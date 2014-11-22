@@ -33,21 +33,21 @@ PetscErrorCode SIA_Sliding::allocate() {
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    ierr = work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS); CHKERRQ(ierr);
+    work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS);
     snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
-    ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
+    work_2d_stag[i].set_name(namestr);
 
   }
 
-  ierr = work_2d.create(grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  work_2d.create(grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);
 
   {
     IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
-    ierr = ice_factory.setType(config.get_string("sia_flow_law")); CHKERRQ(ierr);
+    ice_factory.setType(config.get_string("sia_flow_law"));
 
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+    ice_factory.setFromOptions();
+    ice_factory.create(&flow_law);
   }
 
   return 0;

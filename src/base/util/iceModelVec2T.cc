@@ -62,71 +62,60 @@ unsigned int IceModelVec2T::get_n_records() {
   return n_records;
 }
 
-PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const std::string &my_short_name,
+void IceModelVec2T::create(IceGrid &my_grid, const std::string &my_short_name,
                                      bool local, int width) {
-  PetscErrorCode ierr;
 
   if (local) {
     throw RuntimeError("IceModelVec2T cannot be 'local'");
   }
 
-  ierr = IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width); CHKERRQ(ierr);
+  IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width);
 
   // initialize the m_da3 member:
   m_da3 = grid->get_dm(this->n_records, this->m_da_stencil_width);
 
   // allocate the 3D Vec:
-  ierr = DMCreateGlobalVector(*m_da3, &m_v3); CHKERRQ(ierr);
-
-  return 0;
+  DMCreateGlobalVector(*m_da3, &m_v3);
 }
 
-PetscErrorCode IceModelVec2T::destroy() {
+void IceModelVec2T::destroy() {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec2S::destroy(); CHKERRQ(ierr);
+  IceModelVec2S::destroy();
 
   if (m_v3 != NULL) {
     ierr = VecDestroy(&m_v3);
     PISM_PETSC_CHK(ierr, "VecDestroy");
     m_v3 = NULL;
   }
-
-  return 0;
 }
 
-PetscErrorCode IceModelVec2T::get_array3(double*** &a3) {
-  PetscErrorCode ierr = begin_access(); CHKERRQ(ierr);
+void IceModelVec2T::get_array3(double*** &a3) {
+  begin_access();
   a3 = (double***) array3;
-  return 0;
 }
 
-PetscErrorCode IceModelVec2T::begin_access() const {
-  PetscErrorCode ierr;
+void IceModelVec2T::begin_access() const {
   if (m_access_counter == 0) {
-    ierr = DMDAVecGetArrayDOF(*m_da3, m_v3, &array3); CHKERRQ(ierr);
+    DMDAVecGetArrayDOF(*m_da3, m_v3, &array3);
   }
 
   // this call will increment the m_access_counter
-  ierr = IceModelVec2S::begin_access(); CHKERRQ(ierr);
+  IceModelVec2S::begin_access();
   
-  return 0;
 }
 
-PetscErrorCode IceModelVec2T::end_access() const {
+void IceModelVec2T::end_access() const {
   // this call will decrement the m_access_counter
-  PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
+  IceModelVec2S::end_access();
 
   if (m_access_counter == 0) {
-    ierr = DMDAVecRestoreArrayDOF(*m_da3, m_v3, &array3); CHKERRQ(ierr);
+    DMDAVecRestoreArrayDOF(*m_da3, m_v3, &array3);
     array3 = NULL;
   }
-
-  return 0;
 }
 
-PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period, double reference_time) {
-  PetscErrorCode ierr;
+void IceModelVec2T::init(const std::string &fname, unsigned int period, double reference_time) {
 
   filename         = fname;
   m_period         = period;
@@ -168,7 +157,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
     // we're found the time dimension
     NCTimeseries time_dimension(dimname, dimname, grid->get_unit_system());
 
-    ierr = time_dimension.set_units(grid->time->units_string()); CHKERRQ(ierr);
+    time_dimension.set_units(grid->time->units_string());
     nc.read_timeseries(time_dimension, grid->time, time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
@@ -177,7 +166,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
       if (bounds_name.empty() == false) {
         // read time bounds data from a file
         NCTimeBounds tb(bounds_name, dimname, grid->get_unit_system());
-        ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
+        tb.set_units(time_dimension.get_string("units"));
 
         nc.read_time_bounds(tb, grid->time, time_bounds);
 
@@ -225,18 +214,15 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
     }
 
     // read periodic data right away (we need to hold it all in memory anyway)
-    ierr = update(0); CHKERRQ(ierr);
+    update(0);
   }
-
-  return 0;
 }
 
 //! Initialize as constant in time and space
-PetscErrorCode IceModelVec2T::init_constant(double value) {
-  PetscErrorCode ierr;
+void IceModelVec2T::init_constant(double value) {
 
   // set constant value everywhere
-  ierr = set(value); CHKERRQ(ierr);
+  set(value);
 
   // set the time to zero
   time.resize(1);
@@ -247,24 +233,21 @@ PetscErrorCode IceModelVec2T::init_constant(double value) {
   time_bounds.resize(2);
   time_bounds[0] = -1;
   time_bounds[1] =  1;
-
-  return 0;
 }
 
 //! Read some data to make sure that the interval (my_t, my_t + my_dt) is covered.
-PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void IceModelVec2T::update(double my_t, double my_dt) {
   std::vector<double>::iterator i, j;
   unsigned int m, n, last;
 
   if (time_bounds.size() == 0) {
-    ierr = update(0); CHKERRQ(ierr);
-    return 0;
+    update(0);
+    return;
   }
 
   if (m_period != 0) {
     // we read all data in IceModelVec2T::init() (see above)
-    return 0;
+    return;
   }
 
   if (N > 0) {
@@ -276,7 +259,7 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
 
     // just return if we have all the data we need:
     if (my_t >= t0 && my_t + my_dt <= t1) {
-      return 0;
+      return;
     }
   }
 
@@ -307,13 +290,11 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
     throw RuntimeError("IceModelVec2T::update(): timestep is too big");
   }
 
-  ierr = update(m); CHKERRQ(ierr);
-
-  return 0;
+  update(m);
 }
 
 //! Update by reading at most n_records records from the file.
-PetscErrorCode IceModelVec2T::update(unsigned int start) {
+void IceModelVec2T::update(unsigned int start) {
   PetscErrorCode ierr;
   unsigned int time_size = (int)time.size();
 
@@ -325,7 +306,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 
   if (start == static_cast<unsigned int>(first)) {
     // nothing to do
-    return 0;
+    return;
   }
 
   int kept = 0;
@@ -334,7 +315,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
     if ((N > 0) && (start >= (unsigned int)first) && (start <= last)) {
       int discarded = start - first;
       kept = last - start + 1;
-      ierr = discard(discarded); CHKERRQ(ierr);
+      discard(discarded);
       missing -= kept;
       start += kept;
       first += discarded;
@@ -346,20 +327,20 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
   }
 
   if (missing <= 0) {
-    return 0;
+    return;
   }
   
   N = kept + missing;
 
   if (this->get_n_records() > 1 || getVerbosityLevel() > 4) {
-    ierr = verbPrintf(2, grid->com,
-                      "  reading \"%s\" into buffer\n"
-                      "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
-                      metadata().get_string("long_name").c_str(), m_name.c_str(), missing,
-                      grid->time->date(time_bounds[start*2]).c_str(),
-                      grid->time->date(time_bounds[start*2 + 1]).c_str(),
-                      grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
-                      grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str()); CHKERRQ(ierr);
+    verbPrintf(2, grid->com,
+               "  reading \"%s\" into buffer\n"
+               "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
+               metadata().get_string("long_name").c_str(), m_name.c_str(), missing,
+               grid->time->date(time_bounds[start*2]).c_str(),
+               grid->time->date(time_bounds[start*2 + 1]).c_str(),
+               grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
+               grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
     m_report_range = false;
   } else {
     m_report_range = true;
@@ -369,34 +350,31 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
   nc.open(filename, PISM_READONLY);
 
   for (unsigned int j = 0; j < missing; ++j) {
-    ierr = m_metadata[0].regrid(nc, start + j,
-                                CRITICAL, m_report_range, 0.0, m_v); CHKERRQ(ierr);
+    m_metadata[0].regrid(nc, start + j,
+                         CRITICAL, m_report_range, 0.0, m_v);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
                       m_name.c_str(),
                       start + j,
                       grid->time->date(time[start + j]).c_str());
-    ierr = set_record(kept + j); CHKERRQ(ierr);
+    set_record(kept + j);
   }
 
   nc.close();
-
-  return 0;
 }
 
 //! Discard the first N records, shifting the rest of them towards the "beginning".
-PetscErrorCode IceModelVec2T::discard(int number) {
-  PetscErrorCode ierr;
+void IceModelVec2T::discard(int number) {
   double **a2, ***a3;
 
   if (number == 0) {
-    return 0;
+    return;
   }
 
   N -= number;
 
-  ierr = get_array(a2); CHKERRQ(ierr);
-  ierr = get_array3(a3); CHKERRQ(ierr);
+  get_array(a2);
+  get_array3(a3);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -404,44 +382,37 @@ PetscErrorCode IceModelVec2T::discard(int number) {
       a3[i][j][k] = a3[i][j][k + number];
     }
   }
-  ierr = end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
+  end_access();
+  end_access();
   
-  return 0;
 }
 
 //! Sets the record number n to the contents of the (internal) Vec v.
-PetscErrorCode IceModelVec2T::set_record(int n) {
-  PetscErrorCode ierr;
+void IceModelVec2T::set_record(int n) {
   double **a2, ***a3;
 
-  ierr = get_array(a2); CHKERRQ(ierr);
-  ierr = get_array3(a3); CHKERRQ(ierr);
+  get_array(a2);
+  get_array3(a3);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a3[i][j][n] = a2[i][j];
   }
-  ierr = end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
-
-  return 0;
+  end_access();
+  end_access();
 }
 
 //! Sets the (internal) Vec v to the contents of the nth record.
-PetscErrorCode IceModelVec2T::get_record(int n) {
-  PetscErrorCode ierr;
+void IceModelVec2T::get_record(int n) {
   double **a2, ***a3;
 
-  ierr = get_array(a2); CHKERRQ(ierr);
-  ierr = get_array3(a3); CHKERRQ(ierr);
+  get_array(a2);
+  get_array3(a3);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a2[i][j] = a3[i][j][n];
   }
-  ierr = end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
-
-  return 0;
+  end_access();
+  end_access();
 }
 
 //! \brief Given the time my_t and the current selected time-step my_dt,
@@ -477,18 +448,14 @@ double IceModelVec2T::max_timestep(double my_t) {
  *
  * @param[in] my_t requested time
  *
- * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::interp(double my_t) {
-  PetscErrorCode ierr;
+void IceModelVec2T::interp(double my_t) {
 
   std::vector<double> t_vector(1);
   t_vector[0] = my_t;
-  ierr = init_interpolation(t_vector); CHKERRQ(ierr);
+  init_interpolation(t_vector);
 
-  ierr = get_record(m_interp_indices[0]); CHKERRQ(ierr);
-
-  return 0;
+  get_record(m_interp_indices[0]);
 }
 
 
@@ -498,16 +465,14 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
  * @param my_t  start of the time interval, in seconds
  * @param my_dt length of the time interval, in seconds
  *
- * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void IceModelVec2T::average(double my_t, double my_dt) {
   double **a2;
   double dt_years = grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
   // if only one record, nothing to do
   if (time.size() == 1) {
-    return 0;
+    return;
   }
 
   // Determine the number of small time-steps to use for averaging:
@@ -522,16 +487,14 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
     ts[k] = my_t + k * dt;
   }
 
-  ierr = init_interpolation(ts); CHKERRQ(ierr);
+  init_interpolation(ts);
 
-  ierr = get_array(a2);         // calls begin_access()
+  get_array(a2);         // calls begin_access()
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    ierr = average(i, j, a2[i][j]); CHKERRQ(ierr); // NB! order
+    average(i, j, a2[i][j]); // NB! order
   }
-  ierr = end_access(); CHKERRQ(ierr);
-
-  return 0;
+  end_access();
 }
 
 /**
@@ -540,9 +503,8 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
  *
  * @param ts requested times, in seconds
  *
- * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
+void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   unsigned int index = 0,
     last = first + N - 1;
 
@@ -598,8 +560,6 @@ PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) 
 
     m_interp_indices[k] = index;
   }
-
-  return 0;
 }
 
 /** 
@@ -609,17 +569,14 @@ PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) 
  * @param i,j map-plane grid point
  * @param result pointer to an allocated array of `weights.size()` `double`
  *
- * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
+void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   double ***a3 = (double***) array3;
   unsigned int ts_length = m_interp_indices.size();
 
   for (unsigned int k = 0; k < ts_length; ++k) {
     result[k] = a3[i][j][m_interp_indices[k]];
   }
-  
-  return 0;
 }
 
 //! \brief Finds the average value at i,j over the interval (my_t, my_t +
@@ -627,8 +584,7 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, std::vector<double> &result) 
 /*!
   Can (and should) be optimized. Later, though.
  */
-PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
-  PetscErrorCode ierr;
+void IceModelVec2T::average(int i, int j, double &result) {
   unsigned int M = m_interp_indices.size();
 
   if (N == 1) {
@@ -637,7 +593,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
   } else {
     std::vector<double> values(M);
 
-    ierr = interp(i, j, values); CHKERRQ(ierr);
+    interp(i, j, values);
 
     // rectangular rule (uses the fact that points are equally-spaces
     // in time)
@@ -647,7 +603,6 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
     }
     result /= (double)M;
   }
-  return 0;
 }
 
 

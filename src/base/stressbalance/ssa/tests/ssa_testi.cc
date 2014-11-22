@@ -92,8 +92,8 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
 
-  ierr = bc_mask.set(0); CHKERRQ(ierr);
-  ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
+  bc_mask.set(0);
+  thickness.set(H0_schoof);
 
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
@@ -115,7 +115,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
     const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
     tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
   }
-  ierr = tauc.update_ghosts(); CHKERRQ(ierr);
+  tauc.update_ghosts();
 
   list.add(vel_bc);
   list.add(bc_mask);
@@ -139,10 +139,10 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   }
 
   // communicate what we have set
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
-  ierr = bed.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
+  surface.update_ghosts();
+  bed.update_ghosts();
+  bc_mask.update_ghosts();
+  vel_bc.update_ghosts();
 
   ssa->set_boundary_conditions(bc_mask, vel_bc); 
 

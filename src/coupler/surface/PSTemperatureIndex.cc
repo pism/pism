@@ -140,58 +140,57 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
     air_temp_sd.set_n_records(1);
   }
 
-  ierr = air_temp_sd.create(grid, "air_temp_sd", false); CHKERRQ(ierr);
-  ierr = air_temp_sd.set_attrs("climate_forcing",
-                                "standard deviation of near-surface air temperature",
-                                "Kelvin", ""); CHKERRQ(ierr);
+  air_temp_sd.create(grid, "air_temp_sd", false);
+  air_temp_sd.set_attrs("climate_forcing",
+                        "standard deviation of near-surface air temperature",
+                        "Kelvin", "");
 
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_attrs("diagnostic",
-                                         "instantaneous surface mass balance (accumulation/ablation) rate",
-                                         "kg m-2 s-1",
-                                         "land_ice_surface_specific_mass_balance_flux");  // CF standard_name
-  CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  climatic_mass_balance.set_attrs("diagnostic",
+                                  "instantaneous surface mass balance (accumulation/ablation) rate",
+                                  "kg m-2 s-1",
+                                  "land_ice_surface_specific_mass_balance_flux");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
   climatic_mass_balance.write_in_glaciological_units = true;
   climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:
 
-  ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous surface accumulation rate"
-                                     " (precipitation minus rain)",
-                                     "kg m-2 s-1",
-                                     ""); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS);
+  accumulation_rate.set_attrs("diagnostic",
+                              "instantaneous surface accumulation rate"
+                              " (precipitation minus rain)",
+                              "kg m-2 s-1",
+                              "");
+  accumulation_rate.set_glaciological_units("kg m-2 year-1");
   accumulation_rate.write_in_glaciological_units = true;
 
-  ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = melt_rate.set_attrs("diagnostic",
-                             "instantaneous surface melt rate",
-                             "kg m-2 s-1",
-                             ""); CHKERRQ(ierr);
-  ierr = melt_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  melt_rate.create(grid, "smelt", WITHOUT_GHOSTS);
+  melt_rate.set_attrs("diagnostic",
+                      "instantaneous surface melt rate",
+                      "kg m-2 s-1",
+                      "");
+  melt_rate.set_glaciological_units("kg m-2 year-1");
   melt_rate.write_in_glaciological_units = true;
 
-  ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = runoff_rate.set_attrs("diagnostic",
-                               "instantaneous surface meltwater runoff rate",
-                               "kg m-2 s-1",
-                               ""); CHKERRQ(ierr);
-  ierr = runoff_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS);
+  runoff_rate.set_attrs("diagnostic",
+                        "instantaneous surface meltwater runoff rate",
+                        "kg m-2 s-1",
+                        "");
+  runoff_rate.set_glaciological_units("kg m-2 year-1");
   runoff_rate.write_in_glaciological_units = true;
 
-  ierr = snow_depth.create(grid, "snow_depth", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = snow_depth.set_attrs("diagnostic",
-                              "snow cover depth (set to zero once a year)",
-                              "m", ""); CHKERRQ(ierr);
-  ierr = snow_depth.set(0.0); CHKERRQ(ierr);
+  snow_depth.create(grid, "snow_depth", WITHOUT_GHOSTS);
+  snow_depth.set_attrs("diagnostic",
+                       "snow cover depth (set to zero once a year)",
+                       "m", "");
+  snow_depth.set(0.0);
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  ice_surface_temp.set_units("K");
 
   return 0;
 }

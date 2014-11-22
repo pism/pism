@@ -30,11 +30,11 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   begin_end_access_use_dof = false;
 }
 
-PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const std::string &short_name, IceModelVecKind ghostedp,
+void  IceModelVec2V::create(IceGrid &my_grid, const std::string &short_name, IceModelVecKind ghostedp,
                                       unsigned int stencil_width) {
 
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, short_name, ghostedp,
-                                             stencil_width, m_dof); CHKERRQ(ierr);
+  IceModelVec2::create(my_grid, short_name, ghostedp,
+                       stencil_width, m_dof);
 
   UnitSystem sys = grid->get_unit_system();
 
@@ -42,18 +42,14 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const std::string &short
   m_metadata[1] = NCSpatialVariable(sys, "v" + short_name, *grid);
 
   m_name = "vel" + short_name;
-
-  return 0;
 }
 
-PetscErrorCode IceModelVec2V::get_array(Vector2** &a) {
-  PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
+void IceModelVec2V::get_array(Vector2** &a) {
+  begin_access();
   a = static_cast<Vector2**>(array);
-  return 0;
 }
 
-PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) const {
+void IceModelVec2V::magnitude(IceModelVec2S &result) const {
   IceModelVec::AccessList list;
   list.add(*this);
   list.add(result);
@@ -63,11 +59,9 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) const {
 
     result(i, j) = (*this)(i, j).magnitude();
   }
-
-  return 0;
 }
 
-PetscErrorCode IceModelVec2V::set_name(const std::string &new_name, int component) {
+void IceModelVec2V::set_name(const std::string &new_name, int component) {
   (void) component;
 
   std::string tmp = new_name;
@@ -78,12 +72,10 @@ PetscErrorCode IceModelVec2V::set_name(const std::string &new_name, int componen
 
   m_metadata[0].set_name("u" + tmp);
   m_metadata[1].set_name("v" + tmp);
-
-  return 0;
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
+void IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
                                      const std::string &standard_name, int component)
 {
   (void) component;
@@ -107,12 +99,10 @@ PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::s
     m_metadata[0].set_string("standard_name", standard_name);
     m_metadata[1].set_string("standard_name", standard_name);
   }
-
-  return 0;
 }  
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
+void IceModelVec2V::rename(const std::string & short_name,
                                      const std::vector<std::string> &long_names, 
                                      const std::string & standard_name)
 {
@@ -132,19 +122,17 @@ PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
     m_metadata[0].set_string("standard_name", standard_name);
     m_metadata[1].set_string("standard_name", standard_name);
   }
-
-  return 0;
 }
 
-PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x) {
+void IceModelVec2V::add(double alpha, IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) const {
+void IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) const {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
-PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) const {
+void IceModelVec2V::copy_to(IceModelVec &destination) const {
   return copy_2d<IceModelVec2V>(this, &destination);
 }
 

@@ -28,41 +28,32 @@ namespace pism {
 Hydrology::Hydrology(IceGrid &g, const Config &conf)
   : Component_TS(g, conf)
 {
-  thk   = NULL;
-  bed   = NULL;
-  cellarea = NULL;
-  bmelt = NULL;
-  mask  = NULL;
+  thk        = NULL;
+  bed        = NULL;
+  cellarea   = NULL;
+  bmelt      = NULL;
+  mask       = NULL;
   inputtobed = NULL;
-  variables = NULL;
+  variables  = NULL;
   hold_bmelt = false;
 
   PetscErrorCode ierr1, ierr2;
-  ierr1 = total_input.create(grid, "total_input", WITHOUT_GHOSTS);
-  ierr2 = total_input.set_attrs("internal",
-                         "hydrology model workspace for total input rate into subglacial water layer",
-                         "m s-1", "");
-  if ((ierr1 != 0) || (ierr2 != 0)) {
-    throw std::runtime_error("Hydrology allocation failed");
-  }
+  total_input.create(grid, "total_input", WITHOUT_GHOSTS);
+  total_input.set_attrs("internal",
+                        "hydrology model workspace for total input rate into subglacial water layer",
+                        "m s-1", "");
 
-  ierr1 = bmelt_local.create(grid, "bmelt", WITHOUT_GHOSTS);
-  ierr2 = bmelt_local.set_attrs("internal",
-                         "hydrology model workspace for bmelt",
-                         "m s-1", "");
-  if ((ierr1 != 0) || (ierr2 != 0)) {
-    throw std::runtime_error("Hydrology allocation failed");
-  }
+  bmelt_local.create(grid, "bmelt", WITHOUT_GHOSTS);
+  bmelt_local.set_attrs("internal",
+                        "hydrology model workspace for bmelt",
+                        "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  ierr1 = Wtil.create(grid, "tillwat", WITHOUT_GHOSTS);
-  ierr2 = Wtil.set_attrs("model_state",
-                     "effective thickness of subglacial water stored in till",
-                     "m", "");
+  Wtil.create(grid, "tillwat", WITHOUT_GHOSTS);
+  Wtil.set_attrs("model_state",
+                 "effective thickness of subglacial water stored in till",
+                 "m", "");
   Wtil.metadata().set_double("valid_min", 0.0);
-  if ((ierr1 != 0) || (ierr2 != 0)) {
-    throw std::runtime_error("Hydrology allocation failed");
-  }
 }
 
 

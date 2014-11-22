@@ -126,12 +126,12 @@ PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
     // Evaluate column integrals in flow law at every quadrature point's column
     double H = thickness(i,j);
     double *enthColumn;
-    ierr = enthalpy.getInternalColumn(i, j, &enthColumn); CHKERRQ(ierr);
+    enthalpy.getInternalColumn(i, j, &enthColumn);
     hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
                                                 &(grid->zlevels[0]), enthColumn);
   }
 
-  ierr = hardav.update_ghosts(); CHKERRQ(ierr);
+  hardav.update_ghosts();
 
   return 0;
 }

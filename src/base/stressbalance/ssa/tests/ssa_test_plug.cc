@@ -118,12 +118,12 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   ssa->strength_extension->set_min_thickness(H0/2);
 
   // Set constant coefficients.
-  ierr = thickness.set(H0); CHKERRQ(ierr);
-  ierr = tauc.set(tauc0); CHKERRQ(ierr);
+  thickness.set(H0);
+  tauc.set(tauc0);
 
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = bc_mask.set(0.0); CHKERRQ(ierr);
+  bc_mask.set(0.0);
 
   IceModelVec::AccessList list;
   list.add(vel_bc);
@@ -149,10 +149,10 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
     }
   }
 
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = bed.update_ghosts(); CHKERRQ(ierr);
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
+  vel_bc.update_ghosts();
+  bc_mask.update_ghosts();
+  bed.update_ghosts();
+  surface.update_ghosts();
 
   ssa->set_boundary_conditions(bc_mask, vel_bc); 
 

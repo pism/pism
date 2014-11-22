@@ -45,13 +45,13 @@ PetscErrorCode BedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
-  ierr = topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
-                                "m", ""); CHKERRQ(ierr);
+  topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
+  topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
+                         "m", "");
 
-  ierr = topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
-                             "m", "bedrock_altitude"); CHKERRQ(ierr);
+  topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  topg_last.set_attrs("model_state", "bedrock surface elevation",
+                      "m", "bedrock_altitude");
 
   return 0;
 }

@@ -89,7 +89,7 @@ void ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
 
 PetscErrorCode ConstantYieldStress::allocate() {
   PetscErrorCode ierr;
-  ierr = tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
+  tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width"));
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   tauc.set_attrs("model_state", 
                  "yield stress for basal till (plastic or pseudo-plastic model)",

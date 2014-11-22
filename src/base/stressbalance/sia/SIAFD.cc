@@ -52,24 +52,24 @@ PetscErrorCode SIAFD::allocate() {
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    ierr = work_2d[i].create(grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS); CHKERRQ(ierr);
+    work_2d[i].create(grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL);
+    work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS);
 
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
-    ierr = work_2d[i].set_name(namestr); CHKERRQ(ierr);
+    work_2d[i].set_name(namestr);
 
     for (int j = 0; j < 2; ++j) {
       snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d_%d", i, j);
-      ierr = work_2d_stag[i].set_name(namestr, j); CHKERRQ(ierr);
+      work_2d_stag[i].set_name(namestr, j);
     }
   }
 
-  ierr = delta[0].create(grid, "delta_0", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = delta[1].create(grid, "delta_1", WITH_GHOSTS); CHKERRQ(ierr);
+  delta[0].create(grid, "delta_0", WITH_GHOSTS);
+  delta[1].create(grid, "delta_1", WITH_GHOSTS);
 
   // 3D temporary storage:
-  ierr = work_3d[0].create(grid, "work_3d_0", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS); CHKERRQ(ierr);
+  work_3d[0].create(grid, "work_3d_0", WITH_GHOSTS);
+  work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS);
 
   // bed smoother
   bed_smoother = new BedSmoother(grid, config, WIDE_STENCIL);
@@ -79,10 +79,10 @@ PetscErrorCode SIAFD::allocate() {
   {
     IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
-    ierr = ice_factory.setType(config.get_string("sia_flow_law")); CHKERRQ(ierr);
+    ice_factory.setType(config.get_string("sia_flow_law"));
 
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+    ice_factory.setFromOptions();
+    ice_factory.create(&flow_law);
   }
 
   return 0;

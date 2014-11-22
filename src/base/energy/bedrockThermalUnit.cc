@@ -129,9 +129,9 @@ PetscErrorCode BedThermalUnit::allocate() {
     z.back() = 0;
     ierr = temp.create(grid, "litho_temp", "zb", z, attrs); CHKERRQ(ierr);
 
-    ierr = temp.set_attrs("model_state",
-                          "lithosphere (bedrock) temperature, in BedThermalUnit",
-                          "K", ""); CHKERRQ(ierr);
+    temp.set_attrs("model_state",
+                   "lithosphere (bedrock) temperature, in BedThermalUnit",
+                   "K", "");
     temp.metadata().set_double("valid_min", 0.0);
   }
 
@@ -320,13 +320,6 @@ void BedThermalUnit::update(double my_t, double my_dt) {
 
   double dzb = this->get_vertical_spacing();
   const int  k0  = m_Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
-
-#if (PISM_DEBUG==1)
-  for (unsigned int k = 0; k < m_Mbz; k++) { // working upward from base
-    const double  z = - m_Lbz + (double)k * dzb;
-    temp.isLegalLevel(z);
-  }
-#endif
 
   const double bed_R  = bed_D * my_dt / (dzb * dzb);
 

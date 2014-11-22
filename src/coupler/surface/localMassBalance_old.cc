@@ -83,9 +83,8 @@ PetscScalar PDDMassBalance_Old::CalovGreveIntegrand(PetscScalar sigma, PetscScal
 
 
 //! Compute the expected number of positive degree days from the input temperature time-series.
-PetscScalar PDDMassBalance_Old::getPDDSumFromTemperatureTimeSeries(
-               PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
-               PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+PetscScalar PDDMassBalance_Old::getPDDSumFromTemperatureTimeSeries(PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
+                                                                   PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar  pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
                     h_days = dt_series / sperd;
@@ -118,9 +117,8 @@ There is an allowed linear transition for Tmin below which all
 precipitation is interpreted as snow, and Tmax above which all precipitation is
 rain (see, e.g. \ref Hock2005b).
  */
-PetscScalar PDDMassBalance_Old::getSnowFromPrecipAndTemperatureTimeSeries(
-                 PetscScalar precip_rate,
-                 PetscScalar /*t*/, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+PetscScalar PDDMassBalance_Old::getSnowFromPrecipAndTemperatureTimeSeries(PetscScalar precip_rate,
+                                                                          PetscScalar /*t*/, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
 
   PetscScalar snow = 0.0;
   if (precip_as_snow) {
@@ -288,8 +286,7 @@ which is used in the base class PDDMassBalance_Old.
 Implementation of getPDDSumFromTemperatureTimeSeries() requires returned
 N >= 2, so we guarantee that.
  */
-PetscErrorCode PDDrandMassBalance_Old::getNForTemperatureSeries(
-                   PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
+PetscErrorCode PDDrandMassBalance_Old::getNForTemperatureSeries(PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
   const PetscScalar sperd = 8.64e4;
   N = (int) ceil(dt / sperd);
   if (N < 2) {
@@ -299,9 +296,8 @@ PetscErrorCode PDDrandMassBalance_Old::getNForTemperatureSeries(
 }
 
 
-PetscScalar PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(
-             PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
-             PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+PetscScalar PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
+                                                                       PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar       pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
                     h_days = dt_series / sperd;

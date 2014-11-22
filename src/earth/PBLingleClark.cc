@@ -48,22 +48,21 @@ PBLingleClark::~PBLingleClark() {
 PetscErrorCode PBLingleClark::allocate() {
   PetscErrorCode ierr;
 
-  ierr = topg_initial.allocate_proc0_copy(Hp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(bedp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(Hstartp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(bedstartp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(upliftp0); CHKERRQ(ierr);
+  topg_initial.allocate_proc0_copy(Hp0);
+  topg_initial.allocate_proc0_copy(bedp0);
+  topg_initial.allocate_proc0_copy(Hstartp0);
+  topg_initial.allocate_proc0_copy(bedstartp0);
+  topg_initial.allocate_proc0_copy(upliftp0);
 
   bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
 
   if (grid.rank == 0) {
-    ierr = bdLC.settings(config, use_elastic_model,
-                         grid.Mx, grid.My, grid.dx, grid.dy,
-                         4,     // use Z = 4 for now; to reduce global drift?
-                         &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
-    CHKERRQ(ierr);
+    bdLC.settings(config, use_elastic_model,
+                  grid.Mx, grid.My, grid.dx, grid.dy,
+                  4,     // use Z = 4 for now; to reduce global drift?
+                  &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
 
-    ierr = bdLC.alloc(); CHKERRQ(ierr);
+    bdLC.alloc();
   }
 
   return 0;

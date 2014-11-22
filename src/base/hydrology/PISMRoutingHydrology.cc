@@ -41,53 +41,53 @@ PetscErrorCode RoutingHydrology::allocate() {
   PetscErrorCode ierr;
 
   // model state variables; need ghosts
-  ierr = W.create(grid, "bwat", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = W.set_attrs("model_state",
-                     "thickness of transportable subglacial water layer",
-                     "m", ""); CHKERRQ(ierr);
+  W.create(grid, "bwat", WITH_GHOSTS, 1);
+  W.set_attrs("model_state",
+              "thickness of transportable subglacial water layer",
+              "m", "");
   W.metadata().set_double("valid_min", 0.0);
 
   // auxiliary variables which NEED ghosts
-  ierr = Wstag.create(grid, "W_staggered", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = Wstag.set_attrs("internal",
-                     "cell face-centered (staggered) values of water layer thickness",
-                     "m", ""); CHKERRQ(ierr);
+  Wstag.create(grid, "W_staggered", WITH_GHOSTS, 1);
+  Wstag.set_attrs("internal",
+                  "cell face-centered (staggered) values of water layer thickness",
+                  "m", "");
   Wstag.metadata().set_double("valid_min", 0.0);
-  ierr = Kstag.create(grid, "K_staggered", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = Kstag.set_attrs("internal",
-                     "cell face-centered (staggered) values of nonlinear conductivity",
-                     "", ""); CHKERRQ(ierr);
+  Kstag.create(grid, "K_staggered", WITH_GHOSTS, 1);
+  Kstag.set_attrs("internal",
+                  "cell face-centered (staggered) values of nonlinear conductivity",
+                  "", "");
   Kstag.metadata().set_double("valid_min", 0.0);
-  ierr = Qstag.create(grid, "advection_flux", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = Qstag.set_attrs("internal",
-                     "cell face-centered (staggered) components of advective subglacial water flux",
-                     "m2 s-1", ""); CHKERRQ(ierr);
-  ierr = R.create(grid, "potential_workspace", WITH_GHOSTS, 1); CHKERRQ(ierr); // box stencil used
-  ierr = R.set_attrs("internal",
-                      "work space for modeled subglacial water hydraulic potential",
-                      "Pa", ""); CHKERRQ(ierr);
+  Qstag.create(grid, "advection_flux", WITH_GHOSTS, 1);
+  Qstag.set_attrs("internal",
+                  "cell face-centered (staggered) components of advective subglacial water flux",
+                  "m2 s-1", "");
+  R.create(grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
+  R.set_attrs("internal",
+              "work space for modeled subglacial water hydraulic potential",
+              "Pa", "");
 
   // auxiliary variables which do not need ghosts
-  ierr = Pover.create(grid, "overburden_pressure_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Pover.set_attrs("internal",
-                     "overburden pressure",
-                     "Pa", ""); CHKERRQ(ierr);
+  Pover.create(grid, "overburden_pressure_internal", WITHOUT_GHOSTS);
+  Pover.set_attrs("internal",
+                  "overburden pressure",
+                  "Pa", "");
   Pover.metadata().set_double("valid_min", 0.0);
-  ierr = V.create(grid, "water_velocity", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = V.set_attrs("internal",
-                     "cell face-centered (staggered) components of water velocity in subglacial water layer",
-                     "m s-1", ""); CHKERRQ(ierr);
+  V.create(grid, "water_velocity", WITHOUT_GHOSTS);
+  V.set_attrs("internal",
+              "cell face-centered (staggered) components of water velocity in subglacial water layer",
+              "m s-1", "");
 
   // temporaries during update; do not need ghosts
-  ierr = Wnew.create(grid, "Wnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Wnew.set_attrs("internal",
-                     "new thickness of transportable subglacial water layer during update",
-                     "m", ""); CHKERRQ(ierr);
+  Wnew.create(grid, "Wnew_internal", WITHOUT_GHOSTS);
+  Wnew.set_attrs("internal",
+                 "new thickness of transportable subglacial water layer during update",
+                 "m", "");
   Wnew.metadata().set_double("valid_min", 0.0);
-  ierr = Wtilnew.create(grid, "Wtilnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Wtilnew.set_attrs("internal",
-                     "new thickness of till (subglacial) water layer during update",
-                     "m", ""); CHKERRQ(ierr);
+  Wtilnew.create(grid, "Wtilnew_internal", WITHOUT_GHOSTS);
+  Wtilnew.set_attrs("internal",
+                    "new thickness of till (subglacial) water layer during update",
+                    "m", "");
   Wtilnew.metadata().set_double("valid_min", 0.0);
 
   return 0;
@@ -239,10 +239,9 @@ the boundary removals.
 
 This method does no reporting at stdout; the calling routine can do that.
  */
-void RoutingHydrology::boundary_mass_changes(
-            IceModelVec2S &newthk,
-            double &icefreelost, double &oceanlost,
-            double &negativegain, double &nullstriplost) {
+void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
+                                             double &icefreelost, double &oceanlost,
+                                             double &negativegain, double &nullstriplost) {
   double fresh_water_density = config.get("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
   MaskQuery M(*mask);
@@ -611,11 +610,10 @@ void RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
 
 
 //! Compute the adaptive time step for evolution of W.
-void RoutingHydrology::adaptive_for_W_evolution(
-                  double t_current, double t_end, double maxKW,
-                  double &dt_result,
-                  double &maxV_result, double &maxD_result,
-                  double &dtCFL_result, double &dtDIFFW_result) {
+void RoutingHydrology::adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
+                                                double &dt_result,
+                                                double &maxV_result, double &maxD_result,
+                                                double &dtCFL_result, double &dtDIFFW_result) {
   const double
     dtmax = config.get("hydrology_maximum_time_step_years",
                        "years", "seconds"),

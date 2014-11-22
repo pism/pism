@@ -112,8 +112,8 @@ public:
   */
   virtual PetscErrorCode interior_product(IMVecType &x, IMVecType &y) {
     PetscErrorCode ierr;
-    ierr = this->gradientAt(x, y); CHKERRQ(ierr);
-    ierr = y.scale(0.5); CHKERRQ(ierr);
+    this->gradientAt(x, y);
+    y.scale(0.5);
     return 0;
   }
 

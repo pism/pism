@@ -45,25 +45,25 @@ PetscErrorCode DistributedHydrology::allocate_pressure() {
   PetscErrorCode ierr;
 
   // additional variables beyond RoutingHydrology::allocate()
-  ierr = P.create(grid, "bwp", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = P.set_attrs("model_state",
-                     "pressure of transportable water in subglacial layer",
-                     "Pa", ""); CHKERRQ(ierr);
+  P.create(grid, "bwp", WITH_GHOSTS, 1);
+  P.set_attrs("model_state",
+              "pressure of transportable water in subglacial layer",
+              "Pa", "");
   P.metadata().set_double("valid_min", 0.0);
-  ierr = velbase_mag.create(grid, "velbase_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = velbase_mag.set_attrs("internal",
-                         "ice sliding speed seen by subglacial hydrology",
-                         "m s-1", ""); CHKERRQ(ierr);
+  velbase_mag.create(grid, "velbase_mag", WITHOUT_GHOSTS);
+  velbase_mag.set_attrs("internal",
+                        "ice sliding speed seen by subglacial hydrology",
+                        "m s-1", "");
   velbase_mag.metadata().set_double("valid_min", 0.0);
-  ierr = Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Pnew.set_attrs("internal",
-                     "new transportable subglacial water pressure during update",
-                     "Pa", ""); CHKERRQ(ierr);
+  Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS);
+  Pnew.set_attrs("internal",
+                 "new transportable subglacial water pressure during update",
+                 "Pa", "");
   Pnew.metadata().set_double("valid_min", 0.0);
-  ierr = psi.create(grid, "hydraulic_potential", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = psi.set_attrs("internal",
-                       "hydraulic potential of water in subglacial layer",
-                       "Pa", ""); CHKERRQ(ierr);
+  psi.create(grid, "hydraulic_potential", WITH_GHOSTS, 1);
+  psi.set_attrs("internal",
+                "hydraulic potential of water in subglacial layer",
+                "Pa", "");
   return 0;
 }
 
@@ -304,11 +304,10 @@ void DistributedHydrology::update_velbase_mag(IceModelVec2S &result_velbase_mag)
 
 
 //! Computes the adaptive time step for this (W,P) state space model.
-void DistributedHydrology::adaptive_for_WandP_evolution(
-                  double t_current, double t_end, double maxKW,
-                  double &dt_result,
-                  double &maxV_result, double &maxD_result,
-                  double &PtoCFLratio) {
+void DistributedHydrology::adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+                                                        double &dt_result,
+                                                        double &maxV_result, double &maxD_result,
+                                                        double &PtoCFLratio) {
   double dtCFL, dtDIFFW, dtDIFFP;
 
   adaptive_for_W_evolution(t_current,t_end, maxKW,

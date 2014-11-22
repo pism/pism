@@ -85,26 +85,26 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ierr = theta_ocean->create(grid, "theta_ocean", false); CHKERRQ(ierr);
-  ierr = theta_ocean->set_attrs("climate_forcing",
-                                "absolute potential temperature of the adjacent ocean",
-                                "Kelvin", ""); CHKERRQ(ierr);
+  theta_ocean->create(grid, "theta_ocean", false);
+  theta_ocean->set_attrs("climate_forcing",
+                         "absolute potential temperature of the adjacent ocean",
+                         "Kelvin", "");
 
-  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
-  ierr = salinity_ocean->set_attrs("climate_forcing",
-                                   "salinity of the adjacent ocean",
-                                   "g/kg", ""); CHKERRQ(ierr);
+  salinity_ocean->create(grid, "salinity_ocean", false);
+  salinity_ocean->set_attrs("climate_forcing",
+                            "salinity of the adjacent ocean",
+                            "g/kg", "");
 
-  ierr = shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = shelfbtemp.set_attrs("climate_forcing",
-                              "absolute temperature at ice shelf base",
-                              "Kelvin", ""); CHKERRQ(ierr);
+  shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS);
+  shelfbtemp.set_attrs("climate_forcing",
+                       "absolute temperature at ice shelf base",
+                       "Kelvin", "");
 
-  ierr = shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = shelfbmassflux.set_attrs("climate_forcing",
-                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  shelfbmassflux.set_attrs("climate_forcing",
+                           "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                           "kg m-2 s-1", "");
+  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
   return 0;
 }
 

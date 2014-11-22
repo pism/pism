@@ -42,23 +42,23 @@ POCache::POCache(IceGrid &g, const Config &conf, OceanModel* in)
 PetscErrorCode POCache::allocate_POCache() {
   PetscErrorCode ierr;
 
-  ierr = m_shelf_base_mass_flux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_shelf_base_mass_flux.set_attrs("climate_state",
-                                          "ice mass flux from ice shelf base"
-                                          " (positive flux is loss from ice shelf)",
-                                          "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  m_shelf_base_mass_flux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  m_shelf_base_mass_flux.set_attrs("climate_state",
+                                   "ice mass flux from ice shelf base"
+                                   " (positive flux is loss from ice shelf)",
+                                   "kg m-2 s-1", "");
+  m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1");
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
-  ierr = m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_shelf_base_temperature.set_attrs("climate_state",
-                                            "absolute temperature at ice shelf base",
-                                            "K", ""); CHKERRQ(ierr);
-  ierr = m_melange_back_pressure_fraction.create(grid,"melange_back_pressure_fraction",
-                                                 WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_melange_back_pressure_fraction.set_attrs("climate_state",
-                                                    "melange back pressure fraction",
-                                                    "1", ""); CHKERRQ(ierr);
+  m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelf_base_temperature.set_attrs("climate_state",
+                                     "absolute temperature at ice shelf base",
+                                     "K", "");
+  m_melange_back_pressure_fraction.create(grid,"melange_back_pressure_fraction",
+                                          WITHOUT_GHOSTS);
+  m_melange_back_pressure_fraction.set_attrs("climate_state",
+                                             "melange back pressure fraction",
+                                             "1", "");
 
 
   return 0;

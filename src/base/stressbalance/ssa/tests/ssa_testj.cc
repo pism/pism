@@ -82,12 +82,12 @@ PetscErrorCode SSATestCaseJ::initializeSSAModel()
 PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant for test J
-  ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
-  ierr = ice_mask.set(MASK_FLOATING); CHKERRQ(ierr);
+  tauc.set(0.0);    // irrelevant for test J
+  bed.set(0.0); // assures shelf is floating
+  ice_mask.set(MASK_FLOATING);
 
   double enth0  = enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
-  ierr = enthalpy.set(enth0); CHKERRQ(ierr);
+  enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = config.get("sea_water_density"),
@@ -114,7 +114,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
     const double myx = grid.x[i], myy = grid.y[j];
 
     // set H,h on regular grid
-    ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
+    exactJ(myx, myy, &H, &junk1, &myu, &myv);
 
     thickness(i,j) = H;
     surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
@@ -129,10 +129,10 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   }
 
   // communicate what we have set
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
-  ierr = thickness.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
+  surface.update_ghosts();
+  thickness.update_ghosts();
+  bc_mask.update_ghosts();
+  vel_bc.update_ghosts();
 
   ssa->set_boundary_conditions(bc_mask, vel_bc);
 

@@ -87,7 +87,7 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
         strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
       }
       const int ks = grid.kBelowHeight(thickness(i,j));
-      ierr = strain_heating.getInternalColumn(i,j,&strain_heating_ij); CHKERRQ(ierr);
+      strain_heating.getInternalColumn(i,j,&strain_heating_ij);
       for (int k = 0; k < ks; k++) {  // only eval error if below num surface
         const double _strain_heating_error = PetscAbs(strain_heating_ij[k] - strain_heating_exact[k]);
         max_strain_heating_error = PetscMax(max_strain_heating_error,_strain_heating_error);
@@ -100,10 +100,10 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = GlobalMax(grid.com, &max_strain_heating_error,  &gmax_strain_heating_err); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &av_strain_heating_error,  &gav_strain_heating_err); CHKERRQ(ierr);
+  GlobalMax(grid.com, &max_strain_heating_error,  &gmax_strain_heating_err);
+  GlobalSum(grid.com, &av_strain_heating_error,  &gav_strain_heating_err);
   double  gavcount;
-  ierr = GlobalSum(grid.com, &avcount,  &gavcount); CHKERRQ(ierr);
+  GlobalSum(grid.com, &avcount,  &gavcount);
   gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -156,11 +156,11 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
     }
   }
 
-  ierr = GlobalMax(grid.com, &maxUerr,  &gmaxUerr); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxWerr,  &gmaxWerr); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &avUerr,  &gavUerr); CHKERRQ(ierr);
+  GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
+  GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
+  GlobalSum(grid.com, &avUerr,  &gavUerr);
   gavUerr = gavUerr/(grid.Mx*grid.My);
-  ierr = GlobalSum(grid.com, &avWerr,  &gavWerr); CHKERRQ(ierr);
+  GlobalSum(grid.com, &avWerr,  &gavWerr);
   gavWerr = gavWerr/(grid.Mx*grid.My);
   return 0;
 }
@@ -182,8 +182,8 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = temperature.getInternalColumn(i,j,&T_ij); CHKERRQ(ierr);
-    ierr = enthalpy.getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
+    temperature.getInternalColumn(i,j,&T_ij);
+    enthalpy.getInternalColumn(i,j,&E_ij);
 
     for (unsigned int k=0; k<grid.Mz; ++k) {
       double depth = thickness(i,j) - grid.zlevels[k];
@@ -194,7 +194,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
   }
 
 
-  ierr = enthalpy.update_ghosts(); CHKERRQ(ierr);
+  enthalpy.update_ghosts();
   return 0;
 }
 
@@ -219,8 +219,8 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   dummy3=new double[Mz];  dummy4=new double[Mz];
   dummy5=new double[Mz];
 
-  ierr = bed->set(0); CHKERRQ(ierr);
-  ierr = mask->set(MASK_GROUNDED); CHKERRQ(ierr);
+  bed->set(0);
+  mask->set(MASK_GROUNDED);
 
   double *T;
   T = new double[grid.Mz];
@@ -244,20 +244,20 @@ PetscErrorCode setInitStateF(IceGrid &grid,
       bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
                 &(*thickness)(i, j), dummy5, T, dummy1, dummy2, dummy3, dummy4);
     }
-    ierr = enthalpy->setInternalColumn(i, j, T); CHKERRQ(ierr);
+    enthalpy->setInternalColumn(i, j, T);
   }
 
 
-  ierr = thickness->update_ghosts(); CHKERRQ(ierr);
+  thickness->update_ghosts();
 
-  ierr = thickness->copy_to(*surface); CHKERRQ(ierr);
+  thickness->copy_to(*surface);
 
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   delete [] T; delete [] dummy5;
 
-  ierr = enthalpy_from_temperature_cold(EC, grid, *thickness,
-                                        *enthalpy,
-                                        *enthalpy); CHKERRQ(ierr);
+  enthalpy_from_temperature_cold(EC, grid, *thickness,
+                                 *enthalpy,
+                                 *enthalpy);
 
   return 0;
 }
@@ -272,31 +272,31 @@ PetscErrorCode reportErrors(const Config &config,
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   double max_strain_heating_error, av_strain_heating_error;
-  ierr = compute_strain_heating_errors(config, *strain_heating, *thickness,
-                            grid,
-                            max_strain_heating_error, av_strain_heating_error); CHKERRQ(ierr);
+  compute_strain_heating_errors(config, *strain_heating, *thickness,
+                                grid,
+                                max_strain_heating_error, av_strain_heating_error);
 
-  ierr = verbPrintf(1,grid.com,
-                    "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
-                    max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
+  verbPrintf(1,grid.com,
+             "Sigma     :      maxSig       avSig\n");
+  verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
+             max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
   // surface velocity errors if exact values are available; reported in m/year
   double maxUerr, avUerr, maxWerr, avWerr;
-  ierr = computeSurfaceVelocityErrors(grid, *thickness,
-                                      *u_sia,
-                                      *v_sia,
-                                      *w_sia,
-                                      maxUerr, avUerr,
-                                      maxWerr, avWerr); CHKERRQ(ierr);
+  computeSurfaceVelocityErrors(grid, *thickness,
+                               *u_sia,
+                               *v_sia,
+                               *w_sia,
+                               maxUerr, avUerr,
+                               maxWerr, avWerr);
 
-  ierr = verbPrintf(1,grid.com,
-                    "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
-                    grid.convert(maxUerr, "m/s", "m/year"),
-                    grid.convert(avUerr,  "m/s", "m/year"),
-                    grid.convert(maxWerr, "m/s", "m/year"),
-                    grid.convert(avWerr,  "m/s", "m/year")); CHKERRQ(ierr);
+  verbPrintf(1,grid.com,
+             "surf vels :     maxUvec      avUvec        maxW         avW\n");
+  verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+             grid.convert(maxUerr, "m/s", "m/year"),
+             grid.convert(avUerr,  "m/s", "m/year"),
+             grid.convert(maxWerr, "m/s", "m/year"),
+             grid.convert(avWerr,  "m/s", "m/year"));
 
   return 0;
 }
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
     config.set_flag("compute_grain_size_using_age", false);
 
@@ -345,14 +345,14 @@ int main(int argc, char *argv[]) {
     PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       bool flag;
-      ierr = OptionsInt("-Mx", "Number of grid points in the X direction",
-                            grid.Mx, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-My", "Number of grid points in the X direction",
-                            grid.My, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-Mz", "Number of vertical grid levels",
-                            tmp, flag); CHKERRQ(ierr);
-      ierr = OptionsString("-o", "Set the output file name",
-                               output_file, flag); CHKERRQ(ierr);
+      OptionsInt("-Mx", "Number of grid points in the X direction",
+                 grid.Mx, flag);
+      OptionsInt("-My", "Number of grid points in the X direction",
+                 grid.My, flag);
+      OptionsInt("-Mz", "Number of vertical grid levels",
+                 tmp, flag);
+      OptionsString("-o", "Set the output file name",
+                    output_file, flag);
     }
     ierr = PetscOptionsEnd();
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
@@ -365,12 +365,12 @@ int main(int argc, char *argv[]) {
 
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
-    ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
-    ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    ierr = grid.allocate(); CHKERRQ(ierr);
+    grid.compute_vertical_levels();
+    grid.compute_horizontal_spacing();
+    grid.allocate();
 
-    ierr = setVerbosityLevel(5); CHKERRQ(ierr);
-    ierr = grid.printInfo(1); CHKERRQ(ierr);
+    setVerbosityLevel(5);
+    grid.printInfo(1);
     //ierr = grid.printVertLevels(1); CHKERRQ(ierr);
 
     ICMEnthalpyConverter EC(config);
@@ -385,42 +385,42 @@ int main(int argc, char *argv[]) {
     Vars vars;
 
     // ice upper surface elevation
-    ierr = ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
-          "m", "surface_altitude"); CHKERRQ(ierr);
+    ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
+    ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
+                                    "m", "surface_altitude");
     vars.add(ice_surface_elevation);
 
     // land ice thickness
-    ierr = ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = ice_thickness.set_attrs("model_state", "land ice thickness",
-          "m", "land_ice_thickness"); CHKERRQ(ierr);
+    ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+    ice_thickness.set_attrs("model_state", "land ice thickness",
+                            "m", "land_ice_thickness");
     ice_thickness.metadata().set_double("valid_min", 0.0);
     vars.add(ice_thickness);
 
     // bedrock surface elevation
-    ierr = bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = bed_topography.set_attrs("model_state", "bedrock surface elevation",
-          "m", "bedrock_altitude"); CHKERRQ(ierr);
+    bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+    bed_topography.set_attrs("model_state", "bedrock surface elevation",
+                             "m", "bedrock_altitude");
     vars.add(bed_topography);
 
     // age of the ice; is not used here
-    ierr = age.create(grid, "age", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    ierr = age.set_attrs("diagnostic", "age of the ice", "s", ""); CHKERRQ(ierr);
-    ierr = age.set_glaciological_units("year"); CHKERRQ(ierr);
+    age.create(grid, "age", WITHOUT_GHOSTS);
+    age.set_attrs("diagnostic", "age of the ice", "s", "");
+    age.set_glaciological_units("year");
     age.write_in_glaciological_units = true;
     vars.add(age);
 
     // enthalpy in the ice
-    ierr = enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = enthalpy.set_attrs("model_state",
-                              "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                              "J kg-1", ""); CHKERRQ(ierr);
+    enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+    enthalpy.set_attrs("model_state",
+                       "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                       "J kg-1", "");
     vars.add(enthalpy);
 
     // grounded_dragging_floating integer mask
-    ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
-                           "", ""); CHKERRQ(ierr);
+    vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+    vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
+                    "", "");
     std::vector<double> mask_values(4);
     mask_values[0] = MASK_ICE_FREE_BEDROCK;
     mask_values[1] = MASK_GROUNDED;
@@ -442,9 +442,9 @@ int main(int argc, char *argv[]) {
     StressBalance stress_balance(grid, no_sliding, sia, config);
 
     // fill the fields:
-    ierr = setInitStateF(grid, EC,
-                         &bed_topography, &vMask, &ice_surface_elevation, &ice_thickness,
-                         &enthalpy); CHKERRQ(ierr);
+    setInitStateF(grid, EC,
+                  &bed_topography, &vMask, &ice_surface_elevation, &ice_thickness,
+                  &enthalpy);
 
     // Allocate the SIA solver:
     stress_balance.init(vars);

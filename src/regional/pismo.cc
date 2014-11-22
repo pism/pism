@@ -137,8 +137,7 @@ void IceRegionalModel::createVecs() {
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2);
-  usurfstore.set_attrs(
-                       "model_state", // ensures that it gets written at the end of the run
+  usurfstore.set_attrs("model_state", // ensures that it gets written at the end of the run
                        "saved surface elevation for use to keep surface gradient constant in no_model strip",
                        "m",
                        ""); //  no standard name
@@ -146,8 +145,7 @@ void IceRegionalModel::createVecs() {
 
   // stencil width of 1 needed for differentiation
   thkstore.create(grid, "thkstore", WITH_GHOSTS, 1);
-  thkstore.set_attrs(
-                     "model_state", // ensures that it gets written at the end of the run
+  thkstore.set_attrs("model_state", // ensures that it gets written at the end of the run
                      "saved ice thickness for use to keep driving stress constant in no_model strip",
                      "m",
                      ""); //  no standard name

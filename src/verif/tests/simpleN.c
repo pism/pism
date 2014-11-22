@@ -66,14 +66,13 @@ int main() {
   }
 
   printf("Results from Test N:\n");
-  printf(
-    "     H    = ice thickness        = %12.5f (m)\n"
-    "     h_x  = surface slope        = %12.5e\n"
-    "     u    = ice velocity         = %12.5f (m/year)\n"
-    "     M    = surface mass balance = %12.5f (cm/year)\n"
-    "     B    = ice hardness         = %12.5e (Pa s^(1/3))\n"
-    "     beta = ice hardness         = %12.5e (Pa s m-1)\n",
-    H, hx, u * secpera, M * secpera * 100.0, B, beta);
+  printf("     H    = ice thickness        = %12.5f (m)\n"
+         "     h_x  = surface slope        = %12.5e\n"
+         "     u    = ice velocity         = %12.5f (m/year)\n"
+         "     M    = surface mass balance = %12.5f (cm/year)\n"
+         "     B    = ice hardness         = %12.5e (Pa s^(1/3))\n"
+         "     beta = ice hardness         = %12.5e (Pa s m-1)\n",
+         H, hx, u * secpera, M * secpera * 100.0, B, beta);
   return 0;
 }
 

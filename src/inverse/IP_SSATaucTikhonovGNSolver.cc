@@ -51,35 +51,35 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   unsigned int design_stencil_width = m_d0.get_stencil_width();
   unsigned int state_stencil_width = m_u_obs.get_stencil_width();
 
-  ierr = m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width);
 
-  ierr = m_tmp_D1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
-  ierr = m_tmp_D2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
-  ierr = m_tmp_S1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
-  ierr = m_tmp_S2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  m_tmp_D1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
+  m_tmp_D2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
+  m_tmp_S1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
+  m_tmp_S2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
 
-  ierr = m_tmp_D1Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_D2Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_S2Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  m_tmp_D1Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width);
+  m_tmp_D2Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width);
+  m_tmp_S1Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width);
+  m_tmp_S2Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width);
 
-  ierr = m_GN_rhs.create(grid, "GN_rhs", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  m_GN_rhs.create(grid, "GN_rhs", WITHOUT_GHOSTS, 0);
 
-  ierr = m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
-  ierr = m_d.create(grid, "d", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_hGlobal.create(grid, "h (sans ghosts)", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0);
+  m_d.create(grid, "d", WITH_GHOSTS, design_stencil_width);
+  m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width);
+  m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width);
+  m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width);
+  m_hGlobal.create(grid, "h (sans ghosts)", WITHOUT_GHOSTS);
   
-  ierr = m_dalpha_rhs.create(grid, "dalpha rhs", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_dh_dalpha.create(grid, "dh_dalpha", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dh_dalphaGlobal.create(grid, "dh_dalpha", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_u_diff.create(grid, "du", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  m_dalpha_rhs.create(grid, "dalpha rhs", WITHOUT_GHOSTS);
+  m_dh_dalpha.create(grid, "dh_dalpha", WITH_GHOSTS, design_stencil_width);
+  m_dh_dalphaGlobal.create(grid, "dh_dalpha", WITHOUT_GHOSTS);
+  m_u_diff.create(grid, "du", WITH_GHOSTS, state_stencil_width);
 
-  ierr = m_grad_design.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_gradient.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  m_grad_design.create(grid, "grad design", WITHOUT_GHOSTS);
+  m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS);
+  m_gradient.create(grid, "grad design", WITHOUT_GHOSTS);
 
   ierr = KSPCreate(grid.com, &m_ksp);
   PISM_PETSC_CHK(ierr, "KSPCreate");
@@ -98,14 +98,14 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = KSPGetPC(m_ksp, &pc);
   PISM_PETSC_CHK(ierr, "KSPGetPC");
 
-  ierr = PCSetType(pc, PCNONE); CHKERRQ(ierr);
+  PCSetType(pc, PCNONE);
 
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");  
 
   int nLocalNodes  = grid.xm*grid.ym;
   int nGlobalNodes = grid.Mx*grid.My;
-  ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN); CHKERRQ(ierr);
+  MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN);
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   ierr = multCallback::connect(m_mat_GN);
@@ -113,10 +113,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
 
-  ierr = OptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
+  OptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive);
   
   m_iter_max = 1000; bool flag;
-  ierr = OptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
+  OptionsInt("-inv_gn_iter_max", "", m_iter_max, flag);  
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
@@ -127,20 +127,20 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::destruct() {
   PetscErrorCode ierr;
-  ierr = KSPDestroy(&m_ksp); CHKERRQ(ierr);
-  ierr = MatDestroy(&m_mat_GN); CHKERRQ(ierr);
+  KSPDestroy(&m_ksp);
+  MatDestroy(&m_mat_GN);
   return 0;
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
-  ierr = m_ssaforward.linearize_at(m_d0,reason); CHKERRQ(ierr);
+  m_ssaforward.linearize_at(m_d0,reason);
   return 0;
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
   PetscErrorCode ierr;
-  ierr = this->apply_GN(x.get_vec(),y.get_vec()); CHKERRQ(ierr);
+  this->apply_GN(x.get_vec(),y.get_vec());
   return 0; 
 }
 
@@ -153,17 +153,17 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   DesignVec  &GNx      = m_tmp_D2Global;
   
   // FIXME: Needless copies for now.
-  ierr = m_x.copy_from_vec(x); CHKERRQ(ierr);
+  m_x.copy_from_vec(x);
 
-  ierr = m_ssaforward.apply_linearization(m_x,Tx); CHKERRQ(ierr);
-  ierr = Tx.update_ghosts(); CHKERRQ(ierr);
+  m_ssaforward.apply_linearization(m_x,Tx);
+  Tx.update_ghosts();
   
-  ierr = m_stateFunctional.interior_product(Tx,tmp_gS); CHKERRQ(ierr);
+  m_stateFunctional.interior_product(Tx,tmp_gS);
   
-  ierr = m_ssaforward.apply_linearization_transpose(tmp_gS,GNx); CHKERRQ(ierr);
+  m_ssaforward.apply_linearization_transpose(tmp_gS,GNx);
 
-  ierr = m_designFunctional.interior_product(m_x,tmp_gD); CHKERRQ(ierr);
-  ierr = GNx.add(m_alpha,tmp_gD); CHKERRQ(ierr);
+  m_designFunctional.interior_product(m_x,tmp_gD);
+  GNx.add(m_alpha,tmp_gD);
 
   ierr = VecCopy(GNx.get_vec(), y);
   PISM_PETSC_CHK(ierr, "VecCopy");
@@ -174,15 +174,15 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
 PetscErrorCode IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
   PetscErrorCode ierr;
 
-  ierr = rhs.set(0); CHKERRQ(ierr);
+  rhs.set(0);
   
-  ierr = m_stateFunctional.interior_product(m_u_diff,m_tmp_S1Global); CHKERRQ(ierr);
-  ierr = m_ssaforward.apply_linearization_transpose(m_tmp_S1Global,rhs); CHKERRQ(ierr);
+  m_stateFunctional.interior_product(m_u_diff,m_tmp_S1Global);
+  m_ssaforward.apply_linearization_transpose(m_tmp_S1Global,rhs);
 
-  ierr = m_designFunctional.interior_product(m_d_diff,m_tmp_D1Global); CHKERRQ(ierr);
-  ierr = rhs.add(m_alpha,m_tmp_D1Global);
+  m_designFunctional.interior_product(m_d_diff,m_tmp_D1Global);
+  rhs.add(m_alpha,m_tmp_D1Global);
   
-  ierr = rhs.scale(-1); CHKERRQ(ierr);
+  rhs.scale(-1);
 
   return 0;
 }
@@ -190,7 +190,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
 PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
-  ierr = this->assemble_GN_rhs(m_GN_rhs); CHKERRQ(ierr);
+  this->assemble_GN_rhs(m_GN_rhs);
 
 #if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
@@ -206,7 +206,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
   PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
   
-  ierr = m_h.copy_from(m_hGlobal); CHKERRQ(ierr);
+  m_h.copy_from(m_hGlobal);
 
   reason.reset(new KSPTerminationReason(ksp_reason));
 
@@ -216,19 +216,19 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
 PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
   PetscErrorCode ierr;
   
-  ierr = m_ssaforward.apply_linearization(h,m_tmp_S1Local); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.update_ghosts(); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.add(1,m_u_diff);
+  m_ssaforward.apply_linearization(h,m_tmp_S1Local);
+  m_tmp_S1Local.update_ghosts();
+  m_tmp_S1Local.add(1,m_u_diff);
   
   double sValue;
-  ierr =  m_stateFunctional.valueAt(m_tmp_S1Local,&sValue); CHKERRQ(ierr);
+  m_stateFunctional.valueAt(m_tmp_S1Local,&sValue);
   
   
-  ierr = m_tmp_D1Local.copy_from(m_d_diff); CHKERRQ(ierr);
-  ierr = m_tmp_D1Local.add(1,h); CHKERRQ(ierr);
+  m_tmp_D1Local.copy_from(m_d_diff);
+  m_tmp_D1Local.add(1,h);
   
   double dValue;
-  ierr =  m_designFunctional.valueAt(m_tmp_D1Local,&dValue); CHKERRQ(ierr);
+  m_designFunctional.valueAt(m_tmp_D1Local,&dValue);
   
   *value = m_alpha*dValue + sValue;
 
@@ -244,23 +244,23 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
   dWeight = m_alpha;
   sWeight = 1;
 
-  ierr = m_grad_design.norm(NORM_2,designNorm); CHKERRQ(ierr);
-  ierr = m_grad_state.norm(NORM_2,stateNorm); CHKERRQ(ierr);
+  m_grad_design.norm(NORM_2,designNorm);
+  m_grad_state.norm(NORM_2,stateNorm);
   designNorm *= dWeight;
   stateNorm  *= sWeight;
 
-  ierr = m_gradient.norm(NORM_2,sumNorm); CHKERRQ(ierr);
+  m_gradient.norm(NORM_2,sumNorm);
 
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",
-                    designNorm,stateNorm,sumNorm); CHKERRQ(ierr);
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",
-                    m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
+  verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",
+             designNorm,stateNorm,sumNorm);
+  verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",
+             m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale);
   if (m_tikhonov_adaptive) {
-    ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
+    verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha);
   }
   double relsum = (sumNorm/PetscMax(designNorm,stateNorm));
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",
-                    designNorm,stateNorm,sumNorm,relsum); CHKERRQ(ierr);
+  verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",
+             designNorm,stateNorm,sumNorm,relsum);
 
   // If we have an adaptive tikhonov parameter, check if we have met
   // this constraint first.
@@ -293,31 +293,31 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
 PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
-  ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
+  m_ssaforward.linearize_at(m_d,reason);
   if (reason->failed()) {
     return 0;
   }
 
-  ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
-  ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
+  m_d_diff.copy_from(m_d);
+  m_d_diff.add(-1,m_d0);
 
-  ierr = m_u_diff.copy_from(m_ssaforward.solution()); CHKERRQ(ierr);
-  ierr = m_u_diff.add(-1,m_u_obs); CHKERRQ(ierr);
+  m_u_diff.copy_from(m_ssaforward.solution());
+  m_u_diff.add(-1,m_u_obs);
 
-  ierr = m_designFunctional.gradientAt(m_d_diff,m_grad_design); CHKERRQ(ierr);
+  m_designFunctional.gradientAt(m_d_diff,m_grad_design);
 
   // The following computes the reduced gradient.
   StateVec &adjointRHS = m_tmp_S1Global;
-  ierr = m_stateFunctional.gradientAt(m_u_diff,adjointRHS); CHKERRQ(ierr);  
-  ierr = m_ssaforward.apply_linearization_transpose(adjointRHS,m_grad_state); CHKERRQ(ierr);
+  m_stateFunctional.gradientAt(m_u_diff,adjointRHS);  
+  m_ssaforward.apply_linearization_transpose(adjointRHS,m_grad_state);
 
-  ierr = m_gradient.copy_from(m_grad_design); CHKERRQ(ierr);
-  ierr = m_gradient.scale(m_alpha); CHKERRQ(ierr);    
-  ierr = m_gradient.add(1,m_grad_state); CHKERRQ(ierr);
+  m_gradient.copy_from(m_grad_design);
+  m_gradient.scale(m_alpha);    
+  m_gradient.add(1,m_grad_state);
 
   double valDesign, valState;
-  ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
-  ierr = m_stateFunctional.valueAt(m_u_diff,&valState); CHKERRQ(ierr);
+  m_designFunctional.valueAt(m_d_diff,&valDesign);
+  m_stateFunctional.valueAt(m_u_diff,&valState);
 
   m_val_design = valDesign;
   m_val_state = valState;
@@ -336,7 +336,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
 
   double descent_derivative;
 
-  ierr = m_tmp_D1Global.copy_from(m_h); CHKERRQ(ierr);
+  m_tmp_D1Global.copy_from(m_h);
   ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
   PISM_PETSC_CHK(ierr, "VecDot");
   if (descent_derivative >=0) {
@@ -346,10 +346,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
   }
 
   double alpha = 1;
-  ierr = m_tmp_D1Local.copy_from(m_d); CHKERRQ(ierr);
+  m_tmp_D1Local.copy_from(m_d);
   while(true) {
-    ierr = m_d.add(alpha,m_h); CHKERRQ(ierr);  // Replace with line search.
-    ierr = this->evaluate_objective_and_gradient(step_reason); CHKERRQ(ierr);
+    m_d.add(alpha,m_h);  // Replace with line search.
+    this->evaluate_objective_and_gradient(step_reason);
     if (step_reason->succeeded()) {
       if (m_value <= old_value + 1e-3*alpha*descent_derivative) {
         break;
@@ -364,7 +364,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
       reason.reset(new GenericTerminationReason(-1,"Too many step shrinks."));
       return 0;
     }
-    ierr = m_d.copy_from(m_tmp_D1Local); CHKERRQ(ierr);
+    m_d.copy_from(m_tmp_D1Local);
   }
   
   reason = GenericTerminationReason::success();
@@ -380,7 +380,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   }
 
   m_iter = 0;
-  ierr = m_d.copy_from(m_d0); CHKERRQ(ierr);
+  m_d.copy_from(m_d0);
 
   double dlogalpha = 0;
 
@@ -395,7 +395,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
 
   while(true) {
 
-    ierr = this->check_convergence(reason); CHKERRQ(ierr);
+    this->check_convergence(reason);
     if (reason->done()) {
       return 0;
     }
@@ -405,14 +405,14 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
       m_alpha = exp(m_logalpha);
     }
 
-    ierr = this->solve_linearized(step_reason); CHKERRQ(ierr);
+    this->solve_linearized(step_reason);
     if (step_reason->failed()) {
       reason.reset(new GenericTerminationReason(-1,"Gauss Newton solve"));
       reason->set_root_cause(step_reason);
       return 0;
     }
 
-    ierr = this->linesearch(step_reason); CHKERRQ(ierr);
+    this->linesearch(step_reason);
     if (step_reason->failed()) {
       TerminationReason::Ptr cause = reason;
       reason.reset(new GenericTerminationReason(-1,"Linesearch"));
@@ -421,7 +421,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
     }
 
     if (m_tikhonov_adaptive) {
-      ierr = this->compute_dlogalpha(&dlogalpha,step_reason); CHKERRQ(ierr);
+      this->compute_dlogalpha(&dlogalpha,step_reason);
       if (step_reason->failed()) {
         TerminationReason::Ptr cause = reason;
         reason.reset(new GenericTerminationReason(-1,"Tikhonov penalty update"));
@@ -440,10 +440,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   PetscErrorCode ierr;
 
   // Compute the right-hand side for computing dh/dalpha.
-  ierr = m_d_diff_lin.copy_from(m_d_diff); CHKERRQ(ierr);
-  ierr = m_d_diff_lin.add(1,m_h); CHKERRQ(ierr);  
-  ierr = m_designFunctional.interior_product(m_d_diff_lin,m_dalpha_rhs); CHKERRQ(ierr);
-  ierr = m_dalpha_rhs.scale(-1);
+  m_d_diff_lin.copy_from(m_d_diff);
+  m_d_diff_lin.add(1,m_h);  
+  m_designFunctional.interior_product(m_d_diff_lin,m_dalpha_rhs);
+  m_dalpha_rhs.scale(-1);
 
   // Solve linear equation for dh/dalpha. 
 #if PETSC_VERSION_LT(3,5,0)
@@ -455,7 +455,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
 #endif
   ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec());
   PISM_PETSC_CHK(ierr, "KSPSolve");
-  ierr = m_dh_dalpha.copy_from(m_dh_dalphaGlobal); CHKERRQ(ierr);
+  m_dh_dalpha.copy_from(m_dh_dalphaGlobal);
 
   KSPConvergedReason ksp_reason;
   ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
@@ -466,13 +466,13 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   }
 
   // S1Local contains T(h) + F(x) - u_obs, i.e. the linearized misfit field.
-  ierr = m_ssaforward.apply_linearization(m_h,m_tmp_S1Local); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.update_ghosts(); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.add(1,m_u_diff); CHKERRQ(ierr);
+  m_ssaforward.apply_linearization(m_h,m_tmp_S1Local);
+  m_tmp_S1Local.update_ghosts();
+  m_tmp_S1Local.add(1,m_u_diff);
 
   // Compute linearized discrepancy.
   double disc_sq;
-  ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S1Local,&disc_sq); CHKERRQ(ierr);
+  m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S1Local,&disc_sq);
 
   // There are a number of equivalent ways to compute the derivative of the 
   // linearized discrepancy with respect to alpha, some of which are cheaper
@@ -490,22 +490,22 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   if (ddisc_sq_dalpha <= 0) {
     // Try harder.
     
-    ierr = verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0).  Tighten inv_gn_ksp_rtol?\n",ddisc_sq_dalpha); CHKERRQ(ierr);
+    verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0).  Tighten inv_gn_ksp_rtol?\n",ddisc_sq_dalpha);
     
     // S2Local contains T(dh/dalpha)
-    ierr = m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local); CHKERRQ(ierr);
-    ierr = m_tmp_S2Local.update_ghosts(); CHKERRQ(ierr);
+    m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local);
+    m_tmp_S2Local.update_ghosts();
 
     double ddisc_sq_dalpha_a;
-    ierr = m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha_a); CHKERRQ(ierr);
+    m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha_a);
     double ddisc_sq_dalpha_b;
-    ierr = m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b); CHKERRQ(ierr);
+    m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b);
     ddisc_sq_dalpha = 2*m_alpha*(ddisc_sq_dalpha_a+m_alpha*ddisc_sq_dalpha_b);
 
-    ierr = verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check recovery attempt: dh/dalpha= %g. \n",ddisc_sq_dalpha); CHKERRQ(ierr);
+    verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check recovery attempt: dh/dalpha= %g. \n",ddisc_sq_dalpha);
 
     // This is yet another alternative formula.
-    // ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S2Local,&ddisc_sq_dalpha); CHKERRQ(ierr);
+    // m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S2Local,&ddisc_sq_dalpha);
     // ddisc_sq_dalpha *= 2;
   }
 

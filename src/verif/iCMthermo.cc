@@ -309,9 +309,8 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 }
 
 
-void IceCompModel::computeIceBedrockTemperatureErrors(
-                                double &gmaxTerr, double &gavTerr,
-                                double &gmaxTberr, double &gavTberr) {
+void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
+                                                      double &gmaxTberr, double &gavTberr) {
 
   if ((testname != 'K') && (testname != 'O')) {
     throw RuntimeError("ice and bedrock temperature errors only computable for tests K and O");
@@ -399,8 +398,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(
 }
 
 
-void IceCompModel::computeBasalTemperatureErrors(
-      double &gmaxTerr, double &gavTerr, double &centerTerr) {
+void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTerr, double &centerTerr) {
   double     domeT, domeTexact, Terr, avTerr;
 
   double     dummy, z, Texact, dummy1, dummy2, dummy3, dummy4, dummy5;
@@ -460,8 +458,7 @@ void IceCompModel::computeBasalTemperatureErrors(
 }
 
 
-void IceCompModel::compute_strain_heating_errors(
-                      double &gmax_strain_heating_err, double &gav_strain_heating_err) {
+void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err, double &gav_strain_heating_err) {
   double    max_strain_heating_err = 0.0, av_strain_heating_err = 0.0, avcount = 0.0;
 
   double   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
@@ -583,8 +580,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
 }
 
 
-void IceCompModel::computeBasalMeltRateErrors(
-                   double &gmaxbmelterr, double &gminbmelterr) {
+void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr) {
   double    maxbmelterr = -9.99e40, minbmelterr = 9.99e40, err;
   double    bmelt,dum1,dum2,dum3,dum4;
 

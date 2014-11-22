@@ -67,19 +67,16 @@ int main(int argc, char *argv[]) {
     ierr = OptionsIsSet("-show", show); CHKERRQ(ierr);
 
     IceModelVec2S topg, usurf, theta;
-    ierr = topg.create(grid, "topg", WITH_GHOSTS, 1); CHKERRQ(ierr);
-    ierr = topg.set_attrs(
-                          "trybedrough_tool", "original topography",
-                          "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = usurf.create(grid, "usurf", WITH_GHOSTS, 1); CHKERRQ(ierr);
-    ierr = usurf.set_attrs(
-                           "trybedrough_tool", "ice surface elevation",
-                           "m", "surface_altitude"); CHKERRQ(ierr);
-    ierr = theta.create(grid, "theta", WITH_GHOSTS, 1); CHKERRQ(ierr);
-    ierr = theta.set_attrs(
-                           "trybedrough_tool",
-                           "coefficient theta in Schoof (2003) bed roughness parameterization",
-                           "", ""); CHKERRQ(ierr);
+    topg.create(grid, "topg", WITH_GHOSTS, 1);
+    topg.set_attrs("trybedrough_tool", "original topography",
+                   "m", "bedrock_altitude");
+    usurf.create(grid, "usurf", WITH_GHOSTS, 1);
+    usurf.set_attrs("trybedrough_tool", "ice surface elevation",
+                    "m", "surface_altitude");
+    theta.create(grid, "theta", WITH_GHOSTS, 1);
+    theta.set_attrs("trybedrough_tool",
+                    "coefficient theta in Schoof (2003) bed roughness parameterization",
+                    "", "");
 
     // put in bed elevations, a la this Matlab:
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
@@ -92,36 +89,36 @@ int main(int argc, char *argv[]) {
         100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
     }
 
-    ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
+    usurf.set(1000.0);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
     config.set_double("Glen_exponent", 3.0);
     config.set_double("bed_smoother_range", 50.0e3);
     BedSmoother smoother(grid, config, 1);
-    ierr = smoother.preprocess_bed(topg); CHKERRQ(ierr);
+    smoother.preprocess_bed(topg);
     int Nx,Ny;
-    ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
+    smoother.get_smoothing_domain(Nx,Ny);
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    ierr = smoother.get_theta(usurf, &theta); CHKERRQ(ierr);
+    smoother.get_theta(usurf, &theta);
 
     const IceModelVec2S &topg_smoothed = smoother.get_smoothed_bed();
     if (show) {
       const int  window = 400;
-      ierr = topg.view(window);  CHKERRQ(ierr);
-      ierr = topg_smoothed.view(window);  CHKERRQ(ierr);
-      ierr = theta.view(window);  CHKERRQ(ierr);
+      topg.view(window);
+      topg_smoothed.view(window);
+      theta.view(window);
       printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
       ierr = PetscSleep(10);
       PISM_PETSC_CHK(ierr, "PetscSleep");
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
-    ierr = topg.min(topg_min); CHKERRQ(ierr);
-    ierr = topg.max(topg_max); CHKERRQ(ierr);
-    ierr = topg_smoothed.min(topgs_min); CHKERRQ(ierr);
-    ierr = topg_smoothed.max(topgs_max); CHKERRQ(ierr);
-    ierr = theta.min(theta_min); CHKERRQ(ierr);
-    ierr = theta.max(theta_max); CHKERRQ(ierr);
+    topg.min(topg_min);
+    topg.max(topg_max);
+    topg_smoothed.min(topgs_min);
+    topg_smoothed.max(topgs_max);
+    theta.min(theta_min);
+    theta.max(theta_max);
     PetscPrintf(grid.com,
                 "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
                 topg_min, topg_max);
@@ -133,11 +130,11 @@ int main(int argc, char *argv[]) {
                 theta_min, theta_max);
 
     bool dump = false;
-    ierr = OptionsIsSet("-dump", dump); CHKERRQ(ierr);
+    OptionsIsSet("-dump", dump);
     if (dump) {
-      ierr = topg.dump("bedrough_test_topg.nc"); CHKERRQ(ierr);
-      ierr = topg_smoothed.dump("bedrough_test_topg_smoothed.nc"); CHKERRQ(ierr);
-      ierr = theta.dump("bedrough_test_theta.nc"); CHKERRQ(ierr);
+      topg.dump("bedrough_test_topg.nc");
+      topg_smoothed.dump("bedrough_test_topg_smoothed.nc");
+      theta.dump("bedrough_test_theta.nc");
     }
 
   }

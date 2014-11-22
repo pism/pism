@@ -54,14 +54,14 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ierr = air_temp->create(grid, "air_temp", false); CHKERRQ(ierr);
-  ierr = precipitation->create(grid, "precipitation", false); CHKERRQ(ierr);
+  air_temp->create(grid, "air_temp", false);
+  precipitation->create(grid, "precipitation", false);
 
-  ierr = air_temp->set_attrs("climate_forcing", "near-surface air temperature",
-                             "Kelvin", ""); CHKERRQ(ierr);
-  ierr = precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
-                                  "m s-1", ""); CHKERRQ(ierr);
-  ierr = precipitation->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  air_temp->set_attrs("climate_forcing", "near-surface air temperature",
+                      "Kelvin", "");
+  precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
+                           "m s-1", "");
+  precipitation->set_glaciological_units("m year-1");
   precipitation->write_in_glaciological_units = true;
 
   return 0;

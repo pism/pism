@@ -36,10 +36,9 @@ namespace pism {
 
 
 //! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
-void IceModel::excessToFromBasalMeltLayer(
-                const double rho, const double c, const double L,
-                const double z, const double dz,
-                double *Texcess, double *bwat) {
+void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, const double L,
+                                          const double z, const double dz,
+                                          double *Texcess, double *bwat) {
 
   const double darea = grid.dx * grid.dy,
                     dvol = darea * dz,
@@ -166,14 +165,14 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
 
   IceModelVec2S &G0 = vWork2d[0];
   G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", "");
-  ierr = G0.set_glaciological_units("mW m-2");
+  G0.set_glaciological_units("mW m-2");
 
   assert(btu != NULL);
   btu->get_upward_geothermal_flux(G0);
 
   IceModelVec2S &bwatcurr = vWork2d[1];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");
-  ierr = bwatcurr.set_glaciological_units("m");
+  bwatcurr.set_glaciological_units("m");
 
   assert(subglacial_hydrology != NULL);
   subglacial_hydrology->subglacial_water_thickness(bwatcurr);

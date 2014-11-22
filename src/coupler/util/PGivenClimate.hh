@@ -66,7 +66,7 @@ public:
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       if (set_contains(vars, k->first)) {
-        ierr = (k->second)->define(nc, nctype);
+        (k->second)->define(nc, nctype);
         vars.erase(k->first);
       }
       ++k;

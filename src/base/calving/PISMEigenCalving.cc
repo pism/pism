@@ -30,14 +30,14 @@ EigenCalving::EigenCalving(IceGrid &g, const Config &conf,
   : Component(g, conf), m_stencil_width(2), m_mask(NULL),
     m_stress_balance(stress_balance) {
   PetscErrorCode ierr;
-  ierr = m_strain_rates.create(grid, "edot", WITH_GHOSTS,
-                               m_stencil_width,
-                               2); CHKERRCONTINUE(ierr);
+  m_strain_rates.create(grid, "edot", WITH_GHOSTS,
+                        m_stencil_width,
+                        2);
   if (ierr != 0) {
     throw std::runtime_error("EigenCalving allocation failed");
   }
 
-  ierr = m_thk_loss.create(grid, "temporary_storage", WITH_GHOSTS, 1); CHKERRCONTINUE(ierr);
+  m_thk_loss.create(grid, "temporary_storage", WITH_GHOSTS, 1);
   if (ierr != 0) {
     throw std::runtime_error("EigenCalving allocation failed");
   }

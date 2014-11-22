@@ -30,15 +30,12 @@ OceanKill::OceanKill(IceGrid &g, const Config &conf)
   : Component(g, conf) {
   PetscErrorCode ierr;
 
-  ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
-                                  config.get("grid_max_stencil_width"));
-  if (ierr != 0) {
-    throw std::runtime_error("OceanKill allocation failed");
-  }
+  m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
+                           config.get("grid_max_stencil_width"));
 
-  ierr = m_ocean_kill_mask.set_attrs("internal",
-                                     "mask specifying fixed calving front locations",
-                                     "", ""); CHKERRCONTINUE(ierr);
+  m_ocean_kill_mask.set_attrs("internal",
+                              "mask specifying fixed calving front locations",
+                              "", "");
   m_ocean_kill_mask.set_time_independent(true);
 }
 

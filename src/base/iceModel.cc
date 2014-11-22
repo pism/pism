@@ -248,7 +248,7 @@ void IceModel::createVecs() {
     // PROPOSED standard_name = land_ice_age
     tau3.set_attrs("model_state", "age of ice",
                    "s", "");
-    ierr = tau3.set_glaciological_units("years");
+    tau3.set_glaciological_units("years");
     tau3.write_in_glaciological_units = true;
     tau3.metadata().set_double("valid_min", 0.0);
     variables.add(tau3);
@@ -312,7 +312,7 @@ void IceModel::createVecs() {
   // PROPOSED standard_name = lithosphere_upward_heat_flux
   geothermal_flux.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
                             "W m-2", "");
-  ierr = geothermal_flux.set_glaciological_units("mW m-2");
+  geothermal_flux.set_glaciological_units("mW m-2");
   geothermal_flux.write_in_glaciological_units = true;
   geothermal_flux.set_time_independent(true);
   variables.add(geothermal_flux);
@@ -322,7 +322,7 @@ void IceModel::createVecs() {
   bedtoptemp.set_attrs("internal",
                        "temperature of top of bedrock thermal layer",
                        "K", "");
-  ierr = bedtoptemp.set_glaciological_units("K");
+  bedtoptemp.set_glaciological_units("K");
   variables.add(bedtoptemp);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
@@ -339,7 +339,7 @@ void IceModel::createVecs() {
   bed_uplift_rate.create(grid, "dbdt", WITHOUT_GHOSTS);
   bed_uplift_rate.set_attrs("model_state", "bedrock uplift rate",
                             "m s-1", "tendency_of_bedrock_altitude");
-  ierr = bed_uplift_rate.set_glaciological_units("m year-1");
+   bed_uplift_rate.set_glaciological_units("m year-1");
   bed_uplift_rate.write_in_glaciological_units = true;
   variables.add(bed_uplift_rate);
 

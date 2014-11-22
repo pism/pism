@@ -77,7 +77,7 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   PetscErrorCode   ierr;
 
   // Clear the gradient before doing anything with it.
-  ierr = gradient.set(0); CHKERRQ(ierr);
+  gradient.set(0);
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
@@ -94,7 +94,7 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
-  ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -129,7 +129,7 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
     } // j
   } // i
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  dirichletBC.finish();
   return 0;
 }
 

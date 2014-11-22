@@ -50,16 +50,16 @@ PetscErrorCode POGiven::allocate_POGiven() {
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ierr = shelfbtemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr);
-  ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
+  shelfbtemp->create(grid, "shelfbtemp", false);
+  shelfbmassflux->create(grid, "shelfbmassflux", false);
 
-  ierr = shelfbtemp->set_attrs("climate_forcing",
-                               "absolute temperature at ice shelf base",
-                               "Kelvin", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux->set_attrs("climate_forcing",
-                                   "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                                   "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  shelfbtemp->set_attrs("climate_forcing",
+                        "absolute temperature at ice shelf base",
+                        "Kelvin", "");
+  shelfbmassflux->set_attrs("climate_forcing",
+                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                            "kg m-2 s-1", "");
+  shelfbmassflux->set_glaciological_units("kg m-2 year-1");
   shelfbmassflux->write_in_glaciological_units = true;
 
   return 0;

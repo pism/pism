@@ -62,39 +62,34 @@ PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
 
   // allocate Vecs that live on all procs; all have to be as "wide" as any of
   //   their prospective uses
-  ierr = topgsmooth.create(grid, "topgsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
-  ierr = topgsmooth.set_attrs(
-     "bed_smoother_tool",
-     "smoothed bed elevation, in bed roughness parameterization",
-     "m", ""); CHKERRQ(ierr);
-  ierr = maxtl.create(grid, "maxtl", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
-  ierr = maxtl.set_attrs(
-     "bed_smoother_tool",
-     "maximum elevation in local topography patch, in bed roughness parameterization",
-     "m", ""); CHKERRQ(ierr);
-  ierr = C2.create(grid, "C2bedsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
-  ierr = C2.set_attrs(
-     "bed_smoother_tool",
-     "polynomial coeff of H^-2, in bed roughness parameterization",
-     "m2", ""); CHKERRQ(ierr);
-  ierr = C3.create(grid, "C3bedsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
-  ierr = C3.set_attrs(
-     "bed_smoother_tool",
-     "polynomial coeff of H^-3, in bed roughness parameterization",
-     "m3", ""); CHKERRQ(ierr);
-  ierr = C4.create(grid, "C4bedsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
-  ierr = C4.set_attrs(
-     "bed_smoother_tool",
-     "polynomial coeff of H^-4, in bed roughness parameterization",
-     "m4", ""); CHKERRQ(ierr);
+  topgsmooth.create(grid, "topgsmooth", WITH_GHOSTS, maxGHOSTS);
+  topgsmooth.set_attrs("bed_smoother_tool",
+                       "smoothed bed elevation, in bed roughness parameterization",
+                       "m", "");
+  maxtl.create(grid, "maxtl", WITH_GHOSTS, maxGHOSTS);
+  maxtl.set_attrs("bed_smoother_tool",
+                  "maximum elevation in local topography patch, in bed roughness parameterization",
+                  "m", "");
+  C2.create(grid, "C2bedsmooth", WITH_GHOSTS, maxGHOSTS);
+  C2.set_attrs("bed_smoother_tool",
+               "polynomial coeff of H^-2, in bed roughness parameterization",
+               "m2", "");
+  C3.create(grid, "C3bedsmooth", WITH_GHOSTS, maxGHOSTS);
+  C3.set_attrs("bed_smoother_tool",
+               "polynomial coeff of H^-3, in bed roughness parameterization",
+               "m3", "");
+  C4.create(grid, "C4bedsmooth", WITH_GHOSTS, maxGHOSTS);
+  C4.set_attrs("bed_smoother_tool",
+               "polynomial coeff of H^-4, in bed roughness parameterization",
+               "m4", "");
 
   // allocate Vecs that live on processor 0:
-  ierr = topgsmooth.allocate_proc0_copy(topgp0); CHKERRQ(ierr);
-  ierr = topgsmooth.allocate_proc0_copy(topgsmoothp0); CHKERRQ(ierr);
-  ierr = maxtl.allocate_proc0_copy(maxtlp0); CHKERRQ(ierr);
-  ierr = C2.allocate_proc0_copy(C2p0); CHKERRQ(ierr);
-  ierr = C3.allocate_proc0_copy(C3p0); CHKERRQ(ierr);
-  ierr = C4.allocate_proc0_copy(C4p0); CHKERRQ(ierr);
+  topgsmooth.allocate_proc0_copy(topgp0);
+  topgsmooth.allocate_proc0_copy(topgsmoothp0);
+  maxtl.allocate_proc0_copy(maxtlp0);
+  C2.allocate_proc0_copy(C2p0);
+  C3.allocate_proc0_copy(C3p0);
+  C4.allocate_proc0_copy(C4p0);
 
   return 0;
 }
@@ -131,7 +126,7 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
     //   including ghosts, to public member topgsmooth ...
-    ierr = topg.update_ghosts(topgsmooth); CHKERRQ(ierr);
+    topg.update_ghosts(topgsmooth);
     // and we tell get_theta() to return theta=1
     Nx = -1;
     Ny = -1;
@@ -149,7 +144,7 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   }
   //PetscPrintf(grid.com,"BedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
 
-  ierr = preprocess_bed(topg, Nx, Ny); CHKERRQ(ierr);
+  preprocess_bed(topg, Nx, Ny);
   return 0;
 }
 
@@ -171,17 +166,17 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
   }
   Nx = Nx_in; Ny = Ny_in;
 
-  ierr = topg.put_on_proc0(topgp0); CHKERRQ(ierr);
-  ierr = smooth_the_bed_on_proc0(); CHKERRQ(ierr);
+  topg.put_on_proc0(topgp0);
+  smooth_the_bed_on_proc0();
   // next call *does indeed* fill ghosts in topgsmooth
-  ierr = topgsmooth.get_from_proc0(topgsmoothp0); CHKERRQ(ierr);
+  topgsmooth.get_from_proc0(topgsmoothp0);
 
-  ierr = compute_coefficients_on_proc0(); CHKERRQ(ierr);
+  compute_coefficients_on_proc0();
   // following calls *do* fill the ghosts
-  ierr = maxtl.get_from_proc0(maxtlp0); CHKERRQ(ierr);
-  ierr = C2.get_from_proc0(C2p0); CHKERRQ(ierr);
-  ierr = C3.get_from_proc0(C3p0); CHKERRQ(ierr);
-  ierr = C4.get_from_proc0(C4p0); CHKERRQ(ierr);
+  maxtl.get_from_proc0(maxtlp0);
+  C2.get_from_proc0(C2p0);
+  C3.get_from_proc0(C3p0);
+  C4.get_from_proc0(C4p0);
   return 0;
 }
 
@@ -407,7 +402,7 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
   PetscErrorCode ierr;
 
   if ((Nx < 0) || (Ny < 0)) {
-    ierr = theta->set(1.0); CHKERRQ(ierr);
+    theta->set(1.0);
     return 0;
   }
 

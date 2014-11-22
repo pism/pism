@@ -103,26 +103,26 @@ public:
   virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
   using IceModelVec2S::create;
-  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
+  virtual void create(IceGrid &mygrid, const std::string &my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(const std::string &filename, unsigned int period,
+  virtual void init(const std::string &filename, unsigned int period,
                               double reference_time);
-  virtual PetscErrorCode init_constant(double value);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode set_record(int n);
-  virtual PetscErrorCode get_record(int n);
+  virtual void init_constant(double value);
+  virtual void update(double my_t, double my_dt);
+  virtual void set_record(int n);
+  virtual void get_record(int n);
   virtual double         max_timestep(double my_t);
 
-  virtual PetscErrorCode interp(double my_t);
+  virtual void interp(double my_t);
 
-  virtual PetscErrorCode interp(int i, int j, std::vector<double> &results);
+  virtual void interp(int i, int j, std::vector<double> &results);
 
-  virtual PetscErrorCode average(double my_t, double my_dt);
-  virtual PetscErrorCode average(int i, int j, double &result);
+  virtual void average(double my_t, double my_dt);
+  virtual void average(int i, int j, double &result);
 
-  virtual PetscErrorCode begin_access() const;
-  virtual PetscErrorCode end_access() const;
-  virtual PetscErrorCode init_interpolation(const std::vector<double> &ts);
+  virtual void begin_access() const;
+  virtual void end_access() const;
+  virtual void init_interpolation(const std::vector<double> &ts);
 
 protected:
   std::vector<double> time,             //!< all the times available in filename
@@ -142,10 +142,10 @@ protected:
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 
-  virtual PetscErrorCode destroy();
-  virtual PetscErrorCode get_array3(double*** &a3);
-  virtual PetscErrorCode update(unsigned int start);
-  virtual PetscErrorCode discard(int N);
+  virtual void destroy();
+  virtual void get_array3(double*** &a3);
+  virtual void update(unsigned int start);
+  virtual void discard(int N);
 };
 
 

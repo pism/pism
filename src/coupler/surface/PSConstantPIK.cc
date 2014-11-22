@@ -45,18 +45,18 @@ void PSConstantPIK::attach_atmosphere_model(AtmosphereModel *input)
 PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
   PetscErrorCode ierr;
 
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_attrs("climate_state",
-                                         "constant-in-time surface mass balance (accumulation/ablation) rate",
-                                         "kg m-2 s-1",
-                                         "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  climatic_mass_balance.set_attrs("climate_state",
+                                  "constant-in-time surface mass balance (accumulation/ablation) rate",
+                                  "kg m-2 s-1",
+                                  "land_ice_surface_specific_mass_balance_flux");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
   climatic_mass_balance.write_in_glaciological_units = true;
 
-  ierr = ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = ice_surface_temp.set_attrs("climate_state",
-                                    "constant-in-time ice temperature at the ice surface",
-                                    "K", ""); CHKERRQ(ierr);
+  ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  ice_surface_temp.set_attrs("climate_state",
+                             "constant-in-time ice temperature at the ice surface",
+                             "K", "");
   return 0;
 }
 

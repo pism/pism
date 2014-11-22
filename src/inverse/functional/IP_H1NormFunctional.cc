@@ -127,7 +127,7 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   PetscErrorCode   ierr;
 
   // Clear the gradient before doing anything with it!
-  ierr = gradient.set(0); CHKERRQ(ierr);
+  gradient.set(0);
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
@@ -144,7 +144,7 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
-  ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -180,7 +180,7 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
     } // j
   } // i
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  dirichletBC.finish();
 
   return 0;
 }
@@ -189,13 +189,13 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
   PetscErrorCode   ierr;
 
   // Zero out the Jacobian in preparation for updating it.
-  ierr = MatZeroEntries(form); CHKERRQ(ierr);
+  MatZeroEntries(form);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar zeroLocs;
-  ierr = zeroLocs.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
+  zeroLocs.init(m_dirichletIndices, NULL);
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
@@ -240,12 +240,12 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
   } // i
 
   if (zeroLocs) {
-    ierr = zeroLocs.fix_jacobian(form); CHKERRQ(ierr);
+    zeroLocs.fix_jacobian(form);
   }
-  ierr = zeroLocs.finish(); CHKERRQ(ierr);
+  zeroLocs.finish();
 
-  ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY);
 
   return 0;
 }

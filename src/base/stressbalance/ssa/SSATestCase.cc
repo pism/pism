@@ -35,48 +35,47 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
   
   // ice surface elevation
-  ierr = surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = surface.set_attrs("diagnostic", "ice upper surface elevation", "m", 
-                                      "surface_altitude"); CHKERRQ(ierr);
+  surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
+  surface.set_attrs("diagnostic", "ice upper surface elevation", "m", 
+                    "surface_altitude");
   vars.add(surface);
   
   // land ice thickness
-  ierr = thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = thickness.set_attrs("model_state", "land ice thickness", "m", 
-                             "land_ice_thickness"); CHKERRQ(ierr);
+  thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+  thickness.set_attrs("model_state", "land ice thickness", "m", 
+                      "land_ice_thickness");
   thickness.metadata().set_double("valid_min", 0.0);
   vars.add(thickness);
 
   // bedrock surface elevation
-  ierr = bed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = bed.set_attrs("model_state", "bedrock surface elevation", "m", 
-                                          "bedrock_altitude"); CHKERRQ(ierr);
+  bed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  bed.set_attrs("model_state", "bedrock surface elevation", "m", 
+                "bedrock_altitude");
   vars.add(bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  ierr = tauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = tauc.set_attrs("diagnostic",  
-  "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
-  CHKERRQ(ierr);
+  tauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
+  tauc.set_attrs("diagnostic",  
+                 "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
   vars.add(tauc);
 
   // enthalpy
-  ierr = enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = enthalpy.set_attrs("model_state",
-              "ice enthalpy (includes sensible heat, latent heat, pressure)",
-              "J kg-1", ""); CHKERRQ(ierr);
+  enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+  enthalpy.set_attrs("model_state",
+                     "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                     "J kg-1", "");
   vars.add(enthalpy);
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  ierr = vel_bc.create(grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // u_bc and v_bc
-  ierr = vel_bc.set_attrs("intent", 
-            "X-component of the SSA velocity boundary conditions", 
-            "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attrs("intent", 
-            "Y-component of the SSA velocity boundary conditions", 
-            "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vel_bc.create(grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
+  vel_bc.set_attrs("intent", 
+                   "X-component of the SSA velocity boundary conditions", 
+                   "m s-1", "", 0);
+  vel_bc.set_attrs("intent", 
+                   "Y-component of the SSA velocity boundary conditions", 
+                   "m s-1", "", 1);
+  vel_bc.set_glaciological_units("m year-1");
   vel_bc.metadata(0).set_double("valid_min", grid.convert(-1e6, "m/year", "m/second"));
   vel_bc.metadata(0).set_double("valid_max", grid.convert( 1e6, "m/year", "m/second"));
   vel_bc.metadata(0).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
@@ -84,12 +83,12 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   vel_bc.metadata(1).set_double("valid_max", grid.convert( 1e6, "m/year", "m/second"));
   vel_bc.metadata(1).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
   vel_bc.write_in_glaciological_units = true;
-  ierr = vel_bc.set(config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
+  vel_bc.set(config.get("fill_value", "m/year", "m/s"));
   
   // grounded_dragging_floating integer mask
-  ierr = ice_mask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = ice_mask.set_attrs("model_state", 
-          "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
+  ice_mask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+  ice_mask.set_attrs("model_state", 
+                     "grounded_dragging_floating integer mask", "", "");
   std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
@@ -100,12 +99,12 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                                  "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
   vars.add(ice_mask);
 
-  ierr = ice_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  ice_mask.set(MASK_GROUNDED);
 
   // Dirichlet B.C. mask
-  ierr = bc_mask.create(grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = bc_mask.set_attrs("model_state", 
-          "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
+  bc_mask.create(grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
+  bc_mask.set_attrs("model_state", 
+                    "grounded_dragging_floating integer mask", "", "");
   mask_values.resize(2);
   mask_values[0] = 0;
   mask_values[1] = 1;
@@ -114,11 +113,11 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                                 "no_data ssa_dirichlet_bc_location");
   vars.add(bc_mask);
 
-  ierr = melange_back_pressure.create(grid, "melange_back_pressure_fraction",
-                                      WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = melange_back_pressure.set_attrs("boundary_condition",
-                                         "melange back pressure fraction", "", ""); CHKERRQ(ierr);
-  ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
+  melange_back_pressure.create(grid, "melange_back_pressure_fraction",
+                               WITH_GHOSTS, WIDE_STENCIL);
+  melange_back_pressure.set_attrs("boundary_condition",
+                                  "melange back pressure fraction", "", "");
+  melange_back_pressure.set(0.0);
   
   return 0;
 }

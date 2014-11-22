@@ -49,18 +49,18 @@ PetscErrorCode StressBalance::allocate() {
   PetscErrorCode ierr;
 
   // allocate the vertical velocity field:
-  ierr = m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_w.set_attrs("diagnostic",
-                       "vertical velocity of ice, relative to base of ice directly below",
-                       "m s-1", ""); CHKERRQ(ierr);
+  m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS);
+  m_w.set_attrs("diagnostic",
+                "vertical velocity of ice, relative to base of ice directly below",
+                "m s-1", "");
   m_w.set_time_independent(false);
-  ierr = m_w.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  m_w.set_glaciological_units("m year-1");
   m_w.write_in_glaciological_units = true;
 
-  ierr = m_strain_heating.create(grid, "strain_heating", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_strain_heating.set_attrs("internal",
-                                    "rate of strain heating in ice (dissipation heating)",
-                                    "W m-3", ""); CHKERRQ(ierr);
+  m_strain_heating.create(grid, "strain_heating", WITHOUT_GHOSTS);
+  m_strain_heating.set_attrs("internal",
+                             "rate of strain heating in ice (dissipation heating)",
+                             "W m-3", "");
   return 0;
 }
 

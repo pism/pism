@@ -117,9 +117,9 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
   config.set_flag("compute_surf_grad_inward_ssa", true);
 
   // Set constant thickness, tauc
-  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
-  ierr = thickness.set(H0); CHKERRQ(ierr);
-  ierr = tauc.set(tauc0); CHKERRQ(ierr);
+  bc_mask.set(MASK_GROUNDED);
+  thickness.set(H0);
+  tauc.set(tauc0);
 
   IceModelVec::AccessList list;
   list.add(vel_bc);
@@ -145,10 +145,10 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
     }
   }
   
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = bed.update_ghosts(); CHKERRQ(ierr);
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
+  vel_bc.update_ghosts();
+  bc_mask.update_ghosts();
+  bed.update_ghosts();
+  surface.update_ghosts();
 
   ssa->set_boundary_conditions(bc_mask, vel_bc); 
 

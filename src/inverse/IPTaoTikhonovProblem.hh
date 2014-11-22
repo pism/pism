@@ -185,7 +185,7 @@ public:
   //  the parameter \f$d0\f$ appearing the in the Tikhonov functional will be used.
   virtual PetscErrorCode setInitialGuess(DesignVec &d) {
     PetscErrorCode ierr;
-    ierr = m_dGlobal.copy_from(d); CHKERRQ(ierr);
+    m_dGlobal.copy_from(d);
     return 0;
   }
 
@@ -272,9 +272,7 @@ template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhon
   m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
   m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 {
-  PetscErrorCode ierr = this->construct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+  this->construct();
 }
 
 
@@ -288,18 +286,18 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 
   int design_stencil_width = m_d0.get_stencil_width();
   int state_stencil_width = m_u_obs.get_stencil_width();
-  ierr = m_d.create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dGlobal.copy_from(m_d0); CHKERRQ(ierr);
+  m_d.create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
+  m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
+  m_dGlobal.copy_from(m_d0);
 
-  ierr = m_u_diff.create(*m_grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create(*m_grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  m_u_diff.create(*m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
+  m_d_diff.create(*m_grid, "design residual", WITH_GHOSTS, design_stencil_width);
 
-  ierr = m_grad_state.create(*m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad_design.create(*m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad.create(*m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  m_grad_state.create(*m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_design.create(*m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad.create(*m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width);
 
-  ierr = m_adjointRHS.create(*m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  m_adjointRHS.create(*m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width);
 
   return 0;
 }
@@ -309,13 +307,13 @@ template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikho
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
   PetscErrorCode ierr;
   typedef TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,&IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
-  ierr = ObjGradCallback::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
+  ObjGradCallback::connect(tao,*this);
+  TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
+  TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
 
   double fatol = 1e-10, frtol = 1e-20;
   double gatol = PETSC_DEFAULT, grtol = PETSC_DEFAULT, gttol = PETSC_DEFAULT;
-  ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol); CHKERRQ(ierr);
+  TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol);
 
   return 0;
 }
@@ -324,16 +322,15 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   PetscErrorCode ierr;
   
   PetscInt its;
-  ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
+  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL);
   
   int nListeners = m_listeners.size();
   for (int k=0; k<nListeners; k++) {
-    ierr = m_listeners[k]->iteration(*this,m_eta,
-                                     its,m_val_design,m_val_state,
-                                     m_d, m_d_diff, m_grad_design,
-                                     m_forward.solution(), m_u_diff, m_grad_state,
-                                     m_grad);
-    CHKERRQ(ierr);
+    m_listeners[k]->iteration(*this,m_eta,
+                              its,m_val_design,m_val_state,
+                              m_d, m_d_diff, m_grad_design,
+                              m_forward.solution(), m_u_diff, m_grad_state,
+                              m_grad);
   }
   return 0;
 }
@@ -345,18 +342,18 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   dWeight = 1/m_eta;
   sWeight = 1;
   
-  ierr = m_grad_design.norm(NORM_2,designNorm); CHKERRQ(ierr);
-  ierr = m_grad_state.norm(NORM_2,stateNorm); CHKERRQ(ierr);
-  ierr = m_grad.norm(NORM_2,sumNorm); CHKERRQ(ierr);
+  m_grad_design.norm(NORM_2,designNorm);
+  m_grad_state.norm(NORM_2,stateNorm);
+  m_grad.norm(NORM_2,sumNorm);
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
   
   if (sumNorm < m_tikhonov_atol) {
-    ierr = TaoSetConvergedReason(tao, TAO_CONVERGED_GATOL); CHKERRQ(ierr);
+    TaoSetConvergedReason(tao, TAO_CONVERGED_GATOL);
   } else if (sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm)) {
-    ierr = TaoSetConvergedReason(tao,TAO_CONVERGED_USER); CHKERRQ(ierr);
+    TaoSetConvergedReason(tao,TAO_CONVERGED_USER);
   } else {
-    ierr = TaoDefaultConvergenceTest(tao,NULL); CHKERRQ(ierr);
+    TaoDefaultConvergenceTest(tao,NULL);
   }
 
   return 0;
@@ -366,36 +363,36 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   PetscErrorCode ierr;
 
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
-  ierr = m_d.copy_from_vec(x); CHKERRQ(ierr);
+  m_d.copy_from_vec(x);
 
   TerminationReason::Ptr reason;
-  ierr = m_forward.linearize_at(m_d, reason); CHKERRQ(ierr);
+  m_forward.linearize_at(m_d, reason);
   if (reason->failed()) {
-    ierr = verbPrintf(2,m_grid->com,"IPTaoTikhonovProblem::evaluateObjectiveAndGradient failure in forward solve\n%s\n",reason->description().c_str()); CHKERRQ(ierr);
-    ierr = TaoSetConvergedReason(tao,TAO_DIVERGED_USER); CHKERRQ(ierr);
+    verbPrintf(2,m_grid->com,"IPTaoTikhonovProblem::evaluateObjectiveAndGradient failure in forward solve\n%s\n",reason->description().c_str());
+    TaoSetConvergedReason(tao,TAO_DIVERGED_USER);
     return 0;
   }
 
-  ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
-  ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
-  ierr = m_designFunctional.gradientAt(m_d_diff,m_grad_design); CHKERRQ(ierr);
+  m_d_diff.copy_from(m_d);
+  m_d_diff.add(-1,m_d0);
+  m_designFunctional.gradientAt(m_d_diff,m_grad_design);
 
-  ierr = m_u_diff.copy_from(m_forward.solution()); CHKERRQ(ierr);
-  ierr = m_u_diff.add(-1, m_u_obs); CHKERRQ(ierr);
+  m_u_diff.copy_from(m_forward.solution());
+  m_u_diff.add(-1, m_u_obs);
 
   // The following computes the reduced gradient.
-  ierr = m_stateFunctional.gradientAt(m_u_diff,m_adjointRHS); CHKERRQ(ierr);  
-  ierr = m_forward.apply_linearization_transpose(m_adjointRHS,m_grad_state); CHKERRQ(ierr);
+  m_stateFunctional.gradientAt(m_u_diff,m_adjointRHS);  
+  m_forward.apply_linearization_transpose(m_adjointRHS,m_grad_state);
 
-  ierr = m_grad.copy_from(m_grad_design); CHKERRQ(ierr);
-  ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
-  ierr = m_grad.add(1,m_grad_state); CHKERRQ(ierr);
+  m_grad.copy_from(m_grad_design);
+  m_grad.scale(1./m_eta);    
+  m_grad.add(1,m_grad_state);
 
-  ierr = VecCopy(m_grad.get_vec(), gradient); CHKERRQ(ierr);
+  VecCopy(m_grad.get_vec(), gradient);
 
   double valDesign, valState;
-  ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
-  ierr = m_stateFunctional.valueAt(m_u_diff,&valState); CHKERRQ(ierr);
+  m_designFunctional.valueAt(m_d_diff,&valDesign);
+  m_stateFunctional.valueAt(m_u_diff,&valState);
 
   m_val_design = valDesign;
   m_val_state = valState;

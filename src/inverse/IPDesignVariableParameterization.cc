@@ -59,7 +59,7 @@ PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable(IceMode
     }
   }
   if (communicate) {
-    ierr = d.update_ghosts(); CHKERRQ(ierr);
+    d.update_ghosts();
   }
   return 0;
 }
@@ -76,13 +76,13 @@ PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceMo
   for (Points p(*zeta.get_grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = this->fromDesignVariable(d(i, j), &zeta(i, j)); CHKERRQ(ierr);
+    this->fromDesignVariable(d(i, j), &zeta(i, j));
     if (std::isnan(zeta(i, j))) {
       PetscPrintf(PETSC_COMM_WORLD, "made a zeta nan d = %g zeta = %g\n", d(i, j), zeta(i, j));
     }
   }
   if (communicate) {
-    ierr = zeta.update_ghosts(); CHKERRQ(ierr);
+    zeta.update_ghosts();
   }
   return 0;
 }
@@ -129,7 +129,7 @@ PetscErrorCode IPDesignVariableParamSquare::fromDesignVariable(double d, double 
 
 PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const std::string &design_var_name) {
   PetscErrorCode ierr;
-  ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
+  IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("design_param_");
   key += design_var_name;
@@ -165,7 +165,7 @@ PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OU
 PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
                                                                const std::string &design_var_name) {
   PetscErrorCode ierr;
-  ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
+  IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("design_param_trunc_");
   key += design_var_name;

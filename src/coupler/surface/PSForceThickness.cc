@@ -57,14 +57,14 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   m_alpha_ice_free_factor = config.get("force_to_thickness_ice_free_alpha_factor");
   m_ice_free_thickness_threshold = config.get("force_to_thickness_ice_free_thickness_threshold");
 
-  ierr = m_target_thickness.create(grid, "thk", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  m_target_thickness.create(grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
 
-  ierr = m_ftt_mask.create(grid, "ftt_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_ftt_mask.set_attrs("diagnostic",
-                            "mask specifying where to apply the force-to-thickness mechanism",
-                            "", ""); CHKERRQ(ierr); // no units and no standard name
-  ierr = m_ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
+  m_ftt_mask.create(grid, "ftt_mask", WITHOUT_GHOSTS);
+  m_ftt_mask.set_attrs("diagnostic",
+                       "mask specifying where to apply the force-to-thickness mechanism",
+                       "", ""); // no units and no standard name
+  m_ftt_mask.set(1.0); // default: applied in whole domain
   m_ftt_mask.write_in_glaciological_units = true;
 
   m_climatic_mass_balance.set_string("pism_intent", "diagnostic");
@@ -72,19 +72,19 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
                                    "surface mass balance (accumulation/ablation) rate");
   m_climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
-  ierr = m_climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  m_climatic_mass_balance.set_units("kg m-2 s-1");
+  m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   m_climatic_mass_balance_original.set_string("pism_intent", "diagnostic");
   m_climatic_mass_balance_original.set_string("long_name",
                                             "surface mass balance rate before the adjustment using -surface ...,forcing");
-  ierr = m_climatic_mass_balance_original.set_units("kg m-2 s-1"); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance_original.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  m_climatic_mass_balance_original.set_units("kg m-2 s-1");
+  m_climatic_mass_balance_original.set_glaciological_units("kg m-2 year-1");
 
   m_ice_surface_temp.set_string("pism_intent", "diagnostic");
   m_ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = m_ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  m_ice_surface_temp.set_units("K");
 
   return 0;
 }
@@ -164,8 +164,7 @@ void PSForceThickness::init(Vars &vars) {
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     m_target_thickness.set_name("ftt_target_thk");
-    m_target_thickness.set_attrs(
-                                 "diagnostic",
+    m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
                                  "m",
                                  "");  // no CF standard_name, to put it mildly

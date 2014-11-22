@@ -42,30 +42,30 @@ PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
 PetscErrorCode PSCache::allocate_PSCache() {
   PetscErrorCode ierr;
 
-  ierr = m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_mass_flux.set_attrs("climate_state",
-                               "surface mass balance (accumulation/ablation) rate",
-                               "kg m-2 s-1",
-                               "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-  ierr = m_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_mass_flux.set_attrs("climate_state",
+                        "surface mass balance (accumulation/ablation) rate",
+                        "kg m-2 s-1",
+                        "land_ice_surface_specific_mass_balance_flux");
+  m_mass_flux.set_glaciological_units("kg m-2 year-1");
   m_mass_flux.write_in_glaciological_units = true;
 
-  ierr = m_temperature.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_temperature.set_attrs("climate_state",
-                                 "ice temperature at the ice surface",
-                                 "K", ""); CHKERRQ(ierr);
+  m_temperature.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_temperature.set_attrs("climate_state",
+                          "ice temperature at the ice surface",
+                          "K", "");
 
-  ierr = m_liquid_water_fraction.create(grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_liquid_water_fraction.set_attrs("diagnostic",
-                                           "ice surface liquid water fraction", "1", ""); CHKERRQ(ierr);
+  m_liquid_water_fraction.create(grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
+  m_liquid_water_fraction.set_attrs("diagnostic",
+                                    "ice surface liquid water fraction", "1", "");
 
-  ierr = m_mass_held_in_surface_layer.create(grid, "mass_held_in_surface_layer", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_mass_held_in_surface_layer.set_attrs("diagnostic",
-                                                "mass held in surface layer", "kg", ""); CHKERRQ(ierr);
+  m_mass_held_in_surface_layer.create(grid, "mass_held_in_surface_layer", WITHOUT_GHOSTS);
+  m_mass_held_in_surface_layer.set_attrs("diagnostic",
+                                         "mass held in surface layer", "kg", "");
 
-  ierr = m_surface_layer_thickness.create(grid, "surface_layer_thickness", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_surface_layer_thickness.set_attrs("diagnostic",
-                                             "surface layer thickness", "1", ""); CHKERRQ(ierr);
+  m_surface_layer_thickness.create(grid, "surface_layer_thickness", WITHOUT_GHOSTS);
+  m_surface_layer_thickness.set_attrs("diagnostic",
+                                      "surface layer thickness", "1", "");
 
   return 0;
 }

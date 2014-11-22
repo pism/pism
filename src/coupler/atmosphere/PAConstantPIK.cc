@@ -39,27 +39,27 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in SurfaceModel)
-  ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = precipitation.set_attrs("climate_state",
-                                 "mean annual ice-equivalent precipitation rate",
-                                 "m s-1",
-                                 ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precipitation.create(grid, "precipitation", WITHOUT_GHOSTS);
+  precipitation.set_attrs("climate_state",
+                          "mean annual ice-equivalent precipitation rate",
+                          "m s-1",
+                          ""); // no CF standard_name ??
+  precipitation.set_glaciological_units("m year-1");
   precipitation.write_in_glaciological_units = true;
   precipitation.set_time_independent(true);
 
-  ierr = air_temp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = air_temp.set_attrs("climate_state",
-                                   "mean annual near-surface (2 m) air temperature",
-                                   "K",
-                                   ""); CHKERRQ(ierr);
+  air_temp.create(grid, "air_temp", WITHOUT_GHOSTS);
+  air_temp.set_attrs("climate_state",
+                     "mean annual near-surface (2 m) air temperature",
+                     "K",
+                     "");
   air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
   air_temp_snapshot.set_string("long_name",
                                "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
+  air_temp_snapshot.set_units("K");
 
   return 0;
 }

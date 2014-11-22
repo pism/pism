@@ -51,40 +51,39 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
 PetscErrorCode PSTemperatureIndex_Old::allocate_PSTemperatureIndex_Old() {
   PetscErrorCode ierr;
 
-  ierr = climatic_mass_balance.create(grid, mass_balance_name, WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_attrs("diagnostic",
-			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
-			"kg m-2 s-1",
-			"land_ice_surface_specific_mass_balance_flux");  // CF standard_name
-                        CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.create(grid, mass_balance_name, WITHOUT_GHOSTS);
+  climatic_mass_balance.set_attrs("diagnostic",
+                                  "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                  "kg m-2 s-1",
+                                  "land_ice_surface_specific_mass_balance_flux");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
   climatic_mass_balance.write_in_glaciological_units = true;
-  climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
+  climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:
 
-  ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
-                                     "m s-1",
-                                     ""); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS);
+  accumulation_rate.set_attrs("diagnostic",
+                              "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
+                              "m s-1",
+                              "");
+  accumulation_rate.set_glaciological_units("m year-1");
   accumulation_rate.write_in_glaciological_units = true;
 
-  ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = melt_rate.set_attrs("diagnostic",
-                             "instantaneous ice-equivalent surface melt rate",
-                             "m s-1",
-                             ""); CHKERRQ(ierr);
-  ierr = melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  melt_rate.create(grid, "smelt", WITHOUT_GHOSTS);
+  melt_rate.set_attrs("diagnostic",
+                      "instantaneous ice-equivalent surface melt rate",
+                      "m s-1",
+                      "");
+  melt_rate.set_glaciological_units("m year-1");
   melt_rate.write_in_glaciological_units = true;
 
-  ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = runoff_rate.set_attrs("diagnostic",
-                               "instantaneous ice-equivalent surface meltwater runoff rate",
-                               "m s-1",
-                               ""); CHKERRQ(ierr);
-  ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS);
+  runoff_rate.set_attrs("diagnostic",
+                        "instantaneous ice-equivalent surface meltwater runoff rate",
+                        "m s-1",
+                        "");
+  runoff_rate.set_glaciological_units("m year-1");
   runoff_rate.write_in_glaciological_units = true;
 
   return 0;
@@ -337,8 +336,7 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
                                                                       tseries, dtseries, &T[0], Nseries);
 
     // use the temperature time series to remove the rainfall from the precipitation
-    PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
-                                                                                  climatic_mass_balance(i,j), // precipitation rate (input)
+    PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(climatic_mass_balance(i,j), // precipitation rate (input)
                                                                                   tseries, dtseries, &T[0], Nseries);
 
     // use degree-day factors, and number of PDDs, and the snow precipitation, to

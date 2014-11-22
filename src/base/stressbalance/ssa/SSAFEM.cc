@@ -321,7 +321,7 @@ void SSAFEM::cacheQuadPtValues() {
 
       // Obtain the values of enthalpy at each vertical level at each of the vertices
       // of the current element.
-      ierr = enthalpy->getInternalColumn(i, j, &Enth_e[0]);
+      enthalpy->getInternalColumn(i, j, &Enth_e[0]);
       enthalpy->getInternalColumn(i+1, j, &Enth_e[1]);
       enthalpy->getInternalColumn(i+1, j+1, &Enth_e[2]);
       enthalpy->getInternalColumn(i, j+1, &Enth_e[3]);

@@ -161,7 +161,7 @@ void PSB_velbar_mag::compute(IceModelVec* &output) {
     *result = NULL;
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "velbar_mag", WITHOUT_GHOSTS);
+  result->create(grid, "velbar_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   // compute vertically-averaged horizontal velocity:

@@ -40,11 +40,9 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
  * Note: this code uses overloaded operators (Vector2::operator*, etc).
  */
 template<class V>
-PetscErrorCode add_2d(const IceModelVec* const x_in, double alpha,
-                      const IceModelVec* const y_in,
-                      IceModelVec* const result) {
-  PetscErrorCode ierr;
-
+void add_2d(const IceModelVec* const x_in, double alpha,
+            const IceModelVec* const y_in,
+            IceModelVec* const result) {
   const V *x = dynamic_cast<const V*>(x_in),
     *y = dynamic_cast<const V*>(y_in);
 
@@ -71,19 +69,15 @@ PetscErrorCode add_2d(const IceModelVec* const x_in, double alpha,
   }
 
   if (scatter) {
-    ierr = z->update_ghosts(); CHKERRQ(ierr);
+    z->update_ghosts();
   }
 
   result->inc_state_counter();
-
-  return 0;
 }
 
 template<class V>
-PetscErrorCode copy_2d(const IceModelVec* const source,
-                       IceModelVec* const destination) {
-  PetscErrorCode ierr;
-
+void copy_2d(const IceModelVec* const source,
+             IceModelVec* const destination) {
   const V *x = dynamic_cast<const V*>(source);
 
   V *z = dynamic_cast<V*>(destination);
@@ -108,12 +102,10 @@ PetscErrorCode copy_2d(const IceModelVec* const source,
   }
 
   if (scatter) {
-    ierr = z->update_ghosts(); CHKERRQ(ierr);
+    z->update_ghosts();
   }
 
   destination->inc_state_counter();
-
-  return 0;
 }
 
 } // end of namespace pism

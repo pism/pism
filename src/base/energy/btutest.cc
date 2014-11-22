@@ -73,17 +73,17 @@ static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
   IceModelVec2S *bedtoptemp = new IceModelVec2S,
                 *ghf        = new IceModelVec2S;
 
-  ierr = ghf->create(grid, "bheatflx", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = ghf->set_attrs("",
-                       "upward geothermal flux at bedrock thermal layer base",
-                       "W m-2", ""); CHKERRQ(ierr);
-  ierr = ghf->set_glaciological_units("mW m-2");
+  ghf->create(grid, "bheatflx", WITHOUT_GHOSTS);
+  ghf->set_attrs("",
+                 "upward geothermal flux at bedrock thermal layer base",
+                 "W m-2", "");
+  ghf->set_glaciological_units("mW m-2");
   variables.add(*ghf);
 
-  ierr = bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = bedtoptemp->set_attrs("",
-                       "temperature at top of bedrock thermal layer",
-                       "K", ""); CHKERRQ(ierr);
+  bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS);
+  bedtoptemp->set_attrs("",
+                        "temperature at top of bedrock thermal layer",
+                        "K", "");
   variables.add(*bedtoptemp);
 
   return 0;
@@ -116,32 +116,32 @@ int main(int argc, char *argv[]) {
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
 
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    verbosityLevelFromOptions();
+    verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
+               PISM_Revision);
+    stop_on_version_option();
 
     // check required options
     std::vector<std::string> required;
     required.push_back("-Mbz");
-    ierr = show_usage_check_req_opts(com, "btutest", required,
-      "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
-      "where these are required because they are used in BedThermalUnit:\n"
-      "  -Mbz           number of bedrock thermal layer levels to use\n"
-      "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
-      "and these are allowed:\n"
-      "  -o             output file name; NetCDF format\n"
-      "  -ys            start year in using Test K\n"
-      "  -ye            end year in using Test K\n"
-      "  -dt            time step B (= positive float) in years\n"
-      "  -Mz            number of ice levels to use\n"
-      "  -Lz            height of ice/atmospher box\n"); CHKERRQ(ierr);
+    show_usage_check_req_opts(com, "btutest", required,
+                              "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
+                              "where these are required because they are used in BedThermalUnit:\n"
+                              "  -Mbz           number of bedrock thermal layer levels to use\n"
+                              "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
+                              "and these are allowed:\n"
+                              "  -o             output file name; NetCDF format\n"
+                              "  -ys            start year in using Test K\n"
+                              "  -ye            end year in using Test K\n"
+                              "  -dt            time step B (= positive float) in years\n"
+                              "  -Mz            number of ice levels to use\n"
+                              "  -Lz            height of ice/atmospher box\n");
 
-    ierr = verbPrintf(2,com,
-        "btutest tests BedThermalUnit and IceModelVec3BTU\n"); CHKERRQ(ierr);
+    verbPrintf(2,com,
+               "btutest tests BedThermalUnit and IceModelVec3BTU\n");
 
     // read the config option database:
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
     config.set_string("calendar", "none");
 
     // when IceGrid constructor is called, these settings are used
@@ -163,8 +163,8 @@ int main(int argc, char *argv[]) {
     config.set_double("grid_Mbz", 11); 
     config.set_double("grid_Lbz", 1000); 
 
-    ierr = verbPrintf(2,com,
-        "  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
+    verbPrintf(2,com,
+               "  initializing IceGrid from options ...\n");
     bool flag;
     double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
@@ -172,10 +172,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", "");
     PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
-      ierr = OptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
-      ierr = OptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag); CHKERRQ(ierr);
-      ierr = OptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
+      OptionsString("-o", "Output file name", outname, flag);
+      OptionsReal("-dt", "Time-step, in years", dt_years, flag);
+      OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag);
+      OptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag);
     }
     ierr = PetscOptionsEnd();
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
@@ -189,14 +189,14 @@ int main(int argc, char *argv[]) {
     // complete grid initialization based on user options
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
-    ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
+    grid.compute_horizontal_spacing();
+    grid.compute_vertical_levels();
     grid.time->init();
-    ierr = grid.allocate(); CHKERRQ(ierr);
+    grid.allocate();
 
     // allocate tools and IceModelVecs
     Vars variables;
-    ierr = createVecs(grid, variables); CHKERRQ(ierr);
+    createVecs(grid, variables);
 
     // these vars are owned by this driver, outside of BedThermalUnit
     IceModelVec2S *bedtoptemp, *ghf;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     // lithosphere (bottom of bedrock layer) heat flux; has constant value
     ghf = variables.get_2d_scalar("bheatflx");
 
-    ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
+    ghf->set(0.042);  // see Test K
 
     // initialize BTU object:
     BTU_Test btu(grid, config);
@@ -220,10 +220,10 @@ int main(int argc, char *argv[]) {
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
     dt_seconds = (grid.time->end() - grid.time->start()) / (double)N;
-    ierr = verbPrintf(2,com,
-                      "  user set timestep of %.4f years ...\n"
-                      "  reset to %.4f years to get integer number of steps ... \n",
-                      dt_years, unit_system.convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
+    verbPrintf(2,com,
+               "  user set timestep of %.4f years ...\n"
+               "  reset to %.4f years to get integer number of steps ... \n",
+               dt_years, unit_system.convert(dt_seconds, "seconds", "years"));
     double max_dt;
     bool restrict_dt;
     btu.max_timestep(0.0, max_dt, restrict_dt);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
         const int i = p.i(), j = p.j();
 
         double TT, FF; // Test K:  use TT, ignore FF
-        ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+        exactK(time, 0.0, &TT, &FF, 0);
         (*bedtoptemp)(i,j) = TT;
       }
       // we are not communicating anything, which is fine
@@ -271,22 +271,21 @@ int main(int argc, char *argv[]) {
 
     // compute numerical error
     double maxghferr, avghferr;
-    ierr = ghf->shift(-FF); CHKERRQ(ierr);
-    ierr = ghf->norm(NORM_INFINITY,maxghferr); CHKERRQ(ierr);
-    ierr = ghf->norm(NORM_1,avghferr); CHKERRQ(ierr);
-    ierr = ghf->shift(+FF); CHKERRQ(ierr); // shift it back for writing
+    ghf->shift(-FF);
+    ghf->norm(NORM_INFINITY,maxghferr);
+    ghf->norm(NORM_1,avghferr);
+    ghf->shift(+FF); // shift it back for writing
     avghferr /= (grid.Mx * grid.My);
-    ierr = verbPrintf(2,grid.com, 
-                      "case dt = %.5f:\n", dt_years); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-                      "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
-                      CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-                      "bheatflx0  :       max    prcntmax          av\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
-                      "           %11.7f  %11.7f  %11.7f\n", 
-                      maxghferr,100.0*maxghferr/FF,avghferr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
+    verbPrintf(2,grid.com, 
+               "case dt = %.5f:\n", dt_years);
+    verbPrintf(1,grid.com, 
+               "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
+    verbPrintf(1,grid.com, 
+               "bheatflx0  :       max    prcntmax          av\n");
+    verbPrintf(1,grid.com, 
+               "           %11.7f  %11.7f  %11.7f\n", 
+               maxghferr,100.0*maxghferr/FF,avghferr);
+    verbPrintf(1,grid.com, "NUM ERRORS DONE\n");
 
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"

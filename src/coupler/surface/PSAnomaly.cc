@@ -53,16 +53,16 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ierr = ice_surface_temp_anomaly->create(grid, "ice_surface_temp_anomaly", false); CHKERRQ(ierr);
-  ierr = climatic_mass_balance_anomaly->create(grid, "climatic_mass_balance_anomaly", false); CHKERRQ(ierr);
+  ice_surface_temp_anomaly->create(grid, "ice_surface_temp_anomaly", false);
+  climatic_mass_balance_anomaly->create(grid, "climatic_mass_balance_anomaly", false);
 
-  ierr = ice_surface_temp_anomaly->set_attrs("climate_forcing",
-                                             "anomaly of the temperature of the ice at the ice surface but below firn processes",
-                                             "Kelvin", ""); CHKERRQ(ierr);
-  ierr = climatic_mass_balance_anomaly->set_attrs("climate_forcing",
-                                                  "anomaly of the surface mass balance (accumulation/ablation) rate",
-                                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = climatic_mass_balance_anomaly->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  ice_surface_temp_anomaly->set_attrs("climate_forcing",
+                                      "anomaly of the temperature of the ice at the ice surface but below firn processes",
+                                      "Kelvin", "");
+  climatic_mass_balance_anomaly->set_attrs("climate_forcing",
+                                           "anomaly of the surface mass balance (accumulation/ablation) rate",
+                                           "kg m-2 s-1", "");
+  climatic_mass_balance_anomaly->set_glaciological_units("kg m-2 year-1");
   climatic_mass_balance_anomaly->write_in_glaciological_units = true;
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
@@ -70,13 +70,13 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
                                    "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
-  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.set_units("kg m-2 s-1");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  ice_surface_temp.set_units("K");
 
   return 0;
 }

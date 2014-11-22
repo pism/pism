@@ -27,10 +27,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid &g, const Config &conf)
   : Component(g, conf) {
   m_calving_threshold = config.get("thickness_calving_threshold");
 
-  PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
-  if (ierr != 0) {
-    throw std::runtime_error("CalvingAtThickness allocation failed");
-  }
+  m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
 }
 
 CalvingAtThickness::~CalvingAtThickness() {

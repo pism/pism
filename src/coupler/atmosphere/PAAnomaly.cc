@@ -51,26 +51,26 @@ PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ierr = air_temp_anomaly->create(grid, "air_temp_anomaly", false); CHKERRQ(ierr);
-  ierr = air_temp_anomaly->set_attrs("climate_forcing",
-                                     "anomaly of the near-surface air temperature",
-                                     "Kelvin", ""); CHKERRQ(ierr);
+  air_temp_anomaly->create(grid, "air_temp_anomaly", false);
+  air_temp_anomaly->set_attrs("climate_forcing",
+                              "anomaly of the near-surface air temperature",
+                              "Kelvin", "");
 
-  ierr = precipitation_anomaly->create(grid, "precipitation_anomaly", false); CHKERRQ(ierr);
-  ierr = precipitation_anomaly->set_attrs("climate_forcing",
-                                          "anomaly of the ice-equivalent precipitation rate",
-                                          "m s-1", ""); CHKERRQ(ierr);
-  ierr = precipitation_anomaly->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precipitation_anomaly->create(grid, "precipitation_anomaly", false);
+  precipitation_anomaly->set_attrs("climate_forcing",
+                                   "anomaly of the ice-equivalent precipitation rate",
+                                   "m s-1", "");
+  precipitation_anomaly->set_glaciological_units("m year-1");
   precipitation_anomaly->write_in_glaciological_units = true;
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  air_temp.set_units("K");
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
+  precipitation.set_units("m / s");
+  precipitation.set_glaciological_units("m / year");
   return 0;
 }
 

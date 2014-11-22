@@ -47,33 +47,33 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   m_snow_temp_july_day = config.get("snow_temp_july_day");
 
   // Allocate internal IceModelVecs:
-  ierr = m_air_temp_mean_annual.create(grid, "air_temp_mean_annual", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_annual.set_attrs("diagnostic",
-                           "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
-                           "K", 
-                           ""); CHKERRQ(ierr);  // no CF standard_name ??
+  m_air_temp_mean_annual.create(grid, "air_temp_mean_annual", WITHOUT_GHOSTS);
+  m_air_temp_mean_annual.set_attrs("diagnostic",
+                                   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                                   "K", 
+                                   "");  // no CF standard_name ??
   m_air_temp_mean_annual.metadata().set_string("source", m_reference);
 
-  ierr = m_air_temp_mean_july.create(grid, "air_temp_mean_july", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_july.set_attrs("diagnostic",
-                           "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
-                           "Kelvin",
-                           ""); CHKERRQ(ierr);  // no CF standard_name ??
+  m_air_temp_mean_july.create(grid, "air_temp_mean_july", WITHOUT_GHOSTS);
+  m_air_temp_mean_july.set_attrs("diagnostic",
+                                 "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
+                                 "Kelvin",
+                                 "");  // no CF standard_name ??
   m_air_temp_mean_july.metadata().set_string("source", m_reference);
 
-  ierr = m_precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_precipitation.set_attrs("climate_state", 
-                              "mean annual ice-equivalent precipitation rate",
-                              "m s-1", 
-                              ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = m_precipitation.set_glaciological_units("m year-1");
+  m_precipitation.create(grid, "precipitation", WITHOUT_GHOSTS);
+  m_precipitation.set_attrs("climate_state", 
+                            "mean annual ice-equivalent precipitation rate",
+                            "m s-1", 
+                            ""); // no CF standard_name ??
+  m_precipitation.set_glaciological_units("m year-1");
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
   m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
   m_air_temp_snapshot.set_string("long_name",
                          "snapshot of the near-surface air temperature");
-  ierr = m_air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
+  m_air_temp_snapshot.set_units("K");
 
   return 0;
 }

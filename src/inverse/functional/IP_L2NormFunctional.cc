@@ -100,7 +100,7 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   PetscErrorCode   ierr;
 
   // Clear the gradient before doing anything with it!
-  ierr = gradient.set(0); CHKERRQ(ierr);
+  gradient.set(0);
 
   double x_q[FEQuadrature::Nq];
   double gradient_e[FEQuadrature::Nk];
@@ -176,7 +176,7 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
     } // j
   } // i
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
+  GlobalSum(m_grid.com, &value,  OUTPUT);
 
   return 0;
 }
@@ -214,7 +214,7 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
     } // j
   } // i
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
+  GlobalSum(m_grid.com, &value,  OUTPUT);
 
   return 0;
 }
@@ -224,7 +224,7 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
   PetscErrorCode   ierr;
 
   // Clear the gradient before doing anything with it!
-  ierr = gradient.set(0); CHKERRQ(ierr);
+  gradient.set(0);
 
   Vector2 x_q[FEQuadrature::Nq];
   Vector2 gradient_e[FEQuadrature::Nk];

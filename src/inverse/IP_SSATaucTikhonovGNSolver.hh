@@ -65,7 +65,7 @@ public:
 
   virtual PetscErrorCode setInitialGuess(DesignVec &d) {
     PetscErrorCode ierr;
-    ierr = m_d.copy_from(d); CHKERRQ(ierr);
+    m_d.copy_from(d);
     return 0;
   }
 

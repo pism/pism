@@ -538,12 +538,12 @@ PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *v
   m_weight  = weight;
 
   if (indices != NULL) {
-    ierr = indices->begin_access(); CHKERRQ(ierr);
+    indices->begin_access();
     m_indices = indices;
   }
 
   if (values != NULL) {
-    ierr = values->begin_access(); CHKERRQ(ierr);
+    values->begin_access();
   }
 
   return 0;
@@ -552,12 +552,12 @@ PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *v
 PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
   PetscErrorCode ierr;
   if (m_indices != NULL) {
-    ierr = m_indices->end_access(); CHKERRQ(ierr);
+    m_indices->end_access();
     m_indices = NULL;
   }
 
   if (values != NULL) {
-    ierr = values->end_access(); CHKERRQ(ierr);
+    values->end_access();
   }
 
   return 0;
@@ -583,7 +583,7 @@ DirichletData_Scalar::DirichletData_Scalar()
 PetscErrorCode DirichletData_Scalar::init(IceModelVec2Int *indices, IceModelVec2S *values,
                                           double weight) {
   m_values = values;
-  PetscErrorCode ierr = init_impl(indices, m_values, weight); CHKERRQ(ierr);
+  init_impl(indices, m_values, weight);
 
   return 0;
 }
@@ -658,15 +658,15 @@ PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
       MatStencil row;
       // Transpose shows up here!
       row.j = i; row.i = j;
-      ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
-                                        ADD_VALUES); CHKERRQ(ierr);
+      MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
+                                 ADD_VALUES);
     }
   }
   return 0;
 }
 
 PetscErrorCode DirichletData_Scalar::finish() {
-  PetscErrorCode ierr = finish_impl(m_values); CHKERRQ(ierr);
+  finish_impl(m_values);
   m_values = NULL;
   return 0;
 }
@@ -680,7 +680,7 @@ DirichletData_Vector::DirichletData_Vector()
 PetscErrorCode DirichletData_Vector::init(IceModelVec2Int *indices, IceModelVec2V *values,
                                           double weight) {
   m_values = values;
-  PetscErrorCode ierr = init_impl(indices, m_values, weight); CHKERRQ(ierr);
+  init_impl(indices, m_values, weight);
 
   return 0;
 }
@@ -760,15 +760,15 @@ PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
       MatStencil row;
       // Transpose shows up here!
       row.j = i; row.i = j;
-      ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
-                                        ADD_VALUES); CHKERRQ(ierr);
+      MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
+                                 ADD_VALUES);
     }
   }
   return 0;
 }
 
 PetscErrorCode DirichletData_Vector::finish() {
-  PetscErrorCode ierr = finish_impl(m_values); CHKERRQ(ierr);
+  finish_impl(m_values);
   m_values = NULL;
   return 0;
 }

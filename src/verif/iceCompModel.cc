@@ -606,7 +606,7 @@ void IceCompModel::fillSolnTestL() {
   PetscErrorCode  ierr;
 
   vHexactL.update_ghosts();
-  ierr = ice_thickness.copy_from(vHexactL);
+  ice_thickness.copy_from(vHexactL);
 
   // note bed was filled at initialization and hasn't changed
 }

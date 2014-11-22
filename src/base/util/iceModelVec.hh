@@ -181,46 +181,46 @@ public:
     return zlevels;
   }
 
-  virtual PetscErrorCode  range(double &min, double &max) const;
-  virtual PetscErrorCode  norm(int n, double &out) const;
-  virtual PetscErrorCode  norm_all(int n, std::vector<double> &result) const;
-  virtual PetscErrorCode  add(double alpha, IceModelVec &x);
-  virtual PetscErrorCode  squareroot();
-  virtual PetscErrorCode  shift(double alpha);
-  virtual PetscErrorCode  scale(double alpha);
-  PetscErrorCode copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const;
-  PetscErrorCode copy_from_vec(Vec source);
-  virtual PetscErrorCode copy_to(IceModelVec &destination) const;
-  PetscErrorCode copy_from(const IceModelVec &source);
+  virtual void  range(double &min, double &max) const;
+  virtual void  norm(int n, double &out) const;
+  virtual void  norm_all(int n, std::vector<double> &result) const;
+  virtual void  add(double alpha, IceModelVec &x);
+  virtual void  squareroot();
+  virtual void  shift(double alpha);
+  virtual void  scale(double alpha);
+  void copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const;
+  void copy_from_vec(Vec source);
+  virtual void copy_to(IceModelVec &destination) const;
+  void copy_from(const IceModelVec &source);
   Vec get_vec();
   PISMDM::Ptr get_dm() const;
-  virtual PetscErrorCode  set_name(const std::string &name, int component = 0);
+  virtual void  set_name(const std::string &name, int component = 0);
   virtual std::string name() const;
-  virtual PetscErrorCode  set_glaciological_units(const std::string &units);
-  virtual PetscErrorCode  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
+  virtual void  set_glaciological_units(const std::string &units);
+  virtual void  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
                                     const std::string &my_units, const std::string &my_standard_name, int component = 0);
-  virtual PetscErrorCode  rename(const std::string &short_name, const std::string &long_name,
+  virtual void  rename(const std::string &short_name, const std::string &long_name,
                                  const std::string &standard_name, int component = 0);
-  virtual PetscErrorCode  read_attributes(const std::string &filename, int component = 0);
-  virtual PetscErrorCode  define(const PIO &nc, IO_Type output_datatype) const;
+  virtual void  read_attributes(const std::string &filename, int component = 0);
+  virtual void  define(const PIO &nc, IO_Type output_datatype) const;
 
-  PetscErrorCode read(const std::string &filename, unsigned int time);
-  PetscErrorCode read(const PIO &nc, unsigned int time);
+  void read(const std::string &filename, unsigned int time);
+  void read(const PIO &nc, unsigned int time);
 
-  PetscErrorCode  write(const std::string &filename, IO_Type nctype = PISM_DOUBLE) const;
-  PetscErrorCode  write(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  void  write(const std::string &filename, IO_Type nctype = PISM_DOUBLE) const;
+  void  write(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
 
-  PetscErrorCode  regrid(const std::string &filename, RegriddingFlag flag,
+  void  regrid(const std::string &filename, RegriddingFlag flag,
                          double default_value = 0.0);
-  PetscErrorCode  regrid(const PIO &nc, RegriddingFlag flag,
+  void  regrid(const PIO &nc, RegriddingFlag flag,
                          double default_value = 0.0);
 
-  virtual PetscErrorCode  begin_access() const;
-  virtual PetscErrorCode  end_access() const;
-  virtual PetscErrorCode  update_ghosts();
-  virtual PetscErrorCode  update_ghosts(IceModelVec &destination) const;
+  virtual void  begin_access() const;
+  virtual void  end_access() const;
+  virtual void  update_ghosts();
+  virtual void  update_ghosts(IceModelVec &destination) const;
 
-  PetscErrorCode  set(double c);
+  void  set(double c);
 
   NCSpatialVariable& metadata(unsigned int N = 0);
 
@@ -235,10 +235,10 @@ public:
   //!< \brief If true, data is written to a file in "human-friendly" units.
 
 protected:
-  virtual PetscErrorCode read_impl(const PIO &nc, unsigned int time);
-  virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
+  virtual void read_impl(const PIO &nc, unsigned int time);
+  virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  virtual void write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
   std::vector<double> zlevels;
   unsigned int m_n_levels;                 //!< number of vertical levels
 
@@ -266,17 +266,17 @@ protected:
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
 
-  virtual PetscErrorCode destroy();
-  virtual PetscErrorCode checkCompatibility(const char *function, const IceModelVec &other) const;
+  virtual void destroy();
+  virtual void checkCompatibility(const char *function, const IceModelVec &other) const;
 
   //! \brief Check the array indices and warn if they are out of range.
   void check_array_indices(int i, int j, unsigned int k) const;
-  virtual PetscErrorCode reset_attrs(unsigned int N);
+  virtual void reset_attrs(unsigned int N);
   NormType int_to_normtype(int input) const;
 
-  PetscErrorCode get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
+  void get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
                          unsigned int count=1) const;
-  PetscErrorCode set_dof(PISMDM::Ptr da_source, Vec source, unsigned int n,
+  void set_dof(PISMDM::Ptr da_source, Vec source, unsigned int n,
                          unsigned int count=1);
 private:
   // disable copy constructor and the assignment operator:
@@ -285,7 +285,7 @@ private:
 public:
   //! Dump an IceModelVec to a file. *This is for debugging only.*
   //! Uses const char[] to make it easier to call it from gdb.
-  PetscErrorCode dump(const char filename[]) const;
+  void dump(const char filename[]) const;
 
 public:
 
@@ -340,11 +340,11 @@ class IceModelVec2S;
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2() : IceModelVec() {}
-  virtual PetscErrorCode view(int viewer_size) const;
-  virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2) const;
+  virtual void view(int viewer_size) const;
+  virtual void view(PetscViewer v1, PetscViewer v2) const;
   // component-wise access:
-  virtual PetscErrorCode get_component(unsigned int n, IceModelVec2S &result) const;
-  virtual PetscErrorCode set_component(unsigned int n, IceModelVec2S &source);
+  virtual void get_component(unsigned int n, IceModelVec2S &result) const;
+  virtual void set_component(unsigned int n, IceModelVec2S &source);
   inline double& operator() (int i, int j, int k) {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, k);
@@ -358,13 +358,13 @@ public:
 #endif
     return static_cast<double***>(array)[i][j][k];
   }
-  virtual PetscErrorCode create(IceGrid &my_grid, const std::string &my_short_name,
+  virtual void create(IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
-  virtual PetscErrorCode read_impl(const PIO &nc, const unsigned int time);
-  virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
+  virtual void read_impl(const PIO &nc, const unsigned int time);
+  virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  virtual void write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
 };
 
 /** A class for storing and accessing scalar 2D fields.
@@ -376,21 +376,21 @@ public:
   IceModelVec2S() { begin_end_access_use_dof = false; }
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  virtual PetscErrorCode  create(IceGrid &my_grid, const std::string &my_name,
+  virtual void  create(IceGrid &my_grid, const std::string &my_name,
                                  IceModelVecKind ghostedp, int width = 1);
-  PetscErrorCode allocate_proc0_copy(Vec &result) const;
-  PetscErrorCode put_on_proc0(Vec onp0) const;
-  PetscErrorCode get_from_proc0(Vec onp0);
-  virtual PetscErrorCode  copy_to(IceModelVec &destination) const;
-  PetscErrorCode  get_array(double** &a);
-  virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
-  virtual PetscErrorCode mask_by(IceModelVec2S &M, double fill = 0.0);
-  virtual PetscErrorCode add(double alpha, IceModelVec &x);
-  virtual PetscErrorCode add(double alpha, const IceModelVec &x, IceModelVec &result) const;
-  virtual PetscErrorCode sum(double &result);
-  virtual PetscErrorCode min(double &result) const;
-  virtual PetscErrorCode max(double &result) const;
-  virtual PetscErrorCode absmax(double &result) const;
+  void allocate_proc0_copy(Vec &result) const;
+  void put_on_proc0(Vec onp0) const;
+  void get_from_proc0(Vec onp0);
+  virtual void  copy_to(IceModelVec &destination) const;
+  void  get_array(double** &a);
+  virtual void set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
+  virtual void mask_by(IceModelVec2S &M, double fill = 0.0);
+  virtual void add(double alpha, IceModelVec &x);
+  virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
+  virtual void sum(double &result);
+  virtual void min(double &result) const;
+  virtual void max(double &result) const;
+  virtual void absmax(double &result) const;
   virtual double diff_x(int i, int j) const;
   virtual double diff_y(int i, int j) const;
   virtual double diff_x_stagE(int i, int j) const;
@@ -550,15 +550,15 @@ public:
   ~IceModelVec2V() {}
 
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, const std::string &my_short_name,
+  virtual void create(IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  virtual PetscErrorCode copy_to(IceModelVec &destination) const;
-  virtual PetscErrorCode add(double alpha, IceModelVec &x);
-  virtual PetscErrorCode add(double alpha, IceModelVec &x, IceModelVec &result) const;
+  virtual void copy_to(IceModelVec &destination) const;
+  virtual void add(double alpha, IceModelVec &x);
+  virtual void add(double alpha, IceModelVec &x, IceModelVec &result) const;
 
   // I/O:
-  virtual PetscErrorCode get_array(Vector2 ** &a);
-  virtual PetscErrorCode magnitude(IceModelVec2S &result) const;
+  virtual void get_array(Vector2 ** &a);
+  virtual void magnitude(IceModelVec2S &result) const;
   inline Vector2& operator()(int i, int j) {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
@@ -593,10 +593,10 @@ public:
   }
 
   // Metadata, etc:
-  virtual PetscErrorCode set_name(const std::string &name, int component = 0);
-  virtual PetscErrorCode rename(const std::string &short_name, const std::string &long_name,
+  virtual void set_name(const std::string &name, int component = 0);
+  virtual void rename(const std::string &short_name, const std::string &long_name,
                                 const std::string &standard_name, int component = 0);
-  virtual PetscErrorCode rename(const std::string &short_name,
+  virtual void rename(const std::string &short_name,
                                 const std::vector<std::string> &long_names,
                                 const std::string &standard_name);
 };
@@ -611,11 +611,11 @@ public:
     begin_end_access_use_dof = true;
   }
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
+  virtual void create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                 unsigned int stencil_width = 1);
-  virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result) const;
-  virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result) const;
-  virtual PetscErrorCode absmaxcomponents(double* z) const;
+  virtual void staggered_to_regular(IceModelVec2S &result) const;
+  virtual void staggered_to_regular(IceModelVec2V &result) const;
+  virtual void absmaxcomponents(double* z) const;
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in
@@ -650,13 +650,13 @@ public:
   virtual ~IceModelVec3D();
 public:
 
-  PetscErrorCode  setColumn(int i, int j, double c);
-  PetscErrorCode  setInternalColumn(int i, int j, double *valsIN);
-  PetscErrorCode  getInternalColumn(int i, int j, double **valsOUT);
-  PetscErrorCode  getInternalColumn(int i, int j, const double **valsOUT) const;
+  void  setColumn(int i, int j, double c);
+  void  setInternalColumn(int i, int j, double *valsIN);
+  void  getInternalColumn(int i, int j, double **valsOUT);
+  void  getInternalColumn(int i, int j, const double **valsOUT) const;
 
   virtual double    getValZ(int i, int j, double z) const;
-  virtual PetscErrorCode isLegalLevel(double z) const;
+  virtual bool isLegalLevel(double z) const;
 
   inline double& operator() (int i, int j, int k) {
 #if (PISM_DEBUG==1)
@@ -673,7 +673,7 @@ public:
   }
 
 protected:
-  virtual PetscErrorCode allocate(IceGrid &mygrid, const std::string &my_short_name,
+  virtual void allocate(IceGrid &mygrid, const std::string &my_short_name,
                                   IceModelVecKind ghostedp, const std::vector<double> &levels,
                                   unsigned int stencil_width = 1);
 };
@@ -685,28 +685,28 @@ public:
   IceModelVec3() {}
   virtual ~IceModelVec3() {}
 
-  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
+  virtual void create(IceGrid &mygrid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp,
                                 unsigned int stencil_width = 1);
 
   // need to call begin_access() before set...(i,j,...) or get...(i,j,...) *and* need call
   // end_access() afterward
-  PetscErrorCode  getValColumn(int i, int j, unsigned int ks, double *valsOUT) const;
-  PetscErrorCode  getValColumnQUAD(int i, int j, unsigned int ks, double *valsOUT) const;
-  PetscErrorCode  getValColumnPL(int i, int j, unsigned int ks, double *valsOUT) const;
+  void  getValColumn(int i, int j, unsigned int ks, double *valsOUT) const;
+  void  getValColumnQUAD(int i, int j, unsigned int ks, double *valsOUT) const;
+  void  getValColumnPL(int i, int j, unsigned int ks, double *valsOUT) const;
 
-  PetscErrorCode  setValColumnPL(int i, int j, std::vector<double> &values_fine);
+  void  setValColumnPL(int i, int j, std::vector<double> &values_fine);
 
-  PetscErrorCode  getPlaneStarZ(int i, int j, double z,
+  void  getPlaneStarZ(int i, int j, double z,
                                 planeStar<double> *star) const;
-  PetscErrorCode  getPlaneStar_fine(int i, int j, unsigned int k,
+  void  getPlaneStar_fine(int i, int j, unsigned int k,
                                     planeStar<double> *star) const;
-  PetscErrorCode  getPlaneStar(int i, int j, unsigned int k,
+  void  getPlaneStar(int i, int j, unsigned int k,
                                planeStar<double> *star) const;
 
-  PetscErrorCode  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
-  PetscErrorCode  getHorSlice(IceModelVec2S &gslice, double z) const;
-  PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
+  void  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
+  void  getHorSlice(IceModelVec2S &gslice, double z) const;
+  void  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
 };
 
 } // end of namespace pism

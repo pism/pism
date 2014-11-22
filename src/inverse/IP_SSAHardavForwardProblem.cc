@@ -50,17 +50,17 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencilWidth = 1;
 
-  ierr = m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
-  ierr = m_hardav.create(m_grid, "hardav", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
+  m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencilWidth);
+  m_hardav.create(m_grid, "hardav", WITH_GHOSTS, stencilWidth);
 
-  ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencilWidth); CHKERRQ(ierr);
-  ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
+  m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencilWidth);
+  m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencilWidth);
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(*m_da, "baij", &m_J_state); CHKERRQ(ierr);
+  DMCreateMatrix(*m_da, "baij", &m_J_state);
 #else
-  ierr = DMSetMatType(*m_da, MATBAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(*m_da, &m_J_state); CHKERRQ(ierr);
+  DMSetMatType(*m_da, MATBAIJ);
+  DMCreateMatrix(*m_da, &m_J_state);
 #endif
 
   ierr = KSPCreate(m_grid.com, &m_ksp);
@@ -71,7 +71,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   PC pc;
   ierr = KSPGetPC(m_ksp, &pc);
   PISM_PETSC_CHK(ierr, "KSPGetPC");
-  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
+  PCSetType(pc, PCBJACOBI);
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
@@ -80,7 +80,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
 
 PetscErrorCode IP_SSAHardavForwardProblem::destruct() {
   PetscErrorCode ierr;
-  ierr = MatDestroy(&m_J_state); CHKERRQ(ierr);
+  MatDestroy(&m_J_state);
   ierr = KSPDestroy(&m_ksp);
   PISM_PETSC_CHK(ierr, "KSPDestroy");
   return 0;
@@ -164,12 +164,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, V
   Vector2 **u_a, **rhs_a;
 
   u.get_array(u_a);
-  ierr = DMDAVecGetArray(*m_da, RHS, &rhs_a); CHKERRQ(ierr);
+  DMDAVecGetArray(*m_da, RHS, &rhs_a);
 
   DMDALocalInfo *info = NULL;
   this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
 
-  ierr = DMDAVecRestoreArray(*m_da, RHS, &rhs_a); CHKERRQ(ierr);
+  DMDAVecRestoreArray(*m_da, RHS, &rhs_a);
   u.end_access();
 
   return 0;
@@ -215,9 +215,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du) {
   PetscErrorCode ierr;
   Vector2 **du_a;
-  ierr = DMDAVecGetArray(*m_da, du, &du_a); CHKERRQ(ierr);
+  DMDAVecGetArray(*m_da, du, &du_a);
   this->apply_jacobian_design(u, dzeta, du_a);
-  ierr = DMDAVecRestoreArray(*m_da, du, &du_a); CHKERRQ(ierr);
+  DMDAVecRestoreArray(*m_da, du, &du_a);
   return 0;
 }
 
@@ -255,7 +255,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   if (dzeta.get_stencil_width() > 0) {
     dzeta_local = &dzeta;
   } else {
-    ierr = m_dzeta_local.copy_from(dzeta); CHKERRQ(ierr);
+    m_dzeta_local.copy_from(dzeta);
     dzeta_local = &m_dzeta_local;
   }
   list.add(*dzeta_local);
@@ -290,8 +290,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   DirichletData_Vector dirichletBC;
-  ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                          m_dirichletWeight); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
+                   m_dirichletWeight);
   DirichletData_Scalar fixedZeta;
   ierr = fixedZeta.init(m_fixed_design_locations, NULL);
 
@@ -368,8 +368,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
     dirichletBC.fix_residual_homogeneous(du_a);
   }
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = fixedZeta.finish(); CHKERRQ(ierr);
+  dirichletBC.finish();
+  fixedZeta.finish();
 
   return 0;
 }
@@ -383,9 +383,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
                                                                            IceModelVec2S &dzeta) {
   PetscErrorCode ierr;
   double **dzeta_a;
-  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);
-  ierr = dzeta.end_access(); CHKERRQ(ierr);
+  dzeta.get_array(dzeta_a);
+  this->apply_jacobian_design_transpose(u, du, dzeta_a);
+  dzeta.end_access();
   return 0;
 }
 
@@ -399,9 +399,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   double **dzeta_a;
   PISMDM::Ptr da2 = m_grid.get_dm(1, config.get("grid_max_stencil_width"));
 
-  ierr = DMDAVecGetArray(*da2, dzeta, &dzeta_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(*da2, dzeta, &dzeta_a); CHKERRQ(ierr);
+  DMDAVecGetArray(*da2, dzeta, &dzeta_a);
+  this->apply_jacobian_design_transpose(u, du, dzeta_a);
+  DMDAVecRestoreArray(*da2, dzeta, &dzeta_a);
   return 0;
 }
 
@@ -438,7 +438,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   if (du.get_stencil_width() > 0) {
     du_local = &du;
   } else {
-    ierr = m_du_local.copy_from(du); CHKERRQ(ierr);
+    m_du_local.copy_from(du);
     du_local = &m_du_local;
   }
   list.add(*du_local);
@@ -462,8 +462,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues = m_vel_bc;
   double        m_dirichletWeight = m_dirichletScale;
-  ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                          m_dirichletWeight); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
+                   m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -528,7 +528,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
       m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
     } // j
   } // i
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  dirichletBC.finish();
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -540,9 +540,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 
   if (m_fixed_design_locations) {
     DirichletData_Scalar fixedZeta;
-    ierr = fixedZeta.init(m_fixed_design_locations, NULL); CHKERRQ(ierr);
+    fixedZeta.init(m_fixed_design_locations, NULL);
     fixedZeta.fix_residual_homogeneous(dzeta_a);
-    ierr = fixedZeta.finish(); CHKERRQ(ierr);
+    fixedZeta.finish();
   }
 
 
@@ -567,12 +567,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dz
   PetscErrorCode ierr;
 
   if (m_rebuild_J_state) {
-    ierr = this->assemble_jacobian_state(m_velocity, m_J_state); CHKERRQ(ierr);
+    this->assemble_jacobian_state(m_velocity, m_J_state);
     m_rebuild_J_state = false;
   }
 
-  ierr = this->apply_jacobian_design(m_velocity, dzeta, m_du_global); CHKERRQ(ierr);
-  ierr = m_du_global.scale(-1); CHKERRQ(ierr);
+  this->apply_jacobian_design(m_velocity, dzeta, m_du_global);
+  m_du_global.scale(-1);
 
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
@@ -596,7 +596,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dz
                KSPConvergedReasons[reason]);
   }
 
-  ierr = du.copy_from(m_du_global); CHKERRQ(ierr);
+  du.copy_from(m_du_global);
   return 0;
 }
 
@@ -623,7 +623,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   PetscErrorCode ierr;
 
   if (m_rebuild_J_state) {
-    ierr = this->assemble_jacobian_state(m_velocity, m_J_state); CHKERRQ(ierr);
+    this->assemble_jacobian_state(m_velocity, m_J_state);
     m_rebuild_J_state = false;
   }
 
@@ -632,16 +632,16 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
   double        m_dirichletWeight    = m_dirichletScale;
 
-  ierr = m_du_global.copy_from(du); CHKERRQ(ierr);
+  m_du_global.copy_from(du);
   Vector2 **du_a;
-  ierr = m_du_global.get_array(du_a); CHKERRQ(ierr);
+  m_du_global.get_array(du_a);
   DirichletData_Vector dirichletBC;
-  ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = m_du_global.end_access(); CHKERRQ(ierr);
+  dirichletBC.finish();
+  m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
@@ -665,11 +665,11 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
                KSPConvergedReasons[reason]);
   }
 
-  ierr = this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta); CHKERRQ(ierr);
-  ierr = dzeta.scale(-1); CHKERRQ(ierr);
+  this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);
+  dzeta.scale(-1);
 
   if (dzeta.get_stencil_width() > 0) {
-    ierr = dzeta.update_ghosts();
+    dzeta.update_ghosts();
   }
 
   return 0;

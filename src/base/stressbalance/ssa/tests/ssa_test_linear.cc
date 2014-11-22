@@ -110,17 +110,17 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   config.set_flag("compute_surf_grad_inward_ssa", true);
 
   // Set constants for most coefficients.
-  ierr = thickness.set(H0); CHKERRQ(ierr);
-  ierr = surface.set(H0); CHKERRQ(ierr);
-  ierr = bed.set(0.); CHKERRQ(ierr);
+  thickness.set(H0);
+  surface.set(H0);
+  bed.set(0.);
   // double threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
   // double tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
   // printf("tauc0=%g\n",tauc0);
-  ierr = tauc.set(tauc0); CHKERRQ(ierr);
+  tauc.set(tauc0);
   
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = bc_mask.set(0.0); CHKERRQ(ierr);
+  bc_mask.set(0.0);
 
   IceModelVec::AccessList list;
   list.add(vel_bc);
@@ -140,8 +140,8 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
     }
   }
     
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
+  vel_bc.update_ghosts();
+  bc_mask.update_ghosts();
 
   ssa->set_boundary_conditions(bc_mask, vel_bc); 
 

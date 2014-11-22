@@ -28,28 +28,28 @@ namespace pism {
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
 
-  ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-                          "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
-  ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  u.create(grid, "uvel", WITH_GHOSTS);
+  u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+              "m s-1", "land_ice_x_velocity");
+  u.set_glaciological_units("m year-1");
   u.write_in_glaciological_units = true;
 
-  ierr =     v.create(grid, "vvel", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-                          "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
-  ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  v.create(grid, "vvel", WITH_GHOSTS);
+  v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+              "m s-1", "land_ice_y_velocity");
+  v.set_glaciological_units("m year-1");
   v.write_in_glaciological_units = true;
 
-  ierr = strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr); // never diff'ed in hor dirs
-  ierr = strain_heating.set_attrs("internal",
-                          "rate of strain heating in ice (dissipation heating)",
-                          "W m-3", ""); CHKERRQ(ierr);
-  ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
+  strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
+  strain_heating.set_attrs("internal",
+                           "rate of strain heating in ice (dissipation heating)",
+                           "W m-3", "");
+  strain_heating.set_glaciological_units("mW m-3");
 
-  ierr = diffusive_flux.create(grid, "diffusive_flux", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = diffusive_flux.set_attrs("internal", 
-                                  "diffusive (SIA) flux components on the staggered grid",
-                                  "", ""); CHKERRQ(ierr);
+  diffusive_flux.create(grid, "diffusive_flux", WITH_GHOSTS, 1);
+  diffusive_flux.set_attrs("internal", 
+                           "diffusive (SIA) flux components on the staggered grid",
+                           "", "");
 
   return 0;
 }

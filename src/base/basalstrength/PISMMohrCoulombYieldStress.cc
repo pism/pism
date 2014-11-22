@@ -71,37 +71,37 @@ MohrCoulombYieldStress::~MohrCoulombYieldStress() {
 PetscErrorCode MohrCoulombYieldStress::allocate() {
   PetscErrorCode ierr;
 
-  ierr = m_till_phi.create(grid, "tillphi", WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
-  ierr = m_till_phi.set_attrs("model_state",
-                              "friction angle for till under grounded ice sheet",
-                              "degrees", ""); CHKERRQ(ierr);
+  m_till_phi.create(grid, "tillphi", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_till_phi.set_attrs("model_state",
+                       "friction angle for till under grounded ice sheet",
+                       "degrees", "");
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
-  ierr = m_tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
-  ierr = m_tauc.set_attrs("diagnostic",
-                          "yield stress for basal till (plastic or pseudo-plastic model)",
-                          "Pa", ""); CHKERRQ(ierr);
+  m_tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_tauc.set_attrs("diagnostic",
+                   "yield stress for basal till (plastic or pseudo-plastic model)",
+                   "Pa", "");
 
   // internal working space; stencil width needed because redundant computation
   // on overlaps
-  ierr = m_tillwat.create(grid, "tillwat_for_MohrCoulomb",
-                          WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
-  ierr = m_tillwat.set_attrs("internal",
-                             "copy of till water thickness held by MohrCoulombYieldStress",
-                             "m", ""); CHKERRQ(ierr);
+  m_tillwat.create(grid, "tillwat_for_MohrCoulomb",
+                   WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_tillwat.set_attrs("internal",
+                      "copy of till water thickness held by MohrCoulombYieldStress",
+                      "m", "");
   bool addtransportable = config.get_flag("tauc_add_transportable_water");
   if (addtransportable == true) {
-    ierr = m_bwat.create(grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    ierr = m_bwat.set_attrs("internal",
-                            "copy of transportable water thickness held by MohrCoulombYieldStress",
-                            "m", ""); CHKERRQ(ierr);
+    m_bwat.create(grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
+    m_bwat.set_attrs("internal",
+                     "copy of transportable water thickness held by MohrCoulombYieldStress",
+                     "m", "");
   }
-  ierr = m_Po.create(grid, "overburden_pressure_for_MohrCoulomb",
-                     WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
-  ierr = m_Po.set_attrs("internal",
-                        "copy of overburden pressure held by MohrCoulombYieldStress",
-                        "Pa", ""); CHKERRQ(ierr);
+  m_Po.create(grid, "overburden_pressure_for_MohrCoulomb",
+              WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_Po.set_attrs("internal",
+                 "copy of overburden pressure held by MohrCoulombYieldStress",
+                 "Pa", "");
 
   return 0;
 }

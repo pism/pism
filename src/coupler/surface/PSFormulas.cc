@@ -33,21 +33,21 @@ PSFormulas::PSFormulas(IceGrid &g, const Config &conf)
 PetscErrorCode PSFormulas::allocate() {
   PetscErrorCode ierr;
 
-  ierr = m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_attrs("internal",
-                                           "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                           "kg m-2 s-1",
-                                           "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_climatic_mass_balance.set_attrs("internal",
+                                    "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                    "kg m-2 s-1",
+                                    "land_ice_surface_specific_mass_balance_flux");
+  m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
   m_climatic_mass_balance.write_in_glaciological_units = true;
   m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // annual mean air temperature at "ice surface", at level below all
   // firn processes (e.g. "10 m" or ice temperatures)
-  ierr = m_ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_ice_surface_temp.set_attrs("internal",
-                                      "annual average ice surface temperature, below firn processes",
-                                      "K", ""); CHKERRQ(ierr);
+  m_ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_ice_surface_temp.set_attrs("internal",
+                               "annual average ice surface temperature, below firn processes",
+                               "K", "");
   return 0;
 }
 
