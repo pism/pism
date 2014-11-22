@@ -578,17 +578,17 @@ PetscErrorCode init_config(MPI_Comm com,
   ierr = PetscOptionsEnd();
   PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
-  ierr = config.read(alt_config); CHKERRQ(ierr);
+  config.read(alt_config);
 
   if (use_override_config) {
-    ierr = overrides.read(override_config); CHKERRQ(ierr);
+    overrides.read(override_config);
     config.import_from(overrides);
-    ierr = verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
-                      override_config.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
+               override_config.c_str());
   }
 
   if (process_options) {
-    ierr =  set_config_from_options(config); CHKERRQ(ierr);
+    set_config_from_options(config);
   }
 
   config.print_to_stdout();
@@ -597,17 +597,16 @@ PetscErrorCode init_config(MPI_Comm com,
 }
 
 PetscErrorCode set_config_from_options(Config &config) {
-  PetscErrorCode ierr;
   bool flag;
 
-  ierr = config.keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy"); CHKERRQ(ierr);
+  config.keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy");
 
   // Energy modeling
-  ierr = config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");  CHKERRQ(ierr);
-  ierr = config.flag_from_option("vark",
-                                 "use_temperature_dependent_thermal_conductivity");  CHKERRQ(ierr);
+  config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");
+  config.flag_from_option("vark",
+                          "use_temperature_dependent_thermal_conductivity");
 
-  ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
+  config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity");
 
   {
     bool energy_set;
@@ -617,21 +616,21 @@ PetscErrorCode set_config_from_options(Config &config) {
     choices.insert("cold");
     choices.insert("enthalpy");
 
-    ierr = OptionsList("-energy",
-                       "choose the energy model (one of 'none', 'cold', 'enthalpy')",
-                       choices, "enthalpy", energy, energy_set); CHKERRQ(ierr);
+    OptionsList("-energy",
+                "choose the energy model (one of 'none', 'cold', 'enthalpy')",
+                choices, "enthalpy", energy, energy_set);
 
     if (energy_set == true) {
       if (energy == "none") {
-        ierr = config.set_flag_from_option("do_energy", false); CHKERRQ(ierr);
+        config.set_flag_from_option("do_energy", false);
         // Allow selecting cold ice flow laws in isothermal mode. 
-        ierr = config.set_flag_from_option("do_cold_ice_methods", true); CHKERRQ(ierr);
+        config.set_flag_from_option("do_cold_ice_methods", true);
       } else if (energy == "cold") {
-        ierr = config.set_flag_from_option("do_energy", true); CHKERRQ(ierr);
-        ierr = config.set_flag_from_option("do_cold_ice_methods", true); CHKERRQ(ierr);
+        config.set_flag_from_option("do_energy", true);
+        config.set_flag_from_option("do_cold_ice_methods", true);
       } else if (energy == "enthalpy") {
-        ierr = config.set_flag_from_option("do_energy", true); CHKERRQ(ierr);
-        ierr = config.set_flag_from_option("do_cold_ice_methods", false); CHKERRQ(ierr);
+        config.set_flag_from_option("do_energy", true);
+        config.set_flag_from_option("do_cold_ice_methods", false);
       } else {
         // can't happen (OptionsList validates its input)
         assert(false);
@@ -641,141 +640,140 @@ PetscErrorCode set_config_from_options(Config &config) {
 
   // at bootstrapping, choose whether the method uses smb as upper boundary for
   // vertical velocity
-  ierr = config.keyword_from_option("boot_temperature_heuristic",
-                                    "bootstrapping_temperature_heuristic", "smb,quartic_guess"); CHKERRQ(ierr);
+  config.keyword_from_option("boot_temperature_heuristic",
+                             "bootstrapping_temperature_heuristic", "smb,quartic_guess");
 
-  ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
+  config.scalar_from_option("low_temp", "global_min_allowed_temp");
+  config.scalar_from_option("max_low_temps", "max_low_temp_count");
 
   // Sub-models
-  ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
+  config.flag_from_option("age", "do_age");
+  config.flag_from_option("mass", "do_mass_conserve");
 
   // hydrology
-  ierr = config.keyword_from_option("hydrology", "hydrology_model",
-                                    "null,routing,distributed"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("hydrology_use_const_bmelt",
-                                 "hydrology_use_const_bmelt"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_const_bmelt",
-                                   "hydrology_const_bmelt"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_tillwat_max",
-                                   "hydrology_tillwat_max"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate",
-                                   "hydrology_tillwat_decay_rate"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
-                                   "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_thickness_power_in_flux",
-                                   "hydrology_thickness_power_in_flux"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_gradient_power_in_flux",
-                                   "hydrology_gradient_power_in_flux"); CHKERRQ(ierr);
+  config.keyword_from_option("hydrology", "hydrology_model",
+                             "null,routing,distributed");
+  config.flag_from_option("hydrology_use_const_bmelt",
+                          "hydrology_use_const_bmelt");
+  config.scalar_from_option("hydrology_const_bmelt",
+                            "hydrology_const_bmelt");
+  config.scalar_from_option("hydrology_tillwat_max",
+                            "hydrology_tillwat_max");
+  config.scalar_from_option("hydrology_tillwat_decay_rate",
+                            "hydrology_tillwat_decay_rate");
+  config.scalar_from_option("hydrology_hydraulic_conductivity",
+                            "hydrology_hydraulic_conductivity");
+  config.scalar_from_option("hydrology_thickness_power_in_flux",
+                            "hydrology_thickness_power_in_flux");
+  config.scalar_from_option("hydrology_gradient_power_in_flux",
+                            "hydrology_gradient_power_in_flux");
   // additional to RoutingHydrology, these apply to DistributedHydrology:
-  ierr = config.scalar_from_option("hydrology_roughness_scale",
-                                   "hydrology_roughness_scale"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_cavitation_opening_coefficient",
-                                   "hydrology_cavitation_opening_coefficient"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_creep_closure_coefficient",
-                                   "hydrology_creep_closure_coefficient"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_regularizing_porosity",
-                                   "hydrology_regularizing_porosity"); CHKERRQ(ierr);
+  config.scalar_from_option("hydrology_roughness_scale",
+                            "hydrology_roughness_scale");
+  config.scalar_from_option("hydrology_cavitation_opening_coefficient",
+                            "hydrology_cavitation_opening_coefficient");
+  config.scalar_from_option("hydrology_creep_closure_coefficient",
+                            "hydrology_creep_closure_coefficient");
+  config.scalar_from_option("hydrology_regularizing_porosity",
+                            "hydrology_regularizing_porosity");
 
   // Time-stepping
-  ierr = config.keyword_from_option("calendar", "calendar",
-                                    "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none"); CHKERRQ(ierr);
+  config.keyword_from_option("calendar", "calendar",
+                             "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none");
 
-  ierr = config.scalar_from_option("adapt_ratio",
-                                   "adaptive_timestepping_ratio"); CHKERRQ(ierr);
+  config.scalar_from_option("adapt_ratio",
+                            "adaptive_timestepping_ratio");
 
-  ierr = config.scalar_from_option("timestep_hit_multiples",
-                                   "timestep_hit_multiples"); CHKERRQ(ierr);
+  config.scalar_from_option("timestep_hit_multiples",
+                            "timestep_hit_multiples");
 
-  ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
+  config.flag_from_option("count_steps", "count_time_steps");
+  config.scalar_from_option("max_dt", "maximum_time_step_years");
 
 
   // SIA-related
-  ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
+  config.scalar_from_option("bed_smoother_range", "bed_smoother_range");
 
-  ierr = config.keyword_from_option("gradient", "surface_gradient_method",
-                                    "eta,haseloff,mahaffy"); CHKERRQ(ierr);
+  config.keyword_from_option("gradient", "surface_gradient_method",
+                             "eta,haseloff,mahaffy");
 
   // rheology-related
-  ierr = config.scalar_from_option("sia_n", "sia_Glen_exponent"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_n", "ssa_Glen_exponent"); CHKERRQ(ierr);
+  config.scalar_from_option("sia_n", "sia_Glen_exponent");
+  config.scalar_from_option("ssa_n", "ssa_Glen_exponent");
 
-  ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
+  config.scalar_from_option("sia_e", "sia_enhancement_factor");
+  config.scalar_from_option("ssa_e", "ssa_enhancement_factor");
 
-  ierr = config.flag_from_option("e_age_coupling", "e_age_coupling"); CHKERRQ(ierr);
+  config.flag_from_option("e_age_coupling", "e_age_coupling");
 
   // This parameter is used by the Goldsby-Kohlstedt flow law.
-  ierr = config.scalar_from_option("ice_grain_size", "ice_grain_size"); CHKERRQ(ierr);
+  config.scalar_from_option("ice_grain_size", "ice_grain_size");
 
-  ierr = config.flag_from_option("grain_size_age_coupling",
-                                 "compute_grain_size_using_age"); CHKERRQ(ierr);
+  config.flag_from_option("grain_size_age_coupling",
+                          "compute_grain_size_using_age");
 
   // SSA
   // Decide on the algorithm for solving the SSA
-  ierr = config.keyword_from_option("ssa_method", "ssa_method", "fd,fem"); CHKERRQ(ierr);
+  config.keyword_from_option("ssa_method", "ssa_method", "fd,fem");
 
-  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
+  config.scalar_from_option("ssa_eps",  "epsilon_ssa");
+  config.scalar_from_option("ssa_maxi", "max_iterations_ssafd");
+  config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence");
 
-  ierr = config.scalar_from_option("ssafd_nuH_iter_failure_underrelaxation", "ssafd_nuH_iter_failure_underrelaxation"); CHKERRQ(ierr);
+  config.scalar_from_option("ssafd_nuH_iter_failure_underrelaxation", "ssafd_nuH_iter_failure_underrelaxation");
 
-  ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
+  config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc");
+  config.flag_from_option("cfbc", "calving_front_stress_boundary_condition");
 
   // Basal sliding fiddles
-  ierr = config.flag_from_option("brutal_sliding", "brutal_sliding"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("brutal_sliding_scale","brutal_sliding_scale"); CHKERRQ(ierr);
+  config.flag_from_option("brutal_sliding", "brutal_sliding");
+  config.scalar_from_option("brutal_sliding_scale","brutal_sliding_scale");
 
-  ierr = config.scalar_from_option("sliding_scale_factor_reduces_tauc",
-                                   "sliding_scale_factor_reduces_tauc"); CHKERRQ(ierr);
+  config.scalar_from_option("sliding_scale_factor_reduces_tauc",
+                            "sliding_scale_factor_reduces_tauc");
 
   // SSA Inversion
 
-  ierr = config.keyword_from_option("inv_method","inv_ssa_method",
-                                    "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
-  CHKERRQ(ierr);
+  config.keyword_from_option("inv_method","inv_ssa_method",
+                             "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
 
-  ierr = config.keyword_from_option("inv_design_param",
-                                    "inv_design_param","ident,trunc,square,exp"); CHKERRQ(ierr);
+  config.keyword_from_option("inv_design_param",
+                             "inv_design_param","ident,trunc,square,exp");
 
-  ierr = config.scalar_from_option("inv_target_misfit","inv_target_misfit"); CHKERRQ(ierr);
+  config.scalar_from_option("inv_target_misfit","inv_target_misfit");
 
-  ierr = config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("tikhonov_atol","tikhonov_atol"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("tikhonov_ptol","tikhonov_ptol"); CHKERRQ(ierr);
+  config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight");
+  config.scalar_from_option("tikhonov_atol","tikhonov_atol");
+  config.scalar_from_option("tikhonov_rtol","tikhonov_rtol");
+  config.scalar_from_option("tikhonov_ptol","tikhonov_ptol");
 
-  ierr = config.keyword_from_option("inv_state_func",
-                                    "inv_state_func",
-                                    "meansquare,log_ratio,log_relative"); CHKERRQ(ierr);
-  ierr = config.keyword_from_option("inv_design_func",
-                                    "inv_design_func","sobolevH1,tv"); CHKERRQ(ierr);
+  config.keyword_from_option("inv_state_func",
+                             "inv_state_func",
+                             "meansquare,log_ratio,log_relative");
+  config.keyword_from_option("inv_design_func",
+                             "inv_design_func","sobolevH1,tv");
 
-  ierr = config.scalar_from_option("inv_design_cL2","inv_design_cL2"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("inv_design_cH1","inv_design_cH1"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("inv_ssa_tv_exponent","inv_ssa_tv_exponent"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale"); CHKERRQ(ierr);
+  config.scalar_from_option("inv_design_cL2","inv_design_cL2");
+  config.scalar_from_option("inv_design_cH1","inv_design_cH1");
+  config.scalar_from_option("inv_ssa_tv_exponent","inv_ssa_tv_exponent");
+  config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale");
 
   // Basal strength
-  ierr = config.scalar_from_option("till_cohesion", "till_cohesion");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_reference_void_ratio",
-                                   "till_reference_void_ratio");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_compressibility_coefficient",
-                                   "till_compressibility_coefficient");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_effective_fraction_overburden",
-                                   "till_effective_fraction_overburden");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_log_factor_transportable_water",
-                                   "till_log_factor_transportable_water");      CHKERRQ(ierr);
+  config.scalar_from_option("till_cohesion", "till_cohesion");
+  config.scalar_from_option("till_reference_void_ratio",
+                            "till_reference_void_ratio");
+  config.scalar_from_option("till_compressibility_coefficient",
+                            "till_compressibility_coefficient");
+  config.scalar_from_option("till_effective_fraction_overburden",
+                            "till_effective_fraction_overburden");
+  config.scalar_from_option("till_log_factor_transportable_water",
+                            "till_log_factor_transportable_water");
 
   bool topg_to_phi_set;
   std::vector<double> inarray(4);
   // read the comma-separated list of four values
-  ierr = OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
-                              inarray, topg_to_phi_set); CHKERRQ(ierr);
+  OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
+                   inarray, topg_to_phi_set);
   if (topg_to_phi_set == true) {
     if (inarray.size() != 4) {
       throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
@@ -788,98 +786,98 @@ PetscErrorCode set_config_from_options(Config &config) {
     config.set_double("till_topg_to_phi_topg_max",inarray[3]);
   }
 
-  ierr = config.flag_from_option("tauc_slippery_grounding_lines",
-                                 "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("tauc_add_transportable_water",
-                                 "tauc_add_transportable_water"); CHKERRQ(ierr);
+  config.flag_from_option("tauc_slippery_grounding_lines",
+                          "tauc_slippery_grounding_lines");
+  config.flag_from_option("tauc_add_transportable_water",
+                          "tauc_add_transportable_water");
 
-  ierr = config.keyword_from_option("yield_stress", "yield_stress_model",
-                                    "constant,mohr_coulomb"); CHKERRQ(ierr);
+  config.keyword_from_option("yield_stress", "yield_stress_model",
+                             "constant,mohr_coulomb");
 
   // all basal strength models use this in ice-free areas
-  ierr = config.scalar_from_option("high_tauc", "high_tauc");      CHKERRQ(ierr);
+  config.scalar_from_option("high_tauc", "high_tauc");
 
   // controls regularization of plastic basal sliding law
-  ierr = config.scalar_from_option("plastic_reg", "plastic_regularization"); CHKERRQ(ierr);
+  config.scalar_from_option("plastic_reg", "plastic_regularization");
 
   // "friction angle" in degrees. We allow -plastic_phi without an
   // argument: MohrCoulombYieldStress interprets that as "set
   // constant till friction angle using the default read from a config
   // file or an override file".
   bool plastic_phi_set = false;
-  ierr = OptionsHasArgument("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
+  OptionsHasArgument("-plastic_phi", plastic_phi_set);
   if (plastic_phi_set == true) {
-    ierr = config.scalar_from_option("plastic_phi", "default_till_phi"); CHKERRQ(ierr);
+    config.scalar_from_option("plastic_phi", "default_till_phi");
   }
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
-  ierr = config.flag_from_option("pseudo_plastic", "do_pseudo_plastic_till"); CHKERRQ(ierr);
+  config.flag_from_option("pseudo_plastic", "do_pseudo_plastic_till");
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
-  ierr = config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q"); CHKERRQ(ierr);
+  config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q");
 
   // threshold; at this velocity tau_c is basal shear stress
-  ierr = config.scalar_from_option("pseudo_plastic_uthreshold",
-                                   "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
+  config.scalar_from_option("pseudo_plastic_uthreshold",
+                            "pseudo_plastic_uthreshold");
 
-  ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
+  config.flag_from_option("subgl", "sub_groundingline");
 
   // Ice shelves
-  ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
+  config.flag_from_option("part_grid", "part_grid");
 
-  ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
-                                 "part_grid_reduce_frontal_thickness"); CHKERRQ(ierr);
+  config.flag_from_option("part_grid_reduce_frontal_thickness",
+                          "part_grid_reduce_frontal_thickness");
 
-  ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
+  config.flag_from_option("part_redist", "part_redist");
 
-  ierr = config.scalar_from_option("nu_bedrock", "nu_bedrock"); CHKERRQ(ierr);
-  ierr = OptionsIsSet("-nu_bedrock", flag);  CHKERRQ(ierr);
+  config.scalar_from_option("nu_bedrock", "nu_bedrock");
+  OptionsIsSet("-nu_bedrock", flag);
   if (flag) {
     config.set_flag_from_option("nu_bedrock_set", true);
   }
 
   // fracture density
-  ierr = config.flag_from_option("fractures", "do_fracture_density"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("write_fd_fields", "write_fd_fields"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("fracture_softening",
-                                   "fracture_density_softening_lower_limit"); CHKERRQ(ierr);
+  config.flag_from_option("fractures", "do_fracture_density");
+  config.flag_from_option("write_fd_fields", "write_fd_fields");
+  config.scalar_from_option("fracture_softening",
+                            "fracture_density_softening_lower_limit");
 
   // Calving
-  ierr = config.string_from_option("calving", "calving_methods"); CHKERRQ(ierr);
+  config.string_from_option("calving", "calving_methods");
 
-  ierr = config.scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold"); CHKERRQ(ierr);
+  config.scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold");
 
   // evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
-  ierr = config.flag_from_option("cfl_eigen_calving", "cfl_eigen_calving"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("eigen_calving_K", "eigen_calving_K"); CHKERRQ(ierr);
+  config.flag_from_option("cfl_eigen_calving", "cfl_eigen_calving");
+  config.scalar_from_option("eigen_calving_K", "eigen_calving_K");
 
-  ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
+  config.flag_from_option("kill_icebergs", "kill_icebergs");
 
   // Output
-  ierr = config.keyword_from_option("o_order", "output_variable_order",
-                                    "xyz,yxz,zyx"); CHKERRQ(ierr);
+  config.keyword_from_option("o_order", "output_variable_order",
+                             "xyz,yxz,zyx");
 
-  ierr = config.keyword_from_option("o_format", "output_format",
-                                    "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
+  config.keyword_from_option("o_format", "output_format",
+                             "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5");
 
-  ierr = config.scalar_from_option("summary_vol_scale_factor_log10",
-                                   "summary_vol_scale_factor_log10"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("summary_area_scale_factor_log10",
-                                   "summary_area_scale_factor_log10"); CHKERRQ(ierr);
+  config.scalar_from_option("summary_vol_scale_factor_log10",
+                            "summary_vol_scale_factor_log10");
+  config.scalar_from_option("summary_area_scale_factor_log10",
+                            "summary_area_scale_factor_log10");
 
   // Metadata
-  ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);
-  ierr = config.string_from_option("institution", "institution"); CHKERRQ(ierr);
+  config.string_from_option("title", "run_title");
+  config.string_from_option("institution", "institution");
 
   // Skipping
-  ierr = config.flag_from_option("skip", "do_skip"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("skip_max", "skip_max"); CHKERRQ(ierr);
+  config.flag_from_option("skip", "do_skip");
+  config.scalar_from_option("skip_max", "skip_max");
 
   // Shortcuts
 
   // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
   // and in particular NOT  "-calving eigen_calving")
-  ierr = OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag); CHKERRQ(ierr);
+  OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag);
   if (flag) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
     config.set_flag_from_option("part_grid", true);
@@ -904,12 +902,12 @@ PetscErrorCode set_config_from_options(Config &config) {
     config.set_flag_from_option("part_grid", true);
   }
 
-  ierr = config.keyword_from_option("stress_balance", "stress_balance_model",
-                                    "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia"); CHKERRQ(ierr);
+  config.keyword_from_option("stress_balance", "stress_balance_model",
+                             "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia");
 
   bool test_climate_models = false;
-  ierr = OptionsIsSet("-test_climate_models", "Disable ice dynamics to test climate models",
-                          test_climate_models); CHKERRQ(ierr);
+  OptionsIsSet("-test_climate_models", "Disable ice dynamics to test climate models",
+               test_climate_models);
   if (test_climate_models) {
     config.set_string_from_option("stress_balance_model", "none");
     config.set_flag_from_option("do_energy", false);
@@ -917,32 +915,32 @@ PetscErrorCode set_config_from_options(Config &config) {
     // let the user decide if they want to use "-no_mass" or not
   }
 
-  ierr = config.keyword_from_option("bed_def",
-                                    "bed_deformation_model", "none,iso,lc"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
+  config.keyword_from_option("bed_def",
+                             "bed_deformation_model", "none,iso,lc");
+  config.flag_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model");
 
-  ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
+  config.flag_from_option("dry", "is_dry_simulation");
 
-  ierr = config.flag_from_option("clip_shelf_base_salinity",
-                                 "ocean_three_equation_model_clip_salinity"); CHKERRQ(ierr);
+  config.flag_from_option("clip_shelf_base_salinity",
+                          "ocean_three_equation_model_clip_salinity");
 
-  ierr = config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor"); CHKERRQ(ierr);
+  config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor");
 
   // old options
-  ierr = check_old_option_and_stop("-sliding_scale_brutal",
-                                   "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-ssa_sliding", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-ssa_floating_only", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-sia", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-no_sia", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-hold_tauc", "-yield_stress constant"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-calving_at_thickness",
-                                   "-calving thickness_calving -thickness_calving_threshold XXX"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-float_kill", "-calving float_kill"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-no_energy", "-energy none"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop("-cold", "-energy cold"); CHKERRQ(ierr);
+  check_old_option_and_stop("-sliding_scale_brutal",
+                            "-brutal_sliding' and '-brutal_sliding_scale");
+  check_old_option_and_stop("-ssa_sliding", "-stress_balance ...");
+  check_old_option_and_stop("-ssa_floating_only", "-stress_balance ...");
+  check_old_option_and_stop("-sia", "-stress_balance ...");
+  check_old_option_and_stop("-no_sia", "-stress_balance ...");
+  check_old_option_and_stop("-hold_tauc", "-yield_stress constant");
+  check_old_option_and_stop("-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc");
+  check_old_option_and_stop("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX");
+  check_old_option_and_stop("-calving_at_thickness",
+                            "-calving thickness_calving -thickness_calving_threshold XXX");
+  check_old_option_and_stop("-float_kill", "-calving float_kill");
+  check_old_option_and_stop("-no_energy", "-energy none");
+  check_old_option_and_stop("-cold", "-energy cold");
 
   return 0;
 }

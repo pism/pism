@@ -141,18 +141,18 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
   PetscErrorCode ierr;
 
   // Set options from command line.  
-  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
+  config.scalar_from_option("ssa_eps",  "epsilon_ssa");
+  config.scalar_from_option("ssa_maxi", "max_iterations_ssafd");
+  config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence");
 
   // Subclass builds grid.
   ierr = initializeGrid(Mx,My);
 
   // Subclass builds ice flow law, basal resistance, etc.
-  ierr = initializeSSAModel(); CHKERRQ(ierr);
+  initializeSSAModel();
 
   // We setup storage for the coefficients.
-  ierr = buildSSACoefficients(); CHKERRQ(ierr);
+  buildSSACoefficients();
 
   // Allocate the actual SSA solver.
   ssa = ssafactory(grid, *enthalpyconverter, config);

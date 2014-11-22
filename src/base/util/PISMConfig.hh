@@ -38,13 +38,13 @@ public:
 
   bool is_set(const std::string &name) const;
 
-  PetscErrorCode print_to_stdout(int verbosity_threshhold = 4) const;
-  PetscErrorCode warn_about_unused_parameters() const;
-  PetscErrorCode read(const PIO &nc);
-  PetscErrorCode write(const PIO &nc) const;
+  void print_to_stdout(int verbosity_threshhold = 4) const;
+  void warn_about_unused_parameters() const;
+  void read(const PIO &nc);
+  void write(const PIO &nc) const;
 
-  PetscErrorCode read(const std::string &filename);
-  PetscErrorCode write(const std::string &filename, bool append = true) const;
+  void read(const std::string &filename);
+  void write(const std::string &filename, bool append = true) const;
 
   std::string get_config_filename() const;
   UnitSystem get_unit_system() const;
@@ -56,15 +56,15 @@ public:
   // in pismr code.
   void   set_flag(const std::string&, bool);
   // Set parameters and remember that they were set using a command-line option
-  PetscErrorCode set_flag_from_option(const std::string &name, bool value);
-  PetscErrorCode set_scalar_from_option(const std::string &name, double value);
-  PetscErrorCode set_string_from_option(const std::string &name, const std::string &value);
-  PetscErrorCode set_keyword_from_option(const std::string &name, const std::string &value);
+  void set_flag_from_option(const std::string &name, bool value);
+  void set_scalar_from_option(const std::string &name, double value);
+  void set_string_from_option(const std::string &name, const std::string &value);
+  void set_keyword_from_option(const std::string &name, const std::string &value);
   // Set parameters by ptocessing a command-line option
-  PetscErrorCode flag_from_option(const std::string &, const std::string &);
-  PetscErrorCode scalar_from_option(const std::string &, const std::string &);
-  PetscErrorCode string_from_option(const std::string &, const std::string &);
-  PetscErrorCode keyword_from_option(const std::string &, const std::string &, const std::string &);
+  void flag_from_option(const std::string &, const std::string &);
+  void scalar_from_option(const std::string &, const std::string &);
+  void string_from_option(const std::string &, const std::string &);
+  void keyword_from_option(const std::string &, const std::string &, const std::string &);
   // Import settings from an override file
   void import_from(const Config &other);
   void update_from(const Config &other);
