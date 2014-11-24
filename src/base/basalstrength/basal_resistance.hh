@@ -36,7 +36,7 @@ class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const Config &config);
   virtual ~IceBasalResistancePlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual void print_info(int verbthresh, MPI_Comm com) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
@@ -49,7 +49,7 @@ class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const Config &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual void print_info(int verbthresh, MPI_Comm com) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;

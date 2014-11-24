@@ -30,12 +30,10 @@ IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
   plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
 }
 
-PetscErrorCode IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
+void IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
   verbPrintf(verbthresh, com, 
              "Using purely plastic till with eps = %10.5e m/year.\n",
              m_unit_system.convert(plastic_regularize, "m/s", "m/year"));
-
-  return 0;
 }
 
 
@@ -73,7 +71,7 @@ IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Con
   sliding_scale_factor_reduces_tauc = config.get("sliding_scale_factor_reduces_tauc");
 }
 
-PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
+void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
 
   if (pseudo_q == 1.0) {
     verbPrintf(verbthresh, com, 
@@ -87,8 +85,6 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MP
                pseudo_q,
                m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year"));
   }
-
-  return 0;
 }
 
 //! Compute the drag coefficient for the basal shear stress.
