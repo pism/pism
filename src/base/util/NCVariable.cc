@@ -201,7 +201,6 @@ void NCSpatialVariable::set_time_independent(bool flag) {
 /*! This also converts the data from input units to internal units if needed.
  */
 PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) {
-  PetscErrorCode ierr;
 
   assert(m_grid != NULL);
 
@@ -298,7 +297,6 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
  */
 PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
                                         bool write_in_glaciological_units, Vec v) const {
-  PetscErrorCode ierr;
 
   // find or define the variable
   std::string name_found;
@@ -307,12 +305,12 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
              exists, name_found, found_by_standard_name);
 
   if (!exists) {
-    ierr = define(nc, nctype, write_in_glaciological_units); CHKERRQ(ierr);
+    define(nc, nctype, write_in_glaciological_units);
     name_found = get_name();
   }
 
   if (write_in_glaciological_units) {
-    ierr = convert_vec(v, get_units(), get_glaciological_units()); CHKERRQ(ierr);
+    convert_vec(v, get_units(), get_glaciological_units());
   }
 
   // Actually write data:
@@ -320,7 +318,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
   nc.put_vec(m_grid, name_found, nlevels, v);
 
   if (write_in_glaciological_units) {
-    ierr = convert_vec(v, get_glaciological_units(), get_units()); CHKERRQ(ierr); // restore the units
+    convert_vec(v, get_glaciological_units(), get_units()); // restore the units
   }
 
   return 0;
@@ -338,10 +336,9 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
  */
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
                                          double default_value, Vec v) {
-  PetscErrorCode ierr;
   unsigned int t_length = nc.inq_nrecords(get_name(), get_string("standard_name"));
 
-  ierr = this->regrid(nc, t_length - 1, flag, do_report_range, default_value, v); CHKERRQ(ierr);
+  this->regrid(nc, t_length - 1, flag, do_report_range, default_value, v);
 
   return 0;
 }
@@ -562,7 +559,6 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
 //! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
                                          bool write_in_glaciological_units) const {
-  int ierr;
   std::vector<std::string> dims;
 
   bool exists = nc.inq_var(get_name());
@@ -570,7 +566,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
     return 0;
   }
 
-  ierr = define_dimensions(nc); CHKERRQ(ierr);
+  define_dimensions(nc);
   std::string variable_order = m_variable_order;
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
@@ -751,7 +747,6 @@ std::string NCVariable::get_string(const std::string &name) const {
 }
 
 PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
-  PetscErrorCode ierr;
 
   // Print text attributes:
   const NCVariable::StringAttrs &strings = this->get_all_strings();

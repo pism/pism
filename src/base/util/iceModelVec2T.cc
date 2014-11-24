@@ -295,7 +295,7 @@ void IceModelVec2T::update(double my_t, double my_dt) {
 
 //! Update by reading at most n_records records from the file.
 void IceModelVec2T::update(unsigned int start) {
-  PetscErrorCode ierr;
+
   unsigned int time_size = (int)time.size();
 
   if (start >= time_size) {

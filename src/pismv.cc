@@ -60,19 +60,19 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> required;
     required.push_back("-test");
-    ierr = show_usage_check_req_opts(com, "pismv", required,
-        "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
-        "where:\n"
-        "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
-        "  -no_report  do not give error report at end of run\n"
-        "  -eo         do not do numerical run; exact solution only\n"
-        "(see User's Manual for tests I and J).\n"
-        ); CHKERRQ(ierr);
+    show_usage_check_req_opts(com, "pismv", required,
+                              "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
+                              "where:\n"
+                              "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
+                              "  -no_report  do not give error report at end of run\n"
+                              "  -eo         do not do numerical run; exact solution only\n"
+                              "(see User's Manual for tests I and J).\n"
+                              );
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    init_config(com, config, overrides, true);
 
     config.set_flag("use_eta_transformation", false);
     config.set_string("calendar", "none");
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", "");
     PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
-      ierr = OptionsString("-test", "Specifies PISM verification test",
-                               testname, test_chosen); CHKERRQ(ierr);
+      OptionsString("-test", "Specifies PISM verification test",
+                    testname, test_chosen);
     }
     ierr = PetscOptionsEnd();
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");

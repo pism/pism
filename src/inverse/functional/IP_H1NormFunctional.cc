@@ -124,8 +124,6 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
 PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  PetscErrorCode   ierr;
-
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 

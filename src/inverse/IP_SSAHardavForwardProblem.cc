@@ -159,8 +159,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, I
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
-  PetscErrorCode ierr;
-
   Vector2 **u_a, **rhs_a;
 
   u.get_array(u_a);
@@ -213,7 +211,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 \overload
 */
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du) {
-  PetscErrorCode ierr;
   Vector2 **du_a;
   DMDAVecGetArray(*m_da, du, &du_a);
   this->apply_jacobian_design(u, dzeta, du_a);
@@ -381,7 +378,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                            IceModelVec2V &du,
                                                                            IceModelVec2S &dzeta) {
-  PetscErrorCode ierr;
   double **dzeta_a;
   dzeta.get_array(dzeta_a);
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
@@ -395,7 +391,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                            IceModelVec2V &du,
                                                                            Vec dzeta) {
-  PetscErrorCode ierr;
   double **dzeta_a;
   PISMDM::Ptr da2 = m_grid.get_dm(1, config.get("grid_max_stencil_width"));
 
@@ -428,8 +423,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                            IceModelVec2V &du,
                                                                            double **dzeta_a) {
-  PetscErrorCode ierr;
-
   IceModelVec::AccessList list;
   list.add(*m_zeta);
   list.add(u);

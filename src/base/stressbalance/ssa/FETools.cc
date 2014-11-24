@@ -547,7 +547,6 @@ PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *v
 }
 
 PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
-  PetscErrorCode ierr;
   if (m_indices != NULL) {
     m_indices->end_access();
     m_indices = NULL;
@@ -638,7 +637,6 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
 }
 
 PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
-  PetscErrorCode ierr;
   IceGrid *grid = m_indices->get_grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
@@ -739,7 +737,6 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
 }
 
 PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
-  PetscErrorCode ierr;
   IceGrid &grid = *m_indices->get_grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data

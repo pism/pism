@@ -51,15 +51,15 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
-    ierr = show_usage_check_req_opts(com, "pisms", required,
-      "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
-      "where major option chooses type of simplified experiment:\n"
-      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"); CHKERRQ(ierr);
+    show_usage_check_req_opts(com, "pisms", required,
+                              "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
+                              "where major option chooses type of simplified experiment:\n"
+                              "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n");
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    init_config(com, config, overrides, true);
 
     config.set_string("calendar", "none");
 

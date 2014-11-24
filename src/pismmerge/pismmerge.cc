@@ -166,14 +166,14 @@ int main(int argc, char *argv[])
     bool i_set, o_set, var_name_set, compression_level_set;
     std::string i_name, o_name, var_name;
     int compression_level = 0;
-    ierr = OptionsString("-i", "Input file name",
-                             i_name, i_set); CHKERRQ(ierr);
-    ierr = OptionsString("-o", "Output file name",
-                             o_name, o_set); CHKERRQ(ierr);
-    ierr = OptionsString("-v", "Name of the variable to merge",
-                             var_name, var_name_set); CHKERRQ(ierr);
-    ierr = OptionsInt("-L", "Output compression level",
-                          compression_level, compression_level_set); CHKERRQ(ierr);
+    OptionsString("-i", "Input file name",
+                  i_name, i_set);
+    OptionsString("-o", "Output file name",
+                  o_name, o_set);
+    OptionsString("-v", "Name of the variable to merge",
+                  var_name, var_name_set);
+    OptionsInt("-L", "Output compression level",
+               compression_level, compression_level_set);
     std::string usage =
       "  Merges output file created using '-o_format quilt'.\n\n"
       "  pismmerge {-i in.nc} [-o out.nc]\n"
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> required;
     required.push_back("-i");
-    ierr = show_usage_check_req_opts(com, "pismmerge", required, usage); CHKERRQ(ierr);
+    show_usage_check_req_opts(com, "pismmerge", required, usage);
 
     check_input_files(i_name);
 
@@ -210,9 +210,9 @@ int main(int argc, char *argv[])
 
     if (rank == 0) {
       if (var_name_set) {
-        ierr = process_one_variable(var_name, i_name, o_name, compression_level); CHKERRQ(ierr);
+        process_one_variable(var_name, i_name, o_name, compression_level);
       } else {
-        ierr = process_all_variables(i_name, o_name, compression_level); CHKERRQ(ierr);
+        process_all_variables(i_name, o_name, compression_level);
       }
     }
   }

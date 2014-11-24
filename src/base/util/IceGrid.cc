@@ -393,7 +393,6 @@ void IceGrid::compute_ownership_ranges() {
   order: x in rows, y in columns, indexing as array[x][y].
  */
 PetscErrorCode IceGrid::allocate() {
-  PetscErrorCode ierr;
 
   if (Mx < 3) {
     throw RuntimeError("IceGrid::allocate(): Mx has to be at least 3.");
@@ -428,7 +427,7 @@ PetscErrorCode IceGrid::allocate() {
   m_dm_scalar_global = this->get_dm(1, 0);
 
   DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(*m_dm_scalar_global, &info); CHKERRQ(ierr);
+  DMDAGetLocalInfo(*m_dm_scalar_global, &info);
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
@@ -438,7 +437,6 @@ PetscErrorCode IceGrid::allocate() {
 
 //! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
 PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
-  PetscErrorCode ierr;
 
   if (new_zlevels.size() < 2) {
     throw RuntimeError("IceGrid::set_vertical_levels(): Mz has to be at least 2.");
@@ -454,7 +452,7 @@ PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zleve
   zlevels  = new_zlevels;
 
   get_dzMIN_dzMAX_spacingtype();
-  ierr = compute_fine_vertical_grid(); CHKERRQ(ierr);
+  compute_fine_vertical_grid();
 
   return 0;
 }
@@ -509,7 +507,6 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   the extra level using the value from the topmost level.
  */
 PetscErrorCode IceGrid::compute_fine_vertical_grid() {
-  PetscErrorCode ierr;
 
   // the smallest of the spacings used in ice and bedrock:
   double my_dz_fine = dzMIN;
@@ -529,7 +526,7 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   }
   // Note that it's allowed to go over Lz.
 
-  ierr = init_interpolation(); CHKERRQ(ierr);
+  init_interpolation();
 
   return 0;
 }
@@ -708,7 +705,7 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
   PetscErrorCode ierr;
   int X, Y;
 
-  ierr = compute_viewer_size(viewer_size, X, Y); CHKERRQ(ierr);
+  compute_viewer_size(viewer_size, X, Y);
 
   // note we reverse x <-> y; see IceGrid::allocate() for original reversal
   ierr = PetscViewerDrawOpen(com, NULL, title.c_str(),

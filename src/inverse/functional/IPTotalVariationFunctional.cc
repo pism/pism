@@ -74,8 +74,6 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
 
 PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  PetscErrorCode   ierr;
-
   // Clear the gradient before doing anything with it.
   gradient.set(0);
 

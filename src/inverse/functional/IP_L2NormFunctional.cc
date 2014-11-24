@@ -97,8 +97,6 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
 PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  PetscErrorCode   ierr;
-
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -146,8 +144,6 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 
 PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
-  PetscErrorCode   ierr;
-
   // The value of the objective
   double value = 0;
 
@@ -182,8 +178,6 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
 }
 
 PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT) {
-
-  PetscErrorCode   ierr;
 
   // The value of the objective
   double value = 0;
@@ -220,8 +214,6 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
 }
 
 PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
-
-  PetscErrorCode   ierr;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);

@@ -49,8 +49,8 @@ int main(int argc, char *argv[]) {
     stop_on_version_option();
 
     bool iset, bfset;
-    ierr = OptionsIsSet("-i", iset); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
+    OptionsIsSet("-i", iset);
+    OptionsIsSet("-boot_file", bfset);
     std::string usage =
       "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -64,16 +64,16 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(com,
                          "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
-      ierr = show_usage_and_quit(com, "pismr", usage); CHKERRQ(ierr);
+      show_usage_and_quit(com, "pismr", usage);
     } else {
       std::vector<std::string> required;  required.clear();
-      ierr = show_usage_check_req_opts(com, "pismr", required, usage); CHKERRQ(ierr);
+      show_usage_check_req_opts(com, "pismr", required, usage);
     }
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    init_config(com, config, overrides, true);
 
     IceGrid g(com, config);
     IceModel m(g, config, overrides);

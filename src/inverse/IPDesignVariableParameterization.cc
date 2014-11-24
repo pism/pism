@@ -68,7 +68,6 @@ PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable(IceMode
 PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &d,
                                                                             IceModelVec2S &zeta,
                                                                             bool communicate) {
-  PetscErrorCode ierr;
   IceModelVec::AccessList list;
   list.add(zeta);
   list.add(d);
@@ -128,7 +127,6 @@ PetscErrorCode IPDesignVariableParamSquare::fromDesignVariable(double d, double 
 }
 
 PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const std::string &design_var_name) {
-  PetscErrorCode ierr;
   IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("design_param_");
@@ -164,7 +162,6 @@ PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OU
 
 PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
                                                                const std::string &design_var_name) {
-  PetscErrorCode ierr;
   IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("design_param_trunc_");

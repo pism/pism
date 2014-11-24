@@ -143,7 +143,6 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
 
 //! \brief Report the range of a time-series stored in `values`.
 PetscErrorCode Timeseries::report_range() {
-  PetscErrorCode ierr;
   double min, max;
 
   // min_element and max_element return iterators; "*" is used to get
@@ -353,7 +352,6 @@ PetscErrorCode DiagnosticTimeseries::append(double V, double /*a*/, double b) {
 //! \brief Use linear interpolation to find the value of a scalar diagnostic
 //! quantity at time `T` and store the obtained pair (T, value).
 PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
-  PetscErrorCode ierr;
 
   if (t.empty()) {
     throw RuntimeError("DiagnosticTimeseries::interp(...): interpolation buffer is empty");
@@ -396,7 +394,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   time_bounds.push_back(b);
 
   if (time.size() == buffer_size) {
-    ierr = flush(); CHKERRQ(ierr);
+    flush();
   }
 
   return 0;

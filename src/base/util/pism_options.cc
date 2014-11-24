@@ -154,11 +154,10 @@ PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string u
 //! @brief Show provided usage message and quit. (Consider using
 //! show_usage_check_req_opts() in preference to this one.)
 PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage) {
-  PetscErrorCode ierr;
 
-  ierr = stop_on_version_option(); CHKERRQ(ierr);
+  stop_on_version_option();
 
-  ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
+  just_show_usage(com, execname, usage);
 
   // FIXME!
   // PISMEndQuiet();
@@ -171,38 +170,36 @@ PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::stri
 PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 					 std::vector<std::string> required_options,
 					 std::string usage) {
-  PetscErrorCode ierr;
 
-  ierr = stop_on_version_option(); CHKERRQ(ierr);
+  stop_on_version_option();
 
   bool usageSet = false;
-  ierr = OptionsIsSet("-usage", usageSet); CHKERRQ(ierr);
+  OptionsIsSet("-usage", usageSet);
   if (usageSet == true) {
-    ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
+    show_usage_and_quit(com, execname, usage);
   }
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
   for (size_t ii=0; ii < required_options.size(); ii++) {
     bool set = false;
-    ierr = OptionsIsSet(required_options[ii], set); CHKERRQ(ierr);
+    OptionsIsSet(required_options[ii], set);
     if (set == PETSC_FALSE) {
       req_absent = true;
-      ierr = verbPrintf(1,com,
-        "PISM ERROR: option %s required\n",required_options[ii].c_str());
-        CHKERRQ(ierr);
+      verbPrintf(1,com,
+                 "PISM ERROR: option %s required\n",required_options[ii].c_str());
     }
   }
   if (req_absent == PETSC_TRUE) {
-    ierr = verbPrintf(1,com,"\n"); CHKERRQ(ierr);
-    ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
+    verbPrintf(1,com,"\n");
+    show_usage_and_quit(com, execname, usage);
   }
 
   // show usage message with -help, but don't fail
   bool helpSet = false;
-  ierr = OptionsIsSet("-help", helpSet); CHKERRQ(ierr);
+  OptionsIsSet("-help", helpSet);
   if (helpSet == true) {
-    ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
+    just_show_usage(com, execname, usage);
   }
 
   return 0;
@@ -354,9 +351,8 @@ PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string
 PetscErrorCode OptionsStringSet(std::string opt, std::string text, std::string default_value,
 				    std::set<std::string>& result, bool &flag) {
   std::vector<std::string> tmp;
-  PetscErrorCode ierr;
 
-  ierr = OptionsStringArray(opt, text, default_value, tmp, flag); CHKERRQ(ierr);
+  OptionsStringArray(opt, text, default_value, tmp, flag);
 
   result.clear();
   std::vector<std::string>::iterator j = tmp.begin();
@@ -476,10 +472,9 @@ PetscErrorCode OptionsRealArray(std::string option, std::string text,
 //! integers as an argument.
 PetscErrorCode OptionsIntArray(std::string option, std::string text,
 				   std::vector<int> &result, bool &is_set) {
-  PetscErrorCode ierr;
   std::vector<double> tmp;
 
-  ierr = OptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
+  OptionsRealArray(option, text, tmp, is_set);
 
   result.clear();
   for (unsigned int j = 0; j < tmp.size(); ++j) {
@@ -541,10 +536,9 @@ PetscErrorCode OptionsIsSet(std::string option, std::string text,
  * @return 0 on success
  */
 PetscErrorCode OptionsHasArgument(std::string option, bool &result) {
-  PetscErrorCode ierr;
   std::string tmp;
 
-  ierr = OptionsString(option, "", tmp, result, true); CHKERRQ(ierr);
+  OptionsString(option, "", tmp, result, true);
 
   if (result == false || tmp.empty() == true) {
     result = false;
@@ -569,10 +563,10 @@ PetscErrorCode init_config(MPI_Comm com,
   ierr = PetscOptionsBegin(com, "", "PISM config file options", "");
   PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsString("-config", "Specifies the name of an alternative config file",
-                             alt_config, use_alt_config); CHKERRQ(ierr);
-    ierr = OptionsString("-config_override", "Specifies a config override file name",
-                             override_config, use_override_config); CHKERRQ(ierr);
+    OptionsString("-config", "Specifies the name of an alternative config file",
+                  alt_config, use_alt_config);
+    OptionsString("-config_override", "Specifies a config override file name",
+                  override_config, use_override_config);
   }
   ierr = PetscOptionsEnd();
   PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
