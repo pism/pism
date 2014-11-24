@@ -29,15 +29,6 @@ RoutingHydrology::RoutingHydrology(IceGrid &g, const Config &conf)
     : Hydrology(g, conf)
 {
   stripwidth = config.get("hydrology_null_strip_width");
-  if (allocate() != 0) {
-    throw std::runtime_error("RoutingHydrology allocation failed");
-  }
-}
-
-RoutingHydrology::~RoutingHydrology() {
-}
-
-PetscErrorCode RoutingHydrology::allocate() {
 
   // model state variables; need ghosts
   W.create(grid, "bwat", WITH_GHOSTS, 1);
@@ -88,8 +79,10 @@ PetscErrorCode RoutingHydrology::allocate() {
                     "new thickness of till (subglacial) water layer during update",
                     "m", "");
   Wtilnew.metadata().set_double("valid_min", 0.0);
+}
 
-  return 0;
+RoutingHydrology::~RoutingHydrology() {
+  // empty
 }
 
 

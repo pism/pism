@@ -276,7 +276,6 @@ protected:
   double stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
 
-  PetscErrorCode allocate();
   virtual void init_bwat(Vars &vars);
 
   // when we update the water amounts, careful mass accounting at the
@@ -355,7 +354,6 @@ protected:
   // need to get basal sliding velocity (thus speed):
   StressBalance* stressbalance;
 
-  PetscErrorCode allocate_pressure();
   virtual void init_bwp(Vars &vars);
 
   virtual void check_P_bounds(bool enforce_upper);

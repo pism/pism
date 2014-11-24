@@ -32,16 +32,6 @@ DistributedHydrology::DistributedHydrology(IceGrid &g, const Config &conf,
 {
   stressbalance = sb;
   hold_velbase_mag = false;
-  if (allocate_pressure() != 0) {
-    throw std::runtime_error("DistributedHydrology allocation failed");
-  }
-}
-
-DistributedHydrology::~DistributedHydrology() {
-  // empty
-}
-
-PetscErrorCode DistributedHydrology::allocate_pressure() {
 
   // additional variables beyond RoutingHydrology::allocate()
   P.create(grid, "bwp", WITH_GHOSTS, 1);
@@ -63,9 +53,11 @@ PetscErrorCode DistributedHydrology::allocate_pressure() {
   psi.set_attrs("internal",
                 "hydraulic potential of water in subglacial layer",
                 "Pa", "");
-  return 0;
 }
 
+DistributedHydrology::~DistributedHydrology() {
+  // empty
+}
 
 void DistributedHydrology::init(Vars &vars) {
   verbPrintf(2, grid.com,
