@@ -105,8 +105,6 @@ public:
 
   double get_vertical_spacing();
 protected:
-  PetscErrorCode allocate();
-
 
   IceModelVec3Custom temp;
   //!< storage for bedrock thermal layer temperature; part of state;

@@ -42,100 +42,89 @@ BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
   m_Lbz = (int)config.get("grid_Lbz");
   m_input_file.clear();
 
-  PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("BedThermalUnit allocation failed");
-  }
-
-}
-
-//! \brief Allocate storage for the temperature in the bedrock layer (if there
-//! is a bedrock layer).
-PetscErrorCode BedThermalUnit::allocate() {
-  PetscErrorCode ierr;
-  bool i_set, Mbz_set, Lbz_set;
-
-  ierr = PetscOptionsBegin(grid.com, "", "BedThermalUnit options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
+  // FIXME: Move the code processing command-line options elsewhere,
+  // possibly making Mbz and Lbz arguments of the constructor. It's
+  // good to validate Lbz and Mbz here, though.
   {
-    ierr = OptionsString("-i", "PISM input file name",
-                             m_input_file, i_set); CHKERRQ(ierr);
+    bool i_set, Mbz_set, Lbz_set;
 
-    int tmp = m_Mbz;
-    ierr = OptionsInt("-Mbz", "number of levels in bedrock thermal layer",
-                          tmp, Mbz_set); CHKERRQ(ierr);
-    m_Mbz = tmp;
+    {
+      OptionsString("-i", "PISM input file name",
+                    m_input_file, i_set);
 
-    ierr = OptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                           m_Lbz, Lbz_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
+      int tmp = m_Mbz;
+      OptionsInt("-Mbz", "number of levels in bedrock thermal layer",
+                 tmp, Mbz_set);
+      m_Mbz = tmp;
 
+      OptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+                  m_Lbz, Lbz_set);
+    }
 
-  if (i_set) {
-    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
+    if (i_set) {
+      ignore_option(grid.com, "-Mbz");
+      ignore_option(grid.com, "-Lbz");
 
-    // If we're initializing from a file we need to get the number of bedrock
-    // levels and the depth of the bed thermal layer from it:
-    PIO nc(grid, "guess_mode");
+      // If we're initializing from a file we need to get the number of bedrock
+      // levels and the depth of the bed thermal layer from it:
+      PIO nc(grid, "guess_mode");
 
-    nc.open(m_input_file, PISM_READONLY);
+      nc.open(m_input_file, PISM_READONLY);
 
-    bool exists = nc.inq_var("litho_temp");
+      bool exists = nc.inq_var("litho_temp");
 
-    if (exists) {
-      grid_info g = nc.inq_grid_info("litho_temp", grid.periodicity);
+      if (exists) {
+        grid_info info = nc.inq_grid_info("litho_temp", grid.periodicity);
 
-      m_Mbz = g.z_len;
-      m_Lbz = -g.z_min;
+        m_Mbz = info.z_len;
+        m_Lbz = -info.z_min;
+      } else {
+        // override values we got using config.get() in the constructor
+        m_Mbz = 1;
+        m_Lbz = 0;
+      }
+
+      nc.close();
     } else {
-      // override values we got using config.get() in the constructor
-      m_Mbz = 1;
-      m_Lbz = 0;
+      // Bootstrapping
+
+      if (Mbz_set && m_Mbz == 1) {
+        ignore_option(grid.com, "-Lbz");
+        m_Lbz = 0;
+      } else if (Mbz_set ^ Lbz_set) {
+        throw RuntimeError("please specify both -Mbz and -Lbz");
+      }
     }
 
-    nc.close();
-  } else {
-    // Bootstrapping
+    // actual allocation
 
-    if (Mbz_set && m_Mbz == 1) {
-      ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
-      m_Lbz = 0;
-    } else if (Mbz_set ^ Lbz_set) {
-      throw RuntimeError("please specify both -Mbz and -Lbz");
+    // validate Lbz and Mbz:
+    if ((m_Lbz <= 0.0) && (m_Mbz > 1)) {
+      throw RuntimeError("BedThermalUnit can not be created with negative or zero Lbz value\n"
+                         "and more than one layers");
+    }
+
+    if (m_Mbz > 1) {
+      std::map<std::string, std::string> attrs;
+      attrs["units"] = "m";
+      attrs["long_name"] = "Z-coordinate in bedrock";
+      attrs["axis"] = "Z";
+      attrs["positive"] = "up";
+
+      std::vector<double> z(m_Mbz);
+      double dz = m_Lbz / (m_Mbz - 1);
+      for (unsigned int i = 0; i < m_Mbz; ++i) {
+        z[i] = -m_Lbz + i * dz;
+      }
+      z.back() = 0;
+      temp.create(grid, "litho_temp", "zb", z, attrs);
+
+      temp.set_attrs("model_state",
+                     "lithosphere (bedrock) temperature, in BedThermalUnit",
+                     "K", "");
+      temp.metadata().set_double("valid_min", 0.0);
     }
   }
-
-  // actual allocation:
-  if ((m_Lbz <= 0.0) && (m_Mbz > 1)) {
-    throw RuntimeError("BedThermalUnit can not be created with negative or zero Lbz value\n"
-                       "and more than one layers");
-  }
-
-  if (m_Mbz > 1) {
-    std::map<std::string, std::string> attrs;
-    attrs["units"] = "m";
-    attrs["long_name"] = "Z-coordinate in bedrock";
-    attrs["axis"] = "Z";
-    attrs["positive"] = "up";
-
-    std::vector<double> z(m_Mbz);
-    double dz = m_Lbz / (m_Mbz - 1);
-    for (unsigned int i = 0; i < m_Mbz; ++i) {
-      z[i] = -m_Lbz + i * dz;
-    }
-    z.back() = 0;
-    ierr = temp.create(grid, "litho_temp", "zb", z, attrs); CHKERRQ(ierr);
-
-    temp.set_attrs("model_state",
-                   "lithosphere (bedrock) temperature, in BedThermalUnit",
-                   "K", "");
-    temp.metadata().set_double("valid_min", 0.0);
-  }
-
-  return 0;
 }
 
 
