@@ -240,37 +240,35 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
 
 //! Print to stdout information on computational domain and grid (other than the vertical levels themselves).
 PetscErrorCode IceGrid::printInfo(const int verbosity) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(verbosity,com,
-         "  IceGrid parameters:\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,com,
-         "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m,\n",
-         Lx/1000.0,Ly/1000.0,Lz); CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,com,
-         "            x0 = %6.2f km, y0 = %6.2f km,   (coordinates of center)\n",
-                    x0/1000.0, y0/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,com,
-         "            Mx = %d, My = %d, Mz = %d,\n",
-         Mx,My,Mz); CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,com,
-         "            dx = %6.3f km, dy = %6.3f km, year = %s,\n",
-                    dx/1000.0,dy/1000.0, time->date().c_str()); CHKERRQ(ierr);
-  ierr = verbPrintf(verbosity,com,
-         "            Nx = %d, Ny = %d]\n",
-         Nx,Ny); CHKERRQ(ierr);
+  verbPrintf(verbosity,com,
+             "  IceGrid parameters:\n");
+  verbPrintf(verbosity,com,
+             "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m,\n",
+             Lx/1000.0,Ly/1000.0,Lz);
+  verbPrintf(verbosity,com,
+             "            x0 = %6.2f km, y0 = %6.2f km,   (coordinates of center)\n",
+             x0/1000.0, y0/1000.0);
+  verbPrintf(verbosity,com,
+             "            Mx = %d, My = %d, Mz = %d,\n",
+             Mx,My,Mz);
+  verbPrintf(verbosity,com,
+             "            dx = %6.3f km, dy = %6.3f km, year = %s,\n",
+             dx/1000.0,dy/1000.0, time->date().c_str());
+  verbPrintf(verbosity,com,
+             "            Nx = %d, Ny = %d]\n",
+             Nx,Ny);
   return 0;
 }
 
 
 //! Print the vertical levels in `zlevels[]` to stdout.
 PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(verbosity,com,
-     "    vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz); CHKERRQ(ierr);
+  verbPrintf(verbosity,com,
+             "    vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz);
   for (unsigned int k=0; k < Mz; k++) {
-    ierr = verbPrintf(verbosity,com," %5.4f,",zlevels[k]); CHKERRQ(ierr);
+    verbPrintf(verbosity,com," %5.4f,",zlevels[k]);
   }
-  ierr = verbPrintf(verbosity,com,"\n"); CHKERRQ(ierr);
+  verbPrintf(verbosity,com,"\n");
   return 0;
 }
 
@@ -621,56 +619,54 @@ double IceGrid::radius(int i, int j) {
 
 //! \brief Report grid parameters.
 PetscErrorCode IceGrid::report_parameters() {
-  PetscErrorCode ierr;
 
-  ierr = verbPrintf(2,com, "computational domain and grid:\n"); CHKERRQ(ierr);
+  verbPrintf(2,com, "computational domain and grid:\n");
 
   // report on grid
-  ierr = verbPrintf(2,com,
-           "                grid size   %d x %d x %d\n",
-           Mx,My,Mz); CHKERRQ(ierr);
+  verbPrintf(2,com,
+             "                grid size   %d x %d x %d\n",
+             Mx,My,Mz);
   // report on computational box
-  ierr = verbPrintf(2,com,
-           "           spatial domain   %.2f km x %.2f km x %.2f m\n",
-           2*Lx/1000.0,2*Ly/1000.0,Lz); CHKERRQ(ierr);
+  verbPrintf(2,com,
+             "           spatial domain   %.2f km x %.2f km x %.2f m\n",
+             2*Lx/1000.0,2*Ly/1000.0,Lz);
 
   // report on grid cell dims
-  ierr = verbPrintf(2,com,
-           "     horizontal grid cell   %.2f km x %.2f km\n",
-                    dx/1000.0,dy/1000.0); CHKERRQ(ierr);
+  verbPrintf(2,com,
+             "     horizontal grid cell   %.2f km x %.2f km\n",
+             dx/1000.0,dy/1000.0);
   if (ice_vertical_spacing == EQUAL) {
-    ierr = verbPrintf(2,com,
-           "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
-                    dzMIN); CHKERRQ(ierr);
+    verbPrintf(2,com,
+               "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
+               dzMIN);
   } else {
-    ierr = verbPrintf(2,com,
-           "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-                    Mz, dzMIN, dzMAX); CHKERRQ(ierr);
+    verbPrintf(2,com,
+               "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
+               Mz, dzMIN, dzMAX);
   }
-  ierr = verbPrintf(3,com,
-                    "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
-                    Mz_fine, dz_fine); CHKERRQ(ierr);
+  verbPrintf(3,com,
+             "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
+             Mz_fine, dz_fine);
   if (Mz_fine > 1000) {
-    ierr = verbPrintf(2,com,
-      "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
-      CHKERRQ(ierr);
+    verbPrintf(2,com,
+               "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
   }
 
   // report on time axis
   //   FIXME:  this could use pism_config:summary_time_unit_name instead of fixed "years"
-  ierr = verbPrintf(2, com,
-           "   time interval (length)   [%s, %s]  (%s years, using the '%s' calendar)\n",
-                    time->start_date().c_str(),
-                    time->end_date().c_str(),
-                    time->run_length().c_str(),
-                    time->calendar().c_str()); CHKERRQ(ierr);
+  verbPrintf(2, com,
+             "   time interval (length)   [%s, %s]  (%s years, using the '%s' calendar)\n",
+             time->start_date().c_str(),
+             time->end_date().c_str(),
+             time->run_length().c_str(),
+             time->calendar().c_str());
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
-  ierr = printInfo(3); CHKERRQ(ierr);
+  printInfo(3);
 
-  ierr = verbPrintf(5,com,
-       "  REALLY verbose output on IceGrid:\n"); CHKERRQ(ierr);
-  ierr = printVertLevels(5); CHKERRQ(ierr);
+  verbPrintf(5,com,
+             "  REALLY verbose output on IceGrid:\n");
+  printVertLevels(5);
 
   return 0;
 }

@@ -278,16 +278,16 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   if (has_attribute("units") && (!input_has_units)) {
     const std::string &units_string = get_string("units"),
       &long_name = get_string("long_name");
-    ierr = verbPrintf(2, m_com,
-                      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                      "              Assuming that it is in '%s'.\n",
-                      get_name().c_str(), long_name.c_str(),
-                      units_string.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, m_com,
+               "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+               "              Assuming that it is in '%s'.\n",
+               get_name().c_str(), long_name.c_str(),
+               units_string.c_str());
     input_units = get_units();
   }
 
   // Convert data:
-  ierr = convert_vec(v, input_units, get_units()); CHKERRQ(ierr);
+  convert_vec(v, input_units, get_units());
 
   return 0;
 }
@@ -363,10 +363,10 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 
     if (flag == OPTIONAL_FILL_MISSING ||
         flag == CRITICAL_FILL_MISSING) {
-      ierr = verbPrintf(2, m_com,
-                        "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-                        default_value, get_string("units").c_str(), get_name().c_str(),
-                        nc.inq_filename().c_str()); CHKERRQ(ierr);
+      verbPrintf(2, m_com,
+                 "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+                 default_value, get_string("units").c_str(), get_name().c_str(),
+                 nc.inq_filename().c_str());
 
       nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
                                  t_start, default_value, v);
@@ -386,28 +386,28 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     if (input_has_units == false) {
       input_units = get_units();
       if (get_string("units") != "") {
-        ierr = verbPrintf(2, m_com,
-                          "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                          "              Assuming that it is in '%s'.\n",
-                          get_name().c_str(),
-                          get_string("long_name").c_str(),
-                          get_string("units").c_str()); CHKERRQ(ierr);
+        verbPrintf(2, m_com,
+                   "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                   "              Assuming that it is in '%s'.\n",
+                   get_name().c_str(),
+                   get_string("long_name").c_str(),
+                   get_string("units").c_str());
       }
     }
 
     // Convert data:
-    ierr = convert_vec(v, input_units, get_units()); CHKERRQ(ierr);
+    convert_vec(v, input_units, get_units());
 
     // Read the valid range info:
     nc.read_valid_range(name_found, *this);
 
     // Check the range and warn the user if needed:
-    ierr = check_range(nc.inq_filename(), v); CHKERRQ(ierr);
+    check_range(nc.inq_filename(), v);
 
     if (do_report_range == true) {
       // We can report the success, and the range now:
-      ierr = verbPrintf(2, m_com, "  FOUND ");
-      ierr = this->report_range(v, found_by_standard_name); CHKERRQ(ierr);
+      verbPrintf(2, m_com, "  FOUND ");
+      this->report_range(v, found_by_standard_name);
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL ||
@@ -421,14 +421,13 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     UnitConverter c(this->get_units(), this->get_glaciological_units());
 
     std::string spacer(get_name().size(), ' ');
-    ierr = verbPrintf(2, m_com,
-                      "  absent %s / %-10s\n"
-                      "         %s \\ not found; using default constant %7.2f (%s)\n",
-                      get_name().c_str(),
-                      get_string("long_name").c_str(),
-                      spacer.c_str(), c(default_value),
-                      get_string("glaciological_units").c_str());
-    CHKERRQ(ierr);
+    verbPrintf(2, m_com,
+               "  absent %s / %-10s\n"
+               "         %s \\ not found; using default constant %7.2f (%s)\n",
+               get_name().c_str(),
+               get_string("long_name").c_str(),
+               spacer.c_str(), c(default_value),
+               get_string("glaciological_units").c_str());
     ierr = VecSet(v, default_value);
     PISM_PETSC_CHK(ierr, "VecSet");
   } // end of if (exists)
@@ -457,29 +456,29 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   if (has_attribute("standard_name")) {
 
     if (found_by_standard_name) {
-      ierr = verbPrintf(2, m_com,
-                        " %s / standard_name=%-10s\n"
-                        "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                        get_name().c_str(),
-                        get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                        get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+      verbPrintf(2, m_com,
+                 " %s / standard_name=%-10s\n"
+                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+                 get_name().c_str(),
+                 get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                 get_string("glaciological_units").c_str());
     } else {
-      ierr = verbPrintf(2, m_com,
-                        " %s / WARNING! standard_name=%s is missing, found by short_name\n"
-                        "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                        get_name().c_str(),
-                        get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                        get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+      verbPrintf(2, m_com,
+                 " %s / WARNING! standard_name=%s is missing, found by short_name\n"
+                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+                 get_name().c_str(),
+                 get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                 get_string("glaciological_units").c_str());
     }
 
   } else {
 
-    ierr = verbPrintf(2, m_com,
-                      " %s / %-10s\n"
-                      "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                      get_name().c_str(),
-                      get_string("long_name").c_str(), spacer.c_str(), min, max,
-                      get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+    verbPrintf(2, m_com,
+               " %s / %-10s\n"
+               "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+               get_name().c_str(),
+               get_string("long_name").c_str(), spacer.c_str(), min, max,
+               get_string("glaciological_units").c_str());
   }
 
   return 0;
@@ -765,8 +764,8 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
       continue;
     }
 
-    ierr = verbPrintf(verbosity_threshold, com, "  %s = \"%s\"\n",
-                      name.c_str(), value.c_str()); CHKERRQ(ierr);
+    verbPrintf(verbosity_threshold, com, "  %s = \"%s\"\n",
+               name.c_str(), value.c_str());
   }
 
   // Print double attributes:
@@ -782,11 +781,11 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
 
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
-      ierr = verbPrintf(verbosity_threshold, com, "  %s = %12.3e\n",
-                        name.c_str(), values[0]); CHKERRQ(ierr);
+      verbPrintf(verbosity_threshold, com, "  %s = %12.3e\n",
+                 name.c_str(), values[0]);
     } else {
-      ierr = verbPrintf(verbosity_threshold, com, "  %s = %12.5f\n",
-                        name.c_str(), values[0]); CHKERRQ(ierr);
+      verbPrintf(verbosity_threshold, com, "  %s = %12.5f\n",
+                 name.c_str(), values[0]);
     }
 
   }

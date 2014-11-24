@@ -159,9 +159,9 @@ int main(int argc, char *argv[])
   try {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,com, "PISM-MERGE %s (output file merging tool)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    verbPrintf(2,com, "PISM-MERGE %s (output file merging tool)\n",
+               PISM_Revision);
+    stop_on_version_option();
 
     bool i_set, o_set, var_name_set, compression_level_set;
     std::string i_name, o_name, var_name;

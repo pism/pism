@@ -514,27 +514,24 @@ DirichletData::DirichletData()
 
 DirichletData::~DirichletData() {
   if (m_indices != NULL) {
-    PetscErrorCode ierr;
-    ierr = verbPrintf(1, m_indices->get_grid()->com,
-                      "Warning: DirichletData destructing with IceModelVecs still accessed."
-                      " Looks like DirichletData::finish() was not called.");
-    CHKERRCONTINUE(ierr);
+    verbPrintf(1, m_indices->get_grid()->com,
+               "Warning: DirichletData destructing with IceModelVecs still accessed."
+               " Looks like DirichletData::finish() was not called.");
   }
 }
 
 PetscErrorCode DirichletData::init(IceModelVec2Int *indices, double weight) {
-  PetscErrorCode ierr = init_impl(indices, NULL, weight); CHKERRQ(ierr);
+  init_impl(indices, NULL, weight);
   return 0;
 }
 
 PetscErrorCode DirichletData::finish() {
-  PetscErrorCode ierr = finish_impl(NULL); CHKERRQ(ierr);
+  finish_impl(NULL);
   return 0;
 }
 
 PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *values,
                                         double weight) {
-  PetscErrorCode ierr;
   m_weight  = weight;
 
   if (indices != NULL) {

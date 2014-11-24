@@ -89,8 +89,8 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
   PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
 
   if (option_is_set) {
-    ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
-                      name.c_str()); CHKERRQ(ierr);
+    verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
+               name.c_str());
   }
 
   return 0;
@@ -132,22 +132,21 @@ PetscErrorCode stop_if_set(std::string name) {
 
 //! \brief Print a usage message.
 PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string usage) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(1,com,
-      "%s is a PISM (http://www.pism-docs.org) executable.\nOptions cheat-sheet:\n",
-      execname.c_str()); CHKERRQ(ierr);
-  ierr = verbPrintf(1,com,usage.c_str()); CHKERRQ(ierr);
-  ierr = verbPrintf(1,com,
-      "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
-      "For more help with PISM:\n"
-      "  1. download PDF User's Manual:\n"
-      "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
-      "  2. read browser for technical details:\n"
-      "       http://www.pism-docs.org/doxy/html/index.html\n"
-      "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
-      "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-      "  5. email for help:  help@pism-docs.org\n",
-      execname.c_str(), execname.c_str());  CHKERRQ(ierr);
+  verbPrintf(1,com,
+             "%s is a PISM (http://www.pism-docs.org) executable.\nOptions cheat-sheet:\n",
+             execname.c_str());
+  verbPrintf(1,com,usage.c_str());
+  verbPrintf(1,com,
+             "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
+             "For more help with PISM:\n"
+             "  1. download PDF User's Manual:\n"
+             "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
+             "  2. read browser for technical details:\n"
+             "       http://www.pism-docs.org/doxy/html/index.html\n"
+             "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
+             "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
+             "  5. email for help:  help@pism-docs.org\n",
+             execname.c_str(), execname.c_str());
   return 0;
 }
 

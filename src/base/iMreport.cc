@@ -219,8 +219,6 @@ void IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
                                           double delta_t,
                                           double volume,  double area,
                                           double /* meltfrac */,  double max_diffusivity) {
-
-  PetscErrorCode ierr;
   const bool do_energy = config.get_flag("do_energy");
   const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
@@ -238,11 +236,11 @@ void IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
   }
 
   if (printPrototype == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,
-                      "P         time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
-    ierr = verbPrintf(2,grid.com,
-                      "U         %s   %skm^3  %skm^2         m^2 s^-1       m/%s\n",
-                      tunitstr.c_str(),volscalestr,areascalestr,tunitstr.c_str());
+    verbPrintf(2,grid.com,
+               "P         time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
+    verbPrintf(2,grid.com,
+               "U         %s   %skm^3  %skm^2         m^2 s^-1       m/%s\n",
+               tunitstr.c_str(),volscalestr,areascalestr,tunitstr.c_str());
     return;
   }
 

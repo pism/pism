@@ -158,12 +158,12 @@ PetscErrorCode Timeseries::report_range() {
 
   std::string spacer(var.get_name().size(), ' ');
 
-  ierr = verbPrintf(2, com,
-                    "  FOUND  %s / %-60s\n"
-                    "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                    var.get_name().c_str(),
-                    var.get_string("long_name").c_str(), spacer.c_str(), min, max,
-                    var.get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+  verbPrintf(2, com,
+             "  FOUND  %s / %-60s\n"
+             "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+             var.get_name().c_str(),
+             var.get_string("long_name").c_str(), spacer.c_str(), min, max,
+             var.get_string("glaciological_units").c_str());
 
   return 0;
 }

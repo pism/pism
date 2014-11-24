@@ -232,9 +232,9 @@ void PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
 
   if (pdd_annualize) {
     if (my_t + my_dt > next_pdd_update) {
-      ierr = verbPrintf(3, grid.com,
-                        "  Updating mass balance for one year starting at %1.1f...\n",
-                        grid.time->date(my_t).c_str());
+      verbPrintf(3, grid.com,
+                 "  Updating mass balance for one year starting at %1.1f...\n",
+                 grid.time->date(my_t).c_str());
       update_internal(my_t, one_year);
       next_pdd_update = my_t + one_year;
     }

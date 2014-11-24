@@ -31,10 +31,9 @@ IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
 }
 
 PetscErrorCode IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(verbthresh, com, 
-                    "Using purely plastic till with eps = %10.5e m/year.\n",
-                    m_unit_system.convert(plastic_regularize, "m/s", "m/year")); CHKERRQ(ierr);
+  verbPrintf(verbthresh, com, 
+             "Using purely plastic till with eps = %10.5e m/year.\n",
+             m_unit_system.convert(plastic_regularize, "m/s", "m/year"));
 
   return 0;
 }
@@ -75,20 +74,18 @@ IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Con
 }
 
 PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
-  PetscErrorCode ierr;
 
   if (pseudo_q == 1.0) {
-    ierr = verbPrintf(verbthresh, com, 
-                      "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-                      m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year")); CHKERRQ(ierr);
+    verbPrintf(verbthresh, com, 
+               "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
+               m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year"));
   } else {
-    ierr = verbPrintf(verbthresh, com, 
-                      "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
-                      " and u_threshold = %.2f m/year.\n", 
-                      m_unit_system.convert(plastic_regularize, "m/s", "m/year"),
-                      pseudo_q,
-                      m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year"));
-    CHKERRQ(ierr);
+    verbPrintf(verbthresh, com, 
+               "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
+               " and u_threshold = %.2f m/year.\n", 
+               m_unit_system.convert(plastic_regularize, "m/s", "m/year"),
+               pseudo_q,
+               m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year"));
   }
 
   return 0;

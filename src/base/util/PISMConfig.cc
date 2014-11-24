@@ -333,10 +333,9 @@ void Config::set_keyword_from_option(const std::string &name, const std::string 
 
 //! Print all the attributes of a configuration variable.
 void Config::print_to_stdout(int vt) const {
-  PetscErrorCode ierr;
 
-  ierr = verbPrintf(vt, m_com, "PISM parameters read from %s:\n",
-                    m_config_filename.c_str());
+  verbPrintf(vt, m_com, "PISM parameters read from %s:\n",
+             m_config_filename.c_str());
 
   m_data.report_to_stdout(m_com, vt);
 

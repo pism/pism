@@ -54,9 +54,9 @@ int main(int argc, char *argv[]) {
   try {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    verbPrintf(2, com, "PISMV %s (verification mode)\n",
+               PISM_Revision);
+    stop_on_version_option();
 
     std::vector<std::string> required;
     required.push_back("-test");

@@ -353,7 +353,7 @@ void IceModelVec2T::update(unsigned int start) {
     m_metadata[0].regrid(nc, start + j,
                          CRITICAL, m_report_range, 0.0, m_v);
 
-    ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
+    verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
                       m_name.c_str(),
                       start + j,
                       grid->time->date(time[start + j]).c_str());

@@ -176,9 +176,9 @@ void IceModel::calculateFractureDensity() {
       } else if (uvel>=-dx*vvel/dy && vvel<=0.0) { //8
         tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
       } else {
-        ierr = verbPrintf(3,grid.com,
-                          "######### missing case of angle %f of %f and %f at %d, %d \n",
-                          atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
+        verbPrintf(3,grid.com,
+                   "######### missing case of angle %f of %f and %f at %d, %d \n",
+                   atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
       }
     }
     else{

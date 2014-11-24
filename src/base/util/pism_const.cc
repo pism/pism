@@ -76,16 +76,14 @@ ranks are ignored.
 
 Should not be used for reporting fatal errors.
  */
-PetscErrorCode verbPrintf(const int threshold, 
-                          MPI_Comm comm, const char format[], ...) {
+void verbPrintf(const int threshold, 
+                MPI_Comm comm, const char format[], ...) {
   PetscErrorCode ierr;
   int            rank;
 
-  PetscFunctionBegin;
-
   assert(1 <= threshold && threshold <= 5);
 
-  ierr = MPI_Comm_rank(comm, &rank); CHKERRQ(ierr);
+  ierr = MPI_Comm_rank(comm, &rank); PISM_CHK(ierr, 0, "MPI_Comm_rank");
   if (rank == 0) {
     va_list Argp;
     if (verbosityLevel >= threshold) {
@@ -101,7 +99,6 @@ PetscErrorCode verbPrintf(const int threshold,
       va_end(Argp);
     }
   }
-  PetscFunctionReturn(0);
 }
 
 

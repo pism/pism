@@ -42,7 +42,7 @@ bool is_increasing(const std::vector<double> &a);
 
 PetscErrorCode setVerbosityLevel(int level);
 int       getVerbosityLevel();
-PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
+void verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 
 std::string pism_timestamp();
 std::string pism_username_prefix(MPI_Comm com);
