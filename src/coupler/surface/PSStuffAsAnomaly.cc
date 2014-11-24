@@ -36,7 +36,6 @@ PSStuffAsAnomaly::~PSStuffAsAnomaly() {
 }
 
 PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
-  PetscErrorCode ierr;
 
   mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   mass_flux.set_attrs("climate_state",

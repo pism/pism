@@ -37,7 +37,6 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
   variables  = NULL;
   hold_bmelt = false;
 
-  PetscErrorCode ierr1, ierr2;
   total_input.create(grid, "total_input", WITHOUT_GHOSTS);
   total_input.set_attrs("internal",
                         "hydrology model workspace for total input rate into subglacial water layer",

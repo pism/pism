@@ -184,7 +184,6 @@ public:
   //! Sets the initial guess for minimization iterations. If this isn't set explicitly,
   //  the parameter \f$d0\f$ appearing the in the Tikhonov functional will be used.
   virtual PetscErrorCode setInitialGuess(DesignVec &d) {
-    PetscErrorCode ierr;
     m_dGlobal.copy_from(d);
     return 0;
   }
@@ -277,7 +276,6 @@ template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhon
 
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::construct() {
-  PetscErrorCode ierr;
 
   m_grid = m_d0.get_grid();
 
@@ -305,7 +303,6 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikhonovProblem() {}
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
-  PetscErrorCode ierr;
   typedef TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,&IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
   ObjGradCallback::connect(tao,*this);
   TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
@@ -319,7 +316,6 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 }
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::monitorTao(Tao tao) {
-  PetscErrorCode ierr;
   
   PetscInt its;
   TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL);
@@ -336,7 +332,6 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 }
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::convergenceTest(Tao tao) {
-  PetscErrorCode ierr;
   double designNorm, stateNorm, sumNorm;
   double dWeight, sWeight;
   dWeight = 1/m_eta;
@@ -360,7 +355,6 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 }
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient) {
-  PetscErrorCode ierr;
 
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
   m_d.copy_from_vec(x);

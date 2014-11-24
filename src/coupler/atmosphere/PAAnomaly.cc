@@ -35,7 +35,6 @@ PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
 }
 
 PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
-  PetscErrorCode ierr;
 
   option_prefix  = "-atmosphere_anomaly";
 

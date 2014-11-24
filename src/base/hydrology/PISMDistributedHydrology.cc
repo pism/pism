@@ -42,7 +42,6 @@ DistributedHydrology::~DistributedHydrology() {
 }
 
 PetscErrorCode DistributedHydrology::allocate_pressure() {
-  PetscErrorCode ierr;
 
   // additional variables beyond RoutingHydrology::allocate()
   P.create(grid, "bwp", WITH_GHOSTS, 1);

@@ -199,7 +199,6 @@ IceModel::~IceModel() {
   All the memory allocated here is freed by IceModelVecs' destructors.
 */
 void IceModel::createVecs() {
-  PetscErrorCode ierr;
 
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 

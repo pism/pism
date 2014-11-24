@@ -126,20 +126,17 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::destruct() {
-  PetscErrorCode ierr;
   KSPDestroy(&m_ksp);
   MatDestroy(&m_mat_GN);
   return 0;
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
-  PetscErrorCode ierr;
   m_ssaforward.linearize_at(m_d0,reason);
   return 0;
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
-  PetscErrorCode ierr;
   this->apply_GN(x.get_vec(),y.get_vec());
   return 0; 
 }
@@ -172,7 +169,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
-  PetscErrorCode ierr;
 
   rhs.set(0);
   
@@ -214,7 +210,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
-  PetscErrorCode ierr;
   
   m_ssaforward.apply_linearization(h,m_tmp_S1Local);
   m_tmp_S1Local.update_ghosts();
@@ -237,7 +232,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, do
 
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
-  PetscErrorCode ierr;
 
   double designNorm, stateNorm, sumNorm;
   double dWeight, sWeight;
@@ -291,7 +285,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
-  PetscErrorCode ierr;
 
   m_ssaforward.linearize_at(m_d,reason);
   if (reason->failed()) {
@@ -372,7 +365,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
-  PetscErrorCode ierr;
 
 
   if (m_target_misfit == 0) {

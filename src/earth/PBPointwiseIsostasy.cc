@@ -37,7 +37,6 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const Config &conf)
 }
 
 PetscErrorCode PBPointwiseIsostasy::allocate() {
-  PetscErrorCode ierr;
 
   thk_last.create(grid, "thk_last", WITH_GHOSTS, config.get("grid_max_stencil_width"));
 

@@ -154,7 +154,6 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
 }
 
 void PSB_velbar_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
   IceModelVec *tmp;
   IceModelVec2V *velbar_vec;
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness"),

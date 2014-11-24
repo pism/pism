@@ -35,7 +35,6 @@ POGiven::~POGiven() {
 }
 
 PetscErrorCode POGiven::allocate_POGiven() {
-  PetscErrorCode ierr;
   option_prefix   = "-ocean_given";
 
   // will be de-allocated by the parent's destructor

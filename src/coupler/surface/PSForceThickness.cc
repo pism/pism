@@ -51,7 +51,6 @@ void PSForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
 }
 
 PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
-  PetscErrorCode ierr;
   m_ice_thickness = NULL;
   m_alpha = config.get("force_to_thickness_alpha", "yr-1", "s-1");
   m_alpha_ice_free_factor = config.get("force_to_thickness_ice_free_alpha_factor");

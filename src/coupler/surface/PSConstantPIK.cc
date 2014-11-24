@@ -43,7 +43,6 @@ void PSConstantPIK::attach_atmosphere_model(AtmosphereModel *input)
 }
 
 PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
-  PetscErrorCode ierr;
 
   climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("climate_state",

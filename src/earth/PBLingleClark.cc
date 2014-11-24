@@ -46,7 +46,6 @@ PBLingleClark::~PBLingleClark() {
 }
 
 PetscErrorCode PBLingleClark::allocate() {
-  PetscErrorCode ierr;
 
   topg_initial.allocate_proc0_copy(Hp0);
   topg_initial.allocate_proc0_copy(bedp0);

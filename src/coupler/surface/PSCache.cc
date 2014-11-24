@@ -40,7 +40,6 @@ PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
 }
 
 PetscErrorCode PSCache::allocate_PSCache() {
-  PetscErrorCode ierr;
 
   m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("climate_state",

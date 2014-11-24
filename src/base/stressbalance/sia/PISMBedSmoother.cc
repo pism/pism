@@ -58,7 +58,6 @@ BedSmoother::~BedSmoother() {
 }
 
 PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
-  PetscErrorCode ierr;
 
   // allocate Vecs that live on all procs; all have to be as "wide" as any of
   //   their prospective uses
@@ -121,7 +120,6 @@ average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
 PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
-  PetscErrorCode ierr;
 
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
@@ -158,7 +156,6 @@ average.
  */
 PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
                                                int Nx_in, int Ny_in) {
-  PetscErrorCode ierr;
 
   if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
     throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
@@ -399,7 +396,6 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 Call preprocess_bed() first.
  */
 PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
-  PetscErrorCode ierr;
 
   if ((Nx < 0) || (Ny < 0)) {
     theta->set(1.0);

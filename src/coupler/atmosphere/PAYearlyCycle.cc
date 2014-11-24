@@ -42,7 +42,6 @@ PAYearlyCycle::~PAYearlyCycle() {
 }
 
 PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
-  PetscErrorCode ierr;
 
   m_snow_temp_july_day = config.get("snow_temp_july_day");
 

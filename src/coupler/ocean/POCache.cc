@@ -40,7 +40,6 @@ POCache::POCache(IceGrid &g, const Config &conf, OceanModel* in)
 }
 
 PetscErrorCode POCache::allocate_POCache() {
-  PetscErrorCode ierr;
 
   m_shelf_base_mass_flux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS);
   m_shelf_base_mass_flux.set_attrs("climate_state",

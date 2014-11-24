@@ -69,7 +69,6 @@ MohrCoulombYieldStress::~MohrCoulombYieldStress() {
 
 
 PetscErrorCode MohrCoulombYieldStress::allocate() {
-  PetscErrorCode ierr;
 
   m_till_phi.create(grid, "tillphi", WITH_GHOSTS, config.get("grid_max_stencil_width"));
   m_till_phi.set_attrs("model_state",

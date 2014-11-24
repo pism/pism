@@ -108,7 +108,6 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
 
 PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 {
-  PetscErrorCode ierr;
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);

@@ -42,7 +42,6 @@ BedDef::BedDef(IceGrid &g, const Config &conf)
 }
 
 PetscErrorCode BedDef::pismbeddef_allocate() {
-  PetscErrorCode ierr;
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);

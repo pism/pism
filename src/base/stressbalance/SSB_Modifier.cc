@@ -26,7 +26,6 @@
 namespace pism {
 
 PetscErrorCode SSB_Modifier::allocate() {
-  PetscErrorCode ierr;
 
   u.create(grid, "uvel", WITH_GHOSTS);
   u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",

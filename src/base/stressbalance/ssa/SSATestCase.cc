@@ -30,7 +30,6 @@ namespace pism {
 //! (ice elevation, thickness, etc.)  
 PetscErrorCode SSATestCase::buildSSACoefficients()
 {
-  PetscErrorCode ierr;
 
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
   

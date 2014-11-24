@@ -70,7 +70,6 @@ POGivenTH::~POGivenTH() {
 }
 
 PetscErrorCode POGivenTH::allocate_POGivenTH() {
-  PetscErrorCode ierr;
   option_prefix   = "-ocean_th";
 
   // will be de-allocated by the parent's destructor

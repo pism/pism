@@ -61,8 +61,6 @@ public:
   virtual void define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype)
   {
     std::set<std::string> vars = vars_input;
-    PetscErrorCode ierr;
-
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       if (set_contains(vars, k->first)) {

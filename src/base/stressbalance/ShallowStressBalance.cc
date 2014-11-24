@@ -47,7 +47,6 @@ ShallowStressBalance::~ShallowStressBalance() {
 
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
-  PetscErrorCode ierr;
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   if (config.get_flag("do_pseudo_plastic_till") == true) {

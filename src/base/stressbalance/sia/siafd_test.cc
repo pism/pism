@@ -49,8 +49,6 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
                                   IceGrid &grid,
                                   double &gmax_strain_heating_err,
                                   double &gav_strain_heating_err) {
-
-  PetscErrorCode ierr;
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
   const int Mz = grid.Mz;
 
@@ -118,8 +116,6 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
                                             double &gavUerr,
                                             double &gmaxWerr,
                                             double &gavWerr) {
-
-  PetscErrorCode ierr;
   double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
   const double LforFG = 750000; // m
@@ -171,7 +167,6 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
                                               IceModelVec2S &thickness,
                                               IceModelVec3 &temperature,
                                               IceModelVec3 &enthalpy) {
-  PetscErrorCode ierr;
 
   IceModelVec::AccessList list;
   list.add(temperature);
@@ -207,7 +202,6 @@ PetscErrorCode setInitStateF(IceGrid &grid,
                              IceModelVec2S *surface,
                              IceModelVec2S *thickness,
                              IceModelVec3 *enthalpy) {
-  PetscErrorCode ierr;
   int        Mz=grid.Mz;
   double     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
 
@@ -268,7 +262,6 @@ PetscErrorCode reportErrors(const Config &config,
                             IceModelVec3 *u_sia, IceModelVec3 *v_sia,
                             IceModelVec3 *w_sia,
                             IceModelVec3 *strain_heating) {
-  PetscErrorCode ierr;
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   double max_strain_heating_error, av_strain_heating_error;

@@ -38,7 +38,6 @@ PSAnomaly::~PSAnomaly() {
 }
 
 PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
-  PetscErrorCode ierr;
   option_prefix  = "-surface_anomaly";
 
   // will be de-allocated by the parent's destructor

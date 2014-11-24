@@ -38,7 +38,6 @@ PSGivenClimate::~PSGivenClimate() {
 }
 
 PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
-  PetscErrorCode ierr;
 
   ice_surface_temp      = new IceModelVec2T;
   climatic_mass_balance = new IceModelVec2T;

@@ -39,7 +39,6 @@ m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
-  PetscErrorCode ierr;
 
   IceGrid &grid = *m_d0.get_grid();
 
@@ -93,7 +92,6 @@ IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL()
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::destruct() {
-  PetscErrorCode ierr;
   MatDestroy(&m_Jstate);
   MatDestroy(&m_Jdesign);
 
@@ -101,7 +99,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::destruct() {
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
-  PetscErrorCode ierr;
   m_dGlobal.copy_from(d0);
   return 0;
 }
@@ -147,7 +144,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao /*tao*/, Vec x, double *value, Vec gradient) {
-  PetscErrorCode ierr;
 
   m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
   m_uGlobal.scale(m_velocityScale);
@@ -176,7 +172,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x,TerminationReason::Ptr &reason) {
-  PetscErrorCode ierr;
   m_d.copy_from(m_dGlobal);
   m_ssaforward.linearize_at(m_d,reason);
   if (reason->failed()) {
@@ -215,7 +210,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, 
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat /*Jpc*/, Mat /*Jinv*/, MatStructure *s) {
-  PetscErrorCode ierr;
 
   m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
   m_uGlobal.scale(m_velocityScale);
@@ -233,7 +227,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState
 }
 
 PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec x, Mat /*Jdesign*/) {
-  PetscErrorCode ierr;
   // I'm not sure if the following are necessary (i.e. will the copies that happen
   // in evaluateObjectiveAndGradient be sufficient) but we'll do them here
   // just in case.
@@ -275,7 +268,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTr
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y) {
-  PetscErrorCode ierr;
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
   MatShellGetContext(A,&ctx);
   ctx->applyConstraintsJacobianDesign(x,y);
@@ -284,7 +276,6 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x,
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
-  PetscErrorCode ierr;
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
   MatShellGetContext(A,&ctx);
   ctx->applyConstraintsJacobianDesignTranspose(x,y);

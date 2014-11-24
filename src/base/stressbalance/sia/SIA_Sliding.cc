@@ -27,7 +27,6 @@
 namespace pism {
 
 PetscErrorCode SIA_Sliding::allocate() {
-  PetscErrorCode ierr;
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   for (int i = 0; i < 2; ++i) {

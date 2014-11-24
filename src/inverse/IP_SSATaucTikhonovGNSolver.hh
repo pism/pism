@@ -64,7 +64,6 @@ public:
   }
 
   virtual PetscErrorCode setInitialGuess(DesignVec &d) {
-    PetscErrorCode ierr;
     m_d.copy_from(d);
     return 0;
   }

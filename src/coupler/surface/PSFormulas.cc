@@ -31,7 +31,6 @@ PSFormulas::PSFormulas(IceGrid &g, const Config &conf)
 }
 
 PetscErrorCode PSFormulas::allocate() {
-  PetscErrorCode ierr;
 
   m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_climatic_mass_balance.set_attrs("internal",

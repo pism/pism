@@ -68,8 +68,6 @@ void BTU_Test::bootstrap() {
 
 
 static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
-
-  PetscErrorCode ierr;
   IceModelVec2S *bedtoptemp = new IceModelVec2S,
                 *ghf        = new IceModelVec2S;
 

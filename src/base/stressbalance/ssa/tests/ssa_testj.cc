@@ -81,7 +81,6 @@ PetscErrorCode SSATestCaseJ::initializeSSAModel()
 
 PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 {
-  PetscErrorCode ierr;
   tauc.set(0.0);    // irrelevant for test J
   bed.set(0.0); // assures shelf is floating
   ice_mask.set(MASK_FLOATING);

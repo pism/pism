@@ -111,7 +111,6 @@ public:
     This method returns the vector \f$y\f$.
   */
   virtual PetscErrorCode interior_product(IMVecType &x, IMVecType &y) {
-    PetscErrorCode ierr;
     this->gradientAt(x, y);
     y.scale(0.5);
     return 0;

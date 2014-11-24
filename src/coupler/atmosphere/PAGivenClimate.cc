@@ -40,7 +40,6 @@ PAGivenClimate::~PAGivenClimate() {
 }
 
 PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
-  PetscErrorCode ierr;
 
   // will be de-allocated by the parent's destructor
   precipitation = new IceModelVec2T;

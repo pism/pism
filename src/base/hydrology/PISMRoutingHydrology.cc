@@ -38,7 +38,6 @@ RoutingHydrology::~RoutingHydrology() {
 }
 
 PetscErrorCode RoutingHydrology::allocate() {
-  PetscErrorCode ierr;
 
   // model state variables; need ghosts
   W.create(grid, "bwat", WITH_GHOSTS, 1);

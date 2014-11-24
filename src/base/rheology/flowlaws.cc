@@ -111,7 +111,6 @@ double IceFlowLaw::hardness_parameter(double E, double p) const {
 PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
                                                  IceModelVec3  &enthalpy,
                                                  IceModelVec2S &hardav) const {
-  PetscErrorCode ierr;
 
   IceGrid *grid = thickness.get_grid();
 

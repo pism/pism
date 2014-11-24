@@ -44,7 +44,6 @@ SIAFD::~SIAFD() {
 
 //! \brief Allocate the SIAFD module.
 PetscErrorCode SIAFD::allocate() {
-  PetscErrorCode ierr;
 
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 

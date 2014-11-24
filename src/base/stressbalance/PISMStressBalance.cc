@@ -46,7 +46,6 @@ StressBalance::~StressBalance() {
 }
 
 PetscErrorCode StressBalance::allocate() {
-  PetscErrorCode ierr;
 
   // allocate the vertical velocity field:
   m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS);

@@ -49,7 +49,6 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
 }
 
 PetscErrorCode PSTemperatureIndex_Old::allocate_PSTemperatureIndex_Old() {
-  PetscErrorCode ierr;
 
   climatic_mass_balance.create(grid, mass_balance_name, WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("diagnostic",
@@ -220,7 +219,6 @@ void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool
 }
 
 void PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
-  PetscErrorCode ierr;
 
   PetscReal one_year = grid.convert(1.0, "years", "seconds");
 

@@ -603,7 +603,6 @@ void IceCompModel::fillSolnTestE() {
 
 
 void IceCompModel::fillSolnTestL() {
-  PetscErrorCode  ierr;
 
   vHexactL.update_ghosts();
   ice_thickness.copy_from(vHexactL);

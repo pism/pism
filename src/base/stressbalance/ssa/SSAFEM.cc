@@ -250,8 +250,6 @@ void SSAFEM::cacheQuadPtValues() {
     *Enth_e[4],
     *Enth_q[4];
 
-  PetscErrorCode ierr;
-
   double ice_density = config.get("ice_density");
 
   for (unsigned int q=0; q<FEQuadrature::Nq; q++) {

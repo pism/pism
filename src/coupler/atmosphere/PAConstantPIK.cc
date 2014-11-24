@@ -34,7 +34,6 @@ PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
 }
 
 PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
-  PetscErrorCode ierr;
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
   // create mean annual ice equivalent precipitation rate (before separating

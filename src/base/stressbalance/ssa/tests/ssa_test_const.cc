@@ -107,7 +107,6 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
 
 PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 {
-  PetscErrorCode ierr;
 
   // Force linear rheology
   ssa->strength_extension->set_notional_strength(nu0 * H0);
