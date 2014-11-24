@@ -28,14 +28,12 @@ namespace pism {
 IcebergRemover::IcebergRemover(IceGrid &g, const Config &conf)
   : Component(g, conf) {
 
-  PetscErrorCode ierr = allocate();
-  if (ierr != 0) {
-    throw std::runtime_error("IcebergRemover allocation failed");
-  }
+  m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS);
+  m_iceberg_mask.allocate_proc0_copy(m_mask_p0);
 }
 
 IcebergRemover::~IcebergRemover() {
-  PetscErrorCode ierr = deallocate(); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = VecDestroy(&m_mask_p0); CHKERRCONTINUE(ierr);
 }
 
 void IcebergRemover::init(Vars &vars) {
@@ -146,22 +144,6 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   // elevation can be updated redundantly)
   pism_mask.update_ghosts();
   ice_thickness.update_ghosts();
-}
-
-PetscErrorCode IcebergRemover::allocate() {
-
-  m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS);
-  m_iceberg_mask.allocate_proc0_copy(m_mask_p0);
-
-  return 0;
-}
-
-PetscErrorCode IcebergRemover::deallocate() {
-  PetscErrorCode ierr;
-
-  ierr = VecDestroy(&m_mask_p0); CHKERRCONTINUE(ierr);
-
-  return 0;
 }
 
 void IcebergRemover::add_vars_to_output(const std::string &, std::set<std::string> &) {

@@ -50,9 +50,6 @@ public:
 
   virtual void init(Vars &vars);
   void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
-private:
-  PetscErrorCode allocate();
-  PetscErrorCode deallocate();
 protected:
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
