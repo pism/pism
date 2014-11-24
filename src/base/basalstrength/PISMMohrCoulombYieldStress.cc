@@ -58,18 +58,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid &g,
   m_mask           = NULL;
   m_hydrology      = hydro;
 
-  if (allocate() != 0) {
-    throw std::runtime_error("MohrCoulombYieldStress allocation failed");
-  }
-}
-
-MohrCoulombYieldStress::~MohrCoulombYieldStress() {
-  // empty
-}
-
-
-PetscErrorCode MohrCoulombYieldStress::allocate() {
-
   m_till_phi.create(grid, "tillphi", WITH_GHOSTS, config.get("grid_max_stencil_width"));
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
@@ -101,8 +89,10 @@ PetscErrorCode MohrCoulombYieldStress::allocate() {
   m_Po.set_attrs("internal",
                  "copy of overburden pressure held by MohrCoulombYieldStress",
                  "Pa", "");
+}
 
-  return 0;
+MohrCoulombYieldStress::~MohrCoulombYieldStress() {
+  // empty
 }
 
 

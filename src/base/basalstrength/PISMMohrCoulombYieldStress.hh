@@ -58,8 +58,6 @@ protected:
 
   void topg_to_phi();
   void tauc_to_phi();
-private:
-  PetscErrorCode allocate();
 };
 
 } // end of namespace pism
