@@ -239,7 +239,6 @@ to this method.
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                                IceModelVec2S &dzeta,
                                                                Vector2 **du_a) {
-  PetscErrorCode ierr;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -286,7 +285,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                    m_dirichletWeight);
   DirichletData_Scalar fixedZeta;
-  ierr = fixedZeta.init(m_fixed_tauc_locations, NULL);
+  fixedZeta.init(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();

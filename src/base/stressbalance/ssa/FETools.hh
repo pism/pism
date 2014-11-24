@@ -272,7 +272,7 @@ public:
 
   void localToGlobal(int k, int *i, int *j);
 
-  PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
+  void addLocalJacobianBlock(const double *K, Mat J);
 
   static const unsigned int Nk = 4; //<! The number of test functions defined on an element.
   
@@ -470,15 +470,15 @@ class DirichletData {
 public:
   DirichletData();
   ~DirichletData();
-  PetscErrorCode init(IceModelVec2Int *indices, double weight = 1.0);
+  void init(IceModelVec2Int *indices, double weight = 1.0);
   void constrain(FEDOFMap &dofmap);
   operator bool() {
     return m_indices != NULL;
   }
-  PetscErrorCode finish();
+  void finish();
 protected:
-  PetscErrorCode init_impl(IceModelVec2Int *indices, IceModelVec *values, double weight = 1.0);
-  PetscErrorCode finish_impl(IceModelVec *values);
+  void init_impl(IceModelVec2Int *indices, IceModelVec *values, double weight = 1.0);
+  void finish_impl(IceModelVec *values);
   double           m_indices_e[FEQuadrature::Nk];
   IceModelVec2Int *m_indices;
   double           m_weight;
@@ -487,13 +487,13 @@ protected:
 class DirichletData_Scalar : public DirichletData {
 public:
   DirichletData_Scalar();
-  PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2S *values, double weight = 1.0);
+  void init(IceModelVec2Int *indices, IceModelVec2S *values, double weight = 1.0);
   void update(FEDOFMap &dofmap, double* x_e);
   void update_homogeneous(FEDOFMap &dofmap, double* x_e);
   void fix_residual(const double **x, double **r);
   void fix_residual_homogeneous(double **r_global);
-  PetscErrorCode fix_jacobian(Mat J);
-  PetscErrorCode finish();
+  void fix_jacobian(Mat J);
+  void finish();
 protected:
   IceModelVec2S *m_values;
 };
@@ -501,13 +501,13 @@ protected:
 class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector();
-  PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
+  void init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
   void update(FEDOFMap &dofmap, Vector2* x_e);
   void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
   void fix_residual(const Vector2 **x, Vector2 **r);
   void fix_residual_homogeneous(Vector2 **r);
-  PetscErrorCode fix_jacobian(Mat J);
-  PetscErrorCode finish();
+  void fix_jacobian(Mat J);
+  void finish();
 protected:
   IceModelVec2V *m_values;
 };

@@ -23,8 +23,6 @@ namespace pism {
 
 PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  PetscErrorCode   ierr;
-
   // The value of the objective
   double value = 0;
 
@@ -38,7 +36,7 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
-  ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
@@ -69,16 +67,14 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double
     } // j
   } // i
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
+  GlobalSum(m_grid.com, &value,  OUTPUT);
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  dirichletBC.finish();
 
   return 0;
 }
 
 PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
-
-  PetscErrorCode   ierr;
 
   // The value of the objective
   double value = 0;
@@ -97,7 +93,7 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVe
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
-  ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
@@ -134,9 +130,9 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVe
     } // j
   } // i
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
+  GlobalSum(m_grid.com, &value,  OUTPUT);
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  dirichletBC.finish();
 
   return 0;
 }
@@ -270,7 +266,7 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
           } // l
         } // k
       } // q
-      ierr = m_dofmap.addLocalJacobianBlock(&K[0][0], form);
+      m_dofmap.addLocalJacobianBlock(&K[0][0], form);
     } // j
   } // i
 

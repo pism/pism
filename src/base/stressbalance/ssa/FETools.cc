@@ -21,7 +21,9 @@
 #include "FETools.hh"
 #include "flowlaws.hh"
 #include "IceGrid.hh"
-#include <assert.h>
+#include <cassert>
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -261,10 +263,10 @@ void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
  *  markRowInvalid() and markColInvalid() are ignored. (Just as they
  *  should be.)
  */
-PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
+void FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row,
-                                                   Nk, m_col, K, ADD_VALUES); CHKERRQ(ierr);
-  return 0;
+                                                   Nk, m_col, K, ADD_VALUES);
+  PISM_PETSC_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
 const int FEDOFMap::kIOffset[4] = {0, 1, 1, 0};
@@ -520,17 +522,15 @@ DirichletData::~DirichletData() {
   }
 }
 
-PetscErrorCode DirichletData::init(IceModelVec2Int *indices, double weight) {
+void DirichletData::init(IceModelVec2Int *indices, double weight) {
   init_impl(indices, NULL, weight);
-  return 0;
 }
 
-PetscErrorCode DirichletData::finish() {
+void DirichletData::finish() {
   finish_impl(NULL);
-  return 0;
 }
 
-PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *values,
+void DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *values,
                                         double weight) {
   m_weight  = weight;
 
@@ -542,11 +542,9 @@ PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *v
   if (values != NULL) {
     values->begin_access();
   }
-
-  return 0;
 }
 
-PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
+void DirichletData::finish_impl(IceModelVec *values) {
   if (m_indices != NULL) {
     m_indices->end_access();
     m_indices = NULL;
@@ -555,8 +553,6 @@ PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
   if (values != NULL) {
     values->end_access();
   }
-
-  return 0;
 }
 
 void DirichletData::constrain(FEDOFMap &dofmap) {
@@ -576,12 +572,10 @@ DirichletData_Scalar::DirichletData_Scalar()
   : m_values(NULL) {
 }
 
-PetscErrorCode DirichletData_Scalar::init(IceModelVec2Int *indices, IceModelVec2S *values,
+void DirichletData_Scalar::init(IceModelVec2Int *indices, IceModelVec2S *values,
                                           double weight) {
   m_values = values;
   init_impl(indices, m_values, weight);
-
-  return 0;
 }
 
 void DirichletData_Scalar::update(FEDOFMap &dofmap, double* x_local) {
@@ -636,7 +630,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
   }
 }
 
-PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
+void DirichletData_Scalar::fix_jacobian(Mat J) {
   IceGrid *grid = m_indices->get_grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
@@ -657,13 +651,11 @@ PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
                                  ADD_VALUES);
     }
   }
-  return 0;
 }
 
-PetscErrorCode DirichletData_Scalar::finish() {
+void DirichletData_Scalar::finish() {
   finish_impl(m_values);
   m_values = NULL;
-  return 0;
 }
 
 // Vector version
@@ -672,12 +664,10 @@ DirichletData_Vector::DirichletData_Vector()
   : m_values(NULL) {
 }
 
-PetscErrorCode DirichletData_Vector::init(IceModelVec2Int *indices, IceModelVec2V *values,
+void DirichletData_Vector::init(IceModelVec2Int *indices, IceModelVec2V *values,
                                           double weight) {
   m_values = values;
   init_impl(indices, m_values, weight);
-
-  return 0;
 }
 
 void DirichletData_Vector::update(FEDOFMap &dofmap, Vector2* x_local) {
@@ -736,7 +726,7 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
   }
 }
 
-PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
+void DirichletData_Vector::fix_jacobian(Mat J) {
   IceGrid &grid = *m_indices->get_grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
@@ -758,13 +748,11 @@ PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
                                  ADD_VALUES);
     }
   }
-  return 0;
 }
 
-PetscErrorCode DirichletData_Vector::finish() {
+void DirichletData_Vector::finish() {
   finish_impl(m_values);
   m_values = NULL;
-  return 0;
 }
 
 } // end of namespace pism

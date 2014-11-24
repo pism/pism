@@ -706,7 +706,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
           } // l
         } // k
       } // q
-      ierr = m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
+      m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
     } // j
   } // i
 
