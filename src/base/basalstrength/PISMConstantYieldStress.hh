@@ -29,14 +29,8 @@ namespace pism {
 class ConstantYieldStress : public YieldStress
 {
 public:
-  ConstantYieldStress(IceGrid &g, const Config &conf)
-    : YieldStress(g, conf)
-  {
-    if (allocate() != 0) {
-      throw std::runtime_error("ConstantYieldStress allocation failed");
-    }
-  }
-  virtual ~ConstantYieldStress() {}
+  ConstantYieldStress(IceGrid &g, const Config &conf);
+  virtual ~ConstantYieldStress();
 
   virtual void init(Vars &vars);
 
@@ -52,8 +46,6 @@ public:
   virtual void basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2S tauc;
-private:
-  PetscErrorCode allocate();
 };
 
 } // end of namespace pism

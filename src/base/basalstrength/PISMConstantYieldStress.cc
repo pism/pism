@@ -22,6 +22,19 @@
 
 namespace pism {
 
+ConstantYieldStress::ConstantYieldStress(IceGrid &g, const Config &conf)
+  : YieldStress(g, conf) {
+  tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  // PROPOSED standard_name = land_ice_basal_material_yield_stress
+  tauc.set_attrs("model_state", 
+                 "yield stress for basal till (plastic or pseudo-plastic model)",
+                 "Pa", "");
+}
+
+ConstantYieldStress::~ConstantYieldStress () {
+  // empty
+}
+
 void ConstantYieldStress::init(Vars &/*vars*/) {
   bool i_set, bootstrap, tauc_set;
   double constant_tauc = config.get("default_tauc");
@@ -86,15 +99,5 @@ void ConstantYieldStress::update(double my_t, double my_dt) {
 void ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
   tauc.copy_to(result);
 }
-
-PetscErrorCode ConstantYieldStress::allocate() {
-  tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width"));
-  // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  tauc.set_attrs("model_state", 
-                 "yield stress for basal till (plastic or pseudo-plastic model)",
-                 "Pa", "");
-  return 0;
-}
-
 
 } // end of namespace pism
