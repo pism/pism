@@ -146,7 +146,7 @@ PetscErrorCode SSA::allocate() {
     ice_factory.setType(config.get_string("ssa_flow_law"));
 
     ice_factory.setFromOptions();
-    ice_factory.create(&flow_law);
+    flow_law = ice_factory.create();
   }
 
   return 0;

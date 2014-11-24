@@ -66,7 +66,7 @@ ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Confi
   ice_factory.setType(config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();
-  ice_factory.create(&flow_law);
+  flow_law = ice_factory.create();
 }
 
 ConstantInColumn::~ConstantInColumn()
