@@ -82,21 +82,20 @@ public:
   ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
-  PetscErrorCode set_default(std::string name) {
+  void set_default(std::string name) {
     if (m_models.find(name) == m_models.end()) {
       throw RuntimeError::formatted("type %s is not registered", name.c_str());
     } else {
       m_default_type = name;
     }
-    return 0;
   }
 
   //! Creates a boundary model. Processes command-line options.
-  PetscErrorCode create(Model* &result) {
-    PetscErrorCode ierr;
+  Model* create() {
     std::vector<std::string> choices;
     std::string model_list, modifier_list, descr;
     bool flag = false;
+    Model* result = NULL;
 
     // build a list of available models:
     typename std::map<std::string, ModelCreatorPtr >::iterator k;
@@ -120,7 +119,7 @@ public:
       " Available modifiers: " + modifier_list;
 
     // Get the command-line option:
-    ierr = OptionsStringArray("-" + m_option, descr, m_default_type, choices, flag); CHKERRQ(ierr);
+    OptionsStringArray("-" + m_option, descr, m_default_type, choices, flag);
 
     if (choices.empty()) {
       if (flag == true) {
@@ -158,7 +157,7 @@ public:
       ++j;
     }
 
-    return 0;
+    return result;
   }
 
   //! Adds a boundary model to the dictionary.

@@ -825,15 +825,15 @@ void IceModel::allocate_couplers() {
   AtmosphereModel *atmosphere;
 
   if (surface == NULL) {
-    ps.create(surface);
+    surface = ps.create();
     external_surface_model = false;
 
-    pa.create(atmosphere);
+    atmosphere = pa.create();
     surface->attach_atmosphere_model(atmosphere);
   }
 
   if (ocean == NULL) {
-    po.create(ocean);
+    ocean = po.create();
     external_ocean_model = false;
   }
 }
