@@ -68,7 +68,7 @@ public:
              const Config &config,
              EnthalpyConverter *EC);
   virtual ~IceFlowLaw() {}
-  virtual PetscErrorCode setFromOptions();
+  virtual void setFromOptions();
 
   //! \brief Computes the regularized effective viscosity and its derivative with respect to the
   //! second invariant \f$ \gamma \f$.
@@ -114,8 +114,8 @@ public:
                                    const double *zlevels,
                                    const double *enthalpy) const;
 
-  virtual PetscErrorCode averaged_hardness_vec(IceModelVec2S &thickness,
-                                               IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
+  virtual void averaged_hardness_vec(IceModelVec2S &thickness,
+                                     IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
 
   virtual std::string name() const = 0;
   virtual double exponent() const {

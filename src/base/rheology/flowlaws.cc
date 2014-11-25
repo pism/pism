@@ -85,8 +85,8 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
   schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
-PetscErrorCode IceFlowLaw::setFromOptions() {
-  return 0;
+void IceFlowLaw::setFromOptions() {
+  // empty
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
@@ -108,9 +108,9 @@ double IceFlowLaw::hardness_parameter(double E, double p) const {
   return pow(softness_parameter(E, p), hardness_power);
 }
 
-PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
-                                                 IceModelVec3  &enthalpy,
-                                                 IceModelVec2S &hardav) const {
+void IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
+                                       IceModelVec3  &enthalpy,
+                                       IceModelVec2S &hardav) const {
 
   IceGrid *grid = thickness.get_grid();
 
@@ -127,12 +127,10 @@ PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
     double *enthColumn;
     enthalpy.getInternalColumn(i, j, &enthColumn);
     hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
-                                                &(grid->zlevels[0]), enthColumn);
+                                          &(grid->zlevels[0]), enthColumn);
   }
 
   hardav.update_ghosts();
-
-  return 0;
 }
 
 
