@@ -57,8 +57,6 @@ protected:
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
   NCSpatialVariable m_air_temp_snapshot;
   std::vector<double> m_ts_times, m_cosine_cycle;
-private:
-  PetscErrorCode allocate_PAYearlyCycle();
 };
 
 } // end of namespace pism

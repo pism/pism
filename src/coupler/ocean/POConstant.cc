@@ -31,13 +31,7 @@ POConstant::POConstant(IceGrid &g, const Config &conf)
   : OceanModel(g, conf),
     shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
     shelfbtemp(g.get_unit_system(), "shelfbtemp", grid) {
-  PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("POConstant allocation failed");
-  }
-}
 
-PetscErrorCode POConstant::allocate_POConstant() {
   mymeltrate = 0.0;
   meltrate_set = false;
 
@@ -51,8 +45,6 @@ PetscErrorCode POConstant::allocate_POConstant() {
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
-
-  return 0;
 }
 
 void POConstant::init(Vars &vars) {

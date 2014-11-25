@@ -32,13 +32,8 @@ class EnthalpyConverter;
 class SSB_Modifier : public Component
 {
 public:
-  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const Config &c)
-    : Component(g, c), EC(e) {
-    D_max = 0.0;
-    variables = NULL;
-    allocate();
-  }
-  virtual ~SSB_Modifier() {}
+  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const Config &c);
+  virtual ~SSB_Modifier();
 
   virtual void init(Vars &vars) {
     variables = &vars;
@@ -81,8 +76,6 @@ protected:
   IceModelVec3 u, v, strain_heating;
 
   Vars *variables;
-private:
-  PetscErrorCode allocate();
 };
 
 

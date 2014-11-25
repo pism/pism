@@ -29,21 +29,6 @@ namespace pism {
 
 SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSB_Modifier(g, e, c) {
-  if (allocate() != 0) {
-    throw std::runtime_error("memory allocation failed");
-  }
-}
-
-SIAFD::~SIAFD() {
-  delete bed_smoother;
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
-  }
-}
-
-//! \brief Allocate the SIAFD module.
-PetscErrorCode SIAFD::allocate() {
 
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
@@ -83,8 +68,14 @@ PetscErrorCode SIAFD::allocate() {
     ice_factory.setFromOptions();
     flow_law = ice_factory.create();
   }
+}
 
-  return 0;
+SIAFD::~SIAFD() {
+  delete bed_smoother;
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
+  }
 }
 
 //! \brief Initialize the SIA module.

@@ -41,8 +41,6 @@ public:
 protected:
   double smb_lapse_rate;
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
-private:
-  PetscErrorCode allocate_PSLapseRates();
 };
 
 } // end of namespace pism

@@ -51,8 +51,6 @@ public:
 protected:
   double precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;
-private:
-  PetscErrorCode allocate_PALapseRates();
 };
 
 } // end of namespace pism

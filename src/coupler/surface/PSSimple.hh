@@ -52,8 +52,6 @@ public:
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
-private:
-  PetscErrorCode allocate_PSSimple();
 };
 
 } // end of namespace pism

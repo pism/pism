@@ -47,9 +47,6 @@ protected:
     m_mass_held_in_surface_layer, m_surface_layer_thickness;
   double m_next_update_time;
   unsigned int m_update_interval_years;
-
-private:
-  PetscErrorCode allocate_PSCache();
 };
 
 } // end of namespace pism

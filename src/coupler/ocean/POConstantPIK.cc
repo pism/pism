@@ -32,19 +32,6 @@ POConstantPIK::POConstantPIK(IceGrid &g, const Config &conf)
     shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
     shelfbtemp(g.get_unit_system(), "shelfbtemp", grid)
 {
-  PetscErrorCode ierr = allocate_POConstantPIK(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("POConstantPIK allocation failed");
-  }
-
-  meltfactor = config.get("ocean_pik_melt_factor");
-}
-
-POConstantPIK::~POConstantPIK() {
-  // empty
-}
-
-PetscErrorCode POConstantPIK::allocate_POConstantPIK() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
@@ -56,7 +43,11 @@ PetscErrorCode POConstantPIK::allocate_POConstantPIK() {
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
 
-  return 0;
+  meltfactor = config.get("ocean_pik_melt_factor");
+}
+
+POConstantPIK::~POConstantPIK() {
+  // empty
 }
 
 void POConstantPIK::init(Vars &vars) {

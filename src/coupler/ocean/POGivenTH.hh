@@ -110,9 +110,6 @@ private:
                                                   double sea_water_potential_temperature,
                                                   double ice_thickness,
                                                   double *shelf_base_salinity);
-
-  PetscErrorCode allocate_POGivenTH();
-
 };
 
 } // end of namespace pism

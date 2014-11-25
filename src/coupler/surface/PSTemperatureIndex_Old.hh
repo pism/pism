@@ -81,7 +81,6 @@ protected:
   PetscReal next_pdd_update;
 
 private:
-  PetscErrorCode allocate_PSTemperatureIndex_Old();
   std::string temperature_name, mass_balance_name;
   NCSpatialVariable ice_surface_temp;
 };

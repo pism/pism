@@ -73,8 +73,6 @@ protected:
   NCSpatialVariable air_temp, precipitation;
   double m_precipexpfactor;
   std::vector<double> m_scaling_values;
-private:
-  PetscErrorCode allocate_PA_paleo_precip();
 };
 
 } // end of namespace pism

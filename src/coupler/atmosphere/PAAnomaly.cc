@@ -28,14 +28,6 @@ PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
     air_temp(g.get_unit_system(), "air_temp", grid),
     precipitation(g.get_unit_system(), "precipitation", grid)
 {
-  PetscErrorCode ierr = allocate_PAAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PAAnomaly allocation failed");
-  }
-}
-
-PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
-
   option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
@@ -70,7 +62,6 @@ PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   precipitation.set_units("m / s");
   precipitation.set_glaciological_units("m / year");
-  return 0;
 }
 
 PAAnomaly::~PAAnomaly()

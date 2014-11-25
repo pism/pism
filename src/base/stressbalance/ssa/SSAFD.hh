@@ -40,11 +40,6 @@ public:
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
-private:
-  virtual PetscErrorCode allocate_fd();
-
-  virtual PetscErrorCode deallocate_fd();
-
 protected:
   virtual PetscErrorCode pc_setup_bjacobi();
 

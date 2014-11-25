@@ -24,20 +24,8 @@ namespace pism {
 PSAnomaly::PSAnomaly(IceGrid &g, const Config &conf, SurfaceModel* in)
   : PGivenClimate<PSModifier,SurfaceModel>(g, conf, in),
     climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
-{
-  PetscErrorCode ierr = allocate_PSAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSAnomaly allocation failed");
-  }
+    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
 
-}
-
-PSAnomaly::~PSAnomaly() {
-  // empty
-}
-
-PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   option_prefix  = "-surface_anomaly";
 
   // will be de-allocated by the parent's destructor
@@ -76,8 +64,10 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
   ice_surface_temp.set_units("K");
+}
 
-  return 0;
+PSAnomaly::~PSAnomaly() {
+  // empty
 }
 
 void PSAnomaly::init(Vars &vars) {

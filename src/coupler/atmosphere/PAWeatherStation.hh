@@ -64,8 +64,6 @@ protected:
   std::vector<double> m_precip_values, m_air_temp_values;
 
   NCSpatialVariable m_precip_metadata, m_air_temp_metadata;
-private:
-  PetscErrorCode allocate();
 };
 
 }      // end of namespace pism

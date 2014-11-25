@@ -52,8 +52,6 @@ protected:
   std::string input_file;
   IceModelVec2S climatic_mass_balance, ice_surface_temp;
   IceModelVec2S *lat, *usurf;
-private:
-  PetscErrorCode allocate_PSConstantPIK();
 };
 
 } // end of namespace pism

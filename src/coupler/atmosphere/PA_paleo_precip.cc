@@ -27,15 +27,6 @@ PA_paleo_precip::PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel
     precipitation(g.get_unit_system(), "precipitation", grid)
 {
   offset = NULL;
-  PetscErrorCode ierr = allocate_PA_paleo_precip(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PA_paleo_precip allocation failed");
-  }
-}
-
-PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
-  PetscErrorCode ierr;
-
   option_prefix = "-atmosphere_paleo_precip";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
@@ -45,16 +36,14 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  air_temp.set_units("K");
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
+  precipitation.set_units("m / s");
+  precipitation.set_glaciological_units("m / year");
 
   m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-
-  return 0;
 }
 
 PA_paleo_precip::~PA_paleo_precip()

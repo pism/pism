@@ -57,19 +57,8 @@ POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
 }
 
 POGivenTH::POGivenTH(IceGrid &g, const Config &conf)
-  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
-{
-  PetscErrorCode ierr = allocate_POGivenTH(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("POGivenTH allocation failed");
-  }
-}
+  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL) {
 
-POGivenTH::~POGivenTH() {
-  // empty
-}
-
-PetscErrorCode POGivenTH::allocate_POGivenTH() {
   option_prefix   = "-ocean_th";
 
   // will be de-allocated by the parent's destructor
@@ -104,7 +93,10 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                            "kg m-2 s-1", "");
   shelfbmassflux.set_glaciological_units("kg m-2 year-1");
-  return 0;
+}
+
+POGivenTH::~POGivenTH() {
+  // empty
 }
 
 void POGivenTH::init(Vars &vars) {

@@ -27,13 +27,7 @@ namespace pism {
 PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf),
     air_temp_snapshot(g.get_unit_system(), "air_temp_snapshot", g) {
-  PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PAConstantPIK allocation failed");
-  }
-}
 
-PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
   // create mean annual ice equivalent precipitation rate (before separating
@@ -59,8 +53,6 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   air_temp_snapshot.set_string("long_name",
                                "snapshot of the near-surface air temperature");
   air_temp_snapshot.set_units("K");
-
-  return 0;
 }
 
 void PAConstantPIK::mean_precipitation(IceModelVec2S &result) {

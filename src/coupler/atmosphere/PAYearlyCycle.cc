@@ -31,17 +31,6 @@ namespace pism {
 PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf),
     m_air_temp_snapshot(g.get_unit_system(), "air_temp_snapshot", g) {
-  PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PAYearlyCycle allocation failed");
-  }
-}
-
-PAYearlyCycle::~PAYearlyCycle() {
-  // empty
-}
-
-PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
 
   m_snow_temp_july_day = config.get("snow_temp_july_day");
 
@@ -73,8 +62,10 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   m_air_temp_snapshot.set_string("long_name",
                          "snapshot of the near-surface air temperature");
   m_air_temp_snapshot.set_units("K");
+}
 
-  return 0;
+PAYearlyCycle::~PAYearlyCycle() {
+  // empty
 }
 
 //! Allocates memory and reads in the precipitaion data.

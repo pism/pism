@@ -45,8 +45,6 @@ protected:
   std::string input_file;
   IceModelVec2S precipitation, air_temp;
   NCSpatialVariable air_temp_snapshot;
-private:
-  PetscErrorCode allocate_PAConstantPIK();
 };
 
 } // end of namespace pism

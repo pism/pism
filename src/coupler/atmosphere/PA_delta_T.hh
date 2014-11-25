@@ -49,8 +49,6 @@ public:
 protected:
   NCSpatialVariable air_temp, precipitation;
   std::vector<double> m_offset_values;
-private:
-  PetscErrorCode allocate_PA_delta_T();
 };
 
 

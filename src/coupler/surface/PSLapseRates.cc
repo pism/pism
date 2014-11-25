@@ -28,36 +28,23 @@ PSLapseRates::PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in)
   smb_lapse_rate = 0;
   option_prefix = "-surface_lapse_rate";
 
-  PetscErrorCode ierr = allocate_PSLapseRates(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSLapseRates allocation failed");
-  }
-
-}
-
-PSLapseRates::~PSLapseRates() {
-  // empty
-}
-
-PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
-  PetscErrorCode ierr;
-
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance_flux");
-  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.set_units("kg m-2 s-1");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
-
-  return 0;
+  ice_surface_temp.set_units("K");
 }
 
+PSLapseRates::~PSLapseRates() {
+  // empty
+}
 
 void PSLapseRates::init(Vars &vars) {
   bool smb_lapse_rate_set;

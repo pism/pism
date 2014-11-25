@@ -45,8 +45,6 @@ public:
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
   IceModelVec2T *precipitation, *air_temp;
-private:
-  virtual PetscErrorCode allocate_PAGivenClimate();
 };
 
 } // end of namespace pism

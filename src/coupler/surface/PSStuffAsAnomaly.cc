@@ -25,17 +25,6 @@ namespace pism {
 
 PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, const Config &conf, SurfaceModel *input)
     : PSModifier(g, conf, input) {
-  PetscErrorCode ierr = allocate_PSStuffAsAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSStuffAsAnomaly allocation failed");
-  }
-}
-
-PSStuffAsAnomaly::~PSStuffAsAnomaly() {
-  // empty
-}
-
-PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
 
   mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   mass_flux.set_attrs("climate_state",
@@ -65,8 +54,10 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
   temp_input.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
   temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
                        "K", "");
+}
 
-  return 0;
+PSStuffAsAnomaly::~PSStuffAsAnomaly() {
+  // empty
 }
 
 void PSStuffAsAnomaly::init(Vars &vars) {

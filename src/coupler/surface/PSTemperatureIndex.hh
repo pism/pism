@@ -84,8 +84,6 @@ protected:
   double sd_ref_time, sd_param_a, sd_param_b;
   std::string filename;
   double compute_next_balance_year_start(double time);
-private:
-  PetscErrorCode allocate_PSTemperatureIndex();
 };
 
 } // end of namespace pism

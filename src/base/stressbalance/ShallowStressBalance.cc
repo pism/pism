@@ -38,15 +38,6 @@ ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, con
   variables = NULL;
   sea_level = 0;
 
-  allocate();
-}
-
-ShallowStressBalance::~ShallowStressBalance() {
-  delete basal_sliding_law;
-}
-
-//! \brief Allocate a shallow stress balance object.
-PetscErrorCode ShallowStressBalance::allocate() {
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   if (config.get_flag("do_pseudo_plastic_till") == true) {
@@ -71,8 +62,10 @@ PetscErrorCode ShallowStressBalance::allocate() {
                                      "W m-2", "");
   basal_frictional_heating.set_glaciological_units("mW m-2");
   basal_frictional_heating.write_in_glaciological_units = true;
+}
 
-  return 0;
+ShallowStressBalance::~ShallowStressBalance() {
+  delete basal_sliding_law;
 }
 
 void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,

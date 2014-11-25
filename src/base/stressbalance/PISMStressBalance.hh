@@ -124,7 +124,6 @@ public:
     return m_modifier;
   }
 protected:
-  virtual PetscErrorCode allocate();
   virtual void compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                          IceModelVec2S *bmr, IceModelVec3 &result);
   virtual void compute_volumetric_strain_heating();

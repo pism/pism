@@ -42,8 +42,6 @@ public:
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
-private:
-  PetscErrorCode allocate_PO_delta_SMB();
 };
 
 } // end of namespace pism

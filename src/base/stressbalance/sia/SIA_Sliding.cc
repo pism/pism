@@ -26,7 +26,12 @@
 
 namespace pism {
 
-PetscErrorCode SIA_Sliding::allocate() {
+SIA_Sliding::SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
+  : ShallowStressBalance(g, e, conf)
+{
+  verification_mode = false;
+  eisII_experiment = "";
+
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   for (int i = 0; i < 2; ++i) {
@@ -48,16 +53,6 @@ PetscErrorCode SIA_Sliding::allocate() {
     ice_factory.setFromOptions();
     flow_law = ice_factory.create();
   }
-
-  return 0;
-}
-
-SIA_Sliding::SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
-  : ShallowStressBalance(g, e, conf)
-{
-  verification_mode = false;
-  eisII_experiment = "";
-  allocate();
 }
 
 SIA_Sliding::~SIA_Sliding()

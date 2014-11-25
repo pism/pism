@@ -31,32 +31,20 @@ namespace pism {
 PSSimple::PSSimple(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf),
     climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
-{
-  PetscErrorCode ierr = allocate_PSSimple(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSSimple allocation failed");
-  }
-
-}
-
-PetscErrorCode PSSimple::allocate_PSSimple() {
-  PetscErrorCode ierr;
+    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
                                    "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
-  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.set_units("kg m-2 s-1");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
-
-  return 0;
+  ice_surface_temp.set_units("K");
 }
 
 

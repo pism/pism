@@ -29,20 +29,7 @@ namespace pism {
 
 
 PSConstantPIK::PSConstantPIK(IceGrid &g, const Config &conf)
-  : SurfaceModel(g, conf)
-{
-  PetscErrorCode ierr = allocate_PSConstantPIK(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSConstantPIK allocation failed");
-  }
-}
-
-void PSConstantPIK::attach_atmosphere_model(AtmosphereModel *input)
-{
-  delete input;
-}
-
-PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
+  : SurfaceModel(g, conf) {
 
   climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("climate_state",
@@ -56,9 +43,12 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
   ice_surface_temp.set_attrs("climate_state",
                              "constant-in-time ice temperature at the ice surface",
                              "K", "");
-  return 0;
 }
 
+void PSConstantPIK::attach_atmosphere_model(AtmosphereModel *input)
+{
+  delete input;
+}
 
 void PSConstantPIK::init(Vars &vars) {
   bool do_regrid = false;

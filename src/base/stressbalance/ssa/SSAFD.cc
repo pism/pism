@@ -49,19 +49,90 @@ SSA* SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const Config &c) {
   return new SSAFD(g,ec,c);
 }
 
+/*!
+Because the FD implementation of the SSA uses Picard iteration, a PETSc KSP
+and Mat are used directly.  In particular we set up \f$A\f$
+(Mat m_A) and a \f$b\f$ (= Vec m_b) and iteratively solve
+linear systems
+  \f[ A x = b \f]
+where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
+ */
 SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSA(g,e,c) {
-  PetscErrorCode ierr = allocate_fd();
-  if (ierr != 0) {
-    throw std::runtime_error("SSAFD allocation failed");
+  m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS);
+
+  m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS);
+  m_velocity_old.set_attrs("internal",
+                           "old SSA velocity field; used for re-trying with a different epsilon",
+                           "m s-1", "");
+  
+  const double power = 1.0 / flow_law->exponent();
+  char unitstr[TEMPORARY_STRING_LENGTH];
+  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
+  hardness.create(grid, "hardness", WITHOUT_GHOSTS);
+  hardness.set_attrs("diagnostic",
+                     "vertically-averaged ice hardness",
+                     unitstr, "");
+
+  nuH.create(grid, "nuH", WITH_GHOSTS);
+  nuH.set_attrs("internal",
+                "ice thickness times effective viscosity",
+                "Pa s m", "");
+
+  nuH_old.create(grid, "nuH_old", WITH_GHOSTS);
+  nuH_old.set_attrs("internal",
+                    "ice thickness times effective viscosity (before an update)",
+                    "Pa s m", "");
+
+  m_work.create(grid, "m_work", WITH_GHOSTS,
+                2, /* stencil width */
+                6  /* dof */);
+  m_work.set_attrs("internal",
+                   "temporary storage used to compute nuH",
+                   "", "");
+
+  m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
+
+  // The nuH viewer:
+  view_nuh = false;
+  nuh_viewer_size = 300;
+  nuh_viewer = NULL;
+
+  dump_system_matlab = false;
+
+  fracture_density = NULL;
+  m_melange_back_pressure = NULL;
+  
+  // PETSc objects and settings
+  {
+    PetscErrorCode ierr;
+#if PETSC_VERSION_LT(3,5,0)
+    ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRCONTINUE(ierr);
+#else
+    ierr = DMSetMatType(*m_da, MATAIJ); CHKERRCONTINUE(ierr);
+    ierr = DMCreateMatrix(*m_da, &m_A); CHKERRCONTINUE(ierr);
+#endif
+
+    ierr = KSPCreate(grid.com, &m_KSP);
+    PISM_PETSC_CHK(ierr, "KSPCreate");
+    ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
+    PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
+
+    // Use non-zero initial guess (i.e. SSA velocities from the last
+    // solve() call).
+    ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
+    PISM_PETSC_CHK(ierr, "KSPSetInitialGuessNonzero");
   }
 }
 
 SSAFD::~SSAFD() {
-  PetscErrorCode ierr = deallocate_fd();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
-    abort();
+  PetscErrorCode ierr = 0;
+  if (m_KSP != NULL) {
+    ierr = KSPDestroy(&m_KSP); CHKERRCONTINUE(ierr);
+  }
+
+  if (m_A != NULL) {
+    ierr = MatDestroy(&m_A); CHKERRCONTINUE(ierr);
   }
 }
 
@@ -130,101 +201,6 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   // Let the user override all this:
   // Process options:
   ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
-
-  return 0;
-}
-
-//! \brief Allocate objects specific to the SSAFD object.
-/*!
-Because the FD implementation of the SSA uses Picard iteration, a PETSc KSP
-and Mat are used directly.  In particular we set up \f$A\f$
-(Mat m_A) and a \f$b\f$ (= Vec m_b) and iteratively solve
-linear systems
-  \f[ A x = b \f]
-where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
- */
-PetscErrorCode SSAFD::allocate_fd() {
-
-  m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS);
-
-  m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS);
-  m_velocity_old.set_attrs("internal",
-                           "old SSA velocity field; used for re-trying with a different epsilon",
-                           "m s-1", "");
-  
-  const double power = 1.0 / flow_law->exponent();
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  hardness.create(grid, "hardness", WITHOUT_GHOSTS);
-  hardness.set_attrs("diagnostic",
-                     "vertically-averaged ice hardness",
-                     unitstr, "");
-
-  nuH.create(grid, "nuH", WITH_GHOSTS);
-  nuH.set_attrs("internal",
-                "ice thickness times effective viscosity",
-                "Pa s m", "");
-
-  nuH_old.create(grid, "nuH_old", WITH_GHOSTS);
-  nuH_old.set_attrs("internal",
-                    "ice thickness times effective viscosity (before an update)",
-                    "Pa s m", "");
-
-  m_work.create(grid, "m_work", WITH_GHOSTS,
-                2, /* stencil width */
-                6  /* dof */);
-  m_work.set_attrs("internal",
-                   "temporary storage used to compute nuH",
-                   "", "");
-
-  m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
-
-  // The nuH viewer:
-  view_nuh = false;
-  nuh_viewer_size = 300;
-  nuh_viewer = NULL;
-
-  dump_system_matlab = false;
-
-  fracture_density = NULL;
-  m_melange_back_pressure = NULL;
-  
-  // PETSc objects and settings
-  {
-    PetscErrorCode ierr;
-#if PETSC_VERSION_LT(3,5,0)
-    ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRQ(ierr);
-#else
-    ierr = DMSetMatType(*m_da, MATAIJ); CHKERRQ(ierr);
-    ierr = DMCreateMatrix(*m_da, &m_A); CHKERRQ(ierr);
-#endif
-
-    ierr = KSPCreate(grid.com, &m_KSP);
-    PISM_PETSC_CHK(ierr, "KSPCreate");
-    ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
-    PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
-
-    // Use non-zero initial guess (i.e. SSA velocities from the last
-    // solve() call).
-    ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
-    PISM_PETSC_CHK(ierr, "KSPSetInitialGuessNonzero");
-  }
-
-  return 0;
-}
-
-//! \brief De-allocate SSAFD internal objects.
-PetscErrorCode SSAFD::deallocate_fd() {
-  PetscErrorCode ierr;
-
-  if (m_KSP != NULL) {
-    ierr = KSPDestroy(&m_KSP);
-    PISM_PETSC_CHK(ierr, "KSPDestroy");
-  }
-
-  if (m_A != NULL) {
-    ierr = MatDestroy(&m_A); CHKERRQ(ierr);
-  }
 
   return 0;
 }

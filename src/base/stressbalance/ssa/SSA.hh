@@ -186,9 +186,6 @@ protected:
 
   // profiling
   int event_ssa;
-private:
-  PetscErrorCode allocate();
-  PetscErrorCode deallocate();
 };
 
 

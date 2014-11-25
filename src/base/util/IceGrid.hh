@@ -142,7 +142,7 @@ public:
 
   PetscErrorCode report_parameters();
 
-  PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
+  PetscErrorCode allocate();  // FIXME! allocate in the constructor!
   PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();

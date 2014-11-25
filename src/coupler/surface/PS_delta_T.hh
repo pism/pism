@@ -47,9 +47,6 @@ public:
 protected:
   NCSpatialVariable climatic_mass_balance, //!< climatic mass balance attributes
     ice_surface_temp;                      //!< ice surface temperature attributes
-private:
-  //! Allocate internal objects. Called from the constructor.
-  PetscErrorCode allocate_PS_delta_T();
 };
 
 } // end of namespace pism

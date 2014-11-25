@@ -41,8 +41,6 @@ public:
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
   IceModelVec2T *climatic_mass_balance, *ice_surface_temp;
-private:
-  PetscErrorCode allocate_PSGivenClimate();
 };
 
 } // end of namespace pism

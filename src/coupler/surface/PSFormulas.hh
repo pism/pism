@@ -45,8 +45,6 @@ public:
   void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
-private:
-  PetscErrorCode allocate();
 };
 
 

@@ -25,7 +25,11 @@
 
 namespace pism {
 
-PetscErrorCode SSB_Modifier::allocate() {
+SSB_Modifier::SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const Config &c)
+  : Component(g, c), EC(e) {
+
+  D_max = 0.0;
+  variables = NULL;
 
   u.create(grid, "uvel", WITH_GHOSTS);
   u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
@@ -49,12 +53,14 @@ PetscErrorCode SSB_Modifier::allocate() {
   diffusive_flux.set_attrs("internal", 
                            "diffusive (SIA) flux components on the staggered grid",
                            "", "");
+  
+}
 
-  return 0;
+SSB_Modifier::~SSB_Modifier() {
+  // empty
 }
 
 void ConstantInColumn::init(Vars &vars) {
-
   SSB_Modifier::init(vars);
 }
 

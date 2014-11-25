@@ -42,15 +42,46 @@ SSA::SSA(IceGrid &g, EnthalpyConverter &e, const Config &c)
   gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(config);
-  allocate();
+
+  taud.create(grid, "taud", WITHOUT_GHOSTS);
+  taud.set_attrs("diagnostic",
+                 "X-component of the driving shear stress at the base of ice",
+                 "Pa", "", 0);
+  taud.set_attrs("diagnostic",
+                 "Y-component of the driving shear stress at the base of ice",
+                 "Pa", "", 1);
+
+
+  // override velocity metadata
+  std::vector<std::string> long_names;
+  long_names.push_back("SSA model ice velocity in the X direction");
+  long_names.push_back("SSA model ice velocity in the Y direction");
+  m_velocity.rename("_ssa",long_names,"");
+
+  m_velocity_global.create(grid, "bar", WITHOUT_GHOSTS);
+
+  m_da = m_velocity_global.get_dm();
+
+  {
+    IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
+    ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
+
+    ice_factory.setType(config.get_string("ssa_flow_law"));
+
+    ice_factory.setFromOptions();
+    flow_law = ice_factory.create();
+  }
 }
 
 SSA::~SSA() { 
-  if (deallocate() != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: SSA de-allocation failed.\n");
-    abort();
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
   }
-  delete strength_extension;
+  if (strength_extension != NULL) {
+    delete strength_extension;
+    strength_extension = NULL;
+  }
 }
 
 
@@ -116,53 +147,6 @@ void SSA::init(Vars &vars) {
     m_vel_bc = vars.get_2d_vector("vel_ssa_bc");
   }
 }
-
-//! \brief Allocate objects which any SSA solver would use.
-PetscErrorCode SSA::allocate() {
-
-  taud.create(grid, "taud", WITHOUT_GHOSTS);
-  taud.set_attrs("diagnostic",
-                 "X-component of the driving shear stress at the base of ice",
-                 "Pa", "", 0);
-  taud.set_attrs("diagnostic",
-                 "Y-component of the driving shear stress at the base of ice",
-                 "Pa", "", 1);
-
-
-  // override velocity metadata
-  std::vector<std::string> long_names;
-  long_names.push_back("SSA model ice velocity in the X direction");
-  long_names.push_back("SSA model ice velocity in the Y direction");
-  m_velocity.rename("_ssa",long_names,"");
-
-  m_velocity_global.create(grid, "bar", WITHOUT_GHOSTS);
-
-  m_da = m_velocity_global.get_dm();
-
-  {
-    IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
-    ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
-
-    ice_factory.setType(config.get_string("ssa_flow_law"));
-
-    ice_factory.setFromOptions();
-    flow_law = ice_factory.create();
-  }
-
-  return 0;
-}
-
-
-PetscErrorCode SSA::deallocate() {
-
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
-  }
-
-  return 0;
-}
-
 
 //! \brief Update the SSA solution.
 void SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {

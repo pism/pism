@@ -28,31 +28,20 @@ PALapseRates::PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in)
   precip_lapse_rate = 0;
   option_prefix     = "-atmosphere_lapse_rate";
 
-  PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PALapseRates allocation failed");
-  }
-}
-
-PALapseRates::~PALapseRates() {
-  // empty
-}
-
-PetscErrorCode PALapseRates::allocate_PALapseRates() {
-  PetscErrorCode ierr;
-
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
                            "ice-equivalent precipitation rate with a lapse-rate correction");
-  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precipitation.set_units("m s-1");
+  precipitation.set_glaciological_units("m year-1");
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  air_temp.set_units("K");
+}
 
-  return 0;
+PALapseRates::~PALapseRates() {
+  // empty
 }
 
 void PALapseRates::init(Vars &vars) {

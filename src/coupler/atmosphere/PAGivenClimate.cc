@@ -29,18 +29,6 @@ PAGivenClimate::PAGivenClimate(IceGrid &g, const Config &conf)
   air_temp      = NULL;
   precipitation = NULL;
 
-  // Cannot call allocate_PAGivenClimate() here, because some surface
-  // models do not use atmosphere models *and* this is the default
-  // atmosphere model.
-
-}
-
-PAGivenClimate::~PAGivenClimate() {
-  // empty
-}
-
-PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
-
   // will be de-allocated by the parent's destructor
   precipitation = new IceModelVec2T;
   air_temp      = new IceModelVec2T;
@@ -62,8 +50,10 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
                            "m s-1", "");
   precipitation->set_glaciological_units("m year-1");
   precipitation->write_in_glaciological_units = true;
+}
 
-  return 0;
+PAGivenClimate::~PAGivenClimate() {
+  // empty
 }
 
 void PAGivenClimate::init(Vars &) {
@@ -72,10 +62,6 @@ void PAGivenClimate::init(Vars &) {
   verbPrintf(2, grid.com,
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
-
-  if (air_temp == NULL || precipitation == NULL) {
-    allocate_PAGivenClimate();
-  }
 
   air_temp->init(filename, bc_period, bc_reference_time);
   precipitation->init(filename, bc_period, bc_reference_time);

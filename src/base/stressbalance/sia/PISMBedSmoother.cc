@@ -33,8 +33,38 @@ BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
   C3p0 = NULL;
   C4p0 = NULL;
 
-  if (allocate(MAX_GHOSTS) != 0) {
-    throw std::runtime_error("BedSmoother allocation failed");
+
+  {
+    // allocate Vecs that live on all procs; all have to be as "wide" as any of
+    //   their prospective uses
+    topgsmooth.create(grid, "topgsmooth", WITH_GHOSTS, MAX_GHOSTS);
+    topgsmooth.set_attrs("bed_smoother_tool",
+                         "smoothed bed elevation, in bed roughness parameterization",
+                         "m", "");
+    maxtl.create(grid, "maxtl", WITH_GHOSTS, MAX_GHOSTS);
+    maxtl.set_attrs("bed_smoother_tool",
+                    "maximum elevation in local topography patch, in bed roughness parameterization",
+                    "m", "");
+    C2.create(grid, "C2bedsmooth", WITH_GHOSTS, MAX_GHOSTS);
+    C2.set_attrs("bed_smoother_tool",
+                 "polynomial coeff of H^-2, in bed roughness parameterization",
+                 "m2", "");
+    C3.create(grid, "C3bedsmooth", WITH_GHOSTS, MAX_GHOSTS);
+    C3.set_attrs("bed_smoother_tool",
+                 "polynomial coeff of H^-3, in bed roughness parameterization",
+                 "m3", "");
+    C4.create(grid, "C4bedsmooth", WITH_GHOSTS, MAX_GHOSTS);
+    C4.set_attrs("bed_smoother_tool",
+                 "polynomial coeff of H^-4, in bed roughness parameterization",
+                 "m4", "");
+
+    // allocate Vecs that live on processor 0:
+    topgsmooth.allocate_proc0_copy(topgp0);
+    topgsmooth.allocate_proc0_copy(topgsmoothp0);
+    maxtl.allocate_proc0_copy(maxtlp0);
+    C2.allocate_proc0_copy(C2p0);
+    C3.allocate_proc0_copy(C3p0);
+    C4.allocate_proc0_copy(C4p0);
   }
 
   m_Glen_exponent = config.get("sia_Glen_exponent"); // choice is SIA; see #285
@@ -50,76 +80,22 @@ BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
 
 
 BedSmoother::~BedSmoother() {
-
-  if (deallocate() != 0) {
-    PetscPrintf(grid.com, "BedSmoother destructor: deallocate() failed\n");
-    // there's nothing we can do about it
-  }
-}
-
-PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
-
-  // allocate Vecs that live on all procs; all have to be as "wide" as any of
-  //   their prospective uses
-  topgsmooth.create(grid, "topgsmooth", WITH_GHOSTS, maxGHOSTS);
-  topgsmooth.set_attrs("bed_smoother_tool",
-                       "smoothed bed elevation, in bed roughness parameterization",
-                       "m", "");
-  maxtl.create(grid, "maxtl", WITH_GHOSTS, maxGHOSTS);
-  maxtl.set_attrs("bed_smoother_tool",
-                  "maximum elevation in local topography patch, in bed roughness parameterization",
-                  "m", "");
-  C2.create(grid, "C2bedsmooth", WITH_GHOSTS, maxGHOSTS);
-  C2.set_attrs("bed_smoother_tool",
-               "polynomial coeff of H^-2, in bed roughness parameterization",
-               "m2", "");
-  C3.create(grid, "C3bedsmooth", WITH_GHOSTS, maxGHOSTS);
-  C3.set_attrs("bed_smoother_tool",
-               "polynomial coeff of H^-3, in bed roughness parameterization",
-               "m3", "");
-  C4.create(grid, "C4bedsmooth", WITH_GHOSTS, maxGHOSTS);
-  C4.set_attrs("bed_smoother_tool",
-               "polynomial coeff of H^-4, in bed roughness parameterization",
-               "m4", "");
-
-  // allocate Vecs that live on processor 0:
-  topgsmooth.allocate_proc0_copy(topgp0);
-  topgsmooth.allocate_proc0_copy(topgsmoothp0);
-  maxtl.allocate_proc0_copy(maxtlp0);
-  C2.allocate_proc0_copy(C2p0);
-  C3.allocate_proc0_copy(C3p0);
-  C4.allocate_proc0_copy(C4p0);
-
-  return 0;
-}
-
-
-PetscErrorCode BedSmoother::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&topgp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&topgsmoothp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&maxtlp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&C2p0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&C3p0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&C4p0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  // no need to destroy topgsmooth,maxtl,C2,C3,C4; their destructors do it
-  return 0;
+  ierr = VecDestroy(&topgp0); CHKERRCONTINUE(ierr);
+  ierr = VecDestroy(&topgsmoothp0); CHKERRCONTINUE(ierr);
+  ierr = VecDestroy(&maxtlp0); CHKERRCONTINUE(ierr);
+  ierr = VecDestroy(&C2p0); CHKERRCONTINUE(ierr);
+  ierr = VecDestroy(&C3p0); CHKERRCONTINUE(ierr);
+  ierr = VecDestroy(&C4p0); CHKERRCONTINUE(ierr);
 }
-
 
 /*!
 Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
+void BedSmoother::preprocess_bed(IceModelVec2S &topg) {
 
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
@@ -128,7 +104,7 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
     // and we tell get_theta() to return theta=1
     Nx = -1;
     Ny = -1;
-    return 0;
+    return;
   }
 
   // determine Nx, Ny, which are always at least one if m_smoothing_range > 0
@@ -143,7 +119,6 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   //PetscPrintf(grid.com,"BedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
 
   preprocess_bed(topg, Nx, Ny);
-  return 0;
 }
 
 const IceModelVec2S& BedSmoother::get_smoothed_bed() {
@@ -154,8 +129,8 @@ const IceModelVec2S& BedSmoother::get_smoothed_bed() {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
-                                               int Nx_in, int Ny_in) {
+void BedSmoother::preprocess_bed(IceModelVec2S &topg,
+                                 int Nx_in, int Ny_in) {
 
   if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
     throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
@@ -174,22 +149,20 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
   C2.get_from_proc0(C2p0);
   C3.get_from_proc0(C3p0);
   C4.get_from_proc0(C4p0);
-  return 0;
 }
 
 
 /*!
 Call preprocess_bed() first.
  */
-PetscErrorCode BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
+void BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
   Nx_out = Nx;
   Ny_out = Ny;
-  return 0;
 }
 
 
 //! Computes the smoothed bed by a simple average over a rectangle of grid points.
-PetscErrorCode BedSmoother::smooth_the_bed_on_proc0() {
+void BedSmoother::smooth_the_bed_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
@@ -222,12 +195,10 @@ PetscErrorCode BedSmoother::smooth_the_bed_on_proc0() {
     ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
   }
-
-  return 0;
 }
 
 
-PetscErrorCode BedSmoother::compute_coefficients_on_proc0() {
+void BedSmoother::compute_coefficients_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
@@ -305,8 +276,6 @@ PetscErrorCode BedSmoother::compute_coefficients_on_proc0() {
     ierr = VecScale(C4p0,s4);
     PISM_PETSC_CHK(ierr, "VecScale");
   }
-
-  return 0;
 }
 
 
@@ -324,10 +293,10 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
-                                             IceModelVec2S &thk,
-                                             IceModelVec2Int &mask,
-                                             IceModelVec2S *thksmooth) {
+void BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
+                                   IceModelVec2S &thk,
+                                   IceModelVec2Int &mask,
+                                   IceModelVec2S *thksmooth) {
   MaskQuery M(mask);
   IceModelVec2S &result = *thksmooth;
 
@@ -369,8 +338,6 @@ PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
       }
     }
   }
-
-  return 0;
 }
 
 
@@ -395,11 +362,11 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
+void BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
 
   if ((Nx < 0) || (Ny < 0)) {
     theta->set(1.0);
-    return 0;
+    return;
   }
 
   IceModelVec2S &result = *theta;
@@ -451,8 +418,6 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
       result(i, j) = 0.00;  // FIXME = min_theta; make configurable
     }
   }
-
-  return 0;
 }
 
 

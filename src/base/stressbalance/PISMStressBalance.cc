@@ -37,16 +37,6 @@ StressBalance::StressBalance(IceGrid &g,
   m_basal_melt_rate = NULL;
   m_variables = NULL;
 
-  allocate();
-}
-
-StressBalance::~StressBalance() {
-  delete m_stress_balance;
-  delete m_modifier;
-}
-
-PetscErrorCode StressBalance::allocate() {
-
   // allocate the vertical velocity field:
   m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS);
   m_w.set_attrs("diagnostic",
@@ -60,7 +50,11 @@ PetscErrorCode StressBalance::allocate() {
   m_strain_heating.set_attrs("internal",
                              "rate of strain heating in ice (dissipation heating)",
                              "W m-3", "");
-  return 0;
+}
+
+StressBalance::~StressBalance() {
+  delete m_stress_balance;
+  delete m_modifier;
 }
 
 //! \brief Initialize the StressBalance object.

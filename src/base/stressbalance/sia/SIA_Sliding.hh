@@ -54,8 +54,6 @@ public:
   virtual void write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
   }
 
-private:
-  PetscErrorCode allocate();
 protected:
 
   virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);

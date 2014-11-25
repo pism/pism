@@ -47,7 +47,6 @@ private:
   IceModelVec2S m_target_thickness, m_ftt_mask;
   IceModelVec2Int *m_pism_mask;
   NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
-  PetscErrorCode allocate_PSForceThickness();
 };
 
 } // end of namespace pism

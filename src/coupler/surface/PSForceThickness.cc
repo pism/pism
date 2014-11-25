@@ -34,23 +34,8 @@ PSForceThickness::PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel 
   : PSModifier(g, conf, input),
     m_climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
     m_climatic_mass_balance_original(g.get_unit_system(), "climatic_mass_balance_original", grid),
-    m_ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
-{
-  PetscErrorCode ierr = allocate_PSForceThickness(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSForceThickness allocation failed");
-  }
-}
+    m_ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
 
-PSForceThickness::~PSForceThickness() {
-  // empty
-}
-
-void PSForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
-  input_model->attach_atmosphere_model(input);
-}
-
-PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   m_ice_thickness = NULL;
   m_alpha = config.get("force_to_thickness_alpha", "yr-1", "s-1");
   m_alpha_ice_free_factor = config.get("force_to_thickness_ice_free_alpha_factor");
@@ -84,8 +69,14 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   m_ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
   m_ice_surface_temp.set_units("K");
+}
 
-  return 0;
+PSForceThickness::~PSForceThickness() {
+  // empty
+}
+
+void PSForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
+  input_model->attach_atmosphere_model(input);
 }
 
 void PSForceThickness::init(Vars &vars) {

@@ -77,14 +77,14 @@ public:
   BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS);
   virtual ~BedSmoother();
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg);
+  virtual void preprocess_bed(IceModelVec2S &topg);
 
   // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
-  virtual PetscErrorCode get_smoothing_domain(int &Nx_out, int &Ny_out);
+  virtual void get_smoothing_domain(int &Nx_out, int &Ny_out);
 
-  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
+  virtual void get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
                                           IceModelVec2Int &mask, IceModelVec2S *thksmooth);
-  virtual PetscErrorCode get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
+  virtual void get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
 
   const IceModelVec2S& get_smoothed_bed();
 protected:
@@ -101,19 +101,19 @@ protected:
 
   double m_Glen_exponent, m_smoothing_range;
 
-  PetscErrorCode allocate(int MAX_GHOSTS);
-  PetscErrorCode deallocate();
+  void allocate(int MAX_GHOSTS);
+  void deallocate();
 
   Vec topgp0,         //!< original bed elevation on processor 0
     topgsmoothp0,   //!< smoothed bed elevation on processor 0
     maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
     C2p0, C3p0, C4p0;
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg,
+  virtual void preprocess_bed(IceModelVec2S &topg,
                                         int Nx_in, int Ny_in);
 
-  PetscErrorCode smooth_the_bed_on_proc0();
-  PetscErrorCode compute_coefficients_on_proc0();
+  void smooth_the_bed_on_proc0();
+  void compute_coefficients_on_proc0();
 };
 
 } // end of namespace pism

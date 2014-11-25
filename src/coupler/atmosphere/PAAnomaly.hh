@@ -56,8 +56,6 @@ protected:
   NCSpatialVariable air_temp, precipitation;
   IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
   std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
-private:
-  PetscErrorCode allocate_PAAnomaly();
 };
 
 } // end of namespace pism

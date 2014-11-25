@@ -24,19 +24,8 @@ namespace pism {
 PO_delta_T::PO_delta_T(IceGrid &g, const Config &conf, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, conf, in),
     shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid)
-{
-  PetscErrorCode ierr = allocate_PO_delta_T(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PO_delta_T allocation failed");
-  }
-}
+    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid) {
 
-PO_delta_T::~PO_delta_T() {
-  // empty
-}
-
-PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
   option_prefix = "-ocean_delta_T";
   offset_name   = "delta_T";
 
@@ -56,8 +45,10 @@ PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
+}
 
-  return 0;
+PO_delta_T::~PO_delta_T() {
+  // empty
 }
 
 void PO_delta_T::init(Vars &vars) {

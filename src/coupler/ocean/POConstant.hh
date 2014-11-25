@@ -53,8 +53,6 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
   bool meltrate_set;
   double mymeltrate;
-private:
-  PetscErrorCode allocate_POConstant();
 };
 
 } // end of namespace pism

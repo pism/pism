@@ -45,11 +45,6 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
 
   mass_balance_name = "climatic_mass_balance";
 
-  PetscErrorCode ierr = allocate_PSTemperatureIndex_Old(); CHKERRABORT(grid.com, ierr);
-}
-
-PetscErrorCode PSTemperatureIndex_Old::allocate_PSTemperatureIndex_Old() {
-
   climatic_mass_balance.create(grid, mass_balance_name, WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("diagnostic",
                                   "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
@@ -84,10 +79,7 @@ PetscErrorCode PSTemperatureIndex_Old::allocate_PSTemperatureIndex_Old() {
                         "");
   runoff_rate.set_glaciological_units("m year-1");
   runoff_rate.write_in_glaciological_units = true;
-
-  return 0;
 }
-
 
 PSTemperatureIndex_Old::~PSTemperatureIndex_Old() {
   delete mbscheme;

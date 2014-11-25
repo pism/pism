@@ -114,8 +114,6 @@ protected:
   IceModelVec2V m_velocity, *m_vel_bc;
   IceModelVec2Int *bc_locations;
   IceModelVec2S basal_frictional_heating;
-private:
-  PetscErrorCode allocate();
 };
 
 class SSB_beta : public Diag<ShallowStressBalance>

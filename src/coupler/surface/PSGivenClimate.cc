@@ -26,19 +26,6 @@ PSGivenClimate::PSGivenClimate(IceGrid &g, const Config &conf)
 {
   option_prefix = "-surface_given";
 
-  PetscErrorCode ierr = allocate_PSGivenClimate(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSGivenClimate allocation failed");
-  }
-
-}
-
-PSGivenClimate::~PSGivenClimate() {
-  // empty
-}
-
-PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
-
   ice_surface_temp      = new IceModelVec2T;
   climatic_mass_balance = new IceModelVec2T;
 
@@ -62,8 +49,10 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
                                    "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance->set_glaciological_units("kg m-2 year-1");
   climatic_mass_balance->write_in_glaciological_units = true;
+}
 
-  return 0;
+PSGivenClimate::~PSGivenClimate() {
+  // empty
 }
 
 void PSGivenClimate::attach_atmosphere_model(AtmosphereModel *input) {

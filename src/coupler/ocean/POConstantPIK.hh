@@ -56,8 +56,6 @@ protected:
   IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:
-  PetscErrorCode allocate_POConstantPIK();
-
   //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
   double meltfactor;
 };

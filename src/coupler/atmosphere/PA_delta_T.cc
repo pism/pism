@@ -30,14 +30,6 @@ PA_delta_T::PA_delta_T(IceGrid &g, const Config &conf, AtmosphereModel* in)
     precipitation(g.get_unit_system(), "precipitation", grid)
 {
   offset = NULL;
-  PetscErrorCode ierr = allocate_PA_delta_T(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PA_delta_T allocation failed");
-  }
-}
-
-PetscErrorCode PA_delta_T::allocate_PA_delta_T() {
-  PetscErrorCode ierr;
   option_prefix = "-atmosphere_delta_T";
   offset_name   = "delta_T";
 
@@ -48,14 +40,12 @@ PetscErrorCode PA_delta_T::allocate_PA_delta_T() {
   
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  air_temp.set_units("K");
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
-
-  return 0;
+  precipitation.set_units("m / s");
+  precipitation.set_glaciological_units("m / year");
 }
 
 void PA_delta_T::init(Vars &vars) {

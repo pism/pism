@@ -33,14 +33,6 @@ PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
   m_next_update_time = grid.time->current();
   m_update_interval_years = 10;
 
-  PetscErrorCode ierr = allocate_PSCache();
-  if (ierr != 0) {
-    throw std::runtime_error("PSCache allocation failed");
-  }
-}
-
-PetscErrorCode PSCache::allocate_PSCache() {
-
   m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("climate_state",
                         "surface mass balance (accumulation/ablation) rate",
@@ -65,8 +57,6 @@ PetscErrorCode PSCache::allocate_PSCache() {
   m_surface_layer_thickness.create(grid, "surface_layer_thickness", WITHOUT_GHOSTS);
   m_surface_layer_thickness.set_attrs("diagnostic",
                                       "surface layer thickness", "1", "");
-
-  return 0;
 }
 
 PSCache::~PSCache() {

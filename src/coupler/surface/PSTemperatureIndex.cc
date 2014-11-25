@@ -36,21 +36,7 @@ namespace pism {
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
-{
-  PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PSTemperatureIndex allocation failed");
-  }
-}
-
-PSTemperatureIndex::~PSTemperatureIndex() {
-  delete mbscheme;
-  delete faustogreve;
-}
-
-PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
-  PetscErrorCode ierr;
+    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
 
   mbscheme              = NULL;
   faustogreve           = NULL;
@@ -66,31 +52,26 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   sd_param_a            = config.get("pdd_std_dev_param_a");
   sd_param_b            = config.get("pdd_std_dev_param_b");
 
-  ierr = PetscOptionsBegin(grid.com, "",
-                           "Temperature-index (PDD) scheme for surface (snow) processes", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsIsSet("-pdd_rand",
-                            "Use a PDD implementation based on simulating a random process",
-                            randomized); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-pdd_rand_repeatable",
-                            "Use a PDD implementation based on simulating a repeatable random process",
-                            randomized_repeatable); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-pdd_fausto",
-                            "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
-                            fausto_params); CHKERRQ(ierr);
-    ierr = OptionsString("-pdd_sd_file",
-                             "Read standard deviation from file",
-                             filename, sd_file_set); CHKERRQ(ierr);
-    ierr = OptionsInt("-pdd_sd_period",
-                          "Length of the standard deviation data period in years",
-                          sd_period, sd_period_set); CHKERRQ(ierr);
-    ierr = OptionsInt("-pdd_sd_reference_year",
-                          "Standard deviation data reference year",
-                          sd_ref_year, sd_ref_year_set); CHKERRQ(ierr);
+    OptionsIsSet("-pdd_rand",
+                 "Use a PDD implementation based on simulating a random process",
+                 randomized);
+    OptionsIsSet("-pdd_rand_repeatable",
+                 "Use a PDD implementation based on simulating a repeatable random process",
+                 randomized_repeatable);
+    OptionsIsSet("-pdd_fausto",
+                 "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
+                 fausto_params);
+    OptionsString("-pdd_sd_file",
+                  "Read standard deviation from file",
+                  filename, sd_file_set);
+    OptionsInt("-pdd_sd_period",
+               "Length of the standard deviation data period in years",
+               sd_period, sd_period_set);
+    OptionsInt("-pdd_sd_reference_year",
+               "Standard deviation data reference year",
+               sd_ref_year, sd_ref_year_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (randomized_repeatable) {
     mbscheme = new PDDrandMassBalance(config, true);
@@ -191,8 +172,11 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
   ice_surface_temp.set_units("K");
+}
 
-  return 0;
+PSTemperatureIndex::~PSTemperatureIndex() {
+  delete mbscheme;
+  delete faustogreve;
 }
 
 void PSTemperatureIndex::init(Vars &vars) {

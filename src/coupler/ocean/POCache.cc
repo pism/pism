@@ -33,14 +33,6 @@ POCache::POCache(IceGrid &g, const Config &conf, OceanModel* in)
   m_next_update_time = grid.time->current();
   m_update_interval_years = 10;
 
-  PetscErrorCode ierr = allocate_POCache();
-  if (ierr != 0) {
-    throw std::runtime_error("POCache allocation failed");
-  }
-}
-
-PetscErrorCode POCache::allocate_POCache() {
-
   m_shelf_base_mass_flux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS);
   m_shelf_base_mass_flux.set_attrs("climate_state",
                                    "ice mass flux from ice shelf base"
@@ -58,9 +50,6 @@ PetscErrorCode POCache::allocate_POCache() {
   m_melange_back_pressure_fraction.set_attrs("climate_state",
                                              "melange back pressure fraction",
                                              "1", "");
-
-
-  return 0;
 }
 
 POCache::~POCache() {

@@ -22,19 +22,8 @@
 namespace pism {
 
 POGiven::POGiven(IceGrid &g, const Config &conf)
-  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
-{
-  PetscErrorCode ierr = allocate_POGiven(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("POGiven allocation failed");
-  }
-}
+  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL) {
 
-POGiven::~POGiven() {
-  // empty
-}
-
-PetscErrorCode POGiven::allocate_POGiven() {
   option_prefix   = "-ocean_given";
 
   // will be de-allocated by the parent's destructor
@@ -60,8 +49,10 @@ PetscErrorCode POGiven::allocate_POGiven() {
                             "kg m-2 s-1", "");
   shelfbmassflux->set_glaciological_units("kg m-2 year-1");
   shelfbmassflux->write_in_glaciological_units = true;
+}
 
-  return 0;
+POGiven::~POGiven() {
+  // empty
 }
 
 void POGiven::init(Vars &) {

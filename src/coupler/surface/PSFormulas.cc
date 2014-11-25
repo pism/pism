@@ -24,14 +24,6 @@ namespace pism {
 
 PSFormulas::PSFormulas(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf) {
-  PetscErrorCode ierr = allocate();
-  if (ierr != 0) {
-    throw std::runtime_error("memory allocation failed");
-  }
-}
-
-PetscErrorCode PSFormulas::allocate() {
-
   m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_climatic_mass_balance.set_attrs("internal",
                                     "ice-equivalent surface mass balance (accumulation/ablation) rate",
@@ -47,7 +39,6 @@ PetscErrorCode PSFormulas::allocate() {
   m_ice_surface_temp.set_attrs("internal",
                                "annual average ice surface temperature, below firn processes",
                                "K", "");
-  return 0;
 }
 
 PSFormulas::~PSFormulas() {

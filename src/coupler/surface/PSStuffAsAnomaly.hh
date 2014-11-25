@@ -44,8 +44,6 @@ public:
 protected:
   IceModelVec2S mass_flux, mass_flux_0, mass_flux_input,
     temp, temp_0, temp_input;
-private:
-  PetscErrorCode allocate_PSStuffAsAnomaly();
 };
 
 } // end of namespace pism

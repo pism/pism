@@ -48,7 +48,6 @@ protected:
   double m_sea_level;
   double m_next_update_time;
   unsigned int m_update_interval_years;
-  PetscErrorCode allocate_POCache();
 };
 
 } // end of namespace pism

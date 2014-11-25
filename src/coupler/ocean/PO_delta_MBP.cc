@@ -27,17 +27,7 @@ PO_delta_MBP::PO_delta_MBP(IceGrid &g, const Config &conf, OceanModel* in)
     shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
     shelfbtemp(g.get_unit_system(), "shelfbtemp", grid)
 {
-  PetscErrorCode ierr = allocate_PO_delta_MBP(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    throw std::runtime_error("PO_delta_MBP allocation failed");
-  }
-}
 
-PO_delta_MBP::~PO_delta_MBP() {
-  // empty
-}
-
-PetscErrorCode PO_delta_MBP::allocate_PO_delta_MBP() {
   option_prefix = "-ocean_delta_MBP";
   offset_name   = "delta_MBP";
 
@@ -57,8 +47,10 @@ PetscErrorCode PO_delta_MBP::allocate_PO_delta_MBP() {
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
+}
 
-  return 0;
+PO_delta_MBP::~PO_delta_MBP() {
+  // empty
 }
 
 void PO_delta_MBP::init(Vars &vars) {

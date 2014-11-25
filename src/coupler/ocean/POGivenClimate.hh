@@ -40,8 +40,6 @@ public:
   virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 protected:
   IceModelVec2T *shelfbtemp, *shelfbmassflux;
-private:
-  PetscErrorCode allocate_POGiven();
 };
 
 
