@@ -130,7 +130,7 @@ void IceFlowLawFactory::setFromOptions()
       ++j;
     }
 
-    OptionsList("-flow_law", "flow law type", choices,
+    OptionsList("-" + prefix + "flow_law", "flow law type", choices,
                 type_name, my_type_name, flag);
 
     if (flag) {
