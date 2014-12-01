@@ -74,7 +74,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   DMSetMatType(da, MATBAIJ);
   DMCreateMatrix(da, &m_Jstate);
 
-  int nLocalNodes  = grid.xm*grid.ym;
+  int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx*grid.My;
   MatCreateShell(grid.com,2*nLocalNodes,nLocalNodes,2*nGlobalNodes,nGlobalNodes,this,&m_Jdesign);
   MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);

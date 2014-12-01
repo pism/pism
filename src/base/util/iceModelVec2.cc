@@ -489,7 +489,7 @@ void IceModelVec2S::sum(double &result) {
 void IceModelVec2S::max(double &result) const {
   IceModelVec::AccessList list(*this);
 
-  double my_result = (*this)(grid->xs,grid->ys);
+  double my_result = (*this)(grid->xs(),grid->ys());
   for (Points p(*grid); p; p.next()) {
     my_result = PetscMax(my_result,(*this)(p.i(), p.j()));
   }
@@ -515,7 +515,7 @@ void IceModelVec2S::absmax(double &result) const {
 void IceModelVec2S::min(double &result) const {
   IceModelVec::AccessList list(*this);
 
-  double my_result = (*this)(grid->xs,grid->ys);
+  double my_result = (*this)(grid->xs(),grid->ys());
   for (Points p(*grid); p; p.next()) {
     my_result = PetscMin(my_result,(*this)(p.i(), p.j()));
   }

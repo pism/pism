@@ -449,7 +449,7 @@ void IceCompModel::initTestL() {
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
-  const int MM = grid.xm * grid.ym;
+  const int MM = grid.xm() * grid.ym();
 
   std::vector<rgrid> rrv(MM);  // destructor at end of scope
   int k = 0;

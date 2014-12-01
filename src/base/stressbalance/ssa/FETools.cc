@@ -35,15 +35,15 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   // Elements are indexed by their lower left vertex.  If there is a ghost
   // element on the right, its i-index will be the same as the maximum
   // i-index of a non-ghost vertex in the local grid.
-  xs = g.xs - 1;                    // Start at ghost to the left.
-  int xf = g.xs + g.xm - 1; // End at ghost to the right.
-  ys = g.ys - 1;                    // Start at ghost at the bottom.
-  int yf = g.ys + g.ym - 1; // End at ghost at the top.
+  xs = g.xs() - 1;                    // Start at ghost to the left.
+  int xf = g.xs() + g.xm() - 1; // End at ghost to the right.
+  ys = g.ys() - 1;                    // Start at ghost at the bottom.
+  int yf = g.ys() + g.ym() - 1; // End at ghost at the top.
 
-  lxs = g.xs;
-  int lxf = lxs + g.xm - 1;
-  lys = g.ys;
-  int lyf = lys + g.ym - 1;
+  lxs = g.xs();
+  int lxf = lxs + g.xm() - 1;
+  lys = g.ys();
+  int lyf = lys + g.ym() - 1;
 
   // Now correct if needed. The only way there will not be ghosts is if the
   // grid is not periodic and we are up against the grid boundary.
@@ -187,8 +187,8 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   // We do not ever sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < Nk; k++) {
     int pism_i = m_row[k].j, pism_j = m_row[k].i;
-    if (pism_i < grid.xs || grid.xs + grid.xm - 1 < pism_i ||
-        pism_j < grid.ys || grid.ys + grid.ym - 1 < pism_j) {
+    if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
+        pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
       markRowInvalid(k);
     }
   }

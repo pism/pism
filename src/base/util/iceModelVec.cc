@@ -757,10 +757,10 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   // DM object. So we want the bigger of the two numbers here.
   unsigned int N = std::max(m_dof, m_n_levels);
 
-  bool out_of_range = (i < grid->xs - ghost_width) ||
-    (i > grid->xs + grid->xm + ghost_width) ||
-    (j < grid->ys - ghost_width) ||
-    (j > grid->ys + grid->ym + ghost_width) ||
+  bool out_of_range = (i < grid->xs() - ghost_width) ||
+    (i > grid->xs() + grid->xm() + ghost_width) ||
+    (j < grid->ys() - ghost_width) ||
+    (j > grid->ys() + grid->ym() + ghost_width) ||
     (k >= N);
 
   assert(out_of_range == false);

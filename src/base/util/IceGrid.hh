@@ -165,15 +165,21 @@ public:
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
+  //! Starting x-index of a processor sub-domain
+  int xs() const;
+  //! Number of grid points (in the x-direction) in a processor sub-domain
+  int xm() const;
+  //! Starting y-index of a processor sub-domain
+  int ys() const;
+  //! Number of grid points (in the y-direction) in a processor sub-domain
+  int ym() const;
+
   Profiling profiling;
 
   const Config &config;
   MPI_Comm    com;
   int rank, size;
-  int    xs,               //!< starting x-index of a processor sub-domain
-    xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
-    ys,                         //!< starting y-index of a processor sub-domain
-    ym; //!< number of grid points (in the y-direction) in a processor sub-domain
+  int m_xs, m_xm, m_ys, m_ym;
 
   std::vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
 
@@ -263,10 +269,10 @@ private:
 class PointsWithGhosts {
 public:
   PointsWithGhosts(IceGrid &g, unsigned int stencil_width = 1) {
-    m_i_first = g.xs - stencil_width;
-    m_i_last  = g.xs + g.xm + stencil_width - 1;
-    m_j_first = g.ys - stencil_width;
-    m_j_last  = g.ys + g.ym + stencil_width - 1;
+    m_i_first = g.xs() - stencil_width;
+    m_i_last  = g.xs() + g.xm() + stencil_width - 1;
+    m_j_first = g.ys() - stencil_width;
+    m_j_last  = g.ys() + g.ym() + stencil_width - 1;
 
     m_i = m_i_first;
     m_j = m_j_first;

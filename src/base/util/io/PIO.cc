@@ -117,7 +117,7 @@ PIO::PIO(IceGrid &grid, const string &mode)
   : m_unit_system(grid.get_unit_system()) {
   constructor(grid.com, mode);
   if (m_nc) {
-    set_local_extent(grid.xs, grid.xm, grid.ys, grid.ym);
+    set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
   }
 }
 
@@ -991,8 +991,8 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
                             t_start, t_count,
-                            grid->xs, grid->xm,
-                            grid->ys, grid->ym,
+                            grid->xs(), grid->xm(),
+                            grid->ys(), grid->ym(),
                             0, z_count,
                             start, count, imap);
 
@@ -1075,8 +1075,8 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
                             t_length - 1, t_count,
-                            grid->xs, grid->xm,
-                            grid->ys, grid->ym,
+                            grid->xs(), grid->xm(),
+                            grid->ys(), grid->ym(),
                             0, z_count,
                             start, count, imap);
 
@@ -1273,7 +1273,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const int i0 = i - grid->xs, j0 = j - grid->ys;
+    const int i0 = i - grid->xs(), j0 = j - grid->ys();
 
     for (unsigned int k = 0; k < nlevels; k++) {
       // location (x,y,z) is in target computational domain
@@ -1339,7 +1339,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
       // interpolation coefficient in the x direction
       const double ii = lic->x_alpha[i0];
 
-      int index = (i0 * grid->ym + j0) * nlevels + k;
+      int index = (i0 * grid->ym() + j0) * nlevels + k;
 
       // index into the new array and interpolate in x direction
       output_array[index] = a_m * (1.0 - ii) + a_p * ii;

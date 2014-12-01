@@ -62,10 +62,10 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   // initialize these data members to get rid of a valgrind warning;
   // correct values will be set in IceGrid::allocate()
-  xs = 0;
-  ys = 0;
-  xm = 0;
-  ym = 0;
+  m_xs = 0;
+  m_ys = 0;
+  m_xm = 0;
+  m_ym = 0;
 
   std::string word = config.get_string("grid_periodicity");
   if (word == "none") {
@@ -394,30 +394,13 @@ void IceGrid::compute_ownership_ranges() {
  */
 PetscErrorCode IceGrid::allocate() {
 
-  if (Mx < 3) {
-    throw RuntimeError("IceGrid::allocate(): Mx has to be at least 3.");
-  }
-
-  if (My < 3) {
-    throw RuntimeError("IceGrid::allocate(): My has to be at least 3.");
-  }
-
-  if (Lx <= 0) {
-    throw RuntimeError("IceGrid::allocate(): Lx has to be positive.");
-  }
-
-  if (Ly <= 0) {
-    throw RuntimeError("IceGrid::allocate(): Ly has to be positive.");
-  }
-
+  check_parameters();
 
   unsigned int max_stencil_width = (int)config.get("grid_max_stencil_width");
 
-
   try {
     PISMDM::Ptr tmp = this->get_dm(1, max_stencil_width);
-  }
-  catch (RuntimeError) {
+  } catch (RuntimeError) {
     throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
                                   Mx, My, size);
   }
@@ -429,8 +412,8 @@ PetscErrorCode IceGrid::allocate() {
   DMDALocalInfo info;
   DMDAGetLocalInfo(*m_dm_scalar_global, &info);
   // this continues the fundamental transpose
-  xs = info.ys; xm = info.ym;
-  ys = info.xs; ym = info.xm;
+  m_xs = info.ys; m_xm = info.ym;
+  m_ys = info.xs; m_ym = info.xm;
 
   return 0;
 }
@@ -902,6 +885,22 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
 // Computes the key corresponding to the DM with given dof and stencil_width.
 int IceGrid::dm_key(int da_dof, int stencil_width) {
   return 10000 * da_dof + stencil_width;
+}
+
+int IceGrid::xs() const {
+  return m_xs;
+}
+
+int IceGrid::ys() const {
+  return m_ys;
+}
+
+int IceGrid::xm() const {
+  return m_xm;
+}
+
+int IceGrid::ym() const {
+  return m_ym;
 }
 
 } // end of namespace pism

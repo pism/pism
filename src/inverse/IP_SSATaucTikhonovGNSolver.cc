@@ -103,7 +103,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");  
 
-  int nLocalNodes  = grid.xm*grid.ym;
+  int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx*grid.My;
   MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN);
 
