@@ -166,12 +166,15 @@ protected:
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
       if (bc_period == 0) {
-        n_records = PetscMin(n_records, buffer_size);
+        n_records = std::min(n_records, buffer_size);
       }
 
       if (n_records < 1) {
-        throw RuntimeError::formatted("Can't find '%s' (%s) in %s.",
-                                      short_name.c_str(), standard_name.c_str(), filename.c_str());
+        // If the variable was not found we allocate storage for one
+        // record. This is needed to be able to allocate and then
+        // discard an "-atmosphere given" model (PAGivenClimate) when
+        // "-surface given" (PSGivenClimate) is selected.
+        n_records = 1;
       }
 
       (k->second)->set_n_records(n_records);

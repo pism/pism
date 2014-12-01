@@ -50,6 +50,7 @@ IceModelVec2T::~IceModelVec2T() {
 
 
 //! Sets the number of records to store in memory. Call it before calling create().
+// FIXME: This is bad. Make N an argument of the constructor.
 void IceModelVec2T::set_n_records(unsigned int my_N) {
   n_records = my_N;
 }
