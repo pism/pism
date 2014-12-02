@@ -381,13 +381,13 @@ void IceModel::putTempAtDepth() {
     }
 
     // above ice
-    for (unsigned int k = ks; k < grid.Mz(); k++) {
+    for (unsigned int k = ks; k < grid.Mz; k++) {
       T[k] = Ts;
     }
 
     // convert to enthalpy if that's what we are calculating
     if (do_cold == false) {
-      for (unsigned int k = 0; k < grid.Mz(); ++k) {
+      for (unsigned int k = 0; k < grid.Mz; ++k) {
         const double depth = HH - grid.zlevels[k];
         const double pressure = EC->getPressureFromDepth(depth);
         // reuse T to store enthalpy; assume that the ice is cold

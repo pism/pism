@@ -170,7 +170,7 @@ protected:
   PetscErrorCode construct();
   PetscErrorCode destruct();
 
-  IceGrid &m_grid;                           ///< The computation grid.
+  IceGrid &m_grid;                           ///< Cache of the comptuation grid.
 
   IceModelVec2S   *m_zeta;                   ///< Current value of zeta, provided from caller.
   IceModelVec2S   m_dzeta_local;             ///< Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.

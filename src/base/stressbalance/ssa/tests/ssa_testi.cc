@@ -43,7 +43,7 @@ using namespace pism;
 class SSATestCaseI: public SSATestCase
 {
 public:
-  SSATestCaseI(MPI_Comm com, Config &c):
+  SSATestCaseI(MPI_Comm com, Config &c): 
                  SSATestCase(com,c)
   { };
 
@@ -54,7 +54,7 @@ protected:
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual PetscErrorCode exactSolution(int i, int j, 
     double x, double y, double *u, double *v);
 
 };
@@ -62,16 +62,16 @@ protected:
 const double m_schoof = 10; // (pure number)
 const double L_schoof = 40e3; // meters
 const double aspect_schoof = 0.05; // (pure)
-const double H0_schoof = aspect_schoof * L_schoof;
+const double H0_schoof = aspect_schoof * L_schoof; 
                                        // = 2000 m THICKNESS
-const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
+const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
                                      // given on p. 239 of Schoof; why so big?
 
 PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
   double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NONE);
+  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
 
@@ -106,10 +106,10 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   double standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double y = grid->y[j];
+    const double y = grid.y[j];
     const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
     const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
     tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
@@ -120,17 +120,16 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   list.add(bc_mask);
   list.add(surface);
   list.add(bed);
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double junk, myu, myv;
-    const double myx = grid->x[i], myy=grid->y[j];
+    const double myx = grid.x[i], myy=grid.y[j];
     // eval exact solution; will only use exact vels if at edge
-    exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv);
+    exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
     surface(i,j) = bed(i,j) + H0_schoof;
 
-    bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
-                 (i == 0) || (i == (int)grid->Mx() - 1));
+    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
     if (edge) {
       bc_mask(i,j) = 1;
       vel_bc(i,j).u = myu;
@@ -144,18 +143,18 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   bc_mask.update_ghosts();
   vel_bc.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc);
+  ssa->set_boundary_conditions(bc_mask, vel_bc); 
 
   return 0;
 }
 
 
-PetscErrorCode SSATestCaseI::exactSolution(int /*i*/, int /*j*/,
+PetscErrorCode SSATestCaseI::exactSolution(int /*i*/, int /*j*/, 
                                            double x, double y,
                                            double *u, double *v)
 {
   double junk1, junk2;
-  exactI(m_schoof, x,y, &junk1, &junk2,u,v);
+  exactI(m_schoof, x,y, &junk1, &junk2,u,v); 
   return 0;
 }
 
@@ -168,9 +167,9 @@ int main(int argc, char *argv[]) {
   PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
-
+  
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  try {
+  try {  
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -206,14 +205,14 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
+      OptionsInt("-Mx", "Number of grid points in the X direction", 
                  Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction",
+      OptionsInt("-My", "Number of grid points in the Y direction", 
                  My, flag);
       OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
                   ssa_choices, driver, driver, flag);
-
-      OptionsString("-o", "Set the output file name",
+             
+      OptionsString("-o", "Set the output file name", 
                     output_file, flag);
       OptionsInt("-verbose", "Verbosity level",
                  my_verbosity_level, flag);

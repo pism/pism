@@ -104,7 +104,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");  
 
   int nLocalNodes  = grid.xm()*grid.ym();
-  int nGlobalNodes = grid.Mx()*grid.My();
+  int nGlobalNodes = grid.Mx*grid.My;
   MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN);
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;

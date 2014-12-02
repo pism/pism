@@ -167,9 +167,10 @@ PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::stri
 
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-void show_usage_check_req_opts(MPI_Comm com, std::string execname,
-                               std::vector<std::string> required_options,
-                               std::string usage) {
+PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
+					 std::vector<std::string> required_options,
+					 std::string usage) {
+
   stop_on_version_option();
 
   bool usageSet = false;
@@ -183,13 +184,13 @@ void show_usage_check_req_opts(MPI_Comm com, std::string execname,
   for (size_t ii=0; ii < required_options.size(); ii++) {
     bool set = false;
     OptionsIsSet(required_options[ii], set);
-    if (set == false) {
+    if (set == PETSC_FALSE) {
       req_absent = true;
       verbPrintf(1,com,
                  "PISM ERROR: option %s required\n",required_options[ii].c_str());
     }
   }
-  if (req_absent == true) {
+  if (req_absent == PETSC_TRUE) {
     verbPrintf(1,com,"\n");
     show_usage_and_quit(com, execname, usage);
   }
@@ -200,6 +201,8 @@ void show_usage_check_req_opts(MPI_Comm com, std::string execname,
   if (helpSet == true) {
     just_show_usage(com, execname, usage);
   }
+
+  return 0;
 }
 
 
@@ -363,7 +366,7 @@ PetscErrorCode OptionsStringSet(std::string opt, std::string text, std::string d
 
 //! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode OptionsInt(std::string option, std::string text,
-                          int &result, bool &is_set) {
+			      int &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;

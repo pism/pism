@@ -96,8 +96,8 @@ IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
   gmaxw = 0;
 
   // set default locations of the column used by -view_system
-  id = (grid.Mx() - 1)/2;
-  jd = (grid.My() - 1)/2;
+  id = (grid.Mx - 1)/2;
+  jd = (grid.My - 1)/2;
 
   global_attributes.set_string("Conventions", "CF-1.5");
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
@@ -651,9 +651,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth && basal_yield_stress_model) {
-    grid.profiling().begin("basal yield stress");
+    grid.profiling.begin("basal yield stress");
     basal_yield_stress_model->update(grid.time->current(), dt);
-    grid.profiling().end("basal yield stress");
+    grid.profiling.end("basal yield stress");
     basal_yield_stress_model->basal_material_yield_stress(basal_yield_stress);
     stdout_flags += "y";
   } else {
@@ -675,11 +675,11 @@ void IceModel::step(bool do_mass_continuity,
   ocean->melange_back_pressure_fraction(melange_back_pressure);
 
   try {
-    grid.profiling().begin("stress balance");
+    grid.profiling.begin("stress balance");
     stress_balance->update(updateAtDepth == false,
                            sea_level,
                            melange_back_pressure);
-    grid.profiling().end("stress balance");
+    grid.profiling.end("stress balance");
   } catch (RuntimeError &e) {
     std::string o_file = "stressbalance_failed.nc";
     bool o_file_set;
@@ -705,13 +705,13 @@ void IceModel::step(bool do_mass_continuity,
   max_timestep(dt, skipCountDown);
 
   //! \li Update surface and ocean models.
-  grid.profiling().begin("surface");
+  grid.profiling.begin("surface");
   surface->update(grid.time->current(), dt);
-  grid.profiling().end("surface");
+  grid.profiling.end("surface");
 
-  grid.profiling().begin("ocean");
+  grid.profiling.begin("ocean");
   ocean->update(grid.time->current(),   dt);
-  grid.profiling().end("ocean");
+  grid.profiling.end("ocean");
 
   dt_TempAge += dt;
   // IceModel::dt,dtTempAge are now set correctly according to
@@ -721,9 +721,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the age of the ice (if appropriate)
   if (do_age && updateAtDepth) {
-    grid.profiling().begin("age");
+    grid.profiling.begin("age");
     ageStep();
-    grid.profiling().end("age");
+    grid.profiling.end("age");
     stdout_flags += "a";
   } else {
     stdout_flags += "$";
@@ -733,9 +733,9 @@ void IceModel::step(bool do_mass_continuity,
   //!  energy model based (especially) on the new velocity field; see
   //!  energyStep()
   if (do_energy_step) { // do the energy step
-    grid.profiling().begin("energy");
+    grid.profiling.begin("energy");
     energyStep();
-    grid.profiling().end("energy");
+    grid.profiling.end("energy");
     stdout_flags += "E";
   } else {
     stdout_flags += "$";
@@ -747,24 +747,24 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
-  grid.profiling().begin("basal hydrology");
+  grid.profiling.begin("basal hydrology");
   subglacial_hydrology->update(grid.time->current(), dt);
-  grid.profiling().end("basal hydrology");
+  grid.profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
   if (config.get_flag("do_fracture_density")) {
-    grid.profiling().begin("fracture density");
+    grid.profiling.begin("fracture density");
     calculateFractureDensity();
-    grid.profiling().end("fracture density");
+    grid.profiling.end("fracture density");
   }
 
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
-    grid.profiling().begin("mass transport");
+    grid.profiling.begin("mass transport");
     massContExplicitStep();
     updateSurfaceElevationAndMask(); // update h and mask
-    grid.profiling().end("mass transport");
+    grid.profiling.end("mass transport");
 
     // Note that there are three adaptive time-stepping criteria. Two of them
     // (using max. diffusion and 2D CFL) are limiting the mass-continuity
@@ -786,9 +786,9 @@ void IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
-  grid.profiling().begin("calving");
+  grid.profiling.begin("calving");
   do_calving();
-  grid.profiling().end("calving");
+  grid.profiling.end("calving");
 
   Href_cleanup();
 
@@ -797,9 +797,9 @@ void IceModel::step(bool do_mass_continuity,
   if (beddef) {
     int topg_state_counter = bed_topography.get_state_counter();
 
-    grid.profiling().begin("bed deformation");
+    grid.profiling.begin("bed deformation");
     beddef->update(grid.time->current(), dt);
-    grid.profiling().end("bed deformation");
+    grid.profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
       stdout_flags += "b";
@@ -880,7 +880,7 @@ void IceModel::run() {
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
   // will terminate
-  grid.profiling().stage_begin("time-stepping loop");
+  grid.profiling.stage_begin("time-stepping loop");
   while (grid.time->current() < grid.time->end()) {
 
     stdout_flags.erase();  // clear it out
@@ -897,12 +897,12 @@ void IceModel::run() {
     summary(show_step);
 
     // writing these fields here ensures that we do it after the last time-step
-    grid.profiling().begin("I/O during run");
+    grid.profiling.begin("I/O during run");
     write_snapshot();
     write_timeseries();
     write_extras();
     write_backup();
-    grid.profiling().end("I/O during run");
+    grid.profiling.end("I/O during run");
 
     update_viewers();
 
@@ -914,7 +914,7 @@ void IceModel::run() {
     }
   } // end of the time-stepping loop
 
-  grid.profiling().stage_end("time-stepping loop");
+  grid.profiling.stage_end("time-stepping loop");
 
   bool flag;
   int pause_time = 0;

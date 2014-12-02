@@ -253,7 +253,7 @@ void SSAFEM::cacheQuadPtValues() {
   double ice_density = config.get("ice_density");
 
   for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
-    Enth_q[q] = new double[grid.Mz()];
+    Enth_q[q] = new double[grid.Mz];
   }
 
   GeometryCalculator gc(sea_level, config);
@@ -330,7 +330,7 @@ void SSAFEM::cacheQuadPtValues() {
       // using getInternalColumn doesn't make this straightforward.  So we compute the values
       // by hand.
       const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
-      for (unsigned int k = 0; k < grid.Mz(); k++) {
+      for (unsigned int k = 0; k < grid.Mz; k++) {
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
         for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
           for (unsigned int p = 0; p < FEQuadrature::Nk; p++) {

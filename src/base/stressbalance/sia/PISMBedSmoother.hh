@@ -110,7 +110,7 @@ protected:
     C2p0, C3p0, C4p0;
 
   virtual void preprocess_bed(IceModelVec2S &topg,
-                              unsigned int Nx_in, unsigned int Ny_in);
+                                        int Nx_in, int Ny_in);
 
   void smooth_the_bed_on_proc0();
   void compute_coefficients_on_proc0();

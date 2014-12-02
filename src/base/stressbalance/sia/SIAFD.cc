@@ -113,24 +113,24 @@ void SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
-    grid.profiling().begin("SIA bed smoother");
+    grid.profiling.begin("SIA bed smoother");
     bed_smoother->preprocess_bed(*bed);
-    grid.profiling().end("SIA bed smoother");
+    grid.profiling.end("SIA bed smoother");
     bed_state_counter = bed->get_state_counter();
   }
 
-  grid.profiling().begin("SIA gradient");
+  grid.profiling.begin("SIA gradient");
   compute_surface_gradient(h_x, h_y);
-  grid.profiling().end("SIA gradient");
+  grid.profiling.end("SIA gradient");
 
-  grid.profiling().begin("SIA flux");
+  grid.profiling.begin("SIA flux");
   compute_diffusive_flux(h_x, h_y, diffusive_flux, fast);
-  grid.profiling().end("SIA flux");
+  grid.profiling.end("SIA flux");
 
   if (!fast) {
-    grid.profiling().begin("SIA 3D hor. vel.");
+    grid.profiling.begin("SIA 3D hor. vel.");
     compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v);
-    grid.profiling().end("SIA 3D hor. vel.");
+    grid.profiling.end("SIA 3D hor. vel.");
   }
 }
 
@@ -527,7 +527,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
 
   result.set(0.0);
 
-  std::vector<double> delta_ij(grid.Mz());
+  std::vector<double> delta_ij(grid.Mz);
 
   const double enhancement_factor = flow_law->enhancement_factor();
   double ice_grain_size = config.get("ice_grain_size");
@@ -655,8 +655,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       // this adjustment lets us avoid taking very small time-steps
       // because of the possible thickness and bed elevation
       // "discontinuities" at the boundary.)
-      if (i < 0 || i >= (int)grid.Mx() - 1 ||
-          j < 0 || j >= (int)grid.My() - 1) {
+      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1) {
         Dfoffset = 0.0;
       }
 
@@ -670,7 +669,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       // if doing the full update, fill the delta column above the ice and
       // store it:
       if (full_update) {
-        for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
           delta_ij[k] = 0.0;
         }
         delta[o].setInternalColumn(i,j,&delta_ij[0]);
@@ -814,7 +813,7 @@ void SIAFD::compute_I() {
         I_ij[k] = I_current;
       }
       // above the ice:
-      for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+      for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
         I_ij[k] = I_current;
       }
     }
@@ -881,7 +880,7 @@ void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2St
     double vel_input_u = (*vel_input)(i, j).u,
       vel_input_v = (*vel_input)(i, j).v;
 
-    for (unsigned int k = 0; k < grid.Mz(); ++k) {
+    for (unsigned int k = 0; k < grid.Mz; ++k) {
       u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
                           INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
       v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +

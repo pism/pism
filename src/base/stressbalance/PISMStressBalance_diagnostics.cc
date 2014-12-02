@@ -442,7 +442,7 @@ void PSB_wvel::compute(IceModelVec* &output) {
     }
 
     // above the ice:
-    for (unsigned int k = ks+1; k < grid.Mz() ; k++) {
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
       res[k] = 0.0;
     }
 
@@ -694,7 +694,7 @@ void PSB_uvel::compute(IceModelVec* &output) {
       u_out_ij[k] = u_ij[k];
     }
     // above the ice:
-    for (unsigned int k = ks+1; k < grid.Mz() ; k++) {
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
       u_out_ij[k] = 0.0;
     }
   }
@@ -743,7 +743,7 @@ void PSB_vvel::compute(IceModelVec* &output) {
       v_out_ij[k] = v_ij[k];
     }
     // above the ice:
-    for (unsigned int k = ks+1; k < grid.Mz() ; k++) {
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
       v_out_ij[k] = 0.0;
     }
   }
@@ -792,7 +792,7 @@ void PSB_wvel_rel::compute(IceModelVec* &output) {
       w_out_ij[k] = w_ij[k];
     }
     // above the ice:
-    for (unsigned int k = ks+1; k < grid.Mz() ; k++) {
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
       w_out_ij[k] = 0.0;
     }
   }
@@ -954,7 +954,7 @@ void PSB_pressure::compute(IceModelVec* &output) {
       P_out_ij[k] = rg * (H - grid.zlevels[k]);  // FIXME: add atmospheric pressure?
     }
     // above the ice:
-    for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
       P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
     }
   }
@@ -1013,7 +1013,7 @@ void PSB_tauxz::compute(IceModelVec* &output) {
       tauxz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdx;
     }
     // above the ice:
-    for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
       tauxz_out_ij[k] = 0.0;
     }
 
@@ -1073,7 +1073,7 @@ void PSB_tauyz::compute(IceModelVec* &output) {
       tauyz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdy;
     }
     // above the ice:
-    for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
       tauyz_out_ij[k] = 0.0;
     }
 

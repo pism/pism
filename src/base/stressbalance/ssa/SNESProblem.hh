@@ -138,7 +138,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   ierr = DMDACreate2d(m_grid.com,
                       DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
                       DMDA_STENCIL_BOX,
-                      m_grid.My(), m_grid.Mx(),
+                      m_grid.My, m_grid.Mx,
                       m_grid.Ny, m_grid.Nx,
                       DOF, stencil_width,
                       &m_grid.procs_y[0], &m_grid.procs_x[0],

@@ -207,7 +207,7 @@ void PSVerification::update_ABCDEH(double time) {
 }
 
 void PSVerification::update_FG(double time) {
-  unsigned int   Mz = grid.Mz();
+  unsigned int   Mz = grid.Mz;
   double         H, accum;
 
   std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);

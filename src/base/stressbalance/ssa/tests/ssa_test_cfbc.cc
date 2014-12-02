@@ -89,7 +89,7 @@ PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
     throw RuntimeError("ssa_test_cfbc error: have to use the SSAFD solver.");
   }
 
-  SSAFD_nuH nuH(ssafd, *grid, vars);
+  SSAFD_nuH nuH(ssafd, grid, vars);
 
   IceModelVec* result;
   nuH.compute(result);
@@ -106,7 +106,7 @@ PetscErrorCode SSATestCaseCFBC::initializeGrid(int Mx, int My)
 
   double halfWidth = 250.0e3;  // 500.0 km length
   double Lx = halfWidth, Ly = halfWidth;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, Y_PERIODIC);
+  init_shallow_grid(grid, Lx, Ly, Mx, My, Y_PERIODIC);
   return 0;
 }
 
@@ -145,13 +145,13 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double x = grid->x[i];
+    const double x = grid.x[i];
 
-    if (i != (int)grid->Mx() - 1) {
-      thickness(i, j) = H_exact(V0, H0, C, x + grid->Lx);
+    if (i != grid.Mx - 1) {
+      thickness(i, j) = H_exact(V0, H0, C, x + grid.Lx);
       ice_mask(i, j)  = MASK_FLOATING;
     } else {
       thickness(i, j) = 0;
@@ -192,8 +192,8 @@ PetscErrorCode SSATestCaseCFBC::exactSolution(int i, int /*j*/,
                                               double x, double /*y*/,
                                               double *u, double *v)
 {
-  if (i != (int)grid->Mx() - 1) {
-    *u = u_exact(V0, H0, C, x + grid->Lx);
+  if (i != grid.Mx - 1) {
+    *u = u_exact(V0, H0, C, x + grid.Lx);
   } else {
     *u = 0;
   }

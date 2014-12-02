@@ -54,9 +54,9 @@ FEElementMap::FEElementMap(const IceGrid &g) {
       xs = 0;
     }
     // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
-    if (xf > (int)g.Mx() - 2) {
-      xf = g.Mx() - 2;
-      lxf = g.Mx() - 2;
+    if (xf > g.Mx - 2) {
+      xf = g.Mx - 2;
+      lxf = g.Mx - 2;
     }
   }
 
@@ -66,9 +66,9 @@ FEElementMap::FEElementMap(const IceGrid &g) {
       ys = 0;
     }
     // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
-    if (yf > (int)g.My() - 2) {
-      yf = g.My() - 2;
-      lyf = g.My() - 2;
+    if (yf > g.My - 2) {
+      yf = g.My - 2;
+      lyf = g.My - 2;
     }
   }
 
@@ -187,8 +187,8 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   // We do not ever sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < Nk; k++) {
     int pism_i = m_row[k].j, pism_j = m_row[k].i;
-    if (pism_i < grid.xs() || grid.xs() + (int)grid.xm() - 1 < pism_i ||
-        pism_j < grid.ys() || grid.ys() + (int)grid.ym() - 1 < pism_j) {
+    if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
+        pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
       markRowInvalid(k);
     }
   }

@@ -51,15 +51,10 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     IceGrid grid(com, config);
-    grid_info info;
-
-    info.x_len = 81;
-    info.y_len = 81;
-    info.Lx = 1200e3;
-    info.Ly = info.Lx;
-    info.z_max = config.get("grid_Lz");
-    grid.set_from_grid_info(info);
-
+    grid.Mx = 81;
+    grid.My = 81;
+    grid.Lx = 1200e3;
+    grid.Ly = grid.Lx;
     grid.periodicity = NOT_PERIODIC;
     grid.compute_nprocs();
     grid.compute_ownership_ranges();

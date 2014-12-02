@@ -141,7 +141,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   x_alpha.resize(grid.xm());
 
   // x-direction; loop over all grid points in this processor's sub-domain
-  for (int i = 0; i < (int)grid.xm(); ++i) {
+  for (int i = 0; i < grid.xm(); ++i) {
     // i is the index in this processor's sub-domain
     // x is the x-coordinate in the total domain
     double x = grid.x[grid.xs() + i];
@@ -175,7 +175,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // of all the coarse grid points. So, we modify x_left, x_right, and
   // x_alpha to use constant extrapolation for these fine grid points.
 
-  for (int i = 0; i < (int)grid.xm(); ++i) {
+  for (int i = 0; i < grid.xm(); ++i) {
     // for all points in the x-direction in this sub-domain
 
     // get the coordinate
@@ -200,7 +200,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   y_right.resize(grid.ym());
   y_alpha.resize(grid.ym());
 
-  for (int j = 0; j < (int)grid.ym(); ++j) {
+  for (int j = 0; j < grid.ym(); ++j) {
     double y = grid.y[grid.ys() + j];
 
     // This is here to make it crash and burn if something goes wrong, instead
@@ -222,7 +222,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // Take care of the edge if the domain in the y-direction (see above
   // for details).
-  for (int i = 0; i < (int)grid.ym(); ++i) {
+  for (int i = 0; i < grid.ym(); ++i) {
     // for all points in the y-direction in this sub-domain
 
     // get the coordinate
