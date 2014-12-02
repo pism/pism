@@ -123,6 +123,56 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   // PIO::get_grid()).
 }
 
+/*! @brief Initialize a uniform, shallow (3 z-levels), doubly periodic grid
+ * with half-widths (Lx,Ly) and Mx by My nodes.
+ */
+IceGrid::Ptr IceGrid::Shallow(MPI_Comm c, const Config &config,
+                              double my_Lx, double my_Ly,
+                              unsigned int Mx, unsigned int My, Periodicity p) {
+
+  return IceGrid::Create(c, config, my_Lx, my_Ly, config.get("grid_Lz"),
+                         Mx, My, 3, p);
+}
+
+IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
+                             double my_Lx, double my_Ly, double my_Lz,
+                             unsigned int Mx, unsigned int My, unsigned int Mz,
+                             Periodicity p) {
+
+  Ptr result(new IceGrid(c, config));
+
+  result->Lx = my_Lx;
+  result->Ly = my_Ly;
+  result->Lz = my_Lz;
+  result->Mx = Mx;
+  result->My = My;
+  result->periodicity = p;
+  result->Mz = Mz;
+
+  result->compute_nprocs();
+  result->compute_ownership_ranges();
+  result->compute_vertical_levels();
+  result->compute_horizontal_spacing();
+  result->allocate();
+
+  return result;
+}
+
+IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
+
+  Ptr result(new IceGrid(c, config));
+
+  // use defaults from config
+
+  result->compute_nprocs();
+  result->compute_ownership_ranges();
+  result->compute_vertical_levels();
+  result->compute_horizontal_spacing();
+  result->allocate();
+
+  return result;
+}
+
 /**
  * Select a calendar using the "calendar" configuration parameter, the
  * "-calendar" command-line option, or the "calendar" attribute of the

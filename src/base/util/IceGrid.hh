@@ -36,7 +36,7 @@ class Prof;
 class Config;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
-typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 /** Wrapper around PETSc's DM. Simplifies memory management.
  *
@@ -139,6 +139,26 @@ class IceGrid {
 public:
   IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceGrid> Ptr;
+#else
+  typedef std::shared_ptr<IceGrid> Ptr;
+#endif
+
+  static Ptr Shallow(MPI_Comm c, const Config &config,
+                     double my_Lx, double my_Ly,
+                     unsigned int Mx, unsigned int My, Periodicity p);
+
+  static Ptr Create(MPI_Comm c, const Config &config,
+                    double my_Lx, double my_Ly, double my_Lz,
+                    unsigned int Mx, unsigned int My, unsigned int Mz,
+                    Periodicity p);
+
+  static Ptr Create(MPI_Comm c, const Config &config);
+
+  // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
+  //                          const std::string &filename);
 
   PetscErrorCode report_parameters();
 

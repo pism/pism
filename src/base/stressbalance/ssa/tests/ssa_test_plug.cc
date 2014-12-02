@@ -88,7 +88,7 @@ protected:
 PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
 {
   double Lx=L, Ly = L; 
-  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NOT_PERIODIC);
   return 0;
 }
 
@@ -130,16 +130,16 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   list.add(bed);
   list.add(surface);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid.x[i], myy=grid.y[j];
+    const double myx = grid->x[i], myy=grid->y[j];
 
     bed(i,j) = -myx*(dhdx);
     surface(i,j) = bed(i,j) + H0;
       
-    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    bool edge = ((j == 0) || (j == grid->My - 1)) || ((i==0) || (i==grid->Mx-1));
     if (edge) {
       bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);

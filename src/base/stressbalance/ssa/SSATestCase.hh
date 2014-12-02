@@ -26,14 +26,6 @@
 
 namespace pism {
 
-//! Helper function for initializing a grid with the given dimensions and periodicity.
-//! The grid is shallow (3 z-layers).
-PetscErrorCode init_shallow_grid(IceGrid &grid, 
-                                 double Lx, double Ly, 
-                                 int Mx, int My, Periodicity p);
-
-
-
 /*! An SSATestCase manages running an SSA instance against a particular
   test.  Subclasses must implement the following abstract methods to define
   the input to an SSA for a test case:
@@ -97,8 +89,9 @@ protected:
                                double max_v,
                                double avg_u,
                                double avg_v);
+  MPI_Comm m_com;
   Config &config;
-  IceGrid grid;
+  IceGrid::Ptr grid;
 
   // SSA model variables.
   EnthalpyConverter *enthalpyconverter;

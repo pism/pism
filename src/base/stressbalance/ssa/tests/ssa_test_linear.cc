@@ -81,7 +81,7 @@ protected:
 PetscErrorCode SSATestCaseExp::initializeGrid(int Mx,int My)
 {
   double Lx=L, Ly = L; 
-  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NOT_PERIODIC);
   return 0;
 }
 
@@ -124,13 +124,13 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   IceModelVec::AccessList list;
   list.add(vel_bc);
   list.add(bc_mask);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid.x[i], myy=grid.y[j];
+    const double myx = grid->x[i], myy=grid->y[j];
       
-    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    bool edge = ((j == 0) || (j == grid->My - 1)) || ((i==0) || (i==grid->Mx-1));
     if (edge) {
       bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
@@ -154,7 +154,7 @@ PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/,
 {
   double tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
                                                    "m/year", "m/second");
-  double v0 = grid.convert(100.0, "m/year", "m/second");
+  double v0 = grid->convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
   double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
   *u = v0*exp(-alpha*(x-L));
