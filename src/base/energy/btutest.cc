@@ -102,7 +102,6 @@ static PetscErrorCode doneWithIceInfo(Vars &variables) {
 
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;
   PetscInitializer petsc(argc, argv, help);
@@ -149,13 +148,14 @@ int main(int argc, char *argv[]) {
     config.set_double("run_length_years", 1.0);
 
     // create grid and set defaults
+    config.set_double("grid_Mz", 41);
+    config.set_double("grid_Lz", 4000.0);
+    config.set_double("grid_Mx", 3);
+    config.set_double("grid_My", 3);
+    config.set_double("grid_Lx", 1500e3);
+    config.set_double("grid_Ly", 1500e3);
+
     IceGrid grid(com, config);
-    grid.Mz = 41;
-    grid.Lz = 4000.0;
-    grid.Mx = 3;
-    grid.My = 3;
-    grid.Lx = 1500e3;
-    grid.Ly = grid.Lx;
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
     config.set_double("grid_Mbz", 11); 
@@ -166,23 +166,12 @@ int main(int argc, char *argv[]) {
     bool flag;
     double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
-    int tmp = grid.Mz;
-    ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       OptionsString("-o", "Output file name", outname, flag);
       OptionsReal("-dt", "Time-step, in years", dt_years, flag);
-      OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag);
-      OptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
-
-    if (tmp > 0) {
-      grid.Mz = tmp;
-    } else {
-      throw RuntimeError::formatted("-Mz %d is invalid (has to be positive)", tmp);
-    }
+    config.scalar_from_option("-Mz", "grid_Mz");
+    config.scalar_from_option("-Lz", "grid_Lz");
 
     // complete grid initialization based on user options
     grid.compute_nprocs();
@@ -273,7 +262,7 @@ int main(int argc, char *argv[]) {
     ghf->norm(NORM_INFINITY,maxghferr);
     ghf->norm(NORM_1,avghferr);
     ghf->shift(+FF); // shift it back for writing
-    avghferr /= (grid.Mx * grid.My);
+    avghferr /= (grid.Mx() * grid.My());
     verbPrintf(2,grid.com, 
                "case dt = %.5f:\n", dt_years);
     verbPrintf(1,grid.com, 

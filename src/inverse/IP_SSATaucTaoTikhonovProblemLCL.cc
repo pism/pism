@@ -75,7 +75,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   DMCreateMatrix(da, &m_Jstate);
 
   int nLocalNodes  = grid.xm()*grid.ym();
-  int nGlobalNodes = grid.Mx*grid.My;
+  int nGlobalNodes = grid.Mx()*grid.My();
   MatCreateShell(grid.com,2*nLocalNodes,nLocalNodes,2*nGlobalNodes,nGlobalNodes,this,&m_Jdesign);
   MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);
   MatShellSetOperation(m_Jdesign,MATOP_MULT_TRANSPOSE,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose);

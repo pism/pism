@@ -61,12 +61,14 @@ namespace pism {
   grid initialization when no -i option is set.
  */
 void IceModel::set_grid_defaults() {
-  bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
-  std::string filename;
-  grid_info input;
+  grid_info input_grid;
+
+  // Use a bootstrapping file to set some grid parameters (they can be
+  // overridden later, in IceModel::set_grid_from_options()).
 
   // Get the bootstrapping file name:
-
+  std::string filename;
+  bool boot_file_set = false;
   OptionsString("-boot_file", "Specifies the file to bootstrap from",
                 filename, boot_file_set);
 
@@ -74,82 +76,90 @@ void IceModel::set_grid_defaults() {
     throw RuntimeError("Please specify an input file using -i or -boot_file.");
   }
 
-  // Use a bootstrapping file to set some grid parameters (they can be
-  // overridden later, in IceModel::set_grid_from_options()).
-
   // Determine the grid extent from a bootstrapping file:
   PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
-  bool x_dim_exists, y_dim_exists, t_exists;
-  nc.open(filename, PISM_READONLY);
-
-  x_dim_exists = nc.inq_dim("x");
-  y_dim_exists = nc.inq_dim("y");
-  t_exists = nc.inq_var(config.get_string("time_dimension_name"));
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
   // better way of specifying PISM's computational grid at bootstrapping.
-  std::vector<std::string> names;
-  names.push_back("land_ice_thickness");
-  names.push_back("bedrock_altitude");
-  names.push_back("thk");
-  names.push_back("topg");
-  bool grid_info_found = false;
-  for (unsigned int i = 0; i < names.size(); ++i) {
+  {
+    nc.open(filename, PISM_READONLY);
 
-    grid_info_found = nc.inq_var(names[i]);
+    std::vector<std::string> names;
+    names.push_back("land_ice_thickness");
+    names.push_back("bedrock_altitude");
+    names.push_back("thk");
+    names.push_back("topg");
+    bool grid_info_found = false;
+    for (unsigned int i = 0; i < names.size(); ++i) {
+
+      grid_info_found = nc.inq_var(names[i]);
+      if (grid_info_found == false) {
+        std::string dummy1;
+        bool dummy2;
+        nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+      }
+
+      if (grid_info_found) {
+        input_grid = nc.inq_grid_info(names[i], grid.periodicity);
+        break;
+      }
+    }
+
     if (grid_info_found == false) {
-      std::string dummy1;
-      bool dummy2;
-      nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+      throw RuntimeError::formatted("no geometry information found in '%s'",
+                                    filename.c_str());
+    }
+    nc.close();
+
+  }
+  // global attributes
+  // FIXME: this does not belong here
+  {
+    nc.open(filename, PISM_READONLY);
+
+    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
+    if (proj4_string.empty() == false) {
+      global_attributes.set_string("proj4", proj4_string);
     }
 
-    if (grid_info_found) {
-      input = nc.inq_grid_info(names[i], grid.periodicity);
-      break;
+    bool mapping_exists = nc.inq_var("mapping");
+    if (mapping_exists) {
+      nc.read_attributes(mapping.get_name(), mapping);
+      mapping.report_to_stdout(grid.com, 4);
     }
-  }
 
-  if (grid_info_found == false) {
-    throw RuntimeError::formatted("no geometry information found in '%s'",
-                                  filename.c_str());
+    nc.close();
   }
-
-  std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-  if (proj4_string.empty() == false) {
-    global_attributes.set_string("proj4", proj4_string);
-  }
-
-  bool mapping_exists = nc.inq_var("mapping");
-  if (mapping_exists) {
-    nc.read_attributes(mapping.get_name(), mapping);
-    mapping.report_to_stdout(grid.com, 4);
-  }
-
-  nc.close();
 
   // Set the grid center and horizontal extent:
-  grid.x0 = input.x0;
-  grid.y0 = input.y0;
-  grid.Lx = input.Lx;
-  grid.Ly = input.Ly;
+  grid.set_from_grid_info(input_grid);
 
-  // read current time if no option overrides it (avoids unnecessary reporting)
-  bool ys_set;
-  OptionsIsSet("-ys", ys_set);
-  if (!ys_set) {
-    if (t_exists) {
-      grid.time->set_start(input.time);
-      verbPrintf(2, grid.com,
-                 "  time t = %s found; setting current time\n",
-                 grid.time->date().c_str());
+  // time
+  {
+    nc.open(filename, PISM_READONLY);
+    bool t_exists = nc.inq_var(config.get_string("time_dimension_name"));
+    
+    // read current time if no option overrides it (avoids unnecessary reporting)
+    bool ys_set;
+    OptionsIsSet("-ys", ys_set);
+    if (!ys_set) {
+      if (t_exists) {
+        grid.time->set_start(input_grid.time);
+        verbPrintf(2, grid.com,
+                   "  time t = %s found; setting current time\n",
+                   grid.time->date().c_str());
+      }
     }
-  }
 
-  grid.time->init();
+    grid.time->init();
+
+    nc.close();
+  }
 
   // Grid dimensions should not be deduced from a bootstrapping file, so we
   // check if these options are set and stop if they are not.
+  bool Mx_set, My_set, Mz_set, Lz_set;
   OptionsIsSet("-Mx", Mx_set);
   OptionsIsSet("-My", My_set);
   OptionsIsSet("-Mz", Mz_set);
@@ -164,84 +174,94 @@ void IceModel::set_grid_defaults() {
     -zb_spacing. Sets corresponding grid parameters.
  */
 void IceModel::set_grid_from_options() {
-  bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
-    z_spacing_set;
-  double x_scale = grid.Lx / 1000.0,
-    y_scale = grid.Ly / 1000.0,
-    z_scale = grid.Lz;
 
-  // Process the options:
+  // Read -Lx, -Ly, -Lz:
+  {
+    bool Lx_set, Ly_set, Lz_set;
+    double
+      Lx_km = grid.Lx / 1000.0,
+      Ly_km = grid.Ly / 1000.0,
+      Lz_m  = grid.Lz;
+    OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
+                Ly_km,  Ly_set);
+    OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
+                Lx_km,  Lx_set);
+    OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
+                Lz_m,  Lz_set);
 
-  // Read -Lx and -Ly.
-  OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-              y_scale,  Ly_set);
-  OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-              x_scale,  Lx_set);
-  // Vertical extent (in the ice):
-  OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-              z_scale,  Lz_set);
-
-  // Read -Mx, -My, -Mz and -Mbz.
-  int tmp_Mx = grid.Mx, tmp_My = grid.My, tmp_Mz = grid.Mz;
-  OptionsInt("-My", "Number of grid points in the X direction",
-             tmp_My, My_set);
-  OptionsInt("-Mx", "Number of grid points in the Y direction",
-             tmp_Mx, Mx_set);
-  OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-             tmp_Mz, Mz_set);
-
-
-  if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
-    grid.Mx = tmp_Mx;
-    grid.My = tmp_My;
-    grid.Mz = tmp_Mz;
-  } else {
-    throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
-                                  "(have to have a positive number of grid points).",
-                                  tmp_Mx, tmp_My, tmp_Mz);
-  }
-
-  std::vector<double> x_range, y_range;
-  bool x_range_set, y_range_set;
-  OptionsRealArray("-x_range", "min,max x coordinate values",
-                   x_range, x_range_set);
-  OptionsRealArray("-y_range", "min,max y coordinate values",
-                   y_range, y_range_set);
-
-  std::string keyword;
-  std::set<std::string> z_spacing_choices;
-  z_spacing_choices.insert("quadratic");
-  z_spacing_choices.insert("equal");
-  // Determine the vertical grid spacing in the ice:
-  OptionsList("-z_spacing", "Vertical spacing in the ice.",
-              z_spacing_choices, "quadratic", keyword, z_spacing_set);
-
-  if (keyword == "quadratic") {
-    grid.ice_vertical_spacing = QUADRATIC;
-  } else {
-    grid.ice_vertical_spacing = EQUAL;
-  }
-
-  // Use the information obtained above:
-  if (Lx_set) {
-    grid.Lx  = x_scale * 1000.0; // convert to meters
-  }
-  if (Ly_set) {
-    grid.Ly  = y_scale * 1000.0; // convert to meters
-  }
-  if (Lz_set) {
-    grid.Lz  = z_scale;          // in meters already
-  }
-
-  if (x_range_set && y_range_set) {
-    if (x_range.size() != 2 || y_range.size() != 2) {
-      throw RuntimeError("-x_range and/or -y_range argument is invalid.");
+    if (Lx_set) {
+      grid.Lx  = Lx_km * 1000.0; // convert to meters
     }
 
-    grid.x0 = (x_range[0] + x_range[1]) / 2.0;
-    grid.y0 = (y_range[0] + y_range[1]) / 2.0;
-    grid.Lx = (x_range[1] - x_range[0]) / 2.0;
-    grid.Ly = (y_range[1] - y_range[0]) / 2.0;
+    if (Ly_set) {
+      grid.Ly  = Ly_km * 1000.0; // convert to meters
+    }
+
+    if (Lz_set) {
+      grid.Lz  = Lz_m;            // in meters already
+    }
+  }
+
+  // Read -Mx, -My, -Mz and -Mbz.
+  {
+    bool Mx_set, My_set, Mz_set;
+    int tmp_Mx = grid.Mx(), tmp_My = grid.My(), tmp_Mz = grid.Mz();
+
+    OptionsInt("-My", "Number of grid points in the X direction",
+               tmp_My, My_set);
+    OptionsInt("-Mx", "Number of grid points in the Y direction",
+               tmp_Mx, Mx_set);
+    OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
+               tmp_Mz, Mz_set);
+
+
+    if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
+      grid.set_Mx(tmp_Mx);
+      grid.set_My(tmp_My);
+      grid.set_Mz(tmp_Mz);
+    } else {
+      throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
+                                    "(have to have a positive number of grid points).",
+                                    tmp_Mx, tmp_My, tmp_Mz);
+    }
+  }
+
+  // vertical spacing type
+  {
+    bool z_spacing_set;
+    std::string keyword;
+    std::set<std::string> z_spacing_choices;
+    z_spacing_choices.insert("quadratic");
+    z_spacing_choices.insert("equal");
+    // Determine the vertical grid spacing in the ice:
+    OptionsList("-z_spacing", "Vertical spacing in the ice.",
+                z_spacing_choices, "quadratic", keyword, z_spacing_set);
+
+    if (keyword == "quadratic") {
+      grid.ice_vertical_spacing = QUADRATIC;
+    } else {
+      grid.ice_vertical_spacing = EQUAL;
+    }
+  }
+
+  // X and Y range options
+  {
+    std::vector<double> x_range, y_range;
+    bool x_range_set, y_range_set;
+    OptionsRealArray("-x_range", "min,max x coordinate values",
+                     x_range, x_range_set);
+    OptionsRealArray("-y_range", "min,max y coordinate values",
+                     y_range, y_range_set);
+    if (x_range_set && y_range_set) {
+      if (x_range.size() != 2 || y_range.size() != 2) {
+        throw RuntimeError("-x_range and/or -y_range argument is invalid.");
+      }
+
+      grid.x0 = (x_range[0] + x_range[1]) / 2.0;
+      grid.y0 = (y_range[0] + y_range[1]) / 2.0;
+      grid.Lx = (x_range[1] - x_range[0]) / 2.0;
+      grid.Ly = (y_range[1] - y_range[0]) / 2.0;
+    }
   }
 
   grid.check_parameters();
@@ -349,74 +369,82 @@ void IceModel::grid_setup() {
     ignore_option(grid.com, "-Lz");
     ignore_option(grid.com, "-z_spacing");
   } else {
+    // -i was not set
     set_grid_defaults();
     set_grid_from_options();
   }
 
-  bool Nx_set, Ny_set;
-  OptionsInt("-Nx", "Number of processors in the x direction",
-             grid.Nx, Nx_set);
-  OptionsInt("-Ny", "Number of processors in the y direction",
-             grid.Ny, Ny_set);
+  // -Nx and -Ny
+  {
+    bool Nx_set, Ny_set;
+    int Nx = grid.Nx, Ny = grid.Ny;
+    OptionsInt("-Nx", "Number of processors in the x direction", Nx, Nx_set);
+    OptionsInt("-Ny", "Number of processors in the y direction", Ny, Ny_set);
 
-  if (Nx_set ^ Ny_set) {
-    throw RuntimeError("Please set both -Nx and -Ny.");
-  }
-
-  if ((!Nx_set) && (!Ny_set)) {
-    grid.compute_nprocs();
-    grid.compute_ownership_ranges();
-  } else {
-
-    if ((grid.Mx / grid.Nx) < 2) {
-      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    grid.Mx, grid.Nx);
+    if (Nx_set and Ny_set) {
+      grid.Nx = Nx;
+      grid.Ny = Ny;
+    }
+    
+    if (Nx_set ^ Ny_set) {
+      throw RuntimeError("Please set both -Nx and -Ny.");
     }
 
-    if ((grid.My / grid.Ny) < 2) {
-      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    grid.My, grid.Ny);
-    }
-
-    if (grid.Nx * grid.Ny != grid.size) {
-      throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
-                                    grid.size);
-    }
-
-    bool procs_x_set, procs_y_set;
-    std::vector<int> tmp_x, tmp_y;
-    OptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
-                    tmp_x, procs_x_set);
-    OptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
-                    tmp_y, procs_y_set);
-
-    if (procs_x_set ^ procs_y_set) {
-      throw RuntimeError("Please set both -procs_x and -procs_y.");
-    }
-
-    if (procs_x_set && procs_y_set) {
-      if (tmp_x.size() != (unsigned int)grid.Nx) {
-        throw RuntimeError("-Nx has to be equal to the -procs_x size.");
-      }
-
-      if (tmp_y.size() != (unsigned int)grid.Ny) {
-        throw RuntimeError("-Ny has to be equal to the -procs_y size.");
-      }
-
-      grid.procs_x.resize(grid.Nx);
-      grid.procs_y.resize(grid.Ny);
-
-      for (int j=0; j < grid.Nx; j++) {
-        grid.procs_x[j] = tmp_x[j];
-      }
-
-      for (int j=0; j < grid.Ny; j++) {
-        grid.procs_y[j] = tmp_y[j];
-      }
-    } else {
+    if ((!Nx_set) && (!Ny_set)) {
+      grid.compute_nprocs();
       grid.compute_ownership_ranges();
-    }
-  } // -Nx and -Ny set
+    } else {
+
+      if ((grid.Mx() / grid.Nx) < 2) {
+        throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                      grid.Mx(), grid.Nx);
+      }
+
+      if ((grid.My() / grid.Ny) < 2) {
+        throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                      grid.My(), grid.Ny);
+      }
+
+      if (grid.Nx * grid.Ny != grid.size) {
+        throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
+                                      grid.size);
+      }
+
+      bool procs_x_set, procs_y_set;
+      std::vector<int> tmp_x, tmp_y;
+      OptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
+                      tmp_x, procs_x_set);
+      OptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
+                      tmp_y, procs_y_set);
+
+      if (procs_x_set ^ procs_y_set) {
+        throw RuntimeError("Please set both -procs_x and -procs_y.");
+      }
+
+      if (procs_x_set && procs_y_set) {
+        if (tmp_x.size() != (unsigned int)grid.Nx) {
+          throw RuntimeError("-Nx has to be equal to the -procs_x size.");
+        }
+
+        if (tmp_y.size() != (unsigned int)grid.Ny) {
+          throw RuntimeError("-Ny has to be equal to the -procs_y size.");
+        }
+
+        grid.procs_x.resize(grid.Nx);
+        grid.procs_y.resize(grid.Ny);
+
+        for (unsigned int j=0; j < grid.Nx; j++) {
+          grid.procs_x[j] = tmp_x[j];
+        }
+
+        for (unsigned int j=0; j < grid.Ny; j++) {
+          grid.procs_y[j] = tmp_y[j];
+        }
+      } else {
+        grid.compute_ownership_ranges();
+      }
+    } // -Nx and -Ny set
+  }
 
   grid.check_parameters();
 

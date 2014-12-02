@@ -50,7 +50,7 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
                                   double &gmax_strain_heating_err,
                                   double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
-  const int Mz = grid.Mz;
+  const int Mz = grid.Mz();
 
   const double LforFG = 750000; // m
 
@@ -155,9 +155,9 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
   GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
   GlobalSum(grid.com, &avUerr,  &gavUerr);
-  gavUerr = gavUerr/(grid.Mx*grid.My);
+  gavUerr = gavUerr/(grid.Mx()*grid.My());
   GlobalSum(grid.com, &avWerr,  &gavWerr);
-  gavWerr = gavWerr/(grid.Mx*grid.My);
+  gavWerr = gavWerr/(grid.Mx()*grid.My());
   return 0;
 }
 
@@ -180,7 +180,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
     temperature.getInternalColumn(i,j,&T_ij);
     enthalpy.getInternalColumn(i,j,&E_ij);
 
-    for (unsigned int k=0; k<grid.Mz; ++k) {
+    for (unsigned int k=0; k<grid.Mz(); ++k) {
       double depth = thickness(i,j) - grid.zlevels[k];
       E_ij[k] = EC.getEnthPermissive(T_ij[k], 0.0,
                                      EC.getPressureFromDepth(depth));
@@ -202,7 +202,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
                              IceModelVec2S *surface,
                              IceModelVec2S *thickness,
                              IceModelVec3 *enthalpy) {
-  int        Mz=grid.Mz;
+  int        Mz=grid.Mz();
   double     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
 
   double ST = 1.67e-5,
@@ -217,7 +217,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   mask->set(MASK_GROUNDED);
 
   double *T;
-  T = new double[grid.Mz];
+  T = new double[grid.Mz()];
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -325,49 +325,33 @@ int main(int argc, char *argv[]) {
                   "\n");
     }
 
-    IceGrid grid(com, config);
 
-    grid.Lx = grid.Ly = 900e3;
-    grid.Lz = 4000;
-    grid.Mx = grid.My = 61;
-    grid.Mz = 61;
+    config.set_double("grid_Lx", 900e3);
+    config.set_double("grid_Ly", 900e3);
+    config.set_double("grid_Lz", 4000.0);
+    config.set_double("grid_Mx", 61);
+    config.set_double("grid_My", 61);
+    config.set_double("grid_Mz", 61);
 
     std::string output_file = "siafd_test_F.nc";
-    int tmp = grid.Mz;
-    ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       bool flag;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
-                 grid.Mx, flag);
-      OptionsInt("-My", "Number of grid points in the X direction",
-                 grid.My, flag);
-      OptionsInt("-Mz", "Number of vertical grid levels",
-                 tmp, flag);
       OptionsString("-o", "Set the output file name",
                     output_file, flag);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
-    if (tmp > 0) {
-      grid.Mz = tmp;
-    } else {
-      throw RuntimeError::formatted("-Mz %d is invalid (has to be positive).", tmp);
-    }
-
-    grid.compute_nprocs();
-    grid.compute_ownership_ranges();
-    grid.compute_vertical_levels();
-    grid.compute_horizontal_spacing();
-    grid.allocate();
+    config.scalar_from_option("-Mx", "grid_Mx");
+    config.scalar_from_option("-My", "grid_My");
+    config.scalar_from_option("-Mz", "grid_Mz");
+    
+    IceGrid::Ptr grid = IceGrid::Create(com, config);
 
     setVerbosityLevel(5);
-    grid.printInfo(1);
-    //ierr = grid.printVertLevels(1); CHKERRQ(ierr);
+    grid->printInfo(1);
+
 
     ICMEnthalpyConverter EC(config);
-    ThermoGlenArrIce ice(grid.com, "", config, &EC);
+    ThermoGlenArrIce ice(grid->com, "", config, &EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;
@@ -378,40 +362,40 @@ int main(int argc, char *argv[]) {
     Vars vars;
 
     // ice upper surface elevation
-    ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
+    ice_surface_elevation.create(*grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
     ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
                                     "m", "surface_altitude");
     vars.add(ice_surface_elevation);
 
     // land ice thickness
-    ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+    ice_thickness.create(*grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
     ice_thickness.set_attrs("model_state", "land ice thickness",
                             "m", "land_ice_thickness");
     ice_thickness.metadata().set_double("valid_min", 0.0);
     vars.add(ice_thickness);
 
     // bedrock surface elevation
-    bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+    bed_topography.create(*grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
     bed_topography.set_attrs("model_state", "bedrock surface elevation",
                              "m", "bedrock_altitude");
     vars.add(bed_topography);
 
     // age of the ice; is not used here
-    age.create(grid, "age", WITHOUT_GHOSTS);
+    age.create(*grid, "age", WITHOUT_GHOSTS);
     age.set_attrs("diagnostic", "age of the ice", "s", "");
     age.set_glaciological_units("year");
     age.write_in_glaciological_units = true;
     vars.add(age);
 
     // enthalpy in the ice
-    enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+    enthalpy.create(*grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
     enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");
     vars.add(enthalpy);
 
     // grounded_dragging_floating integer mask
-    vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+    vMask.create(*grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
     vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
                     "", "");
     std::vector<double> mask_values(4);
@@ -429,13 +413,13 @@ int main(int argc, char *argv[]) {
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
     // StressBalance::compute_vertical_velocity().
-    SIAFD *sia = new SIAFD(grid, EC, config);
-    ZeroSliding *no_sliding = new ZeroSliding(grid, EC, config);
+    SIAFD *sia = new SIAFD(*grid, EC, config);
+    ZeroSliding *no_sliding = new ZeroSliding(*grid, EC, config);
 
-    StressBalance stress_balance(grid, no_sliding, sia, config);
+    StressBalance stress_balance(*grid, no_sliding, sia, config);
 
     // fill the fields:
-    setInitStateF(grid, EC,
+    setInitStateF(*grid, EC,
                   &bed_topography, &vMask, &ice_surface_elevation, &ice_thickness,
                   &enthalpy);
 
@@ -443,7 +427,7 @@ int main(int argc, char *argv[]) {
     stress_balance.init(vars);
 
     IceModelVec2S melange_back_pressure;
-    melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
+    melange_back_pressure.create(*grid, "melange_back_pressure", WITHOUT_GHOSTS);
     melange_back_pressure.set_attrs("boundary_condition",
                                     "melange back pressure fraction", "", "");
     melange_back_pressure.set(0.0);
@@ -458,16 +442,16 @@ int main(int argc, char *argv[]) {
 
     stress_balance.get_volumetric_strain_heating(sigma);
 
-    reportErrors(config, grid,
+    reportErrors(config, *grid,
                  &ice_thickness, u_sia, v_sia, w_sia, sigma);
 
     // Write results to an output file:
-    PIO pio(grid, "guess_mode");
+    PIO pio(*grid, "guess_mode");
 
     pio.open(output_file, PISM_READWRITE_MOVE);
     pio.def_time(config.get_string("time_dimension_name"),
-                        grid.time->calendar(),
-                        grid.time->CF_units_string());
+                        grid->time->calendar(),
+                        grid->time->CF_units_string());
     pio.append_time(config.get_string("time_dimension_name"), 0.0);
     pio.close();
 

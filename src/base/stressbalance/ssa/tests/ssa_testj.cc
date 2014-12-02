@@ -65,7 +65,7 @@ PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
 
   double halfWidth = 300.0e3;  // 300.0 km half-width
   double Lx = halfWidth, Ly = halfWidth;
-  init_shallow_grid(grid,Lx,Ly,Mx,My,XY_PERIODIC);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, XY_PERIODIC);
   return 0;
 }
 
@@ -91,7 +91,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
-  const double nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  const double nu0 = grid->convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a
@@ -106,11 +106,11 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   list.add(bc_mask);
   list.add(vel_bc);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double junk1, myu, myv, H;
-    const double myx = grid.x[i], myy = grid.y[j];
+    const double myx = grid->x[i], myy = grid->y[j];
 
     // set H,h on regular grid
     exactJ(myx, myy, &H, &junk1, &myu, &myv);
@@ -120,7 +120,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 
     // special case at center point: here we set vel_bc at (i,j) by marking
     // this grid point as SHEET and setting vel_bc approriately
-    if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
+    if ((i == grid->Mx()/2) && (j == grid->My()/2)) {
       bc_mask(i,j) = 1;
       vel_bc(i,j).u = myu;
       vel_bc(i,j).v = myv;

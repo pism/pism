@@ -63,7 +63,7 @@ public:
     nu0   = s.convert(30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // 1kPa
   }
-  
+
 protected:
   virtual PetscErrorCode initializeGrid(int Mx,int My);
 
@@ -71,7 +71,7 @@ protected:
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j, 
+  virtual PetscErrorCode exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
   double L, H0, dhdx, nu0, tauc0;
@@ -80,8 +80,8 @@ protected:
 
 PetscErrorCode SSATestCaseExp::initializeGrid(int Mx,int My)
 {
-  double Lx=L, Ly = L; 
-  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
+  double Lx = L, Ly = L;
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NONE);
   return 0;
 }
 
@@ -100,7 +100,7 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
 
 PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 {
-  
+
   // Force linear rheology
   ssa->strength_extension->set_notional_strength(nu0 * H0);
   ssa->strength_extension->set_min_thickness(4000*10);
@@ -116,7 +116,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   // double tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
   // printf("tauc0=%g\n",tauc0);
   tauc.set(tauc0);
-  
+
 
   // Set boundary conditions (Dirichlet all the way around).
   bc_mask.set(0.0);
@@ -124,13 +124,14 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   IceModelVec::AccessList list;
   list.add(vel_bc);
   list.add(bc_mask);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid.x[i], myy=grid.y[j];
-      
-    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    const double myx = grid->x[i], myy=grid->y[j];
+
+    bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
+                 (i == 0) || (i == (int)grid->Mx() - 1));
     if (edge) {
       bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
@@ -138,23 +139,23 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
       vel_bc(i,j).v = myv;
     }
   }
-    
+
   vel_bc.update_ghosts();
   bc_mask.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc); 
+  ssa->set_boundary_conditions(bc_mask, vel_bc);
 
   return 0;
 }
 
 
-PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, 
+PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/,
                                              double x, double /*y*/,
                                              double *u, double *v)
 {
   double tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
                                                    "m/year", "m/second");
-  double v0 = grid.convert(100.0, "m/year", "m/second");
+  double v0 = grid->convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
   double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
   *u = v0*exp(-alpha*(x-L));
@@ -171,9 +172,9 @@ int main(int argc, char *argv[]) {
   PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  try {  
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -209,14 +210,14 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction", 
+      OptionsInt("-Mx", "Number of grid points in the X direction",
                  Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction", 
+      OptionsInt("-My", "Number of grid points in the Y direction",
                  My, flag);
       OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
                   ssa_choices, driver, driver, flag);
-             
-      OptionsString("-o", "Set the output file name", 
+
+      OptionsString("-o", "Set the output file name",
                     output_file, flag);
 
       OptionsInt("-verbose", "Verbosity level",

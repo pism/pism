@@ -443,7 +443,7 @@ double IceModelVec2S::diff_x_p(int i, int j) const {
   
   if (i == 0) {
     return ((*this)(i + 1,j) - (*this)(i,j)) / (grid->dx);
-  } else if (i == grid->Mx - 1) {
+  } else if (i == (int)grid->Mx() - 1) {
     return ((*this)(i,j) - (*this)(i - 1,j)) / (grid->dx);
   } else {
     return diff_x(i,j);
@@ -460,7 +460,7 @@ double IceModelVec2S::diff_y_p(int i, int j) const {
   
   if (j == 0) {
     return ((*this)(i,j + 1) - (*this)(i,j)) / (grid->dy);
-  } else if (j == grid->My - 1) {
+  } else if (j == (int)grid->My() - 1) {
     return ((*this)(i,j) - (*this)(i,j - 1)) / (grid->dy);
   } else {
     return diff_y(i,j);

@@ -62,9 +62,9 @@ PetscErrorCode stop_on_version_option();
 
 PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage);
 
-PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
-                                         std::vector<std::string> required_options,
-                                         std::string usage);
+void show_usage_check_req_opts(MPI_Comm com, std::string execname,
+                               std::vector<std::string> required_options,
+                               std::string usage);
 
 // config file initialization:
 PetscErrorCode init_config(MPI_Comm com,

@@ -59,15 +59,15 @@ void IceModel::energyStep() {
   //   enthalpyAndDrainageStep()
   get_bed_top_temp(bedtoptemp);
 
-  grid.profiling.begin("BTU");
+  grid.profiling().begin("BTU");
   btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
-  grid.profiling.end("BTU");
+  grid.profiling().end("BTU");
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-    grid.profiling.begin("temp step");
+    grid.profiling().begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
-    grid.profiling.end("temp step");
+    grid.profiling().end("temp step");
 
     vWork3d.update_ghosts(T3);
 
@@ -80,9 +80,9 @@ void IceModel::energyStep() {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
-    grid.profiling.begin("enth step");
+    grid.profiling().begin("enth step");
     enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
-    grid.profiling.end("enth step");
+    grid.profiling().end("enth step");
 
     vWork3d.update_ghosts(Enth3);
 
@@ -98,7 +98,7 @@ void IceModel::energyStep() {
 
   GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
+    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx() * grid.My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
         getVerbosityLevel() > 2) {

@@ -34,32 +34,32 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
   
   // ice surface elevation
-  surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
+  surface.create(*grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
   surface.set_attrs("diagnostic", "ice upper surface elevation", "m", 
                     "surface_altitude");
   vars.add(surface);
   
   // land ice thickness
-  thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+  thickness.create(*grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
   thickness.set_attrs("model_state", "land ice thickness", "m", 
                       "land_ice_thickness");
   thickness.metadata().set_double("valid_min", 0.0);
   vars.add(thickness);
 
   // bedrock surface elevation
-  bed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  bed.create(*grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   bed.set_attrs("model_state", "bedrock surface elevation", "m", 
                 "bedrock_altitude");
   vars.add(bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  tauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
+  tauc.create(*grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   tauc.set_attrs("diagnostic",  
                  "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
   vars.add(tauc);
 
   // enthalpy
-  enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+  enthalpy.create(*grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   enthalpy.set_attrs("model_state",
                      "ice enthalpy (includes sensible heat, latent heat, pressure)",
                      "J kg-1", "");
@@ -67,7 +67,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  vel_bc.create(grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
+  vel_bc.create(*grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
   vel_bc.set_attrs("intent", 
                    "X-component of the SSA velocity boundary conditions", 
                    "m s-1", "", 0);
@@ -75,17 +75,17 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                    "Y-component of the SSA velocity boundary conditions", 
                    "m s-1", "", 1);
   vel_bc.set_glaciological_units("m year-1");
-  vel_bc.metadata(0).set_double("valid_min", grid.convert(-1e6, "m/year", "m/second"));
-  vel_bc.metadata(0).set_double("valid_max", grid.convert( 1e6, "m/year", "m/second"));
+  vel_bc.metadata(0).set_double("valid_min", grid->convert(-1e6, "m/year", "m/second"));
+  vel_bc.metadata(0).set_double("valid_max", grid->convert( 1e6, "m/year", "m/second"));
   vel_bc.metadata(0).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
-  vel_bc.metadata(1).set_double("valid_min", grid.convert(-1e6, "m/year", "m/second"));
-  vel_bc.metadata(1).set_double("valid_max", grid.convert( 1e6, "m/year", "m/second"));
+  vel_bc.metadata(1).set_double("valid_min", grid->convert(-1e6, "m/year", "m/second"));
+  vel_bc.metadata(1).set_double("valid_max", grid->convert( 1e6, "m/year", "m/second"));
   vel_bc.metadata(1).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
   vel_bc.write_in_glaciological_units = true;
   vel_bc.set(config.get("fill_value", "m/year", "m/s"));
   
   // grounded_dragging_floating integer mask
-  ice_mask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+  ice_mask.create(*grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
   ice_mask.set_attrs("model_state", 
                      "grounded_dragging_floating integer mask", "", "");
   std::vector<double> mask_values(4);
@@ -101,7 +101,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ice_mask.set(MASK_GROUNDED);
 
   // Dirichlet B.C. mask
-  bc_mask.create(grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
+  bc_mask.create(*grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
   bc_mask.set_attrs("model_state", 
                     "grounded_dragging_floating integer mask", "", "");
   mask_values.resize(2);
@@ -112,7 +112,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                                 "no_data ssa_dirichlet_bc_location");
   vars.add(bc_mask);
 
-  melange_back_pressure.create(grid, "melange_back_pressure_fraction",
+  melange_back_pressure.create(*grid, "melange_back_pressure_fraction",
                                WITH_GHOSTS, WIDE_STENCIL);
   melange_back_pressure.set_attrs("boundary_condition",
                                   "melange back pressure fraction", "", "");
@@ -122,7 +122,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 }
 
 SSATestCase::SSATestCase(MPI_Comm com, Config &c)
-  : config(c), grid(com, config), enthalpyconverter(0), ssa(0)
+  : config(c), m_com(com), enthalpyconverter(0), ssa(0)
 {
   // empty
 }
@@ -153,7 +153,7 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
   buildSSACoefficients();
 
   // Allocate the actual SSA solver.
-  ssa = ssafactory(grid, *enthalpyconverter, config);
+  ssa = ssafactory(*grid, *enthalpyconverter, config);
   ssa->init(vars); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.
@@ -166,7 +166,7 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 PetscErrorCode SSATestCase::run()
 {
   // Solve (fast==true means "no update"):
-  verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n");
+  verbPrintf(2,grid->com,"* Solving the SSA stress balance ...\n");
 
   bool fast = false;
   ssa->update(fast, melange_back_pressure);
@@ -179,7 +179,7 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
     
   std::string ssa_stdout;
   ssa->stdout_report(ssa_stdout);
-  verbPrintf(3,grid.com,ssa_stdout.c_str());
+  verbPrintf(3,grid->com,ssa_stdout.c_str());
   
   double maxvecerr = 0.0, avvecerr = 0.0, 
     avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
@@ -188,10 +188,10 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
 
   if (config.get_flag("do_pseudo_plastic_till") &&
       config.get("pseudo_plastic_q") != 1.0) {
-    verbPrintf(1,grid.com, 
+    verbPrintf(1,grid->com, 
                "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
-  verbPrintf(1,grid.com, 
+  verbPrintf(1,grid->com, 
              "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
@@ -202,11 +202,11 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
   list.add(*vel_ssa);
 
   double exactvelmax = 0, gexactvelmax = 0;
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double uexact, vexact;
-    double myx = grid.x[i], myy = grid.y[j];
+    double myx = grid->x[i], myy = grid->y[j];
 
     exactSolution(i,j,myx,myy,&uexact,&vexact);
 
@@ -226,37 +226,37 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
   }
 
 
-  GlobalMax(grid.com, &exactvelmax,  &gexactvelmax);
-  GlobalMax(grid.com, &maxuerr,  &gmaxuerr);
-  GlobalMax(grid.com, &maxverr,  &gmaxverr);
-  GlobalSum(grid.com, &avuerr,  &gavuerr);
-  gavuerr = gavuerr/(grid.Mx*grid.My);
-  GlobalSum(grid.com, &avverr,  &gavverr);
-  gavverr = gavverr/(grid.Mx*grid.My);
-  GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr);
-  GlobalSum(grid.com, &avvecerr,  &gavvecerr);
-  gavvecerr = gavvecerr/(grid.Mx*grid.My);
+  GlobalMax(grid->com, &exactvelmax,  &gexactvelmax);
+  GlobalMax(grid->com, &maxuerr,  &gmaxuerr);
+  GlobalMax(grid->com, &maxverr,  &gmaxverr);
+  GlobalSum(grid->com, &avuerr,  &gavuerr);
+  gavuerr = gavuerr/(grid->Mx()*grid->My());
+  GlobalSum(grid->com, &avverr,  &gavverr);
+  gavverr = gavverr/(grid->Mx()*grid->My());
+  GlobalMax(grid->com, &maxvecerr,  &gmaxvecerr);
+  GlobalSum(grid->com, &avvecerr,  &gavvecerr);
+  gavvecerr = gavvecerr/(grid->Mx()*grid->My());
 
-  verbPrintf(1,grid.com, 
+  verbPrintf(1,grid->com, 
              "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
-  verbPrintf(1,grid.com, 
+  verbPrintf(1,grid->com, 
              "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-             grid.convert(gmaxvecerr, "m/second", "m/year"),
+             grid->convert(gmaxvecerr, "m/second", "m/year"),
              (gavvecerr/gexactvelmax)*100.0,
-             grid.convert(gmaxuerr, "m/second", "m/year"),
-             grid.convert(gmaxverr, "m/second", "m/year"),
-             grid.convert(gavuerr, "m/second", "m/year"),
-             grid.convert(gavverr, "m/second", "m/year"));
+             grid->convert(gmaxuerr, "m/second", "m/year"),
+             grid->convert(gmaxverr, "m/second", "m/year"),
+             grid->convert(gavuerr, "m/second", "m/year"),
+             grid->convert(gavverr, "m/second", "m/year"));
 
-  verbPrintf(1,grid.com, "NUM ERRORS DONE\n");
+  verbPrintf(1,grid->com, "NUM ERRORS DONE\n");
 
   report_netcdf(testname,
-                grid.convert(gmaxvecerr, "m/second", "m/year"),
+                grid->convert(gmaxvecerr, "m/second", "m/year"),
                 (gavvecerr/gexactvelmax)*100.0,
-                grid.convert(gmaxuerr, "m/second", "m/year"),
-                grid.convert(gmaxverr, "m/second", "m/year"),
-                grid.convert(gavuerr, "m/second", "m/year"),
-                grid.convert(gavverr, "m/second", "m/year"));
+                grid->convert(gmaxuerr, "m/second", "m/year"),
+                grid->convert(gmaxverr, "m/second", "m/year"),
+                grid->convert(gavuerr, "m/second", "m/year"),
+                grid->convert(gavverr, "m/second", "m/year"));
 
   return 0;
 }
@@ -268,11 +268,11 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
                                           double max_v,
                                           double avg_u,
                                           double avg_v) {
-  NCTimeseries err("N", "N", grid.get_unit_system());
+  NCTimeseries err("N", "N", grid->get_unit_system());
   unsigned int start;
   std::string filename;
   bool flag, append;
-  NCVariable global_attributes("PISM_GLOBAL", grid.get_unit_system());
+  NCVariable global_attributes("PISM_GLOBAL", grid->get_unit_system());
 
   OptionsString("-report_file", "NetCDF error report file",
                 filename, flag);
@@ -283,7 +283,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   err.set_units("1");
 
-  verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
+  verbPrintf(2, grid->com, "Also writing errors to '%s'...\n", filename.c_str());
 
   OptionsIsSet("-append", "Append the NetCDF error report",
                append);
@@ -296,7 +296,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
+  PIO nc(*grid, "netcdf3");      // OK to use NetCDF3.
   nc.open(filename, mode);
   start = nc.inq_dimlen("N");
 
@@ -308,9 +308,9 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   // Always write grid parameters:
   err.set_name("dx");
   err.set_units("meters");
-  nc.write_timeseries(err, (size_t)start, grid.dx);
+  nc.write_timeseries(err, (size_t)start, grid->dx);
   err.set_name("dy");
-  nc.write_timeseries(err, (size_t)start, grid.dy);
+  nc.write_timeseries(err, (size_t)start, grid->dy);
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
@@ -371,11 +371,11 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 {
 
   // Write results to an output file:
-  PIO pio(grid, grid.config.get_string("output_format"));
+  PIO pio(*grid, grid->config.get_string("output_format"));
   pio.open(filename, PISM_READWRITE_MOVE);
   pio.def_time(config.get_string("time_dimension_name"),
-               grid.time->calendar(),
-               grid.time->CF_units_string());
+               grid->time->calendar(),
+               grid->time->CF_units_string());
   pio.append_time(config.get_string("time_dimension_name"), 0.0);
 
   surface.write(pio);
@@ -391,7 +391,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   vel_ssa->write(pio);
 
   IceModelVec2V exact;
-  exact.create(grid, "_exact", WITHOUT_GHOSTS);
+  exact.create(*grid, "_exact", WITHOUT_GHOSTS);
   exact.set_attrs("diagnostic", 
                   "X-component of the SSA exact solution", 
                   "m s-1", "", 0);
@@ -402,10 +402,10 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   exact.write_in_glaciological_units = true;
 
   IceModelVec::AccessList list(exact);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    exactSolution(i, j, grid.x[i], grid.y[j],
+    exactSolution(i, j, grid->x[i], grid->y[j],
                   &(exact(i,j).u), &(exact(i,j).v));
   }
   exact.write(pio);
@@ -413,27 +413,5 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   pio.close();
   return 0;
 }
-
-
-/*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
-half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
-PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
-				 double Ly, int Mx, int My, Periodicity p)
-{
-  
-  grid.Lx = Lx;
-  grid.Ly = Ly;
-  grid.periodicity = p;
-  grid.Mx = Mx; grid.My=My; grid.Mz = 3;
-  
-  grid.compute_nprocs();
-  grid.compute_ownership_ranges();
-  grid.compute_vertical_levels();
-  grid.compute_horizontal_spacing();
-  grid.allocate();
-
-  return 0;
-}
-
 
 } // end of namespace pism

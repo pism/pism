@@ -86,26 +86,26 @@ void StressBalance::update(bool fast, double sea_level,
   m_stress_balance->set_sea_level_elevation(sea_level);
 
   try {
-    grid.profiling.begin("SSB");
+    grid.profiling().begin("SSB");
     m_stress_balance->update(fast, melange_back_pressure);
-    grid.profiling.end("SSB");
+    grid.profiling().end("SSB");
     m_stress_balance->get_2D_advective_velocity(velocity_2d);
 
-    grid.profiling.begin("SB modifier");
+    grid.profiling().begin("SB modifier");
     m_modifier->update(velocity_2d, fast);
-    grid.profiling.end("SB modifier");
+    grid.profiling().end("SB modifier");
 
     if (fast == false) {
 
       m_modifier->get_horizontal_3d_velocity(u, v);
 
-      grid.profiling.begin("SB strain heat");
+      grid.profiling().begin("SB strain heat");
       this->compute_volumetric_strain_heating();
-      grid.profiling.end("SB strain heat");
+      grid.profiling().end("SB strain heat");
 
-      grid.profiling.begin("SB vert. vel.");
+      grid.profiling().begin("SB vert. vel.");
       this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
-      grid.profiling.end("SB vert. vel.");
+      grid.profiling().end("SB vert. vel.");
     }
   }
   catch (RuntimeError &e) {
@@ -263,7 +263,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
 
     // within the ice and above:
     double old_integrand = u_x + v_y;
-    for (unsigned int k = 1; k < grid.Mz; ++k) {
+    for (unsigned int k = 1; k < grid.Mz(); ++k) {
       u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
       v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
       const double new_integrand = u_x + v_y;
@@ -474,7 +474,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
     } // k-loop
 
-    int remaining_levels = grid.Mz - (ks + 1);
+    int remaining_levels = grid.Mz() - (ks + 1);
     if (remaining_levels > 0) {
       ierr = PetscMemzero(&Sigma[ks+1],
                           remaining_levels*sizeof(double));

@@ -34,9 +34,10 @@ namespace pism {
 class Time;
 class Prof;
 class Config;
+class grid_info;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
-typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 /** Wrapper around PETSc's DM. Simplifies memory management.
  *
@@ -140,6 +141,26 @@ public:
   IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
 
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceGrid> Ptr;
+#else
+  typedef std::shared_ptr<IceGrid> Ptr;
+#endif
+
+  static Ptr Shallow(MPI_Comm c, const Config &config,
+                     double my_Lx, double my_Ly,
+                     unsigned int Mx, unsigned int My, Periodicity p);
+
+  static Ptr Create(MPI_Comm c, const Config &config,
+                    double my_Lx, double my_Ly, double my_Lz,
+                    unsigned int Mx, unsigned int My, unsigned int Mz,
+                    Periodicity p);
+
+  static Ptr Create(MPI_Comm c, const Config &config);
+
+  // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
+  //                          const std::string &filename);
+
   PetscErrorCode report_parameters();
 
   PetscErrorCode allocate();  // FIXME! allocate in the constructor!
@@ -165,22 +186,37 @@ public:
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
+  void set_from_grid_info(const grid_info &info);
+
   //! Starting x-index of a processor sub-domain
   int xs() const;
   //! Number of grid points (in the x-direction) in a processor sub-domain
-  int xm() const;
+  unsigned int xm() const;
   //! Starting y-index of a processor sub-domain
   int ys() const;
   //! Number of grid points (in the y-direction) in a processor sub-domain
-  int ym() const;
+  unsigned int ym() const;
+  //! Number of grid points (in the x-direction) the computational domain.
+  unsigned int Mx() const;
+  //! Number of grid points (in the y-direction) the computational domain.
+  unsigned int My() const;
+  //! @brief Number of grid points (in the z-direction) the computational
+  //! domain (for ice quantities).
+  unsigned int Mz() const;
 
-  Profiling profiling;
+  Profiling& profiling() const;
 
+  // FIXME: REMOVE THESE
+  void set_Mx(int Mx) {m_Mx = Mx;}
+  void set_My(int My) {m_My = My;}
+  void set_Mz(int Mz) {m_Mz = Mz;}
+
+  
   const Config &config;
   MPI_Comm    com;
-  int rank, size;
-  int m_xs, m_xm, m_ys, m_ym;
-
+  int rank;
+  unsigned int size;
+  
   std::vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
 
   std::vector<double> x,             //!< x-coordinates of grid points
@@ -208,10 +244,7 @@ public:
   double Lx, //!< half width of the ice model grid in x-direction (m)
     Ly;           //!< half width of the ice model grid in y-direction (m)
 
-  int    Mx, //!< number of grid points in the x-direction
-    My;      //!< number of grid points in the y-direction
-
-  int    Nx, //!< number of processors in the x-direction
+  unsigned int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
   std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
@@ -222,8 +255,6 @@ public:
 
   double Lz;      //!< max extent of the ice in z-direction (m)
 
-  unsigned int Mz; //!< number of grid points in z-direction in the ice
-
   Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
@@ -232,14 +263,19 @@ public:
     if (strip_width < 0.0) {
       return false;
     }
-    return (x[i] <= x[0] + strip_width || x[i] >= x[Mx-1] - strip_width ||
-            y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
+    return (x[i] <= x[0] + strip_width || x[i] >= x[m_Mx-1] - strip_width ||
+            y[j] <= y[0] + strip_width || y[j] >= y[m_My-1] - strip_width);
   }
 private:
+  int m_xs, m_ys;
+  unsigned int m_xm, m_ym;
+  unsigned int m_Mx, m_My, m_Mz;
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
 
+  mutable Profiling m_profiling;
+  
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.

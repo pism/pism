@@ -116,7 +116,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 void IceModel::dumpToFile(const std::string &filename) {
   PIO nc(grid, config.get_string("output_format"));
 
-  grid.profiling.begin("model state dump");
+  grid.profiling().begin("model state dump");
 
   // Prepare the file
   std::string time_name = config.get_string("time_dimension_name");
@@ -132,7 +132,7 @@ void IceModel::dumpToFile(const std::string &filename) {
 
   nc.close();
 
-  grid.profiling.end("model state dump");
+  grid.profiling().end("model state dump");
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write

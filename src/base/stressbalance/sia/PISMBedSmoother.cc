@@ -130,9 +130,9 @@ Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
 void BedSmoother::preprocess_bed(IceModelVec2S &topg,
-                                 int Nx_in, int Ny_in) {
+                                 unsigned int Nx_in, unsigned int Ny_in) {
 
-  if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
+  if ((Nx_in >= grid.Mx()) || (Ny_in >= grid.My())) {
     throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
                        "domain of smoothing exceeds IceGrid domain");
   }
@@ -167,20 +167,23 @@ void BedSmoother::smooth_the_bed_on_proc0() {
   if (grid.rank == 0) {
     PetscErrorCode ierr;
     double **b0, **bs;
-    ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    ierr = VecGetArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    ierr = VecGetArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
 
-    for (int i=0; i < grid.Mx; i++) {
-      for (int j=0; j < grid.My; j++) {
+    for (int i=0; i < (int)grid.Mx(); i++) {
+      for (int j=0; j < (int)grid.My(); j++) {
         // average only over those points which are in the grid; do not wrap
         //   periodically
-        double sum   = 0.0;
+        double sum = 0.0;
         int  count = 0;
         for (int r = -Nx; r <= Nx; r++) {
           for (int s = -Ny; s <= Ny; s++) {
-            if ((i+r >= 0) && (i+r < grid.Mx) && (j+s >= 0) && (j+s < grid.My)) {
+            if ((i+r >= 0)        &&
+                (i+r < (int)grid.Mx()) &&
+                (j+s >= 0)        &&
+                (j+s < (int)grid.My())) {
               sum += b0[i+r][j+s];
               count++;
             }
@@ -190,9 +193,9 @@ void BedSmoother::smooth_the_bed_on_proc0() {
       }
     }
 
-    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    ierr = VecRestoreArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
   }
 }
@@ -203,21 +206,21 @@ void BedSmoother::compute_coefficients_on_proc0() {
   if (grid.rank == 0) {
     PetscErrorCode ierr;
     double **b0, **bs, **c2, **c3, **c4, **mt;
-    ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    ierr = VecGetArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    ierr = VecGetArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt);
+    ierr = VecGetArray2d(maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(C2p0,         grid.Mx, grid.My, 0, 0, &c2);
+    ierr = VecGetArray2d(C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3);
+    ierr = VecGetArray2d(C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4);
+    ierr = VecGetArray2d(C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
 
-    for (int i=0; i < grid.Mx; i++) {
-      for (int j=0; j < grid.My; j++) {
+    for (int i=0; i < (int)grid.Mx(); i++) {
+      for (int j=0; j < (int)grid.My(); j++) {
         // average only over those points which are in the grid
         // do not wrap periodically
         double topgs     = bs[i][j],
@@ -228,7 +231,11 @@ void BedSmoother::compute_coefficients_on_proc0() {
         int  count     = 0;
         for (int r = -Nx; r <= Nx; r++) {
           for (int s = -Ny; s <= Ny; s++) {
-            if ((i+r >= 0) && (i+r < grid.Mx) && (j+s >= 0) && (j+s < grid.My)) {
+            if ((i+r >= 0)             &&
+                (i+r < (int)grid.Mx()) &&
+                (j+s >= 0)             &&
+                (j+s < (int)grid.My())) {
+
               // tl is elevation of local topography at a pt in patch
               const double tl  = b0[i+r][j+s] - topgs;
               maxtltemp = PetscMax(maxtltemp, tl);
@@ -249,17 +256,17 @@ void BedSmoother::compute_coefficients_on_proc0() {
       }
     }
 
-    ierr = VecRestoreArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4);
+    ierr = VecRestoreArray2d(C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3);
+    ierr = VecRestoreArray2d(C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(C2p0,         grid.Mx, grid.My, 0, 0, &c2);
+    ierr = VecRestoreArray2d(C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt);
+    ierr = VecRestoreArray2d(maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    ierr = VecRestoreArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
 
     // scale the coeffs in Taylor series
