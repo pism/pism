@@ -230,12 +230,12 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
   GlobalMax(grid->com, &maxuerr,  &gmaxuerr);
   GlobalMax(grid->com, &maxverr,  &gmaxverr);
   GlobalSum(grid->com, &avuerr,  &gavuerr);
-  gavuerr = gavuerr/(grid->Mx*grid->My);
+  gavuerr = gavuerr/(grid->Mx()*grid->My);
   GlobalSum(grid->com, &avverr,  &gavverr);
-  gavverr = gavverr/(grid->Mx*grid->My);
+  gavverr = gavverr/(grid->Mx()*grid->My);
   GlobalMax(grid->com, &maxvecerr,  &gmaxvecerr);
   GlobalSum(grid->com, &avvecerr,  &gavvecerr);
-  gavvecerr = gavvecerr/(grid->Mx*grid->My);
+  gavvecerr = gavvecerr/(grid->Mx()*grid->My);
 
   verbPrintf(1,grid->com, 
              "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");

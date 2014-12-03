@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     IceGrid grid(com, config);
-    grid.Mx = 81;
+    grid.set_Mx(81);
     grid.My = 81;
     grid.Lx = 1200e3;
     grid.Ly = grid.Lx;

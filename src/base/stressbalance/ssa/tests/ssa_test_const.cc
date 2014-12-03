@@ -57,7 +57,7 @@ using namespace pism;
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(MPI_Comm com, Config &c, double q): 
+  SSATestCaseConst(MPI_Comm com, Config &c, double q):
     SSATestCase(com, c), basal_q(q)
   {
     UnitSystem s = c.get_unit_system();
@@ -68,7 +68,7 @@ public:
     nu0   = s.convert(30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
   };
-  
+
 protected:
   virtual PetscErrorCode initializeGrid(int Mx,int My);
 
@@ -76,7 +76,7 @@ protected:
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j, 
+  virtual PetscErrorCode exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
   double basal_q,
@@ -134,8 +134,9 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 
     bed(i,j) = -myx*(dhdx);
     surface(i,j) = bed(i,j) + H0;
-      
-    bool edge = ((j == 0) || (j == grid->My - 1)) || ((i==0) || (i==grid->Mx-1));
+
+    bool edge = ((j == 0) || (j == (int)grid->My - 1) ||
+                 (i == 0) || (i == (int)grid->Mx() - 1));
     if (edge) {
       bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
@@ -143,26 +144,26 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
       vel_bc(i,j).v = myv;
     }
   }
-  
+
   vel_bc.update_ghosts();
   bc_mask.update_ghosts();
   bed.update_ghosts();
   surface.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc); 
+  ssa->set_boundary_conditions(bc_mask, vel_bc);
 
   return 0;
 }
 
 
-PetscErrorCode SSATestCaseConst::exactSolution(int /*i*/, int /*j*/, 
+PetscErrorCode SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
  double /*x*/, double /*y*/, double *u, double *v)
 {
   double earth_grav = config.get("standard_gravity"),
     tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
                                          "m/year", "m/second"),
     ice_rho = config.get("ice_density");
-  
+
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
   return 0;
@@ -177,9 +178,9 @@ int main(int argc, char *argv[]) {
   PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  try {  
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -216,17 +217,17 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction", 
+      OptionsInt("-Mx", "Number of grid points in the X direction",
                  Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction", 
+      OptionsInt("-My", "Number of grid points in the Y direction",
                  My, flag);
 
       OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
                   ssa_choices, driver, driver, flag);
-             
+
       OptionsReal("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
-                  basal_q, flag);                                                      
-      OptionsString("-o", "Set the output file name", 
+                  basal_q, flag);
+      OptionsString("-o", "Set the output file name",
                     output_file, flag);
 
       OptionsInt("-verbose", "Verbosity level",

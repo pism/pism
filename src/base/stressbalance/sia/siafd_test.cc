@@ -155,9 +155,9 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
   GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
   GlobalSum(grid.com, &avUerr,  &gavUerr);
-  gavUerr = gavUerr/(grid.Mx*grid.My);
+  gavUerr = gavUerr/(grid.Mx()*grid.My);
   GlobalSum(grid.com, &avWerr,  &gavWerr);
-  gavWerr = gavWerr/(grid.Mx*grid.My);
+  gavWerr = gavWerr/(grid.Mx()*grid.My);
   return 0;
 }
 
@@ -329,26 +329,27 @@ int main(int argc, char *argv[]) {
 
     grid.Lx = grid.Ly = 900e3;
     grid.Lz = 4000;
-    grid.Mx = grid.My = 61;
+    grid.set_Mx(61);
+    grid.My = 61;
     grid.Mz = 61;
 
     std::string output_file = "siafd_test_F.nc";
     int tmp = grid.Mz;
-    ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       bool flag;
+      int Mx = grid.Mx(), My = (int)grid.My;
       OptionsInt("-Mx", "Number of grid points in the X direction",
-                 grid.Mx, flag);
+                 Mx, flag);
       OptionsInt("-My", "Number of grid points in the X direction",
-                 grid.My, flag);
+                 My, flag);
       OptionsInt("-Mz", "Number of vertical grid levels",
                  tmp, flag);
       OptionsString("-o", "Set the output file name",
                     output_file, flag);
+
+      grid.set_Mx(Mx);
+      grid.My = My;
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     if (tmp > 0) {
       grid.Mz = tmp;

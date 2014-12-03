@@ -54,9 +54,9 @@ FEElementMap::FEElementMap(const IceGrid &g) {
       xs = 0;
     }
     // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
-    if (xf > g.Mx - 2) {
-      xf = g.Mx - 2;
-      lxf = g.Mx - 2;
+    if (xf > (int)g.Mx() - 2) {
+      xf = g.Mx() - 2;
+      lxf = g.Mx() - 2;
     }
   }
 
@@ -66,7 +66,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
       ys = 0;
     }
     // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
-    if (yf > g.My - 2) {
+    if (yf > (int)g.My - 2) {
       yf = g.My - 2;
       lyf = g.My - 2;
     }

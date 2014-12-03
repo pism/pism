@@ -97,7 +97,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   m_lambda = config.get("grid_lambda");
 
-  Mx  = static_cast<int>(config.get("grid_Mx"));
+  m_Mx  = static_cast<int>(config.get("grid_Mx"));
   My  = static_cast<int>(config.get("grid_My"));
   Mz  = static_cast<int>(config.get("grid_Mz"));
 
@@ -144,7 +144,7 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
   result->Lx = my_Lx;
   result->Ly = my_Ly;
   result->Lz = my_Lz;
-  result->Mx = Mx;
+  result->m_Mx = Mx;
   result->My = My;
   result->periodicity = p;
   result->Mz = Mz;
@@ -300,7 +300,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
              x0/1000.0, y0/1000.0);
   verbPrintf(verbosity,com,
              "            Mx = %d, My = %d, Mz = %d,\n",
-             Mx,My,Mz);
+             m_Mx,My,Mz);
   verbPrintf(verbosity,com,
              "            dx = %6.3f km, dy = %6.3f km, year = %s,\n",
              dx/1000.0,dy/1000.0, time->date().c_str());
@@ -374,7 +374,7 @@ void IceGrid::compute_nprocs() {
     throw RuntimeError("'My' is invalid.");
   }
 
-  Nx = (int)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
+  Nx = (int)(0.5 + sqrt(((double)m_Mx)*((double)size)/((double)My)));
 
   if (Nx == 0) {
     Nx = 1;
@@ -382,22 +382,22 @@ void IceGrid::compute_nprocs() {
 
   while (Nx > 0) {
     Ny = size/Nx;
-    if (Nx*Ny == size) {
+    if (Nx*Ny == (unsigned int)size) {
       break;
     }
     Nx--;
   }
 
-  if (Mx > My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
+  if (m_Mx > My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
 
-  if ((Mx / Nx) < 2) {          // note: integer division
+  if ((m_Mx / Nx) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  Mx, My, size);
+                                  m_Mx, My, size);
   }
 
   if ((My / Ny) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  Mx, My, size);
+                                  m_Mx, My, size);
   }
 }
 
@@ -411,11 +411,11 @@ void IceGrid::compute_ownership_ranges() {
   procs_x.resize(Nx);
   procs_y.resize(Ny);
 
-  for (int i=0; i < Nx; i++) {
-    procs_x[i] = Mx/Nx + ((Mx % Nx) > i);
+  for (unsigned int i=0; i < Nx; i++) {
+    procs_x[i] = m_Mx/Nx + ((m_Mx % Nx) > i);
   }
 
-  for (int i=0; i < Ny; i++) {
+  for (unsigned int i=0; i < Ny; i++) {
     procs_y[i] = My/Ny + ((My % Ny) > i);
   }
 }
@@ -452,7 +452,7 @@ PetscErrorCode IceGrid::allocate() {
     PISMDM::Ptr tmp = this->get_dm(1, max_stencil_width);
   } catch (RuntimeError) {
     throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
-                                  Mx, My, size);
+                                  m_Mx, My, size);
   }
 
   // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
@@ -509,9 +509,9 @@ Thus we compute  `dx = 2 * Lx / Mx`.
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
 
   if (periodicity & X_PERIODIC) {
-    dx = 2.0 * Lx / Mx;
+    dx = 2.0 * Lx / m_Mx;
   } else {
-    dx = 2.0 * Lx / (Mx - 1);
+    dx = 2.0 * Lx / (m_Mx - 1);
   }
 
   if (periodicity & Y_PERIODIC) {
@@ -603,7 +603,7 @@ PetscErrorCode IceGrid::init_interpolation() {
 //! with accounting for periodicity.
 PetscErrorCode IceGrid::compute_horizontal_coordinates() {
 
-  x.resize(Mx);
+  x.resize(m_Mx);
   y.resize(My);
 
   // Here x_min, x_max define the extent of the computational domain,
@@ -613,27 +613,27 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
     x_min = x0 - Lx,
     x_max = x0 + Lx;
   if (periodicity & X_PERIODIC) {
-    for (int i = 0; i < Mx; ++i) {
+    for (unsigned int i = 0; i < m_Mx; ++i) {
       x[i] = x_min + (i + 0.5) * dx;
     }
-    x[Mx - 1] = x_max - 0.5*dx;
+    x[m_Mx - 1] = x_max - 0.5*dx;
   } else {
-    for (int i = 0; i < Mx; ++i) {
+    for (unsigned int i = 0; i < m_Mx; ++i) {
       x[i] = x_min + i * dx;
     }
-    x[Mx - 1] = x_max;
+    x[m_Mx - 1] = x_max;
   }
 
   double
     y_min = y0 - Ly,
     y_max = y0 + Ly;
   if (periodicity & Y_PERIODIC) {
-    for (int i = 0; i < My; ++i) {
+    for (unsigned int i = 0; i < My; ++i) {
       y[i] = y_min + (i + 0.5) * dy;
     }
     y[My - 1] = y_max - 0.5*dy;
   } else {
-    for (int i = 0; i < My; ++i) {
+    for (unsigned int i = 0; i < My; ++i) {
       y[i] = y_min + i * dy;
     }
     y[My - 1] = y_max;
@@ -655,7 +655,7 @@ PetscErrorCode IceGrid::report_parameters() {
   // report on grid
   verbPrintf(2,com,
              "                grid size   %d x %d x %d\n",
-             Mx,My,Mz);
+             m_Mx,My,Mz);
   // report on computational box
   verbPrintf(2,com,
              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
@@ -787,7 +787,7 @@ void IceGrid::compute_point_neighbors(double X, double Y,
     i_left = i_right;
   }
 
-  if (i_right > Mx - 1) {
+  if (i_right > (int)m_Mx - 1) {
     i_right = i_left;
   }
 
@@ -795,7 +795,7 @@ void IceGrid::compute_point_neighbors(double X, double Y,
     j_bottom = j_top;
   }
 
-  if (j_top > My - 1) {
+  if (j_top > (int)My - 1) {
     j_top = j_bottom;
   }
 }
@@ -832,7 +832,7 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
 //! \brief Checks grid parameters usually set at bootstrapping for validity.
 void IceGrid::check_parameters() {
 
-  if (Mx < 3) {
+  if (m_Mx < 3) {
     throw RuntimeError("Mx has to be at least 3.");
   }
 
@@ -861,7 +861,7 @@ void IceGrid::check_parameters() {
   // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
   // Here we use "long int" to avoid integer overflow.
   const long int two_to_thirty_two = 4294967296L;
-  const long int Mx_long = Mx, My_long = My, Mz_long = Mz;
+  const long int Mx_long = m_Mx, My_long = My, Mz_long = Mz;
   if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
       ((config.get_string("output_format") == "netcdf3") ||
        (config.get_string("output_format") == "pnetcdf"))) {
@@ -922,7 +922,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
                       DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
 #endif
                       DMDA_STENCIL_BOX,
-                      My, Mx, // N, M
+                      My, m_Mx, // N, M
                       Ny, Nx, // n, m
                       da_dof, stencil_width,
                       &procs_y[0], &procs_x[0], // ly, lx
@@ -951,6 +951,10 @@ int IceGrid::xm() const {
 
 int IceGrid::ym() const {
   return m_ym;
+}
+
+unsigned int IceGrid::Mx() const {
+  return m_Mx;
 }
 
 } // end of namespace pism

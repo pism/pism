@@ -1742,7 +1742,7 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   ierr = PetscViewerASCIIPrintf(viewer,
             "x=%12.3f + (0:%d)*%12.3f;\n"
             "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
+                                -grid.Lx,grid.Mx()-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);

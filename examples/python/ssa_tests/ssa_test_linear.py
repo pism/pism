@@ -64,7 +64,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc]):
       for (i,j) in grid.points():
-        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
+        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx()-1));
         if edge:
           bc_mask[i,j] = 1;
           x = grid.x[i]; y=grid.y[j];

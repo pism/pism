@@ -96,7 +96,7 @@ IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
   gmaxw = 0;
 
   // set default locations of the column used by -view_system
-  id = (grid.Mx - 1)/2;
+  id = (grid.Mx() - 1)/2;
   jd = (grid.My - 1)/2;
 
   global_attributes.set_string("Conventions", "CF-1.5");

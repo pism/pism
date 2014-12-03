@@ -723,7 +723,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       areaexact += a;
       volexact += a * Hexact * 1e-3;
     }
-    if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+    if (i == (grid.Mx() - 1)/2 && j == (grid.My - 1)/2) {
       domeH = ice_thickness(i,j);
       domeHexact = Hexact;
     }
@@ -747,7 +747,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   GlobalMax(grid.com, &Herr,  &gmaxHerr);
   GlobalSum(grid.com, &avHerr,  &gavHerr);
-  gavHerr = gavHerr/(grid.Mx*grid.My);
+  gavHerr = gavHerr/(grid.Mx()*grid.My);
   GlobalMax(grid.com, &etaerr,  &gmaxetaerr);
 
   GlobalMax(grid.com, &domeH,  &gdomeH);
@@ -796,7 +796,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
 
   GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr);
   GlobalSum(grid.com, &avvecerr,  &gavvecerr);
-  gavvecerr = gavvecerr/(grid.Mx*grid.My);
+  gavvecerr = gavvecerr/(grid.Mx()*grid.My);
 
   const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),
                     ypeak = 450e3 * sin(25.0*(M_PI/180.0));

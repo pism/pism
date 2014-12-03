@@ -98,7 +98,7 @@ void IceModel::energyStep() {
 
   GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
+    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx() * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
         getVerbosityLevel() > 2) {

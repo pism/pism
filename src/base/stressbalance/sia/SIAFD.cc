@@ -655,7 +655,8 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       // this adjustment lets us avoid taking very small time-steps
       // because of the possible thickness and bed elevation
       // "discontinuities" at the boundary.)
-      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1) {
+      if (i < 0 || i >= (int)grid.Mx() - 1 ||
+          j < 0 || j >= (int)grid.My - 1) {
         Dfoffset = 0.0;
       }
 

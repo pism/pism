@@ -102,7 +102,7 @@ if __name__ == '__main__':
   no_model_mask.set(0)
   with PISM.vec.Access(comm=[no_model_mask]):
     for (i,j) in grid.points():
-      if (i==0) or (i==grid.Mx-1) or (j==0) or (j==grid.My-1):
+      if (i==0) or (i==grid.Mx()-1) or (j==0) or (j==grid.My-1):
         no_model_mask[i,j] = 1
 
   pio = PISM.PIO(grid.com, "netcdf3", grid.get_unit_system())

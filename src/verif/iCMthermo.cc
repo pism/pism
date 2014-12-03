@@ -437,7 +437,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
     }
 
     const double Tbase = T3.getValZ(i,j,0.0);
-    if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+    if (i == (grid.Mx() - 1)/2 && j == (grid.My - 1)/2) {
       domeT = Tbase;
       domeTexact = Texact;
     }
@@ -451,7 +451,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
 
   GlobalMax(grid.com, &Terr,  &gmaxTerr);
   GlobalSum(grid.com, &avTerr,  &gavTerr);
-  gavTerr = gavTerr/(grid.Mx*grid.My);
+  gavTerr = gavTerr/(grid.Mx()*grid.My);
   GlobalMax(grid.com, &domeT,  &gdomeT);
   GlobalMax(grid.com, &domeTexact,  &gdomeTexact);
   centerTerr = PetscAbsReal(gdomeT - gdomeTexact);
@@ -574,9 +574,9 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
   GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
   GlobalSum(grid.com, &avUerr,  &gavUerr);
-  gavUerr = gavUerr/(grid.Mx*grid.My);
+  gavUerr = gavUerr/(grid.Mx()*grid.My);
   GlobalSum(grid.com, &avWerr,  &gavWerr);
-  gavWerr = gavWerr/(grid.Mx*grid.My);
+  gavWerr = gavWerr/(grid.Mx()*grid.My);
 }
 
 

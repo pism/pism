@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     IceGrid grid(com, config);
     grid.Mz = 41;
     grid.Lz = 4000.0;
-    grid.Mx = 3;
+    grid.set_Mx(3);
     grid.My = 3;
     grid.Lx = 1500e3;
     grid.Ly = grid.Lx;
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
     ghf->norm(NORM_INFINITY,maxghferr);
     ghf->norm(NORM_1,avghferr);
     ghf->shift(+FF); // shift it back for writing
-    avghferr /= (grid.Mx * grid.My);
+    avghferr /= (grid.Mx() * grid.My);
     verbPrintf(2,grid.com, 
                "case dt = %.5f:\n", dt_years);
     verbPrintf(1,grid.com, 

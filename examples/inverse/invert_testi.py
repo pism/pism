@@ -51,20 +51,21 @@ class PlotListener(PISM.invert.listener.PlotListener):
       r = self.toproczero(data.residual)
 
     if zeta is not None:
+      Mx = grid.Mx()
       pp.figure(self.figure())
       pp.clf()
       pp.subplot(1,3,1)
-      pp.plot(grid.y,zeta[:,grid.Mx/2])
+      pp.plot(grid.y,zeta[:,Mx/2])
     
       mag = np.max(np.abs(u))
       pp.subplot(1,3,2)
-      pp.plot(grid.y,u[0,:,grid.Mx/2]/mag)
+      pp.plot(grid.y,u[0,:,Mx/2]/mag)
 
       pp.subplot(1,3,3)
       if inv_solver.method.startswith('tikhonov'):
-        pp.plot(grid.y,-grad_zeta[:,grid.Mx/2]*dWeight,grid.y,grad_u[:,grid.Mx/2]*sWeight,grid.y,grad[:,grid.Mx/2])
+        pp.plot(grid.y,-grad_zeta[:,Mx/2]*dWeight,grid.y,grad_u[:,Mx/2]*sWeight,grid.y,grad[:,Mx/2])
       else:
-        pp.plot(grid.y,r[0,:,grid.Mx/2])
+        pp.plot(grid.y,r[0,:,Mx/2])
         
       pp.ion()
       pp.show()
@@ -78,11 +79,12 @@ class LinPlotListener(PISM.invert.listener.PlotListener):
     x  = self.toproczero(data.x)
 
     if x is not None:
+      Mx = grid.Mx()
       pp.figure(self.figure())
       pp.clf()
       mag = np.max(np.abs(x));
       if mag==0 : mag = 1
-      pp.plot(grid.y,x[:,grid.Mx/2]/mag)
+      pp.plot(grid.y,x[:,Mx/2]/mag)
 
       pp.ion()
       pp.show()

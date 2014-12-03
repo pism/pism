@@ -194,10 +194,16 @@ public:
   //! Number of grid points (in the y-direction) in a processor sub-domain
   int ym() const;
 
+  unsigned int Mx() const;
+
+  // FIXME: remove this
+  void set_Mx(unsigned int Mx) {m_Mx = Mx;}
+
   Profiling profiling;
 
   const Config &config;
   MPI_Comm    com;
+  // int to match types used by MPI
   int rank, size;
   int m_xs, m_xm, m_ys, m_ym;
 
@@ -228,10 +234,10 @@ public:
   double Lx, //!< half width of the ice model grid in x-direction (m)
     Ly;           //!< half width of the ice model grid in y-direction (m)
 
-  int    Mx, //!< number of grid points in the x-direction
+  unsigned int
     My;      //!< number of grid points in the y-direction
 
-  int    Nx, //!< number of processors in the x-direction
+  unsigned int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
   std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
@@ -252,10 +258,12 @@ public:
     if (strip_width < 0.0) {
       return false;
     }
-    return (x[i] <= x[0] + strip_width || x[i] >= x[Mx-1] - strip_width ||
+    return (x[i] <= x[0] + strip_width || x[i] >= x[m_Mx-1] - strip_width ||
             y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
   }
 private:
+  //! number of grid points in the x-direction  
+  unsigned int m_Mx;
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;

@@ -52,16 +52,16 @@ class SSATestCasePlug: public SSATestCase
 public:
   SSATestCasePlug(MPI_Comm com, Config &c, double n)
     : SSATestCase(com, c)
-  { 
+  {
     H0 = 2000.; //m
     L=50.e3; // 50km half-width
     dhdx = 0.001; // pure number, slope of surface & bed
     tauc0 = 0.; // No basal shear stress
-    B0 = 3.7e8; // Pa s^{1/3}; hardness 
+    B0 = 3.7e8; // Pa s^{1/3}; hardness
                // given on p. 239 of Schoof; why so big?
-    this->glen_n = n;      
+    this->glen_n = n;
   }
-  
+
 protected:
   virtual PetscErrorCode initializeGrid(int Mx,int My);
 
@@ -69,7 +69,7 @@ protected:
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j, 
+  virtual PetscErrorCode exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
 
@@ -81,13 +81,13 @@ protected:
   double glen_n;
 
   bool dimensionless;
-  
+
 };
 
 
 PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
 {
-  double Lx=L, Ly = L; 
+  double Lx=L, Ly = L;
   grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NOT_PERIODIC);
   return 0;
 }
@@ -138,8 +138,9 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 
     bed(i,j) = -myx*(dhdx);
     surface(i,j) = bed(i,j) + H0;
-      
-    bool edge = ((j == 0) || (j == grid->My - 1)) || ((i==0) || (i==grid->Mx-1));
+
+    bool edge = ((j == 0) || (j == (int)grid->My - 1) ||
+                 (i == 0) || (i == (int)grid->Mx() - 1));
     if (edge) {
       bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
@@ -153,12 +154,12 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   bed.update_ghosts();
   surface.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc); 
+  ssa->set_boundary_conditions(bc_mask, vel_bc);
 
   return 0;
 }
 
-PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/, 
+PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
                                               double *u, double *v)
 {
@@ -180,9 +181,9 @@ int main(int argc, char *argv[]) {
   PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  try {  
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -221,14 +222,14 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction", 
+      OptionsInt("-Mx", "Number of grid points in the X direction",
                  Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction", 
+      OptionsInt("-My", "Number of grid points in the Y direction",
                  My, flag);
       OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
                   ssa_choices, driver, driver, flag);
-             
-      OptionsString("-o", "Set the output file name", 
+
+      OptionsString("-o", "Set the output file name",
                     output_file, flag);
       OptionsReal("-ssa_glen_n", "", glen_n, flag);
 
