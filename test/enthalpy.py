@@ -36,7 +36,7 @@ class EnthalpyTest(object):
         self.u, self.v, self.w = PISM.model.create3DVelocityVecs(grid)
 
         self.esys = PISM.enthSystemCtx(grid.Mz_fine, "enth",
-                                       grid.dx, grid.dy, grid.dz_fine, self.dt,
+                                       grid.dx(), grid.dy(), grid.dz_fine, self.dt,
                                        ctx.config,
                                        self.enthalpy,
                                        self.u, self.v, self.w,

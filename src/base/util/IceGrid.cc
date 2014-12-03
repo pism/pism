@@ -303,7 +303,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
              m_Mx,m_My,Mz);
   verbPrintf(verbosity,com,
              "            dx = %6.3f km, dy = %6.3f km, year = %s,\n",
-             dx/1000.0,dy/1000.0, time->date().c_str());
+             m_dx/1000.0,m_dy/1000.0, time->date().c_str());
   verbPrintf(verbosity,com,
              "            Nx = %d, Ny = %d]\n",
              Nx,Ny);
@@ -509,15 +509,15 @@ Thus we compute  `dx = 2 * Lx / Mx`.
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
 
   if (periodicity & X_PERIODIC) {
-    dx = 2.0 * Lx / m_Mx;
+    m_dx = 2.0 * Lx / m_Mx;
   } else {
-    dx = 2.0 * Lx / (m_Mx - 1);
+    m_dx = 2.0 * Lx / (m_Mx - 1);
   }
 
   if (periodicity & Y_PERIODIC) {
-    dy = 2.0 * Ly / m_My;
+    m_dy = 2.0 * Ly / m_My;
   } else {
-    dy = 2.0 * Ly / (m_My - 1);
+    m_dy = 2.0 * Ly / (m_My - 1);
   }
 
   compute_horizontal_coordinates();
@@ -614,12 +614,12 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
     x_max = x0 + Lx;
   if (periodicity & X_PERIODIC) {
     for (unsigned int i = 0; i < m_Mx; ++i) {
-      x[i] = x_min + (i + 0.5) * dx;
+      x[i] = x_min + (i + 0.5) * m_dx;
     }
-    x[m_Mx - 1] = x_max - 0.5*dx;
+    x[m_Mx - 1] = x_max - 0.5*m_dx;
   } else {
     for (unsigned int i = 0; i < m_Mx; ++i) {
-      x[i] = x_min + i * dx;
+      x[i] = x_min + i * m_dx;
     }
     x[m_Mx - 1] = x_max;
   }
@@ -629,12 +629,12 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
     y_max = y0 + Ly;
   if (periodicity & Y_PERIODIC) {
     for (unsigned int i = 0; i < m_My; ++i) {
-      y[i] = y_min + (i + 0.5) * dy;
+      y[i] = y_min + (i + 0.5) * m_dy;
     }
-    y[m_My - 1] = y_max - 0.5*dy;
+    y[m_My - 1] = y_max - 0.5*m_dy;
   } else {
     for (unsigned int i = 0; i < m_My; ++i) {
-      y[i] = y_min + i * dy;
+      y[i] = y_min + i * m_dy;
     }
     y[m_My - 1] = y_max;
   }
@@ -664,7 +664,7 @@ PetscErrorCode IceGrid::report_parameters() {
   // report on grid cell dims
   verbPrintf(2,com,
              "     horizontal grid cell   %.2f km x %.2f km\n",
-             dx/1000.0,dy/1000.0);
+             m_dx/1000.0,m_dy/1000.0);
   if (ice_vertical_spacing == EQUAL) {
     verbPrintf(2,com,
                "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
@@ -777,8 +777,8 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
 void IceGrid::compute_point_neighbors(double X, double Y,
                                       int &i_left, int &i_right,
                                       int &j_bottom, int &j_top) {
-  i_left = (int)floor((X - x[0])/dx);
-  j_bottom = (int)floor((Y - y[0])/dy);
+  i_left = (int)floor((X - x[0])/m_dx);
+  j_bottom = (int)floor((Y - y[0])/m_dy);
 
   i_right = i_left + 1;
   j_top = j_bottom + 1;
@@ -959,6 +959,14 @@ unsigned int IceGrid::Mx() const {
 
 unsigned int IceGrid::My() const {
   return m_My;
+}
+
+double IceGrid::dx() const {
+  return m_dx;
+}
+
+double IceGrid::dy() const {
+  return m_dy;
 }
 
 } // end of namespace pism

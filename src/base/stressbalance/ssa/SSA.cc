@@ -180,7 +180,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const double minThickEtaTransform = 5.0; // m
-  const double dx=grid.dx, dy=grid.dy;
+  const double dx=grid.dx(), dy=grid.dy();
 
   bool cfbc = config.get_flag("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");

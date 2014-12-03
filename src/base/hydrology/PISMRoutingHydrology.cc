@@ -414,11 +414,11 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
       const int i = p.i(), j = p.j();
 
       double dRdx, dRdy;
-      dRdx = (R(i+1,j) - R(i,j)) / grid.dx;
-      dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy);
+      dRdx = (R(i+1,j) - R(i,j)) / grid.dx();
+      dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy());
       result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
-      dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx);
-      dRdy = (R(i,j+1) - R(i,j)) / grid.dy;
+      dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx());
+      dRdy = (R(i,j+1) - R(i,j)) / grid.dy();
       result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
     }
   }
@@ -495,17 +495,17 @@ void RoutingHydrology::wall_melt(IceModelVec2S &result) {
     if (W(i,j) > 0.0) {
       dRdx = 0.0;
       if (W(i+1,j) > 0.0) {
-        dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx);
+        dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx());
       }
       if (W(i-1,j) > 0.0) {
-        dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx);
+        dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx());
       }
       dRdy = 0.0;
       if (W(i,j+1) > 0.0) {
-        dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy);
+        dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy());
       }
       if (W(i,j-1) > 0.0) {
-        dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
+        dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy());
       }
       result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
     } else {
@@ -552,16 +552,16 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
     const int i = p.i(), j = p.j();
 
     if (Wstag(i,j,0) > 0.0) {
-      dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
-      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
+      dPdx = (R(i+1,j) - R(i,j)) / grid.dx();
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx();
       result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
     } else {
       result(i,j,0) = 0.0;
     }
     
     if (Wstag(i,j,1) > 0.0) {
-      dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
-      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
+      dPdy = (R(i,j+1) - R(i,j)) / grid.dy();
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy();
       result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
     } else {
       result(i,j,1) = 0.0;
@@ -614,8 +614,8 @@ void RoutingHydrology::adaptive_for_W_evolution(double t_current, double t_end, 
   V.absmaxcomponents(tmp); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
-  dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // FIXME: is regularization needed?
-  dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
+  dtCFL_result = 0.5 / (tmp[0]/grid.dx() + tmp[1]/grid.dy()); // FIXME: is regularization needed?
+  dtDIFFW_result = 1.0/(grid.dx()*grid.dx()) + 1.0/(grid.dy()*grid.dy());
   dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
   dt_result = PetscMin(t_end - t_current, dtmax);
@@ -660,8 +660,8 @@ void RoutingHydrology::raw_update_Wtil(double hdt) {
 //! The computation of Wnew, called by update().
 void RoutingHydrology::raw_update_W(double hdt) {
   const double
-    wux  = 1.0 / (grid.dx * grid.dx),
-    wuy  = 1.0 / (grid.dy * grid.dy),
+    wux  = 1.0 / (grid.dx() * grid.dx()),
+    wuy  = 1.0 / (grid.dy() * grid.dy()),
     rg   = config.get("standard_gravity") * config.get("fresh_water_density");
   double divadflux, diffW;
 
@@ -678,8 +678,8 @@ void RoutingHydrology::raw_update_W(double hdt) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
-      + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
+    divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx()
+      + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy();
     const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
       Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
       Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),

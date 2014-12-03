@@ -154,7 +154,7 @@ void IceEISModel::generateTroughTopography() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double nsd = i * grid.dx, ewd = j * grid.dy;
+    const double nsd = i * grid.dx(), ewd = j * grid.dy();
     if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
         (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
       bed_topography(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
@@ -177,7 +177,7 @@ void IceEISModel::generateMoundTopography() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double nsd = i * grid.dx, ewd = j * grid.dy;
+    const double nsd = i * grid.dx(), ewd = j * grid.dy();
     bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
 }

@@ -58,11 +58,11 @@ void EigenCalving::init(Vars &vars) {
   verbPrintf(2, grid.com,
              "* Initializing the 'eigen-calving' mechanism...\n");
 
-  if (PetscAbs(grid.dx - grid.dy) / PetscMin(grid.dx, grid.dy) > 1e-2) {
+  if (PetscAbs(grid.dx() - grid.dy()) / PetscMin(grid.dx(), grid.dy()) > 1e-2) {
     throw RuntimeError::formatted("-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
-                                  grid.dx, grid.dy,
-                                  PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));
+                                  grid.dx(), grid.dy(),
+                                  PetscAbs(grid.dx() - grid.dy()) / PetscMax(grid.dx(), grid.dy()));
   }
 
   m_strain_rates.set(0.0);
@@ -180,7 +180,7 @@ void EigenCalving::update(double dt,
       }
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:
-      double calving_rate = calving_rate_horizontal * H_average / grid.dx; // in m/s
+      double calving_rate = calving_rate_horizontal * H_average / grid.dx(); // in m/s
 
       // apply calving rate at partially filled or empty grid cells
       if (calving_rate > 0.0) {
@@ -348,8 +348,8 @@ void EigenCalving::max_timestep(double /*my_t*/,
 
   calving_rate_mean /= calving_rate_counter;
 
-  double denom = calving_rate_max / grid.dx;
-  const double epsilon = grid.convert(0.001 / (grid.dx + grid.dy), "seconds", "years");
+  double denom = calving_rate_max / grid.dx();
+  const double epsilon = grid.convert(0.001 / (grid.dx() + grid.dy()), "seconds", "years");
 
   my_dt = 1.0 / (denom + epsilon);
 

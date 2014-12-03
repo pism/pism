@@ -108,8 +108,8 @@ void BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   }
 
   // determine Nx, Ny, which are always at least one if m_smoothing_range > 0
-  Nx = static_cast<int>(ceil(m_smoothing_range / grid.dx));
-  Ny = static_cast<int>(ceil(m_smoothing_range / grid.dy));
+  Nx = static_cast<int>(ceil(m_smoothing_range / grid.dx()));
+  Ny = static_cast<int>(ceil(m_smoothing_range / grid.dy()));
   if (Nx < 1) {
     Nx = 1;
   }

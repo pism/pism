@@ -510,7 +510,7 @@ void IceModel::massContExplicitStep() {
     total_sum_divQ_SSA            = 0,
     total_surface_ice_flux        = 0;
 
-  const double dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx(), dy = grid.dy();
   bool
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),

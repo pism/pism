@@ -234,7 +234,7 @@ void IceModel::ageStep() {
   stress_balance->get_3d_velocity(u3, v3, w3);
 
   ageSystemCtx system(grid.Mz_fine, "age",
-                      grid.dx, grid.dy, grid.dz_fine, dt_TempAge,
+                      grid.dx(), grid.dy(), grid.dz_fine, dt_TempAge,
                       &tau3, u3, v3, w3); // linear system to solve in each column
 
   IceModelVec::AccessList list;

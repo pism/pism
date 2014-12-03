@@ -41,7 +41,7 @@ namespace pism {
  */
 void IceModel::energyStats(double iarea, double &gmeltfrac) {
   double       meltarea = 0.0, temp0 = 0.0;
-  const double a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
+  const double a = grid.dx() * grid.dy() * 1e-3 * 1e-3; // area unit (km^2)
   IceModelVec2S &Enthbase = vWork2d[0];
 
   // use Enth3 to get stats
@@ -94,7 +94,7 @@ void IceModel::ageStats(double ivol, double &gorigfrac) {
     return;  // leave now
   }
 
-  const double  a = grid.dx * grid.dy * 1e-3 * 1e-3, // area unit (km^2)
+  const double  a = grid.dx() * grid.dy() * 1e-3 * 1e-3, // area unit (km^2)
     currtime = grid.time->current(); // seconds
 
   double *tau, origvol = 0.0;
@@ -577,7 +577,7 @@ void IceModel::compute_ice_enthalpy(double &result) {
     }
   }
 
-  enthalpysum *= config.get("ice_density") * (grid.dx * grid.dy);
+  enthalpysum *= config.get("ice_density") * (grid.dx() * grid.dy());
 
   GlobalSum(grid.com, &enthalpysum,  &result);
 }

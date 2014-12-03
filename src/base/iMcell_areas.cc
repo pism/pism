@@ -48,7 +48,7 @@ void IceModel::compute_cell_areas() {
   if (config.get_flag("correct_cell_areas") == false ||
       global_attributes.has_attribute("proj4") == false) {
 
-    cell_area.set(grid.dx * grid.dy);
+    cell_area.set(grid.dx() * grid.dy());
 
     return;
   }
@@ -88,7 +88,7 @@ void IceModel::compute_cell_areas() {
 // +-----------+
 // (sw)        (se)
 
-  double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
+  double dx2 = 0.5 * grid.dx(), dy2 = 0.5 * grid.dy();
 
   IceModelVec::AccessList list;
   list.add(vLatitude);
@@ -140,7 +140,7 @@ void IceModel::compute_cell_areas() {
   PetscErrorCode ierr;
 
   // proj.4 was not found; use uncorrected areas.
-  cell_area.set(grid.dx * grid.dy);
+  cell_area.set(grid.dx() * grid.dy());
 
   return 0;
 }

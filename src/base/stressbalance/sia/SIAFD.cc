@@ -199,7 +199,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
   IceModelVec2S &eta = work_2d[0];
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
@@ -270,7 +270,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
 
   IceModelVec2S &h = *surface;
 
@@ -347,7 +347,7 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
  * mask, and bed fields.)
  */
 void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
   IceModelVec2S &h = *surface, &b = *bed,
     &w_i = work_2d[0], &w_j = work_2d[1]; // averaging weights
 

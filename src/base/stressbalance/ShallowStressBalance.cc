@@ -172,7 +172,7 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
-  double    dx = grid.dx, dy = grid.dy;
+  double    dx = grid.dx(), dy = grid.dy();
 
   if (result.get_ndof() != 2) {
     throw RuntimeError("result.dof() == 2 is required");
@@ -254,7 +254,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velo
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
-  double    dx = grid.dx, dy = grid.dy;
+  double    dx = grid.dx(), dy = grid.dy();
 
   if (result.get_ndof() != 3) {
     throw RuntimeError("result.get_dof() == 3 is required");

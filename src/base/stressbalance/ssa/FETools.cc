@@ -289,8 +289,8 @@ FEQuadrature::FEQuadrature(const IceGrid &grid, double L) {
   //
   // Note that the reference element is @f$ [-1,1]^2 @f$ hence the
   // extra factor of 1/2.
-  double jacobian_x = 0.5*grid.dx / L;
-  double jacobian_y = 0.5*grid.dy / L;
+  double jacobian_x = 0.5*grid.dx() / L;
+  double jacobian_y = 0.5*grid.dy() / L;
   m_jacobianDet = jacobian_x*jacobian_y;
 
   FEShapeQ1 shape;

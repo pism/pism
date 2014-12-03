@@ -1852,7 +1852,7 @@ void IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
                  indices, attrs);
   result->metadata() = vars[0];
 
-  double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
+  double dx2 = 0.5 * grid.dx(), dy2 = 0.5 * grid.dy();
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};
   double y_offsets[] = {-dy2, -dy2, dy2, dy2};
 

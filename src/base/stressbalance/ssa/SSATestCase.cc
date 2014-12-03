@@ -308,9 +308,9 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   // Always write grid parameters:
   err.set_name("dx");
   err.set_units("meters");
-  nc.write_timeseries(err, (size_t)start, grid->dx);
+  nc.write_timeseries(err, (size_t)start, grid->dx());
   err.set_name("dy");
-  nc.write_timeseries(err, (size_t)start, grid->dy);
+  nc.write_timeseries(err, (size_t)start, grid->dy());
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");

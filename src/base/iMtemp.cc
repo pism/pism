@@ -40,7 +40,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
                                           const double z, const double dz,
                                           double *Texcess, double *bwat) {
 
-  const double darea = grid.dx * grid.dy,
+  const double darea = grid.dx() * grid.dy(),
                     dvol = darea * dz,
                     dE = rho * c * (*Texcess) * dvol,
                     massmelted = dE / L;
@@ -196,7 +196,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   stress_balance->get_volumetric_strain_heating(strain_heating3);
 
   tempSystemCtx system(grid.Mz_fine, "temperature",
-                       grid.dx, grid.dy, fdz, dt_TempAge,
+                       grid.dx(), grid.dy(), fdz, dt_TempAge,
                        config,
                        &T3, u3, v3, w3, strain_heating3);
 

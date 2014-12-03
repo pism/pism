@@ -271,7 +271,7 @@ come from known velocity values.  The fields vel_bc and bc_locations are used fo
 this.
  */
 void SSAFD::assemble_rhs() {
-  const double dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx(), dy = grid.dy();
 
   const double ice_free_default_velocity = 0.0;
 
@@ -488,7 +488,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
   int zero_pivot_flag = 0;
 
-  const double   dx=grid.dx, dy=grid.dy;
+  const double   dx=grid.dx(), dy=grid.dy();
   const double   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
@@ -1169,7 +1169,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
   std::vector<double> nuNorm, nuChange;
 
-  const double area = grid.dx * grid.dy;
+  const double area = grid.dx() * grid.dy();
 #define MY_NORM     NORM_1
 
   // Test for change in nu
@@ -1363,7 +1363,7 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
     n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
-  const double dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx(), dy = grid.dy();
 
   for (int o=0; o<2; ++o) {
     const int oi = 1 - o, oj=o;
@@ -1439,7 +1439,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
 
-  const double dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx(), dy = grid.dy();
 
   MaskQuery m(*mask);
 
@@ -1742,8 +1742,8 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "x=%12.3f + (0:%d)*%12.3f;\n"
                                 "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -grid.Lx, grid.Mx() - 1, grid.dx,
-                                -grid.Ly, grid.My() - 1, grid.dy); CHKERRQ(ierr);
+                                -grid.Lx, grid.Mx() - 1, grid.dx(),
+                                -grid.Ly, grid.My() - 1, grid.dy()); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);

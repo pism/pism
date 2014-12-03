@@ -91,7 +91,7 @@ double IceModel::get_threshold_thickness(planeStar<int> M,
       const double
         H0 = 600.0,                   // 600 m
         V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
-        mslope = 2.4511e-18 * grid.dx / (H0 * V0);
+        mslope = 2.4511e-18 * grid.dx() / (H0 * V0);
       H_threshold -= 0.8*mslope*pow(H_average, 5);
     }
   }

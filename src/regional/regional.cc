@@ -39,7 +39,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   IceModelVec2S &hst = *usurfstore; // convenience
 
   const int Mx = grid.Mx(), My = grid.My();
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
 
   IceModelVec::AccessList list;
   list.add(h_x);

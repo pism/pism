@@ -646,7 +646,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     standard_gravity = config.get("standard_gravity");
 
   // area of grid square in square km:
-  const double   a = grid.dx * grid.dy * 1e-3 * 1e-3;
+  const double   a = grid.dx() * grid.dy() * 1e-3 * 1e-3;
   const double   m = (2.0 * Glen_n + 2.0) / Glen_n;
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -962,9 +962,9 @@ void IceCompModel::reportErrors() {
     // Always write grid parameters:
     err.set_name("dx");
     err.set_units("meters");
-    nc.write_timeseries(err, (size_t)start, grid.dx);
+    nc.write_timeseries(err, (size_t)start, grid.dx());
     err.set_name("dy");
-    nc.write_timeseries(err, (size_t)start, grid.dy);
+    nc.write_timeseries(err, (size_t)start, grid.dy());
     err.set_name("dz");
     nc.write_timeseries(err, (size_t)start, grid.dzMAX);
 

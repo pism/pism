@@ -57,7 +57,7 @@ PetscErrorCode PBLingleClark::allocate() {
 
   if (grid.rank == 0) {
     bdLC.settings(config, use_elastic_model,
-                  grid.Mx(), grid.My(), grid.dx, grid.dy,
+                  grid.Mx(), grid.My(), grid.dx(), grid.dy(),
                   4,     // use Z = 4 for now; to reduce global drift?
                   &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
 

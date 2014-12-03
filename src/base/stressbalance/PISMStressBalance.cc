@@ -229,7 +229,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (grid.dx * (east + west));
+        D_x = 1.0 / (grid.dx() * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -245,7 +245,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (grid.dy * (north + south));
+        D_y = 1.0 / (grid.dy() * (north + south));
       } else {
         D_y = 0.0;
       }
@@ -411,7 +411,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (grid.dx * (east + west));
+        D_x = 1.0 / (grid.dx() * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -427,7 +427,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (grid.dy * (north + south));
+        D_y = 1.0 / (grid.dy() * (north + south));
       } else {
         D_y = 0.0;
       }

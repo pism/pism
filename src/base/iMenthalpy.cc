@@ -211,7 +211,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   std::vector<double> Enthnew(grid.Mz_fine); // new enthalpy in column
 
-  enthSystemCtx system(grid.Mz_fine, "enth", grid.dx, grid.dy, grid.dz_fine, dt_TempAge,
+  enthSystemCtx system(grid.Mz_fine, "enth", grid.dx(), grid.dy(), grid.dz_fine, dt_TempAge,
                        config, Enth3, u3, v3, w3, strain_heating3, *EC);
 
   // Now get map-plane coupler fields: Dirichlet upper surface
@@ -463,7 +463,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
 
   // FIXME: use cell areas
-  *liquifiedVol = ((double) liquifiedCount) * grid.dz_fine * grid.dx * grid.dy;
+  *liquifiedVol = ((double) liquifiedCount) * grid.dz_fine * grid.dx() * grid.dy();
 }
 
 /*

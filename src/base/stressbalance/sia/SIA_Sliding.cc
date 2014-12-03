@@ -269,7 +269,7 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
   IceModelVec2S &eta = work_2d;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
@@ -344,7 +344,7 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
  */
 void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
 
   IceModelVec2S
     &b = *bed,
@@ -470,7 +470,7 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx(), dy = grid.dy();  // convenience
 
   IceModelVec2S &h = *surface;
 

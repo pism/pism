@@ -415,8 +415,8 @@ void DistributedHydrology::update(double icet, double icedt) {
 
     // update Pnew from time step
     const double  CC = (rg * hdt) / phi0,
-                     wux  = 1.0 / (grid.dx * grid.dx),
-                     wuy  = 1.0 / (grid.dy * grid.dy);
+                     wux  = 1.0 / (grid.dx() * grid.dx()),
+                     wuy  = 1.0 / (grid.dy() * grid.dy());
     double  Open, Close, divflux, ZZ,
                divadflux, diffW;
     overburden_pressure(Pover);
@@ -458,8 +458,8 @@ void DistributedHydrology::update(double icet, double icedt) {
         Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
-        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
-          + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
+        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx()
+          + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy();
         const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
           Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
           Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),

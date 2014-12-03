@@ -194,6 +194,9 @@ public:
   //! Number of grid points (in the y-direction) in a processor sub-domain
   int ym() const;
 
+  double dx() const;
+  double dy() const;
+
   unsigned int Mx() const;
   unsigned int My() const;
 
@@ -242,8 +245,6 @@ public:
   std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
-  double dx,               //!< horizontal grid spacing
-    dy;                         //!< horizontal grid spacing
 
   double Lz;      //!< max extent of the ice in z-direction (m)
 
@@ -261,6 +262,8 @@ public:
             y[j] <= y[0] + strip_width || y[j] >= y[m_My-1] - strip_width);
   }
 private:
+  double m_dx,               //!< horizontal grid spacing
+    m_dy;                    //!< horizontal grid spacing
   //! number of grid points in the x-direction  
   unsigned int m_Mx;
   //! number of grid points in the y-direction

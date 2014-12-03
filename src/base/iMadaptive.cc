@@ -75,7 +75,7 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
         maxu = PetscMax(maxu, absu);
         maxv = PetscMax(maxv, absv);
         maxw = PetscMax(maxw, PetscAbs(w[k]));
-        const double denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
+        const double denom = PetscAbs(absu / grid.dx()) + PetscAbs(absv / grid.dy());
         if (denom > 0.0) {
           maxtimestep = PetscMin(maxtimestep, 1.0 / denom);
         }
@@ -118,7 +118,7 @@ void IceModel::max_timestep_cfl_2d(double &dt_result) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
+      const double denom = PetscAbs(vel(i,j).u)/grid.dx() + PetscAbs(vel(i,j).v)/grid.dy();
       if (denom > 0.0) {
         maxtimestep = PetscMin(maxtimestep, 1.0/denom);
       }
@@ -146,7 +146,7 @@ void IceModel::max_timestep_diffusivity(double &dt_result) {
   if (D_max > 0.0) {
     const double
       adaptive_timestepping_ratio = config.get("adaptive_timestepping_ratio"),
-      grid_factor                 = 1.0 / (grid.dx*grid.dx) + 1.0 / (grid.dy*grid.dy);
+      grid_factor                 = 1.0 / (grid.dx()*grid.dx()) + 1.0 / (grid.dy()*grid.dy());
 
     dt_result = adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
   } else {
@@ -396,8 +396,8 @@ It is handled by temperatureAgeStep(), not here.
 void IceModel::countCFLViolations(double* CFLviol) {
 
   const double
-    CFL_x = grid.dx / dt_TempAge,
-    CFL_y = grid.dy / dt_TempAge;
+    CFL_x = grid.dx() / dt_TempAge,
+    CFL_y = grid.dy() / dt_TempAge;
 
   double *u, *v;
   IceModelVec3 *u3, *v3, *dummy;
