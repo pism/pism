@@ -87,7 +87,7 @@ class testi(PISM.ssa.SSAExactTestCase):
         bed[i,j] = bed_ij
         surface[i,j] = bed_ij + H0_schoof
 
-        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx()-1));
+        edge = ((j == 0) or (j == grid.My() - 1)) or ((i==0) or (i==grid.Mx()-1));
         if (edge):
           bc_mask[i,j] = 1;
           vel_bc[i,j].u = u;

@@ -129,7 +129,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
     exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv);
     surface(i,j) = bed(i,j) + H0_schoof;
 
-    bool edge = ((j == 0) || (j == (int)grid->My - 1) ||
+    bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
                  (i == 0) || (i == (int)grid->Mx() - 1));
     if (edge) {
       bc_mask(i,j) = 1;

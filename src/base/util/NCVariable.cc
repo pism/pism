@@ -538,7 +538,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   // y
   exists = nc.inq_dim(get_y().get_name());
   if (!exists) {
-    nc.def_dim(m_grid->My, m_y);
+    nc.def_dim(m_grid->My(), m_y);
     nc.put_dim(get_y().get_name(), m_grid->y);
   }
 

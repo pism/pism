@@ -38,7 +38,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   IceModelVec2Int &nmm = *no_model_mask;
   IceModelVec2S &hst = *usurfstore; // convenience
 
-  const int Mx = grid.Mx(), My = grid.My;
+  const int Mx = grid.Mx(), My = grid.My();
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec::AccessList list;
@@ -150,7 +150,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
     }
 
     if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
-      if (j - 1 < 0 || j + 1 > (int)grid.My - 1) {
+      if (j - 1 < 0 || j + 1 > (int)grid.My() - 1) {
         result(i, j).v = 0;
       } else {
         result(i, j).v = - pressure * usurfstore->diff_y(i,j);

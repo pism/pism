@@ -65,7 +65,7 @@ SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   m_velocity_old.set_attrs("internal",
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "");
-  
+
   const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
@@ -102,7 +102,7 @@ SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
 
   fracture_density = NULL;
   m_melange_back_pressure = NULL;
-  
+
   // PETSc objects and settings
   {
     PetscErrorCode ierr;
@@ -173,7 +173,7 @@ PetscErrorCode SSAFD::pc_setup_asm() {
 #else
   ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
 #endif
-    
+
   // Switch to using the "unpreconditioned" norm.
   ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
 
@@ -182,7 +182,7 @@ PetscErrorCode SSAFD::pc_setup_asm() {
 
   // Get the PC from the KSP solver:
   ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
-  
+
   // Set the PC type:
   ierr = PCSetType(pc, PCASM); CHKERRQ(ierr);
 
@@ -197,7 +197,7 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
 
   ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
-    
+
   // Let the user override all this:
   // Process options:
   ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
@@ -509,7 +509,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   if (m_vel_bc && bc_locations) {
     list.add(*bc_locations);
   }
-  
+
   const bool sub_gl = config.get_flag("sub_groundingline");
   if (sub_gl) {
     list.add(*gl_mask);
@@ -932,7 +932,7 @@ void SSAFD::picard_iteration(double nuH_regularization,
         throw RuntimeError("SSAFD::pc_setup_asm() failed");
       }
 
-  
+
       m_velocity.copy_from(m_velocity_old);
 
       picard_manager(nuH_regularization,
@@ -1002,7 +1002,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     assemble_matrix(true, m_A);
 
     if (very_verbose) {
-      
+
       stdout_ssa += "A:";
     }
 
@@ -1082,7 +1082,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     if (nuH_norm == 0 || nuH_norm_change / nuH_norm < ssa_relative_tolerance) {
       goto done;
     }
-    
+
   } // outer loop (k)
 
   // If we're here, it means that we exceeded max_iterations and still
@@ -1127,7 +1127,7 @@ void SSAFD::picard_strategy_regularization() {
     throw PicardFailure("will not attempt over-regularization of nuH\n"
                         "because nuH_regularization == 0.0.");
   }
-  
+
   while (k < max_tries) {
     m_velocity.copy_from(m_velocity_old);
     verbPrintf(1, grid.com,
@@ -1485,7 +1485,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   list.add(result);
   list.add(hardness);
   list.add(*thickness);
- 
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -1524,7 +1524,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
         result(i,j,0) = strength_extension->get_notional_strength();
       }
     }
-      
+
     // j-offset
     {
       if (m.icy(i,j) && m.icy(i,j+1)) {
@@ -1740,9 +1740,10 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
                                 grid.convert(grid.time->current(), "seconds", "years"));
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-            "x=%12.3f + (0:%d)*%12.3f;\n"
-            "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -grid.Lx,grid.Mx()-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
+                                "x=%12.3f + (0:%d)*%12.3f;\n"
+                                "y=%12.3f + (0:%d)*%12.3f;\n",
+                                -grid.Lx, grid.Mx() - 1, grid.dx,
+                                -grid.Ly, grid.My() - 1, grid.dy); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);

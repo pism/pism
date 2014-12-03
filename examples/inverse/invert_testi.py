@@ -174,7 +174,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
     
     with PISM.vec.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
       for (i,j) in grid.points():
-        if (j == 0) or (j==grid.My-1):
+        if (j == 0) or (j==grid.My()-1):
           vecs.bc_mask[i,j]=1
           vecs.vel_bc[i,j].u=0
           vecs.vel_bc[i,j].v=0

@@ -97,7 +97,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
       ierr = VecGetArray(m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecGetArray");
 
-      cc(mask, grid.Mx(), grid.My, true, mask_grounded_ice);
+      cc(mask, grid.Mx(), grid.My(), true, mask_grounded_ice);
 
       ierr = VecRestoreArray(m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecRestoreArray");

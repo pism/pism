@@ -68,7 +68,7 @@ class testj(PISM.ssa.SSAExactTestCase):
         vecs.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
   
         # // special case at center point (Dirichlet BC)
-        if (i == (grid.Mx())/2) and (j == (grid.My)/2):
+        if (i == (grid.Mx())/2) and (j == (grid.My())/2):
           vecs.bc_mask[i,j] = 1;
           vecs.vel_bc[i,j] = [u,v]
 

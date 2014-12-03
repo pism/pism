@@ -617,7 +617,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
     }
 
     grid->set_Mx(input.x_len);
-    grid->My = input.y_len;
+    grid->set_My(input.y_len);
 
     grid->periodicity = periodicity;
 

@@ -120,7 +120,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 
     // special case at center point: here we set vel_bc at (i,j) by marking
     // this grid point as SHEET and setting vel_bc approriately
-    if ((i == (grid->Mx())/2) && (j == (grid->My)/2)) {
+    if ((i == (grid->Mx())/2) && (j == (grid->My())/2)) {
       bc_mask(i,j) = 1;
       vel_bc(i,j).u = myu;
       vel_bc(i,j).v = myv;

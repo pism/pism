@@ -155,9 +155,9 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
   GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
   GlobalSum(grid.com, &avUerr,  &gavUerr);
-  gavUerr = gavUerr/(grid.Mx()*grid.My);
+  gavUerr = gavUerr/(grid.Mx()*grid.My());
   GlobalSum(grid.com, &avWerr,  &gavWerr);
-  gavWerr = gavWerr/(grid.Mx()*grid.My);
+  gavWerr = gavWerr/(grid.Mx()*grid.My());
   return 0;
 }
 
@@ -330,14 +330,14 @@ int main(int argc, char *argv[]) {
     grid.Lx = grid.Ly = 900e3;
     grid.Lz = 4000;
     grid.set_Mx(61);
-    grid.My = 61;
+    grid.set_My(61);
     grid.Mz = 61;
 
     std::string output_file = "siafd_test_F.nc";
     int tmp = grid.Mz;
     {
       bool flag;
-      int Mx = grid.Mx(), My = (int)grid.My;
+      int Mx = grid.Mx(), My = (int)grid.My();
       OptionsInt("-Mx", "Number of grid points in the X direction",
                  Mx, flag);
       OptionsInt("-My", "Number of grid points in the X direction",
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
                     output_file, flag);
 
       grid.set_Mx(Mx);
-      grid.My = My;
+      grid.set_My(My);
     }
 
     if (tmp > 0) {

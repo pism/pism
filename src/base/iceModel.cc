@@ -97,7 +97,7 @@ IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
 
   // set default locations of the column used by -view_system
   id = (grid.Mx() - 1)/2;
-  jd = (grid.My - 1)/2;
+  jd = (grid.My() - 1)/2;
 
   global_attributes.set_string("Conventions", "CF-1.5");
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);

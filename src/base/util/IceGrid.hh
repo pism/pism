@@ -195,9 +195,11 @@ public:
   int ym() const;
 
   unsigned int Mx() const;
+  unsigned int My() const;
 
   // FIXME: remove this
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
+  void set_My(unsigned int My) {m_My = My;}
 
   Profiling profiling;
 
@@ -234,9 +236,6 @@ public:
   double Lx, //!< half width of the ice model grid in x-direction (m)
     Ly;           //!< half width of the ice model grid in y-direction (m)
 
-  unsigned int
-    My;      //!< number of grid points in the y-direction
-
   unsigned int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
@@ -259,11 +258,15 @@ public:
       return false;
     }
     return (x[i] <= x[0] + strip_width || x[i] >= x[m_Mx-1] - strip_width ||
-            y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
+            y[j] <= y[0] + strip_width || y[j] >= y[m_My-1] - strip_width);
   }
 private:
   //! number of grid points in the x-direction  
   unsigned int m_Mx;
+  //! number of grid points in the y-direction
+  unsigned int m_My;
+
+  
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;

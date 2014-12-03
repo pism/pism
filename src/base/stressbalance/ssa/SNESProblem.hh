@@ -125,25 +125,18 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   int stencil_width=1;
+  ierr = DMDACreate2d(m_grid.com,
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDACreate2d(m_grid.com,
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      m_grid.My, m_grid.Mx(),
-                      m_grid.Ny, m_grid.Nx,
-                      DOF, stencil_width,
-                      &m_grid.procs_y[0], &m_grid.procs_x[0],
-                      &m_DA); CHKERRQ(ierr);
 #else
-  ierr = DMDACreate2d(m_grid.com,
                       DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+#endif
                       DMDA_STENCIL_BOX,
-                      m_grid.My, m_grid.Mx(),
+                      m_grid.My(), m_grid.Mx(),
                       m_grid.Ny, m_grid.Nx,
                       DOF, stencil_width,
                       &m_grid.procs_y[0], &m_grid.procs_x[0],
                       &m_DA); CHKERRQ(ierr);
-#endif
 
   ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
 
