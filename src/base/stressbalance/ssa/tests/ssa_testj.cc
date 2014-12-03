@@ -110,7 +110,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
     const int i = p.i(), j = p.j();
 
     double junk1, myu, myv, H;
-    const double myx = grid->x[i], myy = grid->y[j];
+    const double myx = grid->x(i), myy = grid->y(j);
 
     // set H,h on regular grid
     exactJ(myx, myy, &H, &junk1, &myu, &myv);

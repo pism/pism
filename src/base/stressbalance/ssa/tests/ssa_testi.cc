@@ -109,7 +109,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double y = grid->y[j];
+    const double y = grid->y(j);
     const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
     const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
     tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
@@ -124,7 +124,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
     const int i = p.i(), j = p.j();
 
     double junk, myu, myv;
-    const double myx = grid->x[i], myy=grid->y[j];
+    const double myx = grid->x(i), myy=grid->y(j);
     // eval exact solution; will only use exact vels if at edge
     exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv);
     surface(i,j) = bed(i,j) + H0_schoof;

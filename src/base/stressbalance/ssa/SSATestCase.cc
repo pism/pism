@@ -206,7 +206,7 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
     const int i = p.i(), j = p.j();
 
     double uexact, vexact;
-    double myx = grid->x[i], myy = grid->y[j];
+    double myx = grid->x(i), myy = grid->y(j);
 
     exactSolution(i,j,myx,myy,&uexact,&vexact);
 
@@ -405,7 +405,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    exactSolution(i, j, grid->x[i], grid->y[j],
+    exactSolution(i, j, grid->x(i), grid->y(j),
                   &(exact(i,j).u), &(exact(i,j).v));
   }
   exact.write(pio);

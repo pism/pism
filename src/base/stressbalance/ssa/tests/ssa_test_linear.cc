@@ -128,7 +128,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid->x[i], myy=grid->y[j];
+    const double myx = grid->x(i), myy=grid->y(j);
 
     bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
                  (i == 0) || (i == (int)grid->Mx() - 1));

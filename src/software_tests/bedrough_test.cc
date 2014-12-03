@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
-        100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
+      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x(i) / 600.0e3) +
+        100.0 * sin(2.0 * M_PI * (grid.x(i) + 1.5 * grid.y(j)) / 40.0e3);
     }
 
     usurf.set(1000.0);  // compute theta for this constant thk

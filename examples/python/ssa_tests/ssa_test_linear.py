@@ -67,7 +67,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         edge = ((j == 0) or (j == grid.My() - 1)) or ((i==0) or (i==grid.Mx()-1));
         if edge:
           bc_mask[i,j] = 1;
-          x = grid.x[i]; y=grid.y[j];
+          x = grid.x(i); y=grid.y(j);
           [u,v] = self.exactSolution(i,j,x,y);
           vel_bc[i,j].u = u;
           vel_bc[i,j].v = v;

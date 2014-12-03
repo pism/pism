@@ -1867,7 +1867,7 @@ void IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double x0 = grid.x[i], y0 = grid.y[j];
+    double x0 = grid.x(i), y0 = grid.y(j);
     double *values;
 
     result->getInternalColumn(i,j,&values);

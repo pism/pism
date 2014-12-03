@@ -463,7 +463,7 @@ using namespace pism;
     def coords(self):
         for i in xrange(self.xs(),self.xs()+self.xm()):
             for j in xrange(self.ys(),self.ys()+self.ym()):
-                yield (i,j,self.x[i],self.y[j])
+                yield (i,j,self.x(i),self.y(j))
     }
 }
 

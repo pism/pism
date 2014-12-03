@@ -74,7 +74,7 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x[i], yy = grid.y[j],
+    double xx = grid.x(i), yy = grid.y(j),
       r = sqrt(PetscSqr(xx) + PetscSqr(yy));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
@@ -129,7 +129,7 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x[i], yy = grid.y[j],
+    double xx = grid.x(i), yy = grid.y(j),
       r = sqrt(PetscSqr(xx) + PetscSqr(yy));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity

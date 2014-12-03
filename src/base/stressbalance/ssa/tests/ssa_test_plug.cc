@@ -134,7 +134,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid->x[i], myy=grid->y[j];
+    const double myx = grid->x(i), myy=grid->y(j);
 
     bed(i,j) = -myx*(dhdx);
     surface(i,j) = bed(i,j) + H0;

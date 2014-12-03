@@ -130,8 +130,8 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
     } else {
       // basal velocity from SIA-type sliding law: not recommended!
       const double
-        myx = grid.x[i],
-        myy = grid.y[j],
+        myx = grid.x(i),
+        myy = grid.y(j),
         myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
                        + h_x(i,j,1) + h_x(i,j-1,1)),
         myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)

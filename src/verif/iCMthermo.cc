@@ -195,7 +195,7 @@ void IceCompModel::fillSolnTestFG() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
+    double xx = grid.x(i), yy = grid.y(j), r = grid.radius(i, j);
     if (r > LforFG - 1.0) {  // outside of sheet
 
       ice_thickness(i, j) = 0.0;
@@ -540,7 +540,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
+    double xx = grid.x(i), yy = grid.y(j), r = grid.radius(i, j);
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
       double radialUex, wex;

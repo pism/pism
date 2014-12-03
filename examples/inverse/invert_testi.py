@@ -52,20 +52,21 @@ class PlotListener(PISM.invert.listener.PlotListener):
 
     if zeta is not None:
       Mx = grid.Mx()
+      y = grid.y()
       pp.figure(self.figure())
       pp.clf()
       pp.subplot(1,3,1)
-      pp.plot(grid.y,zeta[:,Mx/2])
+      pp.plot(y,zeta[:,Mx/2])
     
       mag = np.max(np.abs(u))
       pp.subplot(1,3,2)
-      pp.plot(grid.y,u[0,:,Mx/2]/mag)
+      pp.plot(y,u[0,:,Mx/2]/mag)
 
       pp.subplot(1,3,3)
       if inv_solver.method.startswith('tikhonov'):
-        pp.plot(grid.y,-grad_zeta[:,Mx/2]*dWeight,grid.y,grad_u[:,Mx/2]*sWeight,grid.y,grad[:,Mx/2])
+        pp.plot(y,-grad_zeta[:,Mx/2]*dWeight,y,grad_u[:,Mx/2]*sWeight,y,grad[:,Mx/2])
       else:
-        pp.plot(grid.y,r[0,:,Mx/2])
+        pp.plot(y,r[0,:,Mx/2])
         
       pp.ion()
       pp.show()
@@ -80,11 +81,12 @@ class LinPlotListener(PISM.invert.listener.PlotListener):
 
     if x is not None:
       Mx = grid.Mx()
+      y = grid.y()
       pp.figure(self.figure())
       pp.clf()
       mag = np.max(np.abs(x));
       if mag==0 : mag = 1
-      pp.plot(grid.y,x[:,Mx/2]/mag)
+      pp.plot(y,x[:,Mx/2]/mag)
 
       pp.ion()
       pp.show()
@@ -117,7 +119,7 @@ def testi_tauc(grid, tauc):
 
   with PISM.vec.Access(comm=tauc):
     for (i,j) in grid.points():
-      y=grid.y[j]
+      y=grid.y(j)
       tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
 class testi_run(PISM.invert.ssa.SSATaucForwardRun):
@@ -182,7 +184,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
     misfit_weight=vecs.vel_misfit_weight
     with PISM.vec.Access(comm=misfit_weight):
       for (i,j) in grid.points():
-        if grid.y[j] <= 0:
+        if grid.y(j) <= 0:
           misfit_weight[i,j] = 1.;
         else:
           misfit_weight[i,j] = right_side_weight;
@@ -332,15 +334,17 @@ if __name__ == "__main__":
   secpera = grid.convert(1.0, "year", "seconds")
 
   if do_final_plot and (not tauc_a is None):
+    y = grid.y()
+
     from matplotlib import pyplot
     pyplot.clf()
     pyplot.subplot(1,2,1)
-    pyplot.plot(grid.y,tauc_a[:,Mx/2])
-    pyplot.plot(grid.y,tauc_true[:,Mx/2])
+    pyplot.plot(y,tauc_a[:,Mx/2])
+    pyplot.plot(y,tauc_true[:,Mx/2])
 
     pyplot.subplot(1,2,2)
-    pyplot.plot(grid.y,u_i_a[0,:,Mx/2]*secpera)
-    pyplot.plot(grid.y,u_obs_a[0,:,Mx/2]*secpera)
+    pyplot.plot(y,u_i_a[0,:,Mx/2]*secpera)
+    pyplot.plot(y,u_obs_a[0,:,Mx/2]*secpera)
 
     pyplot.ion()
     pyplot.show()

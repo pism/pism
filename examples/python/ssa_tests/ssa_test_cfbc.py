@@ -100,7 +100,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     
     with PISM.vec.Access(comm=[thickness,surface,bc_mask,vel_bc,ice_mask]):
       for (i,j) in grid.points():
-        x = grid.x[i]
+        x = grid.x(i)
         if x <= 0:
           thickness[i,j] = H_exact(x + self.grid.Lx)
           ice_mask[i,j]  = PISM.MASK_FLOATING

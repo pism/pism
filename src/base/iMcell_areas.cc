@@ -97,7 +97,7 @@ void IceModel::compute_cell_areas() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double x = grid.x[i], y = grid.y[j], Z;
+    double x = grid.x(i), y = grid.y(j), Z;
 
     // compute the cell area:
     double x_nw = x - dx2, y_nw = y + dy2;

@@ -375,7 +375,7 @@ void IceCompModel::initTestABCDEH() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x[i], yy = grid.y[j],
+    double xx = grid.x(i), yy = grid.y(j),
       r = grid.radius(i, j);
     switch (testname) {
     case 'A':
@@ -592,7 +592,7 @@ void IceCompModel::fillSolnTestE() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x[i], yy = grid.y[j];
+    double xx = grid.x(i), yy = grid.y(j);
     exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
     ice_thickness(i,j) = H;
     (*vel_adv)(i,j)    = bvel;
@@ -655,7 +655,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       area += a;
       vol += a * ice_thickness(i,j) * 1e-3;
     }
-    double xx = grid.x[i], yy = grid.y[j],
+    double xx = grid.x(i), yy = grid.y(j),
       r = grid.radius(i,j);
     switch (testname) {
     case 'A':
@@ -778,7 +778,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i,j) > 0.0) {
-      double xx = grid.x[i], yy = grid.y[j];
+      double xx = grid.x(i), yy = grid.y(j);
       exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
       // compute maximum errors
       const double uberr = PetscAbsReal((*vel_adv)(i,j).u - ubexact);

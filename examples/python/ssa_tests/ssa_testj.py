@@ -62,7 +62,7 @@ class testj(PISM.ssa.SSAExactTestCase):
     with PISM.vec.Access(comm=[vecs.thickness, vecs.surface, vecs.bc_mask, vecs.vel_bc]):
       grid = self.grid
       for (i,j) in grid.points():
-        x = grid.x[i]; y = grid.y[j]
+        x = grid.x(i); y = grid.y(j)
         (H,junk,u,v) = PISM.exactJ(x,y);
         vecs.thickness[i,j] = H;
         vecs.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297

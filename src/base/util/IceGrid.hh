@@ -194,6 +194,12 @@ public:
   //! Number of grid points (in the y-direction) in a processor sub-domain
   int ym() const;
 
+  const std::vector<double> x() const;
+  double x(size_t i) const;
+
+  const std::vector<double> y() const;
+  double y(size_t i) const;
+
   double dx() const;
   double dy() const;
 
@@ -210,12 +216,8 @@ public:
   MPI_Comm    com;
   // int to match types used by MPI
   int rank, size;
-  int m_xs, m_xm, m_ys, m_ym;
 
   std::vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
-
-  std::vector<double> x,             //!< x-coordinates of grid points
-    y;                          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
   std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
@@ -258,10 +260,15 @@ public:
     if (strip_width < 0.0) {
       return false;
     }
-    return (x[i] <= x[0] + strip_width || x[i] >= x[m_Mx-1] - strip_width ||
-            y[j] <= y[0] + strip_width || y[j] >= y[m_My-1] - strip_width);
+    return (m_x[i] <= m_x[0] + strip_width || m_x[i] >= m_x[m_Mx-1] - strip_width ||
+            m_y[j] <= m_y[0] + strip_width || m_y[j] >= m_y[m_My-1] - strip_width);
   }
 private:
+
+  std::vector<double> m_x,             //!< x-coordinates of grid points
+    m_y;                          //!< y-coordinates of grid points
+
+  int m_xs, m_xm, m_ys, m_ym;
   double m_dx,               //!< horizontal grid spacing
     m_dy;                    //!< horizontal grid spacing
   //! number of grid points in the x-direction  

@@ -87,10 +87,10 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // limits of the processor's part of the target computational domain
   double
-    x_min_proc = grid.x[grid.xs()],
-    x_max_proc = grid.x[grid.xs() + grid.xm() - 1],
-    y_min_proc = grid.y[grid.ys()],
-    y_max_proc = grid.y[grid.ys() + grid.ym() - 1];
+    x_min_proc = grid.x(grid.xs()),
+    x_max_proc = grid.x(grid.xs() + grid.xm() - 1),
+    y_min_proc = grid.y(grid.ys()),
+    y_max_proc = grid.y(grid.ys() + grid.ym() - 1);
 
   // T
   start[T] = input.t_len - 1;       // use the latest time.
@@ -144,7 +144,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   for (int i = 0; i < grid.xm(); ++i) {
     // i is the index in this processor's sub-domain
     // x is the x-coordinate in the total domain
-    double x = grid.x[grid.xs() + i];
+    double x = grid.x(grid.xs() + i);
 
     // This is here to make it crash and burn if something goes wrong, instead
     // of quietly doing the wrong thing.
@@ -179,7 +179,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
     // for all points in the x-direction in this sub-domain
 
     // get the coordinate
-    double x = grid.x[grid.xs() + i];
+    double x = grid.x(grid.xs() + i);
     if (x_left[i] == -1 && x < input.x[0]) {
       // if x_left was not assigned and the point is to the left of
       // the left-most column in the input grid
@@ -201,7 +201,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   y_alpha.resize(grid.ym());
 
   for (int j = 0; j < grid.ym(); ++j) {
-    double y = grid.y[grid.ys() + j];
+    double y = grid.y(grid.ys() + j);
 
     // This is here to make it crash and burn if something goes wrong, instead
     // of quietly doing the wrong thing.
@@ -226,7 +226,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
     // for all points in the y-direction in this sub-domain
 
     // get the coordinate
-    double y = grid.y[grid.ys() + i];
+    double y = grid.y(grid.ys() + i);
     if (y_left[i] == -1 && y < input.y[0]) {
       // if y_left was not assigned and the point is below the
       // bottom row in the input grid

@@ -177,7 +177,7 @@ void PSVerification::update_ABCDEH(double time) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    PetscScalar xx = grid.x[i], yy = grid.y[j],
+    PetscScalar xx = grid.x(i), yy = grid.y(j),
       r = grid.radius(i, j);
     switch (m_testname) {
     case 'A':

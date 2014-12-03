@@ -72,7 +72,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     grid = self.grid
     with PISM.vec.Access(comm=[vecs.tauc]):
       for (i,j) in grid.points():
-        y=grid.y[j]
+        y=grid.y(j)
         vecs.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
     bc_mask = vecs.bc_mask
@@ -82,7 +82,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     grid = self.grid
     with PISM.vec.Access(comm=[surface,bed,vel_bc,bc_mask]):
       for (i,j) in grid.points():
-        x=grid.x[i]; y=grid.y[j]
+        x=grid.x(i); y=grid.y(j)
         (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)
         bed[i,j] = bed_ij
         surface[i,j] = bed_ij + H0_schoof

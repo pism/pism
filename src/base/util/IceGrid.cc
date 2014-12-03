@@ -603,8 +603,8 @@ PetscErrorCode IceGrid::init_interpolation() {
 //! with accounting for periodicity.
 PetscErrorCode IceGrid::compute_horizontal_coordinates() {
 
-  x.resize(m_Mx);
-  y.resize(m_My);
+  m_x.resize(m_Mx);
+  m_y.resize(m_My);
 
   // Here x_min, x_max define the extent of the computational domain,
   // which is not necessarily the same thing as the smallest and
@@ -614,14 +614,14 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
     x_max = x0 + Lx;
   if (periodicity & X_PERIODIC) {
     for (unsigned int i = 0; i < m_Mx; ++i) {
-      x[i] = x_min + (i + 0.5) * m_dx;
+      m_x[i] = x_min + (i + 0.5) * m_dx;
     }
-    x[m_Mx - 1] = x_max - 0.5*m_dx;
+    m_x[m_Mx - 1] = x_max - 0.5*m_dx;
   } else {
     for (unsigned int i = 0; i < m_Mx; ++i) {
-      x[i] = x_min + i * m_dx;
+      m_x[i] = x_min + i * m_dx;
     }
-    x[m_Mx - 1] = x_max;
+    m_x[m_Mx - 1] = x_max;
   }
 
   double
@@ -629,14 +629,14 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
     y_max = y0 + Ly;
   if (periodicity & Y_PERIODIC) {
     for (unsigned int i = 0; i < m_My; ++i) {
-      y[i] = y_min + (i + 0.5) * m_dy;
+      m_y[i] = y_min + (i + 0.5) * m_dy;
     }
-    y[m_My - 1] = y_max - 0.5*m_dy;
+    m_y[m_My - 1] = y_max - 0.5*m_dy;
   } else {
     for (unsigned int i = 0; i < m_My; ++i) {
-      y[i] = y_min + i * m_dy;
+      m_y[i] = y_min + i * m_dy;
     }
-    y[m_My - 1] = y_max;
+    m_y[m_My - 1] = y_max;
   }
 
   return 0;
@@ -644,7 +644,7 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
 
 //! \brief Returns the distance from the point (i,j) to the origin.
 double IceGrid::radius(int i, int j) {
-  return sqrt(PetscSqr(x[i]) + PetscSqr(y[j]));
+  return sqrt(PetscSqr(m_x[i]) + PetscSqr(m_y[j]));
 }
 
 //! \brief Report grid parameters.
@@ -777,8 +777,8 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
 void IceGrid::compute_point_neighbors(double X, double Y,
                                       int &i_left, int &i_right,
                                       int &j_bottom, int &j_top) {
-  i_left = (int)floor((X - x[0])/m_dx);
-  j_bottom = (int)floor((Y - y[0])/m_dy);
+  i_left = (int)floor((X - m_x[0])/m_dx);
+  j_bottom = (int)floor((Y - m_y[0])/m_dy);
 
   i_right = i_left + 1;
   j_top = j_bottom + 1;
@@ -811,13 +811,13 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
   compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
 
   if (i_left != i_right) {
-    assert(x[i_right] - x[i_left] != 0.0);
-    alpha = (X - x[i_left]) / (x[i_right] - x[i_left]);
+    assert(m_x[i_right] - m_x[i_left] != 0.0);
+    alpha = (X - m_x[i_left]) / (m_x[i_right] - m_x[i_left]);
   }
 
   if (j_bottom != j_top) {
-    assert(y[j_top] - y[j_bottom] != 0.0);
-    beta  = (Y - x[j_bottom]) / (y[j_top] - y[j_bottom]);
+    assert(m_y[j_top] - m_y[j_bottom] != 0.0);
+    beta  = (Y - m_x[j_bottom]) / (m_y[j_top] - m_y[j_bottom]);
   }
 
   std::vector<double> result(4);
@@ -959,6 +959,22 @@ unsigned int IceGrid::Mx() const {
 
 unsigned int IceGrid::My() const {
   return m_My;
+}
+
+const std::vector<double> IceGrid::x() const {
+  return m_x;
+}
+
+double IceGrid::x(size_t i) const {
+  return m_x[i];
+}
+
+const std::vector<double> IceGrid::y() const {
+  return m_y;
+}
+
+double IceGrid::y(size_t i) const {
+  return m_y[i];
 }
 
 double IceGrid::dx() const {

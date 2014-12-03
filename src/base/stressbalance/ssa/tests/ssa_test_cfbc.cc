@@ -148,7 +148,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double x = grid->x[i];
+    const double x = grid->x(i);
 
     if (i != (int)grid->Mx() - 1) {
       thickness(i, j) = H_exact(V0, H0, C, x + grid->Lx);

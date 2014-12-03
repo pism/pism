@@ -65,7 +65,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc, bed, surface]):
       for (i,j) in grid.points():
-        x=grid.x[i]; y=grid.y[j]
+        x=grid.x(i); y=grid.y(j)
         
         bed[i,j] = -x*(dhdx);
         surface[i,j] = bed[i,j] + H0;
