@@ -354,13 +354,13 @@ void IceModel::grid_setup() {
   }
 
   bool Nx_set, Ny_set;
-  int Nx = grid.Nx, Ny = grid.Ny;
+  int Nx = grid.Nx(), Ny = grid.Ny();
   OptionsInt("-Nx", "Number of processors in the x direction",
              Nx, Nx_set);
   OptionsInt("-Ny", "Number of processors in the y direction",
              Ny, Ny_set);
-  grid.Nx = Nx;
-  grid.Ny = Ny;
+  grid.set_Nx(Nx);
+  grid.set_Ny(Ny);
 
   if (Nx_set ^ Ny_set) {
     throw RuntimeError("Please set both -Nx and -Ny.");
@@ -371,17 +371,17 @@ void IceModel::grid_setup() {
     grid.compute_ownership_ranges();
   } else {
 
-    if ((grid.Mx() / grid.Nx) < 2) {
+    if ((grid.Mx() / grid.Nx()) < 2) {
       throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    grid.Mx(), grid.Nx);
+                                    grid.Mx(), grid.Nx());
     }
 
-    if ((grid.My() / grid.Ny) < 2) {
+    if ((grid.My() / grid.Ny()) < 2) {
       throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    grid.My(), grid.Ny);
+                                    grid.My(), grid.Ny());
     }
 
-    if (grid.Nx * grid.Ny != (unsigned int)grid.size) {
+    if (grid.Nx() * grid.Ny() != (unsigned int)grid.size) {
       throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
                                     grid.size);
     }
@@ -398,22 +398,22 @@ void IceModel::grid_setup() {
     }
 
     if (procs_x_set && procs_y_set) {
-      if (tmp_x.size() != (unsigned int)grid.Nx) {
+      if (tmp_x.size() != (unsigned int)grid.Nx()) {
         throw RuntimeError("-Nx has to be equal to the -procs_x size.");
       }
 
-      if (tmp_y.size() != (unsigned int)grid.Ny) {
+      if (tmp_y.size() != (unsigned int)grid.Ny()) {
         throw RuntimeError("-Ny has to be equal to the -procs_y size.");
       }
 
-      grid.procs_x.resize(grid.Nx);
-      grid.procs_y.resize(grid.Ny);
+      grid.procs_x.resize(grid.Nx());
+      grid.procs_y.resize(grid.Ny());
 
-      for (unsigned int j=0; j < grid.Nx; j++) {
+      for (unsigned int j=0; j < grid.Nx(); j++) {
         grid.procs_x[j] = tmp_x[j];
       }
 
-      for (unsigned int j=0; j < grid.Ny; j++) {
+      for (unsigned int j=0; j < grid.Ny(); j++) {
         grid.procs_y[j] = tmp_y[j];
       }
     } else {

@@ -101,7 +101,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   m_My  = static_cast<int>(config.get("grid_My"));
   Mz  = static_cast<int>(config.get("grid_Mz"));
 
-  Nx = Ny = 0;                  // will be set to a correct value in allocate()
+  m_Nx = m_Ny = 0;                  // will be set to a correct value in allocate()
 
   Mz_fine = 0;
 
@@ -306,7 +306,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
              m_dx/1000.0,m_dy/1000.0, time->date().c_str());
   verbPrintf(verbosity,com,
              "            Nx = %d, Ny = %d]\n",
-             Nx,Ny);
+             m_Nx, m_Ny);
   return 0;
 }
 
@@ -374,28 +374,28 @@ void IceGrid::compute_nprocs() {
     throw RuntimeError("'My' is invalid.");
   }
 
-  Nx = (int)(0.5 + sqrt(((double)m_Mx)*((double)size)/((double)m_My)));
+  m_Nx = (int)(0.5 + sqrt(((double)m_Mx)*((double)size)/((double)m_My)));
 
-  if (Nx == 0) {
-    Nx = 1;
+  if (m_Nx == 0) {
+    m_Nx = 1;
   }
 
-  while (Nx > 0) {
-    Ny = size/Nx;
-    if (Nx*Ny == (unsigned int)size) {
+  while (m_Nx > 0) {
+    m_Ny = size/m_Nx;
+    if (m_Nx*m_Ny == (unsigned int)size) {
       break;
     }
-    Nx--;
+    m_Nx--;
   }
 
-  if (m_Mx > m_My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
+  if (m_Mx > m_My && m_Nx < m_Ny) {int _Nx = m_Nx; m_Nx = m_Ny; m_Ny = _Nx;}
 
-  if ((m_Mx / Nx) < 2) {          // note: integer division
+  if ((m_Mx / m_Nx) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
                                   m_Mx, m_My, size);
   }
 
-  if ((m_My / Ny) < 2) {          // note: integer division
+  if ((m_My / m_Ny) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
                                   m_Mx, m_My, size);
   }
@@ -408,15 +408,15 @@ void IceGrid::compute_nprocs() {
  */
 void IceGrid::compute_ownership_ranges() {
 
-  procs_x.resize(Nx);
-  procs_y.resize(Ny);
+  procs_x.resize(m_Nx);
+  procs_y.resize(m_Ny);
 
-  for (unsigned int i=0; i < Nx; i++) {
-    procs_x[i] = m_Mx/Nx + ((m_Mx % Nx) > i);
+  for (unsigned int i=0; i < m_Nx; i++) {
+    procs_x[i] = m_Mx/m_Nx + ((m_Mx % m_Nx) > i);
   }
 
-  for (unsigned int i=0; i < Ny; i++) {
-    procs_y[i] = m_My/Ny + ((m_My % Ny) > i);
+  for (unsigned int i=0; i < m_Ny; i++) {
+    procs_y[i] = m_My/m_Ny + ((m_My % m_Ny) > i);
   }
 }
 
@@ -923,7 +923,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
 #endif
                       DMDA_STENCIL_BOX,
                       m_My, m_Mx, // N, M
-                      Ny, Nx, // n, m
+                      m_Ny, m_Nx, // n, m
                       da_dof, stencil_width,
                       &procs_y[0], &procs_x[0], // ly, lx
                       &result);
@@ -984,5 +984,15 @@ double IceGrid::dx() const {
 double IceGrid::dy() const {
   return m_dy;
 }
+
+unsigned int IceGrid::Nx() const {
+  return m_Nx;
+}
+
+unsigned int IceGrid::Ny() const {
+  return m_Ny;
+}
+
+
 
 } // end of namespace pism

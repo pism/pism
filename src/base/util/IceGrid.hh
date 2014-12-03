@@ -210,6 +210,12 @@ public:
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
   void set_My(unsigned int My) {m_My = My;}
 
+  // FIXME: remove these four
+  unsigned int Nx() const;
+  unsigned int Ny() const;
+  void set_Nx(unsigned int Nx) {m_Nx = Nx;}
+  void set_Ny(unsigned int Ny) {m_Ny = Ny;}
+
   Profiling profiling;
 
   const Config &config;
@@ -241,9 +247,6 @@ public:
   double Lx, //!< half width of the ice model grid in x-direction (m)
     Ly;           //!< half width of the ice model grid in y-direction (m)
 
-  unsigned int    Nx, //!< number of processors in the x-direction
-    Ny;      //!< number of processors in the y-direction
-
   std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
@@ -264,6 +267,8 @@ public:
             m_y[j] <= m_y[0] + strip_width || m_y[j] >= m_y[m_My-1] - strip_width);
   }
 private:
+  unsigned int m_Nx, //!< number of processors in the x-direction
+    m_Ny;      //!< number of processors in the y-direction
 
   std::vector<double> m_x,             //!< x-coordinates of grid points
     m_y;                          //!< y-coordinates of grid points

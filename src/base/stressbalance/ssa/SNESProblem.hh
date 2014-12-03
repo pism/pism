@@ -25,7 +25,7 @@
 
 namespace pism {
 
-template<int DOF, class U> class SNESProblem{
+template<int DOF, class U> class SNESProblem {
 public:
   SNESProblem(IceGrid &g);
 
@@ -133,7 +133,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 #endif
                       DMDA_STENCIL_BOX,
                       m_grid.My(), m_grid.Mx(),
-                      m_grid.Ny, m_grid.Nx,
+                      m_grid.Ny(), m_grid.Nx(),
                       DOF, stencil_width,
                       &m_grid.procs_y[0], &m_grid.procs_x[0],
                       &m_DA); CHKERRQ(ierr);
