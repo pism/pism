@@ -408,16 +408,86 @@ void IceGrid::compute_nprocs() {
  */
 void IceGrid::compute_ownership_ranges() {
 
-  procs_x.resize(m_Nx);
-  procs_y.resize(m_Ny);
+  m_procs_x.resize(m_Nx);
+  m_procs_y.resize(m_Ny);
 
   for (unsigned int i=0; i < m_Nx; i++) {
-    procs_x[i] = m_Mx/m_Nx + ((m_Mx % m_Nx) > i);
+    m_procs_x[i] = m_Mx/m_Nx + ((m_Mx % m_Nx) > i);
   }
 
   for (unsigned int i=0; i < m_Ny; i++) {
-    procs_y[i] = m_My/m_Ny + ((m_My % m_Ny) > i);
+    m_procs_y[i] = m_My/m_Ny + ((m_My % m_Ny) > i);
   }
+}
+
+void IceGrid::ownership_ranges_from_options() {
+  bool Nx_set, Ny_set;
+  int Nx = m_Nx, Ny = m_Ny;
+  OptionsInt("-Nx", "Number of processors in the x direction",
+             Nx, Nx_set);
+  OptionsInt("-Ny", "Number of processors in the y direction",
+             Ny, Ny_set);
+  m_Nx = Nx;
+  m_Ny = Ny;
+
+  if (Nx_set ^ Ny_set) {
+    throw RuntimeError("Please set both -Nx and -Ny.");
+  }
+
+  if ((!Nx_set) && (!Ny_set)) {
+    compute_nprocs();
+    compute_ownership_ranges();
+  } else {
+
+    if ((Mx() / Nx) < 2) {
+      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                    Mx(), Nx);
+    }
+
+    if ((My() / Ny) < 2) {
+      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                    My(), Ny);
+    }
+
+    if (Nx * Ny != size) {
+      throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
+                                    size);
+    }
+
+    bool procs_x_set, procs_y_set;
+    std::vector<int> tmp_x, tmp_y;
+    OptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
+                    tmp_x, procs_x_set);
+    OptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
+                    tmp_y, procs_y_set);
+
+    if (procs_x_set ^ procs_y_set) {
+      throw RuntimeError("Please set both -procs_x and -procs_y.");
+    }
+
+    if (procs_x_set && procs_y_set) {
+      if (tmp_x.size() != (unsigned int)Nx) {
+        throw RuntimeError("-Nx has to be equal to the -procs_x size.");
+      }
+
+      if (tmp_y.size() != (unsigned int)Ny) {
+        throw RuntimeError("-Ny has to be equal to the -procs_y size.");
+      }
+
+      m_procs_x.resize(Nx);
+      m_procs_y.resize(Ny);
+
+      for (int j=0; j < Nx; j++) {
+        m_procs_x[j] = tmp_x[j];
+      }
+
+      for (int j=0; j < Ny; j++) {
+        m_procs_y[j] = tmp_y[j];
+      }
+    } else {
+      compute_ownership_ranges();
+    }
+  } // -Nx and -Ny set
 }
 
 //! \brief Create the PETSc DM for the horizontal grid. Determine how
@@ -445,6 +515,8 @@ void IceGrid::compute_ownership_ranges() {
 PetscErrorCode IceGrid::allocate() {
 
   check_parameters();
+
+  ownership_ranges_from_options();
 
   unsigned int max_stencil_width = (int)config.get("grid_max_stencil_width");
 
@@ -925,7 +997,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
                       m_My, m_Mx, // N, M
                       m_Ny, m_Nx, // n, m
                       da_dof, stencil_width,
-                      &procs_y[0], &procs_x[0], // ly, lx
+                      &m_procs_y[0], &m_procs_x[0], // ly, lx
                       &result);
   PISM_PETSC_CHK(ierr,"DMDACreate2d");
 
@@ -961,7 +1033,7 @@ unsigned int IceGrid::My() const {
   return m_My;
 }
 
-const std::vector<double> IceGrid::x() const {
+const std::vector<double>& IceGrid::x() const {
   return m_x;
 }
 
@@ -969,7 +1041,7 @@ double IceGrid::x(size_t i) const {
   return m_x[i];
 }
 
-const std::vector<double> IceGrid::y() const {
+const std::vector<double>& IceGrid::y() const {
   return m_y;
 }
 
@@ -984,15 +1056,5 @@ double IceGrid::dx() const {
 double IceGrid::dy() const {
   return m_dy;
 }
-
-unsigned int IceGrid::Nx() const {
-  return m_Nx;
-}
-
-unsigned int IceGrid::Ny() const {
-  return m_Ny;
-}
-
-
 
 } // end of namespace pism

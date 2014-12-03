@@ -59,7 +59,7 @@ protected:
 
   Vec          m_X;
   SNES         m_snes;
-  DM           m_DA;
+  PISMDM::Ptr  m_DA;
 
 private:
 
@@ -123,47 +123,35 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 {
   PetscErrorCode ierr;
 
-  // mimic IceGrid::createDA() with TRANSPOSE :
   int stencil_width=1;
-  ierr = DMDACreate2d(m_grid.com,
-#if PETSC_VERSION_LT(3,5,0)
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-#else
-                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-#endif
-                      DMDA_STENCIL_BOX,
-                      m_grid.My(), m_grid.Mx(),
-                      m_grid.Ny(), m_grid.Nx(),
-                      DOF, stencil_width,
-                      &m_grid.procs_y[0], &m_grid.procs_x[0],
-                      &m_DA); CHKERRQ(ierr);
+  m_DA = m_grid.get_dm(DOF, stencil_width);
 
-  ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_DA, &m_X); CHKERRQ(ierr);
 
   ierr = SNESCreate(m_grid.com, &m_snes); CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  m_callbackData.da = m_DA;
+  m_callbackData.da = *m_DA;
   m_callbackData.solver = this;
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES,
+  ierr = DMDASNESSetFunctionLocal(*m_DA,INSERT_VALUES,
                                   (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,
                                   &m_callbackData); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,
+  ierr = DMDASNESSetJacobianLocal(*m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,
                                   &m_callbackData); CHKERRQ(ierr);
 #else
-  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES,
+  ierr = DMDASNESSetFunctionLocal(*m_DA,INSERT_VALUES,
                                   (DMDASNESFunction)SNESProblem<DOF,U>::LocalFunction,
                                   &m_callbackData); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobian)SNESProblem<DOF,U>::LocalJacobian,
+  ierr = DMDASNESSetJacobianLocal(*m_DA,(DMDASNESJacobian)SNESProblem<DOF,U>::LocalJacobian,
                                   &m_callbackData); CHKERRQ(ierr);
 #endif
 
-  ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(m_DA, &m_callbackData); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_DA, "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(*m_DA, &m_callbackData); CHKERRQ(ierr);
 
-  ierr = SNESSetDM(m_snes, m_DA); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, *m_DA); CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
 

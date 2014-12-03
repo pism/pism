@@ -173,6 +173,7 @@ public:
 
   void check_parameters();
 
+  void ownership_ranges_from_options();
   void compute_nprocs();
   void compute_ownership_ranges();
   PetscErrorCode compute_viewer_size(int target, int &x, int &y);
@@ -194,10 +195,10 @@ public:
   //! Number of grid points (in the y-direction) in a processor sub-domain
   int ym() const;
 
-  const std::vector<double> x() const;
+  const std::vector<double>& x() const;
   double x(size_t i) const;
 
-  const std::vector<double> y() const;
+  const std::vector<double>& y() const;
   double y(size_t i) const;
 
   double dx() const;
@@ -209,12 +210,6 @@ public:
   // FIXME: remove this
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
   void set_My(unsigned int My) {m_My = My;}
-
-  // FIXME: remove these four
-  unsigned int Nx() const;
-  unsigned int Ny() const;
-  void set_Nx(unsigned int Nx) {m_Nx = Nx;}
-  void set_Ny(unsigned int Ny) {m_Ny = Ny;}
 
   Profiling profiling;
 
@@ -247,9 +242,6 @@ public:
   double Lx, //!< half width of the ice model grid in x-direction (m)
     Ly;           //!< half width of the ice model grid in y-direction (m)
 
-  std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
-    procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
-
 
   double Lz;      //!< max extent of the ice in z-direction (m)
 
@@ -269,6 +261,9 @@ public:
 private:
   unsigned int m_Nx, //!< number of processors in the x-direction
     m_Ny;      //!< number of processors in the y-direction
+
+  std::vector<PetscInt> m_procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+    m_procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
   std::vector<double> m_x,             //!< x-coordinates of grid points
     m_y;                          //!< y-coordinates of grid points
