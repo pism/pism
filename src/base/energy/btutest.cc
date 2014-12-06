@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 
     // create grid and set defaults
     IceGrid grid(com, config);
-    grid.Mz = 41;
+    grid.set_Mz(41);
     grid.Lz = 4000.0;
     grid.set_Mx(3);
     grid.set_My(3);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     bool flag;
     double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
-    int tmp = grid.Mz;
+    int tmp = grid.Mz();
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", "");
     PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     if (tmp > 0) {
-      grid.Mz = tmp;
+      grid.set_Mz(tmp);
     } else {
       throw RuntimeError::formatted("-Mz %d is invalid (has to be positive)", tmp);
     }

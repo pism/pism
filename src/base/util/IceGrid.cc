@@ -99,7 +99,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   m_Mx  = static_cast<int>(config.get("grid_Mx"));
   m_My  = static_cast<int>(config.get("grid_My"));
-  Mz  = static_cast<int>(config.get("grid_Mz"));
+  m_Mz  = static_cast<int>(config.get("grid_Mz"));
 
   m_Nx = m_Ny = 0;                  // will be set to a correct value in allocate()
 
@@ -148,7 +148,7 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
   result->m_Mx = Mx;
   result->m_My = My;
   result->periodicity = p;
-  result->Mz = Mz;
+  result->m_Mz = Mz;
 
   result->compute_nprocs();
   result->compute_ownership_ranges();
@@ -241,7 +241,7 @@ which may not even be a grid created by this routine).
  */
 void  IceGrid::compute_vertical_levels() {
 
-  if (Mz < 2) {
+  if (m_Mz < 2) {
     throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
   }
 
@@ -250,29 +250,29 @@ void  IceGrid::compute_vertical_levels() {
   }
 
   // Fill the levels in the ice:
-  zlevels.resize(Mz);
+  zlevels.resize(m_Mz);
 
   switch (ice_vertical_spacing) {
   case EQUAL: {
-    dzMIN = Lz / ((double) Mz - 1);
+    dzMIN = Lz / ((double) m_Mz - 1);
     dzMAX = dzMIN;
 
     // Equal spacing
-    for (unsigned int k=0; k < Mz - 1; k++) {
+    for (unsigned int k=0; k < m_Mz - 1; k++) {
       zlevels[k] = dzMIN * ((double) k);
     }
-    zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
+    zlevels[m_Mz - 1] = Lz;  // make sure it is exactly equal
     break;
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k=0; k < Mz - 1; k++) {
-      const double zeta = ((double) k) / ((double) Mz - 1);
+    for (unsigned int k=0; k < m_Mz - 1; k++) {
+      const double zeta = ((double) k) / ((double) m_Mz - 1);
       zlevels[k] = Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
     }
-    zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
+    zlevels[m_Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
-    dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
+    dzMAX = zlevels[m_Mz-1] - zlevels[m_Mz-2];
     break;
   }
   default:
@@ -311,7 +311,7 @@ unsigned int IceGrid::kBelowHeight(double height) {
 void IceGrid::get_dzMIN_dzMAX_spacingtype() {
   dzMIN = Lz;
   dzMAX = 0.0;
-  for (unsigned int k = 0; k < Mz - 1; k++) {
+  for (unsigned int k = 0; k < m_Mz - 1; k++) {
     const double mydz = zlevels[k+1] - zlevels[k];
     dzMIN = std::min(mydz, dzMIN);
     dzMAX = std::max(mydz, dzMAX);
@@ -510,7 +510,7 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
     throw RuntimeError("IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
-  Mz = (unsigned int)new_zlevels.size();
+  m_Mz = (unsigned int)new_zlevels.size();
   Lz = new_zlevels.back();
 
   zlevels = new_zlevels;
@@ -599,7 +599,7 @@ void IceGrid::init_interpolation() {
   m = 0;
   for (unsigned int k = 0; k < Mz_fine; k++) {
     if (zlevels_fine[k] >= Lz) {
-      ice_storage2fine[k] = Mz - 1;
+      ice_storage2fine[k] = m_Mz - 1;
       continue;
     }
 
@@ -611,9 +611,9 @@ void IceGrid::init_interpolation() {
   }
 
   // ice: fine -> storage
-  ice_fine2storage.resize(Mz);
+  ice_fine2storage.resize(m_Mz);
   m = 0;
-  for (unsigned int k = 0; k < Mz; k++) {
+  for (unsigned int k = 0; k < m_Mz; k++) {
     while (m < Mz_fine - 1 && zlevels_fine[m + 1] < zlevels[k]) {
       m++;
     }
@@ -676,7 +676,7 @@ void IceGrid::report_parameters() const {
   // report on grid
   verbPrintf(2, com,
              "                grid size   %d x %d x %d\n",
-             m_Mx, m_My, Mz);
+             m_Mx, m_My, m_Mz);
 
   // report on computational box
   verbPrintf(2, com,
@@ -695,7 +695,7 @@ void IceGrid::report_parameters() const {
   } else {
     verbPrintf(2, com,
                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-               Mz, dzMIN, dzMAX);
+               m_Mz, dzMIN, dzMAX);
   }
 
   verbPrintf(3, com,
@@ -726,7 +726,7 @@ void IceGrid::report_parameters() const {
                x0/1000.0, y0/1000.0);
     verbPrintf(3, com,
                "            Mx = %d, My = %d, Mz = %d, \n",
-               m_Mx, m_My, Mz);
+               m_Mx, m_My, m_Mz);
     verbPrintf(3, com,
                "            dx = %6.3f km, dy = %6.3f km, year = %s, \n",
                m_dx/1000.0, m_dy/1000.0, time->date().c_str());
@@ -740,8 +740,8 @@ void IceGrid::report_parameters() const {
     verbPrintf(5, com,
                "  REALLY verbose output on IceGrid:\n");
     verbPrintf(5, com,
-               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz, Lz);
-    for (unsigned int k=0; k < Mz; k++) {
+               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", m_Mz, Lz);
+    for (unsigned int k=0; k < m_Mz; k++) {
       verbPrintf(5, com, " %5.4f, ", zlevels[k]);
     }
     verbPrintf(5, com, "\n");
@@ -833,7 +833,7 @@ void IceGrid::check_parameters() {
     throw RuntimeError("My has to be at least 3.");
   }
 
-  if (Mz < 2) {
+  if (m_Mz < 2) {
     throw RuntimeError("Mz must be at least 2.");
   }
 
@@ -854,7 +854,7 @@ void IceGrid::check_parameters() {
   // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
   // Here we use "long int" to avoid integer overflow.
   const long int two_to_thirty_two = 4294967296L;
-  const long int Mx_long = m_Mx, My_long = m_My, Mz_long = Mz;
+  const long int Mx_long = m_Mx, My_long = m_My, Mz_long = m_Mz;
   if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
       ((config.get_string("output_format") == "netcdf3") ||
        (config.get_string("output_format") == "pnetcdf"))) {
@@ -952,6 +952,10 @@ unsigned int IceGrid::Mx() const {
 
 unsigned int IceGrid::My() const {
   return m_My;
+}
+
+unsigned int IceGrid::Mz() const {
+  return m_Mz;
 }
 
 const std::vector<double>& IceGrid::x() const {

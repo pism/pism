@@ -182,7 +182,7 @@ void IceModel::set_grid_from_options() {
               z_scale,  Lz_set);
 
   // Read -Mx, -My, -Mz and -Mbz.
-  int tmp_Mx = grid.Mx(), tmp_My = grid.My(), tmp_Mz = grid.Mz;
+  int tmp_Mx = grid.Mx(), tmp_My = grid.My(), tmp_Mz = grid.Mz();
   OptionsInt("-My", "Number of grid points in the X direction",
              tmp_My, My_set);
   OptionsInt("-Mx", "Number of grid points in the Y direction",
@@ -194,7 +194,7 @@ void IceModel::set_grid_from_options() {
   if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
     grid.set_Mx(tmp_Mx);
     grid.set_My(tmp_My);
-    grid.Mz = tmp_Mz;
+    grid.set_Mz(tmp_Mz);
   } else {
     throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
                                   "(have to have a positive number of grid points).",

@@ -55,7 +55,7 @@ void IceCompModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
 
 
 void IceCompModel::initTestFG() {
-  int        Mz = grid.Mz;
+  int        Mz = grid.Mz();
   double     H, accum;
   double     *dummy1, *dummy2, *dummy3, *dummy4;
 
@@ -65,7 +65,7 @@ void IceCompModel::initTestFG() {
   bed_topography.set(0);
   geothermal_flux.set(Ggeo);
 
-  double *T = new double[grid.Mz];
+  double *T = new double[grid.Mz()];
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -112,13 +112,13 @@ void IceCompModel::initTestFG() {
 void IceCompModel::getCompSourcesTestFG() {
   double     accum, dummy0, *dummy1, *dummy2, *dummy3, *dummy4;
 
-  dummy1=new double[grid.Mz];
-  dummy2=new double[grid.Mz];
-  dummy3=new double[grid.Mz];
-  dummy4=new double[grid.Mz];
+  dummy1=new double[grid.Mz()];
+  dummy2=new double[grid.Mz()];
+  dummy3=new double[grid.Mz()];
+  dummy4=new double[grid.Mz()];
 
   double *strain_heating_C;
-  strain_heating_C = new double[grid.Mz];
+  strain_heating_C = new double[grid.Mz()];
 
   const double
     ice_rho   = config.get("ice_density"),
@@ -138,13 +138,13 @@ void IceCompModel::getCompSourcesTestFG() {
     } else {
       r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
-        bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
+        bothexact(0.0, r, &grid.zlevels[0], grid.Mz(), 0.0,
                   &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
       } else {
-        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
+        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz(), ApforG,
                   &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
       }
-      for (unsigned int k=0;  k<grid.Mz;  k++) {
+      for (unsigned int k=0;  k<grid.Mz();  k++) {
         // scale strain_heating to J/(s m^3)
         strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
       }
@@ -169,15 +169,15 @@ void IceCompModel::fillSolnTestFG() {
   stress_balance->get_3d_velocity(u3, v3, w3);
   stress_balance->get_volumetric_strain_heating(strain_heating3);
 
-  Uradial = new double[grid.Mz];
+  Uradial = new double[grid.Mz()];
 
   double *T, *u, *v, *w, *strain_heating, *strain_heating_C;
-  T = new double[grid.Mz];
-  u = new double[grid.Mz];
-  v = new double[grid.Mz];
-  w = new double[grid.Mz];
-  strain_heating = new double[grid.Mz];
-  strain_heating_C = new double[grid.Mz];
+  T = new double[grid.Mz()];
+  u = new double[grid.Mz()];
+  v = new double[grid.Mz()];
+  w = new double[grid.Mz()];
+  strain_heating = new double[grid.Mz()];
+  strain_heating_C = new double[grid.Mz()];
 
   const double
     ice_rho   = config.get("ice_density"),
@@ -209,17 +209,17 @@ void IceCompModel::fillSolnTestFG() {
     } else {  // inside the sheet
       r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
-        bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
+        bothexact(0.0, r, &grid.zlevels[0], grid.Mz(), 0.0,
                   &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
         ice_thickness(i,j)   = H;
 
       } else {
-        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
+        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz(), ApforG,
                   &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
         ice_thickness(i,j)   = H;
 
       }
-      for (unsigned int k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz(); k++) {
         u[k] = Uradial[k]*(xx/r);
         v[k] = Uradial[k]*(yy/r);
         strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
@@ -259,9 +259,9 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   double   *dummy1, *dummy2, *dummy3, *dummy4, *Tex;
   double   junk0, junk1;
 
-  Tex = new double[grid.Mz];
-  dummy1 = new double[grid.Mz];  dummy2 = new double[grid.Mz];
-  dummy3 = new double[grid.Mz];  dummy4 = new double[grid.Mz];
+  Tex = new double[grid.Mz()];
+  dummy1 = new double[grid.Mz()];  dummy2 = new double[grid.Mz()];
+  dummy3 = new double[grid.Mz()];  dummy4 = new double[grid.Mz()];
 
   double *T;
 
@@ -278,11 +278,11 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
       // and not at central singularity
       switch (testname) {
       case 'F':
-        bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
+        bothexact(0.0, r, &grid.zlevels[0], grid.Mz(), 0.0,
                   &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
         break;
       case 'G':
-        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
+        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz(), ApforG,
                   &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
         break;
       default:
@@ -321,7 +321,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   double    *Tex, *Tbex, *T, *Tb;
   double    FF;
-  Tex = new double[grid.Mz];
+  Tex = new double[grid.Mz()];
 
   IceModelVec3Custom *bedrock_temp;
 
@@ -337,7 +337,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   switch (testname) {
     case 'K':
-      for (unsigned int k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz(); k++) {
         exactK(grid.time->current(), grid.zlevels[k], &Tex[k], &FF,
                (bedrock_is_ice_forK==PETSC_TRUE));
       }
@@ -348,7 +348,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       break;
     case 'O':
       double dum1, dum2, dum3, dum4;
-      for (unsigned int k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz(); k++) {
         exactO(grid.zlevels[k], &Tex[k], &dum1, &dum2, &dum3, &dum4);
       }
       for (unsigned int k = 0; k < Mbz; k++) {
@@ -374,7 +374,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       avTberr += Tberr;
     }
     T3.getInternalColumn(i,j,&T);
-    for (unsigned int k = 0; k < grid.Mz; k++) {
+    for (unsigned int k = 0; k < grid.Mz(); k++) {
       const double Terr = fabs(T[k] - Tex[k]);
       maxTerr = std::max(maxTerr,Terr);
       avcount += 1.0;
@@ -464,9 +464,9 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   double   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
   double   junk0, junk1;
 
-  strain_heating_exact = new double[grid.Mz];
-  dummy1 = new double[grid.Mz];  dummy2 = new double[grid.Mz];
-  dummy3 = new double[grid.Mz];  dummy4 = new double[grid.Mz];
+  strain_heating_exact = new double[grid.Mz()];
+  dummy1 = new double[grid.Mz()];  dummy2 = new double[grid.Mz()];
+  dummy3 = new double[grid.Mz()];  dummy4 = new double[grid.Mz()];
 
   const double
     ice_rho   = config.get("ice_density"),
@@ -488,17 +488,17 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
       // and not at central singularity
       switch (testname) {
       case 'F':
-        bothexact(0.0,r,&grid.zlevels[0],grid.Mz,0.0,
+        bothexact(0.0,r,&grid.zlevels[0],grid.Mz(),0.0,
                   &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
         break;
       case 'G':
-        bothexact(grid.time->current(),r,&grid.zlevels[0],grid.Mz,ApforG,
+        bothexact(grid.time->current(),r,&grid.zlevels[0],grid.Mz(),ApforG,
                   &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
         break;
       default:
         throw RuntimeError("strain-heating (strain_heating) errors only computable for tests F and G");
       }
-      for (unsigned int k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz(); k++) {
         // scale exact strain_heating to J/(s m^3)
         strain_heating_exact[k] *= ice_rho * ice_c;
       }
@@ -611,18 +611,18 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
   double       *Tcol;
   double       dum1, dum2, dum3, dum4;
   double    FF;
-  Tcol = new double[grid.Mz];
+  Tcol = new double[grid.Mz()];
 
   // evaluate exact solution in a column; all columns are the same
   switch (testname) {
     case 'K':
-      for (unsigned int k=0; k<grid.Mz; k++) {
+      for (unsigned int k=0; k<grid.Mz(); k++) {
         exactK(grid.time->current(), grid.zlevels[k], &Tcol[k], &FF,
                (bedrock_is_ice_forK==PETSC_TRUE));
       }
       break;
     case 'O':
-      for (unsigned int k=0; k<grid.Mz; k++) {
+      for (unsigned int k=0; k<grid.Mz(); k++) {
         exactO(grid.zlevels[k], &Tcol[k], &dum1, &dum2, &dum3, &dum4);
       }
       break;

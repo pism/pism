@@ -156,7 +156,7 @@ void IceModel::summary(bool tempAndAge) {
 
   // report CFL violations
   if (CFLviolcount > 0.0) {
-    const double CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx() * grid.Mz * grid.Mz);
+    const double CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx() * grid.My() * grid.Mz());
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||

@@ -263,7 +263,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
 
     // within the ice and above:
     double old_integrand = u_x + v_y;
-    for (unsigned int k = 1; k < grid.Mz; ++k) {
+    for (unsigned int k = 1; k < grid.Mz(); ++k) {
       u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
       v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
       const double new_integrand = u_x + v_y;
@@ -474,7 +474,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
     } // k-loop
 
-    int remaining_levels = grid.Mz - (ks + 1);
+    int remaining_levels = grid.Mz() - (ks + 1);
     if (remaining_levels > 0) {
       ierr = PetscMemzero(&Sigma[ks+1],
                           remaining_levels*sizeof(double));

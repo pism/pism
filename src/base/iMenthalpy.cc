@@ -59,7 +59,7 @@ void IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &re
 
     temperature.getInternalColumn(i,j,&Tij);
     result.getInternalColumn(i,j,&Enthij);
-    for (unsigned int k=0; k<grid.Mz; ++k) {
+    for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
       Enthij[k] = EC->getEnthPermissive(Tij[k], 0.0, EC->getPressureFromDepth(depth));
     }
@@ -93,7 +93,7 @@ void IceModel::compute_enthalpy(IceModelVec3 &temperature,
     temperature.getInternalColumn(i,j,&Tij);
     liquid_water_fraction.getInternalColumn(i,j,&Liqfracij);
     result.getInternalColumn(i,j,&Enthij);
-    for (unsigned int k=0; k<grid.Mz; ++k) {
+    for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
       Enthij[k] = EC->getEnthPermissive(Tij[k], Liqfracij[k],
                                         EC->getPressureFromDepth(depth));
@@ -130,7 +130,7 @@ void IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
 
     result.getInternalColumn(i,j,&omegaij);
     enthalpy.getInternalColumn(i,j,&Enthij);
-    for (unsigned int k=0; k<grid.Mz; ++k) {
+    for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
       omegaij[k] = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth));
     }
@@ -164,7 +164,7 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
 
     result.getInternalColumn(i,j,&CTSij);
     Enth3.getInternalColumn(i,j,&Enthij);
-    for (unsigned int k=0; k<grid.Mz; ++k) {
+    for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
       CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
     }

@@ -1190,7 +1190,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 void SSAFD::compute_hardav_staggered() {
   double *E_ij, *E_offset;
 
-  std::vector<double> E(grid.Mz);
+  std::vector<double> E(grid.Mz());
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -1223,7 +1223,7 @@ void SSAFD::compute_hardav_staggered() {
 
       enthalpy->getInternalColumn(i+oi,j+oj,&E_offset);
       // build a column of enthalpy values a the current location:
-      for (unsigned int k = 0; k < grid.Mz; ++k) {
+      for (unsigned int k = 0; k < grid.Mz(); ++k) {
         E[k] = 0.5 * (E_ij[k] + E_offset[k]);
       }
 

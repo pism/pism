@@ -527,7 +527,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
 
   result.set(0.0);
 
-  std::vector<double> delta_ij(grid.Mz);
+  std::vector<double> delta_ij(grid.Mz());
 
   const double enhancement_factor = flow_law->enhancement_factor();
   double ice_grain_size = config.get("ice_grain_size");
@@ -670,7 +670,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       // if doing the full update, fill the delta column above the ice and
       // store it:
       if (full_update) {
-        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+        for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
           delta_ij[k] = 0.0;
         }
         delta[o].setInternalColumn(i,j,&delta_ij[0]);
@@ -814,7 +814,7 @@ void SIAFD::compute_I() {
         I_ij[k] = I_current;
       }
       // above the ice:
-      for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
         I_ij[k] = I_current;
       }
     }
@@ -881,7 +881,7 @@ void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2St
     double vel_input_u = (*vel_input)(i, j).u,
       vel_input_v = (*vel_input)(i, j).v;
 
-    for (unsigned int k = 0; k < grid.Mz; ++k) {
+    for (unsigned int k = 0; k < grid.Mz(); ++k) {
       u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
                           INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
       v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +

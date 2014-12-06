@@ -201,10 +201,12 @@ public:
 
   unsigned int Mx() const;
   unsigned int My() const;
+  unsigned int Mz() const;
 
   // FIXME: remove this
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
   void set_My(unsigned int My) {m_My = My;}
+  void set_Mz(unsigned int Mz) {m_Mz = Mz;}
 
   Profiling profiling;
 
@@ -240,8 +242,6 @@ public:
 
   double Lz;      //!< max extent of the ice in z-direction (m)
 
-  unsigned int Mz; //!< number of grid points in z-direction in the ice
-
   Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
@@ -270,6 +270,9 @@ private:
   unsigned int m_Mx;
   //! number of grid points in the y-direction
   unsigned int m_My;
+  //! number of grid points in z-direction in the ice
+  unsigned int m_Mz;
+
   
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter

@@ -473,7 +473,7 @@ void IceModel_temp::compute(IceModelVec* &output) {
 
     result->getInternalColumn(i,j,&Tij);
     enthalpy->getInternalColumn(i,j,&Enthij);
-    for (unsigned int k=0; k <grid.Mz; ++k) {
+    for (unsigned int k=0; k <grid.Mz(); ++k) {
       const double depth = (*thickness)(i,j) - grid.zlevels[k];
       Tij[k] = model->EC->getAbsTemp(Enthij[k],
                                      model->EC->getPressureFromDepth(depth));
@@ -521,7 +521,7 @@ void IceModel_temp_pa::compute(IceModelVec* &output) {
 
     result->getInternalColumn(i,j,&Tij);
     enthalpy->getInternalColumn(i,j,&Enthij);
-    for (unsigned int k=0; k < grid.Mz; ++k) {
+    for (unsigned int k=0; k < grid.Mz(); ++k) {
       const double depth = (*thickness)(i,j) - grid.zlevels[k],
         p = model->EC->getPressureFromDepth(depth);
       Tij[k] = model->EC->getPATemp(Enthij[k], p);

@@ -50,7 +50,7 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
                                   double &gmax_strain_heating_err,
                                   double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
-  const int Mz = grid.Mz;
+  const int Mz = grid.Mz();
 
   const double LforFG = 750000; // m
 
@@ -180,7 +180,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
     temperature.getInternalColumn(i,j,&T_ij);
     enthalpy.getInternalColumn(i,j,&E_ij);
 
-    for (unsigned int k=0; k<grid.Mz; ++k) {
+    for (unsigned int k=0; k<grid.Mz(); ++k) {
       double depth = thickness(i,j) - grid.zlevels[k];
       E_ij[k] = EC.getEnthPermissive(T_ij[k], 0.0,
                                      EC.getPressureFromDepth(depth));
@@ -202,7 +202,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
                              IceModelVec2S *surface,
                              IceModelVec2S *thickness,
                              IceModelVec3 *enthalpy) {
-  int        Mz=grid.Mz;
+  int        Mz=grid.Mz();
   double     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
 
   double ST = 1.67e-5,
@@ -217,7 +217,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   mask->set(MASK_GROUNDED);
 
   double *T;
-  T = new double[grid.Mz];
+  T = new double[grid.Mz()];
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -331,10 +331,10 @@ int main(int argc, char *argv[]) {
     grid.Lz = 4000;
     grid.set_Mx(61);
     grid.set_My(61);
-    grid.Mz = 61;
+    grid.set_Mz(61);
 
     std::string output_file = "siafd_test_F.nc";
-    int tmp = grid.Mz;
+    int tmp = grid.Mz();
     {
       bool flag;
       int Mx = grid.Mx(), My = (int)grid.My();
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (tmp > 0) {
-      grid.Mz = tmp;
+      grid.set_Mz(tmp);
     } else {
       throw RuntimeError::formatted("-Mz %d is invalid (has to be positive).", tmp);
     }
