@@ -56,9 +56,6 @@ int main(int argc, char *argv[]) {
     grid.Lx = 1200e3;
     grid.Ly = grid.Lx;
     grid.periodicity = NOT_PERIODIC;
-    grid.compute_nprocs();
-    grid.compute_ownership_ranges();
-    ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
     ierr = grid.allocate(); CHKERRQ(ierr);
 
     PetscPrintf(grid.com,"BedSmoother TEST\n");

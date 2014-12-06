@@ -185,9 +185,6 @@ int main(int argc, char *argv[]) {
     }
 
     // complete grid initialization based on user options
-    grid.compute_nprocs();
-    grid.compute_ownership_ranges();
-    grid.compute_horizontal_spacing();
     grid.compute_vertical_levels();
     grid.time->init();
     grid.allocate();

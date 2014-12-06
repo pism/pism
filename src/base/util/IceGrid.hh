@@ -160,23 +160,21 @@ public:
   // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
   //                          const std::string &filename);
 
-  PetscErrorCode report_parameters();
+  void report_parameters();
 
-  PetscErrorCode allocate();  // FIXME! allocate in the constructor!
+  // only of these two should be called:
   PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
   PetscErrorCode compute_vertical_levels();
-  PetscErrorCode compute_horizontal_spacing();
+
+  PetscErrorCode allocate();  // FIXME! allocate in the constructor!
+
   void compute_point_neighbors(double X, double Y,
                                int &i_left, int &i_right,
                                int &j_bottom, int &j_top);
   std::vector<double> compute_interp_weights(double x, double y);
 
-  void check_parameters();
-
   void ownership_ranges_from_options();
-  void compute_nprocs();
-  void compute_ownership_ranges();
-  PetscErrorCode printInfo(int verbosity); 
+
   PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
   double radius(int i, int j);
@@ -284,7 +282,13 @@ private:
   // avoid re-allocating it many times.
   PISMDM::Ptr m_dm_scalar_global;
 
+  void check_parameters();
+
+  void compute_nprocs();
+  void compute_ownership_ranges();
+
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
+  PetscErrorCode compute_horizontal_spacing();
   PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();

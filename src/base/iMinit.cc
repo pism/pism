@@ -244,8 +244,6 @@ void IceModel::set_grid_from_options() {
     grid.Ly = (y_range[1] - y_range[0]) / 2.0;
   }
 
-  grid.check_parameters();
-  grid.compute_horizontal_spacing();
   grid.compute_vertical_levels();
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be

@@ -596,7 +596,6 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
 //! \brief Sets grid parameters using data read from the file.
 PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity periodicity) const {
   try {
-    PetscErrorCode ierr;
 
     assert(grid != NULL);
 
@@ -628,9 +627,6 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
 
     grid->time->set_start(input.time);
     grid->time->init(); // re-initialize to take the new start time into account
-
-    ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
-    ierr = grid->set_vertical_levels(input.z); CHKERRQ(ierr);
 
     // We're ready to call grid->allocate().
   } catch (RuntimeError &e) {

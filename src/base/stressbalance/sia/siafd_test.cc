@@ -357,15 +357,10 @@ int main(int argc, char *argv[]) {
       throw RuntimeError::formatted("-Mz %d is invalid (has to be positive).", tmp);
     }
 
-    grid.compute_nprocs();
-    grid.compute_ownership_ranges();
     grid.compute_vertical_levels();
-    grid.compute_horizontal_spacing();
     grid.allocate();
 
     setVerbosityLevel(5);
-    grid.printInfo(1);
-    //ierr = grid.printVertLevels(1); CHKERRQ(ierr);
 
     ICMEnthalpyConverter EC(config);
     ThermoGlenArrIce ice(grid.com, "", config, &EC);
