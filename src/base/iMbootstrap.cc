@@ -356,7 +356,7 @@ void IceModel::putTempAtDepth() {
           const double z = grid.zlevels[k],
             Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
           T[k] = gg / ice_k * (HH - z) + Ts;
-          T[k] = PetscMin(Tpmp,T[k]);
+          T[k] = std::min(Tpmp,T[k]);
         }
       } else { // positive surface mass balance case
         const double C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
@@ -366,7 +366,7 @@ void IceModel::putTempAtDepth() {
           const double z = grid.zlevels[k],
             Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
           T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
-          T[k] = PetscMin(Tpmp,T[k]);
+          T[k] = std::min(Tpmp,T[k]);
         }
       }
     } else { // method 2:  does not use smb
@@ -376,7 +376,7 @@ void IceModel::putTempAtDepth() {
         const double depth = HH - grid.zlevels[k],
           Tpmp = melting_point_temp - beta_CC_grad * depth,
           d2 = depth * depth;
-        T[k] = PetscMin(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
+        T[k] = std::min(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
       }
     }
 

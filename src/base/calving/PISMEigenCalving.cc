@@ -58,11 +58,11 @@ void EigenCalving::init(Vars &vars) {
   verbPrintf(2, grid.com,
              "* Initializing the 'eigen-calving' mechanism...\n");
 
-  if (PetscAbs(grid.dx() - grid.dy()) / PetscMin(grid.dx(), grid.dy()) > 1e-2) {
+  if (fabs(grid.dx() - grid.dy()) / std::min(grid.dx(), grid.dy()) > 1e-2) {
     throw RuntimeError::formatted("-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
                                   grid.dx(), grid.dy(),
-                                  PetscAbs(grid.dx() - grid.dy()) / PetscMax(grid.dx(), grid.dy()));
+                                  fabs(grid.dx() - grid.dy()) / std::max(grid.dx(), grid.dy()));
   }
 
   m_strain_rates.set(0.0);
@@ -75,9 +75,9 @@ void EigenCalving::init(Vars &vars) {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 void EigenCalving::update(double dt,
-                                        IceModelVec2Int &pism_mask,
-                                        IceModelVec2S &Href,
-                                        IceModelVec2S &ice_thickness) {
+                          IceModelVec2Int &pism_mask,
+                          IceModelVec2S &Href,
+                          IceModelVec2S &ice_thickness) {
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -216,10 +216,10 @@ void EigenCalving::update(double dt,
       thk_loss_ij = (m_thk_loss(i + 1, j) + m_thk_loss(i - 1, j) +
                      m_thk_loss(i, j + 1) + m_thk_loss(i, j - 1));     // in m/s
 
-      // Note PetscMax: we do not account for further calving
+      // Note std::max: we do not account for further calving
       // ice-inwards! Alternatively CFL criterion for time stepping
       // could be adjusted to maximum of calving rate
-      Href(i, j) = PetscMax(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
+      Href(i, j) = std::max(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
 
       ice_thickness(i, j) = 0.0;
       pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
@@ -333,7 +333,7 @@ void EigenCalving::max_timestep(double /*my_t*/,
         i0 = i;
         j0 = j;
       }
-      my_calving_rate_max = PetscMax(my_calving_rate_max, calving_rate_horizontal);
+      my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
     } else {
       calving_rate_horizontal = 0.0;
     }
@@ -361,7 +361,7 @@ void EigenCalving::max_timestep(double /*my_t*/,
              grid.convert(calving_rate_mean, "m/s", "m/year"),
              calving_rate_counter);
 
-  my_dt = PetscMax(my_dt, dt_min);
+  my_dt = std::max(my_dt, dt_min);
 }
 
 void EigenCalving::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {

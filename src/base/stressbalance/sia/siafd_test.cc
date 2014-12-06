@@ -87,8 +87,8 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
       const int ks = grid.kBelowHeight(thickness(i,j));
       strain_heating.getInternalColumn(i,j,&strain_heating_ij);
       for (int k = 0; k < ks; k++) {  // only eval error if below num surface
-        const double _strain_heating_error = PetscAbs(strain_heating_ij[k] - strain_heating_exact[k]);
-        max_strain_heating_error = PetscMax(max_strain_heating_error,_strain_heating_error);
+        const double _strain_heating_error = fabs(strain_heating_ij[k] - strain_heating_exact[k]);
+        max_strain_heating_error = std::max(max_strain_heating_error,_strain_heating_error);
         avcount += 1.0;
         av_strain_heating_error += _strain_heating_error;
       }
@@ -102,7 +102,7 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
   GlobalSum(grid.com, &av_strain_heating_error,  &gav_strain_heating_err);
   double  gavcount;
   GlobalSum(grid.com, &avcount,  &gavcount);
-  gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
+  gav_strain_heating_err = gav_strain_heating_err/std::max(gavcount,1.0);  // avoid div by zero
   return 0;
 }
 
@@ -144,10 +144,10 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
       // a grid point, this causes nonzero errors even with option -eo
       const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,ice_thickness(i,j)) - uex)
                                + PetscSqr(v3.getValZ(i,j,ice_thickness(i,j)) - vex));
-      maxUerr = PetscMax(maxUerr,Uerr);
+      maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
-      const double Werr = PetscAbs(w3.getValZ(i,j,ice_thickness(i,j)) - wex);
-      maxWerr = PetscMax(maxWerr,Werr);
+      const double Werr = fabs(w3.getValZ(i,j,ice_thickness(i,j)) - wex);
+      maxWerr = std::max(maxWerr,Werr);
       avWerr += Werr;
     }
   }
@@ -234,7 +234,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
         T[k]=Ts;
       }
     } else {
-      r = PetscMax(r, 1.0); // avoid singularity at origin
+      r = std::max(r, 1.0); // avoid singularity at origin
       bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
                 &(*thickness)(i, j), dummy5, T, dummy1, dummy2, dummy3, dummy4);
     }

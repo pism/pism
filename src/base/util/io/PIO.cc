@@ -574,8 +574,8 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
     double my_min = data[0],
       my_max = data[0];
     for (unsigned int j = 0; j < data.size(); ++j) {
-      my_min = PetscMin(data[j], my_min);
-      my_max = PetscMax(data[j], my_max);
+      my_min = std::min(data[j], my_min);
+      my_max = std::max(data[j], my_max);
     }
 
     if (min != NULL) {

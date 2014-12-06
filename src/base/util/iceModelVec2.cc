@@ -498,7 +498,7 @@ void IceModelVec2S::max(double &result) const {
 
   double my_result = (*this)(grid->xs(),grid->ys());
   for (Points p(*grid); p; p.next()) {
-    my_result = PetscMax(my_result,(*this)(p.i(), p.j()));
+    my_result = std::max(my_result,(*this)(p.i(), p.j()));
   }
 
   GlobalMax(grid->com, &my_result, &result);
@@ -511,7 +511,7 @@ void IceModelVec2S::absmax(double &result) const {
   IceModelVec::AccessList list(*this);
   double my_result = 0.0;
   for (Points p(*grid); p; p.next()) {
-    my_result = PetscMax(my_result,PetscAbs((*this)(p.i(), p.j())));
+    my_result = std::max(my_result,fabs((*this)(p.i(), p.j())));
   }
 
   GlobalMax(grid->com, &my_result,  &result);
@@ -524,7 +524,7 @@ void IceModelVec2S::min(double &result) const {
 
   double my_result = (*this)(grid->xs(),grid->ys());
   for (Points p(*grid); p; p.next()) {
-    my_result = PetscMin(my_result,(*this)(p.i(), p.j()));
+    my_result = std::min(my_result,(*this)(p.i(), p.j()));
   }
 
   GlobalMin(grid->com, &my_result,  &result);
@@ -649,8 +649,8 @@ void IceModelVec2Stag::absmaxcomponents(double* z) const {
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    my_z[0] = PetscMax(my_z[0],PetscAbs((*this)(i,j,0)));
-    my_z[1] = PetscMax(my_z[1],PetscAbs((*this)(i,j,1)));
+    my_z[0] = std::max(my_z[0],fabs((*this)(i,j,0)));
+    my_z[1] = std::max(my_z[1],fabs((*this)(i,j,1)));
   }
 
   GlobalMax(grid->com, &(my_z[0]), &(z[0]));

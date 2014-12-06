@@ -252,7 +252,7 @@ PDDrandMassBalance::~PDDrandMassBalance() {
   guarantee that.
  */
 unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
-  return PetscMax(static_cast<unsigned int>(ceil(dt / seconds_per_day)), 2);
+  return std::max(static_cast<size_t>(ceil(dt / seconds_per_day)), (size_t)2);
 }
 
 /** 

@@ -188,13 +188,13 @@ void NC4_Quilt::correct_start_and_count(const std::string &name,
     if (dim_names[j] == "x" + suffix) {
       assert(m_xm > 0);
       start[j] -= m_xs;
-      count[j] = PetscMin(count[j], m_xm);
+      count[j] = std::min(count[j], m_xm);
     }
 
     if (dim_names[j] == "y" + suffix) {
       assert(m_ym > 0);
       start[j] -= m_ys;
-      count[j] = PetscMin(count[j], m_ym);
+      count[j] = std::min(count[j], m_ym);
     }
   }
 

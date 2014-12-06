@@ -211,17 +211,17 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
     exactSolution(i,j,myx,myy,&uexact,&vexact);
 
     double exactnormsq=sqrt(uexact*uexact+vexact*vexact);
-    exactvelmax = PetscMax(exactnormsq,exactvelmax);
+    exactvelmax = std::max(exactnormsq,exactvelmax);
 
     // compute maximum errors
-    const double uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
-    const double verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
+    const double uerr = fabs((*vel_ssa)(i,j).u - uexact);
+    const double verr = fabs((*vel_ssa)(i,j).v - vexact);
     avuerr = avuerr + uerr;
     avverr = avverr + verr;
-    maxuerr = PetscMax(maxuerr,uerr);
-    maxverr = PetscMax(maxverr,verr);
+    maxuerr = std::max(maxuerr,uerr);
+    maxverr = std::max(maxverr,verr);
     const double vecerr = sqrt(uerr * uerr + verr * verr);
-    maxvecerr = PetscMax(maxvecerr,vecerr);
+    maxvecerr = std::max(maxvecerr,vecerr);
     avvecerr = avvecerr + vecerr;
   }
 

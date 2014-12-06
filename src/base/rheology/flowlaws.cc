@@ -48,7 +48,7 @@ bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
   for (int i=0; i<4; i++) {
     const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
-    if (PetscAbs((left - right)/left)>1.0e-15) {
+    if (fabs((left - right)/left)>1.0e-15) {
       return false;
     }
   }
@@ -214,7 +214,7 @@ double GPBLDIce::softness_parameter(double enthalpy, double pressure) const {
   } else { // temperate ice
     double omega = EC->getWaterFraction(enthalpy, pressure);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
-    omega = PetscMin(omega, water_frac_observed_limit);
+    omega = std::min(omega, water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softness_parameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
   }
@@ -362,7 +362,7 @@ double GoldsbyKohlstedtIce::flow_from_temp(double stress, double temp,
                                     double pressure, double gs) const {
   double eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
-  if (PetscAbs(stress) < 1e-10) {
+  if (fabs(stress) < 1e-10) {
     return 0;
   }
   const double T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
@@ -404,7 +404,7 @@ GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressu
   double gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
   GKparts p;
 
-  if (PetscAbs(stress) < 1e-10) {
+  if (fabs(stress) < 1e-10) {
     p.eps_total=0.0;
     p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
     return p;
@@ -461,7 +461,7 @@ double GoldsbyKohlstedtIceStripped::flow_from_temp(double stress, double temp, d
   // note no diffusional flow
   double eps_disl, eps_basal, eps_gbs;
 
-  if (PetscAbs(stress) < 1e-10) {
+  if (fabs(stress) < 1e-10) {
     return 0;
   }
   const double T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;

@@ -70,14 +70,14 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
       w3->getInternalColumn(i, j, &w);
       for (int k = 0; k <= ks; ++k) {
         const double
-          absu = PetscAbs(u[k]),
-          absv = PetscAbs(v[k]);
-        maxu = PetscMax(maxu, absu);
-        maxv = PetscMax(maxv, absv);
-        maxw = PetscMax(maxw, PetscAbs(w[k]));
-        const double denom = PetscAbs(absu / grid.dx()) + PetscAbs(absv / grid.dy());
+          absu = fabs(u[k]),
+          absv = fabs(v[k]);
+        maxu = std::max(maxu, absu);
+        maxv = std::max(maxv, absv);
+        maxw = std::max(maxw, fabs(w[k]));
+        const double denom = fabs(absu / grid.dx()) + fabs(absv / grid.dy());
         if (denom > 0.0) {
-          maxtimestep = PetscMin(maxtimestep, 1.0 / denom);
+          maxtimestep = std::min(maxtimestep, 1.0 / denom);
         }
       }
     }
@@ -118,9 +118,9 @@ void IceModel::max_timestep_cfl_2d(double &dt_result) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      const double denom = PetscAbs(vel(i,j).u)/grid.dx() + PetscAbs(vel(i,j).v)/grid.dy();
+      const double denom = fabs(vel(i,j).u)/grid.dx() + fabs(vel(i,j).v)/grid.dy();
       if (denom > 0.0) {
-        maxtimestep = PetscMin(maxtimestep, 1.0/denom);
+        maxtimestep = std::min(maxtimestep, 1.0/denom);
       }
     }
   }
@@ -418,10 +418,10 @@ void IceModel::countCFLViolations(double* CFLviol) {
 
     // check horizontal CFL conditions at each point
     for (int k=0; k<=fks; k++) {
-      if (PetscAbs(u[k]) > CFL_x) {
+      if (fabs(u[k]) > CFL_x) {
         *CFLviol += 1.0;
       }
-      if (PetscAbs(v[k]) > CFL_y) {
+      if (fabs(v[k]) > CFL_y) {
         *CFLviol += 1.0;
       }
     }

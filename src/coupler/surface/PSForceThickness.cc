@@ -334,7 +334,7 @@ void PSForceThickness::max_timestep(double my_t, double &my_dt, bool &restrict) 
 
   if (restrict) {
     if (max_dt > 0) {
-      my_dt = PetscMin(max_dt, my_dt);
+      my_dt = std::min(max_dt, my_dt);
     }
   } else {
     my_dt = max_dt;

@@ -201,9 +201,9 @@ void IceModel::calculateFractureDensity() {
 
     ///max shear stress criterion (more stringent than von mises)
     if (max_shear_stress) {
-      double maxshear=PetscAbs(T1);
-      maxshear=PetscMax(maxshear,PetscAbs(T2));
-      maxshear=PetscMax(maxshear,PetscAbs(T1-T2));
+      double maxshear=fabs(T1);
+      maxshear=std::max(maxshear,fabs(T2));
+      maxshear=std::max(maxshear,fabs(T1-T2));
 
       sigmat=maxshear;
     }

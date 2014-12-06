@@ -96,7 +96,7 @@ void NullTransportHydrology::update(double icet, double icedt) {
       Wtil(i,j) = 0.0;
     } else {
       Wtil(i,j) += icedt * (total_input(i,j) - C);
-      Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
+      Wtil(i,j) = std::min(std::max(0.0, Wtil(i,j)), tillwat_max);
     }
   }
 }

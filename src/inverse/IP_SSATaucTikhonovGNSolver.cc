@@ -252,7 +252,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
   if (m_tikhonov_adaptive) {
     verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha);
   }
-  double relsum = (sumNorm/PetscMax(designNorm,stateNorm));
+  double relsum = (sumNorm/std::max(designNorm,stateNorm));
   verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",
              designNorm,stateNorm,sumNorm,relsum);
 
@@ -271,7 +271,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
     return 0;
   }
 
-  if (sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm)) {
+  if (sumNorm < m_tikhonov_rtol*std::max(designNorm,stateNorm)) {
     reason.reset(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
     return 0;
   }

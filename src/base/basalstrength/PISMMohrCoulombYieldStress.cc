@@ -405,7 +405,7 @@ void MohrCoulombYieldStress::update(double my_t, double my_dt) {
       }
       double s    = water / tillwat_max,
         Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = PetscMin(m_Po(i,j), Ntil);
+      Ntil = std::min(m_Po(i,j), Ntil);
 
       m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
     }
@@ -526,7 +526,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
     } else { // grounded and there is some ice
       double s    = m_tillwat(i,j) / tillwat_max,
         Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = PetscMin(m_Po(i,j), Ntil);
+      Ntil = std::min(m_Po(i,j), Ntil);
       m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
     }
   }

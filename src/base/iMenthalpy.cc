@@ -346,7 +346,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
           if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
             double fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
 
-            fractiondrained  = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
+            fractiondrained  = std::min(fractiondrained, omega - 0.01); // only drain down to 0.01
             Hdrainedtotal   += fractiondrained * grid.dz_fine; // always a positive contribution
             Enthnew[k]      -= fractiondrained * L;
           }

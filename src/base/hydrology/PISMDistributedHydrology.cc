@@ -225,7 +225,7 @@ void DistributedHydrology::check_P_bounds(bool enforce_upper) {
     }
 
     if (enforce_upper) {
-      P(i,j) = PetscMin(P(i,j), Pover(i,j));
+      P(i,j) = std::min(P(i,j), Pover(i,j));
     } else if (P(i,j) > Pover(i,j) + 0.001) {
       throw RuntimeError::formatted("subglacial water pressure P = %.16f Pa exceeds\n"
                                     "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
@@ -271,11 +271,11 @@ void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
         result(i, j) = Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
       }
     } else {
-      double Wratio = PetscMax(0.0, Wr - W(i, j)) / W(i, j);
+      double Wratio = std::max(0.0, Wr - W(i, j)) / W(i, j);
       // in cases where steady state is actually possible this will
       //   come out positive, but otherwise we should get underpressure P=0,
       //   and that is what it yields
-      result(i, j) = PetscMax(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
+      result(i, j) = std::max(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
     }
   }
 }
@@ -308,10 +308,10 @@ void DistributedHydrology::adaptive_for_WandP_evolution(double t_current, double
   dtDIFFP = 2.0 * phi0 * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
-  dt_result = PetscMin(dt_result, dtDIFFP);
+  dt_result = std::min(dt_result, dtDIFFP);
 
   if (dtDIFFP > 0.0) {
-    PtoCFLratio = PetscMax(1.0, dtCFL / dtDIFFP);
+    PtoCFLratio = std::max(1.0, dtCFL / dtDIFFP);
   } else {
     PtoCFLratio = 1.0;
   }
@@ -454,7 +454,7 @@ void DistributedHydrology::update(double icet, double icedt) {
         }
       } else {
         // opening and closure terms in pressure equation
-        Open = PetscMax(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
+        Open = std::max(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
         Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
@@ -472,7 +472,7 @@ void DistributedHydrology::update(double icet, double icedt) {
         ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
         Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
         // projection to enforce  0 <= P <= P_o
-        Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
+        Pnew(i,j) = std::min(std::max(0.0, Pnew(i,j)), Pover(i,j));
       }
     }
 

@@ -39,8 +39,8 @@ PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
   for (i=0; i < mA; i++) {
     for (j=0; j < nA; j++) {
       sum = 0.0;
-      for (r = PetscMax(0, i - mB + 1); r < PetscMin(mA, i); r++) {
-        for (s = PetscMax(0, j - nB + 1); s < PetscMin(nA, j); s++) {
+      for (r = std::max(0, i - mB + 1); r < std::min(mA, i); r++) {
+        for (s = std::max(0, j - nB + 1); s < std::min(nA, j); s++) {
           sum += A[r][s] * B[i - r][j - s];
         }
       }

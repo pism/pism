@@ -183,7 +183,7 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
 void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
 
   if (pdd_annualize) {
-    if (PetscAbs(my_t - next_pdd_update) < 1e-12) {
+    if (fabs(my_t - next_pdd_update) < 1e-12) {
       my_dt = grid.convert(1.0, "years", "seconds");
     } else {
       my_dt = next_pdd_update - my_t;
@@ -197,7 +197,7 @@ void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool
 
   if (restrict) {
     if (my_dt > 0) {
-      my_dt = PetscMin(my_dt, dt_atmosphere);
+      my_dt = std::min(my_dt, dt_atmosphere);
     } else {
       my_dt = dt_atmosphere;
     }

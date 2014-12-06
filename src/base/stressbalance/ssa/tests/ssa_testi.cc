@@ -70,7 +70,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
+  double Lx = std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
   grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NOT_PERIODIC);
   return 0;
 }
@@ -112,7 +112,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
     const double y = grid->y(j);
     const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
     const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
-    tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
+    tauc(i,j) = f * pow(fabs(y / L_schoof), m_schoof);
   }
   tauc.update_ghosts();
 

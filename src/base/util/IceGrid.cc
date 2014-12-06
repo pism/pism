@@ -330,10 +330,10 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
   dzMAX = 0.0;
   for (unsigned int k = 0; k < Mz - 1; k++) {
     const double mydz = zlevels[k+1] - zlevels[k];
-    dzMIN = PetscMin(mydz,dzMIN);
-    dzMAX = PetscMax(mydz,dzMAX);
+    dzMIN = std::min(mydz,dzMIN);
+    dzMAX = std::max(mydz,dzMAX);
   }
-  if (PetscAbs(dzMAX - dzMIN) <= 1.0e-8) {
+  if (fabs(dzMAX - dzMIN) <= 1.0e-8) {
     ice_vertical_spacing = EQUAL;
   } else {
     ice_vertical_spacing = UNKNOWN;
@@ -524,7 +524,7 @@ PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zleve
     throw RuntimeError("IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
 
-  if ((!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10)) {
+  if ((!is_increasing(new_zlevels)) || (fabs(new_zlevels[0]) > 1.0e-10)) {
     throw RuntimeError("IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 

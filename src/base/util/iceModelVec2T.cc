@@ -303,7 +303,7 @@ void IceModelVec2T::update(unsigned int start) {
     throw RuntimeError::formatted("IceModelVec2T::update(int start): start = %d is invalid", start);
   }
 
-  unsigned int missing = PetscMin(n_records, time_size - start);
+  unsigned int missing = std::min(n_records, time_size - start);
 
   if (start == static_cast<unsigned int>(first)) {
     // nothing to do

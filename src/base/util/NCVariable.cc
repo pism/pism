@@ -266,7 +266,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
     }
   }
 
-  unsigned int nlevels = PetscMax(m_zlevels.size(), 1); // make sure we have at least one level
+  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
   nc.get_vec(m_grid, name_found, nlevels, time, v);
 
   bool input_has_units;
@@ -314,7 +314,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
   }
 
   // Actually write data:
-  unsigned int nlevels = PetscMax(m_zlevels.size(), 1); // make sure we have at least one level
+  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
   nc.put_vec(m_grid, name_found, nlevels, v);
 
   if (write_in_glaciological_units) {
@@ -547,7 +547,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   if (z_name.empty() == false) {
     exists = nc.inq_dim(z_name);
     if (!exists) {
-      unsigned int nlevels = PetscMax(m_zlevels.size(), 1); // make sure we have at least one level
+      unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
       nc.def_dim(nlevels, m_z);
       nc.put_dim(z_name, m_zlevels);
     }

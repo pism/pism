@@ -82,7 +82,7 @@ public:
 
     if (restrict == true) {
       if (max_dt > 0) {
-        dt = PetscMin(max_dt, dt);
+        dt = std::min(max_dt, dt);
       }
     } else {
       dt = max_dt;
@@ -158,7 +158,7 @@ protected:
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
       if (bc_period_set == false) {
-        ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
+        ref_surface_n_records = std::min(ref_surface_n_records, buffer_size);
       }
 
       if (ref_surface_n_records == 0) {
@@ -186,7 +186,7 @@ protected:
 
   void lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
   {
-    if (PetscAbs(lapse_rate) < 1e-12) {
+    if (fabs(lapse_rate) < 1e-12) {
       return;
     }
 

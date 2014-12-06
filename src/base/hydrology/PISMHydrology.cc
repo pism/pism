@@ -124,7 +124,7 @@ void Hydrology::init(Vars &vars) {
     // buffer size and the number of available records. Otherwise try
     // to keep all available records in memory.
     if (itbperiod_set == false) {
-      n_records = PetscMin(n_records, buffer_size);
+      n_records = std::min(n_records, buffer_size);
     }
 
     if (n_records == 0) {

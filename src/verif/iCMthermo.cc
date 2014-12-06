@@ -82,7 +82,7 @@ void IceCompModel::initTestFG() {
         T[k] = Tmin + ST * r;
       }
     } else {
-      r = PetscMax(r, 1.0); // avoid singularity at origin
+      r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
         bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
                   &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
@@ -136,7 +136,7 @@ void IceCompModel::getCompSourcesTestFG() {
     if (r > LforFG - 1.0) {  // outside of sheet
       strain_heating3_comp.setColumn(i, j, 0.0);
     } else {
-      r = PetscMax(r, 1.0); // avoid singularity at origin
+      r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
         bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
                   &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
@@ -207,7 +207,7 @@ void IceCompModel::fillSolnTestFG() {
       strain_heating3->setColumn(i, j, 0.0);
       strain_heating3_comp.setColumn(i, j, 0.0);
     } else {  // inside the sheet
-      r = PetscMax(r, 1.0); // avoid singularity at origin
+      r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
         bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
                   &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
@@ -290,8 +290,8 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
       }
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k = 0; k < ks; k++) {  // only eval error if below num surface
-        const double Terr = PetscAbs(T[k] - Tex[k]);
-        maxTerr = PetscMax(maxTerr, Terr);
+        const double Terr = fabs(T[k] - Tex[k]);
+        maxTerr = std::max(maxTerr, Terr);
         avcount += 1.0;
         avTerr += Terr;
       }
@@ -305,7 +305,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   GlobalSum(grid.com, &avTerr,  &gavTerr);
   double  gavcount;
   GlobalSum(grid.com, &avcount,  &gavcount);
-  gavTerr = gavTerr/PetscMax(gavcount, 1.0);  // avoid div by zero
+  gavTerr = gavTerr/std::max(gavcount, 1.0);  // avoid div by zero
 }
 
 
@@ -368,15 +368,15 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
     bedrock_temp->getInternalColumn(i,j,&Tb);
     for (unsigned int kb = 0; kb < Mbz; kb++) {
-      const double Tberr = PetscAbs(Tb[kb] - Tbex[kb]);
-      maxTberr = PetscMax(maxTberr,Tberr);
+      const double Tberr = fabs(Tb[kb] - Tbex[kb]);
+      maxTberr = std::max(maxTberr,Tberr);
       avbcount += 1.0;
       avTberr += Tberr;
     }
     T3.getInternalColumn(i,j,&T);
     for (unsigned int k = 0; k < grid.Mz; k++) {
-      const double Terr = PetscAbs(T[k] - Tex[k]);
-      maxTerr = PetscMax(maxTerr,Terr);
+      const double Terr = fabs(T[k] - Tex[k]);
+      maxTerr = std::max(maxTerr,Terr);
       avcount += 1.0;
       avTerr += Terr;
     }
@@ -388,13 +388,13 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   GlobalSum(grid.com, &avTerr,  &gavTerr);
   double  gavcount;
   GlobalSum(grid.com, &avcount,  &gavcount);
-  gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
+  gavTerr = gavTerr/std::max(gavcount,1.0);  // avoid div by zero
 
   GlobalMax(grid.com, &maxTberr,  &gmaxTberr);
   GlobalSum(grid.com, &avTberr,  &gavTberr);
   double  gavbcount;
   GlobalSum(grid.com, &avbcount,  &gavbcount);
-  gavTberr = gavTberr/PetscMax(gavbcount,1.0);  // avoid div by zero
+  gavTberr = gavTberr/std::max(gavbcount,1.0);  // avoid div by zero
 }
 
 
@@ -416,7 +416,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
       if (r > LforFG - 1.0) {  // outside of sheet
         Texact=Tmin + ST * r;  // = Ts
       } else {
-        r=PetscMax(r,1.0);
+        r=std::max(r,1.0);
         z=0.0;
         bothexact(0.0,r,&z,1,0.0,
                   &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
@@ -426,7 +426,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
       if (r > LforFG -1.0) {  // outside of sheet
         Texact=Tmin + ST * r;  // = Ts
       } else {
-        r=PetscMax(r,1.0);
+        r=std::max(r,1.0);
         z=0.0;
         bothexact(grid.time->current(),r,&z,1,ApforG,
                   &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
@@ -442,9 +442,9 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
       domeTexact = Texact;
     }
     // compute maximum errors
-    Terr = PetscMax(Terr,PetscAbsReal(Tbase - Texact));
+    Terr = std::max(Terr,fabs(Tbase - Texact));
     // add to sums for average errors
-    avTerr += PetscAbs(Tbase - Texact);
+    avTerr += fabs(Tbase - Texact);
   }
 
   double gdomeT, gdomeTexact;
@@ -454,7 +454,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   gavTerr = gavTerr/(grid.Mx()*grid.My());
   GlobalMax(grid.com, &domeT,  &gdomeT);
   GlobalMax(grid.com, &domeTexact,  &gdomeTexact);
-  centerTerr = PetscAbsReal(gdomeT - gdomeTexact);
+  centerTerr = fabs(gdomeT - gdomeTexact);
 }
 
 
@@ -505,8 +505,8 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
       const unsigned int ks = grid.kBelowHeight(ice_thickness(i,j));
       strain_heating3->getInternalColumn(i,j,&strain_heating);
       for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
-        const double strain_heating_err = PetscAbs(strain_heating[k] - strain_heating_exact[k]);
-        max_strain_heating_err = PetscMax(max_strain_heating_err,strain_heating_err);
+        const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
+        max_strain_heating_err = std::max(max_strain_heating_err,strain_heating_err);
         avcount += 1.0;
         av_strain_heating_err += strain_heating_err;
       }
@@ -520,7 +520,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   GlobalSum(grid.com, &av_strain_heating_err,  &gav_strain_heating_err);
   double  gavcount;
   GlobalSum(grid.com, &avcount,  &gavcount);
-  gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
+  gav_strain_heating_err = gav_strain_heating_err/std::max(gavcount,1.0);  // avoid div by zero
 }
 
 
@@ -563,10 +563,10 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
       // a grid point, this causes nonzero errors even with option -eo
       const double Uerr = sqrt(PetscSqr(u3->getValZ(i, j, ice_thickness(i,j)) - uex)
                                + PetscSqr(v3->getValZ(i, j, ice_thickness(i,j)) - vex));
-      maxUerr = PetscMax(maxUerr, Uerr);
+      maxUerr = std::max(maxUerr, Uerr);
       avUerr += Uerr;
-      const double Werr = PetscAbs(w3->getValZ(i, j, ice_thickness(i,j)) - wex);
-      maxWerr = PetscMax(maxWerr, Werr);
+      const double Werr = fabs(w3->getValZ(i, j, ice_thickness(i,j)) - wex);
+      maxWerr = std::max(maxWerr, Werr);
       avWerr += Werr;
     }
   }
@@ -596,9 +596,9 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    err = PetscAbs(basal_melt_rate(i,j) - bmelt);
-    maxbmelterr = PetscMax(maxbmelterr, err);
-    minbmelterr = PetscMin(minbmelterr, err);
+    err = fabs(basal_melt_rate(i,j) - bmelt);
+    maxbmelterr = std::max(maxbmelterr, err);
+    minbmelterr = std::min(minbmelterr, err);
   }
 
   GlobalMax(grid.com, &maxbmelterr,  &gmaxbmelterr);

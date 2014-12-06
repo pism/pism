@@ -660,7 +660,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
         Dfoffset = 0.0;
       }
 
-      my_D_max = PetscMax(my_D_max, Dfoffset);
+      my_D_max = std::max(my_D_max, Dfoffset);
 
       // vertically-averaged SIA-only flux, sans sliding; note
       //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
@@ -944,7 +944,7 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
       l = j;
     }
   }
-  if ((r == l) || (PetscAbsReal(r - l) > 1)) {
+  if ((r == l) || (fabs(r - l) > 1)) {
     PetscPrintf(grid.com, "binary search in grainSizeVostok: oops.\n");
   }
   // Linear interpolation on the interval

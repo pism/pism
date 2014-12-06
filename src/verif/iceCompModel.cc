@@ -677,7 +677,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       if (r > LforFG - 1.0) {  // outside of sheet
         Hexact=0.0;
       } else {
-        r=PetscMax(r,1.0);
+        r=std::max(r,1.0);
         z=0.0;
         bothexact(0.0,r,&z,1,0.0,
                   &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
@@ -687,7 +687,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       if (r > LforFG -1.0) {  // outside of sheet
         Hexact=0.0;
       } else {
-        r=PetscMax(r,1.0);
+        r=std::max(r,1.0);
         z=0.0;
         bothexact(time,r,&z,1,ApforG,
                   &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
@@ -728,10 +728,10 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       domeHexact = Hexact;
     }
     // compute maximum errors
-    Herr = PetscMax(Herr,PetscAbsReal(ice_thickness(i,j) - Hexact));
-    etaerr = PetscMax(etaerr,PetscAbsReal(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
+    Herr = std::max(Herr,fabs(ice_thickness(i,j) - Hexact));
+    etaerr = std::max(etaerr,fabs(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
     // add to sums for average errors
-    avHerr += PetscAbsReal(ice_thickness(i,j) - Hexact);
+    avHerr += fabs(ice_thickness(i,j) - Hexact);
   }
 
   // globalize (find errors over all processors)
@@ -742,8 +742,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   GlobalSum(grid.com, &vol,  &gvol);
   GlobalSum(grid.com, &area,  &garea);
-  volerr = PetscAbsReal(gvol - gvolexact);
-  areaerr = PetscAbsReal(garea - gareaexact);
+  volerr = fabs(gvol - gvolexact);
+  areaerr = fabs(garea - gareaexact);
 
   GlobalMax(grid.com, &Herr,  &gmaxHerr);
   GlobalSum(grid.com, &avHerr,  &gavHerr);
@@ -751,7 +751,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   GlobalMax(grid.com, &etaerr,  &gmaxetaerr);
 
   GlobalMax(grid.com, &domeH,  &gdomeH);
-  centerHerr = PetscAbsReal(gdomeH - gdomeHexact);
+  centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
 
@@ -781,12 +781,12 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
       double xx = grid.x(i), yy = grid.y(j);
       exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
       // compute maximum errors
-      const double uberr = PetscAbsReal((*vel_adv)(i,j).u - ubexact);
-      const double vberr = PetscAbsReal((*vel_adv)(i,j).v - vbexact);
-      maxuberr = PetscMax(maxuberr,uberr);
-      maxvberr = PetscMax(maxvberr,vberr);
+      const double uberr = fabs((*vel_adv)(i,j).u - ubexact);
+      const double vberr = fabs((*vel_adv)(i,j).v - vbexact);
+      maxuberr = std::max(maxuberr,uberr);
+      maxvberr = std::max(maxvberr,vberr);
       const double vecerr = sqrt(uberr*uberr + vberr*vberr);
-      maxvecerr = PetscMax(maxvecerr,vecerr);
+      maxvecerr = std::max(maxvecerr,vecerr);
       avvecerr += vecerr;
     }
   }

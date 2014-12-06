@@ -130,7 +130,7 @@ void PS_EISMINTII::initialize_using_formulas() {
     const double r = sqrt(PetscSqr(-cx + grid.dx()*i)
                           + PetscSqr(-cy + grid.dy()*j));
     // set accumulation from formula (7) in (Payne et al 2000)
-    m_climatic_mass_balance(i,j) = PetscMin(m_M_max, m_S_b * (m_R_el-r));
+    m_climatic_mass_balance(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
     // set surface temperature
     m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;  // formula (8) in (Payne et al 2000)
   }

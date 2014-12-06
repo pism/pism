@@ -441,7 +441,7 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
       } else { // beta == 2.0
         result(i,j,o) = Ktmp;
       }
-      mymaxKW = PetscMax(mymaxKW, result(i,j,o) * Wstag(i,j,o));
+      mymaxKW = std::max(mymaxKW, result(i,j,o) * Wstag(i,j,o));
     }
   }
 
@@ -618,9 +618,9 @@ void RoutingHydrology::adaptive_for_W_evolution(double t_current, double t_end, 
   dtDIFFW_result = 1.0/(grid.dx()*grid.dx()) + 1.0/(grid.dy()*grid.dy());
   dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
-  dt_result = PetscMin(t_end - t_current, dtmax);
-  dt_result = PetscMin(dt_result, dtCFL_result);
-  dt_result = PetscMin(dt_result, dtDIFFW_result);
+  dt_result = std::min(t_end - t_current, dtmax);
+  dt_result = std::min(dt_result, dtCFL_result);
+  dt_result = std::min(dt_result, dtDIFFW_result);
 }
 
 
@@ -652,7 +652,7 @@ void RoutingHydrology::raw_update_Wtil(double hdt) {
     const int i = p.i(), j = p.j();
 
     Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
-    Wtilnew(i,j) = PetscMin(PetscMax(0.0, Wtilnew(i,j)), tillwat_max);
+    Wtilnew(i,j) = std::min(std::max(0.0, Wtilnew(i,j)), tillwat_max);
   }
 }
 

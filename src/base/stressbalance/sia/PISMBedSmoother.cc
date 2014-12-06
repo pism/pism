@@ -231,7 +231,7 @@ void BedSmoother::compute_coefficients_on_proc0() {
             if ((i+r >= 0) && (i+r < (int)grid.Mx()) && (j+s >= 0) && (j+s < (int)grid.My())) {
               // tl is elevation of local topography at a pt in patch
               const double tl  = b0[i+r][j+s] - topgs;
-              maxtltemp = PetscMax(maxtltemp, tl);
+              maxtltemp = std::max(maxtltemp, tl);
               // accumulate 2nd, 3rd, and 4th powers with only 3 mults
               const double tl2 = tl * tl;
               sum2 += tl2;
@@ -395,7 +395,7 @@ void BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
     if (H > maxtl(i, j)) { 
       // thickness exceeds maximum variation in patch of local topography,
       // so ice buries local topography; note maxtl >= 0 always
-      const double Hinv = 1.0 / PetscMax(H, 1.0);
+      const double Hinv = 1.0 / std::max(H, 1.0);
       double omega = 1.0 + Hinv*Hinv * (C2(i, j) + Hinv * (C3(i, j) + Hinv*C4(i, j)));
       if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
         throw RuntimeError::formatted("omega is negative for i=%d, j=%d\n"

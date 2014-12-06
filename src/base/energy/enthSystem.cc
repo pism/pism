@@ -153,8 +153,8 @@ double enthSystemCtx::compute_lambda() {
     if (m_Enth[k] > m_Enth_s[k]) { // lambda = 0 if temperate ice present in column
       result = 0.0;
     } else {
-      const double denom = (PetscAbs(m_w[k]) + epsilon) * m_ice_density * m_ice_c * m_dz;
-      result = PetscMin(result, 2.0 * m_ice_k / denom);
+      const double denom = (fabs(m_w[k]) + epsilon) * m_ice_density * m_ice_c * m_dz;
+      result = std::min(result, 2.0 * m_ice_k / denom);
     }
   }
   return result;

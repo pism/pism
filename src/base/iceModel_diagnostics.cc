@@ -620,7 +620,7 @@ void IceModel_enthalpysurf::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    (*result)(i,j) = PetscMax(model->ice_thickness(i,j) - 1.0, 0.0);
+    (*result)(i,j) = std::max(model->ice_thickness(i,j) - 1.0, 0.0);
   }
 
   model->Enth3.getSurfaceValues(*result, *result);  // z=0 slice
@@ -937,8 +937,8 @@ void IceModel_tempicethk_basal::compute(IceModelVec* &output) {
         (EC->getEnthalpyCTS(pressure_0) - Enth[k-1]) / (slope1 - slope2);
 
       // check if the resulting thickness is valid:
-      (*result)(i,j) = PetscMax((*result)(i,j), grid.zlevels[k-1]);
-      (*result)(i,j) = PetscMin((*result)(i,j), grid.zlevels[k]);
+      (*result)(i,j) = std::max((*result)(i,j), grid.zlevels[k-1]);
+      (*result)(i,j) = std::min((*result)(i,j), grid.zlevels[k]);
     } else {
       throw RuntimeError::formatted("Linear interpolation of the thickness of the basal temperate layer failed:\n"
                                     "(i=%d, j=%d, k=%d, ks=%d)\n",

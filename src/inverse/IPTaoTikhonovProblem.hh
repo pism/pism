@@ -345,7 +345,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   
   if (sumNorm < m_tikhonov_atol) {
     TaoSetConvergedReason(tao, TAO_CONVERGED_GATOL);
-  } else if (sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm)) {
+  } else if (sumNorm < m_tikhonov_rtol*std::max(designNorm,stateNorm)) {
     TaoSetConvergedReason(tao,TAO_CONVERGED_USER);
   } else {
     TaoDefaultConvergenceTest(tao,NULL);
