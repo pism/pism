@@ -126,17 +126,6 @@ void  IceModelVec::destroy() {
     m_v = NULL;
   }
 
-  // map-plane viewers:
-  {
-    std::map<std::string,PetscViewer>::iterator i;
-    for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
-      if (i->second != NULL) {
-        ierr = PetscViewerDestroy(&i->second);
-        PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
-      }
-    }
-  }
-
   assert(m_access_counter == 0);
 }
 

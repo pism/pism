@@ -23,6 +23,7 @@
 #include <petscksp.h>
 
 #include "error_handling.hh"
+#include "Viewer.hh"
 
 namespace pism {
 
@@ -98,7 +99,7 @@ protected:
     m_default_pc_failure_max_count;
   
   bool view_nuh;
-  PetscViewer nuh_viewer;
+  Viewer::Ptr nuh_viewer;
   int nuh_viewer_size;
 
   bool dump_system_matlab;

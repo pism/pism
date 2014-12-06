@@ -176,11 +176,9 @@ public:
   void ownership_ranges_from_options();
   void compute_nprocs();
   void compute_ownership_ranges();
-  PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
-  PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
   double radius(int i, int j);
   PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
   double convert(double, const std::string &, const std::string &) const;

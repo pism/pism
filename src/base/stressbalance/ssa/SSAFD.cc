@@ -96,7 +96,6 @@ SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   // The nuH viewer:
   view_nuh = false;
   nuh_viewer_size = 300;
-  nuh_viewer = NULL;
 
   dump_system_matlab = false;
 
@@ -1601,11 +1600,12 @@ void SSAFD::update_nuH_viewers() {
     }
   }
 
-  if (nuh_viewer == NULL) {
-    grid.create_viewer(nuh_viewer_size, "nuH", nuh_viewer);
+  if (not nuh_viewer) {
+    nuh_viewer.reset(new Viewer(grid.com, "nuH", nuh_viewer_size,
+                                grid.Lx, grid.Ly));
   }
 
-  tmp.view(nuh_viewer, NULL);
+  tmp.view(nuh_viewer, Viewer::Ptr());
 }
 
 void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,

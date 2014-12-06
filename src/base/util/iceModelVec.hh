@@ -27,6 +27,7 @@
 #include "pism_const.hh"
 
 #include "IceGrid.hh"
+#include "Viewer.hh"
 
 namespace pism {
 
@@ -259,7 +260,7 @@ protected:
 
   //! It is a map, because a temporary IceModelVec can be used to view
   //! different quantities
-  mutable std::map<std::string,PetscViewer> map_viewers;
+  mutable std::map<std::string,Viewer::Ptr> map_viewers;
 
   mutable void *array;  // will be cast to double** or double*** in derived classes
 
@@ -341,7 +342,7 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2() : IceModelVec() {}
   virtual void view(int viewer_size) const;
-  virtual void view(PetscViewer v1, PetscViewer v2) const;
+  virtual void view(Viewer::Ptr v1, Viewer::Ptr v2) const;
   // component-wise access:
   virtual void get_component(unsigned int n, IceModelVec2S &result) const;
   virtual void set_component(unsigned int n, IceModelVec2S &source);

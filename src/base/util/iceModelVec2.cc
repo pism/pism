@@ -332,7 +332,7 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
 //! \brief View a 2D field.
 void IceModelVec2::view(int viewer_size) const {
-  PetscViewer viewers[2] = {NULL, NULL};
+  Viewer::Ptr viewers[2];
 
   if (m_dof > 2) {
     throw RuntimeError("dof > 2 is not supported");
@@ -344,8 +344,9 @@ void IceModelVec2::view(int viewer_size) const {
       units = m_metadata[j].get_string("glaciological_units"),
       title = long_name + " (" + units + ")";
 
-    if (map_viewers[c_name] == NULL) {
-      grid->create_viewer(viewer_size, title, map_viewers[c_name]);
+    if (not map_viewers[c_name]) {
+      map_viewers[c_name].reset(new Viewer(grid->com, title, viewer_size,
+                                           grid->Lx, grid->Ly));
     }
 
     viewers[j] = map_viewers[c_name];
@@ -357,7 +358,7 @@ void IceModelVec2::view(int viewer_size) const {
 //! \brief View a 2D vector field using existing PETSc viewers.
 //! Allocates and de-allocates g2, the temporary global vector; performance
 //! should not matter here.
-void IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
+void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -367,7 +368,13 @@ void IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
 
   DMGetGlobalVector(*da2, &tmp);
 
-  PetscViewer viewers[2] = {v1, v2};
+  PetscViewer viewers[2] = {NULL, NULL};
+  if (v1) {
+    viewers[0] = **v1;
+  }
+  if (v2) {
+    viewers[1] = **v2;
+  }
 
   for (unsigned int i = 0; i < m_dof; ++i) {
     std::string long_name = m_metadata[i].get_string("long_name"),

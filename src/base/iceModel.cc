@@ -155,15 +155,6 @@ IceModel::~IceModel() {
     delete (j++)->second;
   }
 
-  // de-allocate viewers
-  std::map<std::string,PetscViewer>::iterator k = viewers.begin();
-  while (k != viewers.end()) {
-    if ((*k).second != NULL) {
-      PetscViewerDestroy(&(*k).second);
-      ++k;
-    }
-  }
-
   delete stress_balance;
 
   if (external_ocean_model == false) {

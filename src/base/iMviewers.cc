@@ -40,11 +40,11 @@ void IceModel::update_viewers() {
 
   // map-plane viewers
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
-    IceModelVec *v = variables.get(*i);
+    IceModelVec *v = NULL;
     bool de_allocate = false;
 
     // if not found, try to compute:
-    if (v == NULL) {
+    if (not variables.is_available(*i)) {
       de_allocate = true;
       Diagnostic *diag = diagnostics[*i];
 
@@ -53,6 +53,8 @@ void IceModel::update_viewers() {
       } else {
         v = NULL;
       }
+    } else {
+      v = variables.get(*i);
     }
 
     // if still not found, ignore
@@ -68,11 +70,11 @@ void IceModel::update_viewers() {
 
     if (v->get_ndof() == 1) {    // scalar fields
       std::string name = v->metadata().get_string("short_name");
-      PetscViewer viewer = viewers[name];
+      Viewer::Ptr viewer = viewers[name];
 
-      if (viewer == NULL) {
-        grid.create_viewer(viewer_size, name, viewer);
-        viewers[name] = viewer;
+      if (not viewer) {
+        viewers[name].reset(new Viewer(grid.com, name, viewer_size, grid.Lx, grid.Ly));
+        viewer = viewers[name];
       }
 
       IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
@@ -80,22 +82,24 @@ void IceModel::update_viewers() {
         throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
       }
 
-      v2d->view(viewer, NULL);
+      v2d->view(viewer, Viewer::Ptr());
 
     } else if (v->get_ndof() == 2) { // vector fields
-      std::string name_1 = v->metadata().get_string("short_name"),
+      std::string
+        name_1 = v->metadata(0).get_string("short_name"),
         name_2 = v->metadata(1).get_string("short_name");
-      PetscViewer v1 = viewers[name_1],
+      Viewer::Ptr
+        v1 = viewers[name_1],
         v2 = viewers[name_2];
 
-      if (v1 == NULL) {
-        grid.create_viewer(viewer_size, name_1, v1);
-        viewers[name_1] = v1;
+      if (not v1) {
+        viewers[name_1].reset(new Viewer(grid.com, name_1, viewer_size, grid.Lx, grid.Ly));
+        v1 = viewers[name_1];
       }
 
-      if (v2 == NULL) {
-        grid.create_viewer(viewer_size, name_2, v2);
-        viewers[name_2] = v2;
+      if (not v2) {
+        viewers[name_2].reset(new Viewer(grid.com, name_2, viewer_size, grid.Lx, grid.Ly));
+        v2 = viewers[name_2];
       }
 
       IceModelVec2 *v2d = dynamic_cast<IceModelVec2*>(v);

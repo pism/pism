@@ -496,7 +496,7 @@ protected:
   virtual void update_viewers();
   std::set<std::string> map_viewers, slice_viewers;
   int     id, jd;            // sounding indexes
-  std::map<std::string,PetscViewer> viewers;
+  std::map<std::string,Viewer::Ptr> viewers;
 
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
