@@ -108,9 +108,11 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   compute_vertical_levels();
 
   std::string calendar;
-  PetscErrorCode ierr = init_calendar(calendar);
-  if (ierr != 0) {
-    throw RuntimeError("Calendar initialization failed.");
+  try {
+    calendar = init_calendar();
+  } catch (RuntimeError &e) {
+    e.add_context("initializing the calendar");
+    throw;
   }
 
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
@@ -179,19 +181,17 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
  *
  * @return 0 on success
  */
-PetscErrorCode IceGrid::init_calendar(std::string &result) {
-  PetscErrorCode ierr;
-
+std::string IceGrid::init_calendar() {
   // Set the default calendar using the config. parameter or the
   // "-calendar" option:
-  result = config.get_string("calendar");
+  std::string result = config.get_string("calendar");
 
   // Check if -time_file was set and override the setting above if the
   // "calendar" attribute is found.
   std::string time_file_name;
   bool time_file_set;
-  ierr = OptionsString("-time_file", "name of the file specifying the run duration",
-                       time_file_name, time_file_set); CHKERRQ(ierr);
+  OptionsString("-time_file", "name of the file specifying the run duration",
+                time_file_name, time_file_set);
   if (time_file_set) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
 
@@ -208,8 +208,7 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
     }
     nc.close();
   }
-
-  return 0;
+  return result;
 }
 
 IceGrid::~IceGrid() {
@@ -240,7 +239,7 @@ which may not even be a grid created by this routine).
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-PetscErrorCode  IceGrid::compute_vertical_levels() {
+void  IceGrid::compute_vertical_levels() {
 
   if (Mz < 2) {
     throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
@@ -280,21 +279,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     throw RuntimeError("IceGrid::compute_ice_vertical_levels(): ice_vertical_spacing can not be UNKNOWN.");
   }
 
-  PetscErrorCode ierr = compute_fine_vertical_grid(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-//! Print the vertical levels in `zlevels[]` to stdout.
-PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
-  verbPrintf(verbosity,com,
-             "    vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz);
-  for (unsigned int k=0; k < Mz; k++) {
-    verbPrintf(verbosity,com," %5.4f,",zlevels[k]);
-  }
-  verbPrintf(verbosity,com,"\n");
-  return 0;
+  compute_fine_vertical_grid();
 }
 
 
@@ -323,23 +308,20 @@ unsigned int IceGrid::kBelowHeight(double height) {
 /*! The standard for equal vertical spacing in the ice is \f$10^{-8}\f$ m max
   difference between `dzMIN` and `dzMAX`.
  */
-PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
-
-  // ice:
+void IceGrid::get_dzMIN_dzMAX_spacingtype() {
   dzMIN = Lz;
   dzMAX = 0.0;
   for (unsigned int k = 0; k < Mz - 1; k++) {
     const double mydz = zlevels[k+1] - zlevels[k];
-    dzMIN = std::min(mydz,dzMIN);
-    dzMAX = std::max(mydz,dzMAX);
+    dzMIN = std::min(mydz, dzMIN);
+    dzMAX = std::max(mydz, dzMAX);
   }
+
   if (fabs(dzMAX - dzMIN) <= 1.0e-8) {
     ice_vertical_spacing = EQUAL;
   } else {
     ice_vertical_spacing = UNKNOWN;
   }
-
-  return 0;
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
@@ -487,7 +469,7 @@ void IceGrid::ownership_ranges_from_options() {
   \note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
   order: x in rows, y in columns, indexing as array[x][y].
  */
-PetscErrorCode IceGrid::allocate() {
+void IceGrid::allocate() {
 
   check_parameters();
 
@@ -495,7 +477,7 @@ PetscErrorCode IceGrid::allocate() {
 
   ownership_ranges_from_options();
 
-  unsigned int max_stencil_width = (int)config.get("grid_max_stencil_width");
+  unsigned int max_stencil_width = (unsigned int)config.get("grid_max_stencil_width");
 
   try {
     PISMDM::Ptr tmp = this->get_dm(1, max_stencil_width);
@@ -511,32 +493,30 @@ PetscErrorCode IceGrid::allocate() {
   DMDALocalInfo info;
   DMDAGetLocalInfo(*m_dm_scalar_global, &info);
   // this continues the fundamental transpose
-  m_xs = info.ys; m_xm = info.ym;
-  m_ys = info.xs; m_ym = info.xm;
-
-  return 0;
+  m_xs = info.ys;
+  m_xm = info.ym;
+  m_ys = info.xs;
+  m_ym = info.xm;
 }
 
 //! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
-PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
+void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
 
   if (new_zlevels.size() < 2) {
     throw RuntimeError("IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
 
-  if ((!is_increasing(new_zlevels)) || (fabs(new_zlevels[0]) > 1.0e-10)) {
+  if ((not is_increasing(new_zlevels)) || (fabs(new_zlevels[0]) > 1.0e-10)) {
     throw RuntimeError("IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
-  Mz  =  (int)new_zlevels.size();
-  Lz  =  new_zlevels.back();
+  Mz = (unsigned int)new_zlevels.size();
+  Lz = new_zlevels.back();
 
-  zlevels  = new_zlevels;
+  zlevels = new_zlevels;
 
   get_dzMIN_dzMAX_spacingtype();
   compute_fine_vertical_grid();
-
-  return 0;
 }
 
 
@@ -555,7 +535,7 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 `i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
 Thus we compute  `dx = 2 * Lx / Mx`.
  */
-PetscErrorCode IceGrid::compute_horizontal_spacing() {
+void IceGrid::compute_horizontal_spacing() {
 
   if (periodicity & X_PERIODIC) {
     m_dx = 2.0 * Lx / m_Mx;
@@ -570,8 +550,6 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   }
 
   compute_horizontal_coordinates();
-
-  return 0;
 }
 
 //! Computes fine vertical spacing in the ice.
@@ -588,7 +566,7 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   this to match spacings (see above). The temperature field is extrapolated to
   the extra level using the value from the topmost level.
  */
-PetscErrorCode IceGrid::compute_fine_vertical_grid() {
+void IceGrid::compute_fine_vertical_grid() {
 
   // the smallest of the spacings used in ice and bedrock:
   double my_dz_fine = dzMIN;
@@ -609,13 +587,11 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   // Note that it's allowed to go over Lz.
 
   init_interpolation();
-
-  return 0;
 }
 
 //! Fills arrays ice_storage2fine, ice_fine2storage, bed_storage2fine,
 //! bed_fine2storage with indices of levels that are just below
-PetscErrorCode IceGrid::init_interpolation() {
+void IceGrid::init_interpolation() {
   unsigned int m = 0;
 
   // ice: storage -> fine
@@ -644,13 +620,11 @@ PetscErrorCode IceGrid::init_interpolation() {
 
     ice_fine2storage[k] = m;
   }
-
-  return 0;
 }
 
 //! \brief Computes values of x and y corresponding to the computational grid,
 //! with accounting for periodicity.
-PetscErrorCode IceGrid::compute_horizontal_coordinates() {
+void IceGrid::compute_horizontal_coordinates() {
 
   m_x.resize(m_Mx);
   m_y.resize(m_My);
@@ -687,8 +661,6 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
     }
     m_y[m_My - 1] = y_max;
   }
-
-  return 0;
 }
 
 //! \brief Returns the distance from the point (i,j) to the origin.
@@ -697,7 +669,7 @@ double IceGrid::radius(int i, int j) {
 }
 
 //! \brief Report grid parameters.
-void IceGrid::report_parameters() {
+void IceGrid::report_parameters() const {
 
   verbPrintf(2, com, "computational domain and grid:\n");
 
@@ -764,9 +736,16 @@ void IceGrid::report_parameters() {
 
   }
 
-  verbPrintf(5, com,
-             "  REALLY verbose output on IceGrid:\n");
-  printVertLevels(5);
+  {
+    verbPrintf(5, com,
+               "  REALLY verbose output on IceGrid:\n");
+    verbPrintf(5, com,
+               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz, Lz);
+    for (unsigned int k=0; k < Mz; k++) {
+      verbPrintf(5, com, " %5.4f, ", zlevels[k]);
+    }
+    verbPrintf(5, com, "\n");
+  }
 }
 
 

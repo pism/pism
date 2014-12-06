@@ -160,13 +160,13 @@ public:
   // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
   //                          const std::string &filename);
 
-  void report_parameters();
+  void report_parameters() const;
 
   // only of these two should be called:
-  PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
-  PetscErrorCode compute_vertical_levels();
+  void set_vertical_levels(const std::vector<double> &z_levels);
+  void compute_vertical_levels();
 
-  PetscErrorCode allocate();  // FIXME! allocate in the constructor!
+  void allocate();  // FIXME! allocate in the constructor!
 
   void compute_point_neighbors(double X, double Y,
                                int &i_left, int &i_right,
@@ -175,7 +175,6 @@ public:
 
   void ownership_ranges_from_options();
 
-  PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
   double radius(int i, int j);
   PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
@@ -271,7 +270,6 @@ private:
   unsigned int m_Mx;
   //! number of grid points in the y-direction
   unsigned int m_My;
-
   
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
@@ -287,16 +285,16 @@ private:
   void compute_nprocs();
   void compute_ownership_ranges();
 
-  PetscErrorCode get_dzMIN_dzMAX_spacingtype();
-  PetscErrorCode compute_horizontal_spacing();
-  PetscErrorCode compute_horizontal_coordinates();
-  PetscErrorCode compute_fine_vertical_grid();
-  PetscErrorCode init_interpolation();
+  void get_dzMIN_dzMAX_spacingtype();
+  void compute_horizontal_spacing();
+  void compute_horizontal_coordinates();
+  void compute_fine_vertical_grid();
+  void init_interpolation();
 
   DM create_dm(int da_dof, int stencil_width);
 
   int dm_key(int, int);
-  PetscErrorCode init_calendar(std::string &result);
+  std::string init_calendar();
 
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);
