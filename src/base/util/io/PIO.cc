@@ -624,6 +624,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
     grid->y0 = input.y0;
     grid->Lx = input.Lx;
     grid->Ly = input.Ly;
+    grid->set_vertical_levels(input.z);
 
     grid->time->set_start(input.time);
     grid->time->init(); // re-initialize to take the new start time into account
