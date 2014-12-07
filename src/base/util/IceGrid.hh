@@ -214,6 +214,12 @@ public:
   void set_Ly(double Ly) {m_Ly = Ly;}
   void set_Lz(double Lz) {m_Lz = Lz;}
 
+  double x0() const;
+  double y0() const;
+  // FIXME: remove this
+  void set_x0(double x0) {m_x0 = x0;}
+  void set_y0(double y0) {m_y0 = y0;}
+
   // FIXME: remove this
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
   void set_My(unsigned int My) {m_My = My;}
@@ -242,11 +248,6 @@ public:
   double dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
     dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
 
-  //! x-coordinate of the grid center
-  double x0;
-  //! y-coordinate of the grid center
-  double y0;
-
   // FIXME: this should be moved into a "Context" class
   Time *time;               //!< The time management object (hides calendar computations)
 private:
@@ -273,6 +274,11 @@ private:
   unsigned int m_My;
   //! number of grid points in z-direction in the ice
   unsigned int m_Mz;
+
+  //! x-coordinate of the grid center
+  double m_x0;
+  //! y-coordinate of the grid center
+  double m_y0;
 
   //! half width of the ice model grid in x-direction (m)
   double m_Lx;

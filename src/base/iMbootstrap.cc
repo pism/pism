@@ -126,10 +126,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
              "  rescaling computational box for ice from -boot_file file and\n"
              "    user options to dimensions:\n"
              "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-             (grid.x0 - grid.Lx())/1000.0,
-             (grid.x0 + grid.Lx())/1000.0,
-             (grid.y0 - grid.Ly())/1000.0,
-             (grid.y0 + grid.Ly())/1000.0,
+             (grid.x0() - grid.Lx())/1000.0,
+             (grid.x0() + grid.Lx())/1000.0,
+             (grid.y0() - grid.Ly())/1000.0,
+             (grid.y0() + grid.Ly())/1000.0,
              grid.Lz());
 
   std::string usurf_name;

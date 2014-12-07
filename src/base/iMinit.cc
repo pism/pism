@@ -129,8 +129,8 @@ void IceModel::set_grid_defaults() {
   nc.close();
 
   // Set the grid center and horizontal extent:
-  grid.x0 = input.x0;
-  grid.y0 = input.y0;
+  grid.set_x0(input.x0);
+  grid.set_y0(input.y0);
   grid.set_Lx(input.Lx);
   grid.set_Ly(input.Ly);
 
@@ -238,8 +238,8 @@ void IceModel::set_grid_from_options() {
       throw RuntimeError("-x_range and/or -y_range argument is invalid.");
     }
 
-    grid.x0 = (x_range[0] + x_range[1]) / 2.0;
-    grid.y0 = (y_range[0] + y_range[1]) / 2.0;
+    grid.set_x0((x_range[0] + x_range[1]) / 2.0);
+    grid.set_y0((y_range[0] + y_range[1]) / 2.0);
     grid.set_Lx((x_range[1] - x_range[0]) / 2.0);
     grid.set_Ly((y_range[1] - y_range[0]) / 2.0);
   }

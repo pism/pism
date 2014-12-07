@@ -57,8 +57,8 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   MPI_Comm_size(com, &size);
 
   // The grid in symmetric with respect to zero by default.
-  x0 = 0.0;
-  y0 = 0.0;
+  m_x0 = 0.0;
+  m_y0 = 0.0;
 
   // initialize these data members to get rid of a valgrind warning;
   // correct values will be set in IceGrid::allocate()
@@ -633,8 +633,8 @@ void IceGrid::compute_horizontal_coordinates() {
   // which is not necessarily the same thing as the smallest and
   // largest values of x.
   double
-    x_min = x0 - m_Lx,
-    x_max = x0 + m_Lx;
+    x_min = m_x0 - m_Lx,
+    x_max = m_x0 + m_Lx;
   if (periodicity & X_PERIODIC) {
     for (unsigned int i = 0; i < m_Mx; ++i) {
       m_x[i] = x_min + (i + 0.5) * m_dx;
@@ -648,8 +648,8 @@ void IceGrid::compute_horizontal_coordinates() {
   }
 
   double
-    y_min = y0 - m_Ly,
-    y_max = y0 + m_Ly;
+    y_min = m_y0 - m_Ly,
+    y_max = m_y0 + m_Ly;
   if (periodicity & Y_PERIODIC) {
     for (unsigned int i = 0; i < m_My; ++i) {
       m_y[i] = y_min + (i + 0.5) * m_dy;
@@ -723,7 +723,7 @@ void IceGrid::report_parameters() const {
                m_Lx/1000.0, m_Ly/1000.0, m_Lz);
     verbPrintf(3, com,
                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
-               x0/1000.0, y0/1000.0);
+               m_x0/1000.0, m_y0/1000.0);
     verbPrintf(3, com,
                "            Mx = %d, My = %d, Mz = %d, \n",
                m_Mx, m_My, m_Mz);
@@ -1000,6 +1000,14 @@ double IceGrid::Ly() const {
 
 double IceGrid::Lz() const {
   return m_Lz;
+}
+
+double IceGrid::x0() const {
+  return m_x0;
+}
+
+double IceGrid::y0() const {
+  return m_y0;
 }
 
 } // end of namespace pism
