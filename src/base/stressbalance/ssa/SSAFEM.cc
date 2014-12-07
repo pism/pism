@@ -343,7 +343,7 @@ void SSAFEM::cacheQuadPtValues() {
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
-                                                        &grid.zlevels[0], Enth_q[q]);
+                                                        &(grid.z()[0]), Enth_q[q]);
       }
 
     } // j-loop

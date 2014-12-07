@@ -127,7 +127,7 @@ public:
   NCSpatialVariable(const UnitSystem &system, const std::string &name,
                     IceGrid &g);
   NCSpatialVariable(const UnitSystem &system, const std::string &name,
-                    IceGrid &g, std::vector<double> &zlevels);
+                    IceGrid &g, const std::vector<double> &zlevels);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
   void set_levels(const std::vector<double> &levels);
@@ -171,7 +171,7 @@ private:
   PetscErrorCode define_dimensions(const PIO &nc) const;
 
   void init_internal(const std::string &name, IceGrid &g,
-                     std::vector<double> &z_levels);
+                     const std::vector<double> &z_levels);
 };
 
 //! An internal class for reading, writing and converting time-series.

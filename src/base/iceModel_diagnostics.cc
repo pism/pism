@@ -337,7 +337,7 @@ void IceModel_hardav::compute(IceModelVec* &output) {
     const double H = model->ice_thickness(i,j);
     if (mask.icy(i, j)) {
       (*result)(i,j) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                   &grid.zlevels[0], Eij);
+                                                   &(grid.z()[0]), Eij);
     } else { // put negative value below valid range
       (*result)(i,j) = fillval;
     }
@@ -378,7 +378,7 @@ IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "cts", grid, g.zlevels));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "cts", grid, g.z()));
 
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
             "", "", 0);
@@ -387,7 +387,7 @@ IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, Vars &my_vars)
 void IceModel_cts::compute(IceModelVec* &output) {
 
   // update vertical levels (in case the grid was extended
-  vars[0].set_levels(grid.zlevels);
+  vars[0].set_levels(grid.z());
 
   IceModelVec3 *result = new IceModelVec3;
   result->create(grid, "cts", WITHOUT_GHOSTS);
@@ -443,7 +443,7 @@ IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temp", grid, g.zlevels));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temp", grid, g.z()));
 
   set_attrs("ice temperature", "land_ice_temperature", "K", "K", 0);
   vars[0].set_double("valid_min", 0);
@@ -452,7 +452,7 @@ IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, Vars &my_vars)
 void IceModel_temp::compute(IceModelVec* &output) {
 
   // update vertical levels (in case the grid was extended
-  vars[0].set_levels(grid.zlevels);
+  vars[0].set_levels(grid.z());
 
   IceModelVec3 *result = new IceModelVec3;
   result->create(grid, "temp", WITHOUT_GHOSTS);
@@ -474,7 +474,7 @@ void IceModel_temp::compute(IceModelVec* &output) {
     result->getInternalColumn(i,j,&Tij);
     enthalpy->getInternalColumn(i,j,&Enthij);
     for (unsigned int k=0; k <grid.Mz(); ++k) {
-      const double depth = (*thickness)(i,j) - grid.zlevels[k];
+      const double depth = (*thickness)(i,j) - grid.z(k);
       Tij[k] = model->EC->getAbsTemp(Enthij[k],
                                      model->EC->getPressureFromDepth(depth));
     }
@@ -488,7 +488,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temp_pa", grid, g.zlevels));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temp_pa", grid, g.z()));
 
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
@@ -500,7 +500,7 @@ void IceModel_temp_pa::compute(IceModelVec* &output) {
   double melting_point_temp = grid.config.get("water_melting_point_temperature");
 
   // update vertical levels (in case the grid was extended
-  vars[0].set_levels(grid.zlevels);
+  vars[0].set_levels(grid.z());
 
   IceModelVec3 *result = new IceModelVec3;
   result->create(grid, "temp_pa", WITHOUT_GHOSTS);
@@ -522,7 +522,7 @@ void IceModel_temp_pa::compute(IceModelVec* &output) {
     result->getInternalColumn(i,j,&Tij);
     enthalpy->getInternalColumn(i,j,&Enthij);
     for (unsigned int k=0; k < grid.Mz(); ++k) {
-      const double depth = (*thickness)(i,j) - grid.zlevels[k],
+      const double depth = (*thickness)(i,j) - grid.z(k),
         p = model->EC->getPressureFromDepth(depth);
       Tij[k] = model->EC->getPATemp(Enthij[k], p);
 
@@ -764,7 +764,7 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "liqfrac", grid, g.zlevels));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "liqfrac", grid, g.z()));
 
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
@@ -775,7 +775,7 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, Vars &my_vars)
 void IceModel_liqfrac::compute(IceModelVec* &output) {
 
   // update vertical levels (in case the grid was extended
-  vars[0].set_levels(grid.zlevels);
+  vars[0].set_levels(grid.z());
 
   IceModelVec3 *result = new IceModelVec3;
   result->create(grid, "liqfrac", WITHOUT_GHOSTS);
@@ -829,16 +829,16 @@ void IceModel_tempicethk::compute(IceModelVec* &output) {
       const unsigned int ks = grid.kBelowHeight(ice_thickness);
 
       for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
-        double pressure = model->EC->getPressureFromDepth(ice_thickness - grid.zlevels[k]);
+        double pressure = model->EC->getPressureFromDepth(ice_thickness - grid.z(k));
 
         if (model->EC->isTemperate(Enth[k], pressure)) {
-          temperate_ice_thickness += grid.zlevels[k+1] - grid.zlevels[k];
+          temperate_ice_thickness += grid.z(k+1) - grid.z(k);
         }
       }
 
-      double pressure = model->EC->getPressureFromDepth(ice_thickness - grid.zlevels[ks]);
+      double pressure = model->EC->getPressureFromDepth(ice_thickness - grid.z(ks));
       if (model->EC->isTemperate(Enth[ks], pressure)) {
-        temperate_ice_thickness += ice_thickness - grid.zlevels[ks];
+        temperate_ice_thickness += ice_thickness - grid.z(ks);
       }
 
       (*result)(i,j) = temperate_ice_thickness;
@@ -902,7 +902,7 @@ void IceModel_tempicethk_basal::compute(IceModelVec* &output) {
       k = 0;
 
     while (k <= ks) {         // FIXME issue #15
-      pressure = EC->getPressureFromDepth(thk - grid.zlevels[k]);
+      pressure = EC->getPressureFromDepth(thk - grid.z(k));
 
       if (EC->isTemperate(Enth[k],pressure)) {
         k++;
@@ -920,25 +920,25 @@ void IceModel_tempicethk_basal::compute(IceModelVec* &output) {
     }
 
     // the whole column is temperate (except, possibly, some ice between
-    // zlevels[ks] and the total thickness; we ignore it)
+    // z(ks) and the total thickness; we ignore it)
     if (k == ks + 1) {
-      (*result)(i,j) = grid.zlevels[ks];
+      (*result)(i,j) = grid.z(ks);
       continue;
     }
 
     double
-      pressure_0 = EC->getPressureFromDepth(thk - grid.zlevels[k-1]),
-      dz         = grid.zlevels[k] - grid.zlevels[k-1],
+      pressure_0 = EC->getPressureFromDepth(thk - grid.z(k-1)),
+      dz         = grid.z(k) - grid.z(k-1),
       slope1     = (Enth[k] - Enth[k-1]) / dz,
       slope2     = (EC->getEnthalpyCTS(pressure) - EC->getEnthalpyCTS(pressure_0)) / dz;
 
     if (slope1 != slope2) {
-      (*result)(i,j) = grid.zlevels[k-1] +
+      (*result)(i,j) = grid.z(k-1) +
         (EC->getEnthalpyCTS(pressure_0) - Enth[k-1]) / (slope1 - slope2);
 
       // check if the resulting thickness is valid:
-      (*result)(i,j) = std::max((*result)(i,j), grid.zlevels[k-1]);
-      (*result)(i,j) = std::min((*result)(i,j), grid.zlevels[k]);
+      (*result)(i,j) = std::max((*result)(i,j), grid.z(k-1));
+      (*result)(i,j) = std::min((*result)(i,j), grid.z(k));
     } else {
       throw RuntimeError::formatted("Linear interpolation of the thickness of the basal temperate layer failed:\n"
                                     "(i=%d, j=%d, k=%d, ks=%d)\n",

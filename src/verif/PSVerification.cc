@@ -226,10 +226,10 @@ void PSVerification::update_FG(double time) {
       accum = - ablationRateOutside / secpera;
     } else {
       if (m_testname == 'F') {
-        bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
+        bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       } else {
-        bothexact(time, r, &grid.zlevels[0], Mz, ApforG,
+        bothexact(time, r, &(grid.z()[0]), Mz, ApforG,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       }
     }

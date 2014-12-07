@@ -78,7 +78,7 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
       r = sqrt(PetscSqr(xx) + PetscSqr(yy));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
-      bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
+      bothexact(0.0,r,&(grid.z()[0]),Mz,0.0,
                 &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
 
       for (int k = 0; k < Mz; k++) {
@@ -181,7 +181,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
     enthalpy.getInternalColumn(i,j,&E_ij);
 
     for (unsigned int k=0; k<grid.Mz(); ++k) {
-      double depth = thickness(i,j) - grid.zlevels[k];
+      double depth = thickness(i,j) - grid.z(k);
       E_ij[k] = EC.getEnthPermissive(T_ij[k], 0.0,
                                      EC.getPressureFromDepth(depth));
     }
@@ -235,7 +235,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
       }
     } else {
       r = std::max(r, 1.0); // avoid singularity at origin
-      bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
+      bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
                 &(*thickness)(i, j), dummy5, T, dummy1, dummy2, dummy3, dummy4);
     }
     enthalpy->setInternalColumn(i, j, T);

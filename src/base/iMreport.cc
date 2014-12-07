@@ -118,7 +118,7 @@ void IceModel::ageStats(double ivol, double &gorigfrac) {
       for (int k=1; k<=ks; k++) {
         // ice in segment is original if it is as old as one year less than current time
         if (0.5*(tau[k-1]+tau[k]) > currtime - one_year) {
-          origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
+          origvol += a * 1.0e-3 * (grid.z(k) - grid.z(k-1));
         }
       }
     }
@@ -389,11 +389,11 @@ void IceModel::compute_ice_volume_temperate(double &result) {
       Enth3.getInternalColumn(i,j,&Enth);
       for (int k=0; k<ks; ++k) {
         if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
+          volume += (grid.z(k+1) - grid.z(k)) * cell_area(i,j);
         }
       }
       if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-        volume += (ice_thickness(i,j) - grid.zlevels[ks]) * cell_area(i,j);
+        volume += (ice_thickness(i,j) - grid.z(ks)) * cell_area(i,j);
       }
     }
   }
@@ -421,11 +421,11 @@ void IceModel::compute_ice_volume_cold(double &result) {
       Enth3.getInternalColumn(i,j,&Enth);
       for (int k=0; k<ks; ++k) {
         if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
+          volume += (grid.z(k+1) - grid.z(k)) * cell_area(i,j);
         }
       }
       if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-        volume += (ice_thickness(i,j) - grid.zlevels[ks]) * cell_area(i,j);
+        volume += (ice_thickness(i,j) - grid.z(ks)) * cell_area(i,j);
       }
     }
   }
@@ -571,9 +571,9 @@ void IceModel::compute_ice_enthalpy(double &result) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
       Enth3.getInternalColumn(i,j,&Enth);
       for (int k=0; k<ks; ++k) {
-        enthalpysum += Enth[k] * (grid.zlevels[k+1] - grid.zlevels[k]);
+        enthalpysum += Enth[k] * (grid.z(k+1) - grid.z(k));
       }
-      enthalpysum += Enth[ks] * (ice_thickness(i,j) - grid.zlevels[ks]);
+      enthalpysum += Enth[ks] * (ice_thickness(i,j) - grid.z(ks));
     }
   }
 

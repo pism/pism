@@ -127,7 +127,7 @@ void IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
     double *enthColumn;
     enthalpy.getInternalColumn(i, j, &enthColumn);
     hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
-                                          &(grid->zlevels[0]), enthColumn);
+                                          &(grid->z()[0]), enthColumn);
   }
 
   hardav.update_ghosts();

@@ -276,7 +276,7 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
     const int i = p.i(), j = p.j();
 
     const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-    if (grid.in_null_strip(i, j, stripwidth)) {
+    if (in_null_strip(grid, i, j, stripwidth)) {
       my_nullstriplost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
     }
@@ -567,11 +567,11 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
       result(i,j,1) = 0.0;
     }
 
-    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth)) {
+    if (in_null_strip(grid, i,j, stripwidth) || in_null_strip(grid, i+1,j, stripwidth)) {
       result(i,j,0) = 0.0;
     }
 
-    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth)) {
+    if (in_null_strip(grid, i,j, stripwidth) || in_null_strip(grid, i,j+1, stripwidth)) {
       result(i,j,1) = 0.0;
     }
   }

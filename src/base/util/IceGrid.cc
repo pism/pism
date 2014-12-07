@@ -250,7 +250,7 @@ void  IceGrid::compute_vertical_levels() {
   }
 
   // Fill the levels in the ice:
-  zlevels.resize(m_Mz);
+  m_zlevels.resize(m_Mz);
 
   switch (ice_vertical_spacing) {
   case EQUAL: {
@@ -259,20 +259,20 @@ void  IceGrid::compute_vertical_levels() {
 
     // Equal spacing
     for (unsigned int k=0; k < m_Mz - 1; k++) {
-      zlevels[k] = dzMIN * ((double) k);
+      m_zlevels[k] = dzMIN * ((double) k);
     }
-    zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
+    m_zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
     break;
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < m_Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) m_Mz - 1);
-      zlevels[k] = m_Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
+      m_zlevels[k] = m_Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
     }
-    zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
-    dzMIN = zlevels[1] - zlevels[0];
-    dzMAX = zlevels[m_Mz-1] - zlevels[m_Mz-2];
+    m_zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
+    dzMIN = m_zlevels[1] - m_zlevels[0];
+    dzMAX = m_zlevels[m_Mz-1] - m_zlevels[m_Mz-2];
     break;
   }
   default:
@@ -297,7 +297,7 @@ unsigned int IceGrid::kBelowHeight(double height) {
   }
 
   unsigned int mcurr = 0;
-  while (zlevels[mcurr+1] < height) {
+  while (m_zlevels[mcurr+1] < height) {
     mcurr++;
   }
   return mcurr;
@@ -312,7 +312,7 @@ void IceGrid::get_dzMIN_dzMAX_spacingtype() {
   dzMIN = m_Lz;
   dzMAX = 0.0;
   for (unsigned int k = 0; k < m_Mz - 1; k++) {
-    const double mydz = zlevels[k+1] - zlevels[k];
+    const double mydz = m_zlevels[k+1] - m_zlevels[k];
     dzMIN = std::min(mydz, dzMIN);
     dzMAX = std::max(mydz, dzMAX);
   }
@@ -513,7 +513,7 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   m_Mz = (unsigned int)new_zlevels.size();
   m_Lz = new_zlevels.back();
 
-  zlevels = new_zlevels;
+  m_zlevels = new_zlevels;
 
   get_dzMIN_dzMAX_spacingtype();
   compute_fine_vertical_grid();
@@ -603,7 +603,7 @@ void IceGrid::init_interpolation() {
       continue;
     }
 
-    while (zlevels[m + 1] < zlevels_fine[k]) {
+    while (m_zlevels[m + 1] < zlevels_fine[k]) {
       m++;
     }
 
@@ -614,7 +614,7 @@ void IceGrid::init_interpolation() {
   ice_fine2storage.resize(m_Mz);
   m = 0;
   for (unsigned int k = 0; k < m_Mz; k++) {
-    while (m < Mz_fine - 1 && zlevels_fine[m + 1] < zlevels[k]) {
+    while (m < Mz_fine - 1 && zlevels_fine[m + 1] < m_zlevels[k]) {
       m++;
     }
 
@@ -742,7 +742,7 @@ void IceGrid::report_parameters() const {
     verbPrintf(5, com,
                "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", m_Mz, m_Lz);
     for (unsigned int k=0; k < m_Mz; k++) {
-      verbPrintf(5, com, " %5.4f, ", zlevels[k]);
+      verbPrintf(5, com, " %5.4f, ", m_zlevels[k]);
     }
     verbPrintf(5, com, "\n");
   }
@@ -972,6 +972,14 @@ const std::vector<double>& IceGrid::y() const {
 
 double IceGrid::y(size_t i) const {
   return m_y[i];
+}
+
+const std::vector<double>& IceGrid::z() const {
+  return m_zlevels;
+}
+
+double IceGrid::z(size_t i) const {
+  return m_zlevels[i];
 }
 
 double IceGrid::dx() const {

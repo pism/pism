@@ -1228,7 +1228,7 @@ void SSAFD::compute_hardav_staggered() {
       }
 
       hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                    &grid.zlevels[0], &E[0]);
+                                                    &(grid.z()[0]), &E[0]);
     } // o
   }     // loop over points
 

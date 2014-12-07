@@ -33,7 +33,7 @@ static double p4(double x) {
   return 24.0 + x*(-24.0 + x*(12.0 + x*(-4.0 + x)));
 }
 
-int bothexact(double t, double r, double *z, int Mz, double Cp,
+int bothexact(double t, double r, const double *z, int Mz, double Cp,
 	      double *Hreturn, double *M, double *TT,
 	      double *Ureturn, double *wreturn, 
               double *Sigreturn, double *Sigc) {

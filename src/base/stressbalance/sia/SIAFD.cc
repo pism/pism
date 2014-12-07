@@ -622,7 +622,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
 
       double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
       for (int k = 0; k <= ks; ++k) {
-        double depth = thk - grid.zlevels[k]; // FIXME issue #15
+        double depth = thk - grid.z(k); // FIXME issue #15
         // pressure added by the ice (i.e. pressure difference between the
         // current level and the top of the column)
         const double pressure = EC.getPressureFromDepth(depth);
@@ -639,12 +639,12 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
         delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
         if (k > 0) { // trapezoidal rule
-          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+          const double dz = grid.z(k) - grid.z(k-1);
           Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
       }
       // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - grid.zlevels[ks];
+      const double dz = thk - grid.z(ks);
       Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
       // Override diffusivity at the edges of the domain. (At these
@@ -741,15 +741,15 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
       double Dfoffset = 0.0;
 
       for (unsigned int k = 1; k <= ks; ++k) {
-        double depth = thk - grid.zlevels[k];
+        double depth = thk - grid.z(k);
 
-        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+        const double dz = grid.z(k) - grid.z(k-1);
         // trapezoidal rule
         Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
       }
 
       // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - grid.zlevels[ks];
+      const double dz = thk - grid.z(ks);
       Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
       D_stag(i,j,o) = Dfoffset;
@@ -808,7 +808,7 @@ void SIAFD::compute_I() {
       I_ij[0] = 0.0;
       double I_current = 0.0;
       for (unsigned int k = 1; k <= ks; ++k) {
-        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+        const double dz = grid.z(k) - grid.z(k-1);
         // trapezoidal rule
         I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
         I_ij[k] = I_current;

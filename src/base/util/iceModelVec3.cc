@@ -450,7 +450,7 @@ void  IceModelVec3::create(IceGrid &my_grid, const std::string &my_name, IceMode
                                      unsigned int stencil_width) {
 
   IceModelVec3D::allocate(my_grid, my_name, ghostedp,
-                          my_grid.zlevels, stencil_width);
+                          my_grid.z(), stencil_width);
 }
 
 } // end of namespace pism

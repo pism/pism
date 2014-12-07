@@ -99,7 +99,7 @@ void IceRegionalModel::set_no_model_strip(double strip) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (grid.in_null_strip(i, j, strip) == true) {
+    if (in_null_strip(grid, i, j, strip) == true) {
       no_model_mask(i, j) = 1;
     } else {
       no_model_mask(i, j) = 0;

@@ -353,7 +353,7 @@ void IceModel::putTempAtDepth() {
       const double mm = climatic_mass_balance(i,j);
       if (mm <= 0.0) { // negative or zero surface mass balance case: linear
         for (unsigned int k = 0; k < ks; k++) {
-          const double z = grid.zlevels[k],
+          const double z = grid.z(k),
             Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
           T[k] = gg / ice_k * (HH - z) + Ts;
           T[k] = std::min(Tpmp,T[k]);
@@ -363,7 +363,7 @@ void IceModel::putTempAtDepth() {
           gamma0 = sqrt(mm * HH / (2.0 * KK));
 
         for (unsigned int k = 0; k < ks; k++) {
-          const double z = grid.zlevels[k],
+          const double z = grid.z(k),
             Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
           T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
           T[k] = std::min(Tpmp,T[k]);
@@ -373,7 +373,7 @@ void IceModel::putTempAtDepth() {
       const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
         alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
       for (unsigned int k = 0; k < ks; k++) {
-        const double depth = HH - grid.zlevels[k],
+        const double depth = HH - grid.z(k),
           Tpmp = melting_point_temp - beta_CC_grad * depth,
           d2 = depth * depth;
         T[k] = std::min(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
@@ -388,7 +388,7 @@ void IceModel::putTempAtDepth() {
     // convert to enthalpy if that's what we are calculating
     if (do_cold == false) {
       for (unsigned int k = 0; k < grid.Mz(); ++k) {
-        const double depth = HH - grid.zlevels[k];
+        const double depth = HH - grid.z(k);
         const double pressure = EC->getPressureFromDepth(depth);
         // reuse T to store enthalpy; assume that the ice is cold
         T[k]= EC->getEnthPermissive(T[k], 0.0, pressure);

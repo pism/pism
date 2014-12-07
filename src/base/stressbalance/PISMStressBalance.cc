@@ -268,7 +268,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
       v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
       const double new_integrand = u_x + v_y;
 
-      const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+      const double dz = grid.z(k) - grid.z(k-1);
 
       w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
@@ -451,7 +451,7 @@ void StressBalance::compute_volumetric_strain_heating() {
 
     for (int k = 0; k <= ks; ++k) {
       double dz,
-        pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
+        pressure = EC.getPressureFromDepth(H - grid.z(k)),
         B        = flow_law->hardness_parameter(E_ij[k], pressure);
 
       double u_z = 0.0, v_z = 0.0,
@@ -461,12 +461,12 @@ void StressBalance::compute_volumetric_strain_heating() {
         v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
 
       if (k > 0) {
-        dz = grid.zlevels[k+1] - grid.zlevels[k-1];
+        dz = grid.z(k+1) - grid.z(k-1);
         u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
         v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
       } else {
         // use one-sided differences for u_z and v_z on the bottom level
-        dz = grid.zlevels[1] - grid.zlevels[0];
+        dz = grid.z(1) - grid.z(0);
         u_z = (u_ij[1] - u_ij[0]) / dz;
         v_z = (v_ij[1] - v_ij[0]) / dz;
       }

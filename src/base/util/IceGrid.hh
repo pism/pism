@@ -196,6 +196,9 @@ public:
   const std::vector<double>& y() const;
   double y(size_t i) const;
 
+  const std::vector<double>& z() const;
+  double z(size_t i) const;
+
   double dx() const;
   double dy() const;
 
@@ -219,15 +222,13 @@ public:
   Profiling profiling;
 
   const Config &config;
-  MPI_Comm    com;
+  MPI_Comm com;
   // int to match types used by MPI
   int rank, size;
 
-  std::vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
-
   // Fine vertical grid and the interpolation setup:
   std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
-  double   dz_fine;                    //!< spacing of the fine vertical grid
+  double dz_fine;                    //!< spacing of the fine vertical grid
   unsigned int Mz_fine;          //!< number of levels of the fine vertical grid in the ice
 
   // Array ice_storage2fine contains indices of the ice storage vertical grid
@@ -241,47 +242,45 @@ public:
   double dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
     dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
 
-  double x0,               //!< x-coordinate of the grid center
-    y0;                         //!< y-coordinate of the grid center
+  //! x-coordinate of the grid center
+  double x0;
+  //! y-coordinate of the grid center
+  double y0;
 
+  // FIXME: this should be moved into a "Context" class
   Time *time;               //!< The time management object (hides calendar computations)
-
-  //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
-  //! meters around the edge of the computational domain.
-  inline bool in_null_strip(int i, int j, double strip_width) {
-    if (strip_width < 0.0) {
-      return false;
-    }
-    return (m_x[i] <= m_x[0] + strip_width || m_x[i] >= m_x[m_Mx-1] - strip_width ||
-            m_y[j] <= m_y[0] + strip_width || m_y[j] >= m_y[m_My-1] - strip_width);
-  }
 private:
   unsigned int m_Nx, //!< number of processors in the x-direction
     m_Ny;      //!< number of processors in the y-direction
 
-  std::vector<PetscInt> m_procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
-    m_procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
+  //! @brief array containing lenghts (in the x-direction) of processor sub-domains
+  std::vector<PetscInt> m_procs_x;
+  //! @brief array containing lenghts (in the y-direction) of processor sub-domains
+  std::vector<PetscInt> m_procs_y;
 
   std::vector<double> m_x,             //!< x-coordinates of grid points
     m_y;                          //!< y-coordinates of grid points
 
+  //! vertical grid levels in the ice; correspond to the storage grid
+  std::vector<double> m_zlevels;
+
   int m_xs, m_xm, m_ys, m_ym;
   double m_dx,               //!< horizontal grid spacing
     m_dy;                    //!< horizontal grid spacing
-  //! number of grid points in the x-direction  
+  //! number of grid points in the x-direction
   unsigned int m_Mx;
   //! number of grid points in the y-direction
   unsigned int m_My;
   //! number of grid points in z-direction in the ice
   unsigned int m_Mz;
 
-  //! half width of the ice model grid in x-direction (m)  
+  //! half width of the ice model grid in x-direction (m)
   double m_Lx;
   //! half width of the ice model grid in y-direction (m)
   double m_Ly;
   //! max extent of the ice in z-direction (m)
   double m_Lz;
-  
+
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
@@ -312,6 +311,16 @@ private:
   IceGrid(IceGrid const &);
   IceGrid & operator=(IceGrid const &);
 };
+
+//! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
+//! meters around the edge of the computational domain.
+inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width) {
+  return (strip_width >= 0.0                               &&
+          (grid.x(i)  <= grid.x(0) + strip_width           ||
+           grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
+           grid.y(j)  <= grid.y(0) + strip_width           ||
+           grid.y(j)  >= grid.y(grid.My()-1) - strip_width));
+}
 
 /** Iterator class for traversing the grid, including ghost points.
  *
