@@ -327,8 +327,9 @@ int main(int argc, char *argv[]) {
 
     IceGrid grid(com, config);
 
-    grid.Lx = grid.Ly = 900e3;
-    grid.Lz = 4000;
+    grid.set_Lx(900e3);
+    grid.set_Ly(grid.Lx());
+    grid.set_Lz(4000.0);
     grid.set_Mx(61);
     grid.set_My(61);
     grid.set_Mz(61);

@@ -346,7 +346,7 @@ void IceModelVec2::view(int viewer_size) const {
 
     if (not map_viewers[c_name]) {
       map_viewers[c_name].reset(new Viewer(grid->com, title, viewer_size,
-                                           grid->Lx, grid->Ly));
+                                           grid->Lx(), grid->Ly()));
     }
 
     viewers[j] = map_viewers[c_name];

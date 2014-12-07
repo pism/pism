@@ -61,10 +61,10 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // that the grid is cell-centered, so edge of the domain is half of
   // the grid spacing away from grid points at the edge.
   const double
-    x_min = grid.x0 - grid.Lx,
-    x_max = grid.x0 + grid.Lx,
-    y_min = grid.y0 - grid.Ly,
-    y_max = grid.y0 + grid.Ly;
+    x_min = grid.x0 - grid.Lx(),
+    x_max = grid.x0 + grid.Lx(),
+    y_min = grid.y0 - grid.Ly(),
+    y_max = grid.y0 + grid.Ly();
   const double
     input_x_min = input.x0 - input.Lx,
     input_x_max = input.x0 + input.Lx,

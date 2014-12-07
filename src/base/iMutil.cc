@@ -206,12 +206,12 @@ void IceModel::check_maximum_thickness() {
   double H_min, H_max;
 
   ice_thickness.range(H_min, H_max);
-  if (grid.Lz >= H_max) {
+  if (grid.Lz() >= H_max) {
     return;
   }
 
   throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height of the computational box (%7.4f m).",
-                                H_max, grid.Lz);
+                                H_max, grid.Lz());
 }
 
 

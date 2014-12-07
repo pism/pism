@@ -91,9 +91,9 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
                                   word.c_str());
   }
 
-  Lx  = config.get("grid_Lx");
-  Ly  = config.get("grid_Ly");
-  Lz  = config.get("grid_Lz");
+  m_Lx  = config.get("grid_Lx");
+  m_Ly  = config.get("grid_Ly");
+  m_Lz  = config.get("grid_Lz");
 
   m_lambda = config.get("grid_lambda");
 
@@ -142,9 +142,9 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
 
   Ptr result(new IceGrid(c, config));
 
-  result->Lx = my_Lx;
-  result->Ly = my_Ly;
-  result->Lz = my_Lz;
+  result->m_Lx = my_Lx;
+  result->m_Ly = my_Ly;
+  result->m_Lz = my_Lz;
   result->m_Mx = Mx;
   result->m_My = My;
   result->periodicity = p;
@@ -245,7 +245,7 @@ void  IceGrid::compute_vertical_levels() {
     throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
   }
 
-  if (Lz <= 0) {
+  if (m_Lz <= 0) {
     throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Lz must be positive.");
   }
 
@@ -254,23 +254,23 @@ void  IceGrid::compute_vertical_levels() {
 
   switch (ice_vertical_spacing) {
   case EQUAL: {
-    dzMIN = Lz / ((double) m_Mz - 1);
+    dzMIN = m_Lz / ((double) m_Mz - 1);
     dzMAX = dzMIN;
 
     // Equal spacing
     for (unsigned int k=0; k < m_Mz - 1; k++) {
       zlevels[k] = dzMIN * ((double) k);
     }
-    zlevels[m_Mz - 1] = Lz;  // make sure it is exactly equal
+    zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
     break;
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < m_Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) m_Mz - 1);
-      zlevels[k] = Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
+      zlevels[k] = m_Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
     }
-    zlevels[m_Mz - 1] = Lz;  // make sure it is exactly equal
+    zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
     dzMAX = zlevels[m_Mz-1] - zlevels[m_Mz-2];
     break;
@@ -290,9 +290,9 @@ unsigned int IceGrid::kBelowHeight(double height) {
                 "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", rank, height);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
-  if (height > Lz + 1.0e-6) {
+  if (height > m_Lz + 1.0e-6) {
     PetscPrintf(PETSC_COMM_SELF,
-                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", rank, height, Lz);
+                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", rank, height, m_Lz);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
 
@@ -309,7 +309,7 @@ unsigned int IceGrid::kBelowHeight(double height) {
   difference between `dzMIN` and `dzMAX`.
  */
 void IceGrid::get_dzMIN_dzMAX_spacingtype() {
-  dzMIN = Lz;
+  dzMIN = m_Lz;
   dzMAX = 0.0;
   for (unsigned int k = 0; k < m_Mz - 1; k++) {
     const double mydz = zlevels[k+1] - zlevels[k];
@@ -511,7 +511,7 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   }
 
   m_Mz = (unsigned int)new_zlevels.size();
-  Lz = new_zlevels.back();
+  m_Lz = new_zlevels.back();
 
   zlevels = new_zlevels;
 
@@ -538,15 +538,15 @@ Thus we compute  `dx = 2 * Lx / Mx`.
 void IceGrid::compute_horizontal_spacing() {
 
   if (periodicity & X_PERIODIC) {
-    m_dx = 2.0 * Lx / m_Mx;
+    m_dx = 2.0 * m_Lx / m_Mx;
   } else {
-    m_dx = 2.0 * Lx / (m_Mx - 1);
+    m_dx = 2.0 * m_Lx / (m_Mx - 1);
   }
 
   if (periodicity & Y_PERIODIC) {
-    m_dy = 2.0 * Ly / m_My;
+    m_dy = 2.0 * m_Ly / m_My;
   } else {
-    m_dy = 2.0 * Ly / (m_My - 1);
+    m_dy = 2.0 * m_Ly / (m_My - 1);
   }
 
   compute_horizontal_coordinates();
@@ -571,8 +571,8 @@ void IceGrid::compute_fine_vertical_grid() {
   // the smallest of the spacings used in ice and bedrock:
   double my_dz_fine = dzMIN;
 
-  Mz_fine = static_cast<int>(ceil(Lz / my_dz_fine) + 1);
-  my_dz_fine = Lz / (Mz_fine - 1);
+  Mz_fine = static_cast<int>(ceil(m_Lz / my_dz_fine) + 1);
+  my_dz_fine = m_Lz / (Mz_fine - 1);
 
   // both ice and bedrock will have this spacing
   dz_fine = my_dz_fine;
@@ -598,7 +598,7 @@ void IceGrid::init_interpolation() {
   ice_storage2fine.resize(Mz_fine);
   m = 0;
   for (unsigned int k = 0; k < Mz_fine; k++) {
-    if (zlevels_fine[k] >= Lz) {
+    if (zlevels_fine[k] >= m_Lz) {
       ice_storage2fine[k] = m_Mz - 1;
       continue;
     }
@@ -633,8 +633,8 @@ void IceGrid::compute_horizontal_coordinates() {
   // which is not necessarily the same thing as the smallest and
   // largest values of x.
   double
-    x_min = x0 - Lx,
-    x_max = x0 + Lx;
+    x_min = x0 - m_Lx,
+    x_max = x0 + m_Lx;
   if (periodicity & X_PERIODIC) {
     for (unsigned int i = 0; i < m_Mx; ++i) {
       m_x[i] = x_min + (i + 0.5) * m_dx;
@@ -648,8 +648,8 @@ void IceGrid::compute_horizontal_coordinates() {
   }
 
   double
-    y_min = y0 - Ly,
-    y_max = y0 + Ly;
+    y_min = y0 - m_Ly,
+    y_max = y0 + m_Ly;
   if (periodicity & Y_PERIODIC) {
     for (unsigned int i = 0; i < m_My; ++i) {
       m_y[i] = y_min + (i + 0.5) * m_dy;
@@ -681,7 +681,7 @@ void IceGrid::report_parameters() const {
   // report on computational box
   verbPrintf(2, com,
              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
-             2*Lx/1000.0, 2*Ly/1000.0, Lz);
+             2*m_Lx/1000.0, 2*m_Ly/1000.0, m_Lz);
 
   // report on grid cell dims
   verbPrintf(2, com,
@@ -720,7 +720,7 @@ void IceGrid::report_parameters() const {
                "  IceGrid parameters:\n");
     verbPrintf(3, com,
                "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
-               Lx/1000.0, Ly/1000.0, Lz);
+               m_Lx/1000.0, m_Ly/1000.0, m_Lz);
     verbPrintf(3, com,
                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
                x0/1000.0, y0/1000.0);
@@ -740,7 +740,7 @@ void IceGrid::report_parameters() const {
     verbPrintf(5, com,
                "  REALLY verbose output on IceGrid:\n");
     verbPrintf(5, com,
-               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", m_Mz, Lz);
+               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", m_Mz, m_Lz);
     for (unsigned int k=0; k < m_Mz; k++) {
       verbPrintf(5, com, " %5.4f, ", zlevels[k]);
     }
@@ -837,15 +837,15 @@ void IceGrid::check_parameters() {
     throw RuntimeError("Mz must be at least 2.");
   }
 
-  if (Lx <= 0) {
+  if (m_Lx <= 0) {
     throw RuntimeError("Lx has to be positive.");
   }
 
-  if (Ly <= 0) {
+  if (m_Ly <= 0) {
     throw RuntimeError("Ly has to be positive.");
   }
 
-  if (Lz <= 0) {
+  if (m_Lz <= 0) {
     throw RuntimeError("Lz must be positive.");
   }
 
@@ -980,6 +980,18 @@ double IceGrid::dx() const {
 
 double IceGrid::dy() const {
   return m_dy;
+}
+
+double IceGrid::Lx() const {
+  return m_Lx;
+}
+
+double IceGrid::Ly() const {
+  return m_Ly;
+}
+
+double IceGrid::Lz() const {
+  return m_Lz;
 }
 
 } // end of namespace pism

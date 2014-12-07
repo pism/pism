@@ -126,11 +126,11 @@ void IceModel::bootstrap_2d(const std::string &filename) {
              "  rescaling computational box for ice from -boot_file file and\n"
              "    user options to dimensions:\n"
              "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-             (grid.x0 - grid.Lx)/1000.0,
-             (grid.x0 + grid.Lx)/1000.0,
-             (grid.y0 - grid.Ly)/1000.0,
-             (grid.y0 + grid.Ly)/1000.0,
-             grid.Lz);
+             (grid.x0 - grid.Lx())/1000.0,
+             (grid.x0 + grid.Lx())/1000.0,
+             (grid.y0 - grid.Ly())/1000.0,
+             (grid.y0 + grid.Ly())/1000.0,
+             grid.Lz());
 
   std::string usurf_name;
   bool usurf_found = false, mask_found = false, usurf_found_by_std_name = false;
@@ -188,10 +188,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     double thk_min = 0.0, thk_max = 0.0;
     ice_thickness.range(thk_min, thk_max);
 
-    if (thk_max >= grid.Lz + 1e-6) {
+    if (thk_max >= grid.Lz() + 1e-6) {
       throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
-                                    thk_max, grid.Lz);
+                                    thk_max, grid.Lz());
     }
   }
 
@@ -223,10 +223,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   double thk_min, thk_max;
   ice_thickness.range(thk_min, thk_max);
 
-  if (thk_max > grid.Lz) {
+  if (thk_max > grid.Lz()) {
     throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_max, grid.Lz);
+                                  thk_max, grid.Lz());
   }
 }
 

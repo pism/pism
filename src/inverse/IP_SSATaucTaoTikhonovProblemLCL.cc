@@ -43,7 +43,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   IceGrid &grid = *m_d0.get_grid();
 
   double stressScale = grid.config.get("design_param_tauc_scale");
-  m_constraintsScale = grid.Lx*grid.Ly*4*stressScale;
+  m_constraintsScale = grid.Lx()*grid.Ly()*4*stressScale;
 
   m_velocityScale = grid.config.get("inv_ssa_velocity_scale", "m/year", "m/second");
 

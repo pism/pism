@@ -173,13 +173,13 @@ public:
                                int &j_bottom, int &j_top);
   std::vector<double> compute_interp_weights(double x, double y);
 
-  void ownership_ranges_from_options();
-
   unsigned int kBelowHeight(double height);
-  double radius(int i, int j);
   PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
+
+  // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
+  double radius(int i, int j);
 
   //! Starting x-index of a processor sub-domain
   int xs() const;
@@ -202,6 +202,14 @@ public:
   unsigned int Mx() const;
   unsigned int My() const;
   unsigned int Mz() const;
+
+  double Lx() const;
+  double Ly() const;
+  double Lz() const;
+  // FIXME: remove this
+  void set_Lx(double Lx) {m_Lx = Lx;}
+  void set_Ly(double Ly) {m_Ly = Ly;}
+  void set_Lz(double Lz) {m_Lz = Lz;}
 
   // FIXME: remove this
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
@@ -236,12 +244,6 @@ public:
   double x0,               //!< x-coordinate of the grid center
     y0;                         //!< y-coordinate of the grid center
 
-  double Lx, //!< half width of the ice model grid in x-direction (m)
-    Ly;           //!< half width of the ice model grid in y-direction (m)
-
-
-  double Lz;      //!< max extent of the ice in z-direction (m)
-
   Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
@@ -273,6 +275,12 @@ private:
   //! number of grid points in z-direction in the ice
   unsigned int m_Mz;
 
+  //! half width of the ice model grid in x-direction (m)  
+  double m_Lx;
+  //! half width of the ice model grid in y-direction (m)
+  double m_Ly;
+  //! max extent of the ice in z-direction (m)
+  double m_Lz;
   
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
@@ -285,6 +293,7 @@ private:
 
   void check_parameters();
 
+  void ownership_ranges_from_options();
   void compute_nprocs();
   void compute_ownership_ranges();
 

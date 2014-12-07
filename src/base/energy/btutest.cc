@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
     // create grid and set defaults
     IceGrid grid(com, config);
     grid.set_Mz(41);
-    grid.Lz = 4000.0;
+    grid.set_Lz(4000.0);
     grid.set_Mx(3);
     grid.set_My(3);
-    grid.Lx = 1500e3;
-    grid.Ly = grid.Lx;
+    grid.set_Lx(1500e3);
+    grid.set_Ly(grid.Lx());
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
     config.set_double("grid_Mbz", 11); 
@@ -173,7 +173,9 @@ int main(int argc, char *argv[]) {
       OptionsString("-o", "Output file name", outname, flag);
       OptionsReal("-dt", "Time-step, in years", dt_years, flag);
       OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag);
-      OptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag);
+      double tmp_Lz = grid.Lz();
+      OptionsReal("-Lz", "height of ice/atmosphere boxr", tmp_Lz, flag);
+      grid.set_Lz(tmp_Lz);
     }
     ierr = PetscOptionsEnd();
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");

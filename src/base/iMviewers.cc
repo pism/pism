@@ -73,7 +73,7 @@ void IceModel::update_viewers() {
       Viewer::Ptr viewer = viewers[name];
 
       if (not viewer) {
-        viewers[name].reset(new Viewer(grid.com, name, viewer_size, grid.Lx, grid.Ly));
+        viewers[name].reset(new Viewer(grid.com, name, viewer_size, grid.Lx(), grid.Ly()));
         viewer = viewers[name];
       }
 
@@ -93,12 +93,12 @@ void IceModel::update_viewers() {
         v2 = viewers[name_2];
 
       if (not v1) {
-        viewers[name_1].reset(new Viewer(grid.com, name_1, viewer_size, grid.Lx, grid.Ly));
+        viewers[name_1].reset(new Viewer(grid.com, name_1, viewer_size, grid.Lx(), grid.Ly()));
         v1 = viewers[name_1];
       }
 
       if (not v2) {
-        viewers[name_2].reset(new Viewer(grid.com, name_2, viewer_size, grid.Lx, grid.Ly));
+        viewers[name_2].reset(new Viewer(grid.com, name_2, viewer_size, grid.Lx(), grid.Ly()));
         v2 = viewers[name_2];
       }
 

@@ -151,7 +151,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
     const double x = grid->x(i);
 
     if (i != (int)grid->Mx() - 1) {
-      thickness(i, j) = H_exact(V0, H0, C, x + grid->Lx);
+      thickness(i, j) = H_exact(V0, H0, C, x + grid->Lx());
       ice_mask(i, j)  = MASK_FLOATING;
     } else {
       thickness(i, j) = 0;
@@ -193,7 +193,7 @@ PetscErrorCode SSATestCaseCFBC::exactSolution(int i, int /*j*/,
                                               double *u, double *v)
 {
   if (i != (int)grid->Mx() - 1) {
-    *u = u_exact(V0, H0, C, x + grid->Lx);
+    *u = u_exact(V0, H0, C, x + grid->Lx());
   } else {
     *u = 0;
   }

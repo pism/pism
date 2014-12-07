@@ -534,10 +534,10 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
       double thk_min = 0.0, thk_max = 0.0;
       ice_thickness.range(thk_min, thk_max);
 
-      if (thk_max >= grid.Lz + 1e-6) {
+      if (thk_max >= grid.Lz() + 1e-6) {
         throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
                                       "exceeds the height of the computational domain (%f meters).",
-                                      thk_max, grid.Lz);
+                                      thk_max, grid.Lz());
       }
     }
 

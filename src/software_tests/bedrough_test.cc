@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
     IceGrid grid(com, config);
     grid.set_Mx(81);
     grid.set_My(81);
-    grid.Lx = 1200e3;
-    grid.Ly = grid.Lx;
+    grid.set_Lx(1200e3);
+    grid.set_Ly(grid.Lx());
     grid.periodicity = NOT_PERIODIC;
     grid.allocate();
 

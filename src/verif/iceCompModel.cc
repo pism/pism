@@ -99,41 +99,46 @@ void IceCompModel::set_grid_defaults() {
   case 'A':
   case 'E':
     // use 1600km by 1600km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 800e3;
-    grid.Lz = 4000;
+    grid.set_Lx(800e3);
+    grid.set_Ly(grid.Lx());
+    grid.set_Lz(4000);
     break;
   case 'B':
   case 'H':
     // use 2400km by 2400km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 1200e3;
-    grid.Lz = 4000;
+    grid.set_Lx(1200e3);
+    grid.set_Ly(grid.Lx());
+    grid.set_Lz(4000);
     break;
   case 'C':
   case 'D':
     // use 2000km by 2000km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 1000e3;
-    grid.Lz = 4000;
+    grid.set_Lx(1000e3);
+    grid.set_Ly(grid.Lx());
+    grid.set_Lz(4000);
     break;
   case 'F':
   case 'G':
   case 'L':
     // use 1800km by 1800km by 4000m rectangular domain
-    grid.Lx = grid.Ly = 900e3;
-    grid.Lz = 4000;
+    grid.set_Lx(900e3);
+    grid.set_Ly(grid.Lx());
+    grid.set_Lz(4000);
     break;
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
     config.set_double("grid_Mbz", 2);
     config.set_double("grid_Lbz", 1000);
-    grid.Lx = grid.Ly = 1000e3;
-    grid.Lz = 4000;
+    grid.set_Lx(1000e3);
+    grid.set_Ly(grid.Lx());
+    grid.set_Lz(4000);
     grid.periodicity = XY_PERIODIC;
     grid.ice_vertical_spacing = QUADRATIC;
     break;
   case 'V':
     grid.set_My(3);             // it's a flow-line setup
-    grid.Lx = 500e3;            // 500 km long
+    grid.set_Lx(500e3);            // 500 km long
     grid.periodicity = Y_PERIODIC;
     break;
   default:

@@ -111,7 +111,7 @@ void PS_EISMINTII::init(Vars &vars) {
 
 void PS_EISMINTII::initialize_using_formulas() {
 
-  PetscScalar cx = grid.Lx, cy = grid.Ly;
+  PetscScalar cx = grid.Lx(), cy = grid.Ly();
   if (m_experiment == 'E') {
     // shift center
     cx += 100.0e3;

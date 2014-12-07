@@ -1602,7 +1602,7 @@ void SSAFD::update_nuH_viewers() {
 
   if (not nuh_viewer) {
     nuh_viewer.reset(new Viewer(grid.com, "nuH", nuh_viewer_size,
-                                grid.Lx, grid.Ly));
+                                grid.Lx(), grid.Ly()));
   }
 
   tmp.view(nuh_viewer, Viewer::Ptr());
@@ -1742,8 +1742,8 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "x=%12.3f + (0:%d)*%12.3f;\n"
                                 "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -grid.Lx, grid.Mx() - 1, grid.dx(),
-                                -grid.Ly, grid.My() - 1, grid.dy()); CHKERRQ(ierr);
+                                -grid.Lx(), grid.Mx() - 1, grid.dx(),
+                                -grid.Ly(), grid.My() - 1, grid.dy()); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);

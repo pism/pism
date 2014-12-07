@@ -131,8 +131,8 @@ void IceModel::set_grid_defaults() {
   // Set the grid center and horizontal extent:
   grid.x0 = input.x0;
   grid.y0 = input.y0;
-  grid.Lx = input.Lx;
-  grid.Ly = input.Ly;
+  grid.set_Lx(input.Lx);
+  grid.set_Ly(input.Ly);
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
@@ -166,9 +166,9 @@ void IceModel::set_grid_defaults() {
 void IceModel::set_grid_from_options() {
   bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
     z_spacing_set;
-  double x_scale = grid.Lx / 1000.0,
-    y_scale = grid.Ly / 1000.0,
-    z_scale = grid.Lz;
+  double x_scale = grid.Lx() / 1000.0,
+    y_scale = grid.Ly() / 1000.0,
+    z_scale = grid.Lz();
 
   // Process the options:
 
@@ -224,13 +224,13 @@ void IceModel::set_grid_from_options() {
 
   // Use the information obtained above:
   if (Lx_set) {
-    grid.Lx  = x_scale * 1000.0; // convert to meters
+    grid.set_Lx(x_scale * 1000.0); // convert to meters
   }
   if (Ly_set) {
-    grid.Ly  = y_scale * 1000.0; // convert to meters
+    grid.set_Ly(y_scale * 1000.0); // convert to meters
   }
   if (Lz_set) {
-    grid.Lz  = z_scale;          // in meters already
+    grid.set_Lz(z_scale);          // in meters already
   }
 
   if (x_range_set && y_range_set) {
@@ -240,8 +240,8 @@ void IceModel::set_grid_from_options() {
 
     grid.x0 = (x_range[0] + x_range[1]) / 2.0;
     grid.y0 = (y_range[0] + y_range[1]) / 2.0;
-    grid.Lx = (x_range[1] - x_range[0]) / 2.0;
-    grid.Ly = (y_range[1] - y_range[0]) / 2.0;
+    grid.set_Lx((x_range[1] - x_range[0]) / 2.0);
+    grid.set_Ly((y_range[1] - y_range[0]) / 2.0);
   }
 
   grid.compute_vertical_levels();
