@@ -663,11 +663,6 @@ void IceGrid::compute_horizontal_coordinates() {
   }
 }
 
-//! \brief Returns the distance from the point (i,j) to the origin.
-double IceGrid::radius(int i, int j) {
-  return sqrt(PetscSqr(m_x[i]) + PetscSqr(m_y[j]));
-}
-
 //! \brief Report grid parameters.
 void IceGrid::report_parameters() const {
 
@@ -1037,6 +1032,11 @@ double IceGrid::x0() const {
 
 double IceGrid::y0() const {
   return m_y0;
+}
+
+//! \brief Returns the distance from the point (i,j) to the origin.
+double radius(const IceGrid &grid, int i, int j) {
+  return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
 }
 
 } // end of namespace pism

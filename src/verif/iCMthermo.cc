@@ -74,7 +74,7 @@ void IceCompModel::initTestFG() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i, j);
+    double r = radius(grid, i, j);
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       ice_thickness(i, j) = 0.0;
@@ -132,7 +132,7 @@ void IceCompModel::getCompSourcesTestFG() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i, j);
+    double r = radius(grid, i, j);
     if (r > LforFG - 1.0) {  // outside of sheet
       strain_heating3_comp.setColumn(i, j, 0.0);
     } else {
@@ -195,7 +195,7 @@ void IceCompModel::fillSolnTestFG() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x(i), yy = grid.y(j), r = grid.radius(i, j);
+    double xx = grid.x(i), yy = grid.y(j), r = radius(grid, i, j);
     if (r > LforFG - 1.0) {  // outside of sheet
 
       ice_thickness(i, j) = 0.0;
@@ -272,7 +272,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i, j);
+    double r = radius(grid, i, j);
     T3.getInternalColumn(i, j, &T);
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
@@ -410,7 +410,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i,j);
+    double r = radius(grid, i,j);
     switch (testname) {
     case 'F':
       if (r > LforFG - 1.0) {  // outside of sheet
@@ -483,7 +483,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i,j);
+    double r = radius(grid, i,j);
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
       switch (testname) {
@@ -540,7 +540,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x(i), yy = grid.y(j), r = grid.radius(i, j);
+    double xx = grid.x(i), yy = grid.y(j), r = radius(grid, i, j);
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
       double radialUex, wex;

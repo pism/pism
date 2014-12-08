@@ -226,7 +226,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i, j),
+    double r = radius(grid, i, j),
       Ts = Tmin + ST * r;
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       (*thickness)(i, j) = 0.0;

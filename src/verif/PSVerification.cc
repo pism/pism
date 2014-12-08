@@ -101,7 +101,7 @@ void PSVerification::update_L() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i, j);
+    double r = radius(grid, i, j);
     m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
@@ -178,7 +178,7 @@ void PSVerification::update_ABCDEH(double time) {
     const int i = p.i(), j = p.j();
 
     PetscScalar xx = grid.x(i), yy = grid.y(j),
-      r = grid.radius(i, j);
+      r = radius(grid, i, j);
     switch (m_testname) {
     case 'A':
       exactA(r, &H, &accum);
@@ -218,7 +218,7 @@ void PSVerification::update_FG(double time) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(grid.radius(i, j), 1.0); // avoid singularity at origin
+    double r = std::max(radius(grid, i, j), 1.0); // avoid singularity at origin
 
     m_ice_surface_temp(i, j) = Tmin + ST * r;
 

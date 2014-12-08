@@ -180,7 +180,8 @@ public:
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
-  double radius(int i, int j);
+  //! The time management object (hides calendar computations).
+  Time *time;
 
   //! Starting x-index of a processor sub-domain
   int xs() const;
@@ -251,8 +252,6 @@ public:
   SpacingType ice_vertical_spacing;
   Periodicity periodicity;
 
-  // FIXME: this should be moved into a "Context" class
-  Time *time;               //!< The time management object (hides calendar computations)
 private:
   // int to match types used by MPI
   int m_rank, m_size;
@@ -328,6 +327,8 @@ private:
   IceGrid(IceGrid const &);
   IceGrid & operator=(IceGrid const &);
 };
+
+double radius(const IceGrid &grid, int i, int j);
 
 //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
 //! meters around the edge of the computational domain.
