@@ -34,7 +34,7 @@ public:
 #endif
   Viewer(MPI_Comm com, const std::string &name, unsigned int target_size, double Lx, double Ly);
   ~Viewer();
-  PetscViewer operator*();
+  operator PetscViewer() const;
 private:
   void compute_size(unsigned int target_size, double Lx, double Ly,
                     unsigned int &X, unsigned int &Y);

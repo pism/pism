@@ -50,7 +50,7 @@ Viewer::~Viewer() {
   PetscViewerDestroy(&m_viewer);
 }
 
-PetscViewer Viewer::operator*() {
+Viewer::operator PetscViewer() const {
   return m_viewer;
 }
 

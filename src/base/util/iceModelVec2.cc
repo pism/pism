@@ -370,10 +370,10 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
 
   PetscViewer viewers[2] = {NULL, NULL};
   if (v1) {
-    viewers[0] = **v1;
+    viewers[0] = *v1;
   }
   if (v2) {
-    viewers[1] = **v2;
+    viewers[1] = *v2;
   }
 
   for (unsigned int i = 0; i < m_dof; ++i) {
