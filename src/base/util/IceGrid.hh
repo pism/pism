@@ -225,10 +225,13 @@ public:
   void set_My(unsigned int My) {m_My = My;}
   void set_Mz(unsigned int Mz) {m_Mz = Mz;}
 
+  double dz_min() const;
+  double dz_max() const;
+
   Profiling profiling;
 
   const Config &config;
-  MPI_Comm com;
+  const MPI_Comm com;
   // int to match types used by MPI
   int rank, size;
 
@@ -245,8 +248,6 @@ public:
 
   SpacingType ice_vertical_spacing;
   Periodicity periodicity;
-  double dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
-    dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
 
   // FIXME: this should be moved into a "Context" class
   Time *time;               //!< The time management object (hides calendar computations)
@@ -287,9 +288,14 @@ private:
   //! max extent of the ice in z-direction (m)
   double m_Lz;
 
+  //! minimal vertical spacing of the storage grid in the ice
+  double m_dz_min;
+  //! maximal vertical spacing of the storage grid in the ice
+  double m_dz_max;
+
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
-  UnitSystem m_unit_system;
+  const UnitSystem m_unit_system;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
@@ -302,7 +308,7 @@ private:
   void compute_nprocs();
   void compute_ownership_ranges();
 
-  void get_dzMIN_dzMAX_spacingtype();
+  void get_dz_min_dz_max_spacingtype();
   void compute_horizontal_spacing();
   void compute_horizontal_coordinates();
   void compute_fine_vertical_grid();

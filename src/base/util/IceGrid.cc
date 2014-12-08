@@ -254,12 +254,12 @@ void  IceGrid::compute_vertical_levels() {
 
   switch (ice_vertical_spacing) {
   case EQUAL: {
-    dzMIN = m_Lz / ((double) m_Mz - 1);
-    dzMAX = dzMIN;
+    m_dz_min = m_Lz / ((double) m_Mz - 1);
+    m_dz_max = m_dz_min;
 
     // Equal spacing
     for (unsigned int k=0; k < m_Mz - 1; k++) {
-      m_zlevels[k] = dzMIN * ((double) k);
+      m_zlevels[k] = m_dz_min * ((double) k);
     }
     m_zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
     break;
@@ -271,8 +271,8 @@ void  IceGrid::compute_vertical_levels() {
       m_zlevels[k] = m_Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
     }
     m_zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
-    dzMIN = m_zlevels[1] - m_zlevels[0];
-    dzMAX = m_zlevels[m_Mz-1] - m_zlevels[m_Mz-2];
+    m_dz_min = m_zlevels[1] - m_zlevels[0];
+    m_dz_max = m_zlevels[m_Mz-1] - m_zlevels[m_Mz-2];
     break;
   }
   default:
@@ -303,21 +303,21 @@ unsigned int IceGrid::kBelowHeight(double height) {
   return mcurr;
 }
 
-//! \brief From given vertical grid zlevels[], determine `dzMIN`, `dzMAX`, and
+//! \brief From given vertical grid zlevels[], determine `m_dz_min`, `m_dz_max`, and
 //! determine whether ice vertical spacings are equal.
 /*! The standard for equal vertical spacing in the ice is \f$10^{-8}\f$ m max
-  difference between `dzMIN` and `dzMAX`.
+  difference between `m_dz_min` and `m_dz_max`.
  */
-void IceGrid::get_dzMIN_dzMAX_spacingtype() {
-  dzMIN = m_Lz;
-  dzMAX = 0.0;
+void IceGrid::get_dz_min_dz_max_spacingtype() {
+  m_dz_min = m_Lz;
+  m_dz_max = 0.0;
   for (unsigned int k = 0; k < m_Mz - 1; k++) {
     const double mydz = m_zlevels[k+1] - m_zlevels[k];
-    dzMIN = std::min(mydz, dzMIN);
-    dzMAX = std::max(mydz, dzMAX);
+    m_dz_min = std::min(mydz, m_dz_min);
+    m_dz_max = std::max(mydz, m_dz_max);
   }
 
-  if (fabs(dzMAX - dzMIN) <= 1.0e-8) {
+  if (fabs(m_dz_max - m_dz_min) <= 1.0e-8) {
     ice_vertical_spacing = EQUAL;
   } else {
     ice_vertical_spacing = UNKNOWN;
@@ -515,7 +515,7 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
 
   m_zlevels = new_zlevels;
 
-  get_dzMIN_dzMAX_spacingtype();
+  get_dz_min_dz_max_spacingtype();
   compute_fine_vertical_grid();
 }
 
@@ -569,7 +569,7 @@ void IceGrid::compute_horizontal_spacing() {
 void IceGrid::compute_fine_vertical_grid() {
 
   // the smallest of the spacings used in ice and bedrock:
-  double my_dz_fine = dzMIN;
+  double my_dz_fine = m_dz_min;
 
   Mz_fine = static_cast<int>(ceil(m_Lz / my_dz_fine) + 1);
   my_dz_fine = m_Lz / (Mz_fine - 1);
@@ -691,11 +691,11 @@ void IceGrid::report_parameters() const {
   if (ice_vertical_spacing == EQUAL) {
     verbPrintf(2, com,
                "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
-               dzMIN);
+               m_dz_min);
   } else {
     verbPrintf(2, com,
                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-               m_Mz, dzMIN, dzMAX);
+               m_Mz, m_dz_min, m_dz_max);
   }
 
   verbPrintf(3, com,
@@ -988,6 +988,14 @@ double IceGrid::dx() const {
 
 double IceGrid::dy() const {
   return m_dy;
+}
+
+double IceGrid::dz_min() const {
+  return m_dz_min;
+}
+
+double IceGrid::dz_max() const {
+  return m_dz_max;
 }
 
 double IceGrid::Lx() const {

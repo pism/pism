@@ -971,7 +971,7 @@ void IceCompModel::reportErrors() {
     err.set_name("dy");
     nc.write_timeseries(err, (size_t)start, grid.dy());
     err.set_name("dz");
-    nc.write_timeseries(err, (size_t)start, grid.dzMAX);
+    nc.write_timeseries(err, (size_t)start, grid.dz_max());
 
     // Always write the test name:
     err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");

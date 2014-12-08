@@ -150,8 +150,8 @@ void IceModel::update_run_stats() {
   run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
   run_stats.set_double("grid_dx_meters", grid.dx());
   run_stats.set_double("grid_dy_meters", grid.dy());
-  run_stats.set_double("grid_dz_min_meters", grid.dzMIN);
-  run_stats.set_double("grid_dz_max_meters", grid.dzMAX);
+  run_stats.set_double("grid_dz_min_meters", grid.dz_min());
+  run_stats.set_double("grid_dz_max_meters", grid.dz_max());
   if (btu != NULL) {
     run_stats.set_double("grid_dzb_meters", btu->get_vertical_spacing());
   }
