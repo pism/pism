@@ -53,8 +53,8 @@ PISMDM::operator DM() const {
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
 
-  MPI_Comm_rank(com, &rank);
-  MPI_Comm_size(com, &size);
+  MPI_Comm_rank(com, &m_rank);
+  MPI_Comm_size(com, &m_size);
 
   // The grid in symmetric with respect to zero by default.
   m_x0 = 0.0;
@@ -287,12 +287,12 @@ void  IceGrid::compute_vertical_levels() {
 unsigned int IceGrid::kBelowHeight(double height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(PETSC_COMM_SELF,
-                "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", rank, height);
+                "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", m_rank, height);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
   if (height > m_Lz + 1.0e-6) {
     PetscPrintf(PETSC_COMM_SELF,
-                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", rank, height, m_Lz);
+                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", m_rank, height, m_Lz);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
 
@@ -331,15 +331,15 @@ void IceGrid::compute_nprocs() {
     throw RuntimeError("'My' is invalid.");
   }
 
-  m_Nx = (int)(0.5 + sqrt(((double)m_Mx)*((double)size)/((double)m_My)));
+  m_Nx = (int)(0.5 + sqrt(((double)m_Mx)*((double)m_size)/((double)m_My)));
 
   if (m_Nx == 0) {
     m_Nx = 1;
   }
 
   while (m_Nx > 0) {
-    m_Ny = size/m_Nx;
-    if (m_Nx*m_Ny == (unsigned int)size) {
+    m_Ny = m_size/m_Nx;
+    if (m_Nx*m_Ny == (unsigned int)m_size) {
       break;
     }
     m_Nx--;
@@ -349,12 +349,12 @@ void IceGrid::compute_nprocs() {
 
   if ((m_Mx / m_Nx) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  m_Mx, m_My, size);
+                                  m_Mx, m_My, m_size);
   }
 
   if ((m_My / m_Ny) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  m_Mx, m_My, size);
+                                  m_Mx, m_My, m_size);
   }
 }
 
@@ -406,9 +406,9 @@ void IceGrid::ownership_ranges_from_options() {
                                     My(), Ny);
     }
 
-    if (Nx * Ny != size) {
+    if (Nx * Ny != m_size) {
       throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
-                                    size);
+                                    m_size);
     }
 
     bool procs_x_set, procs_y_set;
@@ -483,7 +483,7 @@ void IceGrid::allocate() {
     PISMDM::Ptr tmp = this->get_dm(1, max_stencil_width);
   } catch (RuntimeError) {
     throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
-                                  m_Mx, m_My, size);
+                                  m_Mx, m_My, m_size);
   }
 
   // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
@@ -907,8 +907,21 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
              "* Creating a DM with dof=%d and stencil_width=%d...\n",
              da_dof, stencil_width);
 
-  PetscErrorCode ierr;
-  ierr = DMDACreate2d(com,
+  // PetscInt and int may have different sizes, so here we make copies
+  // of m_procs_x and m_procs_y. We could store m_procs_[xy] using
+  // PetscInt, but that leaks this implementation detail in the header
+  // defining IceGrid.
+  std::vector<PetscInt> procs_x(m_procs_x.size()), procs_y(m_procs_y.size());
+
+  for (unsigned int k = 0; k < procs_x.size(); ++k) {
+    procs_x[k] = m_procs_x[k];
+  }
+
+  for (unsigned int k = 0; k < procs_y.size(); ++k) {
+    procs_y[k] = m_procs_y[k];
+  }
+
+  PetscErrorCode ierr = DMDACreate2d(com,
 #if PETSC_VERSION_LT(3,5,0)
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
 #else
@@ -918,7 +931,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
                       m_My, m_Mx, // N, M
                       m_Ny, m_Nx, // n, m
                       da_dof, stencil_width,
-                      &m_procs_y[0], &m_procs_x[0], // ly, lx
+                      &procs_y[0], &procs_x[0], // ly, lx
                       &result);
   PISM_PETSC_CHK(ierr,"DMDACreate2d");
 
@@ -928,6 +941,14 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
 // Computes the key corresponding to the DM with given dof and stencil_width.
 int IceGrid::dm_key(int da_dof, int stencil_width) {
   return 10000 * da_dof + stencil_width;
+}
+
+int IceGrid::rank() const {
+  return m_rank;
+}
+
+unsigned int IceGrid::size() const {
+  return m_size;
 }
 
 int IceGrid::xs() const {

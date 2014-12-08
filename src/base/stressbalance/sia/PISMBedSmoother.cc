@@ -164,7 +164,7 @@ void BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
 //! Computes the smoothed bed by a simple average over a rectangle of grid points.
 void BedSmoother::smooth_the_bed_on_proc0() {
 
-  if (grid.rank == 0) {
+  if (grid.rank() == 0) {
     PetscErrorCode ierr;
     double **b0, **bs;
     ierr = VecGetArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
@@ -200,7 +200,7 @@ void BedSmoother::smooth_the_bed_on_proc0() {
 
 void BedSmoother::compute_coefficients_on_proc0() {
 
-  if (grid.rank == 0) {
+  if (grid.rank() == 0) {
     PetscErrorCode ierr;
     double **b0, **bs, **c2, **c3, **c4, **mt;
     ierr = VecGetArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);

@@ -160,6 +160,8 @@ public:
   // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
   //                          const std::string &filename);
 
+  PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
+
   void report_parameters() const;
 
   // only of these two should be called:
@@ -174,7 +176,6 @@ public:
   std::vector<double> compute_interp_weights(double x, double y);
 
   unsigned int kBelowHeight(double height);
-  PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
 
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
@@ -228,12 +229,13 @@ public:
   double dz_min() const;
   double dz_max() const;
 
+  unsigned int size() const;
+  int rank() const;
+
   Profiling profiling;
 
   const Config &config;
   const MPI_Comm com;
-  // int to match types used by MPI
-  int rank, size;
 
   // Fine vertical grid and the interpolation setup:
   std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
@@ -252,13 +254,16 @@ public:
   // FIXME: this should be moved into a "Context" class
   Time *time;               //!< The time management object (hides calendar computations)
 private:
+  // int to match types used by MPI
+  int m_rank, m_size;
+
   unsigned int m_Nx, //!< number of processors in the x-direction
     m_Ny;      //!< number of processors in the y-direction
 
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
-  std::vector<PetscInt> m_procs_x;
+  std::vector<int> m_procs_x;
   //! @brief array containing lenghts (in the y-direction) of processor sub-domains
-  std::vector<PetscInt> m_procs_y;
+  std::vector<int> m_procs_y;
 
   std::vector<double> m_x,             //!< x-coordinates of grid points
     m_y;                          //!< y-coordinates of grid points

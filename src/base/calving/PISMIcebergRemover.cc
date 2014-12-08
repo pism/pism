@@ -92,7 +92,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   {
     m_iceberg_mask.put_on_proc0(m_mask_p0);
 
-    if (grid.rank == 0) {
+    if (grid.rank() == 0) {
       double *mask;
       ierr = VecGetArray(m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecGetArray");

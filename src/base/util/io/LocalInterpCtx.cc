@@ -51,7 +51,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   com = grid.com;
-  rank = grid.rank;
+  rank = grid.rank();
   report_range = true;
 
   print_grid_info(input, grid.get_unit_system(), 3);

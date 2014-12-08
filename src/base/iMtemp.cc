@@ -277,7 +277,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
                            " proc %d; mask=%d; w=%f m/year]]\n",
-                           Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
+                           Tnew[k],i,j,k,grid.rank(),vMask.as_int(i,j),
                            grid.convert(system.w(k),
                                         "m/s", "m/year"));
         PISM_PETSC_CHK(ierr, "PetscPrintf");
@@ -310,7 +310,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                            " proc %d; mask=%d; w=%f]]\n",
-                           Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
+                           Tnew[0],i,j,grid.rank(),vMask.as_int(i,j),
                            grid.convert(system.w(0), "m/s", "m/year"));
         PISM_PETSC_CHK(ierr, "PetscPrintf");
         myLowTempCount++;

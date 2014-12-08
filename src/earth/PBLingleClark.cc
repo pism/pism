@@ -55,7 +55,7 @@ PetscErrorCode PBLingleClark::allocate() {
 
   bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
 
-  if (grid.rank == 0) {
+  if (grid.rank() == 0) {
     bdLC.settings(config, use_elastic_model,
                   grid.Mx(), grid.My(), grid.dx(), grid.dy(),
                   4,     // use Z = 4 for now; to reduce global drift?
@@ -99,7 +99,7 @@ void PBLingleClark::init(Vars &vars) {
   topg->put_on_proc0(bedstartp0);
   uplift->put_on_proc0(upliftp0);
 
-  if (grid.rank == 0) {
+  if (grid.rank() == 0) {
     bdLC.init();
     bdLC.uplift_init();
   }
@@ -213,7 +213,7 @@ void PBLingleClark::update(double my_t, double my_dt) {
   thk->put_on_proc0(Hp0);
   topg->put_on_proc0(bedp0);
 
-  if (grid.rank == 0) {  // only processor zero does the step
+  if (grid.rank() == 0) {  // only processor zero does the step
     bdLC.step(dt_beddef, // time step, in seconds
               t_final - grid.time->start()); // time since the start of the run, in seconds
   }

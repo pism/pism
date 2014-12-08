@@ -108,7 +108,7 @@ void  IceModel::stampHistoryCommand() {
   char startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
-           "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
+           "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size());
   stampHistory(std::string(startstr));
 
   global_attributes.set_string("history",
@@ -130,7 +130,7 @@ void IceModel::update_run_stats() {
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
-  proc_hours = grid.size * wall_clock_hours;
+  proc_hours = grid.size() * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
   mypph = grid.convert(grid.time->current() - grid.time->start(), "seconds", "years") / proc_hours;

@@ -67,7 +67,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
 
     secpera = grid.convert(1.0, "year", "second")
 
-    if self.grid.rank == 0:
+    if self.grid.rank() == 0:
       import matplotlib.pyplot as pp
     
       pp.figure(self.figure())
@@ -169,7 +169,7 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
     r = self.toproczero(data.r)
     d = self.toproczero(data.d)
 
-    if self.grid.rank == 0:
+    if self.grid.rank() == 0:
       import matplotlib.pyplot as pp
       pp.figure(self.figure())
       pp.clf()

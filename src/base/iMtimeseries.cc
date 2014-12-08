@@ -444,7 +444,7 @@ void IceModel::write_extras() {
 
   // find out how much time passed since the beginning of the run
   double wall_clock_hours;
-  if (grid.rank == 0) {
+  if (grid.rank() == 0) {
     PetscLogDouble current_time;
     GetTime(&current_time);
     wall_clock_hours = (current_time - start_time) / 3600.0;

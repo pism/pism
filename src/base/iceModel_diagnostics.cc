@@ -367,7 +367,7 @@ void IceModel_rank::compute(IceModelVec* &output) {
   list.add(*result);
 
   for (Points p(grid); p; p.next()) {
-    (*result)(p.i(),p.j()) = grid.rank;
+    (*result)(p.i(),p.j()) = grid.rank();
   }
 
   output = result;
