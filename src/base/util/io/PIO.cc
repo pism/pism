@@ -618,7 +618,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
     grid->set_Mx(input.x_len);
     grid->set_My(input.y_len);
 
-    grid->periodicity = periodicity;
+    grid->set_periodicity(periodicity);
 
     grid->set_x0(input.x0);
     grid->set_y0(input.y0);
@@ -1113,7 +1113,7 @@ LocalInterpCtx* PIO::get_interp_context(const string &name,
   if (exists == false) {
     throw RuntimeError("variable " + name + " is missing in " + inq_filename());
   } else {
-    grid_info gi = inq_grid_info(name, grid.periodicity);
+    grid_info gi = inq_grid_info(name, grid.periodicity());
 
     return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }

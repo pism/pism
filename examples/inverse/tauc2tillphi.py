@@ -190,7 +190,7 @@ for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
 
 grid = PISM.Context().newgrid()
 PISM.model.initGridFromFile(grid,bootfile,
-                                periodicity=PISM.XY_PERIODIC)
+                            periodicity=PISM.XY_PERIODIC)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() >3:

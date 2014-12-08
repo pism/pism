@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     grid.set_My(81);
     grid.set_Lx(1200e3);
     grid.set_Ly(grid.Lx());
-    grid.periodicity = NOT_PERIODIC;
+    grid.set_periodicity(NOT_PERIODIC);
     grid.allocate();
 
     PetscPrintf(grid.com,"BedSmoother TEST\n");

@@ -182,6 +182,7 @@ public:
   UnitSystem get_unit_system() const;
   //! The time management object (hides calendar computations).
   Time *time;
+  const Config &config;
 
   //! Starting x-index of a processor sub-domain
   int xs() const;
@@ -230,12 +231,14 @@ public:
   double dz_min() const;
   double dz_max() const;
 
+  Periodicity periodicity() const;
+  void set_periodicity(Periodicity p);
+
   unsigned int size() const;
   int rank() const;
 
   Profiling profiling;
 
-  const Config &config;
   const MPI_Comm com;
 
   // Fine vertical grid and the interpolation setup:
@@ -248,9 +251,8 @@ public:
   // the storage grid level just below fine-grid level k (zlevels_fine[k]).
   // Similarly for other arrays below.
   std::vector<int> ice_storage2fine, ice_fine2storage;
-
   SpacingType ice_vertical_spacing;
-  Periodicity periodicity;
+
 
 private:
   // int to match types used by MPI
@@ -263,6 +265,8 @@ private:
   std::vector<int> m_procs_x;
   //! @brief array containing lenghts (in the y-direction) of processor sub-domains
   std::vector<int> m_procs_y;
+
+  Periodicity m_periodicity;
 
   std::vector<double> m_x,             //!< x-coordinates of grid points
     m_y;                          //!< y-coordinates of grid points

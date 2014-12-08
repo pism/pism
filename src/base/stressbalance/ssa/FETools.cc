@@ -48,7 +48,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   // Now correct if needed. The only way there will not be ghosts is if the
   // grid is not periodic and we are up against the grid boundary.
 
-  if (!(g.periodicity & X_PERIODIC)) {
+  if (!(g.periodicity() & X_PERIODIC)) {
     // Leftmost element has x-index 0.
     if (xs < 0) {
       xs = 0;
@@ -60,7 +60,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
     }
   }
 
-  if (!(g.periodicity & Y_PERIODIC)) {
+  if (!(g.periodicity() & Y_PERIODIC)) {
     // Bottom element has y-index 0.
     if (ys < 0) {
       ys = 0;

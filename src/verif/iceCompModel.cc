@@ -93,7 +93,7 @@ void IceCompModel::set_grid_defaults() {
   grid.ice_vertical_spacing = EQUAL;
 
   // use the non-periodic grid:
-  grid.periodicity = NOT_PERIODIC;
+  grid.set_periodicity(NOT_PERIODIC);
 
   switch (testname) {
   case 'A':
@@ -133,13 +133,13 @@ void IceCompModel::set_grid_defaults() {
     grid.set_Lx(1000e3);
     grid.set_Ly(grid.Lx());
     grid.set_Lz(4000);
-    grid.periodicity = XY_PERIODIC;
+    grid.set_periodicity(XY_PERIODIC);
     grid.ice_vertical_spacing = QUADRATIC;
     break;
   case 'V':
     grid.set_My(3);             // it's a flow-line setup
     grid.set_Lx(500e3);            // 500 km long
-    grid.periodicity = Y_PERIODIC;
+    grid.set_periodicity(Y_PERIODIC);
     break;
   default:
     throw RuntimeError("desired test not implemented\n");

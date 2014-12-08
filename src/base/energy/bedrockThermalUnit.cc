@@ -74,7 +74,7 @@ BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
       bool exists = nc.inq_var("litho_temp");
 
       if (exists) {
-        grid_info info = nc.inq_grid_info("litho_temp", grid.periodicity);
+        grid_info info = nc.inq_grid_info("litho_temp", grid.periodicity());
 
         m_Mbz = info.z_len;
         m_Lbz = -info.z_min;

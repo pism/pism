@@ -444,7 +444,7 @@ double IceModelVec2S::diff_y_stagN(int i, int j) const {
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
 double IceModelVec2S::diff_x_p(int i, int j) const {
-  if (grid->periodicity & X_PERIODIC) {
+  if (grid->periodicity() & X_PERIODIC) {
     return diff_x(i,j);
   }
   
@@ -461,7 +461,7 @@ double IceModelVec2S::diff_x_p(int i, int j) const {
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
 double IceModelVec2S::diff_y_p(int i, int j) const {
-  if (grid->periodicity & Y_PERIODIC) {
+  if (grid->periodicity() & Y_PERIODIC) {
     return diff_y(i,j);
   }
   

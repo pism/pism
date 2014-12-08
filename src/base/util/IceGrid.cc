@@ -69,13 +69,13 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   std::string word = config.get_string("grid_periodicity");
   if (word == "none") {
-    periodicity = NONE;
+    m_periodicity = NONE;
   } else if (word == "x") {
-    periodicity = X_PERIODIC;
+    m_periodicity = X_PERIODIC;
   } else if (word == "y") {
-    periodicity = Y_PERIODIC;
+    m_periodicity = Y_PERIODIC;
   } else if (word == "xy") {
-    periodicity = XY_PERIODIC;
+    m_periodicity = XY_PERIODIC;
   } else {
     throw RuntimeError::formatted("grid periodicity type '%s' is invalid.",
                                   word.c_str());
@@ -147,7 +147,7 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
   result->m_Lz = my_Lz;
   result->m_Mx = Mx;
   result->m_My = My;
-  result->periodicity = p;
+  result->m_periodicity = p;
   result->m_Mz = Mz;
 
   result->compute_nprocs();
@@ -537,13 +537,13 @@ Thus we compute  `dx = 2 * Lx / Mx`.
  */
 void IceGrid::compute_horizontal_spacing() {
 
-  if (periodicity & X_PERIODIC) {
+  if (m_periodicity & X_PERIODIC) {
     m_dx = 2.0 * m_Lx / m_Mx;
   } else {
     m_dx = 2.0 * m_Lx / (m_Mx - 1);
   }
 
-  if (periodicity & Y_PERIODIC) {
+  if (m_periodicity & Y_PERIODIC) {
     m_dy = 2.0 * m_Ly / m_My;
   } else {
     m_dy = 2.0 * m_Ly / (m_My - 1);
@@ -635,7 +635,7 @@ void IceGrid::compute_horizontal_coordinates() {
   double
     x_min = m_x0 - m_Lx,
     x_max = m_x0 + m_Lx;
-  if (periodicity & X_PERIODIC) {
+  if (m_periodicity & X_PERIODIC) {
     for (unsigned int i = 0; i < m_Mx; ++i) {
       m_x[i] = x_min + (i + 0.5) * m_dx;
     }
@@ -650,7 +650,7 @@ void IceGrid::compute_horizontal_coordinates() {
   double
     y_min = m_y0 - m_Ly,
     y_max = m_y0 + m_Ly;
-  if (periodicity & Y_PERIODIC) {
+  if (m_periodicity & Y_PERIODIC) {
     for (unsigned int i = 0; i < m_My; ++i) {
       m_y[i] = y_min + (i + 0.5) * m_dy;
     }
@@ -889,6 +889,14 @@ PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) {
 
 UnitSystem IceGrid::get_unit_system() const {
   return m_unit_system;
+}
+
+Periodicity IceGrid::periodicity() const {
+  return m_periodicity;
+}
+
+void IceGrid::set_periodicity(Periodicity p) {
+  m_periodicity = p;
 }
 
 double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
