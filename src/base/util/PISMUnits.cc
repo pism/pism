@@ -171,10 +171,6 @@ void UnitConverter::convert_doubles(double *data, size_t length) const {
   cv_convert_doubles(m_converter, data, length, data);
 }
 
-bool Unit::is_valid() const {
-  return m_unit != NULL;        // FIXME: this method should not be needed (a Unit should always be valid)
-}
-
 PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
   PetscErrorCode ierr;
 

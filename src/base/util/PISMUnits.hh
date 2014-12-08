@@ -74,8 +74,6 @@ public:
 
   ut_unit* get() const;
   UnitSystem get_system() const;
-
-  bool is_valid() const;
 private:
   void reset();
   ut_unit *m_unit;
