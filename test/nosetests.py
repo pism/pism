@@ -405,3 +405,79 @@ def logging_test():
     pio.open("other_log.nc", PISM.PISM_READWRITE_MOVE)
     pio.close()
     c.write("other_log.nc", "other_log") # non-default arguments
+
+def column_interpolation_test(plot=False):
+    """Test ColumnInterpolation by interpolating from the coarse grid to the
+    fine grid and back."""
+    import numpy as np
+    import pylab as plt
+
+    Lz = 1000.0
+    Mz = 41
+
+    def z_quadratic(Mz, Lz):
+        result = np.zeros(Mz)
+        z_lambda = 4.0
+        for k in xrange(Mz-1):
+            zeta = float(k) / (Mz - 1)
+            result[k] = Lz * ((zeta / z_lambda) * (1.0 + (z_lambda - 1.0) * zeta));
+        result[Mz-1] = Lz
+        return result
+
+    def test_quadratic_interp():
+        z_coarse = z_quadratic(Mz, Lz)
+        f_coarse = (z_coarse / Lz)**2
+
+        print "Testing quadratic interpolation"
+        return test_interp(z_coarse, f_coarse)
+
+    def test_linear_interp():
+        z_coarse = np.linspace(0, Lz, Mz)
+        f_coarse = (z_coarse / Lz)**2
+
+        print "Testing linear interpolation"
+        return test_interp(z_coarse, f_coarse)
+
+    def test_interp(z, f):
+        interp = PISM.ColumnInterpolation(z)
+
+        z_fine = interp.z_fine()
+
+        f_fine = interp.coarse_to_fine(f, interp.Mz_fine())
+
+        f_fine_numpy = np.interp(z_fine, z, f)
+
+        f_roundtrip = interp.fine_to_coarse(f_fine)
+
+        def plot():
+            plt.figure()
+            plt.hold(True)
+            plt.plot(z, f, 'o-', label="original coarse-grid data")
+            plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
+            plt.plot(z, f_roundtrip, 'o-', label="interpolated back onto the coarse grid")
+            plt.plot(z, f_roundtrip - f, 'o-', label="difference after the roundtrip")
+            plt.legend(loc="best")
+            plt.grid(True)
+
+        if plot:
+            plot()
+
+        delta = np.linalg.norm(f - f_roundtrip, ord=1)
+        delta_numpy = np.linalg.norm(f_fine - f_fine_numpy, ord=1)
+        print "norm1(fine_to_coarse(coarse_to_fine(f)) - f) = %f" % delta
+        print "norm1(PISM - NumPy) = %f" % delta_numpy
+
+        return delta,delta_numpy
+
+    linear_delta,linear_delta_numpy = test_linear_interp()
+
+    quadratic_delta,_ = test_quadratic_interp()
+
+    if plot:
+        plt.show()
+
+    if (linear_delta > 1e-12 or
+        linear_delta_numpy > 1e-12 or
+        quadratic_delta > 1e-3):
+        return False
+    return True

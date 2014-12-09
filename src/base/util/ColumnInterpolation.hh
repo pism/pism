@@ -26,7 +26,7 @@ namespace pism {
 
 class ColumnInterpolation {
 public:
-  ColumnInterpolation(std::vector<double> z_coarse);
+  ColumnInterpolation(const std::vector<double> &z_coarse);
 
   void coarse_to_fine(const double *input, unsigned int ks, double *result) const;
   void fine_to_coarse(const double *input, double *result) const;
@@ -35,10 +35,12 @@ public:
   std::vector<double> coarse_to_fine(const std::vector<double> &input, unsigned int ks) const;
   std::vector<double> fine_to_coarse(const std::vector<double> &input) const;
 
-  unsigned int Mz() const;
+  unsigned int Mz_coarse() const;
+  const std::vector<double>& z_coarse() const;
 
   unsigned int Mz_fine() const;
   double dz_fine() const;
+  const std::vector<double>& z_fine() const;
 private:
   std::vector<double> m_z_fine, m_z_coarse;
 
