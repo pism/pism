@@ -50,8 +50,9 @@ class IceModelVec3;
 */
 class tempSystemCtx : public columnSystemCtx {
 public:
-  tempSystemCtx(unsigned int Mz, const std::string &prefix,
-                double dx, double dy, double dz, double dt,
+  tempSystemCtx(const std::vector<double>& storage_grid,
+                const std::string &prefix,
+                double dx, double dy, double dt,
                 const Config &config,
                 IceModelVec3 *T3,
                 IceModelVec3 *u3,

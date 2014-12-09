@@ -26,8 +26,9 @@
 
 namespace pism {
 
-enthSystemCtx::enthSystemCtx(int Mz, const std::string &prefix,
-                             double dx,  double dy, double dz,  double dt,
+enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
+                             const std::string &prefix,
+                             double dx,  double dy, double dt,
                              const Config &config,
                              IceModelVec3 &Enth3,
                              IceModelVec3 *u3,
@@ -35,7 +36,7 @@ enthSystemCtx::enthSystemCtx(int Mz, const std::string &prefix,
                              IceModelVec3 *w3,
                              IceModelVec3 *strain_heating3,
                              const EnthalpyConverter &EC)
-  : columnSystemCtx(Mz, prefix, dx, dy, dz, dt, u3, v3, w3), m_EC(EC) {
+  : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3), m_EC(EC) {
 
   // set some values so we can check if init was called
   m_R_cold   = -1.0;
@@ -53,10 +54,10 @@ enthSystemCtx::enthSystemCtx(int Mz, const std::string &prefix,
   m_ice_K  = m_ice_k / m_ice_c;
   m_ice_K0 = m_ice_K * config.get("enthalpy_temperate_conductivity_ratio");
 
-  m_Enth.resize(m_max_system_size);
-  m_Enth_s.resize(m_max_system_size);
-  m_strain_heating.resize(m_max_system_size);
-  m_R.resize(m_max_system_size);
+  m_Enth.resize(m_z.size());
+  m_Enth_s.resize(m_z.size());
+  m_strain_heating.resize(m_z.size());
+  m_R.resize(m_z.size());
 
   // point to IceModelVec3
   m_Enth3 = &Enth3;
@@ -353,6 +354,9 @@ void enthSystemCtx::assemble_R() {
  * regular grid).
  */
 void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
+
+  TridiagonalSystem &S = *m_solver;
+
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
@@ -362,30 +366,30 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 #endif
 
   // k=0 equation is already established
-  // m_L[0] = 0.0;  // not used
-  m_D[0]   = m_D0;
-  m_U[0]   = m_U0;
-  m_rhs[0] = m_B0;
+  // L[0] = 0.0;  // not used
+  S.D(0)   = m_D0;
+  S.U(0)   = m_U0;
+  S.RHS(0) = m_B0;
 
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {
     const double
         Rminus = 0.5 * (m_R[k-1] + m_R[k]),
         Rplus  = 0.5 * (m_R[k]   + m_R[k+1]);
-    m_L[k] = - Rminus;
-    m_D[k] = 1.0 + Rminus + Rplus;
-    m_U[k] = - Rplus;
+    S.L(k) = - Rminus;
+    S.D(k) = 1.0 + Rminus + Rplus;
+    S.U(k) = - Rplus;
     const double AA = m_nu * m_w[k];
     if (m_w[k] >= 0.0) {  // velocity upward
-      m_L[k] -= AA * (1.0 - m_lambda/2.0);
-      m_D[k] += AA * (1.0 - m_lambda);
-      m_U[k] += AA * (m_lambda/2.0);
+      S.L(k) -= AA * (1.0 - m_lambda/2.0);
+      S.D(k) += AA * (1.0 - m_lambda);
+      S.U(k) += AA * (m_lambda/2.0);
     } else {            // velocity downward
-      m_L[k] -= AA * (m_lambda/2.0);
-      m_D[k] -= AA * (1.0 - m_lambda);
-      m_U[k] += AA * (1.0 - m_lambda/2.0);
+      S.L(k) -= AA * (m_lambda/2.0);
+      S.D(k) -= AA * (1.0 - m_lambda);
+      S.U(k) += AA * (1.0 - m_lambda/2.0);
     }
-    m_rhs[k] = m_Enth[k];
+    S.RHS(k) = m_Enth[k];
     if (not m_ismarginal) {
       planeStar<double> ss;
       m_Enth3->getPlaneStar_fine(m_i,m_j,k,&ss);
@@ -393,23 +397,23 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
                                                m_u[k] * (ss.ij  - ss.w) / m_dx;
       const double UpEnthv = (m_v[k] < 0) ? m_v[k] * (ss.n -  ss.ij) / m_dy :
                                                m_v[k] * (ss.ij  - ss.s) / m_dy;
-      m_rhs[k] += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
+      S.RHS(k) += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
     }
   }
 
   // set Dirichlet boundary condition at top
   if (m_ks > 0) {
-    m_L[m_ks] = 0.0;
+    S.L(m_ks) = 0.0;
   }
-  m_D[m_ks] = 1.0;
-  if (m_ks < m_max_system_size - 1) {
-    m_U[m_ks] = 0.0;
+  S.D(m_ks) = 1.0;
+  if (m_ks < m_z.size() - 1) {
+    S.U(m_ks) = 0.0;
   }
-  m_rhs[m_ks] = m_Enth_ks;
+  S.RHS(m_ks) = m_Enth_ks;
 
   // Solve it; note drainage is not addressed yet and post-processing may occur
   try {
-    solve(m_ks + 1, x);
+    S.solve(m_ks + 1, x);
   }
   catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (enthSystemCtx) at (%d,%d)\n"
@@ -426,15 +430,15 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
   // if success, mark column as done by making scheme params and b.c. coeffs invalid
   m_lambda = -1.0;
-  m_D0       = GSL_NAN;
-  m_U0       = GSL_NAN;
-  m_B0       = GSL_NAN;
+  m_D0     = GSL_NAN;
+  m_U0     = GSL_NAN;
+  m_B0     = GSL_NAN;
 #endif
 }
 
 void enthSystemCtx::save_system(std::ostream &output, unsigned int system_size) const {
-  TridiagonalSystem::save_system(output, system_size);
-  save_vector(output, m_R, system_size, m_prefix + "_R");
+  m_solver->save_system(output, system_size);
+  m_solver->save_vector(output, m_R, system_size, m_solver->prefix() + "_R");
 }
 
 } // end of namespace pism

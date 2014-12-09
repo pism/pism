@@ -37,9 +37,9 @@ class EnthalpyConverter;
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(int max_system_size, const std::string &prefix,
-                double dx,  double dy,
-                double dz,  double dt,
+  enthSystemCtx(const std::vector<double>& storage_grid,
+                const std::string &prefix,
+                double dx,  double dy, double dt,
                 const Config &config,
                 IceModelVec3 &Enth3,
                 IceModelVec3 *u3,

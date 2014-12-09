@@ -26,22 +26,23 @@
 
 namespace pism {
 
-tempSystemCtx::tempSystemCtx(unsigned int Mz, const std::string &prefix,
-                             double dx, double dy, double dz, double dt,
+tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
+                             const std::string &prefix,
+                             double dx, double dy, double dt,
                              const Config &config,
                              IceModelVec3 *T3,
                              IceModelVec3 *u3,
                              IceModelVec3 *v3,
                              IceModelVec3 *w3,
                              IceModelVec3 *strain_heating3)
-  : columnSystemCtx(Mz, prefix, dx, dy, dz, dt, u3, v3, w3) {
+  : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3) {
 
   // set flags to indicate nothing yet set
   m_surfBCsValid      = false;
   m_basalBCsValid     = false;
 
-  m_T.resize(m_max_system_size);
-  m_strain_heating.resize(m_max_system_size);
+  m_T.resize(m_z.size());
+  m_strain_heating.resize(m_z.size());
 
   // set physical constants
   m_ice_density = config.get("ice_density");
@@ -112,34 +113,36 @@ double tempSystemCtx::compute_lambda() {
 
 void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
 
+  TridiagonalSystem &S = *m_solver;
+
   assert(m_surfBCsValid == true);
   assert(m_basalBCsValid == true);
 
   // bottom of ice; k=0 eqn
   if (m_ks == 0) { // no ice; set m_T[0] to surface temp if grounded
     // note L[0] not allocated
-    m_D[0] = 1.0;
-    m_U[0] = 0.0;
+    S.D(0) = 1.0;
+    S.U(0) = 0.0;
     // if floating and no ice then worry only about bedrock temps
     if (mask::ocean(m_mask)) {
       // essentially no ice but floating ... ask OceanCoupler
-      m_rhs[0] = m_Tshelfbase;
+      S.RHS(0) = m_Tshelfbase;
     } else { // top of bedrock sees atmosphere
-      m_rhs[0] = m_Ts;
+      S.RHS(0) = m_Ts;
     }
   } else { // m_ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
     if (mask::ocean(m_mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       // note that L[0] is not used
-      m_D[0] = 1.0;
-      m_U[0] = 0.0;
-      m_rhs[0] = m_Tshelfbase; // set by OceanCoupler
+      S.D(0) = 1.0;
+      S.U(0) = 0.0;
+      S.RHS(0) = m_Tshelfbase; // set by OceanCoupler
     } else {
       // there is *grounded* ice; from FV across interface
-      m_rhs[0] = m_T[0] + m_dt * (m_Rb / (m_rho_c_I * m_dz));
+      S.RHS(0) = m_T[0] + m_dt * (m_Rb / (m_rho_c_I * m_dz));
       if (!m_is_marginal) {
-        m_rhs[0] += m_dt * 0.5 * m_strain_heating[0]/ m_rho_c_I;
+        S.RHS(0) += m_dt * 0.5 * m_strain_heating[0]/ m_rho_c_I;
         planeStar<double> ss;
         m_T3->getPlaneStar(m_i, m_j, 0, &ss);
         const double UpTu = ((m_u[0] < 0) ?
@@ -148,19 +151,19 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
         const double UpTv = ((m_v[0] < 0) ?
                              m_v[0] * (ss.n -  ss.ij) / m_dy :
                              m_v[0] * (ss.ij  - ss.s) / m_dy);
-        m_rhs[0] -= m_dt  * (0.5 * (UpTu + UpTv));
+        S.RHS(0) -= m_dt  * (0.5 * (UpTu + UpTv));
       }
       // vertical upwinding
       // L[0] = 0.0;  (is not used)
-      m_D[0] = 1.0 + 2.0 * m_iceR;
-      m_U[0] = - 2.0 * m_iceR;
+      S.D(0) = 1.0 + 2.0 * m_iceR;
+      S.U(0) = - 2.0 * m_iceR;
       if (m_w[0] < 0.0) { // velocity downward: add velocity contribution
         const double AA = m_dt * m_w[0] / (2.0 * m_dz);
-        m_D[0] -= AA;
-        m_U[0] += AA;
+        S.D(0) -= AA;
+        S.U(0) += AA;
       }
       // apply geothermal flux G0 here
-      m_rhs[0] += 2.0 * m_dt * m_G0 / (m_rho_c_I * m_dz);
+      S.RHS(0) += 2.0 * m_dt * m_G0 / (m_rho_c_I * m_dz);
     }
   }
 
@@ -176,26 +179,26 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
                          m_v[k] * (ss.ij  - ss.s) / m_dy);
     const double AA = m_nu * m_w[k];
     if (m_w[k] >= 0.0) {  // velocity upward
-      m_L[k] = - m_iceR - AA * (1.0 - m_lambda/2.0);
-      m_D[k] = 1.0 + 2.0 * m_iceR + AA * (1.0 - m_lambda);
-      m_U[k] = - m_iceR + AA * (m_lambda/2.0);
+      S.L(k) = - m_iceR - AA * (1.0 - m_lambda/2.0);
+      S.D(k) = 1.0 + 2.0 * m_iceR + AA * (1.0 - m_lambda);
+      S.U(k) = - m_iceR + AA * (m_lambda/2.0);
     } else {  // velocity downward
-      m_L[k] = - m_iceR - AA * (m_lambda/2.0);
-      m_D[k] = 1.0 + 2.0 * m_iceR - AA * (1.0 - m_lambda);
-      m_U[k] = - m_iceR + AA * (1.0 - m_lambda/2.0);
+      S.L(k) = - m_iceR - AA * (m_lambda/2.0);
+      S.D(k) = 1.0 + 2.0 * m_iceR - AA * (1.0 - m_lambda);
+      S.U(k) = - m_iceR + AA * (1.0 - m_lambda/2.0);
     }
-    m_rhs[k] = m_T[k];
+    S.RHS(k) = m_T[k];
     if (!m_is_marginal) {
-      m_rhs[k] += m_dt * (m_strain_heating[k] / m_rho_c_I - UpTu - UpTv);
+      S.RHS(k) += m_dt * (m_strain_heating[k] / m_rho_c_I - UpTu - UpTv);
     }
   }
 
   // surface b.c.
   if (m_ks>0) {
-    m_L[m_ks] = 0.0;
-    m_D[m_ks] = 1.0;
+    S.L(m_ks) = 0.0;
+    S.D(m_ks) = 1.0;
     // ignore U[m_ks]
-    m_rhs[m_ks] = m_Ts;
+    S.RHS(m_ks) = m_Ts;
   }
 
   // mark column as done
@@ -204,7 +207,7 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
 
   // solve it; note melting not addressed yet
   try {
-    solve(m_ks + 1, x);
+    S.solve(m_ks + 1, x);
   }
   catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (tempSystemCtx) at (%d,%d)\n"

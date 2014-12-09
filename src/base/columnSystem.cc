@@ -275,46 +275,83 @@ void TridiagonalSystem::solve(unsigned int system_size, std::vector<double> &res
   }
 }
 
+std::string TridiagonalSystem::prefix() const {
+  return m_prefix;
+}
+
 //! A column system is a kind of a tridiagonal system.
-columnSystemCtx::columnSystemCtx(unsigned int max_system_size, const std::string &my_prefix,
-                                 double dx, double dy, double dz, double dt,
+columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
+                                 const std::string &prefix,
+                                 double dx, double dy, double dt,
                                  IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3)
-  : TridiagonalSystem(max_system_size, my_prefix),
-    m_dx(dx), m_dy(dy), m_dz(dz), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
+  : m_dx(dx), m_dy(dy), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
   assert(dx > 0.0);
   assert(dy > 0.0);
-  assert(dz > 0.0);
   assert(dt > 0.0);
 
-  m_u.resize(m_max_system_size);
-  m_v.resize(m_max_system_size);
-  m_w.resize(m_max_system_size);
+  init_fine_grid(storage_grid);
+
+  m_solver = new TridiagonalSystem(m_z.size(), prefix);
+
+  m_u.resize(m_z.size());
+  m_v.resize(m_z.size());
+  m_w.resize(m_z.size());
 }
 
 columnSystemCtx::~columnSystemCtx() {
+  delete m_solver;
 }
 
 unsigned int columnSystemCtx::ks() const {
   return m_ks;
 }
 
-void columnSystemCtx::init_column(int my_i, int my_j,
+double columnSystemCtx::dz() const {
+  return m_dz;
+}
+
+const std::vector<double>& columnSystemCtx::z() const {
+  return m_z;
+}
+
+void columnSystemCtx::init_fine_grid(const std::vector<double>& storage_grid) {
+  // Compute m_dz as the minimum vertical spacing in the coarse
+  // grid:
+  unsigned int Mz = storage_grid.size();
+  double Lz = storage_grid.back();
+  m_dz = Lz;
+  for (unsigned int k = 1; k < Mz; ++k) {
+    m_dz = std::min(m_dz, storage_grid[k] - storage_grid[k - 1]);
+  }
+
+  size_t Mz_fine = static_cast<size_t>(ceil(Lz / m_dz) + 1);
+  m_dz = Lz / (Mz_fine - 1);
+
+  m_z.resize(Mz_fine);
+  // compute levels of the fine grid:
+  for (unsigned int k = 0; k < Mz_fine; ++k) {
+    m_z[k] = storage_grid[0] + k * m_dz;
+  }
+  // Note that it *is* allowed to go over Lz.
+}
+
+void columnSystemCtx::init_column(int i, int j,
                                   double ice_thickness) {
-  m_i  = my_i;
-  m_j  = my_j;
+  m_i  = i;
+  m_j  = j;
   m_ks = static_cast<unsigned int>(floor(ice_thickness / m_dz));
 
   // Force m_ks to be in the allowed range.
-  if (m_ks >= m_max_system_size) {
-    m_ks = m_max_system_size - 1;
+  if (m_ks >= m_z.size()) {
+    m_ks = m_z.size() - 1;
   }
 
-  reset();
+  m_solver->reset();
 
   // post-condition
 #if PISM_DEBUG==1
   // check if m_ks is valid
-  if (m_ks >= m_max_system_size) {
+  if (m_ks >= m_z.size()) {
     throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
                                   "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
                                   m_ks, m_i, m_j, ice_thickness, m_dz);
@@ -326,13 +363,13 @@ void columnSystemCtx::init_column(int my_i, int my_j,
 void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
   char filename[TEMPORARY_STRING_LENGTH];
   snprintf(filename, sizeof(filename), "%s_i%d_j%d_ZERO_PIVOT_ERROR.m",
-           m_prefix.c_str(), m_i, m_j);
+           m_solver->prefix().c_str(), m_i, m_j);
 
   std::ofstream output(filename);
-  output << "% system has 1-norm = " << norm1(M)
-         << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
+  output << "% system has 1-norm = " << m_solver->norm1(M)
+         << " and diagonal-dominance ratio = " << m_solver->ddratio(M) << std::endl;
 
-  save_system(output, M);
+  m_solver->save_system(output, M);
 }
 
 
@@ -367,16 +404,15 @@ generate `g20km_steady.nc`.  Then:
 Of course we can also do `spy(A)`, `eig(A)`, and look at individual entries,
 and row and column sums, and so on.
  */
-void columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x,
-                                          unsigned int system_size) {
+void columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x) {
   std::cout << "saving "
-            << m_prefix << " column system at (i,j)"
+            << m_solver->prefix() << " column system at (i,j)"
             << " = (" << m_i << "," << m_j << ") to m-file...\n" << std::endl;
 
   char buffer[TEMPORARY_STRING_LENGTH];
-  snprintf(buffer, sizeof(buffer), "%s_i%d_j%d.m", m_prefix.c_str(), m_i, m_j);
+  snprintf(buffer, sizeof(buffer), "%s_i%d_j%d.m", m_solver->prefix().c_str(), m_i, m_j);
 
-  save_system_with_solution(buffer, system_size, x);
+  m_solver->save_system_with_solution(buffer, m_z.size(), x);
 }
 
 } // end of namespace pism

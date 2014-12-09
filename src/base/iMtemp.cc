@@ -40,10 +40,11 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
                                           const double z, const double dz,
                                           double *Texcess, double *bwat) {
 
-  const double darea = grid.dx() * grid.dy(),
-                    dvol = darea * dz,
-                    dE = rho * c * (*Texcess) * dvol,
-                    massmelted = dE / L;
+  const double
+    darea      = grid.dx() * grid.dy(),
+    dvol       = darea * dz,
+    dE         = rho * c * (*Texcess) * dvol,
+    massmelted = dE / L;
 
   assert(config.get_flag("temperature_allow_above_melting") == false);
 
@@ -132,10 +133,6 @@ This method should be kept because it is worth having alternative physics, and
 void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   PetscErrorCode  ierr;
 
-  // set up fine grid in ice
-  double               fdz   = grid.dz_fine;
-  std::vector<double> &fzlev = grid.zlevels_fine;
-
   bool viewOneColumn;
   OptionsIsSet("-view_sys", viewOneColumn);
 
@@ -152,9 +149,6 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
   const double bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
-
-  std::vector<double> x(grid.Mz_fine);// space for solution of system
-  std::vector<double> Tnew(grid.Mz_fine);
 
   // now get map-plane fields, starting with coupler fields
   assert(surface != NULL);
@@ -195,10 +189,16 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   stress_balance->get_3d_velocity(u3, v3, w3);
   stress_balance->get_volumetric_strain_heating(strain_heating3);
 
-  tempSystemCtx system(grid.Mz_fine, "temperature",
-                       grid.dx(), grid.dy(), fdz, dt_TempAge,
+  tempSystemCtx system(grid.z(), "temperature",
+                       grid.dx(), grid.dy(), dt_TempAge,
                        config,
                        &T3, u3, v3, w3, strain_heating3);
+
+  double dz = system.dz();
+  const std::vector<double>& z_fine = system.z();
+  size_t Mz_fine = z_fine.size();
+  std::vector<double> x(Mz_fine);// space for solution of system
+  std::vector<double> Tnew(Mz_fine);
 
   list.add(*Rb);
 
@@ -249,7 +249,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
                            "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j);
         PISM_PETSC_CHK(ierr, "PetscPrintf");
-        system.viewColumnInfoMFile(x, grid.Mz_fine);
+        system.viewColumnInfoMFile(x);
       }
 
     }       // end of "if there are enough points in ice to bother ..."
@@ -263,11 +263,11 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
         Tnew[k] = x[k];
       } else {
         const double
-          Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - fzlev[k]); // FIXME issue #15
+          Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - z_fine[k]); // FIXME issue #15
         if (x[k] > Tpmp) {
           Tnew[k] = Tpmp;
           double Texcess = x[k] - Tpmp; // always positive
-          excessToFromBasalMeltLayer(ice_density, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
+          excessToFromBasalMeltLayer(ice_density, ice_c, L, z_fine[k], dz, &Texcess, &bwatnew);
           // Texcess  will always come back zero here; ignore it
         } else {
           Tnew[k] = x[k];
@@ -275,11 +275,10 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
       }
       if (Tnew[k] < globalMinAllowedTemp) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
-                           "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
+                           "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                            " proc %d; mask=%d; w=%f m/year]]\n",
-                           Tnew[k],i,j,k,grid.rank(),vMask.as_int(i,j),
-                           grid.convert(system.w(k),
-                                        "m/s", "m/year"));
+                           Tnew[k], i, j, k, grid.rank(), vMask.as_int(i, j),
+                           grid.convert(system.w(k), "m/s", "m/year"));
         PISM_PETSC_CHK(ierr, "PetscPrintf");
         myLowTempCount++;
       }
@@ -297,9 +296,9 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
         if (mask.ocean(i,j)) {
           // when floating, only half a segment has had its temperature raised
           // above Tpmp
-          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
+          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
         } else {
-          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
+          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz, &Texcess, &bwatnew);
         }
         Tnew[0] = Tpmp + Texcess;
         if (Tnew[0] > (Tpmp + 0.00001)) {
@@ -320,7 +319,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
     }
 
     // set to air temp above ice
-    for (unsigned int k = ks; k < grid.Mz_fine; k++) {
+    for (unsigned int k = ks; k < Mz_fine; k++) {
       Tnew[k] = ice_surface_temp(i,j);
     }
 

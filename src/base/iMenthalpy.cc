@@ -186,8 +186,8 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
 void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
-                                                 double* liquifiedVol,
-                                                 double* bulgeCount) {
+                                       double* liquifiedVol,
+                                       double* bulgeCount) {
 
   assert(config.get_flag("do_cold_ice_methods") == false);
 
@@ -209,10 +209,12 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   stress_balance->get_3d_velocity(u3, v3, w3);
   stress_balance->get_volumetric_strain_heating(strain_heating3);
 
-  std::vector<double> Enthnew(grid.Mz_fine); // new enthalpy in column
-
-  enthSystemCtx system(grid.Mz_fine, "enth", grid.dx(), grid.dy(), grid.dz_fine, dt_TempAge,
+  enthSystemCtx system(grid.z(), "enth", grid.dx(), grid.dy(), dt_TempAge,
                        config, Enth3, u3, v3, w3, strain_heating3, *EC);
+
+  size_t Mz_fine = system.z().size();
+  double dz = system.dz();
+  std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
   // Now get map-plane coupler fields: Dirichlet upper surface
   // boundary and mass balance lower boundary under shelves
@@ -272,7 +274,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
     // enthalpy and pressures at top of ice
     const double
-      depth_ks = ice_thickness(i, j) - system.ks() * grid.dz_fine,
+      depth_ks = ice_thickness(i, j) - system.ks() * dz,
       p_ks     = EC->getPressureFromDepth(depth_ks); // FIXME issue #15
 
     double Enth_ks = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
@@ -324,7 +326,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       system.solveThisColumn(Enthnew);
 
       if (viewOneColumn && (i == id && j == jd)) {
-        system.viewColumnInfoMFile(Enthnew, grid.Mz_fine);
+        system.viewColumnInfoMFile(Enthnew);
       }
     }
 
@@ -340,14 +342,14 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             liquifiedCount++; // count these rare events...
             Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
           }
-          const double depth = ice_thickness(i, j) - k * grid.dz_fine,
+          const double depth = ice_thickness(i, j) - k * dz,
             p = EC->getPressureFromDepth(depth); // FIXME issue #15
           double omega = EC->getWaterFraction(Enthnew[k], p);
           if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
             double fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
 
             fractiondrained  = std::min(fractiondrained, omega - 0.01); // only drain down to 0.01
-            Hdrainedtotal   += fractiondrained * grid.dz_fine; // always a positive contribution
+            Hdrainedtotal   += fractiondrained * dz; // always a positive contribution
             Enthnew[k]      -= fractiondrained * L;
           }
         }
@@ -376,13 +378,13 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
           //
           // Note that [E_difference] = J/kg, so
           //
-          // U_difference = E_difference * ice_density * dx * dy * (0.5*dz_fine)
+          // U_difference = E_difference * ice_density * dx * dy * (0.5*dz)
           //
           // is the amount of energy created (we changed enthalpy of
           // a block of ice with the volume equal to
-          // dx*dy*(0.5*dz_fine); note that the control volume
+          // dx*dy*(0.5*dz); note that the control volume
           // corresponding to the grid point at the base of the
-          // column has thickness 0.5*dz_fine, not dz_fine).
+          // column has thickness 0.5*dz, not dz).
           //
           // Also, [L] = J/kg, so
           //
@@ -396,7 +398,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
           // Hfrozen, we find the thickness of the basal water layer
           // we need to freeze co restore energy conservation.
 
-          Hfrozen = E_difference * (0.5*grid.dz_fine) / L;
+          Hfrozen = E_difference * (0.5*dz) / L;
         }
       }
 
@@ -420,7 +422,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         } else {
           const double
             p_0 = EC->getPressureFromDepth(ice_thickness(i, j)),
-            p_1 = EC->getPressureFromDepth(ice_thickness(i, j) - grid.dz_fine); // FIXME issue #15
+            p_1 = EC->getPressureFromDepth(ice_thickness(i, j) - dz); // FIXME issue #15
           const bool k1_istemperate = EC->isTemperate(Enthnew[1], p_1); // level  z = + \Delta z
 
           double hf_up;
@@ -429,12 +431,12 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
               Tpmp_0 = EC->getMeltingTemp(p_0),
               Tpmp_1 = EC->getMeltingTemp(p_1);
 
-            hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / grid.dz_fine;
+            hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / dz;
           } else {
             double T_0 = EC->getAbsTemp(Enthnew[0], p_0);
             const double K_0 = system.k_from_T(T_0) / EC->c_from_T(T_0);
 
-            hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / grid.dz_fine;
+            hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / dz;
           }
 
           // compute basal melt rate from flux balance:
@@ -459,11 +461,8 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   }
 
-
-
-
   // FIXME: use cell areas
-  *liquifiedVol = ((double) liquifiedCount) * grid.dz_fine * grid.dx() * grid.dy();
+  *liquifiedVol = ((double) liquifiedCount) * dz * grid.dx() * grid.dy();
 }
 
 /*

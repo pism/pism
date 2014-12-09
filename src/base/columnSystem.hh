@@ -82,7 +82,6 @@ class TridiagonalSystem {
 public:
   TridiagonalSystem(unsigned int max_size, const std::string &prefix);
 
-protected:
   double norm1(unsigned int system_size) const;
   double ddratio(unsigned int system_size) const;
   void reset();
@@ -95,8 +94,8 @@ protected:
 
   //! Save the system to a stream using the ASCII MATLAB (Octave)
   //! format. Virtual to allow saving more info in derived classes.
-  virtual void save_system(std::ostream &output,
-                           unsigned int system_size) const;
+  void save_system(std::ostream &output,
+                   unsigned int system_size) const;
 
 
   void save_matrix(std::ostream &output,
@@ -107,6 +106,21 @@ protected:
                    const std::vector<double> &v,
                    unsigned int system_size, const std::string &info) const;
 
+  std::string prefix() const;
+
+  double& L(size_t i) {
+    return m_L[i];
+  }
+  double& D(size_t i) {
+    return m_D[i];
+  }
+  double& U(size_t i) {
+    return m_U[i];
+  }
+  double& RHS(size_t i) {
+    return m_rhs[i];
+  }
+private:
   unsigned int m_max_system_size;         // maximum system size
   std::vector<double> m_L, m_D, m_U, m_rhs, m_work; // vectors for tridiagonal system
 
@@ -119,18 +133,22 @@ class IceModelVec3;
 /*! Adds data members used in time-dependent systems with advection
   (dx, dy, dz, dt, velocity components).
  */
-class columnSystemCtx : public TridiagonalSystem {
+class columnSystemCtx {
 public:
-  columnSystemCtx(unsigned int max_system_size, const std::string &prefix,
-                  double dx, double dy, double dz, double dt,
+  columnSystemCtx(const std::vector<double>& storage_grid, const std::string &prefix,
+                  double dx, double dy, double dt,
                   IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3);
   ~columnSystemCtx();
 
-  void viewColumnInfoMFile(const std::vector<double> &x,
-                           unsigned int M);
+  void viewColumnInfoMFile(const std::vector<double> &x);
 
   unsigned int ks() const;
+  double dz() const;
+  const std::vector<double>& z() const;
 protected:
+
+  TridiagonalSystem *m_solver;
+
   //! current system size; corresponds to the highest vertical level within the ice
   unsigned int m_ks;
   //! current column indexes
@@ -144,6 +162,8 @@ protected:
   std::vector<double> m_v;
   //! w-component if the ice velocity
   std::vector<double> m_w;
+  //! levels of the fine vertical grid
+  std::vector<double> m_z;
 
   //! pointers to 3D velocity components
   IceModelVec3 *m_u3, *m_v3, *m_w3;
@@ -151,6 +171,8 @@ protected:
   void init_column(int i, int j, double ice_thickness);
 
   void reportColumnZeroPivotErrorMFile(unsigned int M);
+
+  void init_fine_grid(const std::vector<double>& storage_grid);
 };
 
 } // end of namespace pism

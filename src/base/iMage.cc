@@ -31,8 +31,9 @@ namespace pism {
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.
 class ageSystemCtx : public columnSystemCtx {
 public:
-  ageSystemCtx(int my_Mz, const std::string &my_prefix,
-               double dx, double dy, double dz, double dt,
+  ageSystemCtx(const std::vector<double>& storage_grid,
+               const std::string &my_prefix,
+               double dx, double dy, double dt,
                IceModelVec3 *age, IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3);
 
   void initThisColumn(int i, int j, double thickness);
@@ -44,10 +45,11 @@ protected:
 };
 
 
-ageSystemCtx::ageSystemCtx(int my_Mz, const std::string &my_prefix,
-                           double dx, double dy, double dz, double dt,
+ageSystemCtx::ageSystemCtx(const std::vector<double>& storage_grid,
+                           const std::string &my_prefix,
+                           double dx, double dy, double dt,
                            IceModelVec3 *age, IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3)
-  : columnSystemCtx(my_Mz, my_prefix, dx, dy, dz, dt, u3, v3, w3) {
+  : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3) {
 
   assert(age != NULL);
   m_age3 = age;
@@ -119,56 +121,59 @@ CODE STILL REFLECTS THE OLD SCHEME.
 FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
 PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
+
+  TridiagonalSystem &S = *m_solver;
+
   // set up system: 0 <= k < m_ks
   for (unsigned int k = 0; k < m_ks; k++) {
     planeStar<double> ss;  // note ss.ij = tau[k]
     m_age3->getPlaneStar_fine(m_i,m_j,k,&ss);
     // do lowest-order upwinding, explicitly for horizontal
-    m_rhs[k] =  (m_u[k] < 0) ? m_u[k] * (ss.e -  ss.ij) / m_dx
+    S.RHS(k) =  (m_u[k] < 0) ? m_u[k] * (ss.e -  ss.ij) / m_dx
       : m_u[k] * (ss.ij  - ss.w) / m_dx;
-    m_rhs[k] += (m_v[k] < 0) ? m_v[k] * (ss.n -  ss.ij) / m_dy
+    S.RHS(k) += (m_v[k] < 0) ? m_v[k] * (ss.n -  ss.ij) / m_dy
       : m_v[k] * (ss.ij  - ss.s) / m_dy;
     // note it is the age eqn: dage/dt = 1.0 and we have moved the hor.
     //   advection terms over to right:
-    m_rhs[k] = ss.ij + m_dt * (1.0 - m_rhs[k]);
+    S.RHS(k) = ss.ij + m_dt * (1.0 - S.RHS(k));
 
     // do lowest-order upwinding, *implicitly* for vertical
     double AA = m_nu * m_w[k];
     if (k > 0) {
       if (AA >= 0) { // upward velocity
-        m_L[k] = - AA;
-        m_D[k] = 1.0 + AA;
-        m_U[k] = 0.0;
+        S.L(k) = - AA;
+        S.D(k) = 1.0 + AA;
+        S.U(k) = 0.0;
       } else { // downward velocity; note  -AA >= 0
-        m_L[k] = 0.0;
-        m_D[k] = 1.0 - AA;
-        m_U[k] = + AA;
+        S.L(k) = 0.0;
+        S.D(k) = 1.0 - AA;
+        S.U(k) = + AA;
       }
     } else { // k == 0 case
       // note L[0] is not used
       if (AA > 0) { // if strictly upward velocity apply boundary condition:
                     // age = 0 because ice is being added to base
-        m_D[0] = 1.0;
-        m_U[0] = 0.0;
-        m_rhs[0] = 0.0;
+        S.D(0) = 1.0;
+        S.U(0) = 0.0;
+        S.RHS(0) = 0.0;
       } else { // downward velocity; note  -AA >= 0
-        m_D[0] = 1.0 - AA;
-        m_U[0] = + AA;
-        // keep m_rhs[0] as is
+        S.D(0) = 1.0 - AA;
+        S.U(0) = + AA;
+        // keep rhs[0] as is
       }
     }
   }  // done "set up system: 0 <= k < m_ks"
 
   // surface b.c. at m_ks
   if (m_ks > 0) {
-    m_L[m_ks] = 0;
-    m_D[m_ks] = 1.0;   // ignore U[m_ks]
-    m_rhs[m_ks] = 0.0;  // age zero at surface
+    S.L(m_ks) = 0;
+    S.D(m_ks) = 1.0;   // ignore U[m_ks]
+    S.RHS(m_ks) = 0.0;  // age zero at surface
   }
 
   // solve it
   try {
-    solve(m_ks + 1,x);
+    S.solve(m_ks + 1,x);
   }
   catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (ageSystemCtx) at (%d,%d)\n"
@@ -225,17 +230,18 @@ ageSystemCtx::solveThisColumn() for the actual method.
 void IceModel::ageStep() {
   PetscErrorCode  ierr;
 
-  std::vector<double> x(grid.Mz_fine);   // space for solution
-
   bool viewOneColumn;
   OptionsIsSet("-view_sys", viewOneColumn);
 
   IceModelVec3 *u3, *v3, *w3;
   stress_balance->get_3d_velocity(u3, v3, w3);
 
-  ageSystemCtx system(grid.Mz_fine, "age",
-                      grid.dx(), grid.dy(), grid.dz_fine, dt_TempAge,
+  ageSystemCtx system(grid.z(), "age",
+                      grid.dx(), grid.dy(), dt_TempAge,
                       &tau3, u3, v3, w3); // linear system to solve in each column
+
+  size_t Mz_fine = system.z().size();
+  std::vector<double> x(Mz_fine);   // space for solution
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -265,7 +271,7 @@ void IceModel::ageStep() {
                            "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j);
         PISM_PETSC_CHK(ierr, "PetscPrintf");
-        system.viewColumnInfoMFile(x, grid.Mz_fine);
+        system.viewColumnInfoMFile(x);
       }
 
       // put solution in IceModelVec3
