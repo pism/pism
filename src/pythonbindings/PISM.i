@@ -66,6 +66,7 @@
 #include "regional/regional.hh"
 #include "enthSystem.hh"
 #include "error_handling.hh"
+#include "ColumnInterpolation.hh"
 
 using namespace pism;
 %}
@@ -563,6 +564,8 @@ using namespace pism;
 %include "columnSystem.hh"
 %rename pism::enthSystemCtx::lambda get_lambda;
 %include "enthSystem.hh"
+
+%include "ColumnInterpolation.hh"
 
 %include "iceModel.hh"
 

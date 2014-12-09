@@ -23,24 +23,32 @@
 
 namespace pism {
 
-ColumnInterpolation::ColumnInterpolation(std::vector<double> coarse)
-  : m_z_coarse(coarse) {
+ColumnInterpolation::ColumnInterpolation(std::vector<double> z_coarse)
+  : m_z_coarse(z_coarse) {
   init_fine_grid();
   init_interpolation();
 }
 
-void ColumnInterpolation::coarse_to_fine(double *coarse, unsigned int ks, double *fine) const {
+std::vector<double> ColumnInterpolation::coarse_to_fine(const std::vector<double> &input,
+                                                        unsigned int ks) const {
+  std::vector<double> result(Mz_fine());
+  coarse_to_fine(&input[0], ks, &result[0]);
+  return result;
+}
+
+void ColumnInterpolation::coarse_to_fine(const double *input, unsigned int ks, double *result) const {
   if (m_use_linear_interpolation) {
-    coarse_to_fine_linear(coarse, ks, fine);
+    coarse_to_fine_linear(input, ks, result);
   } else {
-    coarse_to_fine_quadratic(coarse, ks, fine);
+    coarse_to_fine_quadratic(input, ks, result);
   }
 }
 
-void ColumnInterpolation::coarse_to_fine_linear(double *coarse, unsigned int ks, double *fine) const {
+void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned int ks,
+                                                double *result) const {
   for (unsigned int k = 0; k < Mz_fine(); k++) {
     if (k > ks) {
-      fine[k] = coarse[m_coarse2fine[k]];
+      result[k] = input[m_coarse2fine[k]];
       continue;
     }
 
@@ -48,16 +56,17 @@ void ColumnInterpolation::coarse_to_fine_linear(double *coarse, unsigned int ks,
 
     // extrapolate (if necessary):
     if (m == Mz() - 1) {
-      fine[k] = coarse[Mz() - 1];
+      result[k] = input[Mz() - 1];
       continue;
     }
 
     const double incr = (m_z_fine[k] - m_z_coarse[m]) / (m_z_coarse[m + 1] - m_z_coarse[m]);
-    fine[k] = coarse[m] + incr * (coarse[m + 1] - coarse[m]);
+    result[k] = input[m] + incr * (input[m + 1] - input[m]);
   }
 }
 
-void ColumnInterpolation::coarse_to_fine_quadratic(double *coarse, unsigned int ks, double *fine) const {
+void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned int ks,
+                                                   double *result) const {
   unsigned int k = 0, m = 0;
   for (m = 0; m < Mz() - 2; m++) {
     if (k > ks) {
@@ -68,9 +77,9 @@ void ColumnInterpolation::coarse_to_fine_quadratic(double *coarse, unsigned int 
       z0 = m_z_coarse[m],
       z1 = m_z_coarse[m+1],
       z2 = m_z_coarse[m+2],
-      f0 = coarse[m],
-      f1 = coarse[m+1],
-      f2 = coarse[m+2];
+      f0 = input[m],
+      f1 = input[m+1],
+      f2 = input[m+2];
 
     const double
       d1 = (f1 - f0) / (z1 - z0),
@@ -86,7 +95,7 @@ void ColumnInterpolation::coarse_to_fine_quadratic(double *coarse, unsigned int 
 
       const double s = m_z_fine[k] - z0;
 
-      fine[k] = s * (a + b * s) + c;
+      result[k] = s * (a + b * s) + c;
 
       k++;
     }
@@ -98,36 +107,42 @@ void ColumnInterpolation::coarse_to_fine_quadratic(double *coarse, unsigned int 
     const double
       z0 = m_z_coarse[m],
       z1 = m_z_coarse[m+1],
-      f0 = coarse[m],
-      f1 = coarse[m+1],
+      f0 = input[m],
+      f1 = input[m+1],
       lambda = (f1 - f0) / (z1 - z0);
 
     while (m_z_fine[k] < z1) {
-      fine[k] = f0 + lambda * (m_z_fine[k] - z0);
+      result[k] = f0 + lambda * (m_z_fine[k] - z0);
 
       k++;
     }
   }
 
   // fill the rest using constant extrapolation
-  const double f0 = coarse[Mz() - 1];
+  const double f0 = input[Mz() - 1];
   while (k <= ks) {
-    fine[k] = f0;
+    result[k] = f0;
     k++;
   }
 }
 
-void ColumnInterpolation::fine_to_coarse(double *fine, double *coarse) const {
+std::vector<double> ColumnInterpolation::fine_to_coarse(const std::vector<double> &input) const {
+  std::vector<double> result(Mz());
+  fine_to_coarse(&input[0], &result[0]);
+  return result;
+}
+
+void ColumnInterpolation::fine_to_coarse(const double *input, double *result) const {
   const unsigned int N = Mz();
 
   for (unsigned int k = 0; k < N - 1; ++k) {
     const int m = m_fine2coarse[k];
 
     const double increment = (m_z_coarse[k] - m_z_fine[m]) / (m_z_fine[m + 1] - m_z_fine[m]);
-    coarse[k] = fine[m] + increment * (fine[m + 1] - fine[m]);
+    result[k] = input[m] + increment * (input[m + 1] - input[m]);
   }
 
-  coarse[N - 1] = fine[m_fine2coarse[N - 1]];
+  result[N - 1] = input[m_fine2coarse[N - 1]];
 }
 
 unsigned int ColumnInterpolation::Mz() const {
