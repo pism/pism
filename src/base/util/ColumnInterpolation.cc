@@ -182,48 +182,56 @@ void ColumnInterpolation::init_fine_grid() {
   for (unsigned int k = 0; k < Mz_fine; ++k) {
     m_z_fine[k] = m_z_coarse[0] + k * dz_fine;
   }
-  // Note that it's allowed to go over Lz.
+  // Note that it is allowed to go over Lz.
+}
+
+/*!
+ * Given two 1D grids, `z_input` and `z_output`, for each `z_output`
+ * index `k` we find an index `m` so that
+ *
+ * `z_input[m] < z_output[k] <= z_input[m+1]`
+ *
+ * In other words, we look for two consecutive points in the input
+ * grid that bracket a point in the output grid.
+ *
+ * This function sets `result[k] = m`. This information is then used
+ * to interpolate from the grid defined by `z_input` to the one
+ * defined by `z_output`.
+ *
+ * We use constant extrapolation outside the range defined by `z_input`.
+ */
+static std::vector<unsigned int> init_interpolation_indexes(const std::vector<double>& z_input,
+                                                            const std::vector<double>& z_output) {
+  std::vector<unsigned int> result(z_output.size());
+
+  unsigned int m = 0;
+  for (unsigned int k = 0; k < z_output.size(); ++k) {
+
+    if (z_output[k] <= z_input.front()) {
+      result[k] = 0;
+      continue;
+    } else if (z_output[k] >= z_input.back()) {
+      result[k] = z_input.size() - 1;
+      continue;
+    }
+
+    while (z_input[m + 1] < z_output[k]) {
+      ++m;
+    }
+
+    result[k] = m;
+  }
+
+  return result;
 }
 
 void ColumnInterpolation::init_interpolation() {
-  unsigned int m = 0;
 
   // coarse -> fine
-  {
-    m_coarse2fine.resize(Mz_fine());
-    m = 0;
-    for (unsigned int k = 0; k < Mz_fine(); ++k) {
-      if (m_z_fine[k] >= m_z_coarse.back()) {
-        m_coarse2fine[k] = Mz_coarse() - 1;
-        continue;
-      }
-
-      while (m_z_coarse[m + 1] < m_z_fine[k]) {
-        ++m;
-      }
-
-      m_coarse2fine[k] = m;
-    }
-  }
+  m_coarse2fine = init_interpolation_indexes(m_z_coarse, m_z_fine);
 
   // fine -> coarse
-  {
-    m_fine2coarse.resize(Mz_coarse());
-    m = 0;
-    for (unsigned int k = 0; k < Mz_coarse(); ++k) {
-      if (m_z_coarse[k] >= m_z_fine.back()) {
-        m_fine2coarse[k] = Mz_fine() - 1;
-        continue;
-      }
-
-      while (m < Mz_fine() - 1 && 
-             m_z_fine[m + 1] < m_z_coarse[k]) {
-        ++m;
-      }
-
-      m_fine2coarse[k] = m;
-    }
-  }
+  m_fine2coarse = init_interpolation_indexes(m_z_fine, m_z_coarse);
 
   // decide if we're going to use linear or quadratic interpolation
   double dz_min = m_z_coarse.back();
