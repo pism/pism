@@ -550,12 +550,12 @@ PetscErrorCode IceGrid::init_interpolation() {
   ice_storage2fine.resize(Mz_fine);
   m = 0;
   for (unsigned int k = 0; k < Mz_fine; k++) {
-    if (zlevels_fine[k] >= Lz) {
+    if (zlevels_fine[k] >= zlevels.back()) {
       ice_storage2fine[k] = Mz - 1;
       continue;
     }
 
-    while (zlevels[m + 1] < zlevels_fine[k]) {
+    while (m < Mz - 1 && zlevels[m + 1] < zlevels_fine[k]) {
       m++;
     }
 
@@ -566,6 +566,11 @@ PetscErrorCode IceGrid::init_interpolation() {
   ice_fine2storage.resize(Mz);
   m = 0;
   for (unsigned int k = 0; k < Mz; k++) {
+    if (zlevels[k] >= zlevels_fine.back()) {
+      ice_fine2storage[k] = Mz_fine - 1;
+      continue;
+    }
+
     while (m < Mz_fine - 1 && zlevels_fine[m + 1] < zlevels[k]) {
       m++;
     }
