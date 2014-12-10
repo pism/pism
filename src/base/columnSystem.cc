@@ -25,6 +25,7 @@
 #include <iostream>
 
 #include "error_handling.hh"
+#include "ColumnInterpolation.hh"
 
 namespace pism {
 
@@ -293,6 +294,8 @@ columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
 
   m_solver = new TridiagonalSystem(m_z.size(), prefix);
 
+  m_interp = new ColumnInterpolation(storage_grid, m_z);
+
   m_u.resize(m_z.size());
   m_v.resize(m_z.size());
   m_w.resize(m_z.size());
@@ -300,6 +303,7 @@ columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
 
 columnSystemCtx::~columnSystemCtx() {
   delete m_solver;
+  delete m_interp;
 }
 
 unsigned int columnSystemCtx::ks() const {
@@ -312,6 +316,20 @@ double columnSystemCtx::dz() const {
 
 const std::vector<double>& columnSystemCtx::z() const {
   return m_z;
+}
+
+void columnSystemCtx::fine_to_coarse(const std::vector<double> &fine, int i, int j,
+                                     IceModelVec3& coarse) const {
+  double *array = NULL;
+  coarse.getInternalColumn(i, j, &array);
+  m_interp->fine_to_coarse(&fine[0], array);
+}
+
+void columnSystemCtx::coarse_to_fine(IceModelVec3 *coarse, int i, int j, int ks,
+                                     double* fine) const {
+  double *array = NULL;
+  coarse->getInternalColumn(i, j, &array);
+  m_interp->coarse_to_fine(array, ks, fine);
 }
 
 void columnSystemCtx::init_fine_grid(const std::vector<double>& storage_grid) {

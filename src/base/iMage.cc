@@ -64,9 +64,9 @@ void ageSystemCtx::initThisColumn(int i, int j, double thickness) {
     return;
   }
 
-  m_u3->getValColumn(i, j, m_ks, &m_u[0]);
-  m_v3->getValColumn(i, j, m_ks, &m_v[0]);
-  m_w3->getValColumn(i, j, m_ks, &m_w[0]);
+  coarse_to_fine(m_u3, i, j, m_ks, &m_u[0]);
+  coarse_to_fine(m_v3, i, j, m_ks, &m_v[0]);
+  coarse_to_fine(m_w3, i, j, m_ks, &m_w[0]);
 }
 
 //! Conservative first-order upwind scheme with implicit in the vertical: one column solve.
@@ -222,8 +222,8 @@ The numerical method is a conservative form of first-order upwinding, but the
 vertical advection term is computed implicitly.  Thus there is no CFL-type
 stability condition from the vertical velocity; CFL is only for the horizontal
 velocity.  We use a finely-spaced, equally-spaced vertical grid in the
-calculation.  Note that the IceModelVec3 methods getValColumn...() and
-setValColumn..() interpolate back and forth between this fine grid and
+calculation.  Note that the columnSystemCtx methods coarse_to_fine() and
+fine_to_coarse() interpolate back and forth between this fine grid and
 the storage grid.  The storage grid may or may not be equally-spaced.  See
 ageSystemCtx::solveThisColumn() for the actual method.
  */
@@ -275,7 +275,7 @@ void IceModel::ageStep() {
       }
 
       // put solution in IceModelVec3
-      vWork3d.setValColumnPL(i, j, x);
+      system.fine_to_coarse(x, i, j, vWork3d);
     }
   }
 

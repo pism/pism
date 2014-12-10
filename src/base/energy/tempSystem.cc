@@ -71,11 +71,11 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
     return;
   }
 
-  m_u3->getValColumn(m_i, m_j, m_ks, &m_u[0]);
-  m_v3->getValColumn(m_i, m_j, m_ks, &m_v[0]);
-  m_w3->getValColumn(m_i, m_j, m_ks, &m_w[0]);
-  m_strain_heating3->getValColumn(m_i, m_j, m_ks, &m_strain_heating[0]);
-  m_T3->getValColumn(m_i, m_j, m_ks, &m_T[0]);
+  coarse_to_fine(m_u3, m_i, m_j, m_ks, &m_u[0]);
+  coarse_to_fine(m_v3, m_i, m_j, m_ks, &m_v[0]);
+  coarse_to_fine(m_w3, m_i, m_j, m_ks, &m_w[0]);
+  coarse_to_fine(m_strain_heating3, m_i, m_j, m_ks, &m_strain_heating[0]);
+  coarse_to_fine(m_T3, m_i, m_j, m_ks, &m_T[0]);
 
   m_lambda = compute_lambda();
 }

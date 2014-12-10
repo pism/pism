@@ -687,23 +687,15 @@ public:
   virtual ~IceModelVec3() {}
 
   virtual void create(IceGrid &mygrid, const std::string &my_short_name,
-                                IceModelVecKind ghostedp,
-                                unsigned int stencil_width = 1);
-
-  // need to call begin_access() before set...(i,j,...) or get...(i,j,...) *and* need call
-  // end_access() afterward
-  void  getValColumn(int i, int j, unsigned int ks, double *valsOUT) const;
-  void  getValColumnQUAD(int i, int j, unsigned int ks, double *valsOUT) const;
-  void  getValColumnPL(int i, int j, unsigned int ks, double *valsOUT) const;
-
-  void  setValColumnPL(int i, int j, std::vector<double> &values_fine);
+                      IceModelVecKind ghostedp,
+                      unsigned int stencil_width = 1);
 
   void  getPlaneStarZ(int i, int j, double z,
-                                planeStar<double> *star) const;
+                      planeStar<double> *star) const;
   void  getPlaneStar_fine(int i, int j, unsigned int k,
-                                    planeStar<double> *star) const;
+                          planeStar<double> *star) const;
   void  getPlaneStar(int i, int j, unsigned int k,
-                               planeStar<double> *star) const;
+                     planeStar<double> *star) const;
 
   void  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
   void  getHorSlice(IceModelVec2S &gslice, double z) const;

@@ -23,6 +23,7 @@
 #include "enthalpyConverter.hh"
 
 #include "error_handling.hh"
+#include "ColumnInterpolation.hh"
 
 namespace pism {
 
@@ -110,11 +111,11 @@ void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
     return;
   }
 
-  m_u3->getValColumn(m_i, m_j, m_ks, &m_u[0]);
-  m_v3->getValColumn(m_i, m_j, m_ks, &m_v[0]);
-  m_w3->getValColumn(m_i, m_j, m_ks, &m_w[0]);
-  m_strain_heating3->getValColumn(m_i, m_j, m_ks, &m_strain_heating[0]);
-  m_Enth3->getValColumn(m_i, m_j, m_ks, &m_Enth[0]);
+  coarse_to_fine(m_u3, m_i, m_j, m_ks, &m_u[0]);
+  coarse_to_fine(m_v3, m_i, m_j, m_ks, &m_v[0]);
+  coarse_to_fine(m_w3, m_i, m_j, m_ks, &m_w[0]);
+  coarse_to_fine(m_strain_heating3, m_i, m_j, m_ks, &m_strain_heating[0]);
+  coarse_to_fine(m_Enth3, m_i, m_j, m_ks, &m_Enth[0]);
 
   compute_enthalpy_CTS();
 

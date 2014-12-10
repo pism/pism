@@ -128,6 +128,7 @@ private:
 };
 
 class IceModelVec3;
+class ColumnInterpolation;
 
 //! Base class for tridiagonal systems in the ice.
 /*! Adds data members used in time-dependent systems with advection
@@ -145,9 +146,12 @@ public:
   unsigned int ks() const;
   double dz() const;
   const std::vector<double>& z() const;
+  void fine_to_coarse(const std::vector<double> &fine, int i, int j,
+                      IceModelVec3& coarse) const;
 protected:
-
   TridiagonalSystem *m_solver;
+
+  ColumnInterpolation *m_interp;
 
   //! current system size; corresponds to the highest vertical level within the ice
   unsigned int m_ks;
@@ -173,6 +177,8 @@ protected:
   void reportColumnZeroPivotErrorMFile(unsigned int M);
 
   void init_fine_grid(const std::vector<double>& storage_grid);
+
+  void coarse_to_fine(IceModelVec3 *coarse, int i, int j, int ks, double* fine) const;
 };
 
 } // end of namespace pism

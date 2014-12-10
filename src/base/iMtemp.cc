@@ -109,9 +109,10 @@ This method should be kept because it is worth having alternative physics, and
     is converted to melt-water, and that a fraction of this melt water is transported to
     the ice base according to the scheme in excessToFromBasalMeltLayer().
 
-    The method uses equally-spaced calculation but the methods getValColumn(),
-    setValColumn() interpolate back-and-forth from this equally-spaced calculational
-    grid to the (usually) non-equally spaced storage grid.
+    The method uses equally-spaced calculation but the columnSystemCtx
+    methods coarse_to_fine(), fine_to_coarse() interpolate
+    back-and-forth from this equally-spaced computational grid to the
+    (usually) non-equally spaced storage grid.
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
@@ -324,7 +325,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
     }
 
     // transfer column into vWork3d; communication later
-    vWork3d.setValColumnPL(i,j,Tnew);
+    system.fine_to_coarse(Tnew, i, j, vWork3d);
 
     // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
     if (mask.ocean(i,j)) {

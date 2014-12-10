@@ -457,8 +457,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       } // end of the grounded case
     } // end of the basal melt rate computation
 
-    vWork3d.setValColumnPL(i, j, Enthnew);
-
+    system.fine_to_coarse(Enthnew, i, j, vWork3d);
   }
 
   // FIXME: use cell areas

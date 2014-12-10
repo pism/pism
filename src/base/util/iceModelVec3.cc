@@ -46,9 +46,9 @@ IceModelVec3D::~IceModelVec3D() {
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-void  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_name,
-                                        IceModelVecKind ghostedp, const std::vector<double> &levels,
-                                        unsigned int stencil_width) {
+void IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_name,
+                             IceModelVecKind ghostedp, const std::vector<double> &levels,
+                             unsigned int stencil_width) {
 
   assert(m_v == NULL);
   
@@ -83,36 +83,6 @@ bool IceModelVec3D::isLegalLevel(double z) const {
   return true;
 }
 
-
-//! Set values of an ice scalar quantity in a column by linear *interpolation*.
-/*!
-  Input array `source` and `must` contain `grid.Mz_fine` scalars
-  (`double`).  Upon completion, internal storage will hold values derived from 
-  linearly interpolating the input values.
- */
-void  IceModelVec3::setValColumnPL(int i, int j, std::vector<double> &source) {
-#if (PISM_DEBUG==1)
-  assert(m_v != NULL);
-  assert(source.size() == grid->Mz_fine);
-  check_array_indices(i, j, 0);
-#endif
-
-  std::vector<double> &zlevels_fine = grid->zlevels_fine;
-
-  double ***arr = (double***) array;
-  
-  for (unsigned int k=0; k < m_n_levels-1; ++k) {
-    int m = grid->ice_fine2storage[k];
-
-    const double increment = (zlevels[k] - zlevels_fine[m])
-                                  / (zlevels_fine[m+1] - zlevels_fine[m]);
-    arr[i][j][k] = source[m] +  increment * (source[m+1] - source[m]);
-  }
-  
-  arr[i][j][m_n_levels-1] = source[grid->ice_fine2storage[m_n_levels-1]];
-}
-
-
 //! Set all values of scalar quantity to given a single value in a particular column.
 void IceModelVec3D::setColumn(int i, int j, double c) {
   PetscErrorCode ierr;
@@ -132,7 +102,6 @@ void IceModelVec3D::setColumn(int i, int j, double c) {
     }
   }
 }
-
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double IceModelVec3D::getValZ(int i, int j, double z) const {
@@ -163,10 +132,9 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
   return valm + incr * (arr[i][j][mcurr+1] - valm);
 }
 
-
 //! Return values on planar star stencil of scalar quantity at level z (by linear interpolation).
-void   IceModelVec3::getPlaneStarZ(int i, int j, double z,
-                                             planeStar<double> *star) const {
+void IceModelVec3::getPlaneStarZ(int i, int j, double z,
+                                 planeStar<double> *star) const {
 #if (PISM_DEBUG==1)
   assert(array != NULL);
   assert(m_has_ghosts == true);
@@ -210,7 +178,7 @@ void   IceModelVec3::getPlaneStarZ(int i, int j, double z,
 
 //! Gets a map-plane star stencil directly from the storage grid.
 void IceModelVec3::getPlaneStar(int i, int j, unsigned int k,
-                                          planeStar<double> *star) const {
+                                planeStar<double> *star) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
@@ -226,7 +194,7 @@ void IceModelVec3::getPlaneStar(int i, int j, unsigned int k,
 
 //! Gets a map-plane star stencil on the fine vertical grid.
 void IceModelVec3::getPlaneStar_fine(int i, int j, unsigned int k,
-                                               planeStar<double> *star) const {
+                                     planeStar<double> *star) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
@@ -247,128 +215,6 @@ void IceModelVec3::getPlaneStar_fine(int i, int j, unsigned int k,
     return getPlaneStar(i, j, kbz, star);
   }
 }
-
-//! \brief Return values of ice scalar quantity at given levels (m)
-//! above base of ice, using piecewise linear interpolation.
-/*!
- * ks is the top-most fine vertical grid level within the ice
- */
-void IceModelVec3::getValColumnPL(int i, int j, unsigned int ks,
-                                            double *result) const {
-#if (PISM_DEBUG==1)
-  assert(m_v != NULL);
-  check_array_indices(i, j, 0);
-#endif
-
-  std::vector<double> &zlevels_fine = grid->zlevels_fine;
-  double ***arr = (double***) array;
-
-  for (unsigned int k = 0; k < grid->Mz_fine; k++) {
-    if (k > ks) {
-      result[k] = arr[i][j][grid->ice_storage2fine[k]];
-      continue;
-    }
-
-    unsigned int m = grid->ice_storage2fine[k];
-
-    // extrapolate (if necessary):
-    if (m == m_n_levels - 1) {
-      result[k] = arr[i][j][m_n_levels-1];
-      continue;
-    }
-
-    const double incr = (zlevels_fine[k] - zlevels[m]) / (zlevels[m+1] - zlevels[m]);
-    const double valm = arr[i][j][m];
-    result[k] = valm + incr * (arr[i][j][m+1] - valm);
-  }
-}
-
-//! \brief Return values of ice scalar quantity on the fine
-//! computational grid, using local quadratic interpolation.
-void  IceModelVec3::getValColumnQUAD(int i, int j, unsigned int ks,
-                                               double *result) const {
-#if (PISM_DEBUG==1)
-  check_array_indices(i, j, 0);
-#endif
-
-  // Assume that the fine grid is equally-spaced:
-  const double dz_fine = grid->zlevels_fine[1] - grid->zlevels_fine[0];
-  const double *column = static_cast<const double***>(array)[i][j];
-
-  unsigned int k = 0, m = 0;
-  for (m = 0; m < m_n_levels - 2; m++) {
-    if (k > ks) {
-      break;
-    }
-
-    const double
-      z0 = zlevels[m],
-      z1 = zlevels[m+1],
-      z2 = zlevels[m+2],
-      f0 = column[m],
-      f1 = column[m+1],
-      f2 = column[m+2];
-
-    const double
-      d1 = (f1 - f0) / (z1 - z0),
-      d2 = (f2 - f0) / (z2 - z0),
-      b  = (d2 - d1) / (z2 - z1),
-      a  = d1 - b * (z1 - z0),
-      c  = f0;
-
-    double z_fine = k * dz_fine;
-    while (z_fine < z1) {
-      if (k > ks) {
-        break;
-      }
-
-      const double s = z_fine - z0;
-
-      result[k] = s * (a + b * s) + c;
-
-      k++;
-      z_fine = k * dz_fine;
-    }
-  } // m-loop
-
-  // check if we got to the end of the m-loop and use linear
-  // interpolation between the remaining 2 coarse levels
-  if (m == m_n_levels - 2) {
-    const double
-      z0 = zlevels[m],
-      z1 = zlevels[m+1],
-      f0 = column[m],
-      f1 = column[m+1],
-      lambda = (f1 - f0) / (z1 - z0);
-
-    double z_fine = k * dz_fine;
-    while (z_fine < z1) {
-      result[k] = f0 + lambda * (z_fine - z0);
-
-      k++;
-      z_fine = k * dz_fine;
-    }
-  }
-
-  // fill the rest using constant extrapolation
-  const double f0 = column[m_n_levels - 1];
-  while (k <= ks) {
-    result[k] = f0;
-    k++;
-  }
-}
-
-
-//! If the grid is equally spaced in the ice then use PL, otherwise use QUAD.
-void  IceModelVec3::getValColumn(int i, int j, unsigned int ks,
-                                           double *result) const {
-  if (grid->ice_vertical_spacing == EQUAL) {
-    return getValColumnPL(i, j, ks, result);
-  } else {
-    return getValColumnQUAD(i, j, ks, result);
-  }
-}
-
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into a Vec gslice.
 /*!
@@ -418,7 +264,6 @@ void  IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
   }
 }
 
-
 void  IceModelVec3D::getInternalColumn(int i, int j, double **valsPTR) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
@@ -435,7 +280,6 @@ void  IceModelVec3D::getInternalColumn(int i, int j, const double **valsPTR) con
   *valsPTR = arr[i][j];
 }
 
-
 void  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
@@ -444,7 +288,6 @@ void  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
   PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, m_n_levels*sizeof(double));
   PISM_PETSC_CHK(ierr, "PetscMemcpy");
 }
-
 
 void  IceModelVec3::create(IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp,
                                      unsigned int stencil_width) {
