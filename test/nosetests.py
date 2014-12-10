@@ -416,6 +416,7 @@ def column_interpolation_test(plot=False):
     Mz = 41
 
     def z_quadratic(Mz, Lz):
+        "Compute levels of a quadratic coarse grid."
         result = np.zeros(Mz)
         z_lambda = 4.0
         for k in xrange(Mz-1):
@@ -424,24 +425,36 @@ def column_interpolation_test(plot=False):
         result[Mz-1] = Lz
         return result
 
+    def fine_grid(z_coarse):
+        "Compute levels of the fine grid corresponding to a given coarse grid."
+        Lz = z_coarse[-1]
+        dz = np.min(np.diff(z_coarse))
+        Mz = int(np.ceil(Lz / dz) + 1)
+        dz = Lz / (Mz - 1.0)
+        result = np.zeros(Mz)
+        for k in range(1, Mz):
+            result[k] = z_coarse[0] + k * dz
+
+        return result
+
     def test_quadratic_interp():
         z_coarse = z_quadratic(Mz, Lz)
         f_coarse = (z_coarse / Lz)**2
+        z_fine = fine_grid(z_coarse)
 
         print "Testing quadratic interpolation"
-        return test_interp(z_coarse, f_coarse)
+        return test_interp(z_coarse, f_coarse, z_fine, "Quadratic interpolation")
 
     def test_linear_interp():
         z_coarse = np.linspace(0, Lz, Mz)
         f_coarse = (z_coarse / Lz)**2
+        z_fine = fine_grid(z_coarse)
 
         print "Testing linear interpolation"
-        return test_interp(z_coarse, f_coarse)
+        return test_interp(z_coarse, f_coarse, z_fine, "Linear interpolation")
 
-    def test_interp(z, f):
-        interp = PISM.ColumnInterpolation(z)
-
-        z_fine = interp.z_fine()
+    def test_interp(z, f, z_fine, title):
+        interp = PISM.ColumnInterpolation(z, z_fine)
 
         f_fine = interp.coarse_to_fine(f, interp.Mz_fine())
 
@@ -457,6 +470,7 @@ def column_interpolation_test(plot=False):
             plt.plot(z, f_roundtrip, 'o-', label="interpolated back onto the coarse grid")
             plt.plot(z, f_roundtrip - f, 'o-', label="difference after the roundtrip")
             plt.legend(loc="best")
+            plt.title(title)
             plt.grid(True)
 
         if plot:

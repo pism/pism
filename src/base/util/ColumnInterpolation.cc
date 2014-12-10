@@ -23,9 +23,9 @@
 
 namespace pism {
 
-ColumnInterpolation::ColumnInterpolation(const std::vector<double> &z_coarse)
-  : m_z_coarse(z_coarse) {
-  init_fine_grid();
+ColumnInterpolation::ColumnInterpolation(const std::vector<double> &z_coarse,
+                                         const std::vector<double> &z_fine)
+  : m_z_fine(z_fine), m_z_coarse(z_coarse) {
   init_interpolation();
 }
 
@@ -163,26 +163,6 @@ const std::vector<double>& ColumnInterpolation::z_fine() const {
 
 const std::vector<double>& ColumnInterpolation::z_coarse() const {
   return m_z_coarse;
-}
-
-void ColumnInterpolation::init_fine_grid() {
-  // Compute dz_fine as the minimum vertical spacing in the coarse
-  // grid:
-  unsigned int Mz = m_z_coarse.size();
-  double Lz = m_z_coarse.back(), dz_fine = Lz;
-  for (unsigned int k = 1; k < Mz; ++k) {
-    dz_fine = std::min(dz_fine, m_z_coarse[k] - m_z_coarse[k - 1]);
-  }
-
-  size_t Mz_fine = static_cast<size_t>(ceil(Lz / dz_fine) + 1);
-  dz_fine = Lz / (Mz_fine - 1);
-
-  m_z_fine.resize(Mz_fine);
-  // compute levels of the fine grid:
-  for (unsigned int k = 0; k < Mz_fine; ++k) {
-    m_z_fine[k] = m_z_coarse[0] + k * dz_fine;
-  }
-  // Note that it is allowed to go over Lz.
 }
 
 /*!

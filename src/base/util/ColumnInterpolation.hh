@@ -26,7 +26,8 @@ namespace pism {
 
 class ColumnInterpolation {
 public:
-  ColumnInterpolation(const std::vector<double> &z_coarse);
+  ColumnInterpolation(const std::vector<double> &z_coarse,
+                      const std::vector<double> &z_fine);
 
   void coarse_to_fine(const double *input, unsigned int ks, double *result) const;
   void fine_to_coarse(const double *input, double *result) const;
@@ -51,7 +52,6 @@ private:
   std::vector<unsigned int> m_coarse2fine, m_fine2coarse;
   bool m_use_linear_interpolation;
 
-  void init_fine_grid();
   void init_interpolation();
   void coarse_to_fine_linear(const double *input, unsigned int ks, double *result) const;
   void coarse_to_fine_quadratic(const double *input, unsigned int ks, double *result) const;
