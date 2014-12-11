@@ -138,6 +138,13 @@ add_custom_target (etags
   VERBATIM
 )
 
+# re-run tests that failed
+add_custom_target (retest
+  COMMAND ${CMAKE_CTEST_COMMAND} --rerun-failed
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  VERBATIM
+)
+
 # Install helper scripts residing in util/
 install (PROGRAMS
   util/check_stationarity.py
