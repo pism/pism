@@ -65,7 +65,9 @@ PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
 
   double halfWidth = 300.0e3;  // 300.0 km half-width
   double Lx = halfWidth, Ly = halfWidth;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, XY_PERIODIC);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+                          0.0, 0.0, // center: (x0,y0)
+                          Mx, My, XY_PERIODIC);
   return 0;
 }
 

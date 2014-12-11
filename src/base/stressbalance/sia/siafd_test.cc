@@ -327,38 +327,33 @@ int main(int argc, char *argv[]) {
 
     IceGrid grid(com, config);
 
-    grid.set_Lx(900e3);
-    grid.set_Ly(grid.Lx());
-    grid.set_Lz(4000.0);
-    grid.set_Mx(61);
-    grid.set_My(61);
-    grid.set_Mz(61);
+    double
+      Lx = 900e3,
+      Ly = Lx,
+      Lz = 4000.0;
+    int
+      Mx = 61,
+      My = 61,
+      Mz = 61;
 
     std::string output_file = "siafd_test_F.nc";
-    int tmp = grid.Mz();
     {
       bool flag;
-      int Mx = grid.Mx(), My = (int)grid.My();
       OptionsInt("-Mx", "Number of grid points in the X direction",
                  Mx, flag);
       OptionsInt("-My", "Number of grid points in the X direction",
                  My, flag);
       OptionsInt("-Mz", "Number of vertical grid levels",
-                 tmp, flag);
+                 Mz, flag);
       OptionsString("-o", "Set the output file name",
                     output_file, flag);
-
-      grid.set_Mx(Mx);
-      grid.set_My(My);
     }
 
-    if (tmp > 0) {
-      grid.set_Mz(tmp);
-    } else {
-      throw RuntimeError::formatted("-Mz %d is invalid (has to be positive).", tmp);
-    }
-
-    grid.compute_vertical_levels();
+    grid.set_Lx(Lx);
+    grid.set_Ly(Ly);
+    grid.set_Mx(Mx);
+    grid.set_My(My);
+    grid.compute_vertical_levels(Lz, Mz, EQUAL);
     grid.allocate();
 
     setVerbosityLevel(5);

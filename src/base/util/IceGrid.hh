@@ -147,12 +147,15 @@ public:
 #endif
 
   static Ptr Shallow(MPI_Comm c, const Config &config,
-                     double my_Lx, double my_Ly,
+                     double Lx, double Ly,
+                     double x0, double y0,
                      unsigned int Mx, unsigned int My, Periodicity p);
 
   static Ptr Create(MPI_Comm c, const Config &config,
-                    double my_Lx, double my_Ly, double my_Lz,
-                    unsigned int Mx, unsigned int My, unsigned int Mz,
+                    double Lx, double Ly,
+                    double x0, double y0,
+                    const std::vector<double> &z,
+                    unsigned int Mx, unsigned int My,
                     Periodicity p);
 
   static Ptr Create(MPI_Comm c, const Config &config);
@@ -166,7 +169,8 @@ public:
 
   // only of these two should be called:
   void set_vertical_levels(const std::vector<double> &z_levels);
-  void compute_vertical_levels();
+  void compute_vertical_levels(double Lz, unsigned int Mz,
+                               SpacingType spacing);
 
   void allocate();  // FIXME! allocate in the constructor!
 
@@ -183,6 +187,7 @@ public:
   //! The time management object (hides calendar computations).
   Time *time;
   const Config &config;
+  Profiling profiling;
 
   //! Starting x-index of a processor sub-domain
   int xs() const;
@@ -215,7 +220,6 @@ public:
   // FIXME: remove this
   void set_Lx(double Lx) {m_Lx = Lx;}
   void set_Ly(double Ly) {m_Ly = Ly;}
-  void set_Lz(double Lz) {m_Lz = Lz;}
 
   double x0() const;
   double y0() const;
@@ -226,7 +230,6 @@ public:
   // FIXME: remove this
   void set_Mx(unsigned int Mx) {m_Mx = Mx;}
   void set_My(unsigned int My) {m_My = My;}
-  void set_Mz(unsigned int Mz) {m_Mz = Mz;}
 
   double dz_min() const;
   double dz_max() const;
@@ -237,11 +240,7 @@ public:
   unsigned int size() const;
   int rank() const;
 
-  Profiling profiling;
-
   const MPI_Comm com;
-
-  SpacingType ice_vertical_spacing;
 
 private:
   // int to match types used by MPI
@@ -261,7 +260,7 @@ private:
     m_y;                          //!< y-coordinates of grid points
 
   //! vertical grid levels in the ice; correspond to the storage grid
-  std::vector<double> m_zlevels;
+  std::vector<double> m_z;
 
   int m_xs, m_xm, m_ys, m_ym;
   double m_dx,               //!< horizontal grid spacing
@@ -270,8 +269,6 @@ private:
   unsigned int m_Mx;
   //! number of grid points in the y-direction
   unsigned int m_My;
-  //! number of grid points in z-direction in the ice
-  unsigned int m_Mz;
 
   //! x-coordinate of the grid center
   double m_x0;
@@ -282,16 +279,8 @@ private:
   double m_Lx;
   //! half width of the ice model grid in y-direction (m)
   double m_Ly;
-  //! max extent of the ice in z-direction (m)
-  double m_Lz;
-
-  //! minimal vertical spacing of the storage grid in the ice
-  double m_dz_min;
-  //! maximal vertical spacing of the storage grid in the ice
-  double m_dz_max;
 
   std::map<int,PISMDM::WeakPtr> m_dms;
-  double m_lambda;         //!< quadratic vertical spacing parameter
   const UnitSystem m_unit_system;
 
   // This DM is used for I/O operations and is not owned by any
@@ -305,7 +294,6 @@ private:
   void compute_nprocs();
   void compute_ownership_ranges();
 
-  void get_dz_min_dz_max_spacingtype();
   void compute_horizontal_spacing();
   void compute_horizontal_coordinates();
 
@@ -313,6 +301,8 @@ private:
 
   int dm_key(int, int);
   std::string init_calendar();
+
+  bool is_equally_spaced() const;
 
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);

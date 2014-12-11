@@ -71,7 +71,9 @@ PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
   double Lx = std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NOT_PERIODIC);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+                          0.0, 0.0, // center: (x0,y0)
+                          Mx, My, NOT_PERIODIC);
   return 0;
 }
 

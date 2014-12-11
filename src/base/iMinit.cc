@@ -166,39 +166,38 @@ void IceModel::set_grid_defaults() {
 void IceModel::set_grid_from_options() {
   bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
     z_spacing_set;
-  double x_scale = grid.Lx() / 1000.0,
-    y_scale = grid.Ly() / 1000.0,
-    z_scale = grid.Lz();
+  double Lx_km = grid.Lx() / 1000.0,
+    Ly_km = grid.Ly() / 1000.0,
+    Lz = grid.Lz();
 
   // Process the options:
 
   // Read -Lx and -Ly.
   OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-              y_scale,  Ly_set);
+              Ly_km,  Ly_set);
   OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-              x_scale,  Lx_set);
+              Lx_km,  Lx_set);
   // Vertical extent (in the ice):
   OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-              z_scale,  Lz_set);
+              Lz,  Lz_set);
 
   // Read -Mx, -My, -Mz and -Mbz.
-  int tmp_Mx = grid.Mx(), tmp_My = grid.My(), tmp_Mz = grid.Mz();
+  int Mx = grid.Mx(), My = grid.My(), Mz = grid.Mz();
   OptionsInt("-My", "Number of grid points in the X direction",
-             tmp_My, My_set);
+             My, My_set);
   OptionsInt("-Mx", "Number of grid points in the Y direction",
-             tmp_Mx, Mx_set);
+             Mx, Mx_set);
   OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-             tmp_Mz, Mz_set);
+             Mz, Mz_set);
 
 
-  if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
-    grid.set_Mx(tmp_Mx);
-    grid.set_My(tmp_My);
-    grid.set_Mz(tmp_Mz);
+  if (Mx > 0 && My > 0) {
+    grid.set_Mx(Mx);
+    grid.set_My(My);
   } else {
     throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
                                   "(have to have a positive number of grid points).",
-                                  tmp_Mx, tmp_My, tmp_Mz);
+                                  Mx, My, Mz);
   }
 
   std::vector<double> x_range, y_range;
@@ -216,21 +215,19 @@ void IceModel::set_grid_from_options() {
   OptionsList("-z_spacing", "Vertical spacing in the ice.",
               z_spacing_choices, "quadratic", keyword, z_spacing_set);
 
+  SpacingType spacing;
   if (keyword == "quadratic") {
-    grid.ice_vertical_spacing = QUADRATIC;
+    spacing = QUADRATIC;
   } else {
-    grid.ice_vertical_spacing = EQUAL;
+    spacing = EQUAL;
   }
 
   // Use the information obtained above:
   if (Lx_set) {
-    grid.set_Lx(x_scale * 1000.0); // convert to meters
+    grid.set_Lx(Lx_km * 1000.0); // convert to meters
   }
   if (Ly_set) {
-    grid.set_Ly(y_scale * 1000.0); // convert to meters
-  }
-  if (Lz_set) {
-    grid.set_Lz(z_scale);          // in meters already
+    grid.set_Ly(Ly_km * 1000.0); // convert to meters
   }
 
   if (x_range_set && y_range_set) {
@@ -244,7 +241,7 @@ void IceModel::set_grid_from_options() {
     grid.set_Ly((y_range[1] - y_range[0]) / 2.0);
   }
 
-  grid.compute_vertical_levels();
+  grid.compute_vertical_levels(Lz, Mz, spacing);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
   // filled. We're ready to call grid.allocate().

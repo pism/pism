@@ -102,7 +102,6 @@ static PetscErrorCode doneWithIceInfo(Vars &variables) {
 
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;
   PetscInitializer petsc(argc, argv, help);
@@ -143,51 +142,43 @@ int main(int argc, char *argv[]) {
     config.set_string("calendar", "none");
 
     // when IceGrid constructor is called, these settings are used
-    config.set_string("grid_ice_vertical_spacing","equal");
-    config.set_string("grid_bed_vertical_spacing","equal");
     config.set_double("start_year", 0.0);
     config.set_double("run_length_years", 1.0);
 
     // create grid and set defaults
     IceGrid grid(com, config);
-    grid.set_Mz(41);
-    grid.set_Lz(4000.0);
-    grid.set_Mx(3);
-    grid.set_My(3);
-    grid.set_Lx(1500e3);
-    grid.set_Ly(grid.Lx());
+    double
+      Lx = 1500e3,
+      Ly = Lx,
+      Lz = 4000.0;
+    int
+      Mx = 3,
+      My = Mx,
+      Mz = 41;
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
-    config.set_double("grid_Mbz", 11); 
-    config.set_double("grid_Lbz", 1000); 
+    config.set_double("grid_Mbz", 11);
+    config.set_double("grid_Lbz", 1000);
 
     verbPrintf(2,com,
                "  initializing IceGrid from options ...\n");
     bool flag;
     double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
-    int tmp = grid.Mz();
-    ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       OptionsString("-o", "Output file name", outname, flag);
       OptionsReal("-dt", "Time-step, in years", dt_years, flag);
-      OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag);
-      double tmp_Lz = grid.Lz();
-      OptionsReal("-Lz", "height of ice/atmosphere boxr", tmp_Lz, flag);
-      grid.set_Lz(tmp_Lz);
+      OptionsInt("-Mz", "number of vertical layers in ice", Mz, flag);
+      OptionsReal("-Lz", "height of ice/atmosphere boxr", Lz, flag);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
-    if (tmp > 0) {
-      grid.set_Mz(tmp);
-    } else {
-      throw RuntimeError::formatted("-Mz %d is invalid (has to be positive)", tmp);
-    }
+    grid.set_Mx(Mx);
+    grid.set_My(My);
+    grid.set_Lx(Lx);
+    grid.set_Ly(Ly);
+    grid.compute_vertical_levels(Lz, Mz, EQUAL);
 
     // complete grid initialization based on user options
-    grid.compute_vertical_levels();
     grid.time->init();
     grid.allocate();
 

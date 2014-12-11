@@ -50,11 +50,12 @@ int main(int argc, char *argv[]) {
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
+    double Lx = 1200e3;
     IceGrid grid(com, config);
     grid.set_Mx(81);
     grid.set_My(81);
-    grid.set_Lx(1200e3);
-    grid.set_Ly(grid.Lx());
+    grid.set_Lx(Lx);
+    grid.set_Ly(Lx);
     grid.set_periodicity(NOT_PERIODIC);
     grid.allocate();
 

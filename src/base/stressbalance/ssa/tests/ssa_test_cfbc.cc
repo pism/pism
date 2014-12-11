@@ -106,7 +106,9 @@ PetscErrorCode SSATestCaseCFBC::initializeGrid(int Mx, int My)
 
   double halfWidth = 250.0e3;  // 500.0 km length
   double Lx = halfWidth, Ly = halfWidth;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, Y_PERIODIC);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+                          0.0, 0.0, // center: (x0,y0)
+                          Mx, My, Y_PERIODIC);
   return 0;
 }
 

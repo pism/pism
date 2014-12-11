@@ -88,7 +88,9 @@ protected:
 PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
 {
   double Lx=L, Ly = L;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly, Mx, My, NOT_PERIODIC);
+  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+                          0.0, 0.0, // center: (x0,y0)
+                          Mx, My, NOT_PERIODIC);
   return 0;
 }
 

@@ -81,29 +81,28 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
                                   word.c_str());
   }
 
+  unsigned int Mz = config.get("grid_Mz");
+  double Lz = config.get("grid_Lz");
+  SpacingType spacing = EQUAL;
   word = config.get_string("grid_ice_vertical_spacing");
   if (word == "quadratic") {
-    ice_vertical_spacing = QUADRATIC;
+    spacing = QUADRATIC;
   } else if (word == "equal") {
-    ice_vertical_spacing = EQUAL;
+    spacing = EQUAL;
   } else {
     throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
                                   word.c_str());
   }
+  compute_vertical_levels(Lz, Mz, spacing);
 
   m_Lx  = config.get("grid_Lx");
   m_Ly  = config.get("grid_Ly");
-  m_Lz  = config.get("grid_Lz");
-
-  m_lambda = config.get("grid_lambda");
 
   m_Mx  = static_cast<int>(config.get("grid_Mx"));
   m_My  = static_cast<int>(config.get("grid_My"));
-  m_Mz  = static_cast<int>(config.get("grid_Mz"));
 
-  m_Nx = m_Ny = 0;                  // will be set to a correct value in allocate()
-
-  compute_vertical_levels();
+  m_Nx = 0;
+  m_Ny = 0;                  // will be set to a correct value in allocate()
 
   std::string calendar;
   try {
@@ -126,45 +125,65 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
  * with half-widths (Lx,Ly) and Mx by My nodes.
  */
 IceGrid::Ptr IceGrid::Shallow(MPI_Comm c, const Config &config,
-                              double my_Lx, double my_Ly,
+                              double Lx, double Ly,
+                              double x0, double y0,
                               unsigned int Mx, unsigned int My, Periodicity p) {
 
-  return IceGrid::Create(c, config, my_Lx, my_Ly, config.get("grid_Lz"),
-                         Mx, My, 3, p);
+  std::vector<double> z(3, 0.0);
+  z[1] = 0.5 * config.get("grid_Lz");
+  z[2] = 1.0 * config.get("grid_Lz");
+
+  return IceGrid::Create(c, config, Lx, Ly, x0, y0, z, Mx, My, p);
 }
 
 IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
-                             double my_Lx, double my_Ly, double my_Lz,
-                             unsigned int Mx, unsigned int My, unsigned int Mz,
+                             double Lx, double Ly,
+                             double x0, double y0,
+                             const std::vector<double> &z,
+                             unsigned int Mx, unsigned int My,
                              Periodicity p) {
 
   Ptr result(new IceGrid(c, config));
 
-  result->m_Lx = my_Lx;
-  result->m_Ly = my_Ly;
-  result->m_Lz = my_Lz;
+  result->m_Lx = Lx;
+  result->m_Ly = Ly;
+  result->m_x0 = x0;
+  result->m_y0 = y0;
   result->m_Mx = Mx;
   result->m_My = My;
   result->m_periodicity = p;
-  result->m_Mz = Mz;
+
+  result->set_vertical_levels(z);
 
   result->compute_nprocs();
   result->compute_ownership_ranges();
-  result->compute_vertical_levels();
   result->allocate();
 
   return result;
 }
 
 IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
+  // use defaults from config
 
   Ptr result(new IceGrid(c, config));
 
-  // use defaults from config
+  SpacingType spacing = EQUAL;
+  std::string word = config.get_string("grid_ice_vertical_spacing");
+  if (word == "quadratic") {
+    spacing = QUADRATIC;
+  } else if (word == "equal") {
+    spacing = EQUAL;
+  } else {
+    throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
+                                  word.c_str());
+  }
+
+  result->compute_vertical_levels(config.get("grid_Lz"),
+                                  config.get("grid_Mz"),
+                                  spacing);
 
   result->compute_nprocs();
   result->compute_ownership_ranges();
-  result->compute_vertical_levels();
   result->allocate();
 
   return result;
@@ -216,8 +235,6 @@ IceGrid::~IceGrid() {
 //! \brief Set the vertical levels in the ice according to values in Mz, Lz,
 //! and the ice_vertical_spacing data member.
 /*!
-Sets `dzMIN` and `dzMAX`.  Sets and re-allocates `zlevels[]`.
-
 Uses `Mz`, `Lz`, and `ice_vertical_spacing`.  (Note that `ice_vertical_spacing`
 cannot be UNKNOWN.)
 
@@ -226,8 +243,7 @@ by a derived class or when bootstrapping from 2D data only, but not when
 reading a model state input file (which will have its own grid,
 which may not even be a grid created by this routine).
   - When `vertical_spacing` == EQUAL, the vertical grid in the ice is equally spaced:
-    `zlevels[k] = k dzMIN` where `dzMIN = Lz / (Mz - 1)`.
-    In this case `dzMIN = dzMAX`.
+    `zlevels[k] = k dz` where `dz = Lz / (Mz - 1)`.
   - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent
     is that the spacing is smaller near the base than near the top.  In particular, if
     \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *
@@ -237,44 +253,48 @@ which may not even be a grid created by this routine).
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-void  IceGrid::compute_vertical_levels() {
+void IceGrid::compute_vertical_levels(double Lz, unsigned int Mz,
+                                      SpacingType spacing) {
 
-  if (m_Mz < 2) {
-    throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
+  double lambda = config.get("grid_lambda");
+
+  if (Mz < 2) {
+    throw RuntimeError("IceGrid::compute_vertical_levels(): Mz must be at least 2.");
   }
 
-  if (m_Lz <= 0) {
-    throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Lz must be positive.");
+  if (Lz <= 0) {
+    throw RuntimeError("IceGrid::compute_vertical_levels(): Lz must be positive.");
   }
+
+  if (spacing == QUADRATIC and lambda <= 0) {
+    throw RuntimeError("IceGrid::compute_vertical_levels(): lambda must be positive.");
+  }
+
+  m_z.resize(Mz);
 
   // Fill the levels in the ice:
-  m_zlevels.resize(m_Mz);
-
-  switch (ice_vertical_spacing) {
+  switch (spacing) {
   case EQUAL: {
-    m_dz_min = m_Lz / ((double) m_Mz - 1);
-    m_dz_max = m_dz_min;
+    double dz = Lz / ((double) Mz - 1);
 
     // Equal spacing
-    for (unsigned int k=0; k < m_Mz - 1; k++) {
-      m_zlevels[k] = m_dz_min * ((double) k);
+    for (unsigned int k=0; k < Mz - 1; k++) {
+      m_z[k] = dz * ((double) k);
     }
-    m_zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
+    m_z[Mz - 1] = Lz;  // make sure it is exactly equal
     break;
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k=0; k < m_Mz - 1; k++) {
-      const double zeta = ((double) k) / ((double) m_Mz - 1);
-      m_zlevels[k] = m_Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
+    for (unsigned int k=0; k < Mz - 1; k++) {
+      const double zeta = ((double) k) / ((double) Mz - 1);
+      m_z[k] = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
-    m_zlevels[m_Mz - 1] = m_Lz;  // make sure it is exactly equal
-    m_dz_min = m_zlevels[1] - m_zlevels[0];
-    m_dz_max = m_zlevels[m_Mz-1] - m_zlevels[m_Mz-2];
+    m_z[Mz - 1] = Lz;  // make sure it is exactly equal
     break;
   }
   default:
-    throw RuntimeError("IceGrid::compute_ice_vertical_levels(): ice_vertical_spacing can not be UNKNOWN.");
+    throw RuntimeError("IceGrid::compute_vertical_levels(): spacing can not be UNKNOWN.");
   }
 }
 
@@ -286,38 +306,17 @@ unsigned int IceGrid::kBelowHeight(double height) {
                 "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", m_rank, height);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
-  if (height > m_Lz + 1.0e-6) {
+  if (height > Lz() + 1.0e-6) {
     PetscPrintf(PETSC_COMM_SELF,
-                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", m_rank, height, m_Lz);
+                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", m_rank, height, Lz());
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
 
   unsigned int mcurr = 0;
-  while (m_zlevels[mcurr+1] < height) {
+  while (m_z[mcurr+1] < height) {
     mcurr++;
   }
   return mcurr;
-}
-
-//! \brief From given vertical grid zlevels[], determine `m_dz_min`, `m_dz_max`, and
-//! determine whether ice vertical spacings are equal.
-/*! The standard for equal vertical spacing in the ice is \f$10^{-8}\f$ m max
-  difference between `m_dz_min` and `m_dz_max`.
- */
-void IceGrid::get_dz_min_dz_max_spacingtype() {
-  m_dz_min = m_Lz;
-  m_dz_max = 0.0;
-  for (unsigned int k = 0; k < m_Mz - 1; k++) {
-    const double mydz = m_zlevels[k+1] - m_zlevels[k];
-    m_dz_min = std::min(mydz, m_dz_min);
-    m_dz_max = std::max(mydz, m_dz_max);
-  }
-
-  if (fabs(m_dz_max - m_dz_min) <= 1.0e-8) {
-    ice_vertical_spacing = EQUAL;
-  } else {
-    ice_vertical_spacing = UNKNOWN;
-  }
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
@@ -506,12 +505,7 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
     throw RuntimeError("IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
-  m_Mz = (unsigned int)new_zlevels.size();
-  m_Lz = new_zlevels.back();
-
-  m_zlevels = new_zlevels;
-
-  get_dz_min_dz_max_spacingtype();
+  m_z = new_zlevels;
 }
 
 
@@ -588,6 +582,15 @@ void IceGrid::compute_horizontal_coordinates() {
   }
 }
 
+bool IceGrid::is_equally_spaced() const {
+  // decide if we're going to use linear or quadratic interpolation
+  if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 //! \brief Report grid parameters.
 void IceGrid::report_parameters() const {
 
@@ -596,26 +599,26 @@ void IceGrid::report_parameters() const {
   // report on grid
   verbPrintf(2, com,
              "                grid size   %d x %d x %d\n",
-             m_Mx, m_My, m_Mz);
+             m_Mx, m_My, Mz());
 
   // report on computational box
   verbPrintf(2, com,
              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
-             2*m_Lx/1000.0, 2*m_Ly/1000.0, m_Lz);
+             2*m_Lx/1000.0, 2*m_Ly/1000.0, Lz());
 
   // report on grid cell dims
   verbPrintf(2, com,
              "     horizontal grid cell   %.2f km x %.2f km\n",
              m_dx/1000.0, m_dy/1000.0);
 
-  if (ice_vertical_spacing == EQUAL) {
+  if (is_equally_spaced()) {
     verbPrintf(2, com,
                "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
-               m_dz_min);
+               dz_min());
   } else {
     verbPrintf(2, com,
                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-               m_Mz, m_dz_min, m_dz_max);
+               Mz(), dz_min(), dz_max());
   }
 
   // report on time axis
@@ -631,13 +634,13 @@ void IceGrid::report_parameters() const {
                "  IceGrid parameters:\n");
     verbPrintf(3, com,
                "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
-               m_Lx/1000.0, m_Ly/1000.0, m_Lz);
+               m_Lx/1000.0, m_Ly/1000.0, Lz());
     verbPrintf(3, com,
                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
                m_x0/1000.0, m_y0/1000.0);
     verbPrintf(3, com,
                "            Mx = %d, My = %d, Mz = %d, \n",
-               m_Mx, m_My, m_Mz);
+               m_Mx, m_My, Mz());
     verbPrintf(3, com,
                "            dx = %6.3f km, dy = %6.3f km, year = %s, \n",
                m_dx/1000.0, m_dy/1000.0, time->date().c_str());
@@ -651,9 +654,9 @@ void IceGrid::report_parameters() const {
     verbPrintf(5, com,
                "  REALLY verbose output on IceGrid:\n");
     verbPrintf(5, com,
-               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", m_Mz, m_Lz);
-    for (unsigned int k=0; k < m_Mz; k++) {
-      verbPrintf(5, com, " %5.4f, ", m_zlevels[k]);
+               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
+    for (unsigned int k=0; k < Mz(); k++) {
+      verbPrintf(5, com, " %5.4f, ", m_z[k]);
     }
     verbPrintf(5, com, "\n");
   }
@@ -744,7 +747,7 @@ void IceGrid::check_parameters() {
     throw RuntimeError("My has to be at least 3.");
   }
 
-  if (m_Mz < 2) {
+  if (Mz() < 2) {
     throw RuntimeError("Mz must be at least 2.");
   }
 
@@ -756,7 +759,7 @@ void IceGrid::check_parameters() {
     throw RuntimeError("Ly has to be positive.");
   }
 
-  if (m_Lz <= 0) {
+  if (Lz() <= 0) {
     throw RuntimeError("Lz must be positive.");
   }
 
@@ -765,7 +768,7 @@ void IceGrid::check_parameters() {
   // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
   // Here we use "long int" to avoid integer overflow.
   const long int two_to_thirty_two = 4294967296L;
-  const long int Mx_long = m_Mx, My_long = m_My, Mz_long = m_Mz;
+  const long int Mx_long = m_Mx, My_long = m_My, Mz_long = Mz();
   if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
       ((config.get_string("output_format") == "netcdf3") ||
        (config.get_string("output_format") == "pnetcdf"))) {
@@ -895,7 +898,7 @@ unsigned int IceGrid::My() const {
 }
 
 unsigned int IceGrid::Mz() const {
-  return m_Mz;
+  return m_z.size();
 }
 
 const std::vector<double>& IceGrid::x() const {
@@ -915,11 +918,11 @@ double IceGrid::y(size_t i) const {
 }
 
 const std::vector<double>& IceGrid::z() const {
-  return m_zlevels;
+  return m_z;
 }
 
 double IceGrid::z(size_t i) const {
-  return m_zlevels[i];
+  return m_z[i];
 }
 
 double IceGrid::dx() const {
@@ -931,11 +934,21 @@ double IceGrid::dy() const {
 }
 
 double IceGrid::dz_min() const {
-  return m_dz_min;
+  double dz_min = m_z.back();
+  for (unsigned int k = 0; k < m_z.size() - 1; ++k) {
+    const double dz = m_z[k + 1] - m_z[k];
+    dz_min = std::min(dz, dz_min);
+  }
+  return dz_min;
 }
 
 double IceGrid::dz_max() const {
-  return m_dz_max;
+  double dz_max = 0.0;
+  for (unsigned int k = 0; k < m_z.size() - 1; ++k) {
+    const double dz = m_z[k + 1] - m_z[k];
+    dz_max = std::max(dz, dz_max);
+  }
+  return dz_max;
 }
 
 double IceGrid::Lx() const {
@@ -947,7 +960,7 @@ double IceGrid::Ly() const {
 }
 
 double IceGrid::Lz() const {
-  return m_Lz;
+  return m_z.back();
 }
 
 double IceGrid::x0() const {

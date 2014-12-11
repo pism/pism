@@ -89,61 +89,77 @@ void IceCompModel::set_grid_defaults() {
 
   // This sets the defaults for each test; command-line options can override this.
 
-  // equal spacing is the default for all the tests except K
-  grid.ice_vertical_spacing = EQUAL;
-
   // use the non-periodic grid:
-  grid.set_periodicity(NOT_PERIODIC);
+  Periodicity periodicity = NOT_PERIODIC;
+  // equal spacing is the default for all the tests except K
+  SpacingType spacing = EQUAL;
+
+  double
+    Lx = grid.Lx(),
+    Ly = grid.Ly(),
+    Lz = grid.Lz();
+
+  unsigned int
+    Mx = grid.Mx(),
+    My = grid.My(),
+    Mz = grid.Mz();
 
   switch (testname) {
   case 'A':
   case 'E':
     // use 1600km by 1600km by 4000m rectangular domain
-    grid.set_Lx(800e3);
-    grid.set_Ly(grid.Lx());
-    grid.set_Lz(4000);
+    Lx = 800e3;
+    Ly = Lx;
+    Lz = 4000;
     break;
   case 'B':
   case 'H':
     // use 2400km by 2400km by 4000m rectangular domain
-    grid.set_Lx(1200e3);
-    grid.set_Ly(grid.Lx());
-    grid.set_Lz(4000);
+    Lx = 1200e3;
+    Ly = Lx;
+    Lz = 4000;
     break;
   case 'C':
   case 'D':
     // use 2000km by 2000km by 4000m rectangular domain
-    grid.set_Lx(1000e3);
-    grid.set_Ly(grid.Lx());
-    grid.set_Lz(4000);
+    Lx = 1000e3;
+    Ly = Lx;
+    Lz = 4000;
     break;
   case 'F':
   case 'G':
   case 'L':
     // use 1800km by 1800km by 4000m rectangular domain
-    grid.set_Lx(900e3);
-    grid.set_Ly(grid.Lx());
-    grid.set_Lz(4000);
+    Lx = 900e3;
+    Ly = Lx;
+    Lz = 4000;
     break;
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
     config.set_double("grid_Mbz", 2);
     config.set_double("grid_Lbz", 1000);
-    grid.set_Lx(1000e3);
-    grid.set_Ly(grid.Lx());
-    grid.set_Lz(4000);
-    grid.set_periodicity(XY_PERIODIC);
-    grid.ice_vertical_spacing = QUADRATIC;
+    Lx = 1000e3;
+    Ly = Lx;
+    Lz = 4000;
+    periodicity = XY_PERIODIC;
+    spacing = QUADRATIC;
     break;
   case 'V':
-    grid.set_My(3);             // it's a flow-line setup
-    grid.set_Lx(500e3);            // 500 km long
-    grid.set_periodicity(Y_PERIODIC);
+    My = 3;             // it's a flow-line setup
+    Lx = 500e3;            // 500 km long
+    periodicity = Y_PERIODIC;
     break;
   default:
     throw RuntimeError("desired test not implemented\n");
   }
+
+  grid.set_Lx(Lx);
+  grid.set_Ly(Ly);
+  grid.set_Mx(Mx);
+  grid.set_My(My);
+  grid.compute_vertical_levels(Lz, Mz, spacing);
+  grid.set_periodicity(periodicity);
 
   grid.time->init();
 }
