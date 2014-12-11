@@ -52,10 +52,8 @@ int main(int argc, char *argv[]) {
 
     double Lx = 1200e3;
     IceGrid grid(com, config);
-    grid.set_Mx(81);
-    grid.set_My(81);
-    grid.set_Lx(Lx);
-    grid.set_Ly(Lx);
+    grid.set_size(81, 81);
+    grid.set_extent(0.0, 0.0, Lx, Lx);
     grid.set_periodicity(NOT_PERIODIC);
     grid.allocate();
 

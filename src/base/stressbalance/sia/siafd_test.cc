@@ -349,11 +349,9 @@ int main(int argc, char *argv[]) {
                     output_file, flag);
     }
 
-    grid.set_Lx(Lx);
-    grid.set_Ly(Ly);
-    grid.set_Mx(Mx);
-    grid.set_My(My);
-    grid.compute_vertical_levels(Lz, Mz, EQUAL);
+    grid.set_extent(0.0, 0.0, Lx, Ly);
+    grid.set_size(Mx, My);
+    grid.set_vertical_levels(Lz, Mz, EQUAL);
     grid.allocate();
 
     setVerbosityLevel(5);

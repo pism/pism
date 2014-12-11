@@ -61,8 +61,8 @@ IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
 }
 
 void IceEISModel::set_grid_defaults() {
-  grid.set_Lx(750e3);
-  grid.set_Ly(750e3);
+  double Lx = 750e3;
+  grid.set_extent(0.0, 0.0, Lx, Lx);
 
   grid.time->init();
 }

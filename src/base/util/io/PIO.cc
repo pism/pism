@@ -615,15 +615,10 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
       input.z.push_back(Lz);
     }
 
-    grid->set_Mx(input.x_len);
-    grid->set_My(input.y_len);
-
     grid->set_periodicity(periodicity);
 
-    grid->set_x0(input.x0);
-    grid->set_y0(input.y0);
-    grid->set_Lx(input.Lx);
-    grid->set_Ly(input.Ly);
+    grid->set_size(input.x_len, input.y_len);
+    grid->set_extent(input.x0, input.y0, input.Lx, input.Ly);
     grid->set_vertical_levels(input.z);
 
     grid->time->set_start(input.time);

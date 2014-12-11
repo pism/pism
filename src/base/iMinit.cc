@@ -129,10 +129,7 @@ void IceModel::set_grid_defaults() {
   nc.close();
 
   // Set the grid center and horizontal extent:
-  grid.set_x0(input.x0);
-  grid.set_y0(input.y0);
-  grid.set_Lx(input.Lx);
-  grid.set_Ly(input.Ly);
+  grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
@@ -192,8 +189,7 @@ void IceModel::set_grid_from_options() {
 
 
   if (Mx > 0 && My > 0) {
-    grid.set_Mx(Mx);
-    grid.set_My(My);
+    grid.set_size(Mx, My);
   } else {
     throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
                                   "(have to have a positive number of grid points).",
@@ -223,25 +219,21 @@ void IceModel::set_grid_from_options() {
   }
 
   // Use the information obtained above:
-  if (Lx_set) {
-    grid.set_Lx(Lx_km * 1000.0); // convert to meters
-  }
-  if (Ly_set) {
-    grid.set_Ly(Ly_km * 1000.0); // convert to meters
-  }
+  grid.set_extent(0.0, 0.0, Lx_km * 1000.0, Ly_km * 1000.0);
 
   if (x_range_set && y_range_set) {
     if (x_range.size() != 2 || y_range.size() != 2) {
       throw RuntimeError("-x_range and/or -y_range argument is invalid.");
     }
-
-    grid.set_x0((x_range[0] + x_range[1]) / 2.0);
-    grid.set_y0((y_range[0] + y_range[1]) / 2.0);
-    grid.set_Lx((x_range[1] - x_range[0]) / 2.0);
-    grid.set_Ly((y_range[1] - y_range[0]) / 2.0);
+    const double
+      x0 = (x_range[0] + x_range[1]) / 2.0,
+      y0 = (y_range[0] + y_range[1]) / 2.0,
+      Lx = (x_range[1] - x_range[0]) / 2.0,
+      Ly = (y_range[1] - y_range[0]) / 2.0;
+    grid.set_extent(x0, y0, Lx, Ly);
   }
 
-  grid.compute_vertical_levels(Lz, Mz, spacing);
+  grid.set_vertical_levels(Lz, Mz, spacing);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
   // filled. We're ready to call grid.allocate().

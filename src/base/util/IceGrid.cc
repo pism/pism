@@ -93,7 +93,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
     throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
                                   word.c_str());
   }
-  compute_vertical_levels(Lz, Mz, spacing);
+  set_vertical_levels(Lz, Mz, spacing);
 
   m_Lx  = config.get("grid_Lx");
   m_Ly  = config.get("grid_Ly");
@@ -145,18 +145,12 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
 
   Ptr result(new IceGrid(c, config));
 
-  result->m_Lx = Lx;
-  result->m_Ly = Ly;
-  result->m_x0 = x0;
-  result->m_y0 = y0;
-  result->m_Mx = Mx;
-  result->m_My = My;
-  result->m_periodicity = p;
+  result->set_extent(x0, y0, Lx, Ly);
+  result->set_size(Mx, My);
+  result->set_periodicity(p);
 
   result->set_vertical_levels(z);
 
-  result->compute_nprocs();
-  result->compute_ownership_ranges();
   result->allocate();
 
   return result;
@@ -178,9 +172,9 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
                                   word.c_str());
   }
 
-  result->compute_vertical_levels(config.get("grid_Lz"),
-                                  config.get("grid_Mz"),
-                                  spacing);
+  result->set_vertical_levels(config.get("grid_Lz"),
+                              config.get("grid_Mz"),
+                              spacing);
 
   result->compute_nprocs();
   result->compute_ownership_ranges();
@@ -253,21 +247,21 @@ which may not even be a grid created by this routine).
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-void IceGrid::compute_vertical_levels(double Lz, unsigned int Mz,
-                                      SpacingType spacing) {
+void IceGrid::set_vertical_levels(double Lz, unsigned int Mz,
+                                  SpacingType spacing) {
 
   double lambda = config.get("grid_lambda");
 
   if (Mz < 2) {
-    throw RuntimeError("IceGrid::compute_vertical_levels(): Mz must be at least 2.");
+    throw RuntimeError("IceGrid::set_vertical_levels(): Mz must be at least 2.");
   }
 
   if (Lz <= 0) {
-    throw RuntimeError("IceGrid::compute_vertical_levels(): Lz must be positive.");
+    throw RuntimeError("IceGrid::set_vertical_levels(): Lz must be positive.");
   }
 
   if (spacing == QUADRATIC and lambda <= 0) {
-    throw RuntimeError("IceGrid::compute_vertical_levels(): lambda must be positive.");
+    throw RuntimeError("IceGrid::set_vertical_levels(): lambda must be positive.");
   }
 
   m_z.resize(Mz);
@@ -294,7 +288,7 @@ void IceGrid::compute_vertical_levels(double Lz, unsigned int Mz,
     break;
   }
   default:
-    throw RuntimeError("IceGrid::compute_vertical_levels(): spacing can not be UNKNOWN.");
+    throw RuntimeError("IceGrid::set_vertical_levels(): spacing can not be UNKNOWN.");
   }
 }
 
@@ -508,6 +502,17 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   m_z = new_zlevels;
 }
 
+void IceGrid::set_extent(double x0, double y0, double Lx, double Ly) {
+  m_x0 = x0;
+  m_y0 = y0;
+  m_Lx = Lx;
+  m_Ly = Ly;
+}
+
+void IceGrid::set_size(unsigned int Mx, unsigned int My) {
+  m_Mx = Mx;
+  m_My = My;
+}
 
 //! Compute horizontal spacing parameters `dx` and `dy` using `Mx`, `My`, `Lx`, `Ly` and periodicity.
 /*!

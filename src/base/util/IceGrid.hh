@@ -160,6 +160,14 @@ public:
 
   static Ptr Create(MPI_Comm c, const Config &config);
 
+  void set_extent(double x0, double y0, double Lx, double Ly);
+  void set_size(unsigned int Mx, unsigned int My);
+  void set_periodicity(Periodicity p);
+  // only of these two should be called:
+  void set_vertical_levels(const std::vector<double> &z_levels);
+  void set_vertical_levels(double Lz, unsigned int Mz,
+                           SpacingType spacing);
+
   // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
   //                          const std::string &filename);
 
@@ -167,10 +175,6 @@ public:
 
   void report_parameters() const;
 
-  // only of these two should be called:
-  void set_vertical_levels(const std::vector<double> &z_levels);
-  void compute_vertical_levels(double Lz, unsigned int Mz,
-                               SpacingType spacing);
 
   void allocate();  // FIXME! allocate in the constructor!
 
@@ -217,25 +221,13 @@ public:
   double Lx() const;
   double Ly() const;
   double Lz() const;
-  // FIXME: remove this
-  void set_Lx(double Lx) {m_Lx = Lx;}
-  void set_Ly(double Ly) {m_Ly = Ly;}
-
   double x0() const;
   double y0() const;
-  // FIXME: remove this
-  void set_x0(double x0) {m_x0 = x0;}
-  void set_y0(double y0) {m_y0 = y0;}
-
-  // FIXME: remove this
-  void set_Mx(unsigned int Mx) {m_Mx = Mx;}
-  void set_My(unsigned int My) {m_My = My;}
 
   double dz_min() const;
   double dz_max() const;
 
   Periodicity periodicity() const;
-  void set_periodicity(Periodicity p);
 
   unsigned int size() const;
   int rank() const;

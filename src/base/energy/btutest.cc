@@ -172,11 +172,9 @@ int main(int argc, char *argv[]) {
       OptionsReal("-Lz", "height of ice/atmosphere boxr", Lz, flag);
     }
 
-    grid.set_Mx(Mx);
-    grid.set_My(My);
-    grid.set_Lx(Lx);
-    grid.set_Ly(Ly);
-    grid.compute_vertical_levels(Lz, Mz, EQUAL);
+    grid.set_size(Mx, My);
+    grid.set_extent(0.0, 0.0, Lx, Ly);
+    grid.set_vertical_levels(Lz, Mz, EQUAL);
 
     // complete grid initialization based on user options
     grid.time->init();

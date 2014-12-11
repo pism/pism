@@ -154,11 +154,9 @@ void IceCompModel::set_grid_defaults() {
     throw RuntimeError("desired test not implemented\n");
   }
 
-  grid.set_Lx(Lx);
-  grid.set_Ly(Ly);
-  grid.set_Mx(Mx);
-  grid.set_My(My);
-  grid.compute_vertical_levels(Lz, Mz, spacing);
+  grid.set_extent(0.0, 0.0, Lx, Ly);
+  grid.set_size(Mx, My);
+  grid.set_vertical_levels(Lz, Mz, spacing);
   grid.set_periodicity(periodicity);
 
   grid.time->init();
