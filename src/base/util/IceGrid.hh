@@ -241,18 +241,7 @@ public:
 
   const MPI_Comm com;
 
-  // Fine vertical grid and the interpolation setup:
-  std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
-  double dz_fine;                    //!< spacing of the fine vertical grid
-  unsigned int Mz_fine;          //!< number of levels of the fine vertical grid in the ice
-
-  // Array ice_storage2fine contains indices of the ice storage vertical grid
-  // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
-  // the storage grid level just below fine-grid level k (zlevels_fine[k]).
-  // Similarly for other arrays below.
-  std::vector<int> ice_storage2fine, ice_fine2storage;
   SpacingType ice_vertical_spacing;
-
 
 private:
   // int to match types used by MPI
@@ -319,8 +308,6 @@ private:
   void get_dz_min_dz_max_spacingtype();
   void compute_horizontal_spacing();
   void compute_horizontal_coordinates();
-  void compute_fine_vertical_grid();
-  void init_interpolation();
 
   DM create_dm(int da_dof, int stencil_width);
 

@@ -103,8 +103,6 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   m_Nx = m_Ny = 0;                  // will be set to a correct value in allocate()
 
-  Mz_fine = 0;
-
   compute_vertical_levels();
 
   std::string calendar;
@@ -278,8 +276,6 @@ void  IceGrid::compute_vertical_levels() {
   default:
     throw RuntimeError("IceGrid::compute_ice_vertical_levels(): ice_vertical_spacing can not be UNKNOWN.");
   }
-
-  compute_fine_vertical_grid();
 }
 
 
@@ -516,7 +512,6 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   m_zlevels = new_zlevels;
 
   get_dz_min_dz_max_spacingtype();
-  compute_fine_vertical_grid();
 }
 
 
@@ -550,76 +545,6 @@ void IceGrid::compute_horizontal_spacing() {
   }
 
   compute_horizontal_coordinates();
-}
-
-//! Computes fine vertical spacing in the ice.
-/*! The computations in IceModel::temperatureStep(), IceModel::enthalpyDrainageStep()
-  and IceModel::ageStep() use a fine equally-spaced grid.
-
-  This method computes the number of levels and the levels themselves so that
-  fine equally-spaced grids in ice and bedrock have the same spacing (if
-  bedrock is present).
-
-  Mapping to and from the storage grid occurs in IceModelVec3 methods.
-
-  Note that the computational grid in the ice is allowed to exceed Lz; we need
-  this to match spacings (see above). The temperature field is extrapolated to
-  the extra level using the value from the topmost level.
- */
-void IceGrid::compute_fine_vertical_grid() {
-
-  // the smallest of the spacings used in ice and bedrock:
-  double my_dz_fine = m_dz_min;
-
-  Mz_fine = static_cast<int>(ceil(m_Lz / my_dz_fine) + 1);
-  my_dz_fine = m_Lz / (Mz_fine - 1);
-
-  // both ice and bedrock will have this spacing
-  dz_fine = my_dz_fine;
-
-  // allocate arrays:
-  zlevels_fine.resize(Mz_fine);
-
-  // compute levels in the ice:
-  for (unsigned int k = 0; k < Mz_fine; k++) {
-    zlevels_fine[k] = ((double) k) * dz_fine;
-  }
-  // Note that it's allowed to go over Lz.
-
-  init_interpolation();
-}
-
-//! Fills arrays ice_storage2fine, ice_fine2storage, bed_storage2fine,
-//! bed_fine2storage with indices of levels that are just below
-void IceGrid::init_interpolation() {
-  unsigned int m = 0;
-
-  // ice: storage -> fine
-  ice_storage2fine.resize(Mz_fine);
-  m = 0;
-  for (unsigned int k = 0; k < Mz_fine; k++) {
-    if (zlevels_fine[k] >= m_Lz) {
-      ice_storage2fine[k] = m_Mz - 1;
-      continue;
-    }
-
-    while (m_zlevels[m + 1] < zlevels_fine[k]) {
-      m++;
-    }
-
-    ice_storage2fine[k] = m;
-  }
-
-  // ice: fine -> storage
-  ice_fine2storage.resize(m_Mz);
-  m = 0;
-  for (unsigned int k = 0; k < m_Mz; k++) {
-    while (m < Mz_fine - 1 && zlevels_fine[m + 1] < m_zlevels[k]) {
-      m++;
-    }
-
-    ice_fine2storage[k] = m;
-  }
 }
 
 //! \brief Computes values of x and y corresponding to the computational grid,
@@ -691,15 +616,6 @@ void IceGrid::report_parameters() const {
     verbPrintf(2, com,
                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
                m_Mz, m_dz_min, m_dz_max);
-  }
-
-  verbPrintf(3, com,
-             "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
-             Mz_fine, dz_fine);
-
-  if (Mz_fine > 1000) {
-    verbPrintf(2, com,
-               "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
   }
 
   // report on time axis

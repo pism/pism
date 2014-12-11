@@ -690,13 +690,6 @@ public:
                       IceModelVecKind ghostedp,
                       unsigned int stencil_width = 1);
 
-  void  getPlaneStarZ(int i, int j, double z,
-                      planeStar<double> *star) const;
-  void  getPlaneStar_fine(int i, int j, unsigned int k,
-                          planeStar<double> *star) const;
-  void  getPlaneStar(int i, int j, unsigned int k,
-                     planeStar<double> *star) const;
-
   void  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
   void  getHorSlice(IceModelVec2S &gslice, double z) const;
   void  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
