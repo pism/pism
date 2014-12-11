@@ -19,19 +19,19 @@ $PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> test_17-G-out.txt
 diff test_17-G-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.780389   32.443567    7.148986    0.016300
+               0.780389   32.443559    7.148986    0.016300
 temp      :        maxT         avT    basemaxT     baseavT
-               0.835466    0.249487    0.747461    0.151304
+               0.834661    0.249470    0.747461    0.151304
 Sigma     :      maxSig       avSig
-               7.208338    0.955275
+               7.208339    0.955275
 surf vels :     maxUvec      avUvec        maxW         avW
                0.945140    0.199934    0.028361    0.004064
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.782888   30.772167    7.242030    0.015477
+               0.782888   30.772156    7.242030    0.015477
 temp      :        maxT         avT    basemaxT     baseavT
-               0.894900    0.248301    0.746664    0.155382
+               0.894135    0.248278    0.746663    0.155383
 Sigma     :      maxSig       avSig
                7.185588    0.913990
 surf vels :     maxUvec      avUvec        maxW         avW

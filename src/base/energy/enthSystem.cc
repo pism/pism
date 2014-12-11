@@ -55,10 +55,16 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_ice_K  = m_ice_k / m_ice_c;
   m_ice_K0 = m_ice_K * config.get("enthalpy_temperate_conductivity_ratio");
 
-  m_Enth.resize(m_z.size());
-  m_Enth_s.resize(m_z.size());
-  m_strain_heating.resize(m_z.size());
-  m_R.resize(m_z.size());
+  size_t Mz = m_z.size();
+  m_Enth.resize(Mz);
+  m_Enth_s.resize(Mz);
+  m_strain_heating.resize(Mz);
+  m_R.resize(Mz);
+
+  m_E_n.resize(Mz);
+  m_E_e.resize(Mz);
+  m_E_s.resize(Mz);
+  m_E_w.resize(Mz);
 
   // point to IceModelVec3
   m_Enth3 = &Enth3;
@@ -116,6 +122,11 @@ void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
   coarse_to_fine(m_w3, m_i, m_j, m_ks, &m_w[0]);
   coarse_to_fine(m_strain_heating3, m_i, m_j, m_ks, &m_strain_heating[0]);
   coarse_to_fine(m_Enth3, m_i, m_j, m_ks, &m_Enth[0]);
+
+  coarse_to_fine(m_Enth3, m_i, m_j+1, m_ks, &m_E_n[0]);
+  coarse_to_fine(m_Enth3, m_i+1, m_j, m_ks, &m_E_e[0]);
+  coarse_to_fine(m_Enth3, m_i, m_j-1, m_ks, &m_E_s[0]);
+  coarse_to_fine(m_Enth3, m_i-1, m_j, m_ks, &m_E_w[0]);
 
   compute_enthalpy_CTS();
 
@@ -260,12 +271,13 @@ void enthSystemCtx::setBasalHeatFlux(double heat_flux) {
   m_B0 = m_Enth[0] + 2.0 * Rminus * m_dz * heat_flux / K;
   // treat vertical velocity using first-order upwinding:
   if (not m_ismarginal) {
-    planeStar<double> ss;
-    m_Enth3->getPlaneStar_fine(m_i,m_j,0,&ss);
-    const double UpEnthu = (m_u[0] < 0) ? m_u[0] * (ss.e -  ss.ij) / m_dx :
-                                             m_u[0] * (ss.ij  - ss.w) / m_dx;
-    const double UpEnthv = (m_v[0] < 0) ? m_v[0] * (ss.n -  ss.ij) / m_dy :
-                                             m_v[0] * (ss.ij  - ss.s) / m_dy;
+    const double UpEnthu = (m_u[0] < 0 ?
+                            m_u[0] * (m_E_e[0] -  m_Enth[0]) / m_dx :
+                            m_u[0] * (m_Enth[0]  - m_E_w[0]) / m_dx);
+    const double UpEnthv = (m_v[0] < 0 ?
+                            m_v[0] * (m_E_n[0] -  m_Enth[0]) / m_dy :
+                            m_v[0] * (m_Enth[0]  - m_E_s[0]) / m_dy);
+
     m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
   }
 }
@@ -392,12 +404,13 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
     }
     S.RHS(k) = m_Enth[k];
     if (not m_ismarginal) {
-      planeStar<double> ss;
-      m_Enth3->getPlaneStar_fine(m_i,m_j,k,&ss);
-      const double UpEnthu = (m_u[k] < 0) ? m_u[k] * (ss.e -  ss.ij) / m_dx :
-                                               m_u[k] * (ss.ij  - ss.w) / m_dx;
-      const double UpEnthv = (m_v[k] < 0) ? m_v[k] * (ss.n -  ss.ij) / m_dy :
-                                               m_v[k] * (ss.ij  - ss.s) / m_dy;
+      const double UpEnthu = (m_u[k] < 0 ?
+                              m_u[k] * (m_E_e[k] -  m_Enth[k]) / m_dx :
+                              m_u[k] * (m_Enth[k]  - m_E_w[k]) / m_dx);
+      const double UpEnthv = (m_v[k] < 0 ?
+                              m_v[k] * (m_E_n[k] -  m_Enth[k]) / m_dy :
+                              m_v[k] * (m_Enth[k]  - m_E_s[k]) / m_dy);
+
       S.RHS(k) += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
     }
   }

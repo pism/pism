@@ -80,6 +80,8 @@ protected:
   IceModelVec3 *m_T3, *m_strain_heating3;
 
   std::vector<double>  m_T, m_strain_heating;
+  std::vector<double> m_T_n, m_T_e, m_T_s, m_T_w;
+
   double m_lambda, m_Ts, m_G0, m_Tshelfbase, m_Rb;
   MaskValue    m_mask;
   bool        m_is_marginal;

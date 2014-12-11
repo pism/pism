@@ -79,6 +79,10 @@ protected:
   // enthalpy level for CTS; function only of pressure
   std::vector<double> m_Enth_s;
 
+  // temporary storage for ice enthalpy at (i,j), as well as north,
+  // east, south, and west from (i,j)
+  std::vector<double> m_E_ij, m_E_n, m_E_e, m_E_s, m_E_w;
+
   //! strain heating in the ice column
   std::vector<double> m_strain_heating;
 

@@ -41,8 +41,14 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
   m_surfBCsValid      = false;
   m_basalBCsValid     = false;
 
-  m_T.resize(m_z.size());
-  m_strain_heating.resize(m_z.size());
+  size_t Mz = m_z.size();
+  m_T.resize(Mz);
+  m_strain_heating.resize(Mz);
+
+  m_T_n.resize(Mz);
+  m_T_e.resize(Mz);
+  m_T_s.resize(Mz);
+  m_T_w.resize(Mz);
 
   // set physical constants
   m_ice_density = config.get("ice_density");
@@ -76,6 +82,11 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
   coarse_to_fine(m_w3, m_i, m_j, m_ks, &m_w[0]);
   coarse_to_fine(m_strain_heating3, m_i, m_j, m_ks, &m_strain_heating[0]);
   coarse_to_fine(m_T3, m_i, m_j, m_ks, &m_T[0]);
+
+  coarse_to_fine(m_T3, m_i, m_j+1, m_ks, &m_T_n[0]);
+  coarse_to_fine(m_T3, m_i+1, m_j, m_ks, &m_T_e[0]);
+  coarse_to_fine(m_T3, m_i, m_j-1, m_ks, &m_T_s[0]);
+  coarse_to_fine(m_T3, m_i-1, m_j, m_ks, &m_T_w[0]);
 
   m_lambda = compute_lambda();
 }
@@ -143,14 +154,12 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
       S.RHS(0) = m_T[0] + m_dt * (m_Rb / (m_rho_c_I * m_dz));
       if (!m_is_marginal) {
         S.RHS(0) += m_dt * 0.5 * m_strain_heating[0]/ m_rho_c_I;
-        planeStar<double> ss;
-        m_T3->getPlaneStar(m_i, m_j, 0, &ss);
-        const double UpTu = ((m_u[0] < 0) ?
-                             m_u[0] * (ss.e -  ss.ij) / m_dx :
-                             m_u[0] * (ss.ij  - ss.w) / m_dx);
-        const double UpTv = ((m_v[0] < 0) ?
-                             m_v[0] * (ss.n -  ss.ij) / m_dy :
-                             m_v[0] * (ss.ij  - ss.s) / m_dy);
+        const double UpTu = (m_u[0] < 0 ?
+                             m_u[0] * (m_T_e[0] -  m_T[0]) / m_dx :
+                             m_u[0] * (m_T[0]  - m_T_w[0]) / m_dx);
+        const double UpTv = (m_v[0] < 0 ?
+                             m_v[0] * (m_T_n[0] -  m_T[0]) / m_dy :
+                             m_v[0] * (m_T[0]  - m_T_s[0]) / m_dy);
         S.RHS(0) -= m_dt  * (0.5 * (UpTu + UpTv));
       }
       // vertical upwinding
@@ -169,14 +178,12 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
 
   // generic ice segment; build 1:m_ks-1 eqns
   for (unsigned int k = 1; k < m_ks; k++) {
-    planeStar<double> ss;
-    m_T3->getPlaneStar_fine(m_i, m_j, k, &ss);
-    const double UpTu = ((m_u[k] < 0) ?
-                         m_u[k] * (ss.e -  ss.ij) / m_dx :
-                         m_u[k] * (ss.ij  - ss.w) / m_dx);
-    const double UpTv = ((m_v[k] < 0) ?
-                         m_v[k] * (ss.n -  ss.ij) / m_dy :
-                         m_v[k] * (ss.ij  - ss.s) / m_dy);
+    const double UpTu = (m_u[k] < 0 ?
+                         m_u[k] * (m_T_e[k] -  m_T[k]) / m_dx :
+                         m_u[k] * (m_T[k]  - m_T_w[k]) / m_dx);
+    const double UpTv = (m_v[k] < 0 ?
+                         m_v[k] * (m_T_n[k] -  m_T[k]) / m_dy :
+                         m_v[k] * (m_T[k]  - m_T_s[k]) / m_dy);
     const double AA = m_nu * m_w[k];
     if (m_w[k] >= 0.0) {  // velocity upward
       S.L(k) = - m_iceR - AA * (1.0 - m_lambda/2.0);
