@@ -5,7 +5,7 @@ print "Test # 0: presence of tools and Python modules needed by other tests."
 
 tools = ["ncpdq", "ncap2", "ncks", "ncrename", "diff", "rm", "cp"]
 for tool in tools:
-    print "Loking for %s..." % tool
+    print "Looking for %s..." % tool
     if os.system("which %s" % tool) != 0:
         print "ERROR: %s does not seem to be on the PATH!" % tool
         sys.exit(1)
