@@ -349,8 +349,7 @@ int main(int argc, char *argv[]) {
                     output_file, flag);
     }
 
-    grid.set_extent(0.0, 0.0, Lx, Ly);
-    grid.set_size(Mx, My);
+    grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
     grid.set_vertical_levels(Lz, Mz, EQUAL);
     grid.allocate();
 

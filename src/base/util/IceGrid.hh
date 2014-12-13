@@ -38,6 +38,8 @@ class Config;
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
+Periodicity string_to_periodicity(const std::string &keyword);
+
 /** Wrapper around PETSc's DM. Simplifies memory management.
  *
  * The constructor takes ownership of the dm argument passed to it.
@@ -159,6 +161,9 @@ public:
                     Periodicity p);
 
   static Ptr Create(MPI_Comm c, const Config &config);
+
+  void set_size_and_extent(double x0, double y0, double Lx, double Ly,
+                           unsigned int Mx, unsigned int My, Periodicity p);
 
   void set_extent(double x0, double y0, double Lx, double Ly);
   void set_size(unsigned int Mx, unsigned int My);

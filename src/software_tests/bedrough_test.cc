@@ -52,9 +52,7 @@ int main(int argc, char *argv[]) {
 
     double Lx = 1200e3;
     IceGrid grid(com, config);
-    grid.set_size(81, 81);
-    grid.set_extent(0.0, 0.0, Lx, Lx);
-    grid.set_periodicity(NOT_PERIODIC);
+    grid.set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
     grid.allocate();
 
     PetscPrintf(grid.com,"BedSmoother TEST\n");

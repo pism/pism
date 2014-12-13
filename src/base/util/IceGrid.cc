@@ -28,6 +28,21 @@
 
 namespace pism {
 
+Periodicity string_to_periodicity(const std::string &keyword) {
+    if (keyword == "none") {
+    return NOT_PERIODIC;
+  } else if (keyword == "x") {
+    return X_PERIODIC;
+  } else if (keyword == "y") {
+    return Y_PERIODIC;
+  } else if (keyword == "xy") {
+    return XY_PERIODIC;
+  } else {
+    throw RuntimeError::formatted("grid periodicity type '%s' is invalid.",
+                                  keyword.c_str());
+  }
+}
+
 PISMDM::PISMDM(DM dm) {
   m_dm = dm;
 }
@@ -68,18 +83,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   m_ym = 0;
 
   std::string word = config.get_string("grid_periodicity");
-  if (word == "none") {
-    m_periodicity = NONE;
-  } else if (word == "x") {
-    m_periodicity = X_PERIODIC;
-  } else if (word == "y") {
-    m_periodicity = Y_PERIODIC;
-  } else if (word == "xy") {
-    m_periodicity = XY_PERIODIC;
-  } else {
-    throw RuntimeError::formatted("grid periodicity type '%s' is invalid.",
-                                  word.c_str());
-  }
+  m_periodicity = string_to_periodicity(word);
 
   unsigned int Mz = config.get("grid_Mz");
   double Lz = config.get("grid_Lz");
@@ -145,10 +149,7 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config,
 
   Ptr result(new IceGrid(c, config));
 
-  result->set_extent(x0, y0, Lx, Ly);
-  result->set_size(Mx, My);
-  result->set_periodicity(p);
-
+  result->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, p);
   result->set_vertical_levels(z);
 
   result->allocate();
@@ -500,6 +501,13 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   }
 
   m_z = new_zlevels;
+}
+
+void IceGrid::set_size_and_extent(double x0, double y0, double Lx, double Ly,
+                                  unsigned int Mx, unsigned int My, Periodicity p) {
+  set_size(Mx, My);
+  set_extent(x0, y0, Lx, Ly);
+  set_periodicity(p);
 }
 
 void IceGrid::set_extent(double x0, double y0, double Lx, double Ly) {

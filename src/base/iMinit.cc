@@ -161,78 +161,108 @@ void IceModel::set_grid_defaults() {
     -zb_spacing. Sets corresponding grid parameters.
  */
 void IceModel::set_grid_from_options() {
-  bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
-    z_spacing_set;
-  double Lx_km = grid.Lx() / 1000.0,
-    Ly_km = grid.Ly() / 1000.0,
+
+  double
+    x0 = grid.x0(),
+    y0 = grid.y0(),
+    Lx = grid.Lx(),
+    Ly = grid.Ly(),
     Lz = grid.Lz();
+  int
+    Mx = grid.Mx(),
+    My = grid.My(),
+    Mz = grid.Mz();
+  SpacingType spacing = QUADRATIC; // irrelevant (it is reset below)
 
-  // Process the options:
+  // Process options:
+  {
+    // Domain size
+    {
+      bool Lx_set = false, Ly_set = false, Lz_set = false;
+      double
+        Lx_km = Lx / 1000.0,
+        Ly_km = Ly / 1000.0;
+      OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
+                  Ly_km,  Ly_set);
+      OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
+                  Lx_km,  Lx_set);
+      OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
+                  Lz,  Lz_set);
+      Lx = Lx_km * 1000.0;
+      Ly = Ly_km * 1000.0;
+    }
 
-  // Read -Lx and -Ly.
-  OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-              Ly_km,  Ly_set);
-  OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-              Lx_km,  Lx_set);
-  // Vertical extent (in the ice):
-  OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-              Lz,  Lz_set);
+    // Alternatively: domain size and extent
+    {
+      std::vector<double> x_range, y_range;
+      bool x_range_set = false, y_range_set = false;
+      OptionsRealArray("-x_range", "min,max x coordinate values",
+                       x_range, x_range_set);
+      OptionsRealArray("-y_range", "min,max y coordinate values",
+                       y_range, y_range_set);
 
-  // Read -Mx, -My, -Mz and -Mbz.
-  int Mx = grid.Mx(), My = grid.My(), Mz = grid.Mz();
-  OptionsInt("-My", "Number of grid points in the X direction",
-             My, My_set);
-  OptionsInt("-Mx", "Number of grid points in the Y direction",
-             Mx, Mx_set);
-  OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-             Mz, Mz_set);
+      if (x_range_set && y_range_set) {
+        if (x_range.size() != 2 || y_range.size() != 2) {
+          throw RuntimeError("-x_range and/or -y_range argument is invalid.");
+        }
+        x0 = (x_range[0] + x_range[1]) / 2.0;
+        y0 = (y_range[0] + y_range[1]) / 2.0;
+        Lx = (x_range[1] - x_range[0]) / 2.0;
+        Ly = (y_range[1] - y_range[0]) / 2.0;
+      }
+    }
 
+    // Number of grid points
+    {
+      bool Mx_set = false, My_set = false, Mz_set = false;
+      OptionsInt("-Mx", "Number of grid points in the Y direction",
+                 Mx, Mx_set);
+      OptionsInt("-My", "Number of grid points in the X direction",
+                 My, My_set);
+      OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
+                 Mz, Mz_set);
+    }
 
-  if (Mx > 0 && My > 0) {
-    grid.set_size(Mx, My);
-  } else {
-    throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
-                                  "(have to have a positive number of grid points).",
-                                  Mx, My, Mz);
+    // Vertical spacing
+    {
+      bool z_spacing_set = false;
+      std::string keyword = config.get_string("grid_ice_vertical_spacing");
+      std::set<std::string> z_spacing_choices;
+      z_spacing_choices.insert("quadratic");
+      z_spacing_choices.insert("equal");
+      OptionsList("-z_spacing", "Vertical spacing in the ice.",
+                  z_spacing_choices,
+                  keyword,
+                  keyword, z_spacing_set);
+
+      if (keyword == "quadratic") {
+        spacing = QUADRATIC;
+      } else {
+        spacing = EQUAL;
+      }
+    }
   }
 
-  std::vector<double> x_range, y_range;
-  bool x_range_set, y_range_set;
-  OptionsRealArray("-x_range", "min,max x coordinate values",
-                   x_range, x_range_set);
-  OptionsRealArray("-y_range", "min,max y coordinate values",
-                   y_range, y_range_set);
+  // validate inputs
+  {
+    if (Mx < 3 || My < 3 || Mz < 2) {
+      throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
+                                    "(have to have Mx >= 3, My >= 3, Mz >= 2).",
+                                    Mx, My, Mz);
+    }
 
-  std::string keyword;
-  std::set<std::string> z_spacing_choices;
-  z_spacing_choices.insert("quadratic");
-  z_spacing_choices.insert("equal");
-  // Determine the vertical grid spacing in the ice:
-  OptionsList("-z_spacing", "Vertical spacing in the ice.",
-              z_spacing_choices, "quadratic", keyword, z_spacing_set);
-
-  SpacingType spacing;
-  if (keyword == "quadratic") {
-    spacing = QUADRATIC;
-  } else {
-    spacing = EQUAL;
+    if (Lx <= 0.0 || Ly <= 0.0 || Lz <= 0.0) {
+      throw RuntimeError::formatted("-Lx %f -Ly %f -Lz %f is invalid\n"
+                                    "(Lx, Ly, Lz have to be positive).",
+                                    Lx / 1000.0, Ly / 1000.0, Lz);
+    }
   }
 
   // Use the information obtained above:
-  grid.set_extent(0.0, 0.0, Lx_km * 1000.0, Ly_km * 1000.0);
-
-  if (x_range_set && y_range_set) {
-    if (x_range.size() != 2 || y_range.size() != 2) {
-      throw RuntimeError("-x_range and/or -y_range argument is invalid.");
-    }
-    const double
-      x0 = (x_range[0] + x_range[1]) / 2.0,
-      y0 = (y_range[0] + y_range[1]) / 2.0,
-      Lx = (x_range[1] - x_range[0]) / 2.0,
-      Ly = (y_range[1] - y_range[0]) / 2.0;
-    grid.set_extent(x0, y0, Lx, Ly);
-  }
-
+  //
+  // Note that grid.periodicity() includes the result of processing
+  // the -periodicity option.
+  grid.set_size_and_extent(x0, y0, Lx, Ly, Mx, My, grid.periodicity());
   grid.set_vertical_levels(Lz, Mz, spacing);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
