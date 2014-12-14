@@ -65,12 +65,23 @@ void IceModel::set_grid_defaults() {
   std::string filename;
   grid_info input;
 
+  // Logical (as opposed to physical) grid dimensions should not be
+  // deduced from a bootstrapping file, so we check if these options
+  // are set and stop if they are not.
+  OptionsIsSet("-Mx", Mx_set);
+  OptionsIsSet("-My", My_set);
+  OptionsIsSet("-Mz", Mz_set);
+  OptionsIsSet("-Lz", Lz_set);
+  if (not (Mx_set && My_set && Mz_set && Lz_set)) {
+    throw RuntimeError("All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
+  }
+
   // Get the bootstrapping file name:
 
   OptionsString("-boot_file", "Specifies the file to bootstrap from",
                 filename, boot_file_set);
 
-  if (!boot_file_set) {
+  if (not boot_file_set) {
     throw RuntimeError("Please specify an input file using -i or -boot_file.");
   }
 
@@ -79,12 +90,9 @@ void IceModel::set_grid_defaults() {
 
   // Determine the grid extent from a bootstrapping file:
   PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
-  bool x_dim_exists, y_dim_exists, t_exists;
   nc.open(filename, PISM_READONLY);
 
-  x_dim_exists = nc.inq_dim("x");
-  y_dim_exists = nc.inq_dim("y");
-  t_exists = nc.inq_var(config.get_string("time_dimension_name"));
+  bool t_exists = nc.inq_var(config.get_string("time_dimension_name"));
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -115,18 +123,21 @@ void IceModel::set_grid_defaults() {
                                   filename.c_str());
   }
 
-  std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-  if (proj4_string.empty() == false) {
-    global_attributes.set_string("proj4", proj4_string);
-  }
+  // proj.4 and mapping
+  {
+    nc.open(filename, PISM_READONLY);
+    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
+    if (proj4_string.empty() == false) {
+      global_attributes.set_string("proj4", proj4_string);
+    }
 
-  bool mapping_exists = nc.inq_var("mapping");
-  if (mapping_exists) {
-    nc.read_attributes(mapping.get_name(), mapping);
-    mapping.report_to_stdout(grid.com, 4);
+    bool mapping_exists = nc.inq_var("mapping");
+    if (mapping_exists) {
+      nc.read_attributes(mapping.get_name(), mapping);
+      mapping.report_to_stdout(grid.com, 4);
+    }
+    nc.close();
   }
-
-  nc.close();
 
   // Set the grid center and horizontal extent:
   grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
@@ -145,15 +156,6 @@ void IceModel::set_grid_defaults() {
 
   grid.time->init();
 
-  // Grid dimensions should not be deduced from a bootstrapping file, so we
-  // check if these options are set and stop if they are not.
-  OptionsIsSet("-Mx", Mx_set);
-  OptionsIsSet("-My", My_set);
-  OptionsIsSet("-Mz", Mz_set);
-  OptionsIsSet("-Lz", Lz_set);
-  if (not (Mx_set && My_set && Mz_set && Lz_set)) {
-    throw RuntimeError("All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
-  }
 }
 
 //! Initalizes the grid from options.
