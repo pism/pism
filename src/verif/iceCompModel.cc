@@ -947,11 +947,11 @@ void IceCompModel::reportErrors() {
   unsigned int start;
   std::string filename;
   bool netcdf_report, append;
-  NCTimeseries err("N", "N", grid.get_unit_system());
+  NCTimeseries err("N", "N", grid.config.get_unit_system());
 
   err.set_units("1");
 
-  PIO nc(grid.com, "netcdf3", grid.get_unit_system()); // OK to use netcdf3
+  PIO nc(grid.com, "netcdf3", grid.config.get_unit_system()); // OK to use netcdf3
 
   OptionsString("-report_file", "NetCDF error report file",
                 filename, netcdf_report);

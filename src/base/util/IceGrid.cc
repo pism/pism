@@ -820,7 +820,7 @@ void IceGrid::set_periodicity(Periodicity p) {
 }
 
 double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return m_config.get_unit_system().convert(value, unit1, unit2);
+  return config.get_unit_system().convert(value, unit1, unit2);
 }
 
 DM IceGrid::create_dm(int da_dof, int stencil_width) {

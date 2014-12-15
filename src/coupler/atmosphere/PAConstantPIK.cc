@@ -19,6 +19,7 @@
 #include "PAConstantPIK.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 #include <stdexcept>
 
@@ -26,7 +27,7 @@ namespace pism {
 
 PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf),
-    air_temp_snapshot(g.get_unit_system(), "air_temp_snapshot", g) {
+    air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 

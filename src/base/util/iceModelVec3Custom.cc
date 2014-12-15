@@ -18,7 +18,9 @@
  */
 
 #include "iceModelVec3Custom.hh"
-#include <assert.h>
+#include "PISMConfig.hh"
+
+#include <cassert>
 
 namespace pism {
 
@@ -66,7 +68,7 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
 
   m_dof = 1;
 
-  m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+  m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
                                          m_name, *grid, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 

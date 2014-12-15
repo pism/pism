@@ -23,6 +23,7 @@
 #include "PIO.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
+#include "PISMConfig.hh"
 
 #include "error_handling.hh"
 
@@ -54,7 +55,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   rank = grid.rank();
   report_range = true;
 
-  print_grid_info(input, grid.get_unit_system(), 3);
+  print_grid_info(input, grid.config.get_unit_system(), 3);
 
   // Grid spacing (assume that the grid is equally-spaced) and the
   // extent of the domain. To compute the extent of the domain, assume

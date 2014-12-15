@@ -30,7 +30,7 @@ namespace pism {
 
 PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf),
-    m_air_temp_snapshot(g.get_unit_system(), "air_temp_snapshot", g) {
+    m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
   m_snow_temp_july_day = config.get("snow_temp_july_day");
 

@@ -26,6 +26,7 @@
 #include "PISMTime.hh"
 
 #include "error_handling.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -92,7 +93,7 @@ protected:
                "  reading %s data from forcing file %s...\n",
                offset->short_name.c_str(), filename.c_str());
 
-    PIO nc(g.com, "netcdf3", g.get_unit_system());
+    PIO nc(g.com, "netcdf3", g.config.get_unit_system());
     nc.open(filename, PISM_READONLY);
     {
       offset->read(nc, g.time);

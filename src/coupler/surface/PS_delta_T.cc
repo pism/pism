@@ -25,8 +25,8 @@ namespace pism {
 
 PS_delta_T::PS_delta_T(IceGrid &g, const Config &conf, SurfaceModel* in)
   : PScalarForcing<SurfaceModel,PSModifier>(g, conf, in),
-    climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
 
   option_prefix = "-surface_delta_T";
   offset_name   = "delta_T";

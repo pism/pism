@@ -36,7 +36,7 @@ namespace pism {
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
 
   mbscheme              = NULL;
   faustogreve           = NULL;
@@ -97,7 +97,7 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
     std::string short_name = "air_temp_sd";
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
 
-    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
+    PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
     nc.open(filename, PISM_READONLY);
     n_records = nc.inq_nrecords(short_name, "");
     nc.close();

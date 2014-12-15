@@ -24,8 +24,8 @@ namespace pism {
 
 PO_delta_MBP::PO_delta_MBP(IceGrid &g, const Config &conf, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, conf, in),
-    shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid)
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid)
 {
 
   option_prefix = "-ocean_delta_MBP";

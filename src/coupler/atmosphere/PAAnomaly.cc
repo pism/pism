@@ -25,8 +25,8 @@ namespace pism {
 
 PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, conf, in),
-    air_temp(g.get_unit_system(), "air_temp", grid),
-    precipitation(g.get_unit_system(), "precipitation", grid)
+    air_temp(g.config.get_unit_system(), "air_temp", grid),
+    precipitation(g.config.get_unit_system(), "precipitation", grid)
 {
   option_prefix  = "-atmosphere_anomaly";
 

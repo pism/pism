@@ -270,11 +270,11 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
                                           double max_v,
                                           double avg_u,
                                           double avg_v) {
-  NCTimeseries err("N", "N", grid->get_unit_system());
+  NCTimeseries err("N", "N", grid->config.get_unit_system());
   unsigned int start;
   std::string filename;
   bool flag, append;
-  NCVariable global_attributes("PISM_GLOBAL", grid->get_unit_system());
+  NCVariable global_attributes("PISM_GLOBAL", grid->config.get_unit_system());
 
   OptionsString("-report_file", "NetCDF error report file",
                 filename, flag);

@@ -23,8 +23,8 @@ namespace pism {
 
 PO_delta_SMB::PO_delta_SMB(IceGrid &g, const Config &conf, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, conf, in),
-    shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid) {
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid) {
 
   option_prefix = "-ocean_delta_mass_flux";
   offset_name   = "delta_mass_flux";

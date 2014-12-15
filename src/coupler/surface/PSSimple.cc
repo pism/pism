@@ -30,8 +30,8 @@ namespace pism {
 ///// Simple PISM surface model.
 PSSimple::PSSimple(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf),
-    climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid) {
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",

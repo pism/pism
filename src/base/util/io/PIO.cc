@@ -114,7 +114,7 @@ PIO::PIO(MPI_Comm c, const string &mode, const UnitSystem &units_system)
 }
 
 PIO::PIO(IceGrid &grid, const string &mode)
-  : m_unit_system(grid.get_unit_system()) {
+  : m_unit_system(grid.config.get_unit_system()) {
   constructor(grid.com, mode);
   if (m_nc) {
     set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());

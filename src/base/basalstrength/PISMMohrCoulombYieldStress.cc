@@ -209,7 +209,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
     if (i_set || bootstrap) {
       find_pism_input(filename, bootstrap, start);
 
-      PIO nc(grid.com, "guess_mode", grid.get_unit_system());
+      PIO nc(grid.com, "guess_mode", grid.config.get_unit_system());
 
       nc.open(filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));

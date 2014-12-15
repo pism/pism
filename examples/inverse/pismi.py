@@ -33,7 +33,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
       grid = self.grid
       vecs = self.modeldata.vecs
 
-      pio = PISM.PIO(grid.com,"netcdf3", grid.get_unit_system())
+      pio = PISM.PIO(grid.com,"netcdf3", grid.config.get_unit_system())
       pio.open(filename,PISM.PISM_READWRITE) #append mode!
 
       self.modeldata.vecs.write(filename)
@@ -431,7 +431,7 @@ if __name__ == "__main__":
   
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
-    pio = PISM.PIO(grid.com,"netcdf3", grid.get_unit_system())
+    pio = PISM.PIO(grid.com,"netcdf3", grid.config.get_unit_system())
     pio.open(output_filename,PISM.PISM_READWRITE_MOVE)
     pio.def_time(grid.config.get_string("time_dimension_name"),
                  grid.config.get_string("calendar"), grid.time.units_string())

@@ -570,7 +570,7 @@ void  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceMod
   m_name       = my_name;
 
   if (m_dof == 1) {
-    m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+    m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
                                            my_name, *grid));
   } else {
 
@@ -579,7 +579,7 @@ void  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceMod
 
       snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
                m_name.c_str(), j);
-      m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+      m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
                                              tmp, *grid));
     }
   }

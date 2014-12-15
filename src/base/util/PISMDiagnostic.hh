@@ -95,7 +95,7 @@ public:
   virtual NCSpatialVariable get_metadata(int N = 0)
   {
     if (N >= dof) {
-      return NCSpatialVariable(grid.get_unit_system(), "missing", grid);
+      return NCSpatialVariable(grid.config.get_unit_system(), "missing", grid);
     }
 
     return vars[N];

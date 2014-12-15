@@ -22,6 +22,7 @@
 
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -36,7 +37,7 @@ void  IceModelVec2V::create(IceGrid &my_grid, const std::string &short_name, Ice
   IceModelVec2::create(my_grid, short_name, ghostedp,
                        stencil_width, m_dof);
 
-  UnitSystem sys = grid->get_unit_system();
+  UnitSystem sys = grid->config.get_unit_system();
 
   m_metadata[0] = NCSpatialVariable(sys, "u" + short_name, *grid);
   m_metadata[1] = NCSpatialVariable(sys, "v" + short_name, *grid);

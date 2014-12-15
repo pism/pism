@@ -292,7 +292,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "hardav", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "hardav", grid));
 
   // choice to use SSA power; see #285
   const double power = 1.0 / grid.config.get("ssa_Glen_exponent");
@@ -351,7 +351,7 @@ IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "rank", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "rank", grid));
 
   set_attrs("processor rank", "", "1", "", 0);
   vars[0].set_time_independent(true);
@@ -378,7 +378,7 @@ IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "cts", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "cts", grid, g.z()));
 
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
             "", "", 0);
@@ -402,7 +402,7 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, Vars &my
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "proc_ice_area", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "proc_ice_area", grid));
 
   set_attrs("number of cells containing ice in a processor's domain", "",
             "", "", 0);
@@ -443,7 +443,7 @@ IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temp", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "temp", grid, g.z()));
 
   set_attrs("ice temperature", "land_ice_temperature", "K", "K", 0);
   vars[0].set_double("valid_min", 0);
@@ -488,7 +488,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temp_pa", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "temp_pa", grid, g.z()));
 
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
@@ -545,7 +545,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "temppabase", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "temppabase", grid));
 
   set_attrs("pressure-adjusted ice temperature at the base of ice", "",
             "Celsius", "Celsius", 0);
@@ -596,7 +596,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, Vars &my_v
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "enthalpysurf", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "enthalpysurf", grid));
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
@@ -640,7 +640,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, Vars &my_v
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "enthalpybase", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "enthalpybase", grid));
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
@@ -665,7 +665,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "tempbase", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempbase", grid));
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
@@ -716,7 +716,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "tempsurf", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempsurf", grid));
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
@@ -764,7 +764,7 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "liqfrac", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "liqfrac", grid, g.z()));
 
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
@@ -796,7 +796,7 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "tempicethk", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempicethk", grid));
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
@@ -855,7 +855,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, Va
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "tempicethk_basal", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempicethk_basal", grid));
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
@@ -953,7 +953,7 @@ IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g, Vars
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "flux_divergence", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "flux_divergence", grid));
 
   set_attrs("flux divergence", "", "m s-1", "m year-1", 0);
 }
@@ -974,7 +974,7 @@ IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumula
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "climatic_mass_balance_cumulative", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "climatic_mass_balance_cumulative", grid));
 
   set_attrs("cumulative ice-equivalent climatic mass balance", "",
             "kg m-2", "kg m-2", 0);
@@ -1490,7 +1490,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, Vars &my_vars)
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "dHdt", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "dHdt", grid));
 
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
@@ -1707,7 +1707,7 @@ IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel 
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "nonneg_flux_cumulative", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "nonneg_flux_cumulative", grid));
 
   set_attrs("cumulative non-negative rule (thk >= 0) flux (positive means ice gain)",
             "",                 // no standard name
@@ -1730,7 +1730,7 @@ IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumu
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "grounded_basal_flux_cumulative", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "grounded_basal_flux_cumulative", grid));
 
   set_attrs("cumulative grounded basal flux (positive means ice gain)",
             "",                 // no standard name
@@ -1753,7 +1753,7 @@ IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumu
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "floating_basal_flux_cumulative", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "floating_basal_flux_cumulative", grid));
 
   set_attrs("cumulative floating basal flux (positive means ice gain)",
             "",                 // no standard name
@@ -1777,7 +1777,7 @@ IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(Ice
   : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "discharge_flux_cumulative", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "discharge_flux_cumulative", grid));
 
   set_attrs("cumulative ice discharge (calving) flux (negative means ice loss)",
             "",                 // no standard name
@@ -1809,7 +1809,7 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &
     levels[k] = k;
   }
 
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), m_var_name + "_bnds", grid, levels));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), m_var_name + "_bnds", grid, levels));
   vars[0].get_z().set_name("nv4");
   vars[0].get_z().clear_all_strings();
   vars[0].get_z().clear_all_doubles();

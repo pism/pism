@@ -32,7 +32,7 @@ namespace pism {
 
 PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf), temperature_name("ice_surface_temp"),
-    ice_surface_temp(g.get_unit_system(), temperature_name, g) {
+    ice_surface_temp(g.config.get_unit_system(), temperature_name, g) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = config.get("pdd_factor_snow");

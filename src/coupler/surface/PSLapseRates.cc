@@ -22,8 +22,8 @@ namespace pism {
 
 PSLapseRates::PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in)
   : PLapseRates<SurfaceModel,PSModifier>(g, conf, in),
-    climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid)
 {
   smb_lapse_rate = 0;
   option_prefix = "-surface_lapse_rate";

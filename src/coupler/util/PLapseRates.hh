@@ -149,7 +149,7 @@ protected:
       unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
-      PIO nc(g.com, "netcdf3", g.get_unit_system());
+      PIO nc(g.com, "netcdf3", g.config.get_unit_system());
       nc.open(filename, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude");
       nc.close();

@@ -491,7 +491,7 @@ void IceModel::model_state_setup() {
   }
 
   if (i_set) {
-    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
+    PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
 
     nc.open(filename, PISM_READONLY);
     bool run_stats_exists = nc.inq_var("run_stats");

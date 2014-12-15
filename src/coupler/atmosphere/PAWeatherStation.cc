@@ -32,8 +32,8 @@ PAWeatherStation::PAWeatherStation(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf),
     m_precipitation(&g, "precipitation", conf.get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", conf.get_string("time_dimension_name")),
-    m_precip_metadata(g.get_unit_system(), "precipitation", grid),
-    m_air_temp_metadata(g.get_unit_system(), "air_temp", grid)
+    m_precip_metadata(g.config.get_unit_system(), "precipitation", grid),
+    m_air_temp_metadata(g.config.get_unit_system(), "air_temp", grid)
 {
   m_precipitation.get_dimension_metadata().set_units(grid.time->units_string());
   m_precipitation.get_metadata().set_units("m / second");
@@ -88,7 +88,7 @@ void PAWeatherStation::init(Vars &vars) {
              "  - Reading air temperature and precipitation from '%s'...\n",
              filename.c_str());
 
-  PIO nc(grid.com, "netcdf3", grid.get_unit_system());
+  PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
   nc.open(filename, PISM_READONLY);
   {
     m_precipitation.read(nc, grid.time);

@@ -29,8 +29,8 @@ namespace pism {
 
 POConstantPIK::POConstantPIK(IceGrid &g, const Config &conf)
   : OceanModel(g, conf),
-    shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid)
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid)
 {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",

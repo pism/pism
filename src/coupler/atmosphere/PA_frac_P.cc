@@ -23,8 +23,8 @@ namespace pism {
 
 PA_frac_P::PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
-    air_temp(g.get_unit_system(), "air_temp", grid),
-    precipitation(g.get_unit_system(), "precipitation", grid)
+    air_temp(g.config.get_unit_system(), "air_temp", grid),
+    precipitation(g.config.get_unit_system(), "precipitation", grid)
 {
   offset = NULL;
 

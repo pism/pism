@@ -345,8 +345,8 @@ SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_x", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_y", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_x", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_y", grid));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -403,7 +403,7 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_mag", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_mag", grid));
 
   set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -442,8 +442,8 @@ SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taub_x", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taub_y", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_x", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_y", grid));
 
   set_attrs("X-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -500,7 +500,7 @@ SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taub_mag", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_mag", grid));
 
   set_attrs("magnitude of the basal shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -573,7 +573,7 @@ void PrescribedSliding::init(Vars &vars) {
 SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "beta", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "beta", grid));
 
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }

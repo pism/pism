@@ -51,11 +51,11 @@ IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
   : grid(g),
     config(conf),
     overrides(conf_overrides),
-    global_attributes("PISM_GLOBAL", g.get_unit_system()),
-    mapping("mapping", g.get_unit_system()),
-    run_stats("run_stats", g.get_unit_system()),
-    extra_bounds("time_bounds", config.get_string("time_dimension_name"), g.get_unit_system()),
-    timestamp("timestamp", config.get_string("time_dimension_name"), g.get_unit_system()) {
+    global_attributes("PISM_GLOBAL", g.config.get_unit_system()),
+    mapping("mapping", g.config.get_unit_system()),
+    run_stats("run_stats", g.config.get_unit_system()),
+    extra_bounds("time_bounds", config.get_string("time_dimension_name"), g.config.get_unit_system()),
+    timestamp("timestamp", config.get_string("time_dimension_name"), g.config.get_unit_system()) {
 
   extra_bounds.set_units(grid.time->units_string());
 

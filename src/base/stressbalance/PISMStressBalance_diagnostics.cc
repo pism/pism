@@ -67,8 +67,8 @@ PSB_velbar::PSB_velbar(StressBalance *m, IceGrid &g, Vars &my_vars)
   dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "ubar", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "vbar", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "ubar", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "vbar", grid));
 
   set_attrs("vertical mean of horizontal ice velocity in the X direction",
             "land_ice_vertical_mean_x_velocity",
@@ -144,7 +144,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "velbar_mag", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "velbar_mag", grid));
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
@@ -186,7 +186,7 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "flux_mag", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "flux_mag", grid));
 
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
@@ -231,7 +231,7 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "velbase_mag", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "velbase_mag", grid));
 
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
@@ -267,7 +267,7 @@ void PSB_velbase_mag::compute(IceModelVec* &output) {
 PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "velsurf_mag", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "velsurf_mag", grid));
 
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -308,8 +308,8 @@ PSB_velsurf::PSB_velsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   dof = 2;
 
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "uvelsurf", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "vvelsurf", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "uvelsurf", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "vvelsurf", grid));
 
   set_attrs("x-component of the horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -373,7 +373,7 @@ PSB_wvel::PSB_wvel(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "wvel", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "wvel", grid, g.z()));
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
@@ -455,7 +455,7 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "wvelsurf", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "wvelsurf", grid));
 
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
             "m s-1", "m year-1", 0);
@@ -512,7 +512,7 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "wvelbase", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "wvelbase", grid));
 
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
             "m s-1", "m year-1", 0);
@@ -569,8 +569,8 @@ PSB_velbase::PSB_velbase(StressBalance *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   dof = 2;
 
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "uvelbase", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "vvelbase", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "uvelbase", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "vvelbase", grid));
 
   set_attrs("x-component of the horizontal velocity of ice at the base of ice", "",
             "m s-1", "m year-1", 0);
@@ -633,7 +633,7 @@ PSB_bfrict::PSB_bfrict(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "bfrict", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "bfrict", grid));
 
   set_attrs("basal frictional heating", "",
             "W m-2", "W m-2", 0);
@@ -658,7 +658,7 @@ PSB_uvel::PSB_uvel(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "uvel", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "uvel", grid, g.z()));
 
   set_attrs("horizontal velocity of ice in the X direction", "land_ice_x_velocity",
             "m s-1", "m year-1", 0);
@@ -707,7 +707,7 @@ PSB_vvel::PSB_vvel(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "vvel", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "vvel", grid, g.z()));
 
   set_attrs("horizontal velocity of ice in the Y direction", "land_ice_y_velocity",
             "m s-1", "m year-1", 0);
@@ -756,7 +756,7 @@ PSB_wvel_rel::PSB_wvel_rel(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "wvel_rel", grid, g.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "wvel_rel", grid, g.z()));
 
   set_attrs("vertical velocity of ice, relative to base of ice directly below", "",
             "m s-1", "m year-1", 0);
@@ -806,7 +806,7 @@ PSB_strainheat::PSB_strainheat(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "strainheat", grid, grid.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "strainheat", grid, grid.z()));
 
   set_attrs("rate of strain heating in ice (dissipation heating)", "",
             "W m-3", "mW m-3", 0);
@@ -832,8 +832,8 @@ PSB_strain_rates::PSB_strain_rates(StressBalance *m, IceGrid &g, Vars &my_vars)
   dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "eigen1", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "eigen2", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "eigen1", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "eigen2", grid));
 
   set_attrs("first eigenvalue of the horizontal, vertically-integrated strain rate tensor",
             "", "s-1", "s-1", 0);
@@ -877,9 +877,9 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, V
   dof = 3;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "sigma_xx", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "sigma_yy", grid));
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "sigma_xy", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "sigma_xx", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "sigma_yy", grid));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "sigma_xy", grid));
 
   set_attrs("deviatoric stress in X direction", "", "Pa", "Pa", 0);
   set_attrs("deviatoric stress in Y direction", "", "Pa", "Pa", 1);
@@ -922,7 +922,7 @@ PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "pressure", grid, grid.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "pressure", grid, grid.z()));
 
   set_attrs("pressure in ice (hydrostatic)", "",
             "Pa", "Pa", 0);
@@ -968,7 +968,7 @@ PSB_tauxz::PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "tauxz", grid, grid.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tauxz", grid, grid.z()));
 
   set_attrs("shear stress xz component (in shallow ice approximation SIA)", "",
             "Pa", "Pa", 0);
@@ -1028,7 +1028,7 @@ PSB_tauyz::PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "tauyz", grid, grid.z()));
+  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tauyz", grid, grid.z()));
 
   set_attrs("shear stress yz component (in shallow ice approximation SIA)", "",
             "Pa", "Pa", 0);

@@ -32,7 +32,7 @@
 namespace pism {
 
 Timeseries::Timeseries(IceGrid *g, const std::string &name, const std::string &dimension_name)
-  : m_unit_system(g->get_unit_system()),
+  : m_unit_system(g->config.get_unit_system()),
     dimension(dimension_name, dimension_name, m_unit_system),
     var(name, dimension_name, m_unit_system),
     bounds(dimension_name + "_bounds", dimension_name, m_unit_system)

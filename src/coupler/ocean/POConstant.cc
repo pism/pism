@@ -29,8 +29,8 @@ namespace pism {
 
 POConstant::POConstant(IceGrid &g, const Config &conf)
   : OceanModel(g, conf),
-    shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid) {
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid) {
 
   mymeltrate = 0.0;
   meltrate_set = false;

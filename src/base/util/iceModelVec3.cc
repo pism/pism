@@ -70,7 +70,7 @@ void IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_name,
 
   m_name = my_name;
 
-  m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+  m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
                                          my_name, *grid, zlevels));
 }
 

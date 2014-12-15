@@ -115,7 +115,7 @@ void Hydrology::init(Vars &vars) {
 
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
 
-    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
+    PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
     nc.open(itbfilename, PISM_READONLY);
     unsigned int n_records = nc.inq_nrecords("inputtobed", "");
     nc.close();
