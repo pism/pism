@@ -26,11 +26,11 @@ namespace pism {
 
 bool Vars::is_available(const std::string &name) const {
   // check if "name" is a standard name
-  if (standard_names.find(name) != standard_names.end()) {
+  if (m_standard_names.find(name) != m_standard_names.end()) {
     return true;
   }
   // check if "name" is a short name
-  if (variables.find(name) != variables.end()) {
+  if (m_variables.find(name) != m_variables.end()) {
     return true;
   }
   return false;
@@ -38,7 +38,7 @@ bool Vars::is_available(const std::string &name) const {
 
 //! \brief Add an IceModelVec v using the name `name`.
 void Vars::add(IceModelVec &v, const std::string &name) {
-  variables[name] = &v;
+  m_variables[name] = &v;
 }
 
 //!Add an IceModelVec to the dictionary.
@@ -55,15 +55,15 @@ void Vars::add(IceModelVec &v) {
   if (m.has_attribute("standard_name")) {
 
     std::string standard_name = m.get_string("standard_name");
-    if (standard_names[standard_name] == NULL) {
-      standard_names[standard_name] = &v;
+    if (m_standard_names[standard_name].empty()) {
+      m_standard_names[standard_name] = name;
     } else {
       throw RuntimeError("Vars::add(): an IceModelVec with the standard_name '" + standard_name + "' was added already.");
     }
   }
 
-  if (variables[name] == NULL) {
-    variables[name] = &v;
+  if (m_variables[name] == NULL) {
+    m_variables[name] = &v;
   } else {
     throw RuntimeError("Vars::add(): an IceModelVec with the short_name '" + name + "' was added already.");
   }
@@ -71,24 +71,23 @@ void Vars::add(IceModelVec &v) {
 
 //! Removes a variable with the key `name` from the dictionary.
 void Vars::remove(const std::string &name) {
-  IceModelVec *v = variables[name];
+  IceModelVec *v = m_variables[name];
   const NCSpatialVariable &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
     if (m.has_attribute("standard_name")) {
       std::string std_name = m.get_string("standard_name");
 
-      variables.erase(name);
-      standard_names.erase(std_name);
+      m_variables.erase(name);
+      m_standard_names.erase(std_name);
     }
   } else {
-    v = standard_names[name];
+    std::string &short_name = m_standard_names[name];
+    v = m_variables[short_name];
 
     if (v != NULL) {            // the argument is a standard_name
-      std::string short_name = v->name();
-
-      variables.erase(short_name);
-      standard_names.erase(name);
+      m_variables.erase(short_name);
+      m_standard_names.erase(name);
     }
   }
 
@@ -108,14 +107,15 @@ IceModelVec* Vars::get(const std::string &name) const {
 }
 
 IceModelVec* Vars::get_internal(const std::string &name) const {
-  std::map<std::string, IceModelVec* >::const_iterator j = standard_names.find(name);
-  if (j != standard_names.end()) {
-    return (j->second);
+  std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
+  if (j != m_standard_names.end()) {
+    std::string short_name = j->second;
+    return m_variables.find(short_name)->second;
   }
 
-  j = variables.find(name);
-  if (j != variables.end()) {
-    return (j->second);
+  std::map<std::string,IceModelVec*>::const_iterator k = m_variables.find(name);
+  if (k != m_variables.end()) {
+    return (k->second);
   }
 
   return NULL;
@@ -149,7 +149,7 @@ IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
   IceModelVec3* tmp = dynamic_cast<IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("3D scalar variable '" + name + "' is not available");
-      }
+  }
   return tmp;
 }
 
@@ -164,8 +164,8 @@ IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
 std::set<std::string> Vars::keys() const {
   std::set<std::string> result;
 
-  std::map<std::string,IceModelVec*>::const_iterator i = variables.begin();
-  while (i != variables.end()) {
+  std::map<std::string,IceModelVec*>::const_iterator i = m_variables.begin();
+  while (i != m_variables.end()) {
     result.insert(i->first);
     ++i;
   }

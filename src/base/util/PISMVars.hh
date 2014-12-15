@@ -49,13 +49,14 @@ public:
   std::set<std::string> keys() const;
 private:
   IceModelVec* get_internal(const std::string &name) const;
-  std::map<std::string, IceModelVec*> variables,
-    standard_names;             //!< stores standard names of variables that
+  std::map<std::string, IceModelVec*> m_variables;
+  //! stores standard names of variables that
   //! have standard names, allowing looking them
   //! up using either short or standard names and
   //! preserving the one-to-one map from keys
   //! (strings) to pointers (represented by
   //! "variables").
+  std::map<std::string, std::string> m_standard_names;
 };
 
 } // end of namespace pism
