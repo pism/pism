@@ -36,6 +36,7 @@ class IceModelVec3;
 // FIXME: 1) make Vars take and return "const IceModelVec*" 2) use smart pointers
 class Vars {
 public:
+  Vars();
   void add(IceModelVec &);
   void add(IceModelVec &, const std::string &name);
   void remove(const std::string &name);

@@ -283,7 +283,6 @@ void IceCompModel::allocate_stressbalance() {
     SIAFD *sia = new SIAFD(grid, *EC, config);
 
     stress_balance = new StressBalance(grid, ssb, sia, config);
-    stress_balance->init(variables);
   } else {
     IceModel::allocate_stressbalance();
   }

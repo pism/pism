@@ -84,6 +84,8 @@ static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
                         "K", "");
   variables.add(*bedtoptemp);
 
+  variables.lock();
+
   return 0;
 }
 

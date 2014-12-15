@@ -98,31 +98,23 @@ void IceEISModel::setFromOptions() {
 //! \brief Decide which stress balance model to use.
 void IceEISModel::allocate_stressbalance() {
 
-  if (stress_balance == NULL) {
-    ShallowStressBalance *my_stress_balance;
-
-    SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
-
-    if (m_experiment == 'G' || m_experiment == 'H') {
-      my_stress_balance = new SIA_Sliding(grid, *EC, config);
-    } else {
-      my_stress_balance = new ZeroSliding(grid, *EC, config);
-    }
-  
-    // ~StressBalance() will de-allocate my_stress_balance and modifier.
-    stress_balance = new StressBalance(grid, my_stress_balance,
-                                           modifier, config);
-
-    // Note that in PISM stress balance computations are diagnostic, i.e. do not
-    // have a state that changes in time. This means that this call can be here
-    // and not in model_state_setup() and we don't need to re-initialize after
-    // the "diagnostic time step".
-    stress_balance->init(variables);
-
-    if (config.get_flag("include_bmr_in_continuity")) {
-      stress_balance->set_basal_melt_rate(&basal_melt_rate);
-    }
+  if (stress_balance != NULL) {
+    return;
   }
+
+  ShallowStressBalance *my_stress_balance;
+
+  SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
+
+  if (m_experiment == 'G' || m_experiment == 'H') {
+    my_stress_balance = new SIA_Sliding(grid, *EC, config);
+  } else {
+    my_stress_balance = new ZeroSliding(grid, *EC, config);
+  }
+  
+  // ~StressBalance() will de-allocate my_stress_balance and modifier.
+  stress_balance = new StressBalance(grid, my_stress_balance,
+                                     modifier, config);
   
 }
 

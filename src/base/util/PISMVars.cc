@@ -24,6 +24,10 @@
 
 namespace pism {
 
+Vars::Vars() {
+  m_locked = false;
+}
+
 bool Vars::is_available(const std::string &name) const {
   // check if "name" is a standard name
   if (m_standard_names.find(name) != m_standard_names.end()) {
@@ -38,6 +42,9 @@ bool Vars::is_available(const std::string &name) const {
 
 //! \brief Add an IceModelVec v using the name `name`.
 void Vars::add(IceModelVec &v, const std::string &name) {
+  if (m_locked) {
+    throw RuntimeError("this pism::Vars instance is locked");
+  }
   m_variables[name] = &v;
 }
 
@@ -48,6 +55,9 @@ void Vars::add(IceModelVec &v, const std::string &name) {
   This code will only work for IceModelVecs with dof == 1.
 */
 void Vars::add(IceModelVec &v) {
+  if (m_locked) {
+    throw RuntimeError("this pism::Vars instance is locked");
+  }
 
   const NCSpatialVariable &m = v.metadata();
   std::string name = v.name();
@@ -71,6 +81,10 @@ void Vars::add(IceModelVec &v) {
 
 //! Removes a variable with the key `name` from the dictionary.
 void Vars::remove(const std::string &name) {
+  if (m_locked) {
+    throw RuntimeError("this pism::Vars instance is locked");
+  }
+
   IceModelVec *v = m_variables[name];
   const NCSpatialVariable &m = v->metadata();
 
@@ -90,7 +104,6 @@ void Vars::remove(const std::string &name) {
       m_standard_names.erase(name);
     }
   }
-
 }
 
 void Vars::lock() {
@@ -111,6 +124,9 @@ IceModelVec* Vars::get(const std::string &name) const {
 }
 
 IceModelVec* Vars::get_internal(const std::string &name) const {
+  if (not m_locked) {
+    throw RuntimeError("pism::Vars is not fully initialized yet");
+  }
   std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
     std::string short_name = j->second;
@@ -166,8 +182,11 @@ IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
  * get written or de-allocated twice).
  */
 std::set<std::string> Vars::keys() const {
-  std::set<std::string> result;
+  if (not m_locked) {
+    throw RuntimeError("pism::Vars is not fully initialized yet");
+  }
 
+  std::set<std::string> result;
   std::map<std::string,IceModelVec*>::const_iterator i = m_variables.begin();
   while (i != m_variables.end()) {
     result.insert(i->first);

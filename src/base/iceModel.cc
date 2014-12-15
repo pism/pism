@@ -960,6 +960,9 @@ void IceModel::init() {
   //! 5) Allocate work vectors:
   allocate_internal_objects();
 
+  // Lock IceModel::variables: we're done adding fields to it.
+  variables.lock();
+
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some
   //! modeling choices or using formulas). Calls IceModel::regrid()

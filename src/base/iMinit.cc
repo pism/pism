@@ -405,6 +405,14 @@ void IceModel::model_state_setup() {
     set_vars_from_options();
   }
 
+  if (stress_balance) {
+    stress_balance->init(variables);
+
+    if (config.get_flag("include_bmr_in_continuity")) {
+      stress_balance->set_basal_melt_rate(&basal_melt_rate);
+    }
+  }
+
   // Initialize a bed deformation model (if needed); this should go after
   // the regrid(0) call.
   if (beddef) {
@@ -432,7 +440,8 @@ void IceModel::model_state_setup() {
     subglacial_hydrology->init(variables);
   }
 
-  // basal_yield_stress_model->init() needs bwat so this must happen after subglacial_hydrology->init()
+  // basal_yield_stress_model->init() needs bwat so this must happen
+  // after subglacial_hydrology->init()
   if (basal_yield_stress_model) {
     basal_yield_stress_model->init(variables);
   }
@@ -632,16 +641,6 @@ void IceModel::allocate_stressbalance() {
 
   // ~StressBalance() will de-allocate sliding and modifier.
   stress_balance = new StressBalance(grid, sliding, modifier, config);
-
-  // PISM stress balance computations are diagnostic, i.e. do not
-  // have a state that changes in time.  Therefore this call can be here
-  // and not in model_state_setup().  We don't need to re-initialize after
-  // the "diagnostic time step".
-  stress_balance->init(variables);
-
-  if (config.get_flag("include_bmr_in_continuity")) {
-    stress_balance->set_basal_melt_rate(&basal_melt_rate);
-  }
 }
 
 void IceModel::allocate_iceberg_remover() {

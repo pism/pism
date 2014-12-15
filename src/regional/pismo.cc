@@ -225,16 +225,6 @@ void IceRegionalModel::allocate_stressbalance() {
 
   // ~StressBalance() will de-allocate sliding and modifier.
   stress_balance = new StressBalance(grid, sliding, modifier, config);
-
-  // PISM stress balance computations are diagnostic, i.e. do not
-  // have a state that changes in time.  Therefore this call can be here
-  // and not in model_state_setup().  We don't need to re-initialize after
-  // the "diagnostic time step".
-  stress_balance->init(variables);
-
-  if (config.get_flag("include_bmr_in_continuity")) {
-    stress_balance->set_basal_melt_rate(&basal_melt_rate);
-  }
 }
 
 

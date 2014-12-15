@@ -118,6 +118,8 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                                   "melange back pressure fraction", "", "");
   melange_back_pressure.set(0.0);
 
+  vars.lock();
+
   return 0;
 }
 
