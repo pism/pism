@@ -39,6 +39,7 @@ public:
   void add(IceModelVec &);
   void add(IceModelVec &, const std::string &name);
   void remove(const std::string &name);
+  void lock();
   bool is_available(const std::string &name) const;
   IceModelVec* get(const std::string &name) const;
   IceModelVec2S* get_2d_scalar(const std::string &name) const;
@@ -48,6 +49,7 @@ public:
 
   std::set<std::string> keys() const;
 private:
+  bool m_locked;
   IceModelVec* get_internal(const std::string &name) const;
   std::map<std::string, IceModelVec*> m_variables;
   //! stores standard names of variables that

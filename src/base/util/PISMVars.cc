@@ -93,6 +93,10 @@ void Vars::remove(const std::string &name) {
 
 }
 
+void Vars::lock() {
+  m_locked = true;
+}
+
 //! \brief Returns a pointer to an IceModelVec containing variable `name` or
 //! NULL if that variable was not found.
 /*!
