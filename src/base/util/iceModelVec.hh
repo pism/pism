@@ -165,6 +165,12 @@ public:
   IceModelVec();
   virtual ~IceModelVec();
 
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec> Ptr;
+#else
+  typedef std::shared_ptr<IceModelVec> Ptr;
+#endif
+
   virtual bool was_created() const;
   IceGrid* get_grid() const {
     return grid;
@@ -375,6 +381,13 @@ class IceModelVec2S : public IceModelVec2 {
   friend class IceModelVec2Stag;
 public:
   IceModelVec2S() { begin_end_access_use_dof = false; }
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec2S> Ptr;
+#else
+  typedef std::shared_ptr<IceModelVec2S> Ptr;
+#endif
+
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
   virtual void  create(IceGrid &my_grid, const std::string &my_name,
@@ -444,6 +457,13 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Int : public IceModelVec2S {
 public:
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec2Int> Ptr;
+#else
+  typedef std::shared_ptr<IceModelVec2Int> Ptr;
+#endif
+
   inline int as_int(int i, int j) const {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
@@ -549,6 +569,12 @@ class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
   ~IceModelVec2V() {}
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec2V> Ptr;
+#else
+  typedef std::shared_ptr<IceModelVec2V> Ptr;
+#endif
 
   using IceModelVec2::create;
   virtual void create(IceGrid &my_grid, const std::string &my_short_name,
@@ -685,6 +711,12 @@ class IceModelVec3 : public IceModelVec3D {
 public:
   IceModelVec3() {}
   virtual ~IceModelVec3() {}
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec3> Ptr;
+#else
+  typedef std::shared_ptr<IceModelVec3> Ptr;
+#endif
 
   virtual void create(IceGrid &mygrid, const std::string &my_short_name,
                       IceModelVecKind ghostedp,
