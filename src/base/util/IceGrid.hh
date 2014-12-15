@@ -278,7 +278,6 @@ private:
   double m_Ly;
 
   std::map<int,PISMDM::WeakPtr> m_dms;
-  const UnitSystem m_unit_system;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to

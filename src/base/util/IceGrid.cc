@@ -77,7 +77,7 @@ PISMDM::operator DM() const {
 }
 
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
-  : config(conf), com(c), m_unit_system(config.get_unit_system()) {
+  : config(conf), com(c) {
 
   MPI_Comm_rank(com, &m_rank);
   MPI_Comm_size(com, &m_size);
@@ -119,9 +119,9 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   }
 
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
-    time = new Time(com, config, calendar, m_unit_system);
+    time = new Time(com, config, calendar, config.get_unit_system());
   } else {
-    time = new Time_Calendar(com, config, calendar, m_unit_system);
+    time = new Time_Calendar(com, config, calendar, config.get_unit_system());
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
@@ -811,10 +811,6 @@ PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) {
   return result;
 }
 
-UnitSystem IceGrid::get_unit_system() const {
-  return m_unit_system;
-}
-
 Periodicity IceGrid::periodicity() const {
   return m_periodicity;
 }
@@ -824,7 +820,7 @@ void IceGrid::set_periodicity(Periodicity p) {
 }
 
 double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return m_unit_system.convert(value, unit1, unit2);
+  return m_config.get_unit_system().convert(value, unit1, unit2);
 }
 
 DM IceGrid::create_dm(int da_dof, int stencil_width) {
