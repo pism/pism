@@ -43,6 +43,17 @@ Periodicity string_to_periodicity(const std::string &keyword) {
   }
 }
 
+SpacingType string_to_spacing(const std::string &keyword) {
+  if (keyword == "quadratic") {
+    return QUADRATIC;
+  } else if (keyword == "equal") {
+    return EQUAL;
+  } else {
+    throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
+                                  keyword.c_str());
+  }
+}
+
 PISMDM::PISMDM(DM dm) {
   m_dm = dm;
 }
@@ -87,16 +98,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   unsigned int Mz = config.get("grid_Mz");
   double Lz = config.get("grid_Lz");
-  SpacingType spacing = EQUAL;
-  word = config.get_string("grid_ice_vertical_spacing");
-  if (word == "quadratic") {
-    spacing = QUADRATIC;
-  } else if (word == "equal") {
-    spacing = EQUAL;
-  } else {
-    throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
-                                  word.c_str());
-  }
+  SpacingType spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
   set_vertical_levels(Lz, Mz, spacing);
 
   m_Lx  = config.get("grid_Lx");
@@ -162,17 +164,7 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
 
   Ptr result(new IceGrid(c, config));
 
-  SpacingType spacing = EQUAL;
-  std::string word = config.get_string("grid_ice_vertical_spacing");
-  if (word == "quadratic") {
-    spacing = QUADRATIC;
-  } else if (word == "equal") {
-    spacing = EQUAL;
-  } else {
-    throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
-                                  word.c_str());
-  }
-
+  SpacingType spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
   result->set_vertical_levels(config.get("grid_Lz"),
                               config.get("grid_Mz"),
                               spacing);

@@ -39,7 +39,7 @@ typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 Periodicity string_to_periodicity(const std::string &keyword);
-
+SpacingType string_to_spacing(const std::string &keyword);
 /** Wrapper around PETSc's DM. Simplifies memory management.
  *
  * The constructor takes ownership of the dm argument passed to it.

@@ -593,6 +593,7 @@ PetscErrorCode set_config_from_options(Config &config) {
   bool flag;
 
   config.keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy");
+  config.keyword_from_option("z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
 
   // Energy modeling
   config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");

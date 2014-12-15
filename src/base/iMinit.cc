@@ -63,7 +63,6 @@ namespace pism {
 void IceModel::set_grid_defaults() {
   bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
   std::string filename;
-  grid_info input;
 
   // Logical (as opposed to physical) grid dimensions should not be
   // deduced from a bootstrapping file, so we check if these options
@@ -88,39 +87,40 @@ void IceModel::set_grid_defaults() {
   // Use a bootstrapping file to set some grid parameters (they can be
   // overridden later, in IceModel::set_grid_from_options()).
 
-  // Determine the grid extent from a bootstrapping file:
   PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
-  nc.open(filename, PISM_READONLY);
-
-  bool t_exists = nc.inq_var(config.get_string("time_dimension_name"));
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
   // better way of specifying PISM's computational grid at bootstrapping.
-  std::vector<std::string> names;
-  names.push_back("land_ice_thickness");
-  names.push_back("bedrock_altitude");
-  names.push_back("thk");
-  names.push_back("topg");
-  bool grid_info_found = false;
-  for (unsigned int i = 0; i < names.size(); ++i) {
+  grid_info input;
+  {
+    std::vector<std::string> names;
+    names.push_back("land_ice_thickness");
+    names.push_back("bedrock_altitude");
+    names.push_back("thk");
+    names.push_back("topg");
+    bool grid_info_found = false;
+    nc.open(filename, PISM_READONLY);
+    for (unsigned int i = 0; i < names.size(); ++i) {
 
-    grid_info_found = nc.inq_var(names[i]);
+      grid_info_found = nc.inq_var(names[i]);
+      if (grid_info_found == false) {
+        std::string dummy1;
+        bool dummy2;
+        nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+      }
+
+      if (grid_info_found) {
+        input = nc.inq_grid_info(names[i], grid.periodicity());
+        break;
+      }
+    }
+
     if (grid_info_found == false) {
-      std::string dummy1;
-      bool dummy2;
-      nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+      throw RuntimeError::formatted("no geometry information found in '%s'",
+                                    filename.c_str());
     }
-
-    if (grid_info_found) {
-      input = nc.inq_grid_info(names[i], grid.periodicity());
-      break;
-    }
-  }
-
-  if (grid_info_found == false) {
-    throw RuntimeError::formatted("no geometry information found in '%s'",
-                                  filename.c_str());
+    nc.close();
   }
 
   // proj.4 and mapping
@@ -146,7 +146,7 @@ void IceModel::set_grid_defaults() {
   bool ys_set;
   OptionsIsSet("-ys", ys_set);
   if (!ys_set) {
-    if (t_exists) {
+    if (input.t_len > 0) {
       grid.time->set_start(input.time);
       verbPrintf(2, grid.com,
                  "  time t = %s found; setting current time\n",
@@ -225,23 +225,9 @@ void IceModel::set_grid_from_options() {
                  Mz, Mz_set);
     }
 
-    // Vertical spacing
+    // Vertical spacing (respects -z_spacing)
     {
-      bool z_spacing_set = false;
-      std::string keyword = config.get_string("grid_ice_vertical_spacing");
-      std::set<std::string> z_spacing_choices;
-      z_spacing_choices.insert("quadratic");
-      z_spacing_choices.insert("equal");
-      OptionsList("-z_spacing", "Vertical spacing in the ice.",
-                  z_spacing_choices,
-                  keyword,
-                  keyword, z_spacing_set);
-
-      if (keyword == "quadratic") {
-        spacing = QUADRATIC;
-      } else {
-        spacing = EQUAL;
-      }
+      spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
     }
   }
 
