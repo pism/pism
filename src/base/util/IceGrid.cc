@@ -181,9 +181,6 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
  * "-calendar" command-line option, or the "calendar" attribute of the
  * "time" variable in the file specified using "-time_file".
  *
- * @param[out] result selected calendar string
- *
- * @return 0 on success
  */
 std::string IceGrid::init_calendar() {
   // Set the default calendar using the config. parameter or the
