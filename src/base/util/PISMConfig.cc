@@ -38,6 +38,10 @@ Config::~Config() {
   warn_about_unused_parameters();
 }
 
+MPI_Comm Config::com() const {
+  return m_com;
+}
+
 void Config::set_string(const std::string &name, const std::string &value) {
   m_data.set_string(name, value);
 }
