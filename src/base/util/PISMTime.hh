@@ -65,6 +65,12 @@ public:
        const UnitSystem &units_system);
   virtual ~Time();
 
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<Time> Ptr;
+#else
+  typedef std::shared_ptr<Time> Ptr;
+#endif
+
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
 
