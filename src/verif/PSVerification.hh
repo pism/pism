@@ -29,7 +29,7 @@ class EnthalpyConverter;
 //! Climate inputs for verification tests.
 class PSVerification : public PSFormulas {
 public:
-  PSVerification(IceGrid &g, const Config &conf, EnthalpyConverter *EC, int test);
+  PSVerification(IceGrid &g, EnthalpyConverter *EC, int test);
   ~PSVerification();
 
   // the interface:

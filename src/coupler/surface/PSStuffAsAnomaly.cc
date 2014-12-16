@@ -23,8 +23,8 @@
 
 namespace pism {
 
-PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, const Config &conf, SurfaceModel *input)
-    : PSModifier(g, conf, input) {
+PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, SurfaceModel *input)
+    : PSModifier(g, input) {
 
   mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   mass_flux.set_attrs("climate_state",

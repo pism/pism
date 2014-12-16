@@ -27,7 +27,7 @@ namespace pism {
 class POGivenTH : public PGivenClimate<POModifier,OceanModel>
 {
 public:
-  POGivenTH(IceGrid &g, const Config &conf);
+  POGivenTH(IceGrid &g);
   virtual ~POGivenTH();
 
   virtual void init(Vars &vars);

@@ -205,26 +205,26 @@ void IceRegionalModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(grid, *EC, config);
+    sliding = new ZeroSliding(grid, *EC);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(grid, *EC, config);
+    sliding = new PrescribedSliding(grid, *EC);
   } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD_Regional(grid, *EC, config);
+    sliding = new SSAFD_Regional(grid, *EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(grid, *EC, config);
+    modifier = new ConstantInColumn(grid, *EC);
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
-    modifier = new SIAFD_Regional(grid, *EC, config);
+    modifier = new SIAFD_Regional(grid, *EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(grid, sliding, modifier, config);
+  stress_balance = new StressBalance(grid, sliding, modifier);
 }
 
 
@@ -241,9 +241,9 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(grid, config);
+      basal_yield_stress_model = new ConstantYieldStress(grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new RegionalDefaultYieldStress(grid, config, subglacial_hydrology);
+      basal_yield_stress_model = new RegionalDefaultYieldStress(grid, subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());

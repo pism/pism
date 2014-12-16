@@ -104,17 +104,16 @@ void IceEISModel::allocate_stressbalance() {
 
   ShallowStressBalance *my_stress_balance;
 
-  SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
+  SSB_Modifier *modifier = new SIAFD(grid, *EC);
 
   if (m_experiment == 'G' || m_experiment == 'H') {
-    my_stress_balance = new SIA_Sliding(grid, *EC, config);
+    my_stress_balance = new SIA_Sliding(grid, *EC);
   } else {
-    my_stress_balance = new ZeroSliding(grid, *EC, config);
+    my_stress_balance = new ZeroSliding(grid, *EC);
   }
   
   // ~StressBalance() will de-allocate my_stress_balance and modifier.
-  stress_balance = new StressBalance(grid, my_stress_balance,
-                                     modifier, config);
+  stress_balance = new StressBalance(grid, my_stress_balance, modifier);
   
 }
 
@@ -122,11 +121,11 @@ void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (surface == NULL) {
-    surface = new PS_EISMINTII(grid, config, m_experiment);
+    surface = new PS_EISMINTII(grid, m_experiment);
   }
 
   if (ocean == NULL) {
-    ocean = new POConstant(grid, config);
+    ocean = new POConstant(grid);
   }
 }
 

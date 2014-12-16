@@ -25,8 +25,8 @@ namespace pism {
 
 class PSFactory : public PCFactory<SurfaceModel,PSModifier> {
 public:
-  PSFactory(IceGrid& g, const Config& conf)
-    : PCFactory<SurfaceModel,PSModifier>(g, conf)
+  PSFactory(IceGrid& g)
+    : PCFactory<SurfaceModel,PSModifier>(g)
   {
     add_standard_types();
     m_option = "surface";

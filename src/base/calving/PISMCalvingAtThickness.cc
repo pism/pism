@@ -23,8 +23,8 @@
 
 namespace pism {
 
-CalvingAtThickness::CalvingAtThickness(IceGrid &g, const Config &conf)
-  : Component(g, conf) {
+CalvingAtThickness::CalvingAtThickness(IceGrid &g)
+  : Component(g) {
   m_calving_threshold = config.get("thickness_calving_threshold");
 
   m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);

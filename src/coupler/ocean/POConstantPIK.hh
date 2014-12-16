@@ -39,7 +39,7 @@ namespace pism {
 //! shelf bottom.
 class POConstantPIK : public OceanModel {
 public:
-  POConstantPIK(IceGrid &g, const Config &conf);
+  POConstantPIK(IceGrid &g);
   virtual ~POConstantPIK();
 
   virtual void init(Vars &vars);

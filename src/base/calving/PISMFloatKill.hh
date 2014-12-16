@@ -31,7 +31,7 @@ class IceModelVec2S;
 class FloatKill : public Component
 {
 public:
-  FloatKill(IceGrid &g, const Config &conf);
+  FloatKill(IceGrid &g);
   virtual ~FloatKill();
 
   virtual void init(Vars &vars);

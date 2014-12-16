@@ -61,20 +61,20 @@ class Config;
   internal fields, and update them in the return fields `thksmooth`, `theta`,
   if asked.  In IceModel::velocitySIAStaggered()
   \code
-  BedSmoother smoother(grid, config, 2);
+  BedSmoother smoother(grid, 2);
   const double n = 3.0,
   lambda = 50.0e3;
   ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
   ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
   ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
   \endcode
-  See IceGrid and Config documentation for initializing `grid` and
-  `config`.  Note we assume `topg`, `usurf`, `thk`, `thksmooth`, and `theta`
-  are all created IceModelVec2S instances.
+  See IceGrid documentation for initializing `grid`. Note we assume
+  `topg`, `usurf`, `thk`, `thksmooth`, and `theta` are all created
+  IceModelVec2S instances.
 */
 class BedSmoother {
 public:
-  BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS);
+  BedSmoother(IceGrid &g, int MAX_GHOSTS);
   virtual ~BedSmoother();
 
   virtual void preprocess_bed(IceModelVec2S &topg);

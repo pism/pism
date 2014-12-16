@@ -27,8 +27,8 @@ namespace pism {
 class BTU_Verification : public BedThermalUnit
 {
 public:
-  BTU_Verification(IceGrid &g, const Config &conf, int test, int bii)
-    : BedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
+  BTU_Verification(IceGrid &g, int test, int bii)
+    : BedThermalUnit(g) { testname = test; bedrock_is_ice = bii; }
   virtual ~BTU_Verification() {}
 
   virtual void get_temp(IceModelVec3Custom* &result);

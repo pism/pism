@@ -106,8 +106,7 @@ public:
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
-                             IPDesignVariableParameterization &tp,
-                             const Config &c);
+                             IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSAHardavForwardProblem();
 

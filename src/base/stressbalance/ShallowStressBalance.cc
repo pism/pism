@@ -30,8 +30,8 @@ namespace pism {
 
 using mask::ice_free;
 
-ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf)
-  : Component(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
+ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e)
+  : Component(g), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
 
   m_vel_bc = NULL;
   bc_locations = NULL;
@@ -78,8 +78,8 @@ void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &d
 }
 
 
-ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
-  : ShallowStressBalance(g, e, conf) {
+ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e)
+  : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
   IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
@@ -540,8 +540,8 @@ void SSB_taub_mag::compute(IceModelVec* &output) {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
-  : ZeroSliding(g, e, conf) {
+PrescribedSliding::PrescribedSliding(IceGrid &g, EnthalpyConverter &e)
+  : ZeroSliding(g, e) {
   // empty
 }
 

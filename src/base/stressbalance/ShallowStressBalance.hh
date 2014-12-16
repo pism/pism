@@ -25,7 +25,6 @@
 #include "flowlaws.hh"
 #include "flowlaw_factory.hh"
 #include <PISMDiagnostic.hh>
-#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -38,7 +37,7 @@ class IceBasalResistancePlasticLaw;
 class ShallowStressBalance : public Component
 {
 public:
-  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf);
+  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -166,7 +165,7 @@ public:
 class ZeroSliding : public ShallowStressBalance
 {
 public:
-  ZeroSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
+  ZeroSliding(IceGrid &g, EnthalpyConverter &e);
   virtual ~ZeroSliding();
   
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
@@ -185,7 +184,7 @@ public:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
+  PrescribedSliding(IceGrid &g, EnthalpyConverter &e);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual void init(Vars &vars);

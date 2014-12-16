@@ -25,8 +25,8 @@
 
 namespace pism {
 
-PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const Config &conf)
-  : BedDef(g, conf) {
+PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g)
+  : BedDef(g) {
   PetscErrorCode ierr;
 
   ierr = allocate();

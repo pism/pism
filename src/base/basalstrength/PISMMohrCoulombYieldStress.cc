@@ -51,9 +51,8 @@ This submodel is inactive in floating areas.
 
 
 MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid &g,
-                                                       const Config &conf,
-                                                       Hydrology *hydro)
-  : YieldStress(g, conf) {
+                                               Hydrology *hydro)
+  : YieldStress(g) {
   m_bed_topography = NULL;
   m_mask           = NULL;
   m_hydrology      = hydro;

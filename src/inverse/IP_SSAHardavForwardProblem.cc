@@ -26,9 +26,8 @@ namespace pism {
 
 
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
-                                                       IPDesignVariableParameterization &tp,
-                                                       const Config &c)
-  : SSAFEM(g, e, c),
+                                                       IPDesignVariableParameterization &tp)
+  : SSAFEM(g, e),
     m_grid(grid), m_zeta(NULL),
     m_fixed_design_locations(NULL),
     m_design_param(tp),

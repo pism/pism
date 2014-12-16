@@ -188,7 +188,7 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid &g, const Config &myconfig);
+  FaustoGrevePDDObject(IceGrid &g);
   virtual ~FaustoGrevePDDObject() {}
 
   virtual PetscErrorCode update_temp_mj(IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon);

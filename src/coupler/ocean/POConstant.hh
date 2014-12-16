@@ -29,7 +29,7 @@ namespace pism {
 //! sub-shelf heat flux.
 class POConstant : public OceanModel {
 public:
-  POConstant(IceGrid &g, const Config &conf);
+  POConstant(IceGrid &g);
   virtual ~POConstant() {}
 
   virtual void init(Vars &vars);

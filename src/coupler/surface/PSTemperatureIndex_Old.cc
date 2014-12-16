@@ -30,8 +30,8 @@ namespace pism {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
-  : SurfaceModel(g, conf), temperature_name("ice_surface_temp"),
+PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g)
+  : SurfaceModel(g), temperature_name("ice_surface_temp"),
     ice_surface_temp(g.config.get_unit_system(), temperature_name, g) {
   mbscheme = NULL;
   faustogreve = NULL;
@@ -160,7 +160,7 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
     usurf = vars.get_2d_scalar("usurf");
 
   if (faustogreve == NULL) {
-    faustogreve = new FaustoGrevePDDObject_Old(grid, config);
+    faustogreve = new FaustoGrevePDDObject_Old(grid);
   }
 
   } else {

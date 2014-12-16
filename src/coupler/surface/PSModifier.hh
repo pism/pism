@@ -37,8 +37,8 @@ namespace pism {
 class PSModifier : public Modifier<SurfaceModel>
 {
 public:
-  PSModifier(IceGrid &g, const Config &conf, SurfaceModel* in)
-    : Modifier<SurfaceModel>(g, conf, in) {}
+  PSModifier(IceGrid &g, SurfaceModel* in)
+    : Modifier<SurfaceModel>(g, in) {}
   virtual ~PSModifier() {}
 
   virtual void attach_atmosphere_model(AtmosphereModel *in) {

@@ -21,8 +21,8 @@
 
 namespace pism {
 
-POGiven::POGiven(IceGrid &g, const Config &conf)
-  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL) {
+POGiven::POGiven(IceGrid &g)
+  : PGivenClimate<POModifier,OceanModel>(g, NULL) {
 
   option_prefix   = "-ocean_given";
 

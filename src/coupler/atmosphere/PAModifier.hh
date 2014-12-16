@@ -26,8 +26,8 @@ namespace pism {
 class PAModifier : public Modifier<AtmosphereModel>
 {
 public:
-  PAModifier(IceGrid &g, const Config &conf, AtmosphereModel* in)
-    : Modifier<AtmosphereModel>(g, conf, in) {}
+  PAModifier(IceGrid &g, AtmosphereModel* in)
+    : Modifier<AtmosphereModel>(g, in) {}
   virtual ~PAModifier() {}
 
   virtual void mean_precipitation(IceModelVec2S &result)

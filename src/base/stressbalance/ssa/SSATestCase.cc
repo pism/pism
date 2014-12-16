@@ -155,7 +155,7 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
   buildSSACoefficients();
 
   // Allocate the actual SSA solver.
-  ssa = ssafactory(*grid, *enthalpyconverter, config);
+  ssa = ssafactory(*grid, *enthalpyconverter);
   ssa->init(vars); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.

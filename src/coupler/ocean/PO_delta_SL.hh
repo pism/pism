@@ -27,7 +27,7 @@ namespace pism {
 class PO_delta_SL : public PScalarForcing<OceanModel,POModifier>
 {
 public:
-  PO_delta_SL(IceGrid &g, const Config &conf, OceanModel* in);
+  PO_delta_SL(IceGrid &g, OceanModel* in);
   virtual ~PO_delta_SL();
 
   virtual void init(Vars &vars);

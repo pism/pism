@@ -28,10 +28,10 @@
 
 namespace pism {
 
-PAWeatherStation::PAWeatherStation(IceGrid &g, const Config &conf)
-  : AtmosphereModel(g, conf),
-    m_precipitation(&g, "precipitation", conf.get_string("time_dimension_name")),
-    m_air_temperature(&g, "air_temp", conf.get_string("time_dimension_name")),
+PAWeatherStation::PAWeatherStation(IceGrid &g)
+  : AtmosphereModel(g),
+    m_precipitation(&g, "precipitation", g.config.get_string("time_dimension_name")),
+    m_air_temperature(&g, "air_temp", g.config.get_string("time_dimension_name")),
     m_precip_metadata(g.config.get_unit_system(), "precipitation", grid),
     m_air_temp_metadata(g.config.get_unit_system(), "air_temp", grid)
 {

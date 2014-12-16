@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PA_frac_P::PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
+PA_frac_P::PA_frac_P(IceGrid &g, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", grid),
     precipitation(g.config.get_unit_system(), "precipitation", grid)
 {

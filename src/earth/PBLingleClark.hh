@@ -29,7 +29,7 @@ namespace pism {
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public BedDef {
 public:
-  PBLingleClark(IceGrid &g, const Config &conf);
+  PBLingleClark(IceGrid &g);
   virtual ~PBLingleClark();
 
   void init(Vars &vars);

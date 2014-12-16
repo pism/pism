@@ -23,8 +23,8 @@
 
 namespace pism {
 
-NullTransportHydrology::NullTransportHydrology(IceGrid &g, const Config &conf)
-  : Hydrology(g, conf) {
+NullTransportHydrology::NullTransportHydrology(IceGrid &g)
+  : Hydrology(g) {
 }
 
 NullTransportHydrology::~NullTransportHydrology() {

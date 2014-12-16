@@ -30,7 +30,7 @@ namespace pism {
 //! (constant in time) precipitation field.
 class PAYearlyCycle : public AtmosphereModel {
 public:
-  PAYearlyCycle(IceGrid &g, const Config &conf);
+  PAYearlyCycle(IceGrid &g);
   virtual ~PAYearlyCycle();
 
   virtual void init(Vars &vars);

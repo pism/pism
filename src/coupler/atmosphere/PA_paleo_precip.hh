@@ -52,7 +52,7 @@ namespace pism {
 class PA_paleo_precip : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel* in);
+  PA_paleo_precip(IceGrid &g, AtmosphereModel* in);
   virtual ~PA_paleo_precip();
 
   virtual void init(Vars &vars);

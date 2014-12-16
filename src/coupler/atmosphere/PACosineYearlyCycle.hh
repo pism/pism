@@ -27,7 +27,7 @@ class Timeseries;
 
 class PACosineYearlyCycle : public PAYearlyCycle {
 public:
-  PACosineYearlyCycle(IceGrid &g, const Config &conf);
+  PACosineYearlyCycle(IceGrid &g);
   virtual ~PACosineYearlyCycle();
 
   virtual void init(Vars &vars);

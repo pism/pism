@@ -29,7 +29,7 @@ namespace pism {
 class PSStuffAsAnomaly : public PSModifier
 {
 public:
-  PSStuffAsAnomaly(IceGrid &g, const Config &conf, SurfaceModel *input);
+  PSStuffAsAnomaly(IceGrid &g, SurfaceModel *input);
   virtual ~PSStuffAsAnomaly();
 
   virtual void init(Vars &vars);

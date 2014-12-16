@@ -612,16 +612,16 @@ void IceModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(grid, *EC, config);
+    sliding = new ZeroSliding(grid, *EC);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(grid, *EC, config);
+    sliding = new PrescribedSliding(grid, *EC);
   } else if (model == "ssa" || model == "ssa+sia") {
     std::string method = config.get_string("ssa_method");
 
     if (method == "fem") {
-      sliding = new SSAFEM(grid, *EC, config);
+      sliding = new SSAFEM(grid, *EC);
     } else if (method == "fd") {
-      sliding = new SSAFD(grid, *EC, config);
+      sliding = new SSAFD(grid, *EC);
     } else {
       throw RuntimeError::formatted("invalid ssa method: %s", method.c_str());
     }
@@ -632,15 +632,15 @@ void IceModel::allocate_stressbalance() {
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(grid, *EC, config);
+    modifier = new ConstantInColumn(grid, *EC);
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
-    modifier = new SIAFD(grid, *EC, config);
+    modifier = new SIAFD(grid, *EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(grid, sliding, modifier, config);
+  stress_balance = new StressBalance(grid, sliding, modifier);
 }
 
 void IceModel::allocate_iceberg_remover() {
@@ -652,7 +652,7 @@ void IceModel::allocate_iceberg_remover() {
   if (config.get_flag("kill_icebergs")) {
 
     // this will throw an exception on failure
-    iceberg_remover = new IcebergRemover(grid, config);
+    iceberg_remover = new IcebergRemover(grid);
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
@@ -667,7 +667,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
     return;
   }
 
-  btu = new BedThermalUnit(grid, config);
+  btu = new BedThermalUnit(grid);
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -679,11 +679,11 @@ void IceModel::allocate_subglacial_hydrology() {
   }
 
   if (hydrology_model == "null") {
-    subglacial_hydrology = new NullTransportHydrology(grid, config);
+    subglacial_hydrology = new NullTransportHydrology(grid);
   } else if (hydrology_model == "routing") {
-    subglacial_hydrology = new RoutingHydrology(grid, config);
+    subglacial_hydrology = new RoutingHydrology(grid);
   } else if (hydrology_model == "distributed") {
-    subglacial_hydrology = new DistributedHydrology(grid, config, stress_balance);
+    subglacial_hydrology = new DistributedHydrology(grid, stress_balance);
   } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
                                   "has value '%s'", hydrology_model.c_str());
@@ -704,9 +704,9 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(grid, config);
+      basal_yield_stress_model = new ConstantYieldStress(grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new MohrCoulombYieldStress(grid, config, subglacial_hydrology);
+      basal_yield_stress_model = new MohrCoulombYieldStress(grid, subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -756,9 +756,9 @@ void IceModel::allocate_submodels() {
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
-  PAFactory pa(grid, config);
-  PSFactory ps(grid, config);
-  POFactory po(grid, config);
+  PAFactory pa(grid);
+  PSFactory ps(grid);
+  POFactory po(grid);
   AtmosphereModel *atmosphere;
 
   if (surface == NULL) {
@@ -902,7 +902,7 @@ void IceModel::init_calving() {
   if (methods.find("ocean_kill") != methods.end()) {
 
     if (ocean_kill_calving == NULL) {
-      ocean_kill_calving = new OceanKill(grid, config);
+      ocean_kill_calving = new OceanKill(grid);
     }
 
     ocean_kill_calving->init(variables);
@@ -912,7 +912,7 @@ void IceModel::init_calving() {
   if (methods.find("thickness_calving") != methods.end()) {
 
     if (thickness_threshold_calving == NULL) {
-      thickness_threshold_calving = new CalvingAtThickness(grid, config);
+      thickness_threshold_calving = new CalvingAtThickness(grid);
     }
 
     thickness_threshold_calving->init(variables);
@@ -923,8 +923,7 @@ void IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (eigen_calving == NULL) {
-      eigen_calving = new EigenCalving(grid, config,
-                                           stress_balance);
+      eigen_calving = new EigenCalving(grid, stress_balance);
     }
 
     eigen_calving->init(variables);
@@ -933,7 +932,7 @@ void IceModel::init_calving() {
 
   if (methods.find("float_kill") != methods.end()) {
     if (float_kill_calving == NULL) {
-      float_kill_calving = new FloatKill(grid, config);
+      float_kill_calving = new FloatKill(grid);
     }
 
     float_kill_calving->init(variables);
@@ -964,12 +963,12 @@ void IceModel::allocate_bed_deformation() {
     }
 
     if (model == "iso") {
-      beddef = new PBPointwiseIsostasy(grid, config);
+      beddef = new PBPointwiseIsostasy(grid);
       return;
     }
 
     if (model == "lc") {
-      beddef = new PBLingleClark(grid, config);
+      beddef = new PBLingleClark(grid);
       return;
     }
   }

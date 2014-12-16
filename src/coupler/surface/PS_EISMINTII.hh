@@ -32,7 +32,7 @@ namespace pism {
  */
 class PS_EISMINTII : public PSFormulas {
 public:
-  PS_EISMINTII(IceGrid &g, const Config &conf, int experiment);
+  PS_EISMINTII(IceGrid &g, int experiment);
   ~PS_EISMINTII();
 
   // the interface:

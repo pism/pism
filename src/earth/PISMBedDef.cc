@@ -26,8 +26,8 @@
 
 namespace pism {
 
-BedDef::BedDef(IceGrid &g, const Config &conf)
-  : Component_TS(g, conf) {
+BedDef::BedDef(IceGrid &g)
+  : Component_TS(g) {
 
   thk    = NULL;
   topg   = NULL;

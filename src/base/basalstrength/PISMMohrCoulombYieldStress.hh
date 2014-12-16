@@ -31,7 +31,7 @@ namespace pism {
 class MohrCoulombYieldStress : public YieldStress
 {
 public:
-  MohrCoulombYieldStress(IceGrid &g, const Config &conf, Hydrology *hydro);
+  MohrCoulombYieldStress(IceGrid &g, Hydrology *hydro);
 
   virtual ~MohrCoulombYieldStress();
 

@@ -66,7 +66,7 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
 #endif
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const Config &);
+SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -88,7 +88,7 @@ class SSAFEM : public SSA
                                             Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
 #endif
 public:
-  SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c);
+  SSAFEM(IceGrid &g, EnthalpyConverter &e);
 
   virtual ~SSAFEM();
 

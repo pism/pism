@@ -32,7 +32,7 @@ namespace pism {
  */
 class PSFormulas : public SurfaceModel {
 public:
-  PSFormulas(IceGrid &g, const Config &conf);
+  PSFormulas(IceGrid &g);
   ~PSFormulas();
 
   // the interface:

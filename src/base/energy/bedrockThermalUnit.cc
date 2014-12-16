@@ -27,8 +27,8 @@
 
 namespace pism {
 
-BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
-    : Component_TS(g, conf) {
+BedThermalUnit::BedThermalUnit(IceGrid &g)
+    : Component_TS(g) {
   bedtoptemp = NULL;
   ghf        = NULL;
 

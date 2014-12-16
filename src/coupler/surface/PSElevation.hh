@@ -28,7 +28,7 @@ namespace pism {
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
 class PSElevation : public SurfaceModel {
 public:
-  PSElevation(IceGrid &g, const Config &conf);
+  PSElevation(IceGrid &g);
 
   virtual void init(Vars &vars);
   virtual void attach_atmosphere_model(AtmosphereModel *input);

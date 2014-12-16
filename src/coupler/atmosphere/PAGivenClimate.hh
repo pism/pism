@@ -27,7 +27,7 @@ namespace pism {
 class PAGivenClimate : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  PAGivenClimate(IceGrid &g, const Config &conf);
+  PAGivenClimate(IceGrid &g);
   virtual ~PAGivenClimate();
 
   virtual void init(Vars &vars);

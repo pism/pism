@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PSAnomaly::PSAnomaly(IceGrid &g, const Config &conf, SurfaceModel* in)
-  : PGivenClimate<PSModifier,SurfaceModel>(g, conf, in),
+PSAnomaly::PSAnomaly(IceGrid &g, SurfaceModel* in)
+  : PGivenClimate<PSModifier,SurfaceModel>(g, in),
     climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
 

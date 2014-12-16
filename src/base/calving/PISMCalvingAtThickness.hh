@@ -30,7 +30,7 @@ namespace pism {
 class CalvingAtThickness : public Component
 {
 public:
-  CalvingAtThickness(IceGrid &g, const Config &conf);
+  CalvingAtThickness(IceGrid &g);
   virtual ~CalvingAtThickness();
 
   virtual void init(Vars &vars);

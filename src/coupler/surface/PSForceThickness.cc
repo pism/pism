@@ -30,8 +30,8 @@
 namespace pism {
 
 ///// "Force-to-thickness" mechanism
-PSForceThickness::PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input)
-  : PSModifier(g, conf, input),
+PSForceThickness::PSForceThickness(IceGrid &g, SurfaceModel *input)
+  : PSModifier(g, input),
     m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
     m_climatic_mass_balance_original(g.config.get_unit_system(), "climatic_mass_balance_original", grid),
     m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {

@@ -282,8 +282,8 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const Config &myconfig)
-  : grid(g), config(myconfig) {
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g)
+  : grid(g), config(g.config) {
 
   beta_ice_w  = config.get("pdd_fausto_beta_ice_w");
   beta_snow_w = config.get("pdd_fausto_beta_snow_w");

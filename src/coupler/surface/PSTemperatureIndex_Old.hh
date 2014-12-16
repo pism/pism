@@ -47,7 +47,7 @@ namespace pism {
 */
 class PSTemperatureIndex_Old : public SurfaceModel {
 public:
-  PSTemperatureIndex_Old(IceGrid &g, const Config &conf);
+  PSTemperatureIndex_Old(IceGrid &g);
   virtual ~PSTemperatureIndex_Old();
   virtual void update(PetscReal my_t, PetscReal my_dt);
   virtual void init(Vars &vars);

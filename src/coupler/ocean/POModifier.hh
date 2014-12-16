@@ -26,8 +26,8 @@ namespace pism {
 class POModifier : public Modifier<OceanModel>
 {
 public:
-  POModifier(IceGrid &g, const Config &conf, OceanModel* in)
-    : Modifier<OceanModel>(g, conf, in) {}
+  POModifier(IceGrid &g, OceanModel* in)
+    : Modifier<OceanModel>(g, in) {}
   virtual ~POModifier() {}
 
   virtual void sea_level_elevation(double &result)

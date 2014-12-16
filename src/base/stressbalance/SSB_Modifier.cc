@@ -25,8 +25,8 @@
 
 namespace pism {
 
-SSB_Modifier::SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : Component(g, c), EC(e) {
+SSB_Modifier::SSB_Modifier(IceGrid &g, EnthalpyConverter &e)
+  : Component(g), EC(e) {
 
   D_max = 0.0;
   variables = NULL;
@@ -64,10 +64,10 @@ void ConstantInColumn::init(Vars &vars) {
   SSB_Modifier::init(vars);
 }
 
-ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : SSB_Modifier(g, e, c)
+ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e)
+  : SSB_Modifier(g, e)
 {
-  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+  IceFlowLawFactory ice_factory(grid.com, "sia_", grid.config, &EC);
 
   ice_factory.setType(config.get_string("sia_flow_law"));
 

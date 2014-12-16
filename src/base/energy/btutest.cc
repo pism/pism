@@ -38,8 +38,8 @@ using namespace pism;
 class BTU_Test : public BedThermalUnit
 {
 public:
-  BTU_Test(IceGrid &g, const Config &conf)
-    : BedThermalUnit(g, conf) {}
+  BTU_Test(IceGrid &g)
+    : BedThermalUnit(g) {}
   virtual ~BTU_Test() {}
   /** Initialize the bedrock temperature field at the beginning of the run. */
   virtual void bootstrap();
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
     ghf->set(0.042);  // see Test K
 
     // initialize BTU object:
-    BTU_Test btu(grid, config);
+    BTU_Test btu(grid);
 
     bool bootstrapping_needed = true; // we know it's true
     btu.init(variables, bootstrapping_needed);

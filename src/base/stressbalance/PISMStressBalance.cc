@@ -30,9 +30,8 @@ namespace pism {
 
 StressBalance::StressBalance(IceGrid &g,
                              ShallowStressBalance *sb,
-                             SSB_Modifier *ssb_mod,
-                             const Config &conf)
-  : Component(g, conf), m_stress_balance(sb), m_modifier(ssb_mod) {
+                             SSB_Modifier *ssb_mod)
+  : Component(g), m_stress_balance(sb), m_modifier(ssb_mod) {
 
   m_basal_melt_rate = NULL;
   m_variables = NULL;

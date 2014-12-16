@@ -27,7 +27,7 @@ namespace pism {
 class PALapseRates : public PLapseRates<AtmosphereModel,PAModifier>
 {
 public:
-  PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in);
+  PALapseRates(IceGrid &g, AtmosphereModel* in);
   virtual ~PALapseRates();
 
   virtual void init(Vars &vars);

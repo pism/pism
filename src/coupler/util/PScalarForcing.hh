@@ -34,8 +34,8 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid &g, const Config &conf, Model* in)
-    : Mod(g, conf, in), input(in) {}
+  PScalarForcing(IceGrid &g, Model* in)
+    : Mod(g, in), input(in) {}
 
   virtual ~PScalarForcing()
   {

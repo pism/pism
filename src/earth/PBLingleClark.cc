@@ -28,8 +28,8 @@
 
 namespace pism {
 
-PBLingleClark::PBLingleClark(IceGrid &g, const Config &conf)
-  : BedDef(g, conf) {
+PBLingleClark::PBLingleClark(IceGrid &g)
+  : BedDef(g) {
 
   if (allocate() != 0) {
     throw std::runtime_error("PBLingleClark allocation failed");

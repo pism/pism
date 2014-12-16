@@ -268,7 +268,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
   }
 
-  btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
+  btu = new BTU_Verification(grid, testname, bedrock_is_ice_forK);
 }
 
 void IceCompModel::allocate_stressbalance() {
@@ -279,10 +279,10 @@ void IceCompModel::allocate_stressbalance() {
 
   if (testname == 'E') {
     config.set_flag("sia_sliding_verification_mode", true);
-    ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC, config);
-    SIAFD *sia = new SIAFD(grid, *EC, config);
+    ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC);
+    SIAFD *sia = new SIAFD(grid, *EC);
 
-    stress_balance = new StressBalance(grid, ssb, sia, config);
+    stress_balance = new StressBalance(grid, ssb, sia);
   } else {
     IceModel::allocate_stressbalance();
   }
@@ -318,8 +318,8 @@ void IceCompModel::allocate_bed_deformation() {
 
 void IceCompModel::allocate_couplers() {
   // Climate will always come from verification test formulas.
-  surface = new PSVerification(grid, config, EC, testname);
-  ocean   = new POConstant(grid, config);
+  surface = new PSVerification(grid, EC, testname);
+  ocean   = new POConstant(grid);
 }
 
 void IceCompModel::set_vars_from_options() {

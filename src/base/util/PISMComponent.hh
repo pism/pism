@@ -91,9 +91,9 @@ class IceModelVec;
 */
 class Component {
 public:
-  /** Create a Component instance given a grid and a configuration database. */
-  Component(IceGrid &g, const Config &conf)
-    : grid(g), config(conf) {}
+  /** Create a Component instance given a grid. */
+  Component(IceGrid &g)
+    : grid(g), config(g.config) {}
   virtual ~Component() {}
 
   //! \brief Adds more variable names to result (to let sub-models respect
@@ -140,9 +140,9 @@ protected:
 class Component_TS : public Component
 {
 public:
-  /** Create an instance of Component_TS given a grid and a configuration database. */
-  Component_TS(IceGrid &g, const Config &conf)
-    : Component(g, conf)
+  /** Create an instance of Component_TS given a grid. */
+  Component_TS(IceGrid &g)
+    : Component(g)
   { m_t = m_dt = GSL_NAN; }
   virtual ~Component_TS() {}
 
@@ -216,8 +216,8 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(IceGrid &g, const Config &conf, Model* in)
-    : Model(g, conf), input_model(in) {}
+  Modifier(IceGrid &g, Model* in)
+    : Model(g), input_model(in) {}
   virtual ~Modifier()
   {
     if (input_model != NULL) {

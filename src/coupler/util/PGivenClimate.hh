@@ -33,8 +33,8 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid &g, const Config &conf, Input *in)
-    : Model(g, conf, in) {}
+  PGivenClimate(IceGrid &g, Input *in)
+    : Model(g, in) {}
 
   virtual ~PGivenClimate() {
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();

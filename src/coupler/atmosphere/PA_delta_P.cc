@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PA_delta_P::PA_delta_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
+PA_delta_P::PA_delta_P(IceGrid &g, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", grid),
     precipitation(g.config.get_unit_system(), "precipitation", grid)
 {

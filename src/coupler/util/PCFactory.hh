@@ -39,7 +39,7 @@ public:
   // in the same dictionary
   class ModelCreator {
   public:
-    virtual Model* create(IceGrid &g, const Config &conf) = 0;
+    virtual Model* create(IceGrid &g) = 0;
     virtual ~ModelCreator() {}
   };
 
@@ -47,8 +47,8 @@ public:
   template <class M>
   class SpecificModelCreator : public ModelCreator {
   public:
-    M* create(IceGrid &g, const Config &conf) {
-      return new M(g, conf);
+    M* create(IceGrid &g) {
+      return new M(g);
     }
   };
 
@@ -56,7 +56,7 @@ public:
   // creators in the same dictionary
   class ModifierCreator {
   public:
-    virtual Modifier* create(IceGrid &g, const Config &conf, Model* input) = 0;
+    virtual Modifier* create(IceGrid &g, Model* input) = 0;
     virtual ~ModifierCreator() {}
   };
 
@@ -64,8 +64,8 @@ public:
   template <class M>
   class SpecificModifierCreator : public ModifierCreator {
   public:
-    M* create(IceGrid &g, const Config &conf, Model* input) {
-      return new M(g, conf, input);
+    M* create(IceGrid &g, Model* input) {
+      return new M(g, input);
     }
   };
 
@@ -77,8 +77,8 @@ public:
   typedef std::shared_ptr<ModifierCreator> ModifierCreatorPtr;
 #endif
 
-  PCFactory<Model,Modifier>(IceGrid &g, const Config &conf)
-  : m_grid(g), m_config(conf) {}
+  PCFactory<Model,Modifier>(IceGrid &g)
+  : m_grid(g) {}
   ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
@@ -140,7 +140,7 @@ public:
                                     model_list.c_str(), modifier_list.c_str());
     }
 
-    result = m_models[*j]->create(m_grid, m_config);
+    result = m_models[*j]->create(m_grid);
 
     ++j;
 
@@ -152,7 +152,7 @@ public:
                                       m_option.c_str(), j->c_str(), modifier_list.c_str());
       }
 
-      result =  m_modifiers[*j]->create(m_grid, m_config, result);
+      result =  m_modifiers[*j]->create(m_grid, result);
 
       ++j;
     }
@@ -194,7 +194,6 @@ protected:
   std::map<std::string, ModelCreatorPtr> m_models;
   std::map<std::string, ModifierCreatorPtr> m_modifiers;
   IceGrid &m_grid;
-  const Config &m_config;
 };
 
 } // end of namespace pism

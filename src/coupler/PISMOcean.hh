@@ -29,8 +29,8 @@ class IceModelVec2S;
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component_TS {
 public:
-  OceanModel(IceGrid &g, const Config &conf)
-    : Component_TS(g, conf), sea_level(0) {}
+  OceanModel(IceGrid &g)
+    : Component_TS(g), sea_level(0) {}
   virtual ~OceanModel() {};
 
   virtual void init(Vars &vars) = 0;

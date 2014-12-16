@@ -28,7 +28,7 @@ namespace pism {
 class PSLapseRates : public PLapseRates<SurfaceModel,PSModifier>
 {
 public:
-  PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in);
+  PSLapseRates(IceGrid &g, SurfaceModel* in);
   virtual ~PSLapseRates();
 
   virtual void init(Vars &vars);

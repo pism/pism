@@ -26,9 +26,9 @@
 
 namespace pism {
 
-DistributedHydrology::DistributedHydrology(IceGrid &g, const Config &conf,
+DistributedHydrology::DistributedHydrology(IceGrid &g,
                                            StressBalance *sb)
-  : RoutingHydrology(g, conf)
+  : RoutingHydrology(g)
 {
   stressbalance = sb;
   hold_velbase_mag = false;

@@ -27,7 +27,7 @@ namespace pism {
 
 class PSCache : public PSModifier {
 public:
-  PSCache(IceGrid &g, const Config &conf, SurfaceModel* in);
+  PSCache(IceGrid &g, SurfaceModel* in);
   virtual ~PSCache();
 
   virtual void init(Vars &vars);

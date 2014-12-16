@@ -27,8 +27,8 @@
 
 namespace pism {
 
-PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
-  : PSModifier(g, conf, in) {
+PSCache::PSCache(IceGrid &g, SurfaceModel* in)
+  : PSModifier(g, in) {
 
   m_next_update_time = grid.time->current();
   m_update_interval_years = 10;

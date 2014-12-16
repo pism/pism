@@ -27,8 +27,8 @@
 
 namespace pism {
 
-SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : SSB_Modifier(g, e, c) {
+SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e)
+  : SSB_Modifier(g, e) {
 
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
@@ -56,7 +56,7 @@ SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS);
 
   // bed smoother
-  bed_smoother = new BedSmoother(grid, config, WIDE_STENCIL);
+  bed_smoother = new BedSmoother(grid, WIDE_STENCIL);
 
   second_to_kiloyear = grid.convert(1, "second", "1000 years");
 

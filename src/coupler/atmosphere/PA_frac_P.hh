@@ -27,7 +27,7 @@ namespace pism {
 class PA_frac_P : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in);
+  PA_frac_P(IceGrid &g, AtmosphereModel* in);
   virtual ~PA_frac_P();
 
   virtual void init(Vars &vars);

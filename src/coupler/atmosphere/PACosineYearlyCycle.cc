@@ -26,8 +26,8 @@
 
 namespace pism {
 
-PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const Config &conf)
-  : PAYearlyCycle(g, conf), A(NULL) {
+PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g)
+  : PAYearlyCycle(g), A(NULL) {
 }
 
 PACosineYearlyCycle::~PACosineYearlyCycle() {

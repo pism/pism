@@ -29,7 +29,7 @@ namespace glint2 {
 
 
 PSConstantGLINT2::PSConstantGLINT2(IceGrid &g, const ::PISMConfig &conf)
-	: PISMSurfaceModel(g, conf)
+	: PISMSurfaceModel(g)
 {
 	PetscErrorCode ierr = allocate_PSConstantGLINT2(); CHKERRCONTINUE(ierr);
 	if (ierr != 0) {

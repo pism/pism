@@ -27,8 +27,8 @@
 
 namespace pism {
 
-POConstant::POConstant(IceGrid &g, const Config &conf)
-  : OceanModel(g, conf),
+POConstant::POConstant(IceGrid &g)
+  : OceanModel(g),
     shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
     shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid) {
 

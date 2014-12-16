@@ -28,8 +28,8 @@ class IceModelVec2S;
 class YieldStress : public Component_TS
 {
 public:
-  YieldStress(IceGrid &g, const Config &conf)
-    : Component_TS(g, conf) {}
+  YieldStress(IceGrid &g)
+    : Component_TS(g) {}
   virtual ~YieldStress() {}
 
   virtual void init(Vars &vars) = 0;

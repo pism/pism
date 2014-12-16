@@ -36,8 +36,8 @@ template <class Model, class Mod>
 class PLapseRates : public Mod
 {
 public:
-  PLapseRates(IceGrid &g, const Config &conf, Model* in)
-    : Mod(g, conf, in)
+  PLapseRates(IceGrid &g, Model* in)
+    : Mod(g, in)
   {
     surface = thk = NULL;
     temp_lapse_rate = 0.0;

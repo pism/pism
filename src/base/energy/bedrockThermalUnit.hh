@@ -85,7 +85,7 @@ class Vars;
 */
 class BedThermalUnit : public Component_TS {
 public:
-  BedThermalUnit(IceGrid &g, const Config &conf);
+  BedThermalUnit(IceGrid &g);
 
   virtual ~BedThermalUnit() { }
 

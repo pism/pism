@@ -40,7 +40,7 @@ public:
 	/** @param conf Not Used (Looked up all the constructors, it just
 	sets this->config, whic his not used
 	@param g glint2::IceGrid*/
-	PSConstantGLINT2(IceGrid &g, const ::PISMConfig &conf);
+	PSConstantGLINT2(IceGrid &g);
 
 	virtual PetscErrorCode init(PISMVars &vars);
 

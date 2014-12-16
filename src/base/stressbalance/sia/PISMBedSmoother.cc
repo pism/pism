@@ -23,8 +23,8 @@
 
 namespace pism {
 
-BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
-    : grid(g), config(conf) {
+BedSmoother::BedSmoother(IceGrid &g, int MAX_GHOSTS)
+    : grid(g), config(g.config) {
 
   topgp0 = NULL;
   topgsmoothp0 = NULL;

@@ -26,8 +26,8 @@
 
 namespace pism {
 
-OceanKill::OceanKill(IceGrid &g, const Config &conf)
-  : Component(g, conf) {
+OceanKill::OceanKill(IceGrid &g)
+  : Component(g) {
 
   m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
                            config.get("grid_max_stencil_width"));

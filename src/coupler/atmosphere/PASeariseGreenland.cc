@@ -36,8 +36,8 @@ namespace pism {
 
 ///// PA_SeaRISE_Greenland
 
-PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const Config &conf)
-  : PAYearlyCycle(g, conf) {
+PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g)
+  : PAYearlyCycle(g) {
   // empty
 }
 

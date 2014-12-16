@@ -92,7 +92,7 @@ namespace pism {
 */
 class Hydrology : public Component_TS {
 public:
-  Hydrology(IceGrid &g, const Config &conf);
+  Hydrology(IceGrid &g);
   virtual ~Hydrology();
 
   virtual void init(Vars &vars);
@@ -163,7 +163,7 @@ protected:
 */
 class NullTransportHydrology : public Hydrology {
 public:
-  NullTransportHydrology(IceGrid &g, const Config &conf);
+  NullTransportHydrology(IceGrid &g);
   virtual ~NullTransportHydrology();
 
   virtual void init(Vars &vars);
@@ -239,7 +239,7 @@ public:
 */
 class RoutingHydrology : public Hydrology {
 public:
-  RoutingHydrology(IceGrid &g, const Config &conf);
+  RoutingHydrology(IceGrid &g);
   virtual ~RoutingHydrology();
 
   virtual void init(Vars &vars);
@@ -323,7 +323,7 @@ protected:
 */
 class DistributedHydrology : public RoutingHydrology {
 public:
-  DistributedHydrology(IceGrid &g, const Config &conf, StressBalance *sb);
+  DistributedHydrology(IceGrid &g, StressBalance *sb);
   virtual ~DistributedHydrology();
 
   virtual void init(Vars &vars);

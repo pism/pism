@@ -29,7 +29,7 @@ namespace pism {
 class ConstantYieldStress : public YieldStress
 {
 public:
-  ConstantYieldStress(IceGrid &g, const Config &conf);
+  ConstantYieldStress(IceGrid &g);
   virtual ~ConstantYieldStress();
 
   virtual void init(Vars &vars);

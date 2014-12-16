@@ -29,7 +29,7 @@ namespace pism {
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input);
+  PSForceThickness(IceGrid &g, SurfaceModel *input);
 
   virtual ~PSForceThickness();
   virtual void init(Vars &vars);

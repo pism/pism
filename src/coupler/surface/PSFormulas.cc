@@ -22,8 +22,8 @@
 
 namespace pism {
 
-PSFormulas::PSFormulas(IceGrid &g, const Config &conf)
-  : SurfaceModel(g, conf) {
+PSFormulas::PSFormulas(IceGrid &g)
+  : SurfaceModel(g) {
   m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_climatic_mass_balance.set_attrs("internal",
                                     "ice-equivalent surface mass balance (accumulation/ablation) rate",

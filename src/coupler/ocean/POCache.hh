@@ -27,7 +27,7 @@ namespace pism {
 
 class POCache : public POModifier {
 public:
-  POCache(IceGrid &g, const Config &conf, OceanModel* in);
+  POCache(IceGrid &g, OceanModel* in);
   virtual ~POCache();
 
   virtual void init(Vars &vars);
