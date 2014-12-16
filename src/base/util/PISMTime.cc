@@ -148,7 +148,6 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) {
 }
 
 void Time::process_ys(double &result, bool &flag) {
-  
   OptionsReal("-ys", "Start year", result, flag);
   if (flag) {
     result = years_to_seconds(result);
@@ -158,7 +157,6 @@ void Time::process_ys(double &result, bool &flag) {
 }
 
 void Time::process_y(double &result, bool &flag) {
-
   OptionsReal("-y", "Run length, in years", result, flag);
   if (flag) {
     result = years_to_seconds(result);
@@ -168,13 +166,12 @@ void Time::process_y(double &result, bool &flag) {
 }
 
 void Time::process_ye(double &result, bool &flag) {
-
   OptionsReal("-ye", "End year", result, flag);
-if (flag) {
-  result = years_to_seconds(result);
- } else {
-  result = m_config.get("start_year") + m_config.get("run_length_years");
- }
+  if (flag) {
+    result = years_to_seconds(result);
+  } else {
+    result = m_config.get("start_year") + m_config.get("run_length_years");
+  }
 }
 
 void Time::init() {
