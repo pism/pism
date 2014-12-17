@@ -24,6 +24,7 @@
 #include <string>
 #include <map>
 #include "PISMUnits.hh"
+#include "PISMVars.hh"
 
 #include <cassert>
 
@@ -238,6 +239,9 @@ public:
 
   const MPI_Comm com;
 
+  Vars& variables();
+  const Vars& variables() const;
+
 private:
   // int to match types used by MPI
   int m_rank, m_size;
@@ -282,6 +286,11 @@ private:
   // IceModelVec (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.
   PISMDM::Ptr m_dm_scalar_global;
+
+  //! @brief A dictionary with pointers to IceModelVecs, for passing
+  //! them from the one component to another (e.g. from IceModel to
+  //! surface and ocean models).
+  Vars m_variables;
 
   void check_parameters();
 

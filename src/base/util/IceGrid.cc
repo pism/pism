@@ -871,6 +871,14 @@ unsigned int IceGrid::size() const {
   return m_size;
 }
 
+Vars& IceGrid::variables() {
+  return m_variables;
+}
+
+const Vars& IceGrid::variables() const {
+  return m_variables;
+}
+
 int IceGrid::xs() const {
   return m_xs;
 }
