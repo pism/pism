@@ -225,10 +225,6 @@ protected:
   BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
 
-  //! \brief A dictionary with pointers to IceModelVecs below, for passing them
-  //! from the IceModel core to other components (such as surface and ocean models)
-  Vars variables;
-
   // state variables and some diagnostics/internals
   IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
     ice_thickness,              //!< ghosted

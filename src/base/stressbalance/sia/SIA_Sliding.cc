@@ -63,9 +63,9 @@ SIA_Sliding::~SIA_Sliding()
   }
 }
 
-void SIA_Sliding::init(Vars &vars) {
+void SIA_Sliding::init() {
 
-  ShallowStressBalance::init(vars);
+  ShallowStressBalance::init();
 
   standard_gravity = m_config.get("standard_gravity");
   verification_mode = m_config.get_flag("sia_sliding_verification_mode");
@@ -74,11 +74,11 @@ void SIA_Sliding::init(Vars &vars) {
     eisII_experiment = m_config.get_string("EISMINT_II_experiment");
   }
 
-  thickness = vars.get_2d_scalar("land_ice_thickness");
-  mask      = vars.get_2d_mask("mask");
-  surface   = vars.get_2d_scalar("surface_altitude");
-  bed       = vars.get_2d_scalar("bedrock_altitude");
-  enthalpy  = vars.get_3d_scalar("enthalpy");
+  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  mask      = m_grid.variables().get_2d_mask("mask");
+  surface   = m_grid.variables().get_2d_scalar("surface_altitude");
+  bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 }
 
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.

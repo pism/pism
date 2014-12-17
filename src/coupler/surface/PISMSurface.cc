@@ -54,11 +54,11 @@ void SurfaceModel::attach_atmosphere_model(AtmosphereModel *input) {
   atmosphere = input;
 }
 
-void SurfaceModel::init(Vars &vars) {
+void SurfaceModel::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
-  atmosphere->init(vars);
+  atmosphere->init();
 }
 
 //! \brief Returns mass held in the surface layer.

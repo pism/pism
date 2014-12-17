@@ -50,7 +50,7 @@ public:
   PSTemperatureIndex_Old(IceGrid &g);
   virtual ~PSTemperatureIndex_Old();
   virtual void update(PetscReal my_t, PetscReal my_dt);
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);

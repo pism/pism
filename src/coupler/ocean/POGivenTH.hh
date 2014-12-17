@@ -30,7 +30,7 @@ public:
   POGivenTH(IceGrid &g);
   virtual ~POGivenTH();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double my_t, double my_dt);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);

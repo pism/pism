@@ -35,7 +35,7 @@ public:
 
   virtual ~MohrCoulombYieldStress();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
@@ -53,7 +53,6 @@ protected:
   IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
   IceModelVec2S *m_bed_topography;
   IceModelVec2Int *m_mask;
-  Vars *m_variables;
   Hydrology *m_hydrology;
 
   void topg_to_phi();

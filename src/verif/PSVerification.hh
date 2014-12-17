@@ -33,7 +33,7 @@ public:
   ~PSVerification();
 
   // the interface:
-  void init(Vars &vars);
+  void init();
   void update(PetscReal t, PetscReal dt);
 private:
   int m_testname;

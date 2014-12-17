@@ -21,14 +21,14 @@
 
 namespace pism {
 
-void SIAFD_Regional::init(Vars &vars) {
+void SIAFD_Regional::init() {
 
-  SIAFD::init(vars);
+  SIAFD::init();
 
   verbPrintf(2,m_grid.com,"  using the regional version of the SIA solver...\n");
 
-  no_model_mask = vars.get_2d_mask("no_model_mask");
-  usurfstore    = vars.get_2d_scalar("usurfstore");
+  no_model_mask = m_grid.variables().get_2d_mask("no_model_mask");
+  usurfstore    = m_grid.variables().get_2d_scalar("usurfstore");
 }
 
 void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
@@ -106,9 +106,9 @@ SSAFD_Regional::~SSAFD_Regional() {
   // empty
 }
 
-void SSAFD_Regional::init(Vars &vars) {
+void SSAFD_Regional::init() {
 
-  SSAFD::init(vars);
+  SSAFD::init();
 
   verbPrintf(2,m_grid.com,"  using the regional version of the SSA solver...\n");
 
@@ -116,9 +116,9 @@ void SSAFD_Regional::init(Vars &vars) {
     verbPrintf(2,m_grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 
-  no_model_mask = vars.get_2d_mask("no_model_mask");
-  usurfstore    = vars.get_2d_scalar("usurfstore");
-  thkstore      = vars.get_2d_scalar("thkstore");
+  no_model_mask = m_grid.variables().get_2d_mask("no_model_mask");
+  usurfstore    = m_grid.variables().get_2d_scalar("usurfstore");
+  thkstore      = m_grid.variables().get_2d_scalar("thkstore");
 }
 
 void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
@@ -159,15 +159,15 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   }
 }
 
-void RegionalDefaultYieldStress::init(Vars &vars) {
+void RegionalDefaultYieldStress::init() {
   int v = getVerbosityLevel(); // turn off second, redundant init message
   setVerbosityLevel(1);
-  MohrCoulombYieldStress::init(vars);
+  MohrCoulombYieldStress::init();
   setVerbosityLevel(v);
   verbPrintf(2,m_grid.com,
              "  using the regional version with strong till in no_model_mask==1 area ...\n");
 
-  no_model_mask = vars.get_2d_mask("no_model_mask");
+  no_model_mask = m_grid.variables().get_2d_mask("no_model_mask");
 }
 
 

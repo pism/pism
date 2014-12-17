@@ -53,11 +53,11 @@ PO_delta_SL::~PO_delta_SL() {
   // empty
 }
 
-void PO_delta_SL::init(Vars &vars) {
+void PO_delta_SL::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com, "* Initializing sea level forcing...\n");
 

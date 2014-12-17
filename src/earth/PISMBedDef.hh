@@ -32,7 +32,7 @@ class BedDef : public Component_TS {
 public:
   BedDef(IceGrid &g);
   virtual ~BedDef() {}
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double my_t, double my_dt) = 0;
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
@@ -55,7 +55,7 @@ class PBPointwiseIsostasy : public BedDef {
 public:
   PBPointwiseIsostasy(IceGrid &g); 
   virtual ~PBPointwiseIsostasy() {}
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double my_t, double my_dt);
 protected:
   PetscErrorCode allocate();

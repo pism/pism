@@ -117,11 +117,11 @@ void IceModel::set_output_size(const std::string &keyword,
   }
 
   // Add all the model-state variables:
-  std::set<std::string> vars = variables.keys();
+  std::set<std::string> vars = grid.variables().keys();
 
   std::set<std::string>::const_iterator i = vars.begin();
   while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i);
+    IceModelVec *var = grid.variables().get(*i);
     NCSpatialVariable &m = var->metadata();
 
     std::string intent = m.get_string("pism_intent");

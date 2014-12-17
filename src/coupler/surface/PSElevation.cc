@@ -34,7 +34,7 @@ PSElevation::PSElevation(IceGrid &g)
   // empty
 }
 
-void PSElevation::init(Vars &vars) {
+void PSElevation::init() {
   PetscErrorCode ierr;
   PetscBool T_is_set, m_is_set, m_limits_set;
 
@@ -101,7 +101,7 @@ void PSElevation::init(Vars &vars) {
              m_grid.convert(m_limit_max, "m s-1", "m year-1"), z_ELA);
 
   // get access to ice upper surface elevation
-  usurf = vars.get_2d_scalar("surface_altitude");
+  usurf = m_grid.variables().get_2d_scalar("surface_altitude");
 
   // NCSpatialVariables storing temperature and surface mass balance metadata
 

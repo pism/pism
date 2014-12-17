@@ -35,7 +35,7 @@ ConstantYieldStress::~ConstantYieldStress () {
   // empty
 }
 
-void ConstantYieldStress::init(Vars &/*vars*/) {
+void ConstantYieldStress::init() {
   bool i_set, bootstrap, tauc_set;
   double constant_tauc = m_config.get("default_tauc");
   std::string filename;

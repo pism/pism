@@ -51,11 +51,11 @@ PA_paleo_precip::~PA_paleo_precip()
   // empty
 }
 
-void PA_paleo_precip::init(Vars &vars) {
+void PA_paleo_precip::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing paleo-precipitation correction using temperature offsets...\n");

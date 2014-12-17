@@ -50,14 +50,14 @@ POConstantPIK::~POConstantPIK() {
   // empty
 }
 
-void POConstantPIK::init(Vars &vars) {
+void POConstantPIK::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
              "* Initializing the constant (PIK) ocean model...\n");
 
-  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
+  ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   double meltfactor_pik = meltfactor;
   bool meltfactorSet = false;

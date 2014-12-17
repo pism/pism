@@ -129,7 +129,7 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
 
 
 //! \brief Initialize the bedrock thermal unit.
-void BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
+void BedThermalUnit::init(bool &bootstrapping_needed) {
   grid_info g;
 
   // first assume that we don't need to bootstrap
@@ -144,8 +144,8 @@ void BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
              "* Initializing the bedrock thermal unit... setting constants...\n");
 
   // Get pointers to fields owned by IceModel.
-  bedtoptemp = vars.get_2d_scalar("bedtoptemp");
-  ghf = vars.get_2d_scalar("bheatflx");
+  bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp");
+  ghf = m_grid.variables().get_2d_scalar("bheatflx");
 
   // If we're using a minimal model, then we're done:
   if (!temp.was_created()) {

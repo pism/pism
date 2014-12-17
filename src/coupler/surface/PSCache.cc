@@ -64,11 +64,11 @@ PSCache::~PSCache() {
 }
 
 
-void PSCache::init(Vars &vars) {
+void PSCache::init() {
   int update_interval = m_update_interval_years;
   bool flag;
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the 'caching' surface model modifier...\n");

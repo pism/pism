@@ -69,10 +69,8 @@ PAYearlyCycle::~PAYearlyCycle() {
 }
 
 //! Allocates memory and reads in the precipitaion data.
-void PAYearlyCycle::init(Vars &vars) {
+void PAYearlyCycle::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
-  m_variables = &vars;
 
   bool do_regrid = false;
   int start = -1;

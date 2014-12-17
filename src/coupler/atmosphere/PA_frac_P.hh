@@ -30,7 +30,7 @@ public:
   PA_frac_P(IceGrid &g, AtmosphereModel* in);
   virtual ~PA_frac_P();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);
 
   virtual void mean_precipitation(IceModelVec2S &result);

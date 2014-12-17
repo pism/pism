@@ -24,17 +24,17 @@ namespace pism {
 
 void SIAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["diffusivity"] = new SIAFD_diffusivity(this, m_grid, *variables);
-  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, m_grid, *variables);
-  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, m_grid, *variables);
-  dict["thksmooth"] = new SIAFD_thksmooth(this, m_grid, *variables);
-  dict["topgsmooth"] = new SIAFD_topgsmooth(this, m_grid, *variables);
-  dict["h_x"] = new SIAFD_h_x(this, m_grid, *variables);
-  dict["h_y"] = new SIAFD_h_y(this, m_grid, *variables);
+  dict["diffusivity"] = new SIAFD_diffusivity(this, m_grid);
+  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, m_grid);
+  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, m_grid);
+  dict["thksmooth"] = new SIAFD_thksmooth(this, m_grid);
+  dict["topgsmooth"] = new SIAFD_topgsmooth(this, m_grid);
+  dict["h_x"] = new SIAFD_h_x(this, m_grid);
+  dict["h_y"] = new SIAFD_h_y(this, m_grid);
 }
 
-SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "schoofs_theta", grid));
@@ -48,7 +48,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars)
 void SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   IceModelVec2S *result, *surface;
 
-  surface = variables.get_2d_scalar("surface_altitude");
+  surface = grid.variables().get_2d_scalar("surface_altitude");
 
   result = new IceModelVec2S;
   result->create(grid, "schoofs_theta", WITHOUT_GHOSTS);
@@ -60,8 +60,8 @@ void SIAFD_schoofs_theta::compute(IceModelVec* &output) {
 }
 
 
-SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "topgsmooth", grid));
@@ -81,8 +81,8 @@ void SIAFD_topgsmooth::compute(IceModelVec* &output) {
   output = result;
 }
 
-SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "thksmooth", grid));
@@ -94,9 +94,9 @@ void SIAFD_thksmooth::compute(IceModelVec* &output) {
   IceModelVec2S *result, *surface, *thickness;
   IceModelVec2Int *mask;
 
-  surface   = variables.get_2d_scalar("surface_altitude");
-  thickness = variables.get_2d_scalar("land_ice_thickness");
-  mask      = variables.get_2d_mask("mask");
+  surface   = grid.variables().get_2d_scalar("surface_altitude");
+  thickness = grid.variables().get_2d_scalar("land_ice_thickness");
+  mask      = grid.variables().get_2d_mask("mask");
 
   result = new IceModelVec2S;
   result->create(grid, "thksmooth", WITHOUT_GHOSTS);
@@ -110,8 +110,8 @@ void SIAFD_thksmooth::compute(IceModelVec* &output) {
 
 
 
-SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "diffusivity", grid));
@@ -132,8 +132,8 @@ void SIAFD_diffusivity::compute(IceModelVec* &output) {
   output = result;
 }
 
-SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   dof = 2;
@@ -161,8 +161,8 @@ void SIAFD_diffusivity_staggered::compute(IceModelVec* &output) {
   output = result;
 }
 
-SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   dof = 2;
@@ -192,8 +192,8 @@ void SIAFD_h_x::compute(IceModelVec* &output) {
   output = result;
 }
 
-SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SIAFD>(m, g, my_vars) {
+SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g)
+  : Diag<SIAFD>(m, g) {
 
   // set metadata:
   dof = 2;

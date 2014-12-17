@@ -97,7 +97,6 @@ protected:
   EnthalpyConverter *enthalpyconverter;
 
   // SSA coefficient variables.
-  Vars vars;
   IceModelVec2S  surface, thickness, bed, tauc, melange_back_pressure;
   IceModelVec3 enthalpy;
   IceModelVec2V vel_bc;

@@ -147,8 +147,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     std::set<std::string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
 
-      if (variables.is_available(*i)) {
-        v = variables.get(*i);
+      if (grid.variables().is_available(*i)) {
+        v = grid.variables().get(*i);
         // It has dedicated storage.
         if (*i == "mask") {
           v->define(nc, PISM_BYTE); // use the default data type
@@ -220,10 +220,10 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end();) {
 
-    if (not variables.is_available(*i)) {
+    if (not grid.variables().is_available(*i)) {
       ++i;
     } else {
-      v = variables.get(*i);
+      v = grid.variables().get(*i);
       v->write(nc); // use the default data type
 
       vars.erase(i++);          // note that it only erases variables that were
@@ -358,11 +358,11 @@ void IceModel::initFromFile(const std::string &filename) {
   unsigned int last_record = nc.inq_nrecords() - 1;
 
   // Read the model state, mapping and climate_steady variables:
-  std::set<std::string> vars = variables.keys();
+  std::set<std::string> vars = grid.variables().keys();
 
   std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i++);
+    IceModelVec *var = grid.variables().get(*i++);
     NCSpatialVariable &m = var->metadata();
 
     std::string intent = m.get_string("pism_intent");
@@ -502,11 +502,11 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
 
-    if (not variables.is_available(*i)) {
+    if (not grid.variables().is_available(*i)) {
       continue;
     }
 
-    IceModelVec *v = variables.get(*i);
+    IceModelVec *v = grid.variables().get(*i);
     NCSpatialVariable &m = v->metadata();
 
     if (v->get_ndims() != ndims) {

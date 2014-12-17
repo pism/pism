@@ -36,7 +36,7 @@ class PSConstantPIK : public SurfaceModel {
 public:
   PSConstantPIK(IceGrid &g);
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void attach_atmosphere_model(AtmosphereModel *input);
 

@@ -53,7 +53,7 @@ EigenCalving::~EigenCalving() {
   // empty
 }
 
-void EigenCalving::init(Vars &vars) {
+void EigenCalving::init() {
 
   verbPrintf(2, m_grid.com,
              "* Initializing the 'eigen-calving' mechanism...\n");
@@ -67,7 +67,7 @@ void EigenCalving::init(Vars &vars) {
 
   m_strain_rates.set(0.0);
 
-  m_mask = vars.get_2d_mask("mask");
+  m_mask = m_grid.variables().get_2d_mask("mask");
 }
 
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.

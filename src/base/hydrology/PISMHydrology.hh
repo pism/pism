@@ -95,7 +95,7 @@ public:
   Hydrology(IceGrid &g);
   virtual ~Hydrology();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -141,8 +141,6 @@ protected:
   unsigned int inputtobed_period;      // in years
   double inputtobed_reference_time; // in seconds
 
-  Vars *variables;
-
   virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
 
   virtual void check_Wtil_bounds();
@@ -166,7 +164,7 @@ public:
   NullTransportHydrology(IceGrid &g);
   virtual ~NullTransportHydrology();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   //! Sets result to 0.
   virtual void subglacial_water_thickness(IceModelVec2S &result);
@@ -242,7 +240,7 @@ public:
   RoutingHydrology(IceGrid &g);
   virtual ~RoutingHydrology();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
@@ -276,7 +274,7 @@ protected:
   double stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
 
-  virtual void init_bwat(Vars &vars);
+  virtual void init_bwat();
 
   // when we update the water amounts, careful mass accounting at the
   // boundary is needed; we update the new thickness variable, typically a
@@ -326,7 +324,7 @@ public:
   DistributedHydrology(IceGrid &g, StressBalance *sb);
   virtual ~DistributedHydrology();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
@@ -354,7 +352,7 @@ protected:
   // need to get basal sliding velocity (thus speed):
   StressBalance* stressbalance;
 
-  virtual void init_bwp(Vars &vars);
+  virtual void init_bwp();
 
   virtual void check_P_bounds(bool enforce_upper);
 

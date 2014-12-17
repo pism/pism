@@ -32,7 +32,7 @@ public:
   PO_delta_T(IceGrid &g, OceanModel* in);
   virtual ~PO_delta_T();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void shelf_base_temperature(IceModelVec2S &result);
 

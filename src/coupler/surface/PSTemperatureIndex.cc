@@ -179,10 +179,10 @@ PSTemperatureIndex::~PSTemperatureIndex() {
   delete faustogreve;
 }
 
-void PSTemperatureIndex::init(Vars &vars) {
+void PSTemperatureIndex::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  SurfaceModel::init(vars);
+  SurfaceModel::init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
@@ -200,10 +200,10 @@ void PSTemperatureIndex::init(Vars &vars) {
     verbPrintf(2, m_grid.com, "an expectation integral.\n");
   }
 
-  mask = vars.get_2d_mask("mask");
+  mask = m_grid.variables().get_2d_mask("mask");
 
   if ((m_config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
-    lat = vars.get_2d_scalar("latitude");
+    lat = m_grid.variables().get_2d_scalar("latitude");
   } else {
     lat = NULL;
   }
@@ -214,8 +214,8 @@ void PSTemperatureIndex::init(Vars &vars) {
 
     base_pddStdDev = 2.53;
 
-    lon   = vars.get_2d_scalar("longitude");
-    usurf = vars.get_2d_scalar("usurf");
+    lon   = m_grid.variables().get_2d_scalar("longitude");
+    usurf = m_grid.variables().get_2d_scalar("usurf");
   } else {
     // generally, this is the case in which degree day factors do not depend
     //   on location; we use base_ddf

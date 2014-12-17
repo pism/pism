@@ -134,7 +134,7 @@ void PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO
   }
 }
 
-void PAConstantPIK::init(Vars &vars) {
+void PAConstantPIK::init() {
   bool do_regrid = false;
   int start = -1;
 
@@ -159,8 +159,8 @@ void PAConstantPIK::init(Vars &vars) {
     precipitation.read(input_file, start); // fails if not found!
   }
 
-  usurf = vars.get_2d_scalar("surface_altitude");
-  lat   = vars.get_2d_scalar("latitude");
+  usurf = m_grid.variables().get_2d_scalar("surface_altitude");
+  lat   = m_grid.variables().get_2d_scalar("latitude");
 }
 
 void PAConstantPIK::update(double, double) {

@@ -46,17 +46,17 @@ PSLapseRates::~PSLapseRates() {
   // empty
 }
 
-void PSLapseRates::init(Vars &vars) {
+void PSLapseRates::init() {
   bool smb_lapse_rate_set;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "  [using temperature and mass balance lapse corrections]\n");
 
-  init_internal(vars);
+  init_internal();
 
   {
     OptionsReal("-smb_lapse_rate",

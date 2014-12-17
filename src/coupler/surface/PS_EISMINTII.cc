@@ -35,9 +35,7 @@ PS_EISMINTII::~PS_EISMINTII() {
   // empty
 }
 
-void PS_EISMINTII::init(Vars &vars) {
-
-  (void) vars;
+void PS_EISMINTII::init() {
 
   verbPrintf(2, m_grid.com, 
              "setting parameters for surface mass balance"

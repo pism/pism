@@ -55,7 +55,7 @@ public:
   PA_paleo_precip(IceGrid &g, AtmosphereModel* in);
   virtual ~PA_paleo_precip();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);
 
   virtual void mean_precipitation(IceModelVec2S &result);

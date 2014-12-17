@@ -215,7 +215,7 @@ void IceModel::createVecs() {
   Enth3.set_attrs("model_state",
                   "ice enthalpy (includes sensible heat, latent heat, pressure)",
                   "J kg-1", "");
-  variables.add(Enth3);
+  grid.variables().add(Enth3);
 
   if (config.get_flag("do_cold_ice_methods")) {
     // ice temperature
@@ -223,7 +223,7 @@ void IceModel::createVecs() {
     T3.set_attrs("model_state",
                  "ice temperature", "K", "land_ice_temperature");
     T3.metadata().set_double("valid_min", 0.0);
-    variables.add(T3);
+    grid.variables().add(T3);
 
     if (config.get_flag("do_energy") == true) {
       Enth3.metadata().set_string("pism_intent", "diagnostic");
@@ -241,46 +241,46 @@ void IceModel::createVecs() {
     tau3.set_glaciological_units("years");
     tau3.write_in_glaciological_units = true;
     tau3.metadata().set_double("valid_min", 0.0);
-    variables.add(tau3);
+    grid.variables().add(tau3);
   }
 
   // ice upper surface elevation
   ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
   ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
                                   "m", "surface_altitude");
-  variables.add(ice_surface_elevation);
+  grid.variables().add(ice_surface_elevation);
 
   // land ice thickness
   ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
   ice_thickness.set_attrs("model_state", "land ice thickness",
                           "m", "land_ice_thickness");
   ice_thickness.metadata().set_double("valid_min", 0.0);
-  variables.add(ice_thickness);
+  grid.variables().add(ice_thickness);
 
   // bedrock surface elevation
   bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   bed_topography.set_attrs("model_state", "bedrock surface elevation",
                            "m", "bedrock_altitude");
-  variables.add(bed_topography);
+  grid.variables().add(bed_topography);
 
   if (config.get_flag("sub_groundingline")) {
     gl_mask.create(grid, "gl_mask", WITHOUT_GHOSTS);
     gl_mask.set_attrs("internal",
                       "fractional grounded/floating mask (floating=0, grounded=1)",
                       "", "");
-    variables.add(gl_mask);
+    grid.variables().add(gl_mask);
 
     gl_mask_x.create(grid, "gl_mask_x", WITHOUT_GHOSTS);
     gl_mask_x.set_attrs("internal",
                         "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
                         "", "");
-    variables.add(gl_mask_x);
+    grid.variables().add(gl_mask_x);
 
     gl_mask_y.create(grid, "gl_mask_y", WITHOUT_GHOSTS);
     gl_mask_y.set_attrs("internal",
                         "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
                         "", "");
-    variables.add(gl_mask_y);
+    grid.variables().add(gl_mask_y);
   }
 
   // grounded_dragging_floating integer mask
@@ -295,7 +295,7 @@ void IceModel::createVecs() {
   vMask.metadata().set_doubles("flag_values", mask_values);
   vMask.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  variables.add(vMask);
+  grid.variables().add(vMask);
 
   // upward geothermal flux at bedrock surface
   geothermal_flux.create(grid, "bheatflx", WITHOUT_GHOSTS);
@@ -305,7 +305,7 @@ void IceModel::createVecs() {
   geothermal_flux.set_glaciological_units("mW m-2");
   geothermal_flux.write_in_glaciological_units = true;
   geothermal_flux.set_time_independent(true);
-  variables.add(geothermal_flux);
+  grid.variables().add(geothermal_flux);
 
   // temperature seen by top of bedrock thermal layer
   bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
@@ -313,7 +313,7 @@ void IceModel::createVecs() {
                        "temperature of top of bedrock thermal layer",
                        "K", "");
   bedtoptemp.set_glaciological_units("K");
-  variables.add(bedtoptemp);
+  grid.variables().add(bedtoptemp);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
@@ -322,7 +322,7 @@ void IceModel::createVecs() {
     basal_yield_stress.set_attrs("diagnostic",
                                  "yield stress for basal till (plastic or pseudo-plastic model)",
                                  "Pa", "");
-    variables.add(basal_yield_stress);
+    grid.variables().add(basal_yield_stress);
   }
 
   // bedrock uplift rate
@@ -331,7 +331,7 @@ void IceModel::createVecs() {
                             "m s-1", "tendency_of_bedrock_altitude");
    bed_uplift_rate.set_glaciological_units("m year-1");
   bed_uplift_rate.write_in_glaciological_units = true;
-  variables.add(bed_uplift_rate);
+  grid.variables().add(bed_uplift_rate);
 
   // basal melt rate
   basal_melt_rate.create(grid, "bmelt", WITHOUT_GHOSTS);
@@ -342,7 +342,7 @@ void IceModel::createVecs() {
   basal_melt_rate.set_glaciological_units("m year-1");
   basal_melt_rate.write_in_glaciological_units = true;
   basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
-  variables.add(basal_melt_rate);
+  grid.variables().add(basal_melt_rate);
 
   // longitude
   vLongitude.create(grid, "lon", WITH_GHOSTS);
@@ -352,7 +352,7 @@ void IceModel::createVecs() {
   vLongitude.metadata().set_string("grid_mapping", "");
   vLongitude.metadata().set_double("valid_min", -180.0);
   vLongitude.metadata().set_double("valid_max",  180.0);
-  variables.add(vLongitude);
+  grid.variables().add(vLongitude);
 
   // latitude
   vLatitude.create(grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
@@ -362,14 +362,14 @@ void IceModel::createVecs() {
   vLatitude.metadata().set_string("grid_mapping", "");
   vLatitude.metadata().set_double("valid_min", -90.0);
   vLatitude.metadata().set_double("valid_max",  90.0);
-  variables.add(vLatitude);
+  grid.variables().add(vLatitude);
 
   if (config.get_flag("part_grid") == true) {
     // Href
     vHref.create(grid, "Href", WITH_GHOSTS);
     vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
                     "m", "");
-    variables.add(vHref);
+    grid.variables().add(vHref);
   }
 
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos ||
@@ -422,7 +422,7 @@ void IceModel::createVecs() {
     bc_mask_values[1] = 1;
     vBCMask.metadata().set_doubles("flag_values", bc_mask_values);
     vBCMask.metadata().set_string("flag_meanings", "no_data bc_condition");
-    variables.add(vBCMask);
+    grid.variables().add(vBCMask);
 
 
     // vel_bc
@@ -440,7 +440,7 @@ void IceModel::createVecs() {
       vBCvel.metadata(j).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
     }
     //just for diagnostics...
-    variables.add(vBCvel);
+    grid.variables().add(vBCvel);
   }
 
   // fracture density field
@@ -449,29 +449,29 @@ void IceModel::createVecs() {
     vFD.set_attrs("model_state", "fracture density in ice shelf", "", "");
     vFD.metadata().set_double("valid_max", 1.0);
     vFD.metadata().set_double("valid_min", 0.0);
-    variables.add(vFD);
+    grid.variables().add(vFD);
 
     if (config.get_flag("write_fd_fields")) {
       vFG.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL); 
       vFG.set_attrs("model_state", "fracture growth rate",       "1/s", "");
       vFG.metadata().set_double("valid_min", 0.0);
-      variables.add(vFG);
+      grid.variables().add(vFG);
 
       vFH.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL); 
       vFH.set_attrs("model_state", "fracture healing rate",      "1/s", "");
-      variables.add(vFH);
+      grid.variables().add(vFH);
 
       vFE.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL); 
       vFE.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
-      variables.add(vFE);
+      grid.variables().add(vFE);
 
       vFA.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL); 
       vFA.set_attrs("model_state", "age since fracturing",       "years", "");
-      variables.add(vFA);
+      grid.variables().add(vFA);
       
       vFT.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL); 
       vFT.set_attrs("model_state", "fracture toughness", "Pa", "");
-      variables.add(vFT);
+      grid.variables().add(vFT);
     }
   }
 
@@ -485,7 +485,7 @@ void IceModel::createVecs() {
   cell_area.set_time_independent(true);
   cell_area.set_glaciological_units("km2");
   cell_area.write_in_glaciological_units = true;
-  variables.add(cell_area);
+  grid.variables().add(cell_area);
 
   // fields owned by IceModel but filled by SurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
@@ -510,7 +510,7 @@ void IceModel::createVecs() {
   liqfrac_surface.set_attrs("climate_from_SurfaceModel",
                             "liquid water fraction at the top surface of the ice",
                             "1", "");
-  // variables.add(liqfrac_surface);
+  // grid.variables().add(liqfrac_surface);
 
   // ice mass balance rate at the base of the ice shelf; sign convention for
   //   vshelfbasemass matches standard sign convention for basal melt rate of
@@ -523,7 +523,7 @@ void IceModel::createVecs() {
   shelfbmassflux.write_in_glaciological_units = true;
   shelfbmassflux.set_glaciological_units("m year-1");
   // do not add; boundary models are in charge here
-  // variables.add(shelfbmassflux);
+  // grid.variables().add(shelfbmassflux);
 
   // ice boundary tempature at the base of the ice shelf
   shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS); // no ghosts; NO HOR. DIFF.!
@@ -531,7 +531,7 @@ void IceModel::createVecs() {
                        "K", "");
   // PROPOSED standard name = ice_shelf_basal_temperature
   // do not add; boundary models are in charge here
-  // variables.add(shelfbtemp);
+  // grid.variables().add(shelfbtemp);
 
   // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or some others (below).
@@ -961,7 +961,7 @@ void IceModel::init() {
   allocate_internal_objects();
 
   // Lock IceModel::variables: we're done adding fields to it.
-  variables.lock();
+  grid.variables().lock();
 
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some

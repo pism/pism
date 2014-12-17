@@ -59,9 +59,7 @@ PAWeatherStation::~PAWeatherStation() {
   // empty
 }
 
-void PAWeatherStation::init(Vars &vars) {
-
-  (void)vars;
+void PAWeatherStation::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 

@@ -86,31 +86,31 @@ SSA::~SSA() {
 
 
 //! \brief Initialize a generic regular-grid SSA solver.
-void SSA::init(Vars &vars) {
+void SSA::init() {
 
-  ShallowStressBalance::init(vars);
+  ShallowStressBalance::init();
 
   verbPrintf(2,m_grid.com,"* Initializing the SSA stress balance...\n");
   verbPrintf(2, m_grid.com,
              "  [using the %s flow law]\n", flow_law->name().c_str());
   
   if (m_config.get_flag("sub_groundingline")) {
-    gl_mask = vars.get_2d_scalar("gl_mask");
+    gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
   }
 
-  mask      = vars.get_2d_mask("mask");
-  thickness = vars.get_2d_scalar("land_ice_thickness");
-  tauc      = vars.get_2d_scalar("tauc");
+  mask      = m_grid.variables().get_2d_mask("mask");
+  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  tauc      = m_grid.variables().get_2d_scalar("tauc");
 
   try {
-    surface = vars.get_2d_scalar("surface_altitude");
+    surface = m_grid.variables().get_2d_scalar("surface_altitude");
   } catch (RuntimeError) {
-    driving_stress_x = vars.get_2d_scalar("ssa_driving_stress_x");
-    driving_stress_y = vars.get_2d_scalar("ssa_driving_stress_y");
+    driving_stress_x = m_grid.variables().get_2d_scalar("ssa_driving_stress_x");
+    driving_stress_y = m_grid.variables().get_2d_scalar("ssa_driving_stress_y");
   }
 
-  bed      = vars.get_2d_scalar("bedrock_altitude");
-  enthalpy = vars.get_3d_scalar("enthalpy");
+  bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
   
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
@@ -143,8 +143,8 @@ void SSA::init(Vars &vars) {
   }
 
   if (m_config.get_flag("ssa_dirichlet_bc")) {
-    bc_locations = vars.get_2d_mask("bcflag");
-    m_vel_bc = vars.get_2d_vector("vel_ssa_bc");
+    bc_locations = m_grid.variables().get_2d_mask("bcflag");
+    m_vel_bc = m_grid.variables().get_2d_vector("vel_ssa_bc");
   }
 }
 
@@ -355,16 +355,16 @@ void SSA::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   if (dict["taud"] != NULL) {
     delete dict["taud"];
   }
-  dict["taud"] = new SSA_taud(this, m_grid, *variables);
+  dict["taud"] = new SSA_taud(this, m_grid);
 
   if (dict["taud_mag"] != NULL) {
     delete dict["taud_mag"];
   }
-  dict["taud_mag"] = new SSA_taud_mag(this, m_grid, *variables);
+  dict["taud_mag"] = new SSA_taud_mag(this, m_grid);
 }
 
-SSA_taud::SSA_taud(SSA *m, IceGrid &g, Vars &my_vars)
-  : Diag<SSA>(m, g, my_vars) {
+SSA_taud::SSA_taud(SSA *m, IceGrid &g)
+  : Diag<SSA>(m, g) {
 
   dof = 2;
 
@@ -395,8 +395,8 @@ void SSA_taud::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars)
-  : Diag<SSA>(m, g, my_vars) {
+SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g)
+  : Diag<SSA>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_mag", grid));
@@ -416,7 +416,7 @@ void SSA_taud_mag::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
-  SSA_taud diag(model, grid, variables);
+  SSA_taud diag(model, grid);
 
   diag.compute(tmp);
 

@@ -60,7 +60,7 @@ void PSGivenClimate::attach_atmosphere_model(AtmosphereModel *input) {
   input = NULL;
 }
 
-void PSGivenClimate::init(Vars &) {
+void PSGivenClimate::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 

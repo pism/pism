@@ -42,8 +42,7 @@ public:
 
   //  initialization and I/O:
 
-  virtual void init(Vars &vars) {
-    variables = &vars;
+  virtual void init() {
   }
 
   virtual void set_boundary_conditions(IceModelVec2Int &locations,
@@ -105,7 +104,6 @@ public:
   }
 protected:
   double sea_level;
-  Vars *variables;
   IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
@@ -118,7 +116,7 @@ protected:
 class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
+  SSB_beta(ShallowStressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -126,7 +124,7 @@ public:
 class SSB_taud : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
+  SSB_taud(ShallowStressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -135,7 +133,7 @@ public:
 class SSB_taud_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
+  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -143,7 +141,7 @@ public:
 class SSB_taub : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
+  SSB_taub(ShallowStressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -152,7 +150,7 @@ public:
 class SSB_taub_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
+  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -187,7 +185,7 @@ public:
   PrescribedSliding(IceGrid &g, EnthalpyConverter &e);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
-  virtual void init(Vars &vars);
+  virtual void init();
 };
 
 } // end of namespace pism

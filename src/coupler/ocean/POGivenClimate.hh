@@ -30,7 +30,7 @@ public:
   POGiven(IceGrid &g);
   virtual ~POGiven();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double my_t, double my_dt);
 
   virtual void sea_level_elevation(double &result);

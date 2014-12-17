@@ -112,9 +112,9 @@ PetscErrorCode SSAFEM::deallocate_fem() {
 }
 
 // Initialize the solver, called once by the client before use.
-void SSAFEM::init(Vars &vars) {
+void SSAFEM::init() {
 
-  SSA::init(vars);
+  SSA::init();
   verbPrintf(2, m_grid.com,
              "  [using the SNES-based finite element method implementation]\n");
 

@@ -39,7 +39,7 @@ public:
   PAWeatherStation(IceGrid &g);
   virtual ~PAWeatherStation();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(double t, double dt);
   virtual void mean_precipitation(IceModelVec2S &result);

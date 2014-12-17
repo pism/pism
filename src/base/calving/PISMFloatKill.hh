@@ -34,7 +34,7 @@ public:
   FloatKill(IceGrid &g);
   virtual ~FloatKill();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);

@@ -28,7 +28,7 @@ namespace pism {
 class PSB_velbar : public Diag<StressBalance>
 {
 public:
-  PSB_velbar(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_velbar(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -37,7 +37,7 @@ public:
 class PSB_velbar_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_velbar_mag(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -46,7 +46,7 @@ public:
 class PSB_flux_mag : public Diag<StressBalance>
 {
 public:
-  PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_flux_mag(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -55,7 +55,7 @@ public:
 class PSB_velbase_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velbase_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_velbase_mag(StressBalance *m, IceGrid &g);
   void  compute(IceModelVec* &result);
 };
 
@@ -64,7 +64,7 @@ public:
 class PSB_velsurf_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velsurf_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_velsurf_mag(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -72,7 +72,7 @@ public:
 class PSB_velsurf : public Diag<StressBalance>
 {
 public:
-  PSB_velsurf(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_velsurf(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -91,7 +91,7 @@ public:
 class PSB_wvel : public Diag<StressBalance>
 {
 public:
-  PSB_wvel(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_wvel(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -99,7 +99,7 @@ public:
 class PSB_wvelsurf : public Diag<StressBalance>
 {
 public:
-  PSB_wvelsurf(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_wvelsurf(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -107,7 +107,7 @@ public:
 class PSB_wvelbase : public Diag<StressBalance>
 {
 public:
-  PSB_wvelbase(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_wvelbase(StressBalance *m, IceGrid &g);
   void compute(IceModelVec* &result);
 };
 
@@ -115,7 +115,7 @@ public:
 class PSB_velbase : public Diag<StressBalance>
 {
 public:
-  PSB_velbase(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_velbase(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -123,7 +123,7 @@ public:
 class PSB_bfrict : public Diag<StressBalance>
 {
 public:
-  PSB_bfrict(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_bfrict(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -131,7 +131,7 @@ public:
 class PSB_uvel : public Diag<StressBalance>
 {
 public:
-  PSB_uvel(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_uvel(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -139,7 +139,7 @@ public:
 class PSB_vvel : public Diag<StressBalance>
 {
 public:
-  PSB_vvel(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_vvel(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -148,7 +148,7 @@ public:
 class PSB_wvel_rel : public Diag<StressBalance>
 {
 public:
-  PSB_wvel_rel(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_wvel_rel(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -156,7 +156,7 @@ public:
 class PSB_strainheat : public Diag<StressBalance>
 {
 public:
-  PSB_strainheat(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_strainheat(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -164,7 +164,7 @@ public:
 class PSB_strain_rates : public Diag<StressBalance>
 {
 public:
-  PSB_strain_rates(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_strain_rates(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -172,7 +172,7 @@ public:
 class PSB_deviatoric_stresses : public Diag<StressBalance>
 {
 public:
-  PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_deviatoric_stresses(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -180,7 +180,7 @@ public:
 class PSB_pressure : public Diag<StressBalance>
 {
 public:
-  PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_pressure(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -188,7 +188,7 @@ public:
 class PSB_tauxz : public Diag<StressBalance>
 {
 public:
-  PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_tauxz(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -196,7 +196,7 @@ public:
 class PSB_tauyz : public Diag<StressBalance>
 {
 public:
-  PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PSB_tauyz(StressBalance *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 

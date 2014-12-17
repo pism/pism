@@ -43,9 +43,9 @@ PetscErrorCode PBPointwiseIsostasy::allocate() {
   return 0;
 }
 
-void PBPointwiseIsostasy::init(Vars &vars) {
+void PBPointwiseIsostasy::init() {
 
-  BedDef::init(vars);
+  BedDef::init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the pointwise isostasy bed deformation model...\n");

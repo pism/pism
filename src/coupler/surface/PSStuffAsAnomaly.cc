@@ -60,7 +60,7 @@ PSStuffAsAnomaly::~PSStuffAsAnomaly() {
   // empty
 }
 
-void PSStuffAsAnomaly::init(Vars &vars) {
+void PSStuffAsAnomaly::init() {
   std::string input_file;
   bool do_regrid = false;
   int start = 0;
@@ -68,7 +68,7 @@ void PSStuffAsAnomaly::init(Vars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (input_model != NULL) {
-    input_model->init(vars);
+    input_model->init();
   }
 
   find_pism_input(input_file, do_regrid, start);

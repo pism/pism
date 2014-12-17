@@ -36,13 +36,11 @@ PACosineYearlyCycle::~PACosineYearlyCycle() {
   }
 }
 
-void PACosineYearlyCycle::init(Vars &vars) {
+void PACosineYearlyCycle::init() {
   bool input_file_flag, scaling_flag;
   std::string input_file, scaling_file;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
-  m_variables = &vars;
 
   verbPrintf(2, m_grid.com,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");

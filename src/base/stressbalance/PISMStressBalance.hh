@@ -47,7 +47,7 @@ public:
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.
-  virtual void init(Vars &vars);
+  virtual void init();
 
   //! \brief Adds more variable names to result (to respect -o_size and
   //! -save_size).
@@ -126,8 +126,6 @@ protected:
   virtual void compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                          IceModelVec2S *bmr, IceModelVec3 &result);
   virtual void compute_volumetric_strain_heating();
-
-  Vars *m_variables;
 
   IceModelVec3 m_w, m_strain_heating;
   IceModelVec2S *m_basal_melt_rate;

@@ -34,7 +34,7 @@ public:
   AtmosphereModel(IceGrid &g)
     : Component_TS(g) {};
 
-  virtual void init(Vars &vars) = 0;
+  virtual void init() = 0;
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
   virtual void mean_precipitation(IceModelVec2S &result) = 0;

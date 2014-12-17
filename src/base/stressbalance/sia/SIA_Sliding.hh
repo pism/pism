@@ -36,7 +36,7 @@ public:
 
   virtual ~SIA_Sliding();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 

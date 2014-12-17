@@ -58,7 +58,7 @@ public:
 
   virtual ~SIAFD();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(IceModelVec2V *vel_input, bool fast);
 
@@ -132,7 +132,7 @@ protected:
 class SIAFD_schoofs_theta : public Diag<SIAFD>
 {
 public:
-  SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_schoofs_theta(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -144,7 +144,7 @@ public:
 class SIAFD_topgsmooth : public Diag<SIAFD>
 {
 public:
-  SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_topgsmooth(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -156,7 +156,7 @@ public:
 class SIAFD_thksmooth : public Diag<SIAFD>
 {
 public:
-  SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_thksmooth(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -164,7 +164,7 @@ public:
 class SIAFD_diffusivity : public Diag<SIAFD>
 {
 public:
-  SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_diffusivity(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -172,7 +172,7 @@ public:
 class SIAFD_diffusivity_staggered : public Diag<SIAFD>
 {
 public:
-  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -181,7 +181,7 @@ public:
 class SIAFD_h_x : public Diag<SIAFD>
 {
 public:
-  SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_h_x(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -190,7 +190,7 @@ public:
 class SIAFD_h_y : public Diag<SIAFD>
 {
 public:
-  SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars);
+  SIAFD_h_y(SIAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 

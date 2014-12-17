@@ -70,12 +70,12 @@ PSAnomaly::~PSAnomaly() {
   // empty
 }
 
-void PSAnomaly::init(Vars &vars) {
+void PSAnomaly::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (input_model != NULL) {
-    input_model->init(vars);
+    input_model->init();
   }
 
   verbPrintf(2, m_grid.com,

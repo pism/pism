@@ -329,11 +329,11 @@ void IceModel::init_extras() {
     verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
                " Writing model_state, mapping and climate_steady variables...\n");
 
-    std::set<std::string> vars_set = variables.keys();
+    std::set<std::string> vars_set = grid.variables().keys();
 
     std::set<std::string>::iterator i = vars_set.begin();
     while (i != vars_set.end()) {
-      IceModelVec *var = variables.get(*i);
+      IceModelVec *var = grid.variables().get(*i);
       NCSpatialVariable &m = var->metadata();
 
       std::string intent = m.get_string("pism_intent");

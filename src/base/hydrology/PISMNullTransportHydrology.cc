@@ -30,10 +30,10 @@ NullTransportHydrology::NullTransportHydrology(IceGrid &g)
 NullTransportHydrology::~NullTransportHydrology() {
 }
 
-void NullTransportHydrology::init(Vars &vars) {
+void NullTransportHydrology::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
-  Hydrology::init(vars);
+  Hydrology::init();
 }
 
 

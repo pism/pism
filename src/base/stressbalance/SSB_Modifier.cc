@@ -29,7 +29,6 @@ SSB_Modifier::SSB_Modifier(IceGrid &g, EnthalpyConverter &e)
   : Component(g), EC(e) {
 
   D_max = 0.0;
-  variables = NULL;
 
   u.create(m_grid, "uvel", WITH_GHOSTS);
   u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
@@ -60,8 +59,8 @@ SSB_Modifier::~SSB_Modifier() {
   // empty
 }
 
-void ConstantInColumn::init(Vars &vars) {
-  SSB_Modifier::init(vars);
+void ConstantInColumn::init() {
+  SSB_Modifier::init();
 }
 
 ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e)

@@ -50,7 +50,7 @@ void PSConstantPIK::attach_atmosphere_model(AtmosphereModel *input)
   delete input;
 }
 
-void PSConstantPIK::init(Vars &vars) {
+void PSConstantPIK::init() {
   bool do_regrid = false;
   int start = -1;
 
@@ -62,8 +62,8 @@ void PSConstantPIK::init(Vars &vars) {
              "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
              "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
 
-  usurf = vars.get_2d_scalar("surface_altitude");
-  lat   = vars.get_2d_scalar("latitude");
+  usurf = m_grid.variables().get_2d_scalar("surface_altitude");
+  lat   = m_grid.variables().get_2d_scalar("latitude");
 
   // find PISM input file to read data from:
   find_pism_input(input_file, do_regrid, start);

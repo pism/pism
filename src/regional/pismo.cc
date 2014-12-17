@@ -133,7 +133,7 @@ void IceRegionalModel::createVecs() {
   no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   no_model_mask.set_time_independent(true);
   no_model_mask.set(NMMASK_NORMAL);
-  variables.add(no_model_mask);
+  grid.variables().add(no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2);
@@ -141,7 +141,7 @@ void IceRegionalModel::createVecs() {
                        "saved surface elevation for use to keep surface gradient constant in no_model strip",
                        "m",
                        ""); //  no standard name
-  variables.add(usurfstore);
+  grid.variables().add(usurfstore);
 
   // stencil width of 1 needed for differentiation
   thkstore.create(grid, "thkstore", WITH_GHOSTS, 1);
@@ -149,7 +149,7 @@ void IceRegionalModel::createVecs() {
                      "saved ice thickness for use to keep driving stress constant in no_model strip",
                      "m",
                      ""); //  no standard name
-  variables.add(thkstore);
+  grid.variables().add(thkstore);
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.
@@ -160,9 +160,9 @@ void IceRegionalModel::createVecs() {
 
   if (config.get_flag("ssa_dirichlet_bc")) {
     // remove the bcflag variable from the dictionary
-    variables.remove("bcflag");
+    grid.variables().remove("bcflag");
 
-    variables.add(no_model_mask, "bcflag");
+    grid.variables().add(no_model_mask, "bcflag");
   }
 }
 

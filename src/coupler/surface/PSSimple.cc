@@ -48,12 +48,12 @@ PSSimple::PSSimple(IceGrid &g)
 }
 
 
-void PSSimple::init(Vars &vars) {
+void PSSimple::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
-  atmosphere->init(vars);
+  atmosphere->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"

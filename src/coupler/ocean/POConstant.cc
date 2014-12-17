@@ -47,7 +47,7 @@ POConstant::POConstant(IceGrid &g)
   shelfbtemp.set_units("Kelvin");
 }
 
-void POConstant::init(Vars &vars) {
+void POConstant::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -66,7 +66,7 @@ void POConstant::init(Vars &vars) {
                mymeltrate);
   }
 
-  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
+  ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 }
 
 void POConstant::sea_level_elevation(double &result) {

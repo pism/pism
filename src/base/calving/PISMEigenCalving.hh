@@ -33,7 +33,7 @@ public:
                StressBalance *stress_balance);
   virtual ~EigenCalving();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double dt,
                       IceModelVec2Int &pism_mask,
                       IceModelVec2S &Href,

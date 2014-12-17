@@ -92,7 +92,7 @@ public:
 
   virtual ~SSAFEM();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void cacheQuadPtValues();
 

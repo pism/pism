@@ -127,14 +127,12 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-void MohrCoulombYieldStress::init(Vars &vars)
+void MohrCoulombYieldStress::init()
 {
   bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
     tauc_to_phi_set;
   std::string filename;
   int start;
-
-  m_variables = &vars;
 
   {
     std::string hydrology_tillwat_max = "hydrology_tillwat_max";
@@ -162,8 +160,8 @@ void MohrCoulombYieldStress::init(Vars &vars)
 
   verbPrintf(2, m_grid.com, "* Initializing the default basal yield stress model...\n");
 
-  m_bed_topography = vars.get_2d_scalar("bedrock_altitude");
-  m_mask = vars.get_2d_mask("mask");
+  m_bed_topography = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  m_mask = m_grid.variables().get_2d_mask("mask");
 
   {
     OptionsIsSet("-plastic_phi", plastic_phi_set);
@@ -180,7 +178,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
 
   // Get the till friction angle from the the context and ignore options that
   // would be used to set it otherwise.
-  IceModelVec2S *till_phi_input = vars.get_2d_scalar("tillphi");
+  IceModelVec2S *till_phi_input = m_grid.variables().get_2d_scalar("tillphi");
   if (till_phi_input != NULL) {
     m_till_phi.copy_from(*till_phi_input);
 

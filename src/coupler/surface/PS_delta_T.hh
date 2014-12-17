@@ -36,7 +36,7 @@ public:
   PS_delta_T(IceGrid &g, SurfaceModel* in);
   virtual ~PS_delta_T();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void ice_surface_temperature(IceModelVec2S &result);
 

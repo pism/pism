@@ -56,7 +56,7 @@ PAGivenClimate::~PAGivenClimate() {
   // empty
 }
 
-void PAGivenClimate::init(Vars &) {
+void PAGivenClimate::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,

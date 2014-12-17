@@ -35,7 +35,7 @@ public:
   PO_delta_MBP(IceGrid &g, OceanModel* in);
   virtual ~PO_delta_MBP();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);

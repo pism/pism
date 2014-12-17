@@ -51,10 +51,10 @@ PO_delta_T::~PO_delta_T() {
   // empty
 }
 
-void PO_delta_T::init(Vars &vars) {
+void PO_delta_T::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing ice shelf base temperature forcing using scalar offsets...\n");

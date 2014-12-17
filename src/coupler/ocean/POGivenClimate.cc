@@ -55,7 +55,7 @@ POGiven::~POGiven() {
   // empty
 }
 
-void POGiven::init(Vars &) {
+void POGiven::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 

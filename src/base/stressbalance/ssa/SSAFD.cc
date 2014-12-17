@@ -204,8 +204,8 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   return 0;
 }
 
-void SSAFD::init(Vars &vars) {
-  SSA::init(vars);
+void SSAFD::init() {
+  SSA::init();
 
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.
@@ -243,7 +243,7 @@ void SSAFD::init(Vars &vars) {
   m_default_pc_failure_max_count = 5;
 
   if (m_config.get_flag("do_fracture_density")) {
-    fracture_density = vars.get_2d_scalar("fracture_density");
+    fracture_density = m_grid.variables().get_2d_scalar("fracture_density");
   }
 }
 
@@ -1752,8 +1752,8 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   return 0;
 }
 
-SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars)
-  : Diag<SSAFD>(m, g, my_vars) {
+SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g)
+  : Diag<SSAFD>(m, g) {
 
   // set metadata:
   dof = 2;
@@ -1784,7 +1784,7 @@ void SSAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &ts_dict) {
   SSA::get_diagnostics(dict, ts_dict);
 
-  dict["nuH"] = new SSAFD_nuH(this, m_grid, *variables);
+  dict["nuH"] = new SSAFD_nuH(this, m_grid);
 }
 
 } // end of namespace pism

@@ -85,8 +85,8 @@ PetscErrorCode PBLingleClark::deallocate() {
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
-void PBLingleClark::init(Vars &vars) {
-  BedDef::init(vars);
+void PBLingleClark::init() {
+  BedDef::init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the Lingle-Clark bed deformation model...\n");

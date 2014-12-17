@@ -30,7 +30,7 @@ public:
   PAGivenClimate(IceGrid &g);
   virtual ~PAGivenClimate();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double my_t, double my_dt);
 
   virtual void mean_precipitation(IceModelVec2S &result);

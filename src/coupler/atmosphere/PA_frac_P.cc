@@ -50,11 +50,11 @@ PA_frac_P::~PA_frac_P()
   // empty; "offset" is deleted by ~PScalarForcing().
 }
 
-void PA_frac_P::init(Vars &vars) {
+void PA_frac_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing precipitation forcing using scalar multipliers...\n");

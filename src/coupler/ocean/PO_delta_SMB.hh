@@ -32,7 +32,7 @@ public:
   PO_delta_SMB(IceGrid &g, OceanModel* in);
   virtual ~PO_delta_SMB();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void shelf_base_mass_flux(IceModelVec2S &result);
 

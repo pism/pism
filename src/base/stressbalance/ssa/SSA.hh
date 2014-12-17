@@ -150,7 +150,7 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
@@ -194,7 +194,7 @@ protected:
 class SSA_taud_mag : public Diag<SSA>
 {
 public:
-  SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars);
+  SSA_taud_mag(SSA *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -206,7 +206,7 @@ public:
 class SSA_taud : public Diag<SSA>
 {
 public:
-  SSA_taud(SSA *m, IceGrid &g, Vars &my_vars);
+  SSA_taud(SSA *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 

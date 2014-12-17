@@ -53,11 +53,11 @@ PA_delta_P::~PA_delta_P()
   // empty
 }
 
-void PA_delta_P::init(Vars &vars) {
+void PA_delta_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing precipitation forcing using scalar offsets...\n");

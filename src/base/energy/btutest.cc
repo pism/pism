@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     BTU_Test btu(grid);
 
     bool bootstrapping_needed = true; // we know it's true
-    btu.init(variables, bootstrapping_needed);
+    btu.init(bootstrapping_needed);
     btu.bootstrap();
 
     double dt_seconds = unit_system.convert(dt_years, "years", "seconds");

@@ -32,7 +32,7 @@ public:
   PBLingleClark(IceGrid &g);
   virtual ~PBLingleClark();
 
-  void init(Vars &vars);
+  void init();
   void update(double my_t, double my_dt);
 protected:
   void correct_topg();

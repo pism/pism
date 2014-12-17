@@ -39,51 +39,51 @@ namespace pism {
 void IceModel::init_diagnostics() {
 
   // Add IceModel diagnostics:
-  diagnostics["cts"]              = new IceModel_cts(this, grid, variables);
-  diagnostics["enthalpybase"]     = new IceModel_enthalpybase(this, grid, variables);
-  diagnostics["enthalpysurf"]     = new IceModel_enthalpysurf(this, grid, variables);
-  diagnostics["hardav"]           = new IceModel_hardav(this, grid, variables);
-  diagnostics["liqfrac"]          = new IceModel_liqfrac(this, grid, variables);
-  diagnostics["proc_ice_area"]    = new IceModel_proc_ice_area(this, grid, variables);
-  diagnostics["rank"]             = new IceModel_rank(this, grid, variables);
-  diagnostics["temp"]             = new IceModel_temp(this, grid, variables);
-  diagnostics["temp_pa"]          = new IceModel_temp_pa(this, grid, variables);
-  diagnostics["tempbase"]         = new IceModel_tempbase(this, grid, variables);
-  diagnostics["tempicethk"]       = new IceModel_tempicethk(this, grid, variables);
-  diagnostics["tempicethk_basal"] = new IceModel_tempicethk_basal(this, grid, variables);
-  diagnostics["temppabase"]       = new IceModel_temppabase(this, grid, variables);
-  diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
-  diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
+  diagnostics["cts"]              = new IceModel_cts(this, grid);
+  diagnostics["enthalpybase"]     = new IceModel_enthalpybase(this, grid);
+  diagnostics["enthalpysurf"]     = new IceModel_enthalpysurf(this, grid);
+  diagnostics["hardav"]           = new IceModel_hardav(this, grid);
+  diagnostics["liqfrac"]          = new IceModel_liqfrac(this, grid);
+  diagnostics["proc_ice_area"]    = new IceModel_proc_ice_area(this, grid);
+  diagnostics["rank"]             = new IceModel_rank(this, grid);
+  diagnostics["temp"]             = new IceModel_temp(this, grid);
+  diagnostics["temp_pa"]          = new IceModel_temp_pa(this, grid);
+  diagnostics["tempbase"]         = new IceModel_tempbase(this, grid);
+  diagnostics["tempicethk"]       = new IceModel_tempicethk(this, grid);
+  diagnostics["tempicethk_basal"] = new IceModel_tempicethk_basal(this, grid);
+  diagnostics["temppabase"]       = new IceModel_temppabase(this, grid);
+  diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid);
+  diagnostics["dHdt"]             = new IceModel_dHdt(this, grid);
 
   if (flux_divergence.was_created()) {
-    diagnostics["flux_divergence"] = new IceModel_flux_divergence(this, grid, variables);
+    diagnostics["flux_divergence"] = new IceModel_flux_divergence(this, grid);
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
-    diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
+    diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this, grid);
   }
 
   if (nonneg_flux_2D_cumulative.was_created()) {
-    diagnostics["nonneg_flux_cumulative"] = new IceModel_nonneg_flux_2D_cumulative(this, grid, variables);
+    diagnostics["nonneg_flux_cumulative"] = new IceModel_nonneg_flux_2D_cumulative(this, grid);
   }
 
   if (grounded_basal_flux_2D_cumulative.was_created()) {
-    diagnostics["grounded_basal_flux_cumulative"] = new IceModel_grounded_basal_flux_2D_cumulative(this, grid, variables);
+    diagnostics["grounded_basal_flux_cumulative"] = new IceModel_grounded_basal_flux_2D_cumulative(this, grid);
   }
 
   if (floating_basal_flux_2D_cumulative.was_created()) {
-    diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid, variables);
+    diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid);
   }
 
   if (discharge_flux_2D_cumulative.was_created()) {
-    diagnostics["discharge_flux_cumulative"] = new IceModel_discharge_flux_2D_cumulative(this, grid, variables);
+    diagnostics["discharge_flux_cumulative"] = new IceModel_discharge_flux_2D_cumulative(this, grid);
   }
 
 #if (PISM_USE_PROJ4==1)
   if (global_attributes.has_attribute("proj4")) {
     std::string proj4 = global_attributes.get_string("proj4");
-    diagnostics["lat_bnds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
-    diagnostics["lon_bnds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
+    diagnostics["lat_bnds"] = new IceModel_lat_lon_bounds(this, grid, "lat", proj4);
+    diagnostics["lon_bnds"] = new IceModel_lat_lon_bounds(this, grid, "lon", proj4);
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -91,38 +91,38 @@ void IceModel::init_diagnostics() {
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
 
-  ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
-  ts_diagnostics["slvol"]         = new IceModel_slvol(this, grid, variables);
-  ts_diagnostics["divoldt"]       = new IceModel_divoldt(this, grid, variables);
-  ts_diagnostics["iarea"]         = new IceModel_iarea(this, grid, variables);
-  ts_diagnostics["imass"]         = new IceModel_imass(this, grid, variables);
-  ts_diagnostics["dimassdt"]      = new IceModel_dimassdt(this, grid, variables);
-  ts_diagnostics["ivoltemp"]      = new IceModel_ivoltemp(this, grid, variables);
-  ts_diagnostics["ivolcold"]      = new IceModel_ivolcold(this, grid, variables);
-  ts_diagnostics["ivolg"]         = new IceModel_ivolg(this, grid, variables);
-  ts_diagnostics["ivolf"]         = new IceModel_ivolf(this, grid, variables);
-  ts_diagnostics["iareatemp"]     = new IceModel_iareatemp(this, grid, variables);
-  ts_diagnostics["iareacold"]     = new IceModel_iareacold(this, grid, variables);
-  ts_diagnostics["iareag"]        = new IceModel_iareag(this, grid, variables);
-  ts_diagnostics["iareaf"]        = new IceModel_iareaf(this, grid, variables);
-  ts_diagnostics["dt"]            = new IceModel_dt(this, grid, variables);
-  ts_diagnostics["max_diffusivity"] = new IceModel_max_diffusivity(this, grid, variables);
-  ts_diagnostics["ienthalpy"]     = new IceModel_ienthalpy(this, grid, variables);
-  ts_diagnostics["max_hor_vel"]   = new IceModel_max_hor_vel(this, grid, variables);
+  ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid);
+  ts_diagnostics["slvol"]         = new IceModel_slvol(this, grid);
+  ts_diagnostics["divoldt"]       = new IceModel_divoldt(this, grid);
+  ts_diagnostics["iarea"]         = new IceModel_iarea(this, grid);
+  ts_diagnostics["imass"]         = new IceModel_imass(this, grid);
+  ts_diagnostics["dimassdt"]      = new IceModel_dimassdt(this, grid);
+  ts_diagnostics["ivoltemp"]      = new IceModel_ivoltemp(this, grid);
+  ts_diagnostics["ivolcold"]      = new IceModel_ivolcold(this, grid);
+  ts_diagnostics["ivolg"]         = new IceModel_ivolg(this, grid);
+  ts_diagnostics["ivolf"]         = new IceModel_ivolf(this, grid);
+  ts_diagnostics["iareatemp"]     = new IceModel_iareatemp(this, grid);
+  ts_diagnostics["iareacold"]     = new IceModel_iareacold(this, grid);
+  ts_diagnostics["iareag"]        = new IceModel_iareag(this, grid);
+  ts_diagnostics["iareaf"]        = new IceModel_iareaf(this, grid);
+  ts_diagnostics["dt"]            = new IceModel_dt(this, grid);
+  ts_diagnostics["max_diffusivity"] = new IceModel_max_diffusivity(this, grid);
+  ts_diagnostics["ienthalpy"]     = new IceModel_ienthalpy(this, grid);
+  ts_diagnostics["max_hor_vel"]   = new IceModel_max_hor_vel(this, grid);
 
-  ts_diagnostics["surface_ice_flux"]   = new IceModel_surface_flux(this, grid, variables);
-  ts_diagnostics["surface_ice_flux_cumulative"]   = new IceModel_surface_flux_cumulative(this, grid, variables);
-  ts_diagnostics["grounded_basal_ice_flux"]     = new IceModel_grounded_basal_flux(this, grid, variables);
-  ts_diagnostics["grounded_basal_ice_flux_cumulative"]     = new IceModel_grounded_basal_flux_cumulative(this, grid, variables);
-  ts_diagnostics["sub_shelf_ice_flux"] = new IceModel_sub_shelf_flux(this, grid, variables);
-  ts_diagnostics["sub_shelf_ice_flux_cumulative"] = new IceModel_sub_shelf_flux_cumulative(this, grid, variables);
-  ts_diagnostics["nonneg_rule_flux"]   = new IceModel_nonneg_flux(this, grid, variables);
-  ts_diagnostics["nonneg_rule_flux_cumulative"]   = new IceModel_nonneg_flux_cumulative(this, grid, variables);
-  ts_diagnostics["discharge_flux"]    = new IceModel_discharge_flux(this, grid, variables);
-  ts_diagnostics["discharge_flux_cumulative"]    = new IceModel_discharge_flux_cumulative(this, grid, variables);
-  ts_diagnostics["H_to_Href_flux"] = new IceModel_H_to_Href_flux(this, grid, variables);
-  ts_diagnostics["Href_to_H_flux"] = new IceModel_Href_to_H_flux(this, grid, variables);
-  ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this, grid, variables);
+  ts_diagnostics["surface_ice_flux"]   = new IceModel_surface_flux(this, grid);
+  ts_diagnostics["surface_ice_flux_cumulative"]   = new IceModel_surface_flux_cumulative(this, grid);
+  ts_diagnostics["grounded_basal_ice_flux"]     = new IceModel_grounded_basal_flux(this, grid);
+  ts_diagnostics["grounded_basal_ice_flux_cumulative"]     = new IceModel_grounded_basal_flux_cumulative(this, grid);
+  ts_diagnostics["sub_shelf_ice_flux"] = new IceModel_sub_shelf_flux(this, grid);
+  ts_diagnostics["sub_shelf_ice_flux_cumulative"] = new IceModel_sub_shelf_flux_cumulative(this, grid);
+  ts_diagnostics["nonneg_rule_flux"]   = new IceModel_nonneg_flux(this, grid);
+  ts_diagnostics["nonneg_rule_flux_cumulative"]   = new IceModel_nonneg_flux_cumulative(this, grid);
+  ts_diagnostics["discharge_flux"]    = new IceModel_discharge_flux(this, grid);
+  ts_diagnostics["discharge_flux_cumulative"]    = new IceModel_discharge_flux_cumulative(this, grid);
+  ts_diagnostics["H_to_Href_flux"] = new IceModel_H_to_Href_flux(this, grid);
+  ts_diagnostics["Href_to_H_flux"] = new IceModel_Href_to_H_flux(this, grid);
+  ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this, grid);
 
   // Get diagnostics supported by the stress balance object:
   if (stress_balance != NULL) {
@@ -159,7 +159,7 @@ void IceModel::list_diagnostics() {
 
   // quantities with dedicated storage
   {
-    std::set<std::string> list = variables.keys();
+    std::set<std::string> list = grid.variables().keys();
 
     if (beddef != NULL) {
       beddef->add_vars_to_output("big", list);
@@ -197,7 +197,7 @@ void IceModel::list_diagnostics() {
 
       std::set<std::string>::iterator j = list.begin();
       while(j != list.end()) {
-        IceModelVec *v = variables.get(*j);
+        IceModelVec *v = grid.variables().get(*j);
 
         if (v != NULL && v->get_ndims() == d) {
           NCSpatialVariable var = v->metadata();
@@ -288,8 +288,8 @@ void IceModel::list_diagnostics() {
 }
 
 
-IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "hardav", grid));
@@ -347,8 +347,8 @@ void IceModel_hardav::compute(IceModelVec* &output) {
 }
 
 
-IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "rank", grid));
@@ -374,8 +374,8 @@ void IceModel_rank::compute(IceModelVec* &output) {
 }
 
 
-IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "cts", grid, g.z()));
@@ -398,8 +398,8 @@ void IceModel_cts::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "proc_ice_area", grid));
@@ -411,8 +411,8 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, Vars &my
 
 void IceModel_proc_ice_area::compute(IceModelVec* &output) {
 
-  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
-  IceModelVec2Int *ice_mask = variables.get_2d_mask("mask");
+  IceModelVec2S *thickness = grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec2Int *ice_mask = grid.variables().get_2d_mask("mask");
 
   IceModelVec2S *result = new IceModelVec2S;
   result->create(grid, "proc_ice_area", WITHOUT_GHOSTS);
@@ -439,8 +439,8 @@ void IceModel_proc_ice_area::compute(IceModelVec* &output) {
 }
 
 
-IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "temp", grid, g.z()));
@@ -458,8 +458,8 @@ void IceModel_temp::compute(IceModelVec* &output) {
   result->create(grid, "temp", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
-  IceModelVec3 *enthalpy = variables.get_3d_scalar("enthalpy");
+  IceModelVec2S *thickness = grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec3 *enthalpy = grid.variables().get_3d_scalar("enthalpy");
 
   double *Tij, *Enthij; // columns of these values
 
@@ -484,8 +484,8 @@ void IceModel_temp::compute(IceModelVec* &output) {
 }
 
 
-IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "temp_pa", grid, g.z()));
@@ -506,8 +506,8 @@ void IceModel_temp_pa::compute(IceModelVec* &output) {
   result->create(grid, "temp_pa", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
-  IceModelVec3  *enthalpy  = variables.get_3d_scalar("enthalpy");
+  IceModelVec2S *thickness = grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec3  *enthalpy  = grid.variables().get_3d_scalar("enthalpy");
 
   double *Tij, *Enthij; // columns of these values
 
@@ -541,8 +541,8 @@ void IceModel_temp_pa::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "temppabase", grid));
@@ -560,8 +560,8 @@ void IceModel_temppabase::compute(IceModelVec* &output) {
   result->create(grid, "temp_pa_base", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
-  IceModelVec3 *enthalpy = variables.get_3d_scalar("enthalpy");
+  IceModelVec2S *thickness = grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec3 *enthalpy = grid.variables().get_3d_scalar("enthalpy");
 
   double *Enthij; // columns of these values
 
@@ -592,8 +592,8 @@ void IceModel_temppabase::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "enthalpysurf", grid));
@@ -636,8 +636,8 @@ void IceModel_enthalpysurf::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "enthalpybase", grid));
@@ -661,8 +661,8 @@ void IceModel_enthalpybase::compute(IceModelVec* &output) {
 }
 
 
-IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempbase", grid));
@@ -675,9 +675,9 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, Vars &my_vars)
 void IceModel_tempbase::compute(IceModelVec* &output) {
 
   IceModelVec2S *result = NULL,
-    *thickness = variables.get_2d_scalar("land_ice_thickness");
+    *thickness = grid.variables().get_2d_scalar("land_ice_thickness");
 
-  IceModel_enthalpybase enth(model, grid, variables);
+  IceModel_enthalpybase enth(model, grid);
 
   enth.compute(output);
   result = dynamic_cast<IceModelVec2S*>(output);
@@ -712,8 +712,8 @@ void IceModel_tempbase::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempsurf", grid));
@@ -725,9 +725,9 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, Vars &my_vars)
 
 void IceModel_tempsurf::compute(IceModelVec* &output) {
 
-  IceModelVec2S *result, *thickness = variables.get_2d_scalar("land_ice_thickness");
+  IceModelVec2S *result, *thickness = grid.variables().get_2d_scalar("land_ice_thickness");
 
-  IceModel_enthalpysurf enth(model, grid, variables);
+  IceModel_enthalpysurf enth(model, grid);
 
   enth.compute(output);
   result = dynamic_cast<IceModelVec2S*>(output);
@@ -760,8 +760,8 @@ void IceModel_tempsurf::compute(IceModelVec* &output) {
 }
 
 
-IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "liqfrac", grid, g.z()));
@@ -792,8 +792,8 @@ void IceModel_liqfrac::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempicethk", grid));
@@ -851,8 +851,8 @@ void IceModel_tempicethk::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "tempicethk_basal", grid));
@@ -949,8 +949,8 @@ void IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "flux_divergence", grid));
@@ -970,8 +970,8 @@ void IceModel_flux_divergence::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "climatic_mass_balance_cumulative", grid));
@@ -992,8 +992,8 @@ void IceModel_climatic_mass_balance_cumulative::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivol", time_dimension_name);
@@ -1013,8 +1013,8 @@ void IceModel_ivol::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "slvol", time_dimension_name);
@@ -1034,8 +1034,8 @@ void IceModel_slvol::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "divoldt", time_dimension_name);
@@ -1057,8 +1057,8 @@ void IceModel_divoldt::update(double a, double b) {
 }
 
 
-IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iarea", time_dimension_name);
@@ -1077,8 +1077,8 @@ void IceModel_iarea::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "imass", time_dimension_name);
@@ -1098,8 +1098,8 @@ void IceModel_imass::update(double a, double b) {
 }
 
 
-IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dimassdt", time_dimension_name);
@@ -1120,8 +1120,8 @@ void IceModel_dimassdt::update(double a, double b) {
 }
 
 
-IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivoltemp", time_dimension_name);
@@ -1141,8 +1141,8 @@ void IceModel_ivoltemp::update(double a, double b) {
 }
 
 
-IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolcold", time_dimension_name);
@@ -1161,8 +1161,8 @@ void IceModel_ivolcold::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareatemp", time_dimension_name);
@@ -1181,8 +1181,8 @@ void IceModel_iareatemp::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareacold", time_dimension_name);
@@ -1201,8 +1201,8 @@ void IceModel_iareacold::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ienthalpy", time_dimension_name);
@@ -1221,8 +1221,8 @@ void IceModel_ienthalpy::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareag", time_dimension_name);
@@ -1240,8 +1240,8 @@ void IceModel_iareag::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareaf", time_dimension_name);
@@ -1259,8 +1259,8 @@ void IceModel_iareaf::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dt", time_dimension_name);
@@ -1276,8 +1276,8 @@ void IceModel_dt::update(double a, double b) {
   ts->append(model->dt, a, b);
 }
 
-IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "max_diffusivity", time_dimension_name);
@@ -1295,8 +1295,8 @@ void IceModel_max_diffusivity::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "surface_ice_flux", time_dimension_name);
@@ -1315,8 +1315,8 @@ void IceModel_surface_flux::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "surface_ice_flux_cumulative", time_dimension_name);
@@ -1334,8 +1334,8 @@ void IceModel_surface_flux_cumulative::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux", time_dimension_name);
@@ -1354,8 +1354,8 @@ void IceModel_grounded_basal_flux::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux_cumulative", time_dimension_name);
@@ -1373,8 +1373,8 @@ void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", time_dimension_name);
@@ -1393,8 +1393,8 @@ void IceModel_sub_shelf_flux::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux_cumulative", time_dimension_name);
@@ -1412,8 +1412,8 @@ void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "nonneg_flux", time_dimension_name);
@@ -1432,8 +1432,8 @@ void IceModel_nonneg_flux::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "nonneg_flux_cumulative", time_dimension_name);
@@ -1451,8 +1451,8 @@ void IceModel_nonneg_flux_cumulative::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "discharge_flux", time_dimension_name);
@@ -1469,8 +1469,8 @@ void IceModel_discharge_flux::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "discharge_flux_cumulative", time_dimension_name);
@@ -1486,8 +1486,8 @@ void IceModel_discharge_flux_cumulative::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "dHdt", grid));
@@ -1550,8 +1550,8 @@ void IceModel_dHdt::update_cumulative() {
   last_report_time = grid.time->current();
 }
 
-IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolg", time_dimension_name);
@@ -1584,8 +1584,8 @@ void IceModel_ivolg::update(double a, double b) {
   ts->append(value, a, b);
 }
 
-IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolf", time_dimension_name);
@@ -1629,8 +1629,8 @@ void IceModel_ivolf::update(double a, double b) {
  * reporting time. (It is not the "average over the reporting interval computed using
  * differencing in time", as other rate-of-change diagnostics.)
  */
-IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "max_hor_vel", time_dimension_name);
@@ -1650,8 +1650,8 @@ void IceModel_max_hor_vel::update(double a, double b) {
   ts->append(gmaxu > gmaxv ? gmaxu : gmaxv, a, b);
 }
 
-IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "H_to_Href_flux", time_dimension_name);
 
@@ -1667,8 +1667,8 @@ void IceModel_H_to_Href_flux::update(double a, double b) {
 }
 
 
-IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "Href_to_H_flux", time_dimension_name);
 
@@ -1685,8 +1685,8 @@ void IceModel_Href_to_H_flux::update(double a, double b) {
 
 
 
-IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, Vars &my_vars)
-  : TSDiag<IceModel>(m, g, my_vars) {
+IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g)
+  : TSDiag<IceModel>(m, g) {
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sum_divQ_flux", time_dimension_name);
 
@@ -1703,8 +1703,8 @@ void IceModel_sum_divQ_flux::update(double a, double b) {
 }
 
 
-IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "nonneg_flux_cumulative", grid));
@@ -1726,8 +1726,8 @@ void IceModel_nonneg_flux_2D_cumulative::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "grounded_basal_flux_cumulative", grid));
@@ -1749,8 +1749,8 @@ void IceModel_grounded_basal_flux_2D_cumulative::compute(IceModelVec* &output) {
   output = result;
 }
 
-IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "floating_basal_flux_cumulative", grid));
@@ -1773,8 +1773,8 @@ void IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* &output) {
 }
 
 
-IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
-  : Diag<IceModel>(m, g, my_vars) {
+IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g)
+  : Diag<IceModel>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "discharge_flux_cumulative", grid));
@@ -1797,9 +1797,9 @@ void IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &output) {
 }
 
 #if (PISM_USE_PROJ4==1)
-IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &my_vars,
+IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g,
                                                  std::string var_name, std::string proj_string)
-  : Diag<IceModel>(m, g, my_vars) {
+  : Diag<IceModel>(m, g) {
   assert(var_name == "lat" || var_name == "lon");
   m_var_name = var_name;
 

@@ -53,10 +53,10 @@ PO_delta_MBP::~PO_delta_MBP() {
   // empty
 }
 
-void PO_delta_MBP::init(Vars &vars) {
+void PO_delta_MBP::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com, "* Initializing melange back pressure fraction forcing...\n");
 

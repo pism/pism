@@ -79,11 +79,11 @@ void PSForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
   input_model->attach_atmosphere_model(input);
 }
 
-void PSForceThickness::init(Vars &vars) {
+void PSForceThickness::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing force-to-thickness mass-balance modifier...\n");
@@ -113,8 +113,8 @@ void PSForceThickness::init(Vars &vars) {
               "Specifies the ice thickness threshold used to determine whether a location is ice-free, in m",
               m_ice_free_thickness_threshold, ftt_ice_free_thickness_threshold_set);
 
-  m_ice_thickness = vars.get_2d_scalar("land_ice_thickness");
-  m_pism_mask     = vars.get_2d_mask("mask");
+  m_ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  m_pism_mask     = m_grid.variables().get_2d_mask("mask");
 
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}

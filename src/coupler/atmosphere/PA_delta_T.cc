@@ -48,11 +48,11 @@ PA_delta_T::PA_delta_T(IceGrid &g, AtmosphereModel* in)
   precipitation.set_glaciological_units("m / year");
 }
 
-void PA_delta_T::init(Vars &vars) {
+void PA_delta_T::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing near-surface air temperature forcing using scalar offsets...\n");

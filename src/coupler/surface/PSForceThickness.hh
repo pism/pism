@@ -32,7 +32,7 @@ public:
   PSForceThickness(IceGrid &g, SurfaceModel *input);
 
   virtual ~PSForceThickness();
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void attach_atmosphere_model(AtmosphereModel *input);
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);

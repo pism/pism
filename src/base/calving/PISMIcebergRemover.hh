@@ -48,7 +48,7 @@ public:
   IcebergRemover(IceGrid &g);
   virtual ~IcebergRemover();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 protected:
 

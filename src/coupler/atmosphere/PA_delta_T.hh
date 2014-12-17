@@ -30,7 +30,7 @@ public:
   PA_delta_T(IceGrid &g, AtmosphereModel* in);
   virtual ~PA_delta_T() {}
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);
 
   virtual void mean_annual_temp(IceModelVec2S &result);

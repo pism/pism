@@ -35,8 +35,7 @@ public:
   SSB_Modifier(IceGrid &g, EnthalpyConverter &e);
   virtual ~SSB_Modifier();
 
-  virtual void init(Vars &vars) {
-    variables = &vars;
+  virtual void init() {
   }
 
   virtual void update(IceModelVec2V *vel_input, bool fast) = 0;
@@ -74,8 +73,6 @@ protected:
   double D_max;
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, strain_heating;
-
-  Vars *variables;
 };
 
 
@@ -86,7 +83,7 @@ public:
   ConstantInColumn(IceGrid &g, EnthalpyConverter &e);
   virtual ~ConstantInColumn();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(IceModelVec2V *vel_input, bool fast);
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {

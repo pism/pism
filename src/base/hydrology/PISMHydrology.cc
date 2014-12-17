@@ -34,7 +34,6 @@ Hydrology::Hydrology(IceGrid &g)
   bmelt      = NULL;
   mask       = NULL;
   inputtobed = NULL;
-  variables  = NULL;
   hold_bmelt = false;
 
   total_input.create(m_grid, "total_input", WITHOUT_GHOSTS);
@@ -61,7 +60,7 @@ Hydrology::~Hydrology() {
 }
 
 
-void Hydrology::init(Vars &vars) {
+void Hydrology::init() {
   std::string itbfilename,  // itb = input_to_bed
               bmeltfilename;
   bool bmeltfile_set, itbfile_set, itbperiod_set, itbreference_set;
@@ -89,16 +88,14 @@ void Hydrology::init(Vars &vars) {
                  bootstrap);
   }
 
-  variables = &vars;
-
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
   // update() method at the current Hydrology time
 
-  thk      = vars.get_2d_scalar("thk");
-  bed      = vars.get_2d_scalar("topg");
-  bmelt    = vars.get_2d_scalar("bmelt");
-  cellarea = vars.get_2d_scalar("cell_area");
-  mask     = vars.get_2d_mask("mask");
+  thk      = m_grid.variables().get_2d_scalar("thk");
+  bed      = m_grid.variables().get_2d_scalar("topg");
+  bmelt    = m_grid.variables().get_2d_scalar("bmelt");
+  cellarea = m_grid.variables().get_2d_scalar("cell_area");
+  mask     = m_grid.variables().get_2d_mask("mask");
 
 
   if (bmeltfile_set) {
@@ -153,7 +150,7 @@ void Hydrology::init(Vars &vars) {
 
   try {
     // FIXME: this is not an exceptional situation...
-    Wtil_input = vars.get_2d_scalar("tillwat");
+    Wtil_input = m_grid.variables().get_2d_scalar("tillwat");
     Wtil.copy_from(*Wtil_input);
   } catch (RuntimeError) {
     if (i_set || bootstrap) {
@@ -178,13 +175,13 @@ void Hydrology::init(Vars &vars) {
 
 void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["bwat"] = new Hydrology_bwat(this, m_grid, *variables);
-  dict["bwp"] = new Hydrology_bwp(this, m_grid, *variables);
-  dict["bwprel"] = new Hydrology_bwprel(this, m_grid, *variables);
-  dict["effbwp"] = new Hydrology_effbwp(this, m_grid, *variables);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid, *variables);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid, *variables);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid, *variables);
+  dict["bwat"] = new Hydrology_bwat(this, m_grid);
+  dict["bwp"] = new Hydrology_bwp(this, m_grid);
+  dict["bwprel"] = new Hydrology_bwprel(this, m_grid);
+  dict["effbwp"] = new Hydrology_effbwp(this, m_grid);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid);
 }
 
 

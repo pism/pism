@@ -86,10 +86,10 @@ PSTemperatureIndex_Old::~PSTemperatureIndex_Old() {
   delete faustogreve;
 }
 
-void PSTemperatureIndex_Old::init(Vars &vars) {
+void PSTemperatureIndex_Old::init() {
   bool           pdd_rand, pdd_rand_repeatable, fausto_params, pSet;
 
-  SurfaceModel::init(vars);
+  SurfaceModel::init();
 
   {
     OptionsIsSet("-pdd_rand",
@@ -144,7 +144,7 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
 
 
   if ((m_config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
-    lat = vars.get_2d_scalar("latitude");
+    lat = m_grid.variables().get_2d_scalar("latitude");
   } else
     lat = NULL;
 
@@ -156,8 +156,8 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
     //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
     base_pddStdDev = 2.53;
 
-    lon   = vars.get_2d_scalar("longitude");
-    usurf = vars.get_2d_scalar("usurf");
+    lon   = m_grid.variables().get_2d_scalar("longitude");
+    usurf = m_grid.variables().get_2d_scalar("usurf");
 
   if (faustogreve == NULL) {
     faustogreve = new FaustoGrevePDDObject_Old(m_grid);

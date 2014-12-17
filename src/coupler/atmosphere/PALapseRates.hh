@@ -30,7 +30,7 @@ public:
   PALapseRates(IceGrid &g, AtmosphereModel* in);
   virtual ~PALapseRates();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void mean_precipitation(IceModelVec2S &result);
   virtual void mean_annual_temp(IceModelVec2S &result);

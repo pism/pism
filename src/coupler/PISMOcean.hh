@@ -33,7 +33,7 @@ public:
     : Component_TS(g), sea_level(0) {}
   virtual ~OceanModel() {};
 
-  virtual void init(Vars &vars) = 0;
+  virtual void init() = 0;
 
   virtual void sea_level_elevation(double &result) = 0;
   virtual void shelf_base_temperature(IceModelVec2S &result) = 0;

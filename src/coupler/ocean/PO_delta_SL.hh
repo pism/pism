@@ -30,7 +30,7 @@ public:
   PO_delta_SL(IceGrid &g, OceanModel* in);
   virtual ~PO_delta_SL();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void sea_level_elevation(double &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);

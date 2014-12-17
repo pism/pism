@@ -32,7 +32,7 @@ public:
   POConstant(IceGrid &g);
   virtual ~POConstant() {}
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(double my_t, double my_dt) {
     // do nothing

@@ -46,7 +46,7 @@ public:
   PSTemperatureIndex(IceGrid &g);
   virtual ~PSTemperatureIndex();
   virtual void update(double my_t, double my_dt);
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);

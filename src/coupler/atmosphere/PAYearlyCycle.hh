@@ -33,7 +33,7 @@ public:
   PAYearlyCycle(IceGrid &g);
   virtual ~PAYearlyCycle();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
@@ -51,7 +51,6 @@ public:
 protected:
   void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);
-  Vars *m_variables;
   double m_snow_temp_july_day;
   std::string m_reference, m_precip_filename;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;

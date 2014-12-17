@@ -44,7 +44,7 @@ void IceModel::update_viewers() {
     bool de_allocate = false;
 
     // if not found, try to compute:
-    if (not variables.is_available(*i)) {
+    if (not grid.variables().is_available(*i)) {
       de_allocate = true;
       Diagnostic *diag = diagnostics[*i];
 
@@ -54,7 +54,7 @@ void IceModel::update_viewers() {
         v = NULL;
       }
     } else {
-      v = variables.get(*i);
+      v = grid.variables().get(*i);
     }
 
     // if still not found, ignore

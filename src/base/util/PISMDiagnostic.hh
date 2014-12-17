@@ -56,8 +56,8 @@ class Vars;
 class Diagnostic
 {
 public:
-  Diagnostic(IceGrid &g, Vars &my_vars)
-    : variables(my_vars), grid(g) {
+  Diagnostic(IceGrid &g)
+    : grid(g) {
     output_datatype = PISM_FLOAT;
     dof = 1;
   }
@@ -136,7 +136,6 @@ public:
     return 0;
   }
 protected:
-  Vars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid
   int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
   IO_Type output_datatype;      //!< data type to use in the file
@@ -148,8 +147,8 @@ template <class Model>
 class Diag : public Diagnostic
 {
 public:
-  Diag(Model *m, IceGrid &g, Vars &my_vars)
-    : Diagnostic(g, my_vars), model(m) {}
+  Diag(Model *m, IceGrid &g)
+    : Diagnostic(g), model(m) {}
 protected:
   Model *model;
 };
@@ -158,8 +157,8 @@ protected:
 class TSDiagnostic
 {
 public:
-  TSDiagnostic(IceGrid &g, Vars &my_vars)
-    : variables(my_vars), grid(g), ts(NULL) {
+  TSDiagnostic(IceGrid &g)
+    : grid(g), ts(NULL) {
   }
 
   virtual ~TSDiagnostic() {
@@ -191,7 +190,6 @@ public:
   }
 
 protected:
-  Vars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid
   DiagnosticTimeseries *ts;
 };
@@ -200,8 +198,8 @@ template <class Model>
 class TSDiag : public TSDiagnostic
 {
 public:
-  TSDiag(Model *m, IceGrid &g, Vars &my_vars)
-    : TSDiagnostic(g, my_vars), model(m) {
+  TSDiag(Model *m, IceGrid &g)
+    : TSDiagnostic(g), model(m) {
     time_units = grid.time->CF_units_string();
     time_dimension_name = grid.config.get_string("time_dimension_name");
   }

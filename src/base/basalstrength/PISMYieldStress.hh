@@ -32,7 +32,7 @@ public:
     : Component_TS(g) {}
   virtual ~YieldStress() {}
 
-  virtual void init(Vars &vars) = 0;
+  virtual void init() = 0;
 
   virtual void basal_material_yield_stress(IceModelVec2S &result) = 0;
 };

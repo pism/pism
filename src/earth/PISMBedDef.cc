@@ -72,12 +72,12 @@ void BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   }
 }
 
-void BedDef::init(Vars &vars) {
+void BedDef::init() {
   t_beddef_last = m_grid.time->start();
 
-  thk    = vars.get_2d_scalar("land_ice_thickness");
-  topg   = vars.get_2d_scalar("bedrock_altitude");
-  uplift = vars.get_2d_scalar("tendency_of_bedrock_altitude");
+  thk    = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  topg   = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  uplift = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
   // Save the bed elevation at the beginning of the run:
   topg_initial.copy_from(*topg);

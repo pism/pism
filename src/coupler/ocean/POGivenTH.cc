@@ -99,7 +99,7 @@ POGivenTH::~POGivenTH() {
   // empty
 }
 
-void POGivenTH::init(Vars &vars) {
+void POGivenTH::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -107,7 +107,7 @@ void POGivenTH::init(Vars &vars) {
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
-  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
+  ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   theta_ocean->init(filename, bc_period, bc_reference_time);
   salinity_ocean->init(filename, bc_period, bc_reference_time);

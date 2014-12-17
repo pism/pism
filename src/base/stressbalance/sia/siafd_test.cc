@@ -429,7 +429,7 @@ int main(int argc, char *argv[]) {
                   &enthalpy);
 
     // Allocate the SIA solver:
-    stress_balance.init(vars);
+    stress_balance.init();
 
     IceModelVec2S melange_back_pressure;
     melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);

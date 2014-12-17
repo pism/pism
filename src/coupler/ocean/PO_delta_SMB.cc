@@ -52,10 +52,10 @@ PO_delta_SMB::~PO_delta_SMB() {
   // empty
 }
 
-void PO_delta_SMB::init(Vars &vars) {
+void PO_delta_SMB::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");

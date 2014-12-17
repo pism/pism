@@ -35,7 +35,6 @@ ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e)
 
   m_vel_bc = NULL;
   bc_locations = NULL;
-  variables = NULL;
   sea_level = 0;
 
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
@@ -70,11 +69,11 @@ ShallowStressBalance::~ShallowStressBalance() {
 
 void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["beta"]     = new SSB_beta(this, m_grid, *variables);
-  dict["taub"]     = new SSB_taub(this, m_grid, *variables);
-  dict["taub_mag"] = new SSB_taub_mag(this, m_grid, *variables);
-  dict["taud"]     = new SSB_taud(this, m_grid, *variables);
-  dict["taud_mag"] = new SSB_taud_mag(this, m_grid, *variables);
+  dict["beta"]     = new SSB_beta(this, m_grid);
+  dict["taub"]     = new SSB_taub(this, m_grid);
+  dict["taub_mag"] = new SSB_taub_mag(this, m_grid);
+  dict["taud"]     = new SSB_taud(this, m_grid);
+  dict["taud_mag"] = new SSB_taud_mag(this, m_grid);
 }
 
 
@@ -339,8 +338,8 @@ void ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModel
   }
 }
 
-SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g)
+  : Diag<ShallowStressBalance>(m, g) {
 
   dof = 2;
 
@@ -372,8 +371,8 @@ void SSB_taud::compute(IceModelVec* &output) {
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
-  thickness = variables.get_2d_scalar("land_ice_thickness");
-  surface = variables.get_2d_scalar("surface_altitude");
+  thickness = grid.variables().get_2d_scalar("land_ice_thickness");
+  surface = grid.variables().get_2d_scalar("surface_altitude");
 
   double standard_gravity = grid.config.get("standard_gravity"),
     ice_density = grid.config.get("ice_density");
@@ -399,8 +398,8 @@ void SSB_taud::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g)
+  : Diag<ShallowStressBalance>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_mag", grid));
@@ -420,7 +419,7 @@ void SSB_taud_mag::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
-  SSB_taud diag(model, grid, variables);
+  SSB_taud diag(model, grid);
 
   diag.compute(tmp);
 
@@ -437,8 +436,8 @@ void SSB_taud_mag::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g)
+  : Diag<ShallowStressBalance>(m, g) {
   dof = 2;
 
   // set metadata:
@@ -468,8 +467,8 @@ void SSB_taub::compute(IceModelVec* &output) {
   model->get_2D_advective_velocity(velocity);
 
   IceModelVec2V &vel = *velocity;
-  IceModelVec2S *tauc = variables.get_2d_scalar("tauc");
-  IceModelVec2Int *mask = variables.get_2d_mask("mask");
+  IceModelVec2S *tauc = grid.variables().get_2d_scalar("tauc");
+  IceModelVec2Int *mask = grid.variables().get_2d_mask("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 
@@ -496,8 +495,8 @@ void SSB_taub::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g)
+  : Diag<ShallowStressBalance>(m, g) {
 
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_mag", grid));
@@ -517,7 +516,7 @@ void SSB_taub_mag::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
-  SSB_taub diag(model, grid, variables);
+  SSB_taub diag(model, grid);
 
   diag.compute(tmp);
 
@@ -556,8 +555,8 @@ void PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) 
   }
 }
 
-void PrescribedSliding::init(Vars &vars) {
-  ShallowStressBalance::init(vars);
+void PrescribedSliding::init() {
+  ShallowStressBalance::init();
 
   bool flag;
   std::string input_filename;
@@ -570,8 +569,8 @@ void PrescribedSliding::init(Vars &vars) {
   m_velocity.regrid(input_filename, CRITICAL);
 }
 
-SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<ShallowStressBalance>(m, g, my_vars) {
+SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g)
+  : Diag<ShallowStressBalance>(m, g) {
   // set metadata:
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "beta", grid));
 
@@ -586,7 +585,7 @@ void SSB_beta::compute(IceModelVec* &output) {
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec2S *tauc = variables.get_2d_scalar("tauc");
+  IceModelVec2S *tauc = grid.variables().get_2d_scalar("tauc");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 

@@ -55,11 +55,11 @@ PS_delta_T::~PS_delta_T() {
   // empty
 }
 
-void PS_delta_T::init(Vars &vars) {
+void PS_delta_T::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing ice-surface temperature forcing using scalar offsets...\n");

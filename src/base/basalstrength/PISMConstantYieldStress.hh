@@ -32,7 +32,7 @@ public:
   ConstantYieldStress(IceGrid &g);
   virtual ~ConstantYieldStress();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 

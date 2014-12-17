@@ -34,7 +34,6 @@ StressBalance::StressBalance(IceGrid &g,
   : Component(g), m_stress_balance(sb), m_modifier(ssb_mod) {
 
   m_basal_melt_rate = NULL;
-  m_variables = NULL;
 
   // allocate the vertical velocity field:
   m_w.create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
@@ -57,11 +56,9 @@ StressBalance::~StressBalance() {
 }
 
 //! \brief Initialize the StressBalance object.
-void StressBalance::init(Vars &vars) {
-  m_variables = &vars;
-
-  m_stress_balance->init(vars);
-  m_modifier->init(vars);
+void StressBalance::init() {
+  m_stress_balance->init();
+  m_modifier->init();
 }
 
 void StressBalance::set_boundary_conditions(IceModelVec2Int &locations,
@@ -183,7 +180,7 @@ The vertical integral is computed by the trapezoid rule.
 void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                               IceModelVec2S *basal_melt_rate,
                                               IceModelVec3 &result) {
-  IceModelVec2Int *mask = m_variables->get_2d_mask("mask");
+  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
@@ -366,10 +363,10 @@ void StressBalance::compute_volumetric_strain_heating() {
   IceModelVec3 *u, *v;
   m_modifier->get_horizontal_3d_velocity(u, v);
 
-  IceModelVec2S *thickness = m_variables->get_2d_scalar("land_ice_thickness");
-  IceModelVec3  *enthalpy  = m_variables->get_3d_scalar("enthalpy");
+  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 
-  IceModelVec2Int *mask = m_variables->get_2d_mask("mask");
+  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   double

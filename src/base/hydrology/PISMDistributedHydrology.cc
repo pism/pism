@@ -59,7 +59,7 @@ DistributedHydrology::~DistributedHydrology() {
   // empty
 }
 
-void DistributedHydrology::init(Vars &vars) {
+void DistributedHydrology::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
@@ -87,11 +87,11 @@ void DistributedHydrology::init(Vars &vars) {
                   filename, hold_flag);
   }
 
-  Hydrology::init(vars);
+  Hydrology::init();
 
-  RoutingHydrology::init_bwat(vars);
+  RoutingHydrology::init_bwat();
 
-  init_bwp(vars);
+  init_bwp();
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     verbPrintf(2, m_grid.com,
@@ -109,7 +109,7 @@ void DistributedHydrology::init(Vars &vars) {
 }
 
 
-void DistributedHydrology::init_bwp(Vars &vars) {
+void DistributedHydrology::init_bwp() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
@@ -127,7 +127,7 @@ void DistributedHydrology::init_bwp(Vars &vars) {
 
   try {
     // FIXME: this is not an "exceptional" situation...
-    P_input = vars.get_2d_scalar("bwp");
+    P_input = m_grid.variables().get_2d_scalar("bwp");
     P.copy_from(*P_input);
   } catch (RuntimeError) {
     if (i_set || bootstrap_set) {
@@ -187,13 +187,13 @@ void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &d
                                                std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   // bwp is state
-  dict["bwprel"] = new Hydrology_bwprel(this, m_grid, *variables);
-  dict["effbwp"] = new Hydrology_effbwp(this, m_grid, *variables);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid, *variables);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid, *variables);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid, *variables);
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid, *variables);
-  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, m_grid, *variables);
+  dict["bwprel"] = new Hydrology_bwprel(this, m_grid);
+  dict["effbwp"] = new Hydrology_effbwp(this, m_grid);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid);
+  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, m_grid);
 }
 
 
@@ -508,8 +508,8 @@ void DistributedHydrology::update(double icet, double icedt) {
 }
 
 
-DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<DistributedHydrology>(m, g, my_vars) {
+DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g)
+    : Diag<DistributedHydrology>(m, g) {
   vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "hydrovelbase_mag", grid));
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
             "", "m s-1", "m/year", 0);

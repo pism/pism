@@ -47,7 +47,7 @@ public:
   virtual void surface_layer_thickness(IceModelVec2S &result);
 
   // provide default re-implementations of these parent's methods:
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);

@@ -44,7 +44,7 @@ PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g)
 PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
 }
 
-void PA_SeaRISE_Greenland::init(Vars &vars) {
+void PA_SeaRISE_Greenland::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -65,8 +65,6 @@ void PA_SeaRISE_Greenland::init(Vars &vars) {
   }
 
   if (precip_file_set == true) {
-    m_variables = &vars;
-
     verbPrintf(2, m_grid.com,
                "  * Option '-atmosphere_searise_greenland %s' is set...\n",
                m_precip_filename.c_str());
@@ -75,13 +73,13 @@ void PA_SeaRISE_Greenland::init(Vars &vars) {
                                  true, /* do regrid */
                                  0 /* start (irrelevant) */);
   } else {
-    PAYearlyCycle::init(vars);
+    PAYearlyCycle::init();
   }
 
   // initialize pointers to fields the parameterization depends on:
-  m_surfelev = vars.get_2d_scalar("surface_altitude");
-  m_lat      = vars.get_2d_scalar("latitude");
-  m_lon      = vars.get_2d_scalar("longitude");
+  m_surfelev = m_grid.variables().get_2d_scalar("surface_altitude");
+  m_lat      = m_grid.variables().get_2d_scalar("latitude");
+  m_lon      = m_grid.variables().get_2d_scalar("longitude");
 }
 
 void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> &result) {

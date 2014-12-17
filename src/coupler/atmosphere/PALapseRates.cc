@@ -44,17 +44,17 @@ PALapseRates::~PALapseRates() {
   // empty
 }
 
-void PALapseRates::init(Vars &vars) {
+void PALapseRates::init() {
   bool precip_lapse_rate_set;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "  [using air temperature and precipitation lapse corrections]\n");
 
-  init_internal(vars);
+  init_internal();
 
   {
     OptionsReal("-precip_lapse_rate",

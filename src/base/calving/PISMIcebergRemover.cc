@@ -36,8 +36,8 @@ IcebergRemover::~IcebergRemover() {
   PetscErrorCode ierr = VecDestroy(&m_mask_p0); CHKERRCONTINUE(ierr);
 }
 
-void IcebergRemover::init(Vars &vars) {
-  m_bcflag = vars.get_2d_mask("bcflag");
+void IcebergRemover::init() {
+  m_bcflag = m_grid.variables().get_2d_mask("bcflag");
 }
 
 /**

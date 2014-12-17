@@ -86,7 +86,7 @@ RoutingHydrology::~RoutingHydrology() {
 }
 
 
-void RoutingHydrology::init(Vars &vars) {
+void RoutingHydrology::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
@@ -107,13 +107,13 @@ void RoutingHydrology::init(Vars &vars) {
     }
   }
 
-  Hydrology::init(vars);
+  Hydrology::init();
 
-  init_bwat(vars);
+  init_bwat();
 }
 
 
-void RoutingHydrology::init_bwat(Vars &vars) {
+void RoutingHydrology::init_bwat() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
@@ -129,7 +129,7 @@ void RoutingHydrology::init_bwat(Vars &vars) {
   try {
     // FIXME: this is not an "exceptional" situation...
     // a variable called "bwat" is already in context
-    W_input = vars.get_2d_scalar("bwat");
+    W_input = m_grid.variables().get_2d_scalar("bwat");
     W.copy_from(*W_input);
   } catch (RuntimeError) {
     if (i || bootstrap) {
@@ -189,14 +189,14 @@ void RoutingHydrology::write_variables(const std::set<std::string> &vars, const 
 void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
-  dict["bwp"] = new Hydrology_bwp(this, m_grid, *variables);
-  dict["bwprel"] = new Hydrology_bwprel(this, m_grid, *variables);
-  dict["effbwp"] = new Hydrology_effbwp(this, m_grid, *variables);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid, *variables);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid, *variables);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid, *variables);
+  dict["bwp"] = new Hydrology_bwp(this, m_grid);
+  dict["bwprel"] = new Hydrology_bwprel(this, m_grid);
+  dict["effbwp"] = new Hydrology_effbwp(this, m_grid);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid);
   // add diagnostic that only makes sense if transport is modeled
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid, *variables);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid);
 }
 
 
@@ -795,8 +795,8 @@ void RoutingHydrology::update(double icet, double icedt) {
 }
 
 
-RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<RoutingHydrology>(m, g, my_vars) {
+RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g)
+    : Diag<RoutingHydrology>(m, g) {
 
   // set metadata:
   dof = 2;

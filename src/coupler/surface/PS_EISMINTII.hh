@@ -36,7 +36,7 @@ public:
   ~PS_EISMINTII();
 
   // the interface:
-  void init(Vars &vars);
+  void init();
   void update(PetscReal t, PetscReal dt);
 protected:
   void initialize_using_formulas();

@@ -30,7 +30,7 @@ class PSElevation : public SurfaceModel {
 public:
   PSElevation(IceGrid &g);
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void attach_atmosphere_model(AtmosphereModel *input);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,

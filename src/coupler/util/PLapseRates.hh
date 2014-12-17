@@ -103,7 +103,7 @@ protected:
     temp_lapse_rate;
   std::string option_prefix;
 
-  virtual void init_internal(Vars &vars)
+  virtual void init_internal()
   {
     std::string filename;
     bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
@@ -180,8 +180,8 @@ protected:
 
     reference_surface.init(filename, bc_period, bc_reference_time);
 
-    surface = vars.get_2d_scalar("surface_altitude");
-    thk     = vars.get_2d_scalar("land_ice_thickness");
+    surface = g.variables().get_2d_scalar("surface_altitude");
+    thk     = g.variables().get_2d_scalar("land_ice_thickness");
   }
 
   void lapse_rate_correction(IceModelVec2S &result, double lapse_rate)

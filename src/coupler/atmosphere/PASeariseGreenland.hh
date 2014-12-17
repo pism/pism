@@ -33,7 +33,7 @@ public:
   PA_SeaRISE_Greenland(IceGrid &g);
   virtual ~PA_SeaRISE_Greenland();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void update(double my_t, double my_dt);
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:

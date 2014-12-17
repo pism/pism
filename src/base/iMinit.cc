@@ -406,7 +406,7 @@ void IceModel::model_state_setup() {
   }
 
   if (stress_balance) {
-    stress_balance->init(variables);
+    stress_balance->init();
 
     if (config.get_flag("include_bmr_in_continuity")) {
       stress_balance->set_basal_melt_rate(&basal_melt_rate);
@@ -416,12 +416,12 @@ void IceModel::model_state_setup() {
   // Initialize a bed deformation model (if needed); this should go after
   // the regrid(0) call.
   if (beddef) {
-    beddef->init(variables);
+    beddef->init();
   }
 
   if (btu) {
     bool bootstrapping_needed = false;
-    btu->init(variables, bootstrapping_needed);
+    btu->init(bootstrapping_needed);
 
     if (bootstrapping_needed == true) {
       // update surface and ocean models so that we can get the
@@ -437,13 +437,13 @@ void IceModel::model_state_setup() {
   }
 
   if (subglacial_hydrology) {
-    subglacial_hydrology->init(variables);
+    subglacial_hydrology->init();
   }
 
   // basal_yield_stress_model->init() needs bwat so this must happen
   // after subglacial_hydrology->init()
   if (basal_yield_stress_model) {
-    basal_yield_stress_model->init(variables);
+    basal_yield_stress_model->init();
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
@@ -656,7 +656,7 @@ void IceModel::allocate_iceberg_remover() {
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
-    iceberg_remover->init(variables);
+    iceberg_remover->init();
   }
 }
 
@@ -782,10 +782,10 @@ void IceModel::init_couplers() {
              "Initializing boundary models...\n");
 
   assert(surface != NULL);
-  surface->init(variables);
+  surface->init();
 
   assert(ocean != NULL);
-  ocean->init(variables);
+  ocean->init();
 }
 
 
@@ -905,7 +905,7 @@ void IceModel::init_calving() {
       ocean_kill_calving = new OceanKill(grid);
     }
 
-    ocean_kill_calving->init(variables);
+    ocean_kill_calving->init();
     methods.erase("ocean_kill");
   }
 
@@ -915,7 +915,7 @@ void IceModel::init_calving() {
       thickness_threshold_calving = new CalvingAtThickness(grid);
     }
 
-    thickness_threshold_calving->init(variables);
+    thickness_threshold_calving->init();
     methods.erase("thickness_calving");
   }
 
@@ -926,7 +926,7 @@ void IceModel::init_calving() {
       eigen_calving = new EigenCalving(grid, stress_balance);
     }
 
-    eigen_calving->init(variables);
+    eigen_calving->init();
     methods.erase("eigen_calving");
   }
 
@@ -935,7 +935,7 @@ void IceModel::init_calving() {
       float_kill_calving = new FloatKill(grid);
     }
 
-    float_kill_calving->init(variables);
+    float_kill_calving->init();
     methods.erase("float_kill");
   }
 

@@ -42,7 +42,7 @@ OceanKill::~OceanKill() {
   // empty
 }
 
-void OceanKill::init(Vars &vars) {
+void OceanKill::init() {
   std::string filename;
   bool flag;
 
@@ -54,7 +54,7 @@ void OceanKill::init(Vars &vars) {
                   filename, flag);
   }
 
-  IceModelVec2Int *mask = vars.get_2d_mask("mask");
+  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec2S thickness, *tmp;

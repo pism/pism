@@ -37,33 +37,33 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   surface.create(*grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
   surface.set_attrs("diagnostic", "ice upper surface elevation", "m",
                     "surface_altitude");
-  vars.add(surface);
+  grid->variables().add(surface);
 
   // land ice thickness
   thickness.create(*grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
   thickness.set_attrs("model_state", "land ice thickness", "m",
                       "land_ice_thickness");
   thickness.metadata().set_double("valid_min", 0.0);
-  vars.add(thickness);
+  grid->variables().add(thickness);
 
   // bedrock surface elevation
   bed.create(*grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   bed.set_attrs("model_state", "bedrock surface elevation", "m",
                 "bedrock_altitude");
-  vars.add(bed);
+  grid->variables().add(bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   tauc.create(*grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   tauc.set_attrs("diagnostic",
                  "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
-  vars.add(tauc);
+  grid->variables().add(tauc);
 
   // enthalpy
   enthalpy.create(*grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   enthalpy.set_attrs("model_state",
                      "ice enthalpy (includes sensible heat, latent heat, pressure)",
                      "J kg-1", "");
-  vars.add(enthalpy);
+  grid->variables().add(enthalpy);
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
@@ -96,7 +96,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ice_mask.metadata().set_doubles("flag_values", mask_values);
   ice_mask.metadata().set_string("flag_meanings",
                                  "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  vars.add(ice_mask);
+  grid->variables().add(ice_mask);
 
   ice_mask.set(MASK_GROUNDED);
 
@@ -110,7 +110,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   bc_mask.metadata().set_doubles("flag_values", mask_values);
   bc_mask.metadata().set_string("flag_meanings",
                                 "no_data ssa_dirichlet_bc_location");
-  vars.add(bc_mask);
+  grid->variables().add(bc_mask);
 
   melange_back_pressure.create(*grid, "melange_back_pressure_fraction",
                                WITH_GHOSTS, WIDE_STENCIL);
@@ -118,7 +118,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                                   "melange back pressure fraction", "", "");
   melange_back_pressure.set(0.0);
 
-  vars.lock();
+  grid->variables().lock();
 
   return 0;
 }
@@ -156,7 +156,7 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 
   // Allocate the actual SSA solver.
   ssa = ssafactory(*grid, *enthalpyconverter);
-  ssa->init(vars); // vars was setup preivouisly with buildSSACoefficients
+  ssa->init(); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.
   initializeSSACoefficients();

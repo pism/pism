@@ -69,11 +69,11 @@ PAAnomaly::~PAAnomaly()
   // empty
 }
 
-void PAAnomaly::init(Vars &vars) {
+void PAAnomaly::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(input_model != NULL);
-  input_model->init(vars);
+  input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the -atmosphere ...,anomaly code...\n");

@@ -37,7 +37,7 @@ public:
   SIAFD_Regional(IceGrid &g, EnthalpyConverter &e)
     : SIAFD(g, e) {}
   virtual ~SIAFD_Regional() {}
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
   IceModelVec2Int *no_model_mask;
@@ -51,7 +51,7 @@ class SSAFD_Regional : public SSAFD
 public:
   SSAFD_Regional(IceGrid &g, EnthalpyConverter &e);
   virtual ~SSAFD_Regional();
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void compute_driving_stress(IceModelVec2V &taud);
 protected:
   IceModelVec2Int *no_model_mask;    
@@ -64,7 +64,7 @@ public:
   RegionalDefaultYieldStress(IceGrid &g, Hydrology *hydro)
     : MohrCoulombYieldStress(g, hydro) {}
   virtual ~RegionalDefaultYieldStress() {}
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2Int *no_model_mask;

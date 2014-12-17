@@ -32,7 +32,7 @@ FloatKill::~FloatKill() {
   // empty
 }
 
-void FloatKill::init(Vars &/*vars*/) {
+void FloatKill::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the 'calving at the grounding line' mechanism...\n");
 }

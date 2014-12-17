@@ -35,7 +35,7 @@ public:
   SSAFD(IceGrid &g, EnthalpyConverter &e);
   virtual ~SSAFD();
 
-  virtual void init(Vars &vars);
+  virtual void init();
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
@@ -128,7 +128,7 @@ SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &);
 class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
-  SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars);
+  SSAFD_nuH(SSAFD *m, IceGrid &g);
   virtual void compute(IceModelVec* &result);
 };
 

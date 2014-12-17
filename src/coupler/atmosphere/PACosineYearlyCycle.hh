@@ -30,7 +30,7 @@ public:
   PACosineYearlyCycle(IceGrid &g);
   virtual ~PACosineYearlyCycle();
 
-  virtual void init(Vars &vars);
+  virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);
   virtual void update(double my_t, double my_dt);
   virtual void temp_snapshot(IceModelVec2S &result);

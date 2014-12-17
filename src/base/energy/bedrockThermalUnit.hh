@@ -89,7 +89,7 @@ public:
 
   virtual ~BedThermalUnit() { }
 
-  virtual void init(Vars &vars, bool &bootstrapping_needed);
+  virtual void init(bool &bootstrapping_needed);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  

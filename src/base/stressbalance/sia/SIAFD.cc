@@ -79,23 +79,23 @@ SIAFD::~SIAFD() {
 }
 
 //! \brief Initialize the SIA module.
-void SIAFD::init(Vars &vars) {
+void SIAFD::init() {
 
-  SSB_Modifier::init(vars);
+  SSB_Modifier::init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the SIA stress balance modifier...\n");
   verbPrintf(2, m_grid.com,
              "  [using the %s flow law]\n", flow_law->name().c_str());
 
-  mask      = vars.get_2d_mask("mask");
-  thickness = vars.get_2d_scalar("land_ice_thickness");
-  surface   = vars.get_2d_scalar("surface_altitude");
-  bed       = vars.get_2d_scalar("bedrock_altitude");
-  enthalpy  = vars.get_3d_scalar("enthalpy");
+  mask      = m_grid.variables().get_2d_mask("mask");
+  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  surface   = m_grid.variables().get_2d_scalar("surface_altitude");
+  bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 
   if (m_config.get_flag("do_age")) {
-    age = vars.get_3d_scalar("age");
+    age = m_grid.variables().get_3d_scalar("age");
   } else {
     age = NULL;
   }

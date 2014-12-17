@@ -60,6 +60,10 @@ private:
   //! (strings) to pointers (represented by
   //! "variables").
   std::map<std::string, std::string> m_standard_names;
+
+  // Hide copy constructor / assignment operator.
+  Vars(Vars const &);
+  Vars & operator=(Vars const &);
 };
 
 } // end of namespace pism
