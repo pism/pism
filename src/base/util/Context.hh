@@ -26,6 +26,7 @@
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "PISMUnits.hh"
+#include "enthalpyConverter.hh"
 
 namespace pism {
 
@@ -52,6 +53,7 @@ private:
   Vars m_variables;
   mutable Profiling m_profiling;
   Time::Ptr m_time;
+  EnthalpyConverter m_EC;
 
   // Hide copy constructor / assignment operator.
   Context(Context const &);

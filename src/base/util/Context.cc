@@ -22,7 +22,7 @@
 namespace pism {
 
 Context::Context(Config &config)
-  : m_config(config) {
+  : m_config(config), m_EC(config) {
 }
 
 MPI_Comm Context::com() const {
