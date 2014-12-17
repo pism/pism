@@ -28,8 +28,8 @@ namespace pism {
 ///// Elevation-dependent temperature and surface mass balance.
 PSElevation::PSElevation(IceGrid &g)
   : SurfaceModel(g),
-    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid)
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid)
 {
   // empty
 }
@@ -40,7 +40,7 @@ void PSElevation::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n");
 
   {
@@ -50,8 +50,8 @@ void PSElevation::init(Vars &vars) {
     ierr = PetscOptionsGetRealArray(NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
     PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
-    T_min = grid.convert(T_array[0], "Celsius", "Kelvin");
-    T_max = grid.convert(T_array[1], "Celsius", "Kelvin");
+    T_min = m_grid.convert(T_array[0], "Celsius", "Kelvin");
+    T_max = m_grid.convert(T_array[1], "Celsius", "Kelvin");
     z_T_min = T_array[2];
     z_T_max = T_array[3];
 
@@ -61,8 +61,8 @@ void PSElevation::init(Vars &vars) {
     ierr = PetscOptionsGetRealArray(NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
     PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
-    m_min = grid.convert(m_array[0], "m year-1", "m s-1");
-    m_max = grid.convert(m_array[1], "m year-1", "m s-1");
+    m_min = m_grid.convert(m_array[0], "m year-1", "m s-1");
+    m_max = m_grid.convert(m_array[1], "m year-1", "m s-1");
     z_m_min = m_array[2];
     z_ELA = m_array[3];
     z_m_max = m_array[4];
@@ -76,8 +76,8 @@ void PSElevation::init(Vars &vars) {
     PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
     if (m_limits_set) {
-      m_limit_min = grid.convert(limitsarray[0], "m year-1", "m s-1");
-      m_limit_max = grid.convert(limitsarray[1], "m year-1", "m s-1");
+      m_limit_min = m_grid.convert(limitsarray[0], "m year-1", "m s-1");
+      m_limit_max = m_grid.convert(limitsarray[1], "m year-1", "m s-1");
     } else {
       m_limit_min = m_min;
       m_limit_max = m_max;
@@ -85,7 +85,7 @@ void PSElevation::init(Vars &vars) {
 
   }
 
-  verbPrintf(3, grid.com,
+  verbPrintf(3, m_grid.com,
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
              "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
@@ -94,11 +94,11 @@ void PSElevation::init(Vars &vars) {
              "     mass balance above %.0f m a.s.l. = %.2f m/year\n"
              "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
              z_T_min, T_min, z_T_max, T_max, z_m_min,
-             grid.convert(m_limit_min, "m s-1", "m year-1"),
+             m_grid.convert(m_limit_min, "m s-1", "m year-1"),
              z_m_min, m_min, z_m_max,
-             grid.convert(m_max, "m s-1", "m year-1"),
+             m_grid.convert(m_max, "m s-1", "m year-1"),
              z_m_max,
-             grid.convert(m_limit_max, "m s-1", "m year-1"), z_ELA);
+             m_grid.convert(m_limit_max, "m s-1", "m year-1"), z_ELA);
 
   // get access to ice upper surface elevation
   usurf = vars.get_2d_scalar("surface_altitude");
@@ -119,8 +119,8 @@ void PSElevation::init(Vars &vars) {
   ice_surface_temp.set_units("K");
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
-  verbPrintf(2, grid.com, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
+  verbPrintf(2, m_grid.com,
              "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
              "        of surface altitude (usurf):\n"
              "                 /  %2.2f K                            for            usurf < %.f m\n"
@@ -131,23 +131,23 @@ void PSElevation::init(Vars &vars) {
              T_max, z_T_max);
 
   // parameterizing the ice surface mass balance 'climatic_mass_balance'
-  verbPrintf(2, grid.com, "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n");
+  verbPrintf(2, m_grid.com, "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n");
 
   if (m_limits_set) {
-    verbPrintf(2, grid.com, "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n");
+    verbPrintf(2, m_grid.com, "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n");
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
              "        of surface altitue (usurf):\n"
              "                  /  %5.2f m/year                       for          usurf < %3.f m\n"
              "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
              "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
              "                   \\ %5.2f m/year                       for %3.f m < usurf\n",
-             grid.convert(m_limit_min, "m s-1", "m year-1"), z_m_min,
-             grid.convert(-m_min, "m s-1", "m year-1")/(z_ELA - z_m_min), z_ELA, z_m_min, z_ELA,
-             grid.convert(m_max, "m s-1", "m year-1")/(z_m_max - z_ELA), z_ELA, z_ELA, z_m_max,
-             grid.convert(m_limit_max, "m s-1", "m year-1"), z_m_max);
+             m_grid.convert(m_limit_min, "m s-1", "m year-1"), z_m_min,
+             m_grid.convert(-m_min, "m s-1", "m year-1")/(z_ELA - z_m_min), z_ELA, z_m_min, z_ELA,
+             m_grid.convert(m_max, "m s-1", "m year-1")/(z_m_max - z_ELA), z_ELA, z_ELA, z_m_max,
+             m_grid.convert(m_limit_max, "m s-1", "m year-1"), z_m_max);
 }
 
 void PSElevation::attach_atmosphere_model(AtmosphereModel *input)
@@ -174,7 +174,7 @@ void PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   IceModelVec::AccessList list;
   list.add(result);
   list.add(*usurf);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double z = (*usurf)(i, j);
@@ -196,7 +196,7 @@ void PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   }
 
   // convert from m/s ice equivalent to kg m-2 s-1:
-  result.scale(config.get("ice_density"));
+  result.scale(m_config.get("ice_density"));
 }
 
 void PSElevation::ice_surface_temperature(IceModelVec2S &result) {
@@ -204,7 +204,7 @@ void PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   list.add(result);
   list.add(*usurf);
   double dTdz = (T_max - T_min)/(z_T_max - z_T_min);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double z = (*usurf)(i, j);
@@ -245,7 +245,7 @@ void PSElevation::define_variables(const std::set<std::string> &vars, const PIO 
 void PSElevation::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
     ice_surface_temperature(tmp);
@@ -255,7 +255,7 @@ void PSElevation::write_variables(const std::set<std::string> &vars, const PIO &
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
     ice_surface_mass_flux(tmp);

@@ -23,16 +23,16 @@ namespace pism {
 
 PO_delta_SMB::PO_delta_SMB(IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, in),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid) {
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
 
   option_prefix = "-ocean_delta_mass_flux";
   offset_name   = "delta_mass_flux";
 
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+  offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
   offset->get_metadata().set_units("m s-1");
-  offset->get_dimension_metadata().set_units(grid.time->units_string());
+  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
   offset->get_metadata().set_string("long_name",
                                     "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
 
@@ -57,13 +57,13 @@ void PO_delta_SMB::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 
   init_internal();
 
   // convert from [m s-1] to [kg m-2 s-1]:
-  offset->scale(config.get("ice_density"));
+  offset->scale(m_config.get("ice_density"));
 }
 
 void PO_delta_SMB::shelf_base_mass_flux(IceModelVec2S &result) {
@@ -101,7 +101,7 @@ void PO_delta_SMB::write_variables(const std::set<std::string> &vars_input, cons
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
@@ -112,7 +112,7 @@ void PO_delta_SMB::write_variables(const std::set<std::string> &vars_input, cons
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;

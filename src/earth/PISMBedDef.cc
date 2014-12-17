@@ -42,13 +42,13 @@ BedDef::BedDef(IceGrid &g)
 }
 
 PetscErrorCode BedDef::pismbeddef_allocate() {
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
-  topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
+  topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
   topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
                          "m", "");
 
-  topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   topg_last.set_attrs("model_state", "bedrock surface elevation",
                       "m", "bedrock_altitude");
 
@@ -73,7 +73,7 @@ void BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
 }
 
 void BedDef::init(Vars &vars) {
-  t_beddef_last = grid.time->start();
+  t_beddef_last = m_grid.time->start();
 
   thk    = vars.get_2d_scalar("land_ice_thickness");
   topg   = vars.get_2d_scalar("bedrock_altitude");

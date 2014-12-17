@@ -37,7 +37,7 @@ StressBalance::StressBalance(IceGrid &g,
   m_variables = NULL;
 
   // allocate the vertical velocity field:
-  m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS);
+  m_w.create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
   m_w.set_attrs("diagnostic",
                 "vertical velocity of ice, relative to base of ice directly below",
                 "m s-1", "");
@@ -45,7 +45,7 @@ StressBalance::StressBalance(IceGrid &g,
   m_w.set_glaciological_units("m year-1");
   m_w.write_in_glaciological_units = true;
 
-  m_strain_heating.create(grid, "strain_heating", WITHOUT_GHOSTS);
+  m_strain_heating.create(m_grid, "strain_heating", WITHOUT_GHOSTS);
   m_strain_heating.set_attrs("internal",
                              "rate of strain heating in ice (dissipation heating)",
                              "W m-3", "");
@@ -85,26 +85,26 @@ void StressBalance::update(bool fast, double sea_level,
   m_stress_balance->set_sea_level_elevation(sea_level);
 
   try {
-    grid.profiling.begin("SSB");
+    m_grid.profiling.begin("SSB");
     m_stress_balance->update(fast, melange_back_pressure);
-    grid.profiling.end("SSB");
+    m_grid.profiling.end("SSB");
     m_stress_balance->get_2D_advective_velocity(velocity_2d);
 
-    grid.profiling.begin("SB modifier");
+    m_grid.profiling.begin("SB modifier");
     m_modifier->update(velocity_2d, fast);
-    grid.profiling.end("SB modifier");
+    m_grid.profiling.end("SB modifier");
 
     if (fast == false) {
 
       m_modifier->get_horizontal_3d_velocity(u, v);
 
-      grid.profiling.begin("SB strain heat");
+      m_grid.profiling.begin("SB strain heat");
       this->compute_volumetric_strain_heating();
-      grid.profiling.end("SB strain heat");
+      m_grid.profiling.end("SB strain heat");
 
-      grid.profiling.begin("SB vert. vel.");
+      m_grid.profiling.begin("SB vert. vel.");
       this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
-      grid.profiling.end("SB vert. vel.");
+      m_grid.profiling.end("SB vert. vel.");
     }
   }
   catch (RuntimeError &e) {
@@ -198,7 +198,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
 
   double *w_ij, *u_ij, *u_w, *u_e, *v_ij, *v_s, *v_n;
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result.getInternalColumn(i,j,&w_ij);
@@ -228,7 +228,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (grid.dx() * (east + west));
+        D_x = 1.0 / (m_grid.dx() * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -244,7 +244,7 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (grid.dy() * (north + south));
+        D_y = 1.0 / (m_grid.dy() * (north + south));
       } else {
         D_y = 0.0;
       }
@@ -262,12 +262,12 @@ void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
 
     // within the ice and above:
     double old_integrand = u_x + v_y;
-    for (unsigned int k = 1; k < grid.Mz(); ++k) {
+    for (unsigned int k = 1; k < m_grid.Mz(); ++k) {
       u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
       v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
       const double new_integrand = u_x + v_y;
 
-      const double dz = grid.z(k) - grid.z(k-1);
+      const double dz = m_grid.z(k) - m_grid.z(k-1);
 
       w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
@@ -386,11 +386,11 @@ void StressBalance::compute_volumetric_strain_heating() {
   list.add(*u);
   list.add(*v);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double H = (*thickness)(i,j);
-    int ks = grid.kBelowHeight(H);
+    int ks = m_grid.kBelowHeight(H);
     double
       *u_ij, *u_w, *u_n, *u_e, *u_s,
       *v_ij, *v_w, *v_n, *v_e, *v_s;
@@ -410,7 +410,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (grid.dx() * (east + west));
+        D_x = 1.0 / (m_grid.dx() * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -426,7 +426,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (grid.dy() * (north + south));
+        D_y = 1.0 / (m_grid.dy() * (north + south));
       } else {
         D_y = 0.0;
       }
@@ -450,7 +450,7 @@ void StressBalance::compute_volumetric_strain_heating() {
 
     for (int k = 0; k <= ks; ++k) {
       double dz,
-        pressure = EC.getPressureFromDepth(H - grid.z(k)),
+        pressure = EC.getPressureFromDepth(H - m_grid.z(k)),
         B        = flow_law->hardness_parameter(E_ij[k], pressure);
 
       double u_z = 0.0, v_z = 0.0,
@@ -460,12 +460,12 @@ void StressBalance::compute_volumetric_strain_heating() {
         v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
 
       if (k > 0) {
-        dz = grid.z(k+1) - grid.z(k-1);
+        dz = m_grid.z(k+1) - m_grid.z(k-1);
         u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
         v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
       } else {
         // use one-sided differences for u_z and v_z on the bottom level
-        dz = grid.z(1) - grid.z(0);
+        dz = m_grid.z(1) - m_grid.z(0);
         u_z = (u_ij[1] - u_ij[0]) / dz;
         v_z = (v_ij[1] - v_ij[0]) / dz;
       }
@@ -473,7 +473,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
     } // k-loop
 
-    int remaining_levels = grid.Mz() - (ks + 1);
+    int remaining_levels = m_grid.Mz() - (ks + 1);
     if (remaining_levels > 0) {
       ierr = PetscMemzero(&Sigma[ks+1],
                           remaining_levels*sizeof(double));

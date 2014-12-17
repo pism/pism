@@ -38,8 +38,8 @@ POGiven::POGiven(IceGrid &g)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  shelfbtemp->create(grid, "shelfbtemp", false);
-  shelfbmassflux->create(grid, "shelfbmassflux", false);
+  shelfbtemp->create(m_grid, "shelfbtemp", false);
+  shelfbmassflux->create(m_grid, "shelfbmassflux", false);
 
   shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",
@@ -59,7 +59,7 @@ void POGiven::init(Vars &) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
 
@@ -68,7 +68,7 @@ void POGiven::init(Vars &) {
 
   // read time-independent data right away:
   if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {
-    update(grid.time->current(), 0); // dt is irrelevant
+    update(m_grid.time->current(), 0); // dt is irrelevant
   }
 }
 

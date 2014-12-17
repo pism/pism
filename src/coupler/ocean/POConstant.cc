@@ -29,8 +29,8 @@ namespace pism {
 
 POConstant::POConstant(IceGrid &g)
   : OceanModel(g),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid) {
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
 
   mymeltrate = 0.0;
   meltrate_set = false;
@@ -51,8 +51,8 @@ void POConstant::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!config.get_flag("is_dry_simulation")) {
-    verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n");
+  if (!m_config.get_flag("is_dry_simulation")) {
+    verbPrintf(2, m_grid.com, "* Initializing the constant ocean model...\n");
   }
 
   OptionsReal("-shelf_base_melt_rate",
@@ -60,7 +60,7 @@ void POConstant::init(Vars &vars) {
               mymeltrate, meltrate_set);
 
   if (meltrate_set) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "    - option '-shelf_base_melt_rate' seen, "
                "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
                mymeltrate);
@@ -74,15 +74,15 @@ void POConstant::sea_level_elevation(double &result) {
 }
 
 void POConstant::shelf_base_temperature(IceModelVec2S &result) {
-  const double T0 = config.get("water_melting_point_temperature"), // K
-    beta_CC       = config.get("beta_CC"),
-    g             = config.get("standard_gravity"),
-    ice_density   = config.get("ice_density");
+  const double T0 = m_config.get("water_melting_point_temperature"), // K
+    beta_CC       = m_config.get("beta_CC"),
+    g             = m_config.get("standard_gravity"),
+    ice_density   = m_config.get("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
   list.add(result);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
     // temp is set to melting point at depth
@@ -94,18 +94,18 @@ void POConstant::shelf_base_temperature(IceModelVec2S &result) {
 //! basal heat flux rate converts to mass flux.
 void POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   double
-    L           = config.get("water_latent_heat_fusion"),
-    ice_density = config.get("ice_density"),
+    L           = m_config.get("water_latent_heat_fusion"),
+    ice_density = m_config.get("ice_density"),
     meltrate    = 0.0;
 
   if (meltrate_set) {
 
-    meltrate = grid.convert(mymeltrate, "m year-1", "m s-1");
+    meltrate = m_grid.convert(mymeltrate, "m year-1", "m s-1");
 
   } else {
 
     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-    meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
+    meltrate = m_config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
 
   }
 
@@ -137,7 +137,7 @@ void POConstant::write_variables(const std::set<std::string> &vars, const PIO &n
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
@@ -147,7 +147,7 @@ void POConstant::write_variables(const std::set<std::string> &vars, const PIO &n
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;

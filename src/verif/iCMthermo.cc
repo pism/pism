@@ -698,7 +698,7 @@ void BTU_Verification::bootstrap() {
   switch (testname) {
     case 'K':
       for (unsigned int k = 0; k < m_Mbz; k++) {
-        if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
+        if (exactK(m_grid.time->current(), zlevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice==PETSC_TRUE))) {
           throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                         zlevels[k]);
@@ -719,7 +719,7 @@ void BTU_Verification::bootstrap() {
   // copy column values into 3D arrays
   IceModelVec::AccessList list(temp);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     temp.setInternalColumn(p.i(), p.j(), &Tbcol[0]);
   }
 }

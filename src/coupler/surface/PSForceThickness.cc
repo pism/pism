@@ -32,19 +32,19 @@ namespace pism {
 ///// "Force-to-thickness" mechanism
 PSForceThickness::PSForceThickness(IceGrid &g, SurfaceModel *input)
   : PSModifier(g, input),
-    m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
-    m_climatic_mass_balance_original(g.config.get_unit_system(), "climatic_mass_balance_original", grid),
-    m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
+    m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
+    m_climatic_mass_balance_original(g.config.get_unit_system(), "climatic_mass_balance_original", m_grid),
+    m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
   m_ice_thickness = NULL;
-  m_alpha = config.get("force_to_thickness_alpha", "yr-1", "s-1");
-  m_alpha_ice_free_factor = config.get("force_to_thickness_ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = config.get("force_to_thickness_ice_free_thickness_threshold");
+  m_alpha = m_config.get("force_to_thickness_alpha", "yr-1", "s-1");
+  m_alpha_ice_free_factor = m_config.get("force_to_thickness_ice_free_alpha_factor");
+  m_ice_free_thickness_threshold = m_config.get("force_to_thickness_ice_free_thickness_threshold");
 
-  m_target_thickness.create(grid, "thk", WITHOUT_GHOSTS);
+  m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
 
-  m_ftt_mask.create(grid, "ftt_mask", WITHOUT_GHOSTS);
+  m_ftt_mask.create(m_grid, "ftt_mask", WITHOUT_GHOSTS);
   m_ftt_mask.set_attrs("diagnostic",
                        "mask specifying where to apply the force-to-thickness mechanism",
                        "", ""); // no units and no standard name
@@ -85,7 +85,7 @@ void PSForceThickness::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing force-to-thickness mass-balance modifier...\n");
 
   bool file_set = false;
@@ -97,7 +97,7 @@ void PSForceThickness::init(Vars &vars) {
     throw RuntimeError("surface model forcing requires the -force_to_thickness_file option.");
   }
 
-  double ftt_alpha = grid.convert(m_alpha, "s-1", "yr-1");
+  double ftt_alpha = m_grid.convert(m_alpha, "s-1", "yr-1");
   bool ftt_alpha_set = false;
   OptionsReal("-force_to_thickness_alpha",
               "Specifies the value of force-to-thickness alpha in per-year units",
@@ -119,26 +119,26 @@ void PSForceThickness::init(Vars &vars) {
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
   if (ftt_alpha_set == true) {
-    verbPrintf(3, grid.com, "    option -force_to_thickness_alpha seen\n");
-    m_alpha = grid.convert(ftt_alpha, "yr-1", "s-1");
+    verbPrintf(3, m_grid.com, "    option -force_to_thickness_alpha seen\n");
+    m_alpha = m_grid.convert(ftt_alpha, "yr-1", "s-1");
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
              "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-             grid.convert(m_alpha, "s-1", "yr-1"),
-             m_alpha_ice_free_factor * grid.convert(m_alpha, "s-1", "yr-1"),
+             m_grid.convert(m_alpha, "s-1", "yr-1"),
+             m_alpha_ice_free_factor * m_grid.convert(m_alpha, "s-1", "yr-1"),
              m_ice_free_thickness_threshold);
 
   // m_input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
-  PIO nc(grid, "guess_mode");
+  PIO nc(m_grid, "guess_mode");
   bool mask_exists = false;
   nc.open(m_input_file, PISM_READONLY);
   mask_exists = nc.inq_var("ftt_mask");
   nc.close();
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    reading target thickness 'thk' from %s ...\n"
              "    (this field will appear in output file as 'ftt_target_thk')\n",
              m_input_file.c_str());
@@ -163,7 +163,7 @@ void PSForceThickness::init(Vars &vars) {
   }
 
   if (mask_exists) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
                m_input_file.c_str());
     m_ftt_mask.regrid(m_input_file, CRITICAL);
@@ -283,10 +283,10 @@ void PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   // get the surface mass balance result from the next level up
   input_model->ice_surface_mass_flux(result);
 
-  verbPrintf(5, grid.com,
+  verbPrintf(5, m_grid.com,
              "    updating surface mass balance using -force_to_thickness mechanism ...");
 
-  double ice_density = config.get("ice_density");
+  double ice_density = m_config.get("ice_density");
 
   MaskQuery m(*m_pism_mask);
 
@@ -297,7 +297,7 @@ void PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   list.add(m_ftt_mask);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
@@ -328,7 +328,7 @@ Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
 void PSForceThickness::max_timestep(double my_t, double &my_dt, bool &restrict) {
-  double max_dt = grid.convert(2.0 / m_alpha, "years", "seconds");
+  double max_dt = m_grid.convert(2.0 / m_alpha, "years", "seconds");
 
   input_model->max_timestep(my_t, my_dt, restrict);
 
@@ -401,7 +401,7 @@ void PSForceThickness::write_variables(const std::set<std::string> &vars_input, 
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = m_ice_surface_temp;
 
     ice_surface_temperature(tmp);
@@ -413,7 +413,7 @@ void PSForceThickness::write_variables(const std::set<std::string> &vars_input, 
 
   if (set_contains(vars, "climatic_mass_balance_original")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance_original", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance_original", WITHOUT_GHOSTS);
     tmp.metadata() = m_climatic_mass_balance_original;
 
     input_model->ice_surface_mass_flux(tmp);
@@ -425,7 +425,7 @@ void PSForceThickness::write_variables(const std::set<std::string> &vars_input, 
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = m_climatic_mass_balance;
 
     ice_surface_mass_flux(tmp);

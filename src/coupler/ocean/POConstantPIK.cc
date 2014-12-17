@@ -29,8 +29,8 @@ namespace pism {
 
 POConstantPIK::POConstantPIK(IceGrid &g)
   : OceanModel(g),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid)
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)
 {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
@@ -43,7 +43,7 @@ POConstantPIK::POConstantPIK(IceGrid &g)
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
 
-  meltfactor = config.get("ocean_pik_melt_factor");
+  meltfactor = m_config.get("ocean_pik_melt_factor");
 }
 
 POConstantPIK::~POConstantPIK() {
@@ -54,7 +54,7 @@ void POConstantPIK::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the constant (PIK) ocean model...\n");
 
   ice_thickness = vars.get_2d_scalar("land_ice_thickness");
@@ -82,15 +82,15 @@ void POConstantPIK::sea_level_elevation(double &result) {
 
 void POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   const double
-    T0          = config.get("water_melting_point_temperature"), // K
-    beta_CC     = config.get("beta_CC"),
-    g           = config.get("standard_gravity"),
-    ice_density = config.get("ice_density");
+    T0          = m_config.get("water_melting_point_temperature"), // K
+    beta_CC     = m_config.get("beta_CC"),
+    g           = m_config.get("standard_gravity"),
+    ice_density = m_config.get("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
   list.add(result);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME task #7297
     // temp is set to melting point at depth
@@ -104,20 +104,20 @@ void POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
  */
 void POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   const double
-    L                 = config.get("water_latent_heat_fusion"),
-    sea_water_density = config.get("sea_water_density"),
-    ice_density       = config.get("ice_density"),
+    L                 = m_config.get("water_latent_heat_fusion"),
+    sea_water_density = m_config.get("sea_water_density"),
+    ice_density       = m_config.get("ice_density"),
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
-    T_ocean           = grid.convert(-1.7, "Celsius", "Kelvin");   //Default in PISM-PIK
+    T_ocean           = m_grid.convert(-1.7, "Celsius", "Kelvin");   //Default in PISM-PIK
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
   list.add(result);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // compute T_f[i][j] according to beckmann_goosse03, which has the
@@ -168,7 +168,7 @@ void POConstantPIK::write_variables(const std::set<std::string> &vars, const PIO
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
@@ -178,7 +178,7 @@ void POConstantPIK::write_variables(const std::set<std::string> &vars, const PIO
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;

@@ -25,17 +25,17 @@ namespace pism {
 
 PO_delta_SL::PO_delta_SL(IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, in),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", grid) {
+    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
+    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
 
   option_prefix = "-ocean_delta_SL";
   offset_name   = "delta_SL";
 
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+  offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
   offset->get_metadata().set_units("m");
   offset->get_metadata().set_string("long_name", "sea level elevation offsets");
-  offset->get_dimension_metadata().set_units(grid.time->units_string());
+  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
@@ -59,7 +59,7 @@ void PO_delta_SL::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com, "* Initializing sea level forcing...\n");
+  verbPrintf(2, m_grid.com, "* Initializing sea level forcing...\n");
 
   init_internal();
 }
@@ -103,7 +103,7 @@ void PO_delta_SL::write_variables(const std::set<std::string> &vars_input, const
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
@@ -114,7 +114,7 @@ void PO_delta_SL::write_variables(const std::set<std::string> &vars_input, const
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;

@@ -31,25 +31,25 @@ SSB_Modifier::SSB_Modifier(IceGrid &g, EnthalpyConverter &e)
   D_max = 0.0;
   variables = NULL;
 
-  u.create(grid, "uvel", WITH_GHOSTS);
+  u.create(m_grid, "uvel", WITH_GHOSTS);
   u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
               "m s-1", "land_ice_x_velocity");
   u.set_glaciological_units("m year-1");
   u.write_in_glaciological_units = true;
 
-  v.create(grid, "vvel", WITH_GHOSTS);
+  v.create(m_grid, "vvel", WITH_GHOSTS);
   v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
               "m s-1", "land_ice_y_velocity");
   v.set_glaciological_units("m year-1");
   v.write_in_glaciological_units = true;
 
-  strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
+  strain_heating.create(m_grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
   strain_heating.set_attrs("internal",
                            "rate of strain heating in ice (dissipation heating)",
                            "W m-3", "");
   strain_heating.set_glaciological_units("mW m-3");
 
-  diffusive_flux.create(grid, "diffusive_flux", WITH_GHOSTS, 1);
+  diffusive_flux.create(m_grid, "diffusive_flux", WITH_GHOSTS, 1);
   diffusive_flux.set_attrs("internal", 
                            "diffusive (SIA) flux components on the staggered grid",
                            "", "");
@@ -67,9 +67,9 @@ void ConstantInColumn::init(Vars &vars) {
 ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e)
   : SSB_Modifier(g, e)
 {
-  IceFlowLawFactory ice_factory(grid.com, "sia_", grid.config, &EC);
+  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_grid.config, &EC);
 
-  ice_factory.setType(config.get_string("sia_flow_law"));
+  ice_factory.setType(m_config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();
   flow_law = ice_factory.create();
@@ -105,7 +105,7 @@ void ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   list.add(v);
   list.add(*vel_input);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     u.setColumn(i,j, (*vel_input)(i,j).u);

@@ -33,7 +33,7 @@ PAConstantPIK::PAConstantPIK(IceGrid &g)
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in SurfaceModel)
-  precipitation.create(grid, "precipitation", WITHOUT_GHOSTS);
+  precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   precipitation.set_attrs("climate_state",
                           "mean annual ice-equivalent precipitation rate",
                           "m s-1",
@@ -42,7 +42,7 @@ PAConstantPIK::PAConstantPIK(IceGrid &g)
   precipitation.write_in_glaciological_units = true;
   precipitation.set_time_independent(true);
 
-  air_temp.create(grid, "air_temp", WITHOUT_GHOSTS);
+  air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
   air_temp.set_attrs("climate_state",
                      "mean annual near-surface (2 m) air temperature",
                      "K",
@@ -117,7 +117,7 @@ void PAConstantPIK::define_variables(const std::set<std::string> &vars, const PI
 void PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp_snapshot;
 
     temp_snapshot(tmp);
@@ -140,7 +140,7 @@ void PAConstantPIK::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"
              "  It reads a precipitation field directly from the file and holds it constant.\n"
              "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
@@ -149,7 +149,7 @@ void PAConstantPIK::init(Vars &vars) {
   find_pism_input(input_file, do_regrid, start);
 
   // read snow precipitation rate and air_temps from file
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "    from %s ... \n",
              input_file.c_str());
@@ -171,7 +171,7 @@ void PAConstantPIK::update(double, double) {
   list.add(air_temp);
   list.add(*usurf);
   list.add(*lat);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;

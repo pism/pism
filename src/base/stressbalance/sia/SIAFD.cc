@@ -30,14 +30,14 @@ namespace pism {
 SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e)
   : SSB_Modifier(g, e) {
 
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    work_2d[i].create(grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL);
-    work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS);
+    work_2d[i].create(m_grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL);
+    work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
 
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
     work_2d[i].set_name(namestr);
@@ -48,22 +48,22 @@ SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e)
     }
   }
 
-  delta[0].create(grid, "delta_0", WITH_GHOSTS);
-  delta[1].create(grid, "delta_1", WITH_GHOSTS);
+  delta[0].create(m_grid, "delta_0", WITH_GHOSTS);
+  delta[1].create(m_grid, "delta_1", WITH_GHOSTS);
 
   // 3D temporary storage:
-  work_3d[0].create(grid, "work_3d_0", WITH_GHOSTS);
-  work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS);
+  work_3d[0].create(m_grid, "work_3d_0", WITH_GHOSTS);
+  work_3d[1].create(m_grid, "work_3d_1", WITH_GHOSTS);
 
   // bed smoother
-  bed_smoother = new BedSmoother(grid, WIDE_STENCIL);
+  bed_smoother = new BedSmoother(m_grid, WIDE_STENCIL);
 
-  second_to_kiloyear = grid.convert(1, "second", "1000 years");
+  second_to_kiloyear = m_grid.convert(1, "second", "1000 years");
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+    IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &EC);
 
-    ice_factory.setType(config.get_string("sia_flow_law"));
+    ice_factory.setType(m_config.get_string("sia_flow_law"));
 
     ice_factory.setFromOptions();
     flow_law = ice_factory.create();
@@ -83,9 +83,9 @@ void SIAFD::init(Vars &vars) {
 
   SSB_Modifier::init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the SIA stress balance modifier...\n");
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  [using the %s flow law]\n", flow_law->name().c_str());
 
   mask      = vars.get_2d_mask("mask");
@@ -94,7 +94,7 @@ void SIAFD::init(Vars &vars) {
   bed       = vars.get_2d_scalar("bedrock_altitude");
   enthalpy  = vars.get_3d_scalar("enthalpy");
 
-  if (config.get_flag("do_age")) {
+  if (m_config.get_flag("do_age")) {
     age = vars.get_3d_scalar("age");
   } else {
     age = NULL;
@@ -113,24 +113,24 @@ void SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
-    grid.profiling.begin("SIA bed smoother");
+    m_grid.profiling.begin("SIA bed smoother");
     bed_smoother->preprocess_bed(*bed);
-    grid.profiling.end("SIA bed smoother");
+    m_grid.profiling.end("SIA bed smoother");
     bed_state_counter = bed->get_state_counter();
   }
 
-  grid.profiling.begin("SIA gradient");
+  m_grid.profiling.begin("SIA gradient");
   compute_surface_gradient(h_x, h_y);
-  grid.profiling.end("SIA gradient");
+  m_grid.profiling.end("SIA gradient");
 
-  grid.profiling.begin("SIA flux");
+  m_grid.profiling.begin("SIA flux");
   compute_diffusive_flux(h_x, h_y, diffusive_flux, fast);
-  grid.profiling.end("SIA flux");
+  m_grid.profiling.end("SIA flux");
 
   if (!fast) {
-    grid.profiling.begin("SIA 3D hor. vel.");
+    m_grid.profiling.begin("SIA 3D hor. vel.");
     compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v);
-    grid.profiling.end("SIA 3D hor. vel.");
+    m_grid.profiling.end("SIA 3D hor. vel.");
   }
 }
 
@@ -173,7 +173,7 @@ void SIAFD::update(IceModelVec2V *vel_input, bool fast) {
 */
 void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  const std::string method = config.get_string("surface_gradient_method");
+  const std::string method = m_config.get_string("surface_gradient_method");
 
   if (method == "eta") {
 
@@ -199,7 +199,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-  const double dx = grid.dx(), dy = grid.dy();  // convenience
+  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
   IceModelVec2S &eta = work_2d[0];
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
@@ -210,7 +210,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   unsigned int GHOSTS = eta.get_stencil_width();
   assert(thickness->get_stencil_width() >= GHOSTS);
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     eta(i,j) = pow((*thickness)(i,j), etapow);
@@ -230,7 +230,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
   for (int o=0; o<2; o++) {
 
-    for (PointsWithGhosts p(grid); p; p.next()) {
+    for (PointsWithGhosts p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (o==0) {     // If I-offset
@@ -270,7 +270,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double dx = grid.dx(), dy = grid.dy();  // convenience
+  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
   IceModelVec2S &h = *surface;
 
@@ -285,7 +285,7 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
   // surface elevation needs more ghosts
   assert(surface->get_stencil_width() >= 2);
 
-  for (PointsWithGhosts p(grid); p; p.next()) {
+  for (PointsWithGhosts p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // I-offset
@@ -347,7 +347,7 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
  * mask, and bed fields.)
  */
 void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double dx = grid.dx(), dy = grid.dy();  // convenience
+  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
   IceModelVec2S &h = *surface, &b = *bed,
     &w_i = work_2d[0], &w_j = work_2d[1]; // averaging weights
 
@@ -371,7 +371,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
   assert(w_i.get_stencil_width()      >= 1);
   assert(w_j.get_stencil_width()      >= 1);
 
-  for (PointsWithGhosts p(grid); p; p.next()) {
+  for (PointsWithGhosts p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
@@ -413,7 +413,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
     }
   }
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, j-offset
@@ -527,22 +527,22 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
 
   result.set(0.0);
 
-  std::vector<double> delta_ij(grid.Mz());
+  std::vector<double> delta_ij(m_grid.Mz());
 
   const double enhancement_factor = flow_law->enhancement_factor();
-  double ice_grain_size = config.get("ice_grain_size");
+  double ice_grain_size = m_config.get("ice_grain_size");
 
-  bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
+  bool compute_grain_size_using_age = m_config.get_flag("compute_grain_size_using_age");
 
   // some flow laws use grain size, and even need age to update grain size
-  if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
+  if (compute_grain_size_using_age && (!m_config.get_flag("do_age"))) {
     throw RuntimeError("SIAFD::compute_diffusive_flux(): do_age not set but\n"
                        "age is needed for grain-size-based flow law");
   }
 
   const bool use_age = (IceFlowLawUsesGrainSize(flow_law) &&
                         compute_grain_size_using_age &&
-                        config.get_flag("do_age"));
+                        m_config.get_flag("do_age"));
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
@@ -587,7 +587,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
-    for (PointsWithGhosts p(grid); p; p.next()) {
+    for (PointsWithGhosts p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
@@ -615,14 +615,14 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       enthalpy->getInternalColumn(i+oi, j+oj, &E_offset);
 
       const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-      const int      ks = grid.kBelowHeight(thk);
+      const int      ks = m_grid.kBelowHeight(thk);
       const double   alpha =
         sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
       const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
 
       double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
       for (int k = 0; k <= ks; ++k) {
-        double depth = thk - grid.z(k); // FIXME issue #15
+        double depth = thk - m_grid.z(k); // FIXME issue #15
         // pressure added by the ice (i.e. pressure difference between the
         // current level and the top of the column)
         const double pressure = EC.getPressureFromDepth(depth);
@@ -639,12 +639,12 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
         delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
         if (k > 0) { // trapezoidal rule
-          const double dz = grid.z(k) - grid.z(k-1);
+          const double dz = m_grid.z(k) - m_grid.z(k-1);
           Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
       }
       // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - grid.z(ks);
+      const double dz = thk - m_grid.z(ks);
       Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
       // Override diffusivity at the edges of the domain. (At these
@@ -655,8 +655,8 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       // this adjustment lets us avoid taking very small time-steps
       // because of the possible thickness and bed elevation
       // "discontinuities" at the boundary.)
-      if (i < 0 || i >= (int)grid.Mx() - 1 ||
-          j < 0 || j >= (int)grid.My() - 1) {
+      if (i < 0 || i >= (int)m_grid.Mx() - 1 ||
+          j < 0 || j >= (int)m_grid.My() - 1) {
         Dfoffset = 0.0;
       }
 
@@ -670,7 +670,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       // if doing the full update, fill the delta column above the ice and
       // store it:
       if (full_update) {
-        for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+        for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
           delta_ij[k] = 0.0;
         }
         delta[o].setInternalColumn(i,j,&delta_ij[0]);
@@ -678,7 +678,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
     }
   } // i
 
-  GlobalMax(grid.com, &my_D_max,  &D_max);
+  GlobalMax(m_grid.com, &my_D_max,  &D_max);
 }
 
 //! \brief Compute diffusivity (diagnostically).
@@ -721,7 +721,7 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   list.add(delta[0]);
   list.add(delta[1]);
   list.add(D_stag);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
@@ -737,19 +737,19 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
         continue;
       }
 
-      const unsigned int ks = grid.kBelowHeight(thk);
+      const unsigned int ks = m_grid.kBelowHeight(thk);
       double Dfoffset = 0.0;
 
       for (unsigned int k = 1; k <= ks; ++k) {
-        double depth = thk - grid.z(k);
+        double depth = thk - m_grid.z(k);
 
-        const double dz = grid.z(k) - grid.z(k-1);
+        const double dz = m_grid.z(k) - m_grid.z(k-1);
         // trapezoidal rule
         Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
       }
 
       // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - grid.z(ks);
+      const double dz = thk - m_grid.z(ks);
       Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
       D_stag(i,j,o) = Dfoffset;
@@ -792,7 +792,7 @@ void SIAFD::compute_I() {
   assert(thk_smooth.get_stencil_width() >= 2);
 
   for (int o = 0; o < 2; ++o) {
-    for (PointsWithGhosts p(grid); p; p.next()) {
+    for (PointsWithGhosts p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const int oi = 1-o, oj=o;
@@ -802,19 +802,19 @@ void SIAFD::compute_I() {
       delta[o].getInternalColumn(i,j,&delta_ij);
       I[o].getInternalColumn(i,j,&I_ij);
 
-      const unsigned int ks = grid.kBelowHeight(thk);
+      const unsigned int ks = m_grid.kBelowHeight(thk);
 
       // within the ice:
       I_ij[0] = 0.0;
       double I_current = 0.0;
       for (unsigned int k = 1; k <= ks; ++k) {
-        const double dz = grid.z(k) - grid.z(k-1);
+        const double dz = m_grid.z(k) - m_grid.z(k-1);
         // trapezoidal rule
         I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
         I_ij[k] = I_current;
       }
       // above the ice:
-      for (unsigned int k = ks + 1; k < grid.Mz(); ++k) {
+      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
         I_ij[k] = I_current;
       }
     }
@@ -860,7 +860,7 @@ void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2St
   list.add(I[0]);
   list.add(I[1]);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     I[0].getInternalColumn(i, j, &IEAST);
@@ -881,7 +881,7 @@ void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2St
     double vel_input_u = (*vel_input)(i, j).u,
       vel_input_v = (*vel_input)(i, j).v;
 
-    for (unsigned int k = 0; k < grid.Mz(); ++k) {
+    for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
       u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
                           INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
       v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
@@ -945,7 +945,7 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
     }
   }
   if ((r == l) || (fabs(r - l) > 1)) {
-    PetscPrintf(grid.com, "binary search in grainSizeVostok: oops.\n");
+    PetscPrintf(m_grid.com, "binary search in grainSizeVostok: oops.\n");
   }
   // Linear interpolation on the interval
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);

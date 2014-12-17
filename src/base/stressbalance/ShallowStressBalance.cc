@@ -38,15 +38,15 @@ ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e)
   variables = NULL;
   sea_level = 0;
 
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
-  if (config.get_flag("do_pseudo_plastic_till") == true) {
-    basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(config);
+  if (m_config.get_flag("do_pseudo_plastic_till") == true) {
+    basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(m_config);
   } else {
-    basal_sliding_law = new IceBasalResistancePlasticLaw(config);
+    basal_sliding_law = new IceBasalResistancePlasticLaw(m_config);
   }
 
-  m_velocity.create(grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
+  m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (x-component)", 
                        "m s-1", "", 0);
@@ -56,7 +56,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e)
   m_velocity.set_glaciological_units("m year-1");
   m_velocity.write_in_glaciological_units = true;
 
-  basal_frictional_heating.create(grid, "bfrict", WITHOUT_GHOSTS);
+  basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   basal_frictional_heating.set_attrs("diagnostic",
                                      "basal frictional heating",
                                      "W m-2", "");
@@ -70,11 +70,11 @@ ShallowStressBalance::~ShallowStressBalance() {
 
 void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["beta"]     = new SSB_beta(this, grid, *variables);
-  dict["taub"]     = new SSB_taub(this, grid, *variables);
-  dict["taub_mag"] = new SSB_taub_mag(this, grid, *variables);
-  dict["taud"]     = new SSB_taud(this, grid, *variables);
-  dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
+  dict["beta"]     = new SSB_beta(this, m_grid, *variables);
+  dict["taub"]     = new SSB_taub(this, m_grid, *variables);
+  dict["taub_mag"] = new SSB_taub_mag(this, m_grid, *variables);
+  dict["taud"]     = new SSB_taud(this, m_grid, *variables);
+  dict["taud_mag"] = new SSB_taud_mag(this, m_grid, *variables);
 }
 
 
@@ -82,8 +82,8 @@ ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
-  ice_factory.setType(config.get_string("sia_flow_law"));
+  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &EC);
+  ice_factory.setType(m_config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();
   flow_law = ice_factory.create();
@@ -137,7 +137,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &veloc
   list.add(tauc);
   list.add(mask);
   
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.ocean(i,j)) {
@@ -172,7 +172,7 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
-  double    dx = grid.dx(), dy = grid.dy();
+  double    dx = m_grid.dx(), dy = m_grid.dy();
 
   if (result.get_ndof() != 2) {
     throw RuntimeError("result.dof() == 2 is required");
@@ -183,7 +183,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velo
   list.add(result);
   list.add(mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_free(mask.as_int(i,j))) {
@@ -254,21 +254,21 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velo
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
-  double    dx = grid.dx(), dy = grid.dy();
+  double    dx = m_grid.dx(), dy = m_grid.dy();
 
   if (result.get_ndof() != 3) {
     throw RuntimeError("result.get_dof() == 3 is required");
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(config.get("ice_softness"),-1.0/config.get("ssa_Glen_exponent"));
+  double hardness = pow(m_config.get("ice_softness"),-1.0/m_config.get("ssa_Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(velocity);
   list.add(result);
   list.add(mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_free(mask.as_int(i,j))) {

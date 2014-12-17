@@ -33,7 +33,7 @@ FloatKill::~FloatKill() {
 }
 
 void FloatKill::init(Vars &/*vars*/) {
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'calving at the grounding line' mechanism...\n");
 }
 
@@ -53,7 +53,7 @@ void FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
   list.add(pism_mask);
   list.add(ice_thickness);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     if (M.floating_ice(i, j)) {
       ice_thickness(i, j) = 0.0;

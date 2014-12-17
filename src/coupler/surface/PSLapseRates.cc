@@ -22,8 +22,8 @@ namespace pism {
 
 PSLapseRates::PSLapseRates(IceGrid &g, SurfaceModel* in)
   : PLapseRates<SurfaceModel,PSModifier>(g, in),
-    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid)
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid)
 {
   smb_lapse_rate = 0;
   option_prefix = "-surface_lapse_rate";
@@ -53,7 +53,7 @@ void PSLapseRates::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  [using temperature and mass balance lapse corrections]\n");
 
   init_internal(vars);
@@ -64,15 +64,15 @@ void PSLapseRates::init(Vars &vars) {
                 smb_lapse_rate, smb_lapse_rate_set);
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
              "   ice-equivalent surface mass balance lapse rate: %3.3f m/year per km\n",
              temp_lapse_rate, smb_lapse_rate);
 
-  temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
+  temp_lapse_rate = m_grid.convert(temp_lapse_rate, "K/km", "K/m");
 
-  smb_lapse_rate *= config.get("ice_density"); // convert from [m/year / km] to [kg m-2 / year / km]
-  smb_lapse_rate = grid.convert(smb_lapse_rate, "(kg m-2) / year / km", "(kg m-2) / s / m");
+  smb_lapse_rate *= m_config.get("ice_density"); // convert from [m/year / km] to [kg m-2 / year / km]
+  smb_lapse_rate = m_grid.convert(smb_lapse_rate, "(kg m-2) / year / km", "(kg m-2) / s / m");
 }
 
 void PSLapseRates::ice_surface_mass_flux(IceModelVec2S &result) {
@@ -112,7 +112,7 @@ void PSLapseRates::write_variables(const std::set<std::string> &vars_input, cons
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
     ice_surface_temperature(tmp);
@@ -124,7 +124,7 @@ void PSLapseRates::write_variables(const std::set<std::string> &vars_input, cons
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
     ice_surface_mass_flux(tmp);

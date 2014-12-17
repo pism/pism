@@ -73,22 +73,22 @@ POGivenTH::POGivenTH(IceGrid &g)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  theta_ocean->create(grid, "theta_ocean", false);
+  theta_ocean->create(m_grid, "theta_ocean", false);
   theta_ocean->set_attrs("climate_forcing",
                          "absolute potential temperature of the adjacent ocean",
                          "Kelvin", "");
 
-  salinity_ocean->create(grid, "salinity_ocean", false);
+  salinity_ocean->create(m_grid, "salinity_ocean", false);
   salinity_ocean->set_attrs("climate_forcing",
                             "salinity of the adjacent ocean",
                             "g/kg", "");
 
-  shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS);
+  shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
   shelfbtemp.set_attrs("climate_forcing",
                        "absolute temperature at ice shelf base",
                        "Kelvin", "");
 
-  shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
   shelfbmassflux.set_attrs("climate_forcing",
                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                            "kg m-2 s-1", "");
@@ -103,7 +103,7 @@ void POGivenTH::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
@@ -114,7 +114,7 @@ void POGivenTH::init(Vars &vars) {
 
   // read time-independent data right away:
   if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
-    update(grid.time->current(), 0); // dt is irrelevant
+    update(m_grid.time->current(), 0); // dt is irrelevant
   }
 }
 
@@ -179,7 +179,7 @@ void POGivenTH::update(double my_t, double my_dt) {
   theta_ocean->average(m_t, m_dt);
   salinity_ocean->average(m_t, m_dt);
 
-  POGivenTHConstants c(config);
+  POGivenTHConstants c(m_config);
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
@@ -188,7 +188,7 @@ void POGivenTH::update(double my_t, double my_dt) {
   list.add(shelfbtemp);
   list.add(shelfbmassflux);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
@@ -210,7 +210,7 @@ void POGivenTH::update(double my_t, double my_dt) {
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  shelfbmassflux.scale(config.get("ice_density"));
+  shelfbmassflux.scale(m_config.get("ice_density"));
 }
 
 

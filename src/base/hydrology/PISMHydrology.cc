@@ -37,18 +37,18 @@ Hydrology::Hydrology(IceGrid &g)
   variables  = NULL;
   hold_bmelt = false;
 
-  total_input.create(grid, "total_input", WITHOUT_GHOSTS);
+  total_input.create(m_grid, "total_input", WITHOUT_GHOSTS);
   total_input.set_attrs("internal",
                         "hydrology model workspace for total input rate into subglacial water layer",
                         "m s-1", "");
 
-  bmelt_local.create(grid, "bmelt", WITHOUT_GHOSTS);
+  bmelt_local.create(m_grid, "bmelt", WITHOUT_GHOSTS);
   bmelt_local.set_attrs("internal",
                         "hydrology model workspace for bmelt",
                         "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  Wtil.create(grid, "tillwat", WITHOUT_GHOSTS);
+  Wtil.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   Wtil.set_attrs("model_state",
                  "effective thickness of subglacial water stored in till",
                  "m", "");
@@ -68,7 +68,7 @@ void Hydrology::init(Vars &vars) {
   bool i_set, bootstrap;
   double itbperiod_years = 0.0, itbreference_year = 0.0;
 
-  verbPrintf(4, grid.com,
+  verbPrintf(4, m_grid.com,
              "entering Hydrology::init() ...\n");
 
   {
@@ -102,7 +102,7 @@ void Hydrology::init(Vars &vars) {
 
 
   if (bmeltfile_set) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  option -hydrology_bmelt_file seen; reading bmelt from '%s'.\n", bmeltfilename.c_str());
     bmelt_local.regrid(bmeltfilename, CRITICAL);
     hold_bmelt = true;
@@ -111,11 +111,11 @@ void Hydrology::init(Vars &vars) {
 
   if (itbfile_set) {
     inputtobed_period = (itbperiod_set) ? itbperiod_years : 0.0;
-    inputtobed_reference_time = (itbreference_set) ? grid.convert(itbreference_year, "years", "seconds") : 0.0;
+    inputtobed_reference_time = (itbreference_set) ? m_grid.convert(itbreference_year, "years", "seconds") : 0.0;
 
-    unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) m_config.get("climate_forcing_buffer_size");
 
-    PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
+    PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
     nc.open(itbfilename, PISM_READONLY);
     unsigned int n_records = nc.inq_nrecords("inputtobed", "");
     nc.close();
@@ -132,17 +132,17 @@ void Hydrology::init(Vars &vars) {
                                     itbfilename.c_str());
     }
 
-    verbPrintf(2,grid.com,
+    verbPrintf(2,m_grid.com,
                "    option -hydrology_input_to_bed_file seen ... creating 'inputtobed' variable ...\n");
-    verbPrintf(2,grid.com,
+    verbPrintf(2,m_grid.com,
                "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records);
     inputtobed = new IceModelVec2T;
     inputtobed->set_n_records(n_records);
-    inputtobed->create(grid, "inputtobed", WITHOUT_GHOSTS);
+    inputtobed->create(m_grid, "inputtobed", WITHOUT_GHOSTS);
     inputtobed->set_attrs("climate_forcing",
                           "amount of water (depth per time like bmelt) which should be put at the ice sheet bed",
                           "m s-1", "");
-    verbPrintf(2,grid.com,
+    verbPrintf(2,m_grid.com,
                "    reading 'inputtobed' variable from file '%s' ...\n",itbfilename.c_str());
     inputtobed->init(itbfilename, inputtobed_period, inputtobed_reference_time);
   }
@@ -164,10 +164,10 @@ void Hydrology::init(Vars &vars) {
         Wtil.read(filename, start);
       } else {
         Wtil.regrid(filename, OPTIONAL,
-                    config.get("bootstrapping_tillwat_value_no_var"));
+                    m_config.get("bootstrapping_tillwat_value_no_var"));
       }
     } else {
-      Wtil.set(config.get("bootstrapping_tillwat_value_no_var"));
+      Wtil.set(m_config.get("bootstrapping_tillwat_value_no_var"));
     }
   }
 
@@ -178,13 +178,13 @@ void Hydrology::init(Vars &vars) {
 
 void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["bwat"] = new Hydrology_bwat(this, grid, *variables);
-  dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
-  dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
-  dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
+  dict["bwat"] = new Hydrology_bwat(this, m_grid, *variables);
+  dict["bwp"] = new Hydrology_bwp(this, m_grid, *variables);
+  dict["bwprel"] = new Hydrology_bwprel(this, m_grid, *variables);
+  dict["effbwp"] = new Hydrology_effbwp(this, m_grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid, *variables);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid, *variables);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid, *variables);
 }
 
 
@@ -217,7 +217,7 @@ Accesses H=thk from Vars, which points into IceModel.
 void Hydrology::overburden_pressure(IceModelVec2S &result) {
   // FIXME issue #15
   result.copy_from(*thk);  // copies into ghosts if result has them
-  result.scale(config.get("ice_density") * config.get("standard_gravity"));
+  result.scale(m_config.get("ice_density") * m_config.get("standard_gravity"));
 }
 
 
@@ -237,10 +237,10 @@ void Hydrology::wall_melt(IceModelVec2S &result) {
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 void Hydrology::check_Wtil_bounds() {
-  double tillwat_max = config.get("hydrology_tillwat_max");
+  double tillwat_max = m_config.get("hydrology_tillwat_max");
 
   IceModelVec::AccessList list(Wtil);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (Wtil(i,j) < 0.0) {
@@ -273,8 +273,8 @@ in derived classes of Hydrology.
  */
 void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
                                          IceModelVec2S &result) {
-  bool   use_const   = config.get_flag("hydrology_use_const_bmelt");
-  double const_bmelt = config.get("hydrology_const_bmelt");
+  bool   use_const   = m_config.get_flag("hydrology_use_const_bmelt");
+  double const_bmelt = m_config.get("hydrology_const_bmelt");
 
   IceModelVec::AccessList list;
   if (inputtobed != NULL) {
@@ -291,7 +291,7 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
   list.add(*mask);
   list.add(result);
   MaskQuery m(*mask);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.icy(i, j)) {

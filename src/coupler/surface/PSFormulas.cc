@@ -24,7 +24,7 @@ namespace pism {
 
 PSFormulas::PSFormulas(IceGrid &g)
   : SurfaceModel(g) {
-  m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_climatic_mass_balance.set_attrs("internal",
                                     "ice-equivalent surface mass balance (accumulation/ablation) rate",
                                     "kg m-2 s-1",
@@ -35,7 +35,7 @@ PSFormulas::PSFormulas(IceGrid &g)
 
   // annual mean air temperature at "ice surface", at level below all
   // firn processes (e.g. "10 m" or ice temperatures)
-  m_ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   m_ice_surface_temp.set_attrs("internal",
                                "annual average ice surface temperature, below firn processes",
                                "K", "");

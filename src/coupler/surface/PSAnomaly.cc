@@ -23,8 +23,8 @@ namespace pism {
 
 PSAnomaly::PSAnomaly(IceGrid &g, SurfaceModel* in)
   : PGivenClimate<PSModifier,SurfaceModel>(g, in),
-    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
   option_prefix  = "-surface_anomaly";
 
@@ -40,8 +40,8 @@ PSAnomaly::PSAnomaly(IceGrid &g, SurfaceModel* in)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ice_surface_temp_anomaly->create(grid, "ice_surface_temp_anomaly", false);
-  climatic_mass_balance_anomaly->create(grid, "climatic_mass_balance_anomaly", false);
+  ice_surface_temp_anomaly->create(m_grid, "ice_surface_temp_anomaly", false);
+  climatic_mass_balance_anomaly->create(m_grid, "climatic_mass_balance_anomaly", false);
 
   ice_surface_temp_anomaly->set_attrs("climate_forcing",
                                       "anomaly of the temperature of the ice at the ice surface but below firn processes",
@@ -78,10 +78,10 @@ void PSAnomaly::init(Vars &vars) {
     input_model->init(vars);
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the '-surface ...,anomaly' modifier...\n");
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    reading anomalies from %s ...\n", filename.c_str());
 
   ice_surface_temp_anomaly->init(filename, bc_period, bc_reference_time);
@@ -132,7 +132,7 @@ void PSAnomaly::write_variables(const std::set<std::string> &vars_input, const P
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
     ice_surface_temperature(tmp);
@@ -144,7 +144,7 @@ void PSAnomaly::write_variables(const std::set<std::string> &vars_input, const P
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
     ice_surface_mass_flux(tmp);

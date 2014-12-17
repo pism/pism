@@ -53,14 +53,14 @@ void BTU_Test::bootstrap() {
 
     IceModelVec::AccessList list(temp);
     double *Tb; // columns of these values
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       temp.getInternalColumn(i,j,&Tb);
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF; // Test K:  use Tb[k], ignore FF
-        exactK(grid.time->start(), z, &Tb[k], &FF, 0);
+        exactK(m_grid.time->start(), z, &Tb[k], &FF, 0);
       }
     }
   }

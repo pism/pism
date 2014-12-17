@@ -44,7 +44,7 @@ void PACosineYearlyCycle::init(Vars &vars) {
 
   m_variables = &vars;
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
 
   {
@@ -61,7 +61,7 @@ void PACosineYearlyCycle::init(Vars &vars) {
                        "using the -atmosphere_yearly_cycle_file option.");
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  Reading mean annual air temperature, mean July air temperature, and\n"
              "  precipitation fields from '%s'...\n", input_file.c_str());
 
@@ -72,21 +72,21 @@ void PACosineYearlyCycle::init(Vars &vars) {
   if (scaling_flag) {
 
     if (A == NULL) {
-      A = new Timeseries(&grid, "amplitude_scaling",
-                         config.get_string("time_dimension_name"));
+      A = new Timeseries(&m_grid, "amplitude_scaling",
+                         m_config.get_string("time_dimension_name"));
       A->get_metadata().set_units("1");
       A->get_metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
-      A->get_dimension_metadata().set_units(grid.time->units_string());
+      A->get_dimension_metadata().set_units(m_grid.time->units_string());
     }
 
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
                scaling_file.c_str());
 
-    PIO nc(grid, "netcdf3");    // OK to use netcdf3
+    PIO nc(m_grid, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
-      A->read(nc, grid.time);
+      A->read(nc, m_grid.time);
     }
     nc.close();
 
@@ -106,8 +106,8 @@ void PACosineYearlyCycle::update(double my_t, double my_dt) {
 
 void PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
-    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
+    julyday_fraction = m_grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
+    T                = m_grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   double scaling = 1.0;
@@ -120,7 +120,7 @@ void PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   list.add(m_air_temp_mean_annual);
   list.add(m_air_temp_mean_july);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
   }

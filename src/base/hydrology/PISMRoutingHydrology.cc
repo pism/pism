@@ -28,53 +28,53 @@ namespace pism {
 RoutingHydrology::RoutingHydrology(IceGrid &g)
     : Hydrology(g)
 {
-  stripwidth = config.get("hydrology_null_strip_width");
+  stripwidth = m_config.get("hydrology_null_strip_width");
 
   // model state variables; need ghosts
-  W.create(grid, "bwat", WITH_GHOSTS, 1);
+  W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   W.set_attrs("model_state",
               "thickness of transportable subglacial water layer",
               "m", "");
   W.metadata().set_double("valid_min", 0.0);
 
   // auxiliary variables which NEED ghosts
-  Wstag.create(grid, "W_staggered", WITH_GHOSTS, 1);
+  Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
   Wstag.set_attrs("internal",
                   "cell face-centered (staggered) values of water layer thickness",
                   "m", "");
   Wstag.metadata().set_double("valid_min", 0.0);
-  Kstag.create(grid, "K_staggered", WITH_GHOSTS, 1);
+  Kstag.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
   Kstag.set_attrs("internal",
                   "cell face-centered (staggered) values of nonlinear conductivity",
                   "", "");
   Kstag.metadata().set_double("valid_min", 0.0);
-  Qstag.create(grid, "advection_flux", WITH_GHOSTS, 1);
+  Qstag.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
   Qstag.set_attrs("internal",
                   "cell face-centered (staggered) components of advective subglacial water flux",
                   "m2 s-1", "");
-  R.create(grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
+  R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   R.set_attrs("internal",
               "work space for modeled subglacial water hydraulic potential",
               "Pa", "");
 
   // auxiliary variables which do not need ghosts
-  Pover.create(grid, "overburden_pressure_internal", WITHOUT_GHOSTS);
+  Pover.create(m_grid, "overburden_pressure_internal", WITHOUT_GHOSTS);
   Pover.set_attrs("internal",
                   "overburden pressure",
                   "Pa", "");
   Pover.metadata().set_double("valid_min", 0.0);
-  V.create(grid, "water_velocity", WITHOUT_GHOSTS);
+  V.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
   V.set_attrs("internal",
               "cell face-centered (staggered) components of water velocity in subglacial water layer",
               "m s-1", "");
 
   // temporaries during update; do not need ghosts
-  Wnew.create(grid, "Wnew_internal", WITHOUT_GHOSTS);
+  Wnew.create(m_grid, "Wnew_internal", WITHOUT_GHOSTS);
   Wnew.set_attrs("internal",
                  "new thickness of transportable subglacial water layer during update",
                  "m", "");
   Wnew.metadata().set_double("valid_min", 0.0);
-  Wtilnew.create(grid, "Wtilnew_internal", WITHOUT_GHOSTS);
+  Wtilnew.create(m_grid, "Wtilnew_internal", WITHOUT_GHOSTS);
   Wtilnew.set_attrs("internal",
                     "new thickness of till (subglacial) water layer during update",
                     "m", "");
@@ -87,7 +87,7 @@ RoutingHydrology::~RoutingHydrology() {
 
 
 void RoutingHydrology::init(Vars &vars) {
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
@@ -97,13 +97,13 @@ void RoutingHydrology::init(Vars &vars) {
                  "Report to stdout on mass accounting in hydrology models",
                  report_mass_accounting);
 
-    stripwidth = grid.convert(stripwidth, "m", "km");
+    stripwidth = m_grid.convert(stripwidth, "m", "km");
     OptionsReal("-hydrology_null_strip",
                 "set the width, in km, of the strip around the edge"
                 " of the computational domain in which hydrology is inactivated",
                 stripwidth, stripset);
     if (stripset) {
-      stripwidth = grid.convert(stripwidth, "km", "m");
+      stripwidth = m_grid.convert(stripwidth, "km", "m");
     }
   }
 
@@ -124,7 +124,7 @@ void RoutingHydrology::init_bwat(Vars &vars) {
                  bootstrap);
   }
 
-  const PetscReal bwatdefault = config.get("bootstrapping_bwat_value_no_var");
+  const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
   IceModelVec2S *W_input = NULL;
   try {
     // FIXME: this is not an "exceptional" situation...
@@ -137,13 +137,13 @@ void RoutingHydrology::init_bwat(Vars &vars) {
       int start;
       find_pism_input(filename, bootstrap, start);
       if (i) {
-        PIO nc(grid, "guess_mode");
+        PIO nc(m_grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
         bool bwat_exists = nc.inq_var("bwat");
         if (bwat_exists == true) {
           W.read(filename, start);
         } else {
-          verbPrintf(2, grid.com,
+          verbPrintf(2, m_grid.com,
                      "PISM WARNING: bwat for hydrology model not found in '%s'."
                      "  Setting it to %.2f ...\n",
                      filename.c_str(), bwatdefault);
@@ -189,14 +189,14 @@ void RoutingHydrology::write_variables(const std::set<std::string> &vars, const 
 void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
-  dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
-  dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
-  dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
+  dict["bwp"] = new Hydrology_bwp(this, m_grid, *variables);
+  dict["bwprel"] = new Hydrology_bwprel(this, m_grid, *variables);
+  dict["effbwp"] = new Hydrology_effbwp(this, m_grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid, *variables);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid, *variables);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid, *variables);
   // add diagnostic that only makes sense if transport is modeled
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid, *variables);
 }
 
 
@@ -205,7 +205,7 @@ void RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk
   IceModelVec::AccessList list;
   list.add(waterthk);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (waterthk(i,j) < 0.0) {
@@ -234,7 +234,7 @@ This method does no reporting at stdout; the calling routine can do that.
 void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
                                              double &icefreelost, double &oceanlost,
                                              double &negativegain, double &nullstriplost) {
-  double fresh_water_density = config.get("fresh_water_density");
+  double fresh_water_density = m_config.get("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
   MaskQuery M(*mask);
 
@@ -243,7 +243,7 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
   list.add(*cellarea);
   list.add(*mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
@@ -262,9 +262,9 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
   }
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
-  GlobalSum(grid.com, &my_icefreelost,  &icefreelost);
-  GlobalSum(grid.com, &my_oceanlost,  &oceanlost);
-  GlobalSum(grid.com, &my_negativegain,  &negativegain);
+  GlobalSum(m_grid.com, &my_icefreelost,  &icefreelost);
+  GlobalSum(m_grid.com, &my_oceanlost,  &oceanlost);
+  GlobalSum(m_grid.com, &my_negativegain,  &negativegain);
 
   if (stripwidth <= 0.0) {
     nullstriplost = 0.0;
@@ -272,17 +272,17 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
   }
 
   double my_nullstriplost = 0.0;
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-    if (in_null_strip(grid, i, j, stripwidth)) {
+    if (in_null_strip(m_grid, i, j, stripwidth)) {
       my_nullstriplost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
     }
   }
 
-  GlobalSum(grid.com, &my_nullstriplost,  &nullstriplost);
+  GlobalSum(m_grid.com, &my_nullstriplost,  &nullstriplost);
 }
 
 
@@ -306,7 +306,7 @@ Calls subglacial_water_pressure() method to get water pressure.
 void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
 
   const double
-    rg = config.get("fresh_water_density") * config.get("standard_gravity");
+    rg = m_config.get("fresh_water_density") * m_config.get("standard_gravity");
 
   subglacial_water_pressure(result);
   result.add(rg, (*bed)); // result  <-- P + rhow g b
@@ -321,7 +321,7 @@ void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
   list.add(*mask);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ocean(i,j)) {
@@ -342,7 +342,7 @@ void RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
   list.add(W);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // east
@@ -391,10 +391,10 @@ Also returns the maximum over all staggered points of \f$ K W \f$.
 void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
                                                         double &maxKW) {
   const double
-    k     = config.get("hydrology_hydraulic_conductivity"),
-    alpha = config.get("hydrology_thickness_power_in_flux"),
-    beta  = config.get("hydrology_gradient_power_in_flux"),
-    rg    = config.get("standard_gravity") * config.get("fresh_water_density");
+    k     = m_config.get("hydrology_hydraulic_conductivity"),
+    alpha = m_config.get("hydrology_thickness_power_in_flux"),
+    beta  = m_config.get("hydrology_gradient_power_in_flux"),
+    rg    = m_config.get("standard_gravity") * m_config.get("fresh_water_density");
   if (alpha < 1.0) {
     throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
   }
@@ -410,15 +410,15 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
     R.update_ghosts();
 
     list.add(R);
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double dRdx, dRdy;
-      dRdx = (R(i+1,j) - R(i,j)) / grid.dx();
-      dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy());
+      dRdx = (R(i+1,j) - R(i,j)) / m_grid.dx();
+      dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * m_grid.dy());
       result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
-      dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx());
-      dRdy = (R(i,j+1) - R(i,j)) / grid.dy();
+      dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * m_grid.dx());
+      dRdy = (R(i,j+1) - R(i,j)) / m_grid.dy();
       result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
     }
   }
@@ -426,7 +426,7 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
   double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
 
   list.add(Wstag);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
@@ -445,7 +445,7 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
     }
   }
 
-  GlobalMax(grid.com, &mymaxKW,  &maxKW);
+  GlobalMax(m_grid.com, &mymaxKW,  &maxKW);
 }
 
 
@@ -465,12 +465,12 @@ At the current state of the code, this is a diagnostic calculation only.
 void RoutingHydrology::wall_melt(IceModelVec2S &result) {
 
   const double
-    k     = config.get("hydrology_hydraulic_conductivity"),
-    L     = config.get("water_latent_heat_fusion"),
-    alpha = config.get("hydrology_thickness_power_in_flux"),
-    beta  = config.get("hydrology_gradient_power_in_flux"),
-    rhow  = config.get("standard_gravity"),
-    g     = config.get("fresh_water_density"),
+    k     = m_config.get("hydrology_hydraulic_conductivity"),
+    L     = m_config.get("water_latent_heat_fusion"),
+    alpha = m_config.get("hydrology_thickness_power_in_flux"),
+    beta  = m_config.get("hydrology_gradient_power_in_flux"),
+    rhow  = m_config.get("standard_gravity"),
+    g     = m_config.get("fresh_water_density"),
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
@@ -488,24 +488,24 @@ void RoutingHydrology::wall_melt(IceModelVec2S &result) {
   list.add(W);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double dRdx, dRdy;
 
     if (W(i,j) > 0.0) {
       dRdx = 0.0;
       if (W(i+1,j) > 0.0) {
-        dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx());
+        dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * m_grid.dx());
       }
       if (W(i-1,j) > 0.0) {
-        dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx());
+        dRdx += (R(i,j) - R(i-1,j)) / (2.0 * m_grid.dx());
       }
       dRdy = 0.0;
       if (W(i,j+1) > 0.0) {
-        dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy());
+        dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * m_grid.dy());
       }
       if (W(i,j-1) > 0.0) {
-        dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy());
+        dRdy += (R(i,j) - R(i,j-1)) / (2.0 * m_grid.dy());
       }
       result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
     } else {
@@ -536,7 +536,7 @@ have valid ghosts.
 Calls subglacial_water_pressure() method to get water pressure.
  */
 void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
-  const double  rg = config.get("standard_gravity") * config.get("fresh_water_density");
+  const double  rg = m_config.get("standard_gravity") * m_config.get("fresh_water_density");
   double dbdx, dbdy, dPdx, dPdy;
 
   subglacial_water_pressure(R);  // R=P; yes, it updates ghosts
@@ -548,30 +548,30 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   list.add(*bed);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (Wstag(i,j,0) > 0.0) {
-      dPdx = (R(i+1,j) - R(i,j)) / grid.dx();
-      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx();
+      dPdx = (R(i+1,j) - R(i,j)) / m_grid.dx();
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / m_grid.dx();
       result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
     } else {
       result(i,j,0) = 0.0;
     }
     
     if (Wstag(i,j,1) > 0.0) {
-      dPdy = (R(i,j+1) - R(i,j)) / grid.dy();
-      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy();
+      dPdy = (R(i,j+1) - R(i,j)) / m_grid.dy();
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / m_grid.dy();
       result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
     } else {
       result(i,j,1) = 0.0;
     }
 
-    if (in_null_strip(grid, i,j, stripwidth) || in_null_strip(grid, i+1,j, stripwidth)) {
+    if (in_null_strip(m_grid, i,j, stripwidth) || in_null_strip(m_grid, i+1,j, stripwidth)) {
       result(i,j,0) = 0.0;
     }
 
-    if (in_null_strip(grid, i,j, stripwidth) || in_null_strip(grid, i,j+1, stripwidth)) {
+    if (in_null_strip(m_grid, i,j, stripwidth) || in_null_strip(m_grid, i,j+1, stripwidth)) {
       result(i,j,1) = 0.0;
     }
   }
@@ -592,7 +592,7 @@ void RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
 
   assert(W.get_stencil_width() >= 1);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
@@ -607,15 +607,15 @@ void RoutingHydrology::adaptive_for_W_evolution(double t_current, double t_end, 
                                                 double &maxV_result, double &maxD_result,
                                                 double &dtCFL_result, double &dtDIFFW_result) {
   const double
-    dtmax = config.get("hydrology_maximum_time_step_years",
+    dtmax = m_config.get("hydrology_maximum_time_step_years",
                        "years", "seconds"),
-    rg    = config.get("standard_gravity") * config.get("fresh_water_density");
+    rg    = m_config.get("standard_gravity") * m_config.get("fresh_water_density");
   double tmp[2];
   V.absmaxcomponents(tmp); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
-  dtCFL_result = 0.5 / (tmp[0]/grid.dx() + tmp[1]/grid.dy()); // FIXME: is regularization needed?
-  dtDIFFW_result = 1.0/(grid.dx()*grid.dx()) + 1.0/(grid.dy()*grid.dy());
+  dtCFL_result = 0.5 / (tmp[0]/m_grid.dx() + tmp[1]/m_grid.dy()); // FIXME: is regularization needed?
+  dtDIFFW_result = 1.0/(m_grid.dx()*m_grid.dx()) + 1.0/(m_grid.dy()*m_grid.dy());
   dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
   dt_result = std::min(t_end - t_current, dtmax);
@@ -640,15 +640,15 @@ call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
 void RoutingHydrology::raw_update_Wtil(double hdt) {
-  const double tillwat_max = config.get("hydrology_tillwat_max"),
-               C           = config.get("hydrology_tillwat_decay_rate");
+  const double tillwat_max = m_config.get("hydrology_tillwat_max"),
+               C           = m_config.get("hydrology_tillwat_decay_rate");
 
   IceModelVec::AccessList list;
   list.add(Wtil);
   list.add(Wtilnew);
   list.add(total_input);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
@@ -660,9 +660,9 @@ void RoutingHydrology::raw_update_Wtil(double hdt) {
 //! The computation of Wnew, called by update().
 void RoutingHydrology::raw_update_W(double hdt) {
   const double
-    wux  = 1.0 / (grid.dx() * grid.dx()),
-    wuy  = 1.0 / (grid.dy() * grid.dy()),
-    rg   = config.get("standard_gravity") * config.get("fresh_water_density");
+    wux  = 1.0 / (m_grid.dx() * m_grid.dx()),
+    wuy  = 1.0 / (m_grid.dy() * m_grid.dy()),
+    rg   = m_config.get("standard_gravity") * m_config.get("fresh_water_density");
   double divadflux, diffW;
 
   IceModelVec::AccessList list;
@@ -675,11 +675,11 @@ void RoutingHydrology::raw_update_W(double hdt) {
   list.add(total_input);
   list.add(Wnew);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx()
-      + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy();
+    divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / m_grid.dx()
+      + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / m_grid.dy();
     const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
       Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
       Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
@@ -713,7 +713,7 @@ void RoutingHydrology::update(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
-  if (config.get("hydrology_tillwat_max") < 0.0) {
+  if (m_config.get("hydrology_tillwat_max") < 0.0) {
     throw RuntimeError("RoutingHydrology: hydrology_tillwat_max is negative.\n"
                        "This is not allowed.");
   }
@@ -781,13 +781,13 @@ void RoutingHydrology::update(double icet, double icedt) {
   } // end of hydrology model time-stepping loop
 
   if (report_mass_accounting) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                " 'routing' hydrology summary:\n"
                "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
                "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
                "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
                "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-               hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
+               hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
                maxV, maxD,
                icefreelost, oceanlost,
                negativegain, nullstriplost);

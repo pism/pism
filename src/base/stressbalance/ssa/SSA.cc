@@ -41,9 +41,9 @@ SSA::SSA(IceGrid &g, EnthalpyConverter &e)
   driving_stress_y = NULL;
   gl_mask = NULL;
 
-  strength_extension = new SSAStrengthExtension(config);
+  strength_extension = new SSAStrengthExtension(m_config);
 
-  taud.create(grid, "taud", WITHOUT_GHOSTS);
+  taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   taud.set_attrs("diagnostic",
                  "X-component of the driving shear stress at the base of ice",
                  "Pa", "", 0);
@@ -58,15 +58,15 @@ SSA::SSA(IceGrid &g, EnthalpyConverter &e)
   long_names.push_back("SSA model ice velocity in the Y direction");
   m_velocity.rename("_ssa",long_names,"");
 
-  m_velocity_global.create(grid, "bar", WITHOUT_GHOSTS);
+  m_velocity_global.create(m_grid, "bar", WITHOUT_GHOSTS);
 
   m_da = m_velocity_global.get_dm();
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
+    IceFlowLawFactory ice_factory(m_grid.com, "ssa_", m_config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
-    ice_factory.setType(config.get_string("ssa_flow_law"));
+    ice_factory.setType(m_config.get_string("ssa_flow_law"));
 
     ice_factory.setFromOptions();
     flow_law = ice_factory.create();
@@ -90,11 +90,11 @@ void SSA::init(Vars &vars) {
 
   ShallowStressBalance::init(vars);
 
-  verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n");
-  verbPrintf(2, grid.com,
+  verbPrintf(2,m_grid.com,"* Initializing the SSA stress balance...\n");
+  verbPrintf(2, m_grid.com,
              "  [using the %s flow law]\n", flow_law->name().c_str());
   
-  if (config.get_flag("sub_groundingline")) {
+  if (m_config.get_flag("sub_groundingline")) {
     gl_mask = vars.get_2d_scalar("gl_mask");
   }
 
@@ -122,7 +122,7 @@ void SSA::init(Vars &vars) {
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
     unsigned int start;
-    PIO nc(grid, "guess_mode");
+    PIO nc(m_grid, "guess_mode");
 
     OptionsIsSet("-dontreadSSAvels", dont_read_initial_guess);
 
@@ -133,7 +133,7 @@ void SSA::init(Vars &vars) {
     nc.close();
 
     if (u_ssa_found && v_ssa_found && (not dont_read_initial_guess)) {
-      verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n");
+      verbPrintf(3,m_grid.com,"Reading u_ssa and v_ssa...\n");
 
       m_velocity.read(filename, start);
     }
@@ -142,7 +142,7 @@ void SSA::init(Vars &vars) {
     m_velocity.set(0.0); // default initial guess
   }
 
-  if (config.get_flag("ssa_dirichlet_bc")) {
+  if (m_config.get_flag("ssa_dirichlet_bc")) {
     bc_locations = vars.get_2d_mask("bcflag");
     m_vel_bc = vars.get_2d_vector("vel_ssa_bc");
   }
@@ -180,11 +180,11 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const double minThickEtaTransform = 5.0; // m
-  const double dx=grid.dx(), dy=grid.dy();
+  const double dx=m_grid.dx(), dy=m_grid.dy();
 
-  bool cfbc = config.get_flag("calving_front_stress_boundary_condition");
-  bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  bool use_eta = (config.get_string("surface_gradient_method") == "eta");
+  bool cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
+  bool compute_surf_grad_inward_ssa = m_config.get_flag("compute_surf_grad_inward_ssa");
+  bool use_eta = (m_config.get_string("surface_gradient_method") == "eta");
 
   MaskQuery m(*mask);
 
@@ -195,7 +195,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   list.add(thk);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
@@ -355,12 +355,12 @@ void SSA::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   if (dict["taud"] != NULL) {
     delete dict["taud"];
   }
-  dict["taud"] = new SSA_taud(this, grid, *variables);
+  dict["taud"] = new SSA_taud(this, m_grid, *variables);
 
   if (dict["taud_mag"] != NULL) {
     delete dict["taud_mag"];
   }
-  dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
+  dict["taud_mag"] = new SSA_taud_mag(this, m_grid, *variables);
 }
 
 SSA_taud::SSA_taud(SSA *m, IceGrid &g, Vars &my_vars)

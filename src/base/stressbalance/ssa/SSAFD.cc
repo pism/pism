@@ -59,9 +59,9 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e)
   : SSA(g, e) {
-  m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS);
+  m_b.create(m_grid, "right_hand_side", WITHOUT_GHOSTS);
 
-  m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS);
+  m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);
   m_velocity_old.set_attrs("internal",
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "");
@@ -69,22 +69,22 @@ SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e)
   const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  hardness.create(grid, "hardness", WITHOUT_GHOSTS);
+  hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
   hardness.set_attrs("diagnostic",
                      "vertically-averaged ice hardness",
                      unitstr, "");
 
-  nuH.create(grid, "nuH", WITH_GHOSTS);
+  nuH.create(m_grid, "nuH", WITH_GHOSTS);
   nuH.set_attrs("internal",
                 "ice thickness times effective viscosity",
                 "Pa s m", "");
 
-  nuH_old.create(grid, "nuH_old", WITH_GHOSTS);
+  nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   nuH_old.set_attrs("internal",
                     "ice thickness times effective viscosity (before an update)",
                     "Pa s m", "");
 
-  m_work.create(grid, "m_work", WITH_GHOSTS,
+  m_work.create(m_grid, "m_work", WITH_GHOSTS,
                 2, /* stencil width */
                 6  /* dof */);
   m_work.set_attrs("internal",
@@ -112,7 +112,7 @@ SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e)
     ierr = DMCreateMatrix(*m_da, &m_A); CHKERRCONTINUE(ierr);
 #endif
 
-    ierr = KSPCreate(grid.com, &m_KSP);
+    ierr = KSPCreate(m_grid.com, &m_KSP);
     PISM_PETSC_CHK(ierr, "KSPCreate");
     ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
     PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
@@ -214,7 +214,7 @@ void SSAFD::init(Vars &vars) {
                        "An explicit driving stress was specified instead and cannot be used.");
   }
 
-  verbPrintf(2,grid.com,
+  verbPrintf(2,m_grid.com,
              "  [using the KSP-based finite difference implementation]\n");
 
   // options
@@ -226,8 +226,8 @@ void SSAFD::init(Vars &vars) {
                  view_nuh);
   }
 
-  if (config.get_flag("calving_front_stress_boundary_condition")) {
-    verbPrintf(2,grid.com,
+  if (m_config.get_flag("calving_front_stress_boundary_condition")) {
+    verbPrintf(2,m_grid.com,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
 
@@ -242,7 +242,7 @@ void SSAFD::init(Vars &vars) {
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
 
-  if (config.get_flag("do_fracture_density")) {
+  if (m_config.get_flag("do_fracture_density")) {
     fracture_density = vars.get_2d_scalar("fracture_density");
   }
 }
@@ -270,17 +270,17 @@ come from known velocity values.  The fields vel_bc and bc_locations are used fo
 this.
  */
 void SSAFD::assemble_rhs() {
-  const double dx = grid.dx(), dy = grid.dy();
+  const double dx = m_grid.dx(), dy = m_grid.dy();
 
   const double ice_free_default_velocity = 0.0;
 
-  const double standard_gravity = config.get("standard_gravity"),
-    rho_ocean = config.get("sea_water_density"),
-    rho_ice = config.get("ice_density");
-  const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
+  const double standard_gravity = m_config.get("standard_gravity"),
+    rho_ocean = m_config.get("sea_water_density"),
+    rho_ice = m_config.get("ice_density");
+  const bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+  bool bedrock_boundary = m_config.get_flag("ssa_dirichlet_bc");
 
   m_b.set(0.0);
 
@@ -306,7 +306,7 @@ void SSAFD::assemble_rhs() {
     list.add(*m_melange_back_pressure);
   }
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_vel_bc != NULL &&
@@ -487,12 +487,12 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
   int zero_pivot_flag = 0;
 
-  const double   dx=grid.dx(), dy=grid.dy();
-  const double   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
-  const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
+  const double   dx=m_grid.dx(), dy=m_grid.dy();
+  const double   beta_ice_free_bedrock = m_config.get("beta_ice_free_bedrock");
+  const bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+  const bool bedrock_boundary = m_config.get_flag("ssa_dirichlet_bc");
 
   // shortcut:
   IceModelVec2V &vel = m_velocity;
@@ -509,23 +509,23 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     list.add(*bc_locations);
   }
 
-  const bool sub_gl = config.get_flag("sub_groundingline");
+  const bool sub_gl = m_config.get_flag("sub_groundingline");
   if (sub_gl) {
     list.add(*gl_mask);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
-  bool nu_bedrock_set=config.get_flag("nu_bedrock_set");
+  bool nu_bedrock_set=m_config.get_flag("nu_bedrock_set");
   if (nu_bedrock_set) {
     list.add(*thickness);
     list.add(*bed);
     list.add(*surface);
   }
-  double nu_bedrock=config.get("nu_bedrock");
+  double nu_bedrock=m_config.get("nu_bedrock");
   double HminFrozen=0.0;
 
   /* matrix assembly loop */
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // Handle the easy case: provided Dirichlet boundary conditions
@@ -785,7 +785,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 #endif
 
   int zero_pivot_flag_global = 0;
-  MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, grid.com);
+  MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, m_grid.com);
   if (zero_pivot_flag_global != 0) {
     throw ZeroPivot();
   }
@@ -864,16 +864,16 @@ void SSAFD::solve() {
     try {
       if (k == 0) {
         // default strategy
-        picard_iteration(config.get("epsilon_ssa"), 1.0);
+        picard_iteration(m_config.get("epsilon_ssa"), 1.0);
 
         break;
       } else if (k == 1) {
         // try underrelaxing the iteration
-        const double underrelax = config.get("ssafd_nuH_iter_failure_underrelaxation");
-        verbPrintf(1, grid.com,
+        const double underrelax = m_config.get("ssafd_nuH_iter_failure_underrelaxation");
+        verbPrintf(1, m_grid.com,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
-        picard_iteration(config.get("epsilon_ssa"), underrelax);
+        picard_iteration(m_config.get("epsilon_ssa"), underrelax);
 
         break;
       } else if (k == 2) {
@@ -896,8 +896,8 @@ void SSAFD::solve() {
   }
 
   // Post-process velocities if the user asked for it:
-  if (config.get_flag("brutal_sliding")) {
-    const double brutal_sliding_scaleFactor = config.get("brutal_sliding_scale");
+  if (m_config.get_flag("brutal_sliding")) {
+    const double brutal_sliding_scaleFactor = m_config.get("brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
     m_velocity.update_ghosts();
@@ -923,7 +923,7 @@ void SSAFD::picard_iteration(double nuH_regularization,
 
       m_default_pc_failure_count += 1;
 
-      verbPrintf(1, grid.com,
+      verbPrintf(1, m_grid.com,
                  "  re-trying using the Additive Schwarz preconditioner...\n");
 
       PetscErrorCode ierr = pc_setup_asm();
@@ -966,8 +966,8 @@ void SSAFD::picard_manager(double nuH_regularization,
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  unsigned int max_iterations = static_cast<int>(config.get("max_iterations_ssafd"));
-  double ssa_relative_tolerance = config.get("ssafd_relative_convergence");
+  unsigned int max_iterations = static_cast<int>(m_config.get("max_iterations_ssafd"));
+  double ssa_relative_tolerance = m_config.get("ssafd_relative_convergence");
   char tempstr[100] = "";
   bool verbose = getVerbosityLevel() >= 2,
     very_verbose = getVerbosityLevel() > 2;
@@ -977,7 +977,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
   stdout_ssa.clear();
 
-  bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
+  bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
 
   if (use_cfbc == true) {
     compute_nuH_staggered_cfbc(nuH, nuH_regularization);
@@ -1022,7 +1022,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     if (reason < 0) {
       // KSP diverged
-      verbPrintf(1, grid.com,
+      verbPrintf(1, m_grid.com,
                  "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
                  reason, KSPConvergedReasons[reason]);
 
@@ -1071,7 +1071,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
       // assume that high verbosity shows interest in immediate
       // feedback about SSA iterations
-      verbPrintf(2, grid.com, stdout_ssa.c_str());
+      verbPrintf(2, m_grid.com, stdout_ssa.c_str());
 
       stdout_ssa.clear();
     }
@@ -1119,7 +1119,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 void SSAFD::picard_strategy_regularization() {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
-  double nuH_regularization = config.get("epsilon_ssa");
+  double nuH_regularization = m_config.get("epsilon_ssa");
   unsigned int k = 0, max_tries = 5;
 
   if (nuH_regularization <= 0.0) {
@@ -1129,7 +1129,7 @@ void SSAFD::picard_strategy_regularization() {
 
   while (k < max_tries) {
     m_velocity.copy_from(m_velocity_old);
-    verbPrintf(1, grid.com,
+    verbPrintf(1, m_grid.com,
                "  re-trying with nuH_regularization multiplied by %8.2f...\n",
                DEFAULT_EPSILON_MULTIPLIER_SSA);
 
@@ -1137,7 +1137,7 @@ void SSAFD::picard_strategy_regularization() {
 
     try {
       // 1.0 is the under-relaxation parameter
-      picard_iteration(config.get("epsilon_ssa"), 1.0);
+      picard_iteration(m_config.get("epsilon_ssa"), 1.0);
       // if this call succeeded, stop over-regularizing
       break;
     }
@@ -1168,7 +1168,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
   std::vector<double> nuNorm, nuChange;
 
-  const double area = grid.dx() * grid.dy();
+  const double area = m_grid.dx() * m_grid.dy();
 #define MY_NORM     NORM_1
 
   // Test for change in nu
@@ -1190,7 +1190,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 void SSAFD::compute_hardav_staggered() {
   double *E_ij, *E_offset;
 
-  std::vector<double> E(grid.Mz());
+  std::vector<double> E(m_grid.Mz());
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -1200,7 +1200,7 @@ void SSAFD::compute_hardav_staggered() {
 
   MaskQuery m(*mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     enthalpy->getInternalColumn(i,j,&E_ij);
@@ -1223,12 +1223,12 @@ void SSAFD::compute_hardav_staggered() {
 
       enthalpy->getInternalColumn(i+oi,j+oj,&E_offset);
       // build a column of enthalpy values a the current location:
-      for (unsigned int k = 0; k < grid.Mz(); ++k) {
+      for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
         E[k] = 0.5 * (E_ij[k] + E_offset[k]);
       }
 
-      hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                    &(grid.z()[0]), &E[0]);
+      hardness(i,j,o) = flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
+                                                    &(m_grid.z()[0]), &E[0]);
     } // o
   }     // loop over points
 
@@ -1271,19 +1271,19 @@ void SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 void SSAFD::fracture_induced_softening() {
-  if (config.get_flag("do_fracture_density") == false) {
+  if (m_config.get_flag("do_fracture_density") == false) {
     return;
   }
 
   const double
-    epsilon = config.get("fracture_density_softening_lower_limit"),
+    epsilon = m_config.get("fracture_density_softening_lower_limit"),
     n_glen  = flow_law->exponent();
 
   IceModelVec::AccessList list;
   list.add(hardness);
   list.add(*fracture_density);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o=0; o<2; o++) {
@@ -1362,11 +1362,11 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
     n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
-  const double dx = grid.dx(), dy = grid.dy();
+  const double dx = m_grid.dx(), dy = m_grid.dy();
 
   for (int o=0; o<2; ++o) {
     const int oi = 1 - o, oj=o;
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
@@ -1438,7 +1438,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
 
-  const double dx = grid.dx(), dy = grid.dy();
+  const double dx = m_grid.dx(), dy = m_grid.dy();
 
   MaskQuery m(*mask);
 
@@ -1451,7 +1451,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   assert(mask->get_stencil_width()      >= 2);
   assert(m_work.get_stencil_width()     >= 1);
 
-  for (PointsWithGhosts p(grid); p; p.next()) {
+  for (PointsWithGhosts p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
@@ -1485,7 +1485,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   list.add(hardness);
   list.add(*thickness);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double u_x, u_y, v_x, v_y, H, nu, W;
@@ -1580,7 +1580,7 @@ void SSAFD::update_nuH_viewers() {
   }
 
   IceModelVec2S tmp;
-  tmp.create(grid, "nuH", WITHOUT_GHOSTS);
+  tmp.create(m_grid, "nuH", WITHOUT_GHOSTS);
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "");
@@ -1589,7 +1589,7 @@ void SSAFD::update_nuH_viewers() {
   list.add(nuH);
   list.add(tmp);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
@@ -1601,8 +1601,8 @@ void SSAFD::update_nuH_viewers() {
   }
 
   if (not nuh_viewer) {
-    nuh_viewer.reset(new Viewer(grid.com, "nuH", nuh_viewer_size,
-                                grid.Lx(), grid.Ly()));
+    nuh_viewer.reset(new Viewer(m_grid.com, "nuH", nuh_viewer_size,
+                                m_grid.Lx(), m_grid.Ly()));
   }
 
   tmp.view(nuh_viewer, Viewer::Ptr());
@@ -1670,10 +1670,10 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   // write a file with a fixed filename; avoid zillions of files
   std::string filename = "SSAFD_" + namepart + ".petsc";
-  verbPrintf(1, grid.com,
+  verbPrintf(1, m_grid.com,
              "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
   PetscViewer viewer;
-  ierr = PetscViewerBinaryOpen(grid.com, filename.c_str(), FILE_MODE_WRITE,
+  ierr = PetscViewerBinaryOpen(m_grid.com, filename.c_str(), FILE_MODE_WRITE,
                                &viewer); PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
   ierr = MatView(m_A, viewer); PISM_PETSC_CHK(ierr, "MatView");
   ierr = VecView(m_b.get_vec(), viewer); PISM_PETSC_CHK(ierr, "VecView");
@@ -1688,7 +1688,7 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   char           yearappend[PETSC_MAX_PATH_LEN];
 
   IceModelVec2S component;
-  component.create(grid, "temp_storage", WITHOUT_GHOSTS);
+  component.create(m_grid, "temp_storage", WITHOUT_GHOSTS);
 
   bool flag;
   OptionsString("-ssafd_matlab",
@@ -1696,13 +1696,13 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
                 prefix, flag);
 
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m",
-           grid.convert(grid.time->current(), "seconds", "years"));
+           m_grid.convert(m_grid.time->current(), "seconds", "years"));
   file_name = prefix + std::string(yearappend);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
              file_name.c_str());
-  ierr = PetscViewerCreate(grid.com, &viewer); CHKERRQ(ierr);
+  ierr = PetscViewerCreate(m_grid.com, &viewer); CHKERRQ(ierr);
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
   ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
@@ -1737,13 +1737,13 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
 
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
-                                grid.convert(grid.time->current(), "seconds", "years"));
+                                m_grid.convert(m_grid.time->current(), "seconds", "years"));
   CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "x=%12.3f + (0:%d)*%12.3f;\n"
                                 "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -grid.Lx(), grid.Mx() - 1, grid.dx(),
-                                -grid.Ly(), grid.My() - 1, grid.dy()); CHKERRQ(ierr);
+                                -m_grid.Lx(), m_grid.Mx() - 1, m_grid.dx(),
+                                -m_grid.Ly(), m_grid.My() - 1, m_grid.dy()); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);
@@ -1784,7 +1784,7 @@ void SSAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &ts_dict) {
   SSA::get_diagnostics(dict, ts_dict);
 
-  dict["nuH"] = new SSAFD_nuH(this, grid, *variables);
+  dict["nuH"] = new SSAFD_nuH(this, m_grid, *variables);
 }
 
 } // end of namespace pism

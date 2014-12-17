@@ -32,15 +32,15 @@ PAWeatherStation::PAWeatherStation(IceGrid &g)
   : AtmosphereModel(g),
     m_precipitation(&g, "precipitation", g.config.get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", g.config.get_string("time_dimension_name")),
-    m_precip_metadata(g.config.get_unit_system(), "precipitation", grid),
-    m_air_temp_metadata(g.config.get_unit_system(), "air_temp", grid)
+    m_precip_metadata(g.config.get_unit_system(), "precipitation", m_grid),
+    m_air_temp_metadata(g.config.get_unit_system(), "air_temp", m_grid)
 {
-  m_precipitation.get_dimension_metadata().set_units(grid.time->units_string());
+  m_precipitation.get_dimension_metadata().set_units(m_grid.time->units_string());
   m_precipitation.get_metadata().set_units("m / second");
   m_precipitation.get_metadata().set_string("long_name",
                                             "ice-equivalent precipitation rate");
 
-  m_air_temperature.get_dimension_metadata().set_units(grid.time->units_string());
+  m_air_temperature.get_dimension_metadata().set_units(m_grid.time->units_string());
   m_air_temperature.get_metadata().set_units("Kelvin");
   m_air_temperature.get_metadata().set_string("long_name",
                                               "near-surface air temperature");
@@ -65,7 +65,7 @@ void PAWeatherStation::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the constant-in-space atmosphere model\n"
              "  for use with scalar data from one weather station\n"
              "  combined with lapse rate corrections...\n");
@@ -84,15 +84,15 @@ void PAWeatherStation::init(Vars &vars) {
     throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  - Reading air temperature and precipitation from '%s'...\n",
              filename.c_str());
 
-  PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
+  PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
   nc.open(filename, PISM_READONLY);
   {
-    m_precipitation.read(nc, grid.time);
-    m_air_temperature.read(nc, grid.time);
+    m_precipitation.read(nc, m_grid.time);
+    m_air_temperature.read(nc, m_grid.time);
   }
   nc.close();
 }
@@ -184,7 +184,7 @@ void PAWeatherStation::write_variables(const std::set<std::string> &vars,
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "air_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp_metadata;
 
     mean_annual_temp(tmp);
@@ -194,7 +194,7 @@ void PAWeatherStation::write_variables(const std::set<std::string> &vars,
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "precipitation", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = m_precip_metadata;
 
     mean_precipitation(tmp);

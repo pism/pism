@@ -57,34 +57,34 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid &g,
   m_mask           = NULL;
   m_hydrology      = hydro;
 
-  m_till_phi.create(grid, "tillphi", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
-  m_tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   m_tauc.set_attrs("diagnostic",
                    "yield stress for basal till (plastic or pseudo-plastic model)",
                    "Pa", "");
 
   // internal working space; stencil width needed because redundant computation
   // on overlaps
-  m_tillwat.create(grid, "tillwat_for_MohrCoulomb",
-                   WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb",
+                   WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   m_tillwat.set_attrs("internal",
                       "copy of till water thickness held by MohrCoulombYieldStress",
                       "m", "");
-  bool addtransportable = config.get_flag("tauc_add_transportable_water");
+  bool addtransportable = m_config.get_flag("tauc_add_transportable_water");
   if (addtransportable == true) {
-    m_bwat.create(grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
+    m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
     m_bwat.set_attrs("internal",
                      "copy of transportable water thickness held by MohrCoulombYieldStress",
                      "m", "");
   }
-  m_Po.create(grid, "overburden_pressure_for_MohrCoulomb",
-              WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  m_Po.create(m_grid, "overburden_pressure_for_MohrCoulomb",
+              WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   m_Po.set_attrs("internal",
                  "copy of overburden pressure held by MohrCoulombYieldStress",
                  "Pa", "");
@@ -138,7 +138,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
 
   {
     std::string hydrology_tillwat_max = "hydrology_tillwat_max";
-    bool till_is_present = config.get(hydrology_tillwat_max) > 0.0;
+    bool till_is_present = m_config.get(hydrology_tillwat_max) > 0.0;
 
     if (till_is_present == false) {
       throw RuntimeError::formatted("The Mohr-Coulomb yield stress model cannot be used without till.\n"
@@ -150,7 +150,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
   {
     const std::string flag_name = "tauc_add_transportable_water";
     RoutingHydrology *hydrology_routing = dynamic_cast<RoutingHydrology*>(m_hydrology);
-    if (config.get_flag(flag_name) == true && hydrology_routing == NULL) {
+    if (m_config.get_flag(flag_name) == true && hydrology_routing == NULL) {
       throw RuntimeError::formatted("Flag %s is set.\n"
                                     "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
                                     "(or derived like DistributedHydrology) object with transportable water.\n"
@@ -160,7 +160,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
     }
   }
 
-  verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n");
+  verbPrintf(2, m_grid.com, "* Initializing the default basal yield stress model...\n");
 
   m_bed_topography = vars.get_2d_scalar("bedrock_altitude");
   m_mask = vars.get_2d_mask("mask");
@@ -184,8 +184,8 @@ void MohrCoulombYieldStress::init(Vars &vars)
   if (till_phi_input != NULL) {
     m_till_phi.copy_from(*till_phi_input);
 
-    ignore_option(grid.com, "-plastic_phi");
-    ignore_option(grid.com, "-topg_to_phi");
+    ignore_option(m_grid.com, "-plastic_phi");
+    ignore_option(m_grid.com, "-topg_to_phi");
 
     // We do not allow re-gridding in this case.
 
@@ -198,24 +198,24 @@ void MohrCoulombYieldStress::init(Vars &vars)
 
   if (plastic_phi_set) {
 
-    m_till_phi.set(config.get("default_till_phi"));
+    m_till_phi.set(m_config.get("default_till_phi"));
 
   } else if (topg_to_phi_set) {
 
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
     if (i_set || bootstrap) {
       find_pism_input(filename, bootstrap, start);
 
-      PIO nc(grid.com, "guess_mode", grid.config.get_unit_system());
+      PIO nc(m_grid.com, "guess_mode", m_grid.config.get_unit_system());
 
       nc.open(filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));
       nc.close();
 
       if (tillphi_present) {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
                    "              present in the input file '%s'!\n",
                    m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str());
@@ -233,7 +233,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
       m_till_phi.read(filename, start);
     } else {
       m_till_phi.regrid(filename, OPTIONAL,
-                        config.get("bootstrapping_tillphi_value_no_var"));
+                        m_config.get("bootstrapping_tillphi_value_no_var"));
     }
   }
 
@@ -274,7 +274,7 @@ void MohrCoulombYieldStress::init(Vars &vars)
     // Now tauc_to_phi() will correct till_phi at all locations where grounded
     // ice is present:
 
-    verbPrintf(2, grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n");
+    verbPrintf(2, m_grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n");
 
     tauc_to_phi();
 
@@ -349,17 +349,17 @@ void MohrCoulombYieldStress::update(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt;
   // this model does no internal time-stepping
 
-  bool slipperygl       = config.get_flag("tauc_slippery_grounding_lines"),
-       addtransportable = config.get_flag("tauc_add_transportable_water");
+  bool slipperygl       = m_config.get_flag("tauc_slippery_grounding_lines"),
+       addtransportable = m_config.get_flag("tauc_add_transportable_water");
 
-  const double high_tauc   = config.get("high_tauc"),
-               tillwat_max = config.get("hydrology_tillwat_max"),
-               c0          = config.get("till_cohesion"),
-               N0          = config.get("till_reference_effective_pressure"),
-               e0overCc    = config.get("till_reference_void_ratio")
-                                / config.get("till_compressibility_coefficient"),
-               delta       = config.get("till_effective_fraction_overburden"),
-               tlftw       = config.get("till_log_factor_transportable_water");
+  const double high_tauc   = m_config.get("high_tauc"),
+               tillwat_max = m_config.get("hydrology_tillwat_max"),
+               c0          = m_config.get("till_cohesion"),
+               N0          = m_config.get("till_reference_effective_pressure"),
+               e0overCc    = m_config.get("till_reference_void_ratio")
+                                / m_config.get("till_compressibility_coefficient"),
+               delta       = m_config.get("till_effective_fraction_overburden"),
+               tlftw       = m_config.get("till_log_factor_transportable_water");
 
   RoutingHydrology* hydrowithtransport = dynamic_cast<RoutingHydrology*>(m_hydrology);
   if (m_hydrology) {
@@ -384,7 +384,7 @@ void MohrCoulombYieldStress::update(double my_t, double my_dt) {
 
   MaskQuery m(*m_mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.ocean(i, j)) {
@@ -440,10 +440,10 @@ void MohrCoulombYieldStress::topg_to_phi() {
   OptionsIsSet("-topg_to_phi", topg_to_phi_set);
   assert(topg_to_phi_set == true);
 
-  double phi_min  = config.get("till_topg_to_phi_phi_min"),
-         phi_max  = config.get("till_topg_to_phi_phi_max"),
-         topg_min = config.get("till_topg_to_phi_topg_min"),
-         topg_max = config.get("till_topg_to_phi_topg_max");
+  double phi_min  = m_config.get("till_topg_to_phi_phi_min"),
+         phi_max  = m_config.get("till_topg_to_phi_phi_max"),
+         topg_min = m_config.get("till_topg_to_phi_topg_min"),
+         topg_max = m_config.get("till_topg_to_phi_topg_max");
 
   if (phi_min >= phi_max) {
     throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required");
@@ -453,7 +453,7 @@ void MohrCoulombYieldStress::topg_to_phi() {
     throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
              "            /  %5.2f                                 for   topg < %.f\n"
              "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
@@ -468,7 +468,7 @@ void MohrCoulombYieldStress::topg_to_phi() {
   list.add(*m_bed_topography);
   list.add(m_till_phi);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double bed = (*m_bed_topography)(i, j);
 
@@ -488,11 +488,11 @@ void MohrCoulombYieldStress::topg_to_phi() {
 
 
 void MohrCoulombYieldStress::tauc_to_phi() {
-  const double c0 = config.get("till_cohesion"),
-    N0            = config.get("till_reference_effective_pressure"),
-    e0overCc      = config.get("till_reference_void_ratio")/ config.get("till_compressibility_coefficient"),
-    delta         = config.get("till_effective_fraction_overburden"),
-    tillwat_max   = config.get("hydrology_tillwat_max");
+  const double c0 = m_config.get("till_cohesion"),
+    N0            = m_config.get("till_reference_effective_pressure"),
+    e0overCc      = m_config.get("till_reference_void_ratio")/ m_config.get("till_compressibility_coefficient"),
+    delta         = m_config.get("till_effective_fraction_overburden"),
+    tillwat_max   = m_config.get("hydrology_tillwat_max");
 
   assert(m_hydrology != NULL);
 
@@ -515,7 +515,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   assert(m_tillwat.get_stencil_width() >= GHOSTS);
   assert(m_Po.get_stencil_width()      >= GHOSTS);
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.ocean(i, j)) {

@@ -25,7 +25,7 @@ void SIAFD_Regional::init(Vars &vars) {
 
   SIAFD::init(vars);
 
-  verbPrintf(2,grid.com,"  using the regional version of the SIA solver...\n");
+  verbPrintf(2,m_grid.com,"  using the regional version of the SIA solver...\n");
 
   no_model_mask = vars.get_2d_mask("no_model_mask");
   usurfstore    = vars.get_2d_scalar("usurfstore");
@@ -38,8 +38,8 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   IceModelVec2Int &nmm = *no_model_mask;
   IceModelVec2S &hst = *usurfstore; // convenience
 
-  const int Mx = grid.Mx(), My = grid.My();
-  const double dx = grid.dx(), dy = grid.dy();  // convenience
+  const int Mx = m_grid.Mx(), My = m_grid.My();
+  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
   IceModelVec::AccessList list;
   list.add(h_x);
@@ -47,7 +47,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   list.add(nmm);
   list.add(hst);
 
-  for (PointsWithGhosts p(grid); p; p.next()) {
+  for (PointsWithGhosts p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-component, i-offset
@@ -110,10 +110,10 @@ void SSAFD_Regional::init(Vars &vars) {
 
   SSAFD::init(vars);
 
-  verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n");
+  verbPrintf(2,m_grid.com,"  using the regional version of the SSA solver...\n");
 
-  if (config.get_flag("ssa_dirichlet_bc")) {
-    verbPrintf(2,grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
+  if (m_config.get_flag("ssa_dirichlet_bc")) {
+    verbPrintf(2,m_grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 
   no_model_mask = vars.get_2d_mask("no_model_mask");
@@ -133,7 +133,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   list.add(*usurfstore);
   list.add(*thkstore);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
@@ -142,7 +142,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
     }
 
     if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
-      if (i - 1 < 0 || i + 1 > (int)grid.Mx() - 1) {
+      if (i - 1 < 0 || i + 1 > (int)m_grid.Mx() - 1) {
         result(i, j).u = 0;
       } else {
         result(i, j).u = - pressure * usurfstore->diff_x(i,j);
@@ -150,7 +150,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
     }
 
     if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
-      if (j - 1 < 0 || j + 1 > (int)grid.My() - 1) {
+      if (j - 1 < 0 || j + 1 > (int)m_grid.My() - 1) {
         result(i, j).v = 0;
       } else {
         result(i, j).v = - pressure * usurfstore->diff_y(i,j);
@@ -164,7 +164,7 @@ void RegionalDefaultYieldStress::init(Vars &vars) {
   setVerbosityLevel(1);
   MohrCoulombYieldStress::init(vars);
   setVerbosityLevel(v);
-  verbPrintf(2,grid.com,
+  verbPrintf(2,m_grid.com,
              "  using the regional version with strong till in no_model_mask==1 area ...\n");
 
   no_model_mask = vars.get_2d_mask("no_model_mask");
@@ -181,7 +181,7 @@ void RegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &resu
   list.add(*no_model_mask);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*no_model_mask)(i,j) > 0.5) {

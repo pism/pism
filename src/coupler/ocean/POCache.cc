@@ -30,10 +30,10 @@ namespace pism {
 POCache::POCache(IceGrid &g, OceanModel* in)
   : POModifier(g, in) {
 
-  m_next_update_time = grid.time->current();
+  m_next_update_time = m_grid.time->current();
   m_update_interval_years = 10;
 
-  m_shelf_base_mass_flux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  m_shelf_base_mass_flux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
   m_shelf_base_mass_flux.set_attrs("climate_state",
                                    "ice mass flux from ice shelf base"
                                    " (positive flux is loss from ice shelf)",
@@ -41,11 +41,11 @@ POCache::POCache(IceGrid &g, OceanModel* in)
   m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1");
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
-  m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelf_base_temperature.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
   m_shelf_base_temperature.set_attrs("climate_state",
                                      "absolute temperature at ice shelf base",
                                      "K", "");
-  m_melange_back_pressure_fraction.create(grid,"melange_back_pressure_fraction",
+  m_melange_back_pressure_fraction.create(m_grid,"melange_back_pressure_fraction",
                                           WITHOUT_GHOSTS);
   m_melange_back_pressure_fraction.set_attrs("climate_state",
                                              "melange back pressure fraction",
@@ -63,7 +63,7 @@ void POCache::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'caching' ocean model modifier...\n");
 
   {
@@ -77,7 +77,7 @@ void POCache::init(Vars &vars) {
   }
 
   m_update_interval_years = update_interval;
-  m_next_update_time = grid.time->current();
+  m_next_update_time = m_grid.time->current();
 }
 
 void POCache::update(double my_t, double my_dt) {
@@ -89,14 +89,14 @@ void POCache::update(double my_t, double my_dt) {
       fabs(my_t - m_next_update_time) < 1.0) {
 
     double
-      one_year_from_now = grid.time->increment_date(my_t, 1.0),
+      one_year_from_now = m_grid.time->increment_date(my_t, 1.0),
       update_dt         = one_year_from_now - my_t;
 
     assert(update_dt > 0.0);
 
     input_model->update(my_t, update_dt);
 
-    m_next_update_time = grid.time->increment_date(m_next_update_time,
+    m_next_update_time = m_grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
     input_model->sea_level_elevation(m_sea_level);
@@ -174,7 +174,7 @@ void POCache::max_timestep(double t, double &dt, bool &restrict) {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < 1.0) {
-    double update_time_after_next = grid.time->increment_date(m_next_update_time,
+    double update_time_after_next = m_grid.time->increment_date(m_next_update_time,
                                                               m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;

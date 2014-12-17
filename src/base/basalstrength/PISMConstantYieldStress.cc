@@ -24,7 +24,7 @@ namespace pism {
 
 ConstantYieldStress::ConstantYieldStress(IceGrid &g)
   : YieldStress(g) {
-  tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   tauc.set_attrs("model_state", 
                  "yield stress for basal till (plastic or pseudo-plastic model)",
@@ -37,11 +37,11 @@ ConstantYieldStress::~ConstantYieldStress () {
 
 void ConstantYieldStress::init(Vars &/*vars*/) {
   bool i_set, bootstrap, tauc_set;
-  double constant_tauc = config.get("default_tauc");
+  double constant_tauc = m_config.get("default_tauc");
   std::string filename;
   int start;
 
-  verbPrintf(2, grid.com, "* Initializing the constant basal yield stress model...\n");
+  verbPrintf(2, m_grid.com, "* Initializing the constant basal yield stress model...\n");
 
   {
     OptionsIsSet("-i", "PISM input file", i_set);
@@ -61,10 +61,10 @@ void ConstantYieldStress::init(Vars &/*vars*/) {
       tauc.read(filename, start);
     } else {
       tauc.regrid(filename, OPTIONAL,
-                  config.get("default_tauc"));
+                  m_config.get("default_tauc"));
     }
   } else {
-    tauc.set(config.get("default_tauc"));
+    tauc.set(m_config.get("default_tauc"));
   }
 
   regrid("ConstantYieldStress", &tauc);

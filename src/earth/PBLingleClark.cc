@@ -40,7 +40,7 @@ PBLingleClark::PBLingleClark(IceGrid &g)
 PBLingleClark::~PBLingleClark() {
 
   if (deallocate() != 0) {
-    PetscPrintf(grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
+    PetscPrintf(m_grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
   }
 
 }
@@ -53,11 +53,11 @@ PetscErrorCode PBLingleClark::allocate() {
   topg_initial.allocate_proc0_copy(bedstartp0);
   topg_initial.allocate_proc0_copy(upliftp0);
 
-  bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
+  bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
 
-  if (grid.rank() == 0) {
-    bdLC.settings(config, use_elastic_model,
-                  grid.Mx(), grid.My(), grid.dx(), grid.dy(),
+  if (m_grid.rank() == 0) {
+    bdLC.settings(m_config, use_elastic_model,
+                  m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
                   4,     // use Z = 4 for now; to reduce global drift?
                   &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
 
@@ -88,7 +88,7 @@ PetscErrorCode PBLingleClark::deallocate() {
 void PBLingleClark::init(Vars &vars) {
   BedDef::init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the Lingle-Clark bed deformation model...\n");
 
   correct_topg();
@@ -99,7 +99,7 @@ void PBLingleClark::init(Vars &vars) {
   topg->put_on_proc0(bedstartp0);
   uplift->put_on_proc0(upliftp0);
 
-  if (grid.rank() == 0) {
+  if (m_grid.rank() == 0) {
     bdLC.init();
     bdLC.uplift_init();
   }
@@ -109,7 +109,7 @@ void PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
   std::string boot_filename, regrid_filename;
-  PIO nc(grid, "guess_mode");
+  PIO nc(m_grid, "guess_mode");
 
   OptionsIsSet("-regrid_bed_special",
                "Correct topg when switching to a different grid",
@@ -149,20 +149,20 @@ void PBLingleClark::correct_topg() {
 
   if (regrid_vars_set) {
     if (set_contains(regrid_vars, "topg")) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "  Bed elevation correction requested, but -regrid_vars contains topg...\n");
       return;
     }
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
              "  of the bed deformation from '%s'...\n",
              boot_filename.c_str(), regrid_filename.c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
-  topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
+  topg_tmp.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                      "m", "bedrock_altitude");
 
@@ -202,8 +202,8 @@ void PBLingleClark::update(double my_t, double my_dt) {
 
   // Check if it's time to update:
   double dt_beddef = t_final - t_beddef_last; // in seconds
-  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
-       t_final < grid.time->end()) ||
+  if ((dt_beddef < m_config.get("bed_def_interval_years", "years", "seconds") &&
+       t_final < m_grid.time->end()) ||
       dt_beddef < 1e-12) {
     return;
   }
@@ -213,9 +213,9 @@ void PBLingleClark::update(double my_t, double my_dt) {
   thk->put_on_proc0(Hp0);
   topg->put_on_proc0(bedp0);
 
-  if (grid.rank() == 0) {  // only processor zero does the step
+  if (m_grid.rank() == 0) {  // only processor zero does the step
     bdLC.step(dt_beddef, // time step, in seconds
-              t_final - grid.time->start()); // time since the start of the run, in seconds
+              t_final - m_grid.time->start()); // time since the start of the run, in seconds
   }
 
   topg->get_from_proc0(bedp0);

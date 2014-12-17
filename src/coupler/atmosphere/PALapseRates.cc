@@ -51,7 +51,7 @@ void PALapseRates::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  [using air temperature and precipitation lapse corrections]\n");
 
   init_internal(vars);
@@ -62,14 +62,14 @@ void PALapseRates::init(Vars &vars) {
                 precip_lapse_rate, precip_lapse_rate_set);
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "   air temperature lapse rate: %3.3f K per km\n"
              "   precipitation lapse rate:   %3.3f m/year per km\n",
              temp_lapse_rate, precip_lapse_rate);
 
-  temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
+  temp_lapse_rate = m_grid.convert(temp_lapse_rate, "K/km", "K/m");
 
-  precip_lapse_rate = grid.convert(precip_lapse_rate, "m/year / km", "m/s / m");
+  precip_lapse_rate = m_grid.convert(precip_lapse_rate, "m/year / km", "m/s / m");
 }
 
 
@@ -151,7 +151,7 @@ void PALapseRates::write_variables(const std::set<std::string> &vars_input, cons
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "air_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp;
 
     temp_snapshot(tmp);
@@ -163,7 +163,7 @@ void PALapseRates::write_variables(const std::set<std::string> &vars_input, cons
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "precipitation", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = precipitation;
 
     mean_precipitation(tmp);

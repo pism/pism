@@ -32,24 +32,24 @@ PAYearlyCycle::PAYearlyCycle(IceGrid &g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
-  m_snow_temp_july_day = config.get("snow_temp_july_day");
+  m_snow_temp_july_day = m_config.get("snow_temp_july_day");
 
   // Allocate internal IceModelVecs:
-  m_air_temp_mean_annual.create(grid, "air_temp_mean_annual", WITHOUT_GHOSTS);
+  m_air_temp_mean_annual.create(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS);
   m_air_temp_mean_annual.set_attrs("diagnostic",
                                    "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
                                    "K", 
                                    "");  // no CF standard_name ??
   m_air_temp_mean_annual.metadata().set_string("source", m_reference);
 
-  m_air_temp_mean_july.create(grid, "air_temp_mean_july", WITHOUT_GHOSTS);
+  m_air_temp_mean_july.create(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS);
   m_air_temp_mean_july.set_attrs("diagnostic",
                                  "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
                                  "Kelvin",
                                  "");  // no CF standard_name ??
   m_air_temp_mean_july.metadata().set_string("source", m_reference);
 
-  m_precipitation.create(grid, "precipitation", WITHOUT_GHOSTS);
+  m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("climate_state", 
                             "mean annual ice-equivalent precipitation rate",
                             "m s-1", 
@@ -85,7 +85,7 @@ void PAYearlyCycle::init(Vars &vars) {
 void PAYearlyCycle::init_internal(const std::string &input_filename, bool do_regrid,
                                             unsigned int start) {
   // read precipitation rate from file
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "      from %s ... \n",
              input_filename.c_str());
@@ -131,7 +131,7 @@ void PAYearlyCycle::write_variables(const std::set<std::string> &vars, const PIO
 
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp_snapshot;
 
     temp_snapshot(tmp);
@@ -165,14 +165,14 @@ void PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
 void PAYearlyCycle::init_timeseries(const std::vector<double> &ts) {
   // constants related to the standard yearly cycle
   const double
-    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
+    julyday_fraction = m_grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
 
   size_t N = ts.size();
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    double tk = grid.time->year_fraction(ts[k]) - julyday_fraction;
+    double tk = m_grid.time->year_fraction(ts[k]) - julyday_fraction;
 
     m_ts_times[k] = ts[k];
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
@@ -194,8 +194,8 @@ void PAYearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) 
 
 void PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
-    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
+    julyday_fraction = m_grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
+    T                = m_grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   IceModelVec::AccessList list;
@@ -203,7 +203,7 @@ void PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   list.add(m_air_temp_mean_annual);
   list.add(m_air_temp_mean_july);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * cos_T;
   }

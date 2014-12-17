@@ -38,8 +38,8 @@ PSGivenClimate::PSGivenClimate(IceGrid &g)
   standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance_flux";
   set_vec_parameters(standard_names);
 
-  ice_surface_temp->create(grid, "ice_surface_temp", false);
-  climatic_mass_balance->create(grid, "climatic_mass_balance", false);
+  ice_surface_temp->create(m_grid, "ice_surface_temp", false);
+  climatic_mass_balance->create(m_grid, "climatic_mass_balance", false);
 
   ice_surface_temp->set_attrs("climate_forcing",
                               "temperature of the ice at the ice surface but below firn processes",
@@ -64,7 +64,7 @@ void PSGivenClimate::init(Vars &) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the surface model reading temperature at the top of the ice\n"
              "  and ice surface mass flux from a file...\n");
 
@@ -73,7 +73,7 @@ void PSGivenClimate::init(Vars &) {
 
   // read time-independent data right away:
   if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {
-    update(grid.time->current(), 0); // dt is irrelevant
+    update(m_grid.time->current(), 0); // dt is irrelevant
   }
 }
 

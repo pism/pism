@@ -126,18 +126,18 @@ protected:
       bool do_regrid; int start;   // will be ignored
       Model::find_pism_input(filename, do_regrid, start);
 
-      verbPrintf(2, Model::grid.com,
+      verbPrintf(2, Model::m_grid.com,
                  "  - Option %s_file is not set. Trying the input file '%s'...\n",
                  option_prefix.c_str(), filename.c_str());
 
     } else {
-      verbPrintf(2, Model::grid.com,
+      verbPrintf(2, Model::m_grid.com,
                  "  - Reading boundary conditions from '%s'...\n",
                  filename.c_str());
     }
 
     if (bc_ref_year_set) {
-      bc_reference_time = Model::grid.convert(bc_reference_year, "years", "seconds");
+      bc_reference_time = Model::m_grid.convert(bc_reference_year, "years", "seconds");
     }
 
     if (bc_period_set) {
@@ -149,9 +149,9 @@ protected:
 
   void set_vec_parameters(std::map<std::string, std::string> standard_names)
   {
-    unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) Model::m_config.get("climate_forcing_buffer_size");
 
-    PIO nc(Model::grid.com, "netcdf3", Model::grid.config.get_unit_system());
+    PIO nc(Model::m_grid.com, "netcdf3", Model::m_grid.config.get_unit_system());
     nc.open(filename, PISM_READONLY);
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -179,7 +179,7 @@ protected:
 
       (k->second)->set_n_records(n_records);
 
-      (k->second)->set_n_evaluations_per_year((unsigned int)Model::config.get("climate_forcing_evaluations_per_year"));
+      (k->second)->set_n_evaluations_per_year((unsigned int)Model::m_config.get("climate_forcing_evaluations_per_year"));
 
       ++k;
     }
@@ -190,7 +190,7 @@ protected:
   virtual void update_internal(double my_t, double my_dt)
   {
     // "Periodize" the climate:
-    my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
+    my_t = Model::m_grid.time->mod(my_t - bc_reference_time, bc_period);
 
     if ((fabs(my_t - Model::m_t) < 1e-12) &&
         (fabs(my_dt - Model::m_dt) < 1e-12)) {

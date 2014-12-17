@@ -28,7 +28,7 @@ namespace pism {
 IcebergRemover::IcebergRemover(IceGrid &g)
   : Component(g) {
 
-  m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS);
+  m_iceberg_mask.create(m_grid, "iceberg_mask", WITHOUT_GHOSTS);
   m_iceberg_mask.allocate_proc0_copy(m_mask_p0);
 }
 
@@ -63,7 +63,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     list.add(pism_mask);
     list.add(m_iceberg_mask);
 
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (M.grounded_ice(i,j) == true) {
@@ -78,7 +78,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     if (m_bcflag) {
       list.add(*m_bcflag);
 
-      for (Points p(grid); p; p.next()) {
+      for (Points p(m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if ((*m_bcflag)(i,j) > 0.5 && M.icy(i,j)) {
@@ -92,12 +92,12 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   {
     m_iceberg_mask.put_on_proc0(m_mask_p0);
 
-    if (grid.rank() == 0) {
+    if (m_grid.rank() == 0) {
       double *mask;
       ierr = VecGetArray(m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecGetArray");
 
-      cc(mask, grid.Mx(), grid.My(), true, mask_grounded_ice);
+      cc(mask, m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
 
       ierr = VecRestoreArray(m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecRestoreArray");
@@ -119,7 +119,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
       // thickness at Dirichlet B.C. locations
       list.add(*m_bcflag);
 
-      for (Points p(grid); p; p.next()) {
+      for (Points p(m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (m_iceberg_mask(i,j) > 0.5 && (*m_bcflag)(i,j) < 0.5) {
@@ -129,7 +129,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
       }
     } else {
 
-      for (Points p(grid); p; p.next()) {
+      for (Points p(m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (m_iceberg_mask(i,j) > 0.5) {

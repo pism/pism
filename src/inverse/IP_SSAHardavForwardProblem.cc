@@ -28,11 +28,11 @@ namespace pism {
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
                                                        IPDesignVariableParameterization &tp)
   : SSAFEM(g, e),
-    m_grid(grid), m_zeta(NULL),
+    m_zeta(NULL),
     m_fixed_design_locations(NULL),
     m_design_param(tp),
     m_element_index(m_grid),
-    m_quadrature(grid, 1.0),
+    m_quadrature(m_grid, 1.0),
     m_rebuild_J_state(true) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
@@ -256,7 +256,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     du_a[i][j].u = 0.0;
@@ -390,7 +390,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
                                                                            IceModelVec2V &du,
                                                                            Vec dzeta) {
   double **dzeta_a;
-  PISMDM::Ptr da2 = m_grid.get_dm(1, config.get("grid_max_stencil_width"));
+  PISMDM::Ptr da2 = m_grid.get_dm(1, m_config.get("grid_max_stencil_width"));
 
   DMDAVecGetArray(*da2, dzeta, &dzeta_a);
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
@@ -460,7 +460,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     dzeta_a[i][j] = 0;
@@ -521,7 +521,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   } // i
   dirichletBC.finish();
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dB_dzeta;
@@ -583,7 +583,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dz
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+    verbPrintf(4, m_grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }
 
@@ -652,7 +652,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+    verbPrintf(4, m_grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }
 

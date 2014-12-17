@@ -29,8 +29,8 @@ namespace pism {
 OceanKill::OceanKill(IceGrid &g)
   : Component(g) {
 
-  m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
-                           config.get("grid_max_stencil_width"));
+  m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
+                           m_config.get("grid_max_stencil_width"));
 
   m_ocean_kill_mask.set_attrs("internal",
                               "mask specifying fixed calving front locations",
@@ -46,7 +46,7 @@ void OceanKill::init(Vars &vars) {
   std::string filename;
   bool flag;
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing calving at a fixed calving front...\n");
 
   {
@@ -62,11 +62,11 @@ void OceanKill::init(Vars &vars) {
   if (flag == false) {
     throw RuntimeError("option -ocean_kill_file is required.");
   } else {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  setting fixed calving front location using\n"
                "  ice thickness from '%s'.\n", filename.c_str());
 
-    thickness.create(grid, "thk", WITHOUT_GHOSTS);
+    thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",
                         "m", "land_ice_thickness");
     thickness.metadata().set_double("valid_min", 0.0);
@@ -81,7 +81,7 @@ void OceanKill::init(Vars &vars) {
   list.add(*tmp);
   list.add(*mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*tmp)(i, j) > 0 || m.grounded(i, j)) { // FIXME: use GeometryCalculator
@@ -105,7 +105,7 @@ void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
   assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);
   assert(ice_thickness.get_stencil_width()     >= GHOSTS);
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_ocean_kill_mask(i, j) > 0.5) {

@@ -48,7 +48,7 @@ void PA_SeaRISE_Greenland::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
              "  air temperature parameterization and using stored time-independent precipitation...\n");
 
@@ -67,7 +67,7 @@ void PA_SeaRISE_Greenland::init(Vars &vars) {
   if (precip_file_set == true) {
     m_variables = &vars;
 
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  * Option '-atmosphere_searise_greenland %s' is set...\n",
                m_precip_filename.c_str());
 
@@ -115,14 +115,14 @@ void PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
   m_dt = my_dt;
 
   const double 
-    d_ma     = config.get("snow_temp_fausto_d_ma"),      // K
-    gamma_ma = config.get("snow_temp_fausto_gamma_ma"),  // K m-1
-    c_ma     = config.get("snow_temp_fausto_c_ma"),      // K (degN)-1
-    kappa_ma = config.get("snow_temp_fausto_kappa_ma"),  // K (degW)-1
-    d_mj     = config.get("snow_temp_fausto_d_mj"),      // SAME UNITS as for _ma ...
-    gamma_mj = config.get("snow_temp_fausto_gamma_mj"),
-    c_mj     = config.get("snow_temp_fausto_c_mj"),
-    kappa_mj = config.get("snow_temp_fausto_kappa_mj");
+    d_ma     = m_config.get("snow_temp_fausto_d_ma"),      // K
+    gamma_ma = m_config.get("snow_temp_fausto_gamma_ma"),  // K m-1
+    c_ma     = m_config.get("snow_temp_fausto_c_ma"),      // K (degN)-1
+    kappa_ma = m_config.get("snow_temp_fausto_kappa_ma"),  // K (degW)-1
+    d_mj     = m_config.get("snow_temp_fausto_d_mj"),      // SAME UNITS as for _ma ...
+    gamma_mj = m_config.get("snow_temp_fausto_gamma_mj"),
+    c_mj     = m_config.get("snow_temp_fausto_c_mj"),
+    kappa_mj = m_config.get("snow_temp_fausto_kappa_mj");
 
   IceModelVec2S &h = *m_surfelev, &lat_degN = *m_lat, &lon_degE = *m_lon;
 
@@ -133,7 +133,7 @@ void PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
   list.add(m_air_temp_mean_annual);
   list.add(m_air_temp_mean_july);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
     m_air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));

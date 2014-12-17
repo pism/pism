@@ -38,7 +38,7 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g)
 
 PetscErrorCode PBPointwiseIsostasy::allocate() {
 
-  thk_last.create(grid, "thk_last", WITH_GHOSTS, config.get("grid_max_stencil_width"));
+  thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
 
   return 0;
 }
@@ -47,7 +47,7 @@ void PBPointwiseIsostasy::init(Vars &vars) {
 
   BedDef::init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the pointwise isostasy bed deformation model...\n");
 
   thk->copy_to(thk_last);
@@ -68,16 +68,16 @@ void PBPointwiseIsostasy::update(double my_t, double my_dt) {
 
   // Check if it's time to update:
   double dt_beddef = t_final - t_beddef_last; // in seconds
-  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
-       t_final < grid.time->end()) ||
+  if ((dt_beddef < m_config.get("bed_def_interval_years", "years", "seconds") &&
+       t_final < m_grid.time->end()) ||
       dt_beddef < 1e-12) {
     return;
   }
 
   t_beddef_last = t_final;
 
-  const double lithosphere_density = config.get("lithosphere_density"),
-    ice_density = config.get("ice_density"),
+  const double lithosphere_density = m_config.get("lithosphere_density"),
+    ice_density = m_config.get("ice_density"),
     f = ice_density / lithosphere_density;
 
   //! Our goal: topg = topg_last - f*(thk - thk_last)

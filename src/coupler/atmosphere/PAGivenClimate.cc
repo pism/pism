@@ -41,8 +41,8 @@ PAGivenClimate::PAGivenClimate(IceGrid &g)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  air_temp->create(grid, "air_temp", false);
-  precipitation->create(grid, "precipitation", false);
+  air_temp->create(m_grid, "air_temp", false);
+  precipitation->create(m_grid, "precipitation", false);
 
   air_temp->set_attrs("climate_forcing", "near-surface air temperature",
                       "Kelvin", "");
@@ -59,7 +59,7 @@ PAGivenClimate::~PAGivenClimate() {
 void PAGivenClimate::init(Vars &) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
@@ -68,7 +68,7 @@ void PAGivenClimate::init(Vars &) {
 
   // read time-independent data right away:
   if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {
-    update(grid.time->current(), 0); // dt is irrelevant
+    update(m_grid.time->current(), 0); // dt is irrelevant
   }
 }
 

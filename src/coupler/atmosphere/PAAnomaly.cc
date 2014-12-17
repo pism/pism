@@ -25,8 +25,8 @@ namespace pism {
 
 PAAnomaly::PAAnomaly(IceGrid &g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
-    air_temp(g.config.get_unit_system(), "air_temp", grid),
-    precipitation(g.config.get_unit_system(), "precipitation", grid)
+    air_temp(g.config.get_unit_system(), "air_temp", m_grid),
+    precipitation(g.config.get_unit_system(), "precipitation", m_grid)
 {
   option_prefix  = "-atmosphere_anomaly";
 
@@ -42,12 +42,12 @@ PAAnomaly::PAAnomaly(IceGrid &g, AtmosphereModel* in)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  air_temp_anomaly->create(grid, "air_temp_anomaly", false);
+  air_temp_anomaly->create(m_grid, "air_temp_anomaly", false);
   air_temp_anomaly->set_attrs("climate_forcing",
                               "anomaly of the near-surface air temperature",
                               "Kelvin", "");
 
-  precipitation_anomaly->create(grid, "precipitation_anomaly", false);
+  precipitation_anomaly->create(m_grid, "precipitation_anomaly", false);
   precipitation_anomaly->set_attrs("climate_forcing",
                                    "anomaly of the ice-equivalent precipitation rate",
                                    "m s-1", "");
@@ -75,10 +75,10 @@ void PAAnomaly::init(Vars &vars) {
   assert(input_model != NULL);
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the -atmosphere ...,anomaly code...\n");
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    reading anomalies from %s ...\n",
              filename.c_str());
 
@@ -189,7 +189,7 @@ void PAAnomaly::write_variables(const std::set<std::string> &vars_input, const P
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "air_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp;
 
     mean_annual_temp(tmp);
@@ -201,7 +201,7 @@ void PAAnomaly::write_variables(const std::set<std::string> &vars_input, const P
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "precipitation", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = precipitation;
 
     mean_precipitation(tmp);

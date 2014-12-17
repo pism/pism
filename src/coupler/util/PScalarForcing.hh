@@ -46,7 +46,7 @@ public:
 
   virtual void update(double my_t, double my_dt)
   {
-    Mod::m_t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_t  = Mod::m_grid.time->mod(my_t - bc_reference_time, bc_period);
     Mod::m_dt = my_dt;
 
     Mod::input_model->update(my_t, my_dt);
@@ -57,7 +57,7 @@ protected:
   {
     bool file_set, bc_period_set, bc_ref_year_set;
 
-    IceGrid &g = Mod::grid;
+    IceGrid &g = Mod::m_grid;
 
     double bc_period_years = 0,
       bc_reference_year = 0;

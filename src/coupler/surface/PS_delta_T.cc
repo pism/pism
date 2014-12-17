@@ -25,17 +25,17 @@ namespace pism {
 
 PS_delta_T::PS_delta_T(IceGrid &g, SurfaceModel* in)
   : PScalarForcing<SurfaceModel,PSModifier>(g, in),
-    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
   option_prefix = "-surface_delta_T";
   offset_name   = "delta_T";
 
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+  offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
   offset->get_metadata().set_units("Kelvin");
   offset->get_metadata().set_string("long_name", "ice-surface temperature offsets");
-  offset->get_dimension_metadata().set_units(grid.time->units_string());
+  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
@@ -61,7 +61,7 @@ void PS_delta_T::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing ice-surface temperature forcing using scalar offsets...\n");
 
   init_internal();
@@ -99,7 +99,7 @@ void PS_delta_T::write_variables(const std::set<std::string> &vars_input, const 
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
     ice_surface_temperature(tmp);
@@ -111,7 +111,7 @@ void PS_delta_T::write_variables(const std::set<std::string> &vars_input, const 
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
     ice_surface_mass_flux(tmp);

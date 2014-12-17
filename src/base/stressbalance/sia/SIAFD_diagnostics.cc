@@ -24,13 +24,13 @@ namespace pism {
 
 void SIAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
-  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, grid, *variables);
-  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);
-  dict["thksmooth"] = new SIAFD_thksmooth(this, grid, *variables);
-  dict["topgsmooth"] = new SIAFD_topgsmooth(this, grid, *variables);
-  dict["h_x"] = new SIAFD_h_x(this, grid, *variables);
-  dict["h_y"] = new SIAFD_h_y(this, grid, *variables);
+  dict["diffusivity"] = new SIAFD_diffusivity(this, m_grid, *variables);
+  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, m_grid, *variables);
+  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, m_grid, *variables);
+  dict["thksmooth"] = new SIAFD_thksmooth(this, m_grid, *variables);
+  dict["topgsmooth"] = new SIAFD_topgsmooth(this, m_grid, *variables);
+  dict["h_x"] = new SIAFD_h_x(this, m_grid, *variables);
+  dict["h_y"] = new SIAFD_h_y(this, m_grid, *variables);
 }
 
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars)

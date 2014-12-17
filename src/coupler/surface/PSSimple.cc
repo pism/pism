@@ -30,8 +30,8 @@ namespace pism {
 ///// Simple PISM surface model.
 PSSimple::PSSimple(IceGrid &g)
   : SurfaceModel(g),
-    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", grid),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", grid) {
+    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
+    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
@@ -55,7 +55,7 @@ void PSSimple::init(Vars &vars) {
   assert(atmosphere != NULL);
   atmosphere->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
              "  It passes atmospheric state directly to upper ice fluid surface:\n"
              "    surface mass balance          := precipitation,\n"
@@ -73,7 +73,7 @@ void PSSimple::update(double my_t, double my_dt) {
 
 void PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
   atmosphere->mean_precipitation(result);
-  result.scale(config.get("ice_density"));
+  result.scale(m_config.get("ice_density"));
 }
 
 void PSSimple::ice_surface_temperature(IceModelVec2S &result) {
@@ -107,7 +107,7 @@ void PSSimple::write_variables(const std::set<std::string> &vars_input, const PI
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
     ice_surface_temperature(tmp);
@@ -119,7 +119,7 @@ void PSSimple::write_variables(const std::set<std::string> &vars_input, const PI
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
     ice_surface_mass_flux(tmp);

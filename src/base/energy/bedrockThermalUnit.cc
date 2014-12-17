@@ -33,13 +33,13 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
   ghf        = NULL;
 
   // build constant diffusivity for heat equation
-  bed_rho = config.get("bedrock_thermal_density");
-  bed_c   = config.get("bedrock_thermal_specific_heat_capacity");
-  bed_k   = config.get("bedrock_thermal_conductivity");
+  bed_rho = m_config.get("bedrock_thermal_density");
+  bed_c   = m_config.get("bedrock_thermal_specific_heat_capacity");
+  bed_k   = m_config.get("bedrock_thermal_conductivity");
   bed_D   = bed_k / (bed_rho * bed_c);
 
-  m_Mbz = (int)config.get("grid_Mbz");
-  m_Lbz = (int)config.get("grid_Lbz");
+  m_Mbz = (int)m_config.get("grid_Mbz");
+  m_Lbz = (int)m_config.get("grid_Lbz");
   m_input_file.clear();
 
   // FIXME: Move the code processing command-line options elsewhere,
@@ -62,19 +62,19 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
     }
 
     if (i_set) {
-      ignore_option(grid.com, "-Mbz");
-      ignore_option(grid.com, "-Lbz");
+      ignore_option(m_grid.com, "-Mbz");
+      ignore_option(m_grid.com, "-Lbz");
 
       // If we're initializing from a file we need to get the number of bedrock
       // levels and the depth of the bed thermal layer from it:
-      PIO nc(grid, "guess_mode");
+      PIO nc(m_grid, "guess_mode");
 
       nc.open(m_input_file, PISM_READONLY);
 
       bool exists = nc.inq_var("litho_temp");
 
       if (exists) {
-        grid_info info = nc.inq_grid_info("litho_temp", grid.periodicity());
+        grid_info info = nc.inq_grid_info("litho_temp", m_grid.periodicity());
 
         m_Mbz = info.z_len;
         m_Lbz = -info.z_min;
@@ -89,7 +89,7 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
       // Bootstrapping
 
       if (Mbz_set && m_Mbz == 1) {
-        ignore_option(grid.com, "-Lbz");
+        ignore_option(m_grid.com, "-Lbz");
         m_Lbz = 0;
       } else if (Mbz_set ^ Lbz_set) {
         throw RuntimeError("please specify both -Mbz and -Lbz");
@@ -117,7 +117,7 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
         z[i] = -m_Lbz + i * dz;
       }
       z.back() = 0;
-      temp.create(grid, "litho_temp", "zb", z, attrs);
+      temp.create(m_grid, "litho_temp", "zb", z, attrs);
 
       temp.set_attrs("model_state",
                      "lithosphere (bedrock) temperature, in BedThermalUnit",
@@ -140,7 +140,7 @@ void BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2,grid.com,
+  verbPrintf(2,m_grid.com,
              "* Initializing the bedrock thermal unit... setting constants...\n");
 
   // Get pointers to fields owned by IceModel.
@@ -149,13 +149,13 @@ void BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
 
   // If we're using a minimal model, then we're done:
   if (!temp.was_created()) {
-    verbPrintf(2,grid.com,
+    verbPrintf(2,m_grid.com,
                "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
     return;
   }
 
   if (m_input_file.empty() == false) {
-    PIO nc(grid, "guess_mode");
+    PIO nc(m_grid, "guess_mode");
 
     nc.open(m_input_file, PISM_READONLY);
     bool exists = nc.inq_var("litho_temp");
@@ -320,7 +320,7 @@ void BedThermalUnit::update(double my_t, double my_dt) {
   list.add(*ghf);
   list.add(*bedtoptemp);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     temp.getInternalColumn(i,j,&Tbold); // Tbold actually points into temp memory
@@ -365,7 +365,7 @@ void BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
   list.add(temp);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     temp.getInternalColumn(i,j,&Tb);
@@ -383,7 +383,7 @@ void BedThermalUnit::bootstrap() {
     return;
   }
 
-  verbPrintf(2,grid.com,
+  verbPrintf(2,m_grid.com,
              "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
              "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
 
@@ -395,7 +395,7 @@ void BedThermalUnit::bootstrap() {
   list.add(*bedtoptemp);
   list.add(*ghf);
   list.add(temp);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     temp.getInternalColumn(i,j,&Tb); // Tb points into temp memory

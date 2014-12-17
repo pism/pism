@@ -29,11 +29,11 @@ EigenCalving::EigenCalving(IceGrid &g,
                                    StressBalance *stress_balance)
   : Component(g), m_stencil_width(2), m_mask(NULL),
     m_stress_balance(stress_balance) {
-  m_strain_rates.create(grid, "edot", WITH_GHOSTS,
+  m_strain_rates.create(m_grid, "edot", WITH_GHOSTS,
                         m_stencil_width,
                         2);
 
-  m_thk_loss.create(grid, "temporary_storage", WITH_GHOSTS, 1);
+  m_thk_loss.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
 
   m_strain_rates.set_name("edot_1", 0);
   m_strain_rates.set_attrs("internal",
@@ -45,8 +45,8 @@ EigenCalving::EigenCalving(IceGrid &g,
                            "minor principal component of horizontal strain-rate",
                            "1/s", "", 1);
 
-  m_K = config.get("eigen_calving_K");
-  m_restrict_timestep = config.get_flag("cfl_eigen_calving");
+  m_K = m_config.get("eigen_calving_K");
+  m_restrict_timestep = m_config.get_flag("cfl_eigen_calving");
 }
 
 EigenCalving::~EigenCalving() {
@@ -55,14 +55,14 @@ EigenCalving::~EigenCalving() {
 
 void EigenCalving::init(Vars &vars) {
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'eigen-calving' mechanism...\n");
 
-  if (fabs(grid.dx() - grid.dy()) / std::min(grid.dx(), grid.dy()) > 1e-2) {
+  if (fabs(m_grid.dx() - m_grid.dy()) / std::min(m_grid.dx(), m_grid.dy()) > 1e-2) {
     throw RuntimeError::formatted("-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
-                                  grid.dx(), grid.dy(),
-                                  fabs(grid.dx() - grid.dy()) / std::max(grid.dx(), grid.dy()));
+                                  m_grid.dx(), m_grid.dy(),
+                                  fabs(m_grid.dx() - m_grid.dy()) / std::max(m_grid.dx(), m_grid.dy()));
   }
 
   m_strain_rates.set(0.0);
@@ -95,7 +95,7 @@ void EigenCalving::update(double dt,
   list.add(m_strain_rates);
   list.add(m_thk_loss);
 
-  for (Points pt(grid); pt; pt.next()) {
+  for (Points pt(m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
     // Average of strain-rate eigenvalues in adjacent floating grid
     // cells to be used for eigen-calving:
@@ -180,7 +180,7 @@ void EigenCalving::update(double dt,
       }
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:
-      double calving_rate = calving_rate_horizontal * H_average / grid.dx(); // in m/s
+      double calving_rate = calving_rate_horizontal * H_average / m_grid.dx(); // in m/s
 
       // apply calving rate at partially filled or empty grid cells
       if (calving_rate > 0.0) {
@@ -205,7 +205,7 @@ void EigenCalving::update(double dt,
 
   m_thk_loss.update_ghosts();
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double thk_loss_ij = 0.0;
 
@@ -262,7 +262,7 @@ void EigenCalving::max_timestep(double /*my_t*/,
   restrict = true;
 
   // About 9 hours which corresponds to 10000 km/year on a 10 km grid
-  double dt_min = grid.convert(0.001, "years", "seconds");
+  double dt_min = m_grid.convert(0.001, "years", "seconds");
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width,
@@ -280,7 +280,7 @@ void EigenCalving::max_timestep(double /*my_t*/,
   list.add(*m_mask);
   list.add(m_strain_rates);
 
-  for (Points pt(grid); pt; pt.next()) {
+  for (Points pt(m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
     // Average of strain-rate eigenvalues in adjacent floating grid cells to
     // be used for eigencalving
@@ -342,23 +342,23 @@ void EigenCalving::max_timestep(double /*my_t*/,
 
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
-  GlobalSum(grid.com, &my_calving_rate_mean,  &calving_rate_mean);
-  GlobalSum(grid.com, &my_calving_rate_counter,  &calving_rate_counter);
-  GlobalMax(grid.com, &my_calving_rate_max,  &calving_rate_max);
+  GlobalSum(m_grid.com, &my_calving_rate_mean,  &calving_rate_mean);
+  GlobalSum(m_grid.com, &my_calving_rate_counter,  &calving_rate_counter);
+  GlobalMax(m_grid.com, &my_calving_rate_max,  &calving_rate_max);
 
   calving_rate_mean /= calving_rate_counter;
 
-  double denom = calving_rate_max / grid.dx();
-  const double epsilon = grid.convert(0.001 / (grid.dx() + grid.dy()), "seconds", "years");
+  double denom = calving_rate_max / m_grid.dx();
+  const double epsilon = m_grid.convert(0.001 / (m_grid.dx() + m_grid.dy()), "seconds", "years");
 
   my_dt = 1.0 / (denom + epsilon);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "!!!!! c_rate = %.0f m/year (dt=%.5f a) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
-             grid.convert(calving_rate_max, "m/s", "m/year"),
-             grid.convert(my_dt, "seconds", "years"),
+             m_grid.convert(calving_rate_max, "m/s", "m/year"),
+             m_grid.convert(my_dt, "seconds", "years"),
              i0, j0,
-             grid.convert(calving_rate_mean, "m/s", "m/year"),
+             m_grid.convert(calving_rate_mean, "m/s", "m/year"),
              calving_rate_counter);
 
   my_dt = std::max(my_dt, dt_min);
@@ -436,7 +436,7 @@ void EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
   list.add(pism_mask);
   list.add(ice_thickness);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     if (mask.ice_free(i, j)) {
       // FIXME: it might be better to have access to bedrock elevation b(i,j)

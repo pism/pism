@@ -35,17 +35,17 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g)
     ice_surface_temp(g.config.get_unit_system(), temperature_name, g) {
   mbscheme = NULL;
   faustogreve = NULL;
-  base_ddf.snow = config.get("pdd_factor_snow");
-  base_ddf.ice  = config.get("pdd_factor_ice");
-  base_ddf.refreezeFrac = config.get("pdd_refreeze");
-  base_pddStdDev = config.get("pdd_std_dev");
-  base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
+  base_ddf.snow = m_config.get("pdd_factor_snow");
+  base_ddf.ice  = m_config.get("pdd_factor_ice");
+  base_ddf.refreezeFrac = m_config.get("pdd_refreeze");
+  base_pddStdDev = m_config.get("pdd_std_dev");
+  base_pddThresholdTemp = m_config.get("pdd_positive_threshold_temp");
 
   pdd_annualize = false;
 
   mass_balance_name = "climatic_mass_balance";
 
-  climatic_mass_balance.create(grid, mass_balance_name, WITHOUT_GHOSTS);
+  climatic_mass_balance.create(m_grid, mass_balance_name, WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("diagnostic",
                                   "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
                                   "kg m-2 s-1",
@@ -56,7 +56,7 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g)
 
   // diagnostic fields:
 
-  accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS);
+  accumulation_rate.create(m_grid, "saccum", WITHOUT_GHOSTS);
   accumulation_rate.set_attrs("diagnostic",
                               "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
                               "m s-1",
@@ -64,7 +64,7 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g)
   accumulation_rate.set_glaciological_units("m year-1");
   accumulation_rate.write_in_glaciological_units = true;
 
-  melt_rate.create(grid, "smelt", WITHOUT_GHOSTS);
+  melt_rate.create(m_grid, "smelt", WITHOUT_GHOSTS);
   melt_rate.set_attrs("diagnostic",
                       "instantaneous ice-equivalent surface melt rate",
                       "m s-1",
@@ -72,7 +72,7 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g)
   melt_rate.set_glaciological_units("m year-1");
   melt_rate.write_in_glaciological_units = true;
 
-  runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS);
+  runoff_rate.create(m_grid, "srunoff", WITHOUT_GHOSTS);
   runoff_rate.set_attrs("diagnostic",
                         "instantaneous ice-equivalent surface meltwater runoff rate",
                         "m s-1",
@@ -119,7 +119,7 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
                 base_pddThresholdTemp, pSet);
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
              "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
              "  Surface mass balance and ice upper surface temperature are outputs.\n"
@@ -129,28 +129,28 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
   if (mbscheme == NULL) {
     if (pdd_rand_repeatable) {
       method = "simulation of a random process.";
-      mbscheme = new PDDrandMassBalance_Old(config, true);
+      mbscheme = new PDDrandMassBalance_Old(m_config, true);
     } else if (pdd_rand) {
       method = "repeatable simulation of a random process.";
-      mbscheme = new PDDrandMassBalance_Old(config, false);
+      mbscheme = new PDDrandMassBalance_Old(m_config, false);
     } else {
       method = "an expectation integral.";
-      mbscheme = new PDDMassBalance_Old(config);
+      mbscheme = new PDDMassBalance_Old(m_config);
     }
   }
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  Computing number of positive degree-days by: %s\n",
              method.c_str());
 
 
-  if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
+  if ((m_config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = vars.get_2d_scalar("latitude");
   } else
     lat = NULL;
 
 
   if (fausto_params) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  Setting PDD parameters from [Faustoetal2009] ...\n");
 
     //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
@@ -160,7 +160,7 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
     usurf = vars.get_2d_scalar("usurf");
 
   if (faustogreve == NULL) {
-    faustogreve = new FaustoGrevePDDObject_Old(grid);
+    faustogreve = new FaustoGrevePDDObject_Old(m_grid);
   }
 
   } else {
@@ -172,7 +172,7 @@ void PSTemperatureIndex_Old::init(Vars &vars) {
 
   // if -pdd_annualize is set, update mass balance immediately (at the
   // beginning of the run)
-  next_pdd_update = grid.time->current();
+  next_pdd_update = m_grid.time->current();
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
@@ -184,7 +184,7 @@ void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool
 
   if (pdd_annualize) {
     if (fabs(my_t - next_pdd_update) < 1e-12) {
-      my_dt = grid.convert(1.0, "years", "seconds");
+      my_dt = m_grid.convert(1.0, "years", "seconds");
     } else {
       my_dt = next_pdd_update - my_t;
     }
@@ -212,7 +212,7 @@ void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool
 
 void PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
 
-  PetscReal one_year = grid.convert(1.0, "years", "seconds");
+  PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
@@ -224,9 +224,9 @@ void PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
 
   if (pdd_annualize) {
     if (my_t + my_dt > next_pdd_update) {
-      verbPrintf(3, grid.com,
+      verbPrintf(3, m_grid.com,
                  "  Updating mass balance for one year starting at %1.1f...\n",
-                 grid.time->date(my_t).c_str());
+                 m_grid.time->date(my_t).c_str());
       update_internal(my_t, one_year);
       next_pdd_update = my_t + one_year;
     }
@@ -237,7 +237,7 @@ void PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
 
 void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
-  const double ice_density = config.get("ice_density");
+  const double ice_density = m_config.get("ice_density");
 
   // to ensure that temperature time series are correct:
   atmosphere->update(my_t, my_dt);
@@ -250,10 +250,10 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscInt Nseries = 0;
   mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries);
 
-  PetscReal one_year = grid.convert(1.0, "years", "seconds");
+  PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
 
   // time since the beginning of the year, in seconds
-  const PetscScalar tseries = grid.time->mod(my_t, one_year),
+  const PetscScalar tseries = m_grid.time->mod(my_t, one_year),
     dtseries = my_dt / ((PetscScalar) (Nseries - 1));
 
   // times for the air temperature time-series, in years:
@@ -283,8 +283,8 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
     faustogreve->update_temp_mj(usurf, lat, lon);
   }
 
-  const PetscScalar sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
-                    sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
+  const PetscScalar sigmalapserate = m_config.get("pdd_std_dev_lapse_lat_rate"),
+                    sigmabaselat   = m_config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
     if (lat == NULL) {
       throw RuntimeError("pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL");
@@ -302,7 +302,7 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
   atmosphere->init_timeseries(ts);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // the temperature time series from the AtmosphereModel and its modifiers
@@ -400,7 +400,7 @@ void PSTemperatureIndex_Old::write_variables(const std::set<std::string> &vars_i
 
   if (set_contains(vars, temperature_name)) {
     IceModelVec2S tmp;
-    tmp.create(grid, temperature_name, WITHOUT_GHOSTS);
+    tmp.create(m_grid, temperature_name, WITHOUT_GHOSTS);
     tmp.metadata(0) = ice_surface_temp;
 
     ice_surface_temperature(tmp);

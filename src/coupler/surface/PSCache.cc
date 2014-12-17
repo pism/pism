@@ -30,10 +30,10 @@ namespace pism {
 PSCache::PSCache(IceGrid &g, SurfaceModel* in)
   : PSModifier(g, in) {
 
-  m_next_update_time = grid.time->current();
+  m_next_update_time = m_grid.time->current();
   m_update_interval_years = 10;
 
-  m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("climate_state",
                         "surface mass balance (accumulation/ablation) rate",
                         "kg m-2 s-1",
@@ -41,20 +41,20 @@ PSCache::PSCache(IceGrid &g, SurfaceModel* in)
   m_mass_flux.set_glaciological_units("kg m-2 year-1");
   m_mass_flux.write_in_glaciological_units = true;
 
-  m_temperature.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_temperature.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   m_temperature.set_attrs("climate_state",
                           "ice temperature at the ice surface",
                           "K", "");
 
-  m_liquid_water_fraction.create(grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
+  m_liquid_water_fraction.create(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
   m_liquid_water_fraction.set_attrs("diagnostic",
                                     "ice surface liquid water fraction", "1", "");
 
-  m_mass_held_in_surface_layer.create(grid, "mass_held_in_surface_layer", WITHOUT_GHOSTS);
+  m_mass_held_in_surface_layer.create(m_grid, "mass_held_in_surface_layer", WITHOUT_GHOSTS);
   m_mass_held_in_surface_layer.set_attrs("diagnostic",
                                          "mass held in surface layer", "kg", "");
 
-  m_surface_layer_thickness.create(grid, "surface_layer_thickness", WITHOUT_GHOSTS);
+  m_surface_layer_thickness.create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);
   m_surface_layer_thickness.set_attrs("diagnostic",
                                       "surface layer thickness", "1", "");
 }
@@ -70,7 +70,7 @@ void PSCache::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'caching' surface model modifier...\n");
 
   {
@@ -84,7 +84,7 @@ void PSCache::init(Vars &vars) {
   }
 
   m_update_interval_years = update_interval;
-  m_next_update_time = grid.time->current();
+  m_next_update_time = m_grid.time->current();
 }
 
 void PSCache::update(double my_t, double my_dt) {
@@ -96,14 +96,14 @@ void PSCache::update(double my_t, double my_dt) {
       fabs(my_t - m_next_update_time) < 1.0) {
 
     double
-      one_year_from_now = grid.time->increment_date(my_t, 1.0),
+      one_year_from_now = m_grid.time->increment_date(my_t, 1.0),
       update_dt         = one_year_from_now - my_t;
 
     assert(update_dt > 0.0);
 
     input_model->update(my_t, update_dt);
 
-    m_next_update_time = grid.time->increment_date(m_next_update_time,
+    m_next_update_time = m_grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
     input_model->ice_surface_mass_flux(m_mass_flux);
@@ -121,7 +121,7 @@ void PSCache::max_timestep(double t, double &dt, bool &restrict) {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < 1.0) {
-    double update_time_after_next = grid.time->increment_date(m_next_update_time,
+    double update_time_after_next = m_grid.time->increment_date(m_next_update_time,
                                                               m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;

@@ -52,7 +52,7 @@ public:
     double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
-    my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
+    my_t = Mod::m_grid.time->mod(my_t - bc_reference_time,  bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
         (fabs(my_dt - dt) < 1e-12)) {
@@ -74,7 +74,7 @@ public:
     double max_dt = -1;
 
     // "Periodize" the climate:
-    t = Mod::grid.time->mod(t - bc_reference_time, bc_period);
+    t = Mod::m_grid.time->mod(t - bc_reference_time, bc_period);
 
     Mod::input_model->max_timestep(t, dt, restrict);
 
@@ -108,7 +108,7 @@ protected:
     std::string filename;
     bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
-    IceGrid &g = Mod::grid;
+    IceGrid &g = Mod::m_grid;
 
     double bc_period_years = 0,
       bc_reference_year = 0;
@@ -134,7 +134,7 @@ protected:
     }
 
     if (bc_ref_year_set) {
-      bc_reference_time = Model::grid.convert(bc_reference_year, "years", "seconds");
+      bc_reference_time = Model::m_grid.convert(bc_reference_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }
@@ -146,7 +146,7 @@ protected:
     }
 
     if (reference_surface.was_created() == false) {
-      unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
+      unsigned int buffer_size = (unsigned int) Mod::m_config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
       PIO nc(g.com, "netcdf3", g.config.get_unit_system());
@@ -171,7 +171,7 @@ protected:
       reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
-      reference_surface.set_n_evaluations_per_year((unsigned int)Mod::config.get("climate_forcing_evaluations_per_year"));
+      reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config.get("climate_forcing_evaluations_per_year"));
     }
 
     verbPrintf(2, g.com,
@@ -196,7 +196,7 @@ protected:
     list.add(reference_surface);
     list.add(result);
 
-    for (Points p(Mod::grid); p; p.next()) {
+    for (Points p(Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*thk)(i,j) > 0) {

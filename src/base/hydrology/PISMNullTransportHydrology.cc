@@ -31,7 +31,7 @@ NullTransportHydrology::~NullTransportHydrology() {
 }
 
 void NullTransportHydrology::init(Vars &vars) {
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
   Hydrology::init(vars);
 }
@@ -76,8 +76,8 @@ void NullTransportHydrology::update(double icet, double icedt) {
 
   get_input_rate(icet,icedt,total_input);
 
-  const double tillwat_max = config.get("hydrology_tillwat_max"),
-               C           = config.get("hydrology_tillwat_decay_rate");
+  const double tillwat_max = m_config.get("hydrology_tillwat_max"),
+               C           = m_config.get("hydrology_tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
     throw RuntimeError("NullTransportHydrology: hydrology_tillwat_max is negative.\n"
@@ -89,7 +89,7 @@ void NullTransportHydrology::update(double icet, double icedt) {
   list.add(*mask);
   list.add(Wtil);
   list.add(total_input);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ocean(i,j) || M.ice_free(i,j)) {

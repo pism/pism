@@ -30,32 +30,32 @@ namespace pism {
 void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                         std::map<std::string, TSDiagnostic*> &ts_dict) {
 
-  dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
+  dict["bfrict"]   = new PSB_bfrict(this, m_grid, *m_variables);
 
-  dict["velbar_mag"]     = new PSB_velbar_mag(this,     grid, *m_variables);
-  dict["flux_mag"]     = new PSB_flux_mag(this,     grid, *m_variables);
-  dict["velbase_mag"]    = new PSB_velbase_mag(this,    grid, *m_variables);
-  dict["velsurf_mag"]    = new PSB_velsurf_mag(this,    grid, *m_variables);
+  dict["velbar_mag"]     = new PSB_velbar_mag(this,     m_grid, *m_variables);
+  dict["flux_mag"]     = new PSB_flux_mag(this,     m_grid, *m_variables);
+  dict["velbase_mag"]    = new PSB_velbase_mag(this,    m_grid, *m_variables);
+  dict["velsurf_mag"]    = new PSB_velsurf_mag(this,    m_grid, *m_variables);
 
-  dict["uvel"]     = new PSB_uvel(this, grid, *m_variables);
-  dict["vvel"]     = new PSB_vvel(this, grid, *m_variables);
+  dict["uvel"]     = new PSB_uvel(this, m_grid, *m_variables);
+  dict["vvel"]     = new PSB_vvel(this, m_grid, *m_variables);
 
-  dict["strainheat"] = new PSB_strainheat(this, grid, *m_variables);
+  dict["strainheat"] = new PSB_strainheat(this, m_grid, *m_variables);
 
-  dict["velbar"]   = new PSB_velbar(this,   grid, *m_variables);
-  dict["velbase"]  = new PSB_velbase(this,  grid, *m_variables);
-  dict["velsurf"]  = new PSB_velsurf(this,  grid, *m_variables);
+  dict["velbar"]   = new PSB_velbar(this,   m_grid, *m_variables);
+  dict["velbase"]  = new PSB_velbase(this,  m_grid, *m_variables);
+  dict["velsurf"]  = new PSB_velsurf(this,  m_grid, *m_variables);
 
-  dict["wvel"]     = new PSB_wvel(this,     grid, *m_variables);
-  dict["wvelbase"] = new PSB_wvelbase(this, grid, *m_variables);
-  dict["wvelsurf"] = new PSB_wvelsurf(this, grid, *m_variables);
-  dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *m_variables);
-  dict["strain_rates"] = new PSB_strain_rates(this, grid, *m_variables);
-  dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *m_variables);
+  dict["wvel"]     = new PSB_wvel(this,     m_grid, *m_variables);
+  dict["wvelbase"] = new PSB_wvelbase(this, m_grid, *m_variables);
+  dict["wvelsurf"] = new PSB_wvelsurf(this, m_grid, *m_variables);
+  dict["wvel_rel"] = new PSB_wvel_rel(this, m_grid, *m_variables);
+  dict["strain_rates"] = new PSB_strain_rates(this, m_grid, *m_variables);
+  dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, m_grid, *m_variables);
 
-  dict["pressure"] = new PSB_pressure(this, grid, *m_variables);
-  dict["tauxz"] = new PSB_tauxz(this, grid, *m_variables);
-  dict["tauyz"] = new PSB_tauyz(this, grid, *m_variables);
+  dict["pressure"] = new PSB_pressure(this, m_grid, *m_variables);
+  dict["tauxz"] = new PSB_tauxz(this, m_grid, *m_variables);
+  dict["tauyz"] = new PSB_tauyz(this, m_grid, *m_variables);
 
   m_stress_balance->get_diagnostics(dict, ts_dict);
   m_modifier->get_diagnostics(dict, ts_dict);

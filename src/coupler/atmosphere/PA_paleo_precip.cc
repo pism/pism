@@ -23,16 +23,16 @@ namespace pism {
 
 PA_paleo_precip::PA_paleo_precip(IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.config.get_unit_system(), "air_temp", grid),
-    precipitation(g.config.get_unit_system(), "precipitation", grid)
+    air_temp(g.config.get_unit_system(), "air_temp", m_grid),
+    precipitation(g.config.get_unit_system(), "precipitation", m_grid)
 {
   offset = NULL;
   option_prefix = "-atmosphere_paleo_precip";
   offset_name = "delta_T";
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+  offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
   offset->get_metadata().set_units("Kelvin");
   offset->get_metadata().set_string("long_name", "air temperature offsets");
-  offset->get_dimension_metadata().set_units(grid.time->units_string());
+  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
@@ -43,7 +43,7 @@ PA_paleo_precip::PA_paleo_precip(IceGrid &g, AtmosphereModel* in)
   precipitation.set_units("m / s");
   precipitation.set_glaciological_units("m / year");
 
-  m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
+  m_precipexpfactor = m_config.get("precip_exponential_factor_for_temperature");
 }
 
 PA_paleo_precip::~PA_paleo_precip()
@@ -57,7 +57,7 @@ void PA_paleo_precip::init(Vars &vars) {
 
   input_model->init(vars);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing paleo-precipitation correction using temperature offsets...\n");
 
   init_internal();
@@ -121,7 +121,7 @@ void PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, c
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "air_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp;
 
     mean_annual_temp(tmp);
@@ -133,7 +133,7 @@ void PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, c
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    tmp.create(grid, "precipitation", WITHOUT_GHOSTS);
+    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = precipitation;
 
     mean_precipitation(tmp);

@@ -56,7 +56,7 @@ void Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
     filename = boot_file_file;
   }
 
-  PIO nc(grid, "netcdf3");      // OK to use netcdf3
+  PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
   unsigned int last_record;
   nc.open(filename, PISM_READONLY);
   last_record = nc.inq_nrecords() - 1;
@@ -110,7 +110,7 @@ void Component::regrid(const std::string &module_name, IceModelVec *variable,
 
   if ((vars_set == true && set_contains(vars, m.get_string("short_name")) == true) ||
       (vars_set == false && flag == REGRID_WITHOUT_REGRID_VARS)) {
-    verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
+    verbPrintf(2, m_grid.com, "  regridding '%s' from file '%s' ...\n",
                m.get_string("short_name").c_str(), file.c_str());
     variable->regrid(file, CRITICAL);
   }

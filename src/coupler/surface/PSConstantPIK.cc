@@ -31,7 +31,7 @@ namespace pism {
 PSConstantPIK::PSConstantPIK(IceGrid &g)
   : SurfaceModel(g) {
 
-  climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("climate_state",
                                   "constant-in-time surface mass balance (accumulation/ablation) rate",
                                   "kg m-2 s-1",
@@ -39,7 +39,7 @@ PSConstantPIK::PSConstantPIK(IceGrid &g)
   climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
   climatic_mass_balance.write_in_glaciological_units = true;
 
-  ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   ice_surface_temp.set_attrs("climate_state",
                              "constant-in-time ice temperature at the ice surface",
                              "K", "");
@@ -56,7 +56,7 @@ void PSConstantPIK::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
              "  It reads surface mass balance directly from the file and holds it constant.\n"
              "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
@@ -69,7 +69,7 @@ void PSConstantPIK::init(Vars &vars) {
   find_pism_input(input_file, do_regrid, start);
 
   // read snow precipitation rate from file
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
              input_file.c_str());
   if (do_regrid) {
@@ -79,7 +79,7 @@ void PSConstantPIK::init(Vars &vars) {
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 
@@ -98,7 +98,7 @@ void PSConstantPIK::update(double my_t, double my_dt)
   list.add(*usurf);
   list.add(*lat);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
   }

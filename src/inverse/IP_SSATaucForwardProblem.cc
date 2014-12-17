@@ -27,7 +27,6 @@ namespace pism {
 IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
                                                    IPDesignVariableParameterization &tp)
   : SSAFEM(g, e),
-    m_grid(grid),
     m_zeta(NULL),
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
@@ -253,7 +252,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     du_a[i][j].u = 0.0;
@@ -377,7 +376,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 \overload */
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta) {
   double **dzeta_a;
-  PISMDM::Ptr da2 = m_grid.get_dm(1, config.get("grid_max_stencil_width"));
+  PISMDM::Ptr da2 = m_grid.get_dm(1, m_config.get("grid_max_stencil_width"));
 
   DMDAVecGetArray(*da2, dzeta, &dzeta_a);
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
@@ -437,7 +436,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     dzeta_a[i][j] = 0;
@@ -494,7 +493,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   } // i
   dirichletBC.finish();
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dtauc_dzeta;
@@ -556,7 +555,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzet
     throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n",
+    verbPrintf(4, m_grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }
 
@@ -627,7 +626,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
     throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n",
+    verbPrintf(4, m_grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }
 

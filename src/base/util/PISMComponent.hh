@@ -93,7 +93,7 @@ class Component {
 public:
   /** Create a Component instance given a grid. */
   Component(IceGrid &g)
-    : grid(g), config(g.config) {}
+    : m_grid(g), m_config(g.config) {}
   virtual ~Component() {}
 
   //! \brief Adds more variable names to result (to let sub-models respect
@@ -122,8 +122,8 @@ public:
 
 protected:
   virtual void find_pism_input(std::string &filename, bool &regrid, int &start);
-  IceGrid &grid;
-  const Config &config;
+  IceGrid &m_grid;
+  const Config &m_config;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in

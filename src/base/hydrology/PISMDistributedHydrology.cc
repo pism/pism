@@ -34,22 +34,22 @@ DistributedHydrology::DistributedHydrology(IceGrid &g,
   hold_velbase_mag = false;
 
   // additional variables beyond RoutingHydrology::allocate()
-  P.create(grid, "bwp", WITH_GHOSTS, 1);
+  P.create(m_grid, "bwp", WITH_GHOSTS, 1);
   P.set_attrs("model_state",
               "pressure of transportable water in subglacial layer",
               "Pa", "");
   P.metadata().set_double("valid_min", 0.0);
-  velbase_mag.create(grid, "velbase_mag", WITHOUT_GHOSTS);
+  velbase_mag.create(m_grid, "velbase_mag", WITHOUT_GHOSTS);
   velbase_mag.set_attrs("internal",
                         "ice sliding speed seen by subglacial hydrology",
                         "m s-1", "");
   velbase_mag.metadata().set_double("valid_min", 0.0);
-  Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS);
+  Pnew.create(m_grid, "Pnew_internal", WITHOUT_GHOSTS);
   Pnew.set_attrs("internal",
                  "new transportable subglacial water pressure during update",
                  "Pa", "");
   Pnew.metadata().set_double("valid_min", 0.0);
-  psi.create(grid, "hydraulic_potential", WITH_GHOSTS, 1);
+  psi.create(m_grid, "hydraulic_potential", WITH_GHOSTS, 1);
   psi.set_attrs("internal",
                 "hydraulic potential of water in subglacial layer",
                 "Pa", "");
@@ -60,7 +60,7 @@ DistributedHydrology::~DistributedHydrology() {
 }
 
 void DistributedHydrology::init(Vars &vars) {
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
   std::string filename;
@@ -70,13 +70,13 @@ void DistributedHydrology::init(Vars &vars) {
                  "Report to stdout on mass accounting in hydrology models",
                  report_mass_accounting);
 
-    stripwidth = grid.convert(stripwidth, "m", "km");
+    stripwidth = m_grid.convert(stripwidth, "m", "km");
     OptionsReal("-hydrology_null_strip",
                 "set the width, in km, of the strip around the edge "
                 "of the computational domain in which hydrology is inactivated",
                 stripwidth, strip_set);
     if (strip_set == true) {
-      stripwidth = grid.convert(stripwidth, "km", "m");
+      stripwidth = m_grid.convert(stripwidth, "km", "m");
     }
     OptionsIsSet("-init_P_from_steady",
                  "initialize P from formula P(W) which applies in steady state",
@@ -94,14 +94,14 @@ void DistributedHydrology::init(Vars &vars) {
   init_bwp(vars);
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  option -init_P_from_steady seen ...\n"
                "  initializing P from P(W) formula which applies in steady state\n");
     P_from_W_steady(P);
   }
 
   if (hold_flag) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "  reading velbase_mag for 'distributed' hydrology from '%s'.\n", filename.c_str());
     velbase_mag.regrid(filename, CRITICAL_FILL_MISSING, 0.0);
     hold_velbase_mag = true;
@@ -122,7 +122,7 @@ void DistributedHydrology::init_bwp(Vars &vars) {
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
-  const double bwp_default = config.get("bootstrapping_bwp_value_no_var");
+  const double bwp_default = m_config.get("bootstrapping_bwp_value_no_var");
   IceModelVec2S *P_input = NULL;
 
   try {
@@ -135,14 +135,14 @@ void DistributedHydrology::init_bwp(Vars &vars) {
       int start;
       find_pism_input(filename, bootstrap_set, start);
       if (i_set) {
-        PIO nc(grid, "guess_mode");
+        PIO nc(m_grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
         bool bwp_exists = nc.inq_var("bwp");
         nc.close();
         if (bwp_exists == true) {
           P.read(filename, start);
         } else {
-          verbPrintf(2, grid.com,
+          verbPrintf(2, m_grid.com,
                      "PISM WARNING: bwp for hydrology model not found in '%s'."
                      "  Setting it to %.2f ...\n",
                      filename.c_str(), bwp_default);
@@ -187,13 +187,13 @@ void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &d
                                                std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   // bwp is state
-  dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
-  dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
-  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, grid, *variables);
+  dict["bwprel"] = new Hydrology_bwprel(this, m_grid, *variables);
+  dict["effbwp"] = new Hydrology_effbwp(this, m_grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid, *variables);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid, *variables);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid, *variables);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid, *variables);
+  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, m_grid, *variables);
 }
 
 
@@ -215,7 +215,7 @@ void DistributedHydrology::check_P_bounds(bool enforce_upper) {
   list.add(P);
   list.add(Pover);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (P(i,j) < 0.0) {
@@ -245,10 +245,10 @@ in verification and/or reporting.  It is not used during time-dependent
 model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
 void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
-  double CC = config.get("hydrology_cavitation_opening_coefficient") /
-                    (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
-    powglen = 1.0 / config.get("sia_Glen_exponent"), // choice is SIA; see #285
-    Wr = config.get("hydrology_roughness_scale");
+  double CC = m_config.get("hydrology_cavitation_opening_coefficient") /
+                    (m_config.get("hydrology_creep_closure_coefficient") * m_config.get("ice_softness")),
+    powglen = 1.0 / m_config.get("sia_Glen_exponent"), // choice is SIA; see #285
+    Wr = m_config.get("hydrology_roughness_scale");
 
   overburden_pressure(Pover);
 
@@ -258,7 +258,7 @@ void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   list.add(velbase_mag);
   list.add(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double sb = pow(CC * velbase_mag(i, j), powglen);
@@ -304,7 +304,7 @@ void DistributedHydrology::adaptive_for_WandP_evolution(double t_current, double
   adaptive_for_W_evolution(t_current,t_end, maxKW,
                            dt_result,maxV_result,maxD_result,dtCFL,dtDIFFW);
 
-  const double phi0 = config.get("hydrology_regularizing_porosity");
+  const double phi0 = m_config.get("hydrology_regularizing_porosity");
   dtDIFFP = 2.0 * phi0 * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
@@ -316,14 +316,14 @@ void DistributedHydrology::adaptive_for_WandP_evolution(double t_current, double
     PtoCFLratio = 1.0;
   }
 
-  verbPrintf(3,grid.com,
+  verbPrintf(3,m_grid.com,
              "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-             grid.convert(maxV_result, "m/second", "m/year"),
-             grid.convert(dtCFL,       "seconds",  "years"),
-             grid.convert(dtDIFFW,     "seconds",  "years"),
-             grid.convert(dtDIFFP,     "seconds",  "years"),
-             grid.convert(dt_result,   "seconds",  "years"),
-             grid.convert(t_current,   "seconds",  "years"));
+             m_grid.convert(maxV_result, "m/second", "m/year"),
+             m_grid.convert(dtCFL,       "seconds",  "years"),
+             m_grid.convert(dtDIFFW,     "seconds",  "years"),
+             m_grid.convert(dtDIFFP,     "seconds",  "years"),
+             m_grid.convert(dt_result,   "seconds",  "years"),
+             m_grid.convert(t_current,   "seconds",  "years"));
 }
 
 
@@ -355,13 +355,13 @@ void DistributedHydrology::update(double icet, double icedt) {
   }
 
   const double
-            rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
-            nglen = config.get("sia_Glen_exponent"), // choice is SIA; see #285
-            Aglen = config.get("ice_softness"),
-            c1    = config.get("hydrology_cavitation_opening_coefficient"),
-            c2    = config.get("hydrology_creep_closure_coefficient"),
-            Wr    = config.get("hydrology_roughness_scale"),
-            phi0  = config.get("hydrology_regularizing_porosity");
+            rg    = m_config.get("fresh_water_density") * m_config.get("standard_gravity"),
+            nglen = m_config.get("sia_Glen_exponent"), // choice is SIA; see #285
+            Aglen = m_config.get("ice_softness"),
+            c1    = m_config.get("hydrology_cavitation_opening_coefficient"),
+            c2    = m_config.get("hydrology_creep_closure_coefficient"),
+            Wr    = m_config.get("hydrology_roughness_scale"),
+            phi0  = m_config.get("hydrology_regularizing_porosity");
 
   double ht = m_t, hdt = 0, // hydrology model time and time step
             maxKW = 0, maxV = 0, maxD = 0;
@@ -415,8 +415,8 @@ void DistributedHydrology::update(double icet, double icedt) {
 
     // update Pnew from time step
     const double  CC = (rg * hdt) / phi0,
-                     wux  = 1.0 / (grid.dx() * grid.dx()),
-                     wuy  = 1.0 / (grid.dy() * grid.dy());
+                     wux  = 1.0 / (m_grid.dx() * m_grid.dx()),
+                     wuy  = 1.0 / (m_grid.dy() * m_grid.dy());
     double  Open, Close, divflux, ZZ,
                divadflux, diffW;
     overburden_pressure(Pover);
@@ -437,7 +437,7 @@ void DistributedHydrology::update(double icet, double icedt) {
     list.add(Pover);
     list.add(Pnew);
 
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (M.ice_free_land(i,j)) {
@@ -458,8 +458,8 @@ void DistributedHydrology::update(double icet, double icedt) {
         Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
-        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx()
-          + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy();
+        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / m_grid.dx()
+          + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / m_grid.dy();
         const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
           Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
           Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
@@ -494,13 +494,13 @@ void DistributedHydrology::update(double icet, double icedt) {
   } // end of hydrology model time-stepping loop
 
   if (report_mass_accounting) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                " 'distributed' hydrology summary:\n"
                "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
                "        (average of %.2f steps per CFL time; max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
                "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
                "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-               hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
+               hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
                cumratio/hydrocount, maxV, maxD,
                icefreelost, oceanlost,
                negativegain, nullstriplost);

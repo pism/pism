@@ -59,7 +59,7 @@ void PSVerification::init(Vars &vars) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(grid.time->current(), 0);
+  update(m_grid.time->current(), 0);
 }
 
 /** Initialize climate inputs of tests K and O.
@@ -82,7 +82,7 @@ void PSVerification::update_KO() {
 void PSVerification::update_L() {
   PetscScalar     A0, T0;
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, m_EC);
+  ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -92,16 +92,16 @@ void PSVerification::update_L() {
   m_ice_surface_temp.set(T0);
 
   const double
-    ice_density = config.get("ice_density"),
-    a0          = grid.convert(0.3, "m/year", "m/s"),
+    ice_density = m_config.get("ice_density"),
+    a0          = m_grid.convert(0.3, "m/year", "m/s"),
     L           = 750e3,
     Lsqr        = L * L;
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = radius(grid, i, j);
+    double r = radius(m_grid, i, j);
     m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
@@ -152,7 +152,7 @@ void PSVerification::update(PetscReal t, PetscReal dt) {
   }
 
   // convert from [m/s] to [kg m-2 s-1]
-  m_climatic_mass_balance.scale(config.get("ice_density"));
+  m_climatic_mass_balance.scale(m_config.get("ice_density"));
 }
 
 /** Update climate inputs for tests A, B, C, D, E, H.
@@ -162,9 +162,9 @@ void PSVerification::update(PetscReal t, PetscReal dt) {
 void PSVerification::update_ABCDEH(double time) {
   double         A0, T0, H, accum, dummy1, dummy2, dummy3;
 
-  double f = config.get("ice_density") / config.get("lithosphere_density");
+  double f = m_config.get("ice_density") / m_config.get("lithosphere_density");
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, m_EC);
+  ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -174,11 +174,11 @@ void PSVerification::update_ABCDEH(double time) {
   m_ice_surface_temp.set(T0);
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    PetscScalar xx = grid.x(i), yy = grid.y(j),
-      r = radius(grid, i, j);
+    PetscScalar xx = m_grid.x(i), yy = m_grid.y(j),
+      r = radius(m_grid, i, j);
     switch (m_testname) {
     case 'A':
       exactA(r, &H, &accum);
@@ -207,7 +207,7 @@ void PSVerification::update_ABCDEH(double time) {
 }
 
 void PSVerification::update_FG(double time) {
-  unsigned int   Mz = grid.Mz();
+  unsigned int   Mz = m_grid.Mz();
   double         H, accum;
 
   std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
@@ -215,10 +215,10 @@ void PSVerification::update_FG(double time) {
   IceModelVec::AccessList list(m_climatic_mass_balance);
   list.add(m_ice_surface_temp);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(radius(grid, i, j), 1.0); // avoid singularity at origin
+    double r = std::max(radius(m_grid, i, j), 1.0); // avoid singularity at origin
 
     m_ice_surface_temp(i, j) = Tmin + ST * r;
 
@@ -226,10 +226,10 @@ void PSVerification::update_FG(double time) {
       accum = - ablationRateOutside / secpera;
     } else {
       if (m_testname == 'F') {
-        bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
+        bothexact(0.0, r, &(m_grid.z()[0]), Mz, 0.0,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       } else {
-        bothexact(time, r, &(grid.z()[0]), Mz, ApforG,
+        bothexact(time, r, &(m_grid.z()[0]), Mz, ApforG,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       }
     }

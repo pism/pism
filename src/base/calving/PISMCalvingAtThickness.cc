@@ -25,9 +25,9 @@ namespace pism {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid &g)
   : Component(g) {
-  m_calving_threshold = config.get("thickness_calving_threshold");
+  m_calving_threshold = m_config.get("thickness_calving_threshold");
 
-  m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
+  m_old_mask.create(m_grid, "old_mask", WITH_GHOSTS, 1);
 }
 
 CalvingAtThickness::~CalvingAtThickness() {
@@ -36,7 +36,7 @@ CalvingAtThickness::~CalvingAtThickness() {
 
 
 void CalvingAtThickness::init(Vars &/*vars*/) {
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'calving at a threshold thickness' mechanism...\n"
              "  thickness threshold: %3.3f meters\n", m_calving_threshold);
 }
@@ -63,7 +63,7 @@ void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
   list.add(ice_thickness);
   list.add(m_old_mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.floating_ice(i, j)           &&

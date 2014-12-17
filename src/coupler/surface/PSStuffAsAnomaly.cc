@@ -26,7 +26,7 @@ namespace pism {
 PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, SurfaceModel *input)
     : PSModifier(g, input) {
 
-  mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   mass_flux.set_attrs("climate_state",
                       "surface mass balance (accumulation/ablation) rate",
                       "kg m-2 s-1",
@@ -34,24 +34,24 @@ PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, SurfaceModel *input)
   mass_flux.set_glaciological_units("kg m-2 year-1");
   mass_flux.write_in_glaciological_units = true;
 
-  temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   temp.set_attrs("climate_state", "ice temperature at the ice surface",
                  "K", "");
 
   // create special variables
-  mass_flux_0.create(grid, "mass_flux_0", WITHOUT_GHOSTS);
+  mass_flux_0.create(m_grid, "mass_flux_0", WITHOUT_GHOSTS);
   mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
 
-  mass_flux_input.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  mass_flux_input.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
                             "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
 
-  temp_0.create(grid, "ice_surface_temp_0", WITHOUT_GHOSTS);
+  temp_0.create(m_grid, "ice_surface_temp_0", WITHOUT_GHOSTS);
   temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
                    "");
 
-  temp_input.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  temp_input.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
                        "K", "");
 }
@@ -73,7 +73,7 @@ void PSStuffAsAnomaly::init(Vars &vars) {
 
   find_pism_input(input_file, do_regrid, start);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing the 'turn_into_anomaly' modifier\n"
              "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
              "  read from '%s'.\n", input_file.c_str());
@@ -102,7 +102,7 @@ void PSStuffAsAnomaly::update(double my_t, double my_dt) {
     input_model->ice_surface_mass_flux(mass_flux);
 
     // if we are at the beginning of the run...
-    if (m_t < grid.time->start() + 1) { // this is goofy, but time-steps are
+    if (m_t < m_grid.time->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
       temp.copy_to(temp_0);
@@ -119,7 +119,7 @@ void PSStuffAsAnomaly::update(double my_t, double my_dt) {
   list.add(temp_0);
   list.add(temp_input);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);

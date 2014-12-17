@@ -39,17 +39,17 @@ void PS_EISMINTII::init(Vars &vars) {
 
   (void) vars;
 
-  verbPrintf(2, grid.com, 
+  verbPrintf(2, m_grid.com, 
              "setting parameters for surface mass balance"
              " and temperature in EISMINT II experiment %c ... \n", 
              m_experiment);
 
   // EISMINT II specified values for parameters
-  m_S_b = grid.convert(1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
+  m_S_b = m_grid.convert(1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
   m_S_T = 1.67e-2 * 1e-3;       // K/m  Temp gradient
 
   // these are for A,E,G,H,I,K:
-  m_M_max = grid.convert(0.5, "m/year", "m/s"); // Max accumulation
+  m_M_max = m_grid.convert(0.5, "m/year", "m/s"); // Max accumulation
   m_R_el  = 450.0e3;            // Distance to equil line (SMB=0)
   m_T_min = 238.15;
 
@@ -61,7 +61,7 @@ void PS_EISMINTII::init(Vars &vars) {
   case 'J':
   case 'L':                     // supposed to start from end of experiment A (for C;
     //   resp I and K for J and L) and:
-    m_M_max = grid.convert(0.25, "m/year", "m/s");
+    m_M_max = m_grid.convert(0.25, "m/year", "m/s");
     m_R_el  = 425.0e3;
     break;
   case 'D':                     // supposed to start from end of experiment A and:
@@ -77,33 +77,33 @@ void PS_EISMINTII::init(Vars &vars) {
   OptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set);
 
   double
-    myMmax = grid.convert(m_M_max, "m/s",        "m/year"),
-    mySb   = grid.convert(m_S_b,   "m/second/m", "m/year/km"),
-    myST   = grid.convert(m_S_T,   "K/m",        "K/km"),
-    myRel  = grid.convert(m_R_el,  "m",          "km");
+    myMmax = m_grid.convert(m_M_max, "m/s",        "m/year"),
+    mySb   = m_grid.convert(m_S_b,   "m/second/m", "m/year/km"),
+    myST   = m_grid.convert(m_S_T,   "K/m",        "K/km"),
+    myRel  = m_grid.convert(m_R_el,  "m",          "km");
 
   OptionsReal("-Mmax", "Maximum accumulation, m/year",
               myMmax, option_set);
   if (option_set) {
-    m_M_max = grid.convert(myMmax, "m/year", "m/second");
+    m_M_max = m_grid.convert(myMmax, "m/year", "m/second");
   }
 
   OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
               mySb, option_set);
   if (option_set) {
-    m_S_b = grid.convert(mySb, "m/year/km", "m/second/m");
+    m_S_b = m_grid.convert(mySb, "m/year/km", "m/second/m");
   }
 
   OptionsReal("-ST", "radial gradient of surface temperature, K/km",
               myST, option_set);
   if (option_set) {
-    m_S_T = grid.convert(myST, "K/km", "K/m");
+    m_S_T = m_grid.convert(myST, "K/km", "K/m");
   }
 
   OptionsReal("-Rel", "radial distance to equilibrium line, km",
               myRel, option_set);
   if (option_set) {
-    m_R_el = grid.convert(myRel, "km", "m");
+    m_R_el = m_grid.convert(myRel, "km", "m");
   }
 
   initialize_using_formulas();
@@ -111,7 +111,7 @@ void PS_EISMINTII::init(Vars &vars) {
 
 void PS_EISMINTII::initialize_using_formulas() {
 
-  PetscScalar cx = grid.Lx(), cy = grid.Ly();
+  PetscScalar cx = m_grid.Lx(), cy = m_grid.Ly();
   if (m_experiment == 'E') {
     // shift center
     cx += 100.0e3;
@@ -123,12 +123,12 @@ void PS_EISMINTII::initialize_using_formulas() {
   list.add(m_ice_surface_temp);
   list.add(m_climatic_mass_balance);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // r is distance from center of grid; if E then center is shifted (above)
-    const double r = sqrt(PetscSqr(-cx + grid.dx()*i)
-                          + PetscSqr(-cy + grid.dy()*j));
+    const double r = sqrt(PetscSqr(-cx + m_grid.dx()*i)
+                          + PetscSqr(-cy + m_grid.dy()*j));
     // set accumulation from formula (7) in (Payne et al 2000)
     m_climatic_mass_balance(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
     // set surface temperature
@@ -136,7 +136,7 @@ void PS_EISMINTII::initialize_using_formulas() {
   }
 
   // convert from [m/s] to [kg m-2 s-1]
-  m_climatic_mass_balance.scale(config.get("ice_density"));
+  m_climatic_mass_balance.scale(m_config.get("ice_density"));
 }
 
 void PS_EISMINTII::update(PetscReal t, PetscReal dt) {
