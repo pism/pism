@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
     setVerbosityLevel(5);
 
     ICMEnthalpyConverter EC(config);
-    ThermoGlenArrIce ice(grid.com, "", config, &EC);
+    ThermoGlenArrIce ice(grid.com, "sia_", config, &EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;
@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
       age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
-    Vars vars;
+    Vars &vars = grid.variables();
 
     // ice upper surface elevation
     ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -413,6 +413,8 @@ int main(int argc, char *argv[]) {
                                 "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
     vars.add(vMask);
 
+    vars.lock();
+
     // Create the SIA solver object:
 
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
@@ -451,7 +453,7 @@ int main(int argc, char *argv[]) {
                  &ice_thickness, u_sia, v_sia, w_sia, sigma);
 
     // Write results to an output file:
-    PIO pio(grid, "guess_mode");
+    PIO pio(grid, "netcdf3");
 
     pio.open(output_file, PISM_READWRITE_MOVE);
     pio.def_time(config.get_string("time_dimension_name"),

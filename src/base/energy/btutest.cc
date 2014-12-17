@@ -67,7 +67,7 @@ void BTU_Test::bootstrap() {
 }
 
 
-static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
+static PetscErrorCode createVecs(IceGrid &grid) {
   IceModelVec2S *bedtoptemp = new IceModelVec2S,
                 *ghf        = new IceModelVec2S;
 
@@ -76,15 +76,15 @@ static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
                  "upward geothermal flux at bedrock thermal layer base",
                  "W m-2", "");
   ghf->set_glaciological_units("mW m-2");
-  variables.add(*ghf);
+  grid.variables().add(*ghf);
 
   bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS);
   bedtoptemp->set_attrs("",
                         "temperature at top of bedrock thermal layer",
                         "K", "");
-  variables.add(*bedtoptemp);
+  grid.variables().add(*bedtoptemp);
 
-  variables.lock();
+  grid.variables().lock();
 
   return 0;
 }
@@ -182,16 +182,15 @@ int main(int argc, char *argv[]) {
     grid.allocate();
 
     // allocate tools and IceModelVecs
-    Vars variables;
-    createVecs(grid, variables);
+    createVecs(grid);
 
     // these vars are owned by this driver, outside of BedThermalUnit
     IceModelVec2S *bedtoptemp, *ghf;
 
     // top of bedrock layer temperature; filled from Test K exact values
-    bedtoptemp = variables.get_2d_scalar("bedtoptemp");
+    bedtoptemp = grid.variables().get_2d_scalar("bedtoptemp");
     // lithosphere (bottom of bedrock layer) heat flux; has constant value
-    ghf = variables.get_2d_scalar("bheatflx");
+    ghf = grid.variables().get_2d_scalar("bheatflx");
 
     ghf->set(0.042);  // see Test K
 
@@ -293,7 +292,7 @@ int main(int argc, char *argv[]) {
 
     pio.close();
 
-    doneWithIceInfo(variables);
+    doneWithIceInfo(grid.variables());
     verbPrintf(2,com, "done.\n");
   }
   catch (...) {
