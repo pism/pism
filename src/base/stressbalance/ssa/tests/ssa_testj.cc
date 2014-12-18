@@ -182,43 +182,26 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=61;
-    int My=61;
-    std::string output_file = "ssa_test_j.nc";
 
-    std::set<std::string> ssa_choices;
-    ssa_choices.insert("fem");
-    ssa_choices.insert("fd");
-    std::string driver = "fem";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TESTJ options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-    {
-      bool flag;
-      int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
-                 Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction",
-                 My, flag);
-      OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
-                  ssa_choices, driver, driver, flag);
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fem");
 
-      OptionsString("-o", "Set the output file name",
-                    output_file, flag);
-      OptionsInt("-verbose", "Verbosity level",
-                 my_verbosity_level, flag);
-      if (flag) {
-        setVerbosityLevel(my_verbosity_level);
-      }
+    options::String output("-o", "Set the output file name",
+                           "ssa_test_j.nc", options::ALLOW_EMPTY);
+
+    options::Integer verbose("-verbose", "Verbosity level", 2);
+    if (verbose.is_set()) {
+      setVerbosityLevel(verbose);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") {
+    if (method.value() == "fem") {
       ssafactory = SSAFEMFactory;
-    } else if (driver == "fd") {
+    } else if (method.value() == "fd") {
       ssafactory = SSAFDFactory;
     } else {
       /* can't happen */
@@ -228,7 +211,7 @@ int main(int argc, char *argv[]) {
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("J");
-    ierr = testcase.write(output_file);
+    testcase.write(output);
   }
   catch (...) {
     handle_fatal_errors(com);
