@@ -28,7 +28,7 @@ namespace options {
 String::String(const std::string& option,
                const std::string& description,
                const std::string& default_value,
-               bool allow_empty_argument) {
+               ArgumentFlag argument_flag) {
 
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag = PETSC_FALSE;
@@ -47,7 +47,7 @@ String::String(const std::string& option,
 
   if (flag == PETSC_TRUE) {
     if (result.empty()) {
-      if (allow_empty_argument) {
+      if (argument_flag == ALLOW_EMPTY) {
         set("", true);
       } else {
         throw RuntimeError::formatted("command line option '%s' requires an argument.",
@@ -65,7 +65,7 @@ String::String(const std::string& option,
 StringList::StringList(const std::string& option,
                        const std::string& description,
                        const std::string& default_value) {
-  String input(option, description, default_value, false);
+  String input(option, description, default_value, DONT_ALLOW_EMPTY);
   std::vector<std::string> result;
 
   std::string token;
@@ -104,7 +104,7 @@ Keyword::Keyword(const std::string& option,
   std::string list = "[" + choices + "]";
   std::string long_description = description + " Choose one of " + list;
 
-  String input(option, long_description, default_value, false);
+  String input(option, long_description, default_value, DONT_ALLOW_EMPTY);
   
   // use the default value if the option was not set
   if (not input.is_set()) {
@@ -176,7 +176,7 @@ Real::Real(const std::string& option,
            double default_value) {
   std::stringstream buffer;
   buffer << default_value;
-  String input(option, description, buffer.str(), false);
+  String input(option, description, buffer.str(), DONT_ALLOW_EMPTY);
 
   std::string str = input;
   char *endptr = NULL;
@@ -191,7 +191,7 @@ Real::Real(const std::string& option,
 
 RealList::RealList(const std::string& option,
                    const std::string& description) {
-  String input(option, description, "", false);
+  String input(option, description, "", DONT_ALLOW_EMPTY);
   std::vector<double> result;
 
   if (input.is_set()) {

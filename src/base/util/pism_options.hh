@@ -29,12 +29,14 @@ class Config;
 
 namespace options {
 
+typedef enum {ALLOW_EMPTY, DONT_ALLOW_EMPTY} ArgumentFlag;
+
 class String : public Option<std::string> {
 public:
   String(const std::string& option,
          const std::string& description,
          const std::string& default_value,
-         bool allow_empty_argument = false);
+         ArgumentFlag flag = DONT_ALLOW_EMPTY);
 };
 
 class StringList : public Option<std::vector<std::string> > {
