@@ -233,10 +233,10 @@ void MohrCoulombYieldStress::init()
   // regrid if requested, regardless of how initialized
   regrid("MohrCoulombYieldStress", &m_till_phi);
 
-  StringOption tauc_to_phi("-tauc_to_phi",
-                           "Turn on, and specify, the till friction angle computation"
-                           " which uses basal yield stress (tauc) and the rest of the model state",
-                           "", true /* allow and empty argument */);
+  options::String tauc_to_phi("-tauc_to_phi",
+                              "Turn on, and specify, the till friction angle computation"
+                              " which uses basal yield stress (tauc) and the rest of the model state",
+                              "", true /* allow and empty argument */);
 
   if (tauc_to_phi.is_set()) {
 

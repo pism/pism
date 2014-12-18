@@ -21,13 +21,12 @@
 #define _OPTIONS_H_
 
 namespace pism {
-
-// namespace options {
+namespace options {
 
 template <typename T>
-class GenericOption {
+class Option {
 public:
-  GenericOption() {
+  Option() {
     m_is_set = false;
   }
   operator T() {
@@ -48,9 +47,7 @@ protected:
   }
 };
 
-
-// } // end of namespace options
-
+} // end of namespace options
 } // end of namespace pism
 
 

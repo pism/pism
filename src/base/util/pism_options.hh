@@ -27,66 +27,66 @@ namespace pism {
 
 class Config;
 
-////
+namespace options {
 
-class StringOption : public GenericOption<std::string> {
+class String : public Option<std::string> {
 public:
-  StringOption(const std::string& option,
-               const std::string& description,
-               const std::string& default_value,
-               bool allow_empty_arg = false);
+  String(const std::string& option,
+         const std::string& description,
+         const std::string& default_value,
+         bool allow_empty_argument = false);
 };
 
-class StringListOption : public GenericOption<std::vector<std::string> > {
+class StringList : public Option<std::vector<std::string> > {
 public:
-  StringListOption(const std::string& option,
-                   const std::string& description,
-                   const std::string& default_value);  
-};
-
-class StringSetOption : public GenericOption<std::set<std::string> > {
-public:
-  StringSetOption(const std::string& option,
-                  const std::string& description,
-                  const std::string& default_value);
-};
-
-class KeywordOption : public GenericOption<std::string> {
-public:
-  KeywordOption(const std::string& option,
-                const std::string& description,
-                const std::string& choices,
-                const std::string& default_value);
-};
-
-class IntegerOption : public GenericOption<int> {
-public:
-  IntegerOption(const std::string& option,
-                const std::string& description,
-                int default_value);
-};
-
-class IntegerListOption : public GenericOption<std::vector<int> > {
-public:
-  IntegerListOption(const std::string& option,
-                    const std::string& description);
-};
-
-
-class RealOption : public GenericOption<double> {
-public:
-  RealOption(const std::string& option,
+  StringList(const std::string& option,
              const std::string& description,
-             double default_value);
+             const std::string& default_value);
 };
 
-class RealListOption : public GenericOption<std::vector<double> > {
+class StringSet : public Option<std::set<std::string> > {
 public:
-  RealListOption(const std::string& option,
-                 const std::string& description);
+  StringSet(const std::string& option,
+            const std::string& description,
+            const std::string& default_value);
 };
 
-////
+class Keyword : public Option<std::string> {
+public:
+  Keyword(const std::string& option,
+          const std::string& description,
+          const std::string& choices,
+          const std::string& default_value);
+};
+
+class Integer : public Option<int> {
+public:
+  Integer(const std::string& option,
+          const std::string& description,
+          int default_value);
+};
+
+class IntegerList : public Option<std::vector<int> > {
+public:
+  IntegerList(const std::string& option,
+              const std::string& description);
+};
+
+
+class Real : public Option<double> {
+public:
+  Real(const std::string& option,
+       const std::string& description,
+       double default_value);
+};
+
+class RealList : public Option<std::vector<double> > {
+public:
+  RealList(const std::string& option,
+           const std::string& description);
+};
+
+} // end of namespace options
 
 PetscErrorCode verbosityLevelFromOptions();
 

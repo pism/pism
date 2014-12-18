@@ -284,13 +284,22 @@ using namespace pism;
 %rename(_OptionsStringSet) pism::OptionsStringSet;
 
 %include "options.hh"
-%template(GenericOptionStdString) pism::GenericOption<std::string>;
-%template(GenericOptionStdVectorStdString) pism::GenericOption<std::vector<std::string> >;
-%template(GenericOptionStdSetStdString) pism::GenericOption<std::set<std::string> >;
-%template(GenericOptionInt) pism::GenericOption<int>;
-%template(GenericOptionStdVectorInt) pism::GenericOption<std::vector<int> >;
-%template(GenericOptionDouble) pism::GenericOption<double>;
-%template(GenericOptionStdVectorDouble) pism::GenericOption<std::vector<double> >;
+%template(OptionStdString) pism::options::Option<std::string>;
+%template(OptionStdVectorStdString) pism::options::Option<std::vector<std::string> >;
+%template(OptionStdSetStdString) pism::options::Option<std::set<std::string> >;
+%template(OptionInt) pism::options::Option<int>;
+%template(OptionStdVectorInt) pism::options::Option<std::vector<int> >;
+%template(OptionDouble) pism::options::Option<double>;
+%template(OptionStdVectorDouble) pism::options::Option<std::vector<double> >;
+
+%rename(StringOption) pism::options::String;
+%rename(StringListOption) pism::options::StringList;
+%rename(StringSetOption) pism::options::StringSet;
+%rename(KeywordOption) pism::options::Keyword;
+%rename(IntegerOption) pism::options::Integer;
+%rename(IntegerListOption) pism::options::IntegerList;
+%rename(RealOption) pism::options::Real;
+%rename(RealListOption) pism::options::RealList;
 
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.
