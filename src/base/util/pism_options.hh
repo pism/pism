@@ -106,7 +106,7 @@ PetscErrorCode OptionsString(std::string option, std::string text,
 PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string default_value,
                                       std::vector<std::string>& result, bool &flag);
 PetscErrorCode OptionsStringSet(std::string opt, std::string text, std::string default_value,
-                                    std::set<std::string>& result, bool &flag);
+                                std::set<std::string>& result, bool &flag);
 
 PetscErrorCode OptionsInt(std::string option, std::string text,
                               int &result, bool &is_set);

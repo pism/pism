@@ -31,7 +31,6 @@ namespace pism {
 
 //! \brief Stop if -version is set.
 PetscErrorCode stop_on_version_option() {
-  PetscErrorCode ierr;
 
   bool vSet = false;
   vSet = OptionsIsSet("-version");
@@ -228,7 +227,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   This is to make it possible to pass a parameter to a module selected using a
   command-line option without adding one mode option.
  */
-PetscErrorCode OptionsList(std::string opt, std::string description,
+PetscErrorCode OptionsList(std::string option, std::string description,
                            std::set<std::string> choices, std::string default_value,
                            std::string &result, bool &flag) {
   PetscErrorCode ierr;
@@ -249,7 +248,7 @@ PetscErrorCode OptionsList(std::string opt, std::string description,
 
   descr = description + " Choose one of " + list;
 
-  ierr = PetscOptionsString(opt.c_str(), descr.c_str(), "", default_value.c_str(),
+  ierr = PetscOptionsString(option.c_str(), descr.c_str(), "", default_value.c_str(),
                             tmp, TEMPORARY_STRING_LENGTH, &opt_set);
   PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
@@ -273,7 +272,7 @@ PetscErrorCode OptionsList(std::string opt, std::string description,
     result = tmp;
   } else {
     throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
-                                  opt.c_str(), tmp, list.c_str());
+                                  option.c_str(), tmp, list.c_str());
   }
 
   return 0;
