@@ -174,8 +174,7 @@ void IceRegionalModel::model_state_setup() {
   // Now save the basal melt rate at the beginning of the run.
   bmr_stored.copy_from(basal_melt_rate);
 
-  bool zgwnm;
-  OptionsIsSet("-zero_grad_where_no_model", zgwnm);
+  bool zgwnm = OptionsIsSet("-zero_grad_where_no_model");
   if (zgwnm) {
     thkstore.set(0.0);
     usurfstore.set(0.0);
@@ -264,9 +263,7 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 void IceRegionalModel::initFromFile(const std::string &filename) {
   PIO nc(grid, "guess_mode");
 
-  bool no_model_strip_set;
-  OptionsIsSet("-no_model_strip", "No-model strip, in km",
-               no_model_strip_set);
+  bool no_model_strip_set = OptionsIsSet("-no_model_strip", "No-model strip, in km");
 
   if (no_model_strip_set) {
     no_model_mask.metadata().set_string("pism_intent", "internal");
@@ -297,8 +294,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
     }
   }
 
-  bool zgwnm;
-  OptionsIsSet("-zero_grad_where_no_model", zgwnm);
+  bool zgwnm = OptionsIsSet("-zero_grad_where_no_model");
   if (zgwnm) {
     thkstore.metadata().set_string("pism_intent", "internal");
     usurfstore.metadata().set_string("pism_intent", "internal");
@@ -318,15 +314,12 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
 
 void IceRegionalModel::set_vars_from_options() {
-  PetscErrorCode ierr;
-  bool nmstripSet;
 
   // base class reads the -boot_file option and does the bootstrapping:
   IceModel::set_vars_from_options();
 
-  ierr = OptionsIsSet("-no_model_strip", 
-                      "width in km of strip near boundary in which modeling is turned off",
-                      nmstripSet);
+  bool nmstripSet = OptionsIsSet("-no_model_strip", 
+                                 "width in km of strip near boundary in which modeling is turned off");
 
   if (not nmstripSet) {
     throw RuntimeError("option '-no_model_strip X' (X in km) is REQUIRED if '-i' is not used.\n"
@@ -433,9 +426,8 @@ int main(int argc, char *argv[]) {
                PISM_Revision);
     stop_on_version_option();
 
-    bool iset, bfset;
-    OptionsIsSet("-i", iset);
-    OptionsIsSet("-boot_file", bfset);
+    bool iset = OptionsIsSet("-i");
+    bool bfset = OptionsIsSet("-boot_file");
     std::string usage =
       "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"

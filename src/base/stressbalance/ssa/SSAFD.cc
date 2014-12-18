@@ -222,8 +222,7 @@ void SSAFD::init() {
     bool flag;
     OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
                nuh_viewer_size, flag);
-    OptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
-                 view_nuh);
+    view_nuh = OptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
   }
 
   if (m_config.get_flag("calving_front_stress_boundary_condition")) {
@@ -236,8 +235,7 @@ void SSAFD::init() {
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
   std::string tempPrefix;
-  OptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
-               dump_system_matlab);
+  dump_system_matlab = OptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format");
 
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;

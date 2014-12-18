@@ -101,8 +101,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
   nc.write_global_attributes(global_attributes);
 
-  bool override_used;
-  OptionsIsSet("-config_override", override_used);
+  bool override_used = OptionsIsSet("-config_override");
   if (override_used) {
     overrides.update_from(config);
     overrides.write(nc);
@@ -630,8 +629,7 @@ void IceModel::init_snapshots() {
     OptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
                   tmp, save_times_set);
 
-    OptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
-                 split);
+    split = OptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files");
 
     output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
                             "small", snapshot_vars);

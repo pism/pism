@@ -164,16 +164,15 @@ void MohrCoulombYieldStress::init()
   m_mask = m_grid.variables().get_2d_mask("mask");
 
   {
-    OptionsIsSet("-plastic_phi", plastic_phi_set);
-    OptionsIsSet("-topg_to_phi",
-                 "Turn on, and specify, the till friction angle parameterization based on bedrock elevation (topg)",
-                 topg_to_phi_set);
-    OptionsIsSet("-i", "PISM input file", i_set);
-    OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                 bootstrap);
-    OptionsIsSet("-tauc_to_phi", 
-                 "Turn on, and specify, the till friction angle computation which uses basal yield stress (tauc) and the rest of the model state",
-                 tauc_to_phi_set);
+    plastic_phi_set = OptionsIsSet("-plastic_phi");
+    topg_to_phi_set = OptionsIsSet("-topg_to_phi",
+                                   "Turn on, and specify, the till friction angle parameterization"
+                                   " based on bedrock elevation (topg)");
+    i_set           = OptionsIsSet("-i", "PISM input file");
+    bootstrap       = OptionsIsSet("-boot_file", "PISM bootstrapping file");
+    tauc_to_phi_set = OptionsIsSet("-tauc_to_phi", 
+                                   "Turn on, and specify, the till friction angle computation"
+                                   " which uses basal yield stress (tauc) and the rest of the model state");
   }
 
   // Get the till friction angle from the the context and ignore options that
@@ -434,8 +433,7 @@ where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
 The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
 */
 void MohrCoulombYieldStress::topg_to_phi() {
-  bool  topg_to_phi_set;
-  OptionsIsSet("-topg_to_phi", topg_to_phi_set);
+  bool topg_to_phi_set = OptionsIsSet("-topg_to_phi");
   assert(topg_to_phi_set == true);
 
   double phi_min  = m_config.get("till_topg_to_phi_phi_min"),

@@ -198,8 +198,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     // constants controlling the numerical method:
     bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
-  bool viewOneColumn = false;
-  OptionsIsSet("-view_sys", viewOneColumn);
+  bool viewOneColumn = OptionsIsSet("-view_sys");
 
   DrainageCalculator dc(config);
 

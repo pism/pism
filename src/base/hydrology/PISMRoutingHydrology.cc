@@ -93,9 +93,8 @@ void RoutingHydrology::init() {
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool stripset;
   {
-    OptionsIsSet("-report_mass_accounting",
-                 "Report to stdout on mass accounting in hydrology models",
-                 report_mass_accounting);
+    report_mass_accounting = OptionsIsSet("-report_mass_accounting",
+                                          "Report to stdout on mass accounting in hydrology models");
 
     stripwidth = m_grid.convert(stripwidth, "m", "km");
     OptionsReal("-hydrology_null_strip",
@@ -119,9 +118,8 @@ void RoutingHydrology::init_bwat() {
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i, bootstrap;
   {
-    OptionsIsSet("-i", "PISM input file", i);
-    OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                 bootstrap);
+    i         = OptionsIsSet("-i", "PISM input file");
+    bootstrap = OptionsIsSet("-boot_file", "PISM bootstrapping file");
   }
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");

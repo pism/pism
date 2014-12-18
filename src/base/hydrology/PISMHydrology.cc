@@ -83,9 +83,8 @@ void Hydrology::init() {
     OptionsReal("-hydrology_input_to_bed_reference_year",
                 "The reference year for periodizing the -hydrology_input_to_bed_file data",
                 itbreference_year, itbreference_set);
-    OptionsIsSet("-i", "PISM input file", i_set);
-    OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                 bootstrap);
+    i_set = OptionsIsSet("-i", "PISM input file");
+    bootstrap = OptionsIsSet("-boot_file", "PISM bootstrapping file");
   }
 
   // the following are IceModelVec pointers into IceModel generally and are read by code in the

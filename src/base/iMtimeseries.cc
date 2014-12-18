@@ -47,7 +47,7 @@ void IceModel::init_timeseries() {
                   vars, ts_vars_set);
 
     // default behavior is to move the file aside if it exists already; option allows appending
-    OptionsIsSet("-ts_append", append);
+    append = OptionsIsSet("-ts_append");
   }
 
   IO_Mode mode = PISM_READWRITE;
@@ -224,8 +224,7 @@ void IceModel::init_extras() {
     OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
                   vars, extra_vars_set);
 
-    OptionsIsSet("-extra_split", "Specifies whether to save to separate files",
-                 split);
+    split = OptionsIsSet("-extra_split", "Specifies whether to save to separate files");
   }
 
   if (extra_file_set ^ extra_times_set) {
@@ -248,8 +247,7 @@ void IceModel::init_extras() {
     throw RuntimeError("no argument for -extra_times option.");
   }
 
-  bool append;
-  OptionsIsSet("-extra_append", append);
+  bool append = OptionsIsSet("-extra_append");
 
   if (append == true && split == true) {
     throw RuntimeError("both -extra_split and -extra_append are set.");
@@ -456,8 +454,7 @@ void IceModel::write_extras() {
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
-    bool append = false;
-    OptionsIsSet("-extra_append", append);
+    bool append = OptionsIsSet("-extra_append");
 
     IO_Mode mode = PISM_READWRITE;
     if (append == false) {

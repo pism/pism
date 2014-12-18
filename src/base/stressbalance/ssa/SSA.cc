@@ -124,7 +124,7 @@ void SSA::init() {
     unsigned int start;
     PIO nc(m_grid, "guess_mode");
 
-    OptionsIsSet("-dontreadSSAvels", dont_read_initial_guess);
+    dont_read_initial_guess = OptionsIsSet("-dontreadSSAvels");
 
     nc.open(filename, PISM_READONLY);
     u_ssa_found = nc.inq_var("u_ssa");

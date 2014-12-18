@@ -48,9 +48,8 @@ int main(int argc, char *argv[]) {
                PISM_Revision);
     stop_on_version_option();
 
-    bool iset, bfset;
-    OptionsIsSet("-i", iset);
-    OptionsIsSet("-boot_file", bfset);
+    bool iset = OptionsIsSet("-i");
+    bool bfset = OptionsIsSet("-boot_file");
     std::string usage =
       "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -82,10 +81,8 @@ int main(int argc, char *argv[]) {
 
     m.init();
 
-    bool print_list_and_stop = false;
-    OptionsIsSet("-list_diagnostics",
-                 "List available diagnostic quantities and stop",
-                 print_list_and_stop);
+    bool print_list_and_stop = OptionsIsSet("-list_diagnostics",
+                                            "List available diagnostic quantities and stop");
 
     if (print_list_and_stop) {
       m.list_diagnostics();

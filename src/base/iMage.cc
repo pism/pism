@@ -245,8 +245,7 @@ ageSystemCtx::solveThisColumn() for the actual method.
 void IceModel::ageStep() {
   PetscErrorCode  ierr;
 
-  bool viewOneColumn;
-  OptionsIsSet("-view_sys", viewOneColumn);
+  bool viewOneColumn = OptionsIsSet("-view_sys");
 
   IceModelVec3 *u3, *v3, *w3;
   stress_balance->get_3d_velocity(u3, v3, w3);

@@ -113,7 +113,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
 
-  OptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive);
+  m_tikhonov_adaptive = OptionsIsSet("-tikhonov_adaptive");
   
   m_iter_max = 1000; bool flag;
   OptionsInt("-inv_gn_iter_max", "", m_iter_max, flag);  

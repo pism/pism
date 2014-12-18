@@ -273,7 +273,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   NCTimeseries err("N", "N", grid->config.get_unit_system());
   unsigned int start;
   std::string filename;
-  bool flag, append;
+  bool flag;
   NCVariable global_attributes("PISM_GLOBAL", grid->config.get_unit_system());
 
   OptionsString("-report_file", "NetCDF error report file",
@@ -287,8 +287,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   verbPrintf(2, grid->com, "Also writing errors to '%s'...\n", filename.c_str());
 
-  OptionsIsSet("-append", "Append the NetCDF error report",
-               append);
+  bool append = OptionsIsSet("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {

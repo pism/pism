@@ -61,16 +61,16 @@ namespace pism {
   grid initialization when no -i option is set.
  */
 void IceModel::set_grid_defaults() {
-  bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
+  bool boot_file_set;
   std::string filename;
 
   // Logical (as opposed to physical) grid dimensions should not be
   // deduced from a bootstrapping file, so we check if these options
   // are set and stop if they are not.
-  OptionsIsSet("-Mx", Mx_set);
-  OptionsIsSet("-My", My_set);
-  OptionsIsSet("-Mz", Mz_set);
-  OptionsIsSet("-Lz", Lz_set);
+  bool Mx_set = OptionsIsSet("-Mx");
+  bool My_set = OptionsIsSet("-My");
+  bool Mz_set = OptionsIsSet("-Mz");
+  bool Lz_set = OptionsIsSet("-Lz");
   if (not (Mx_set && My_set && Mz_set && Lz_set)) {
     throw RuntimeError("All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
   }
@@ -143,8 +143,7 @@ void IceModel::set_grid_defaults() {
   grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
 
   // read current time if no option overrides it (avoids unnecessary reporting)
-  bool ys_set;
-  OptionsIsSet("-ys", ys_set);
+  bool ys_set = OptionsIsSet("-ys");
   if (!ys_set) {
     if (input.t_len > 0) {
       grid.time->set_start(input.time);

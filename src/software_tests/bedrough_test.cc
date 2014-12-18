@@ -57,8 +57,7 @@ int main(int argc, char *argv[]) {
 
     PetscPrintf(grid.com,"BedSmoother TEST\n");
 
-    bool show;
-    ierr = OptionsIsSet("-show", show); CHKERRQ(ierr);
+    bool show = OptionsIsSet("-show");
 
     IceModelVec2S topg, usurf, theta;
     topg.create(grid, "topg", WITH_GHOSTS, 1);
@@ -123,8 +122,7 @@ int main(int argc, char *argv[]) {
                 "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
                 theta_min, theta_max);
 
-    bool dump = false;
-    OptionsIsSet("-dump", dump);
+    bool dump = OptionsIsSet("-dump");
     if (dump) {
       topg.dump("bedrough_test_topg.nc");
       topg_smoothed.dump("bedrough_test_topg_smoothed.nc");

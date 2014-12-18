@@ -66,9 +66,8 @@ void DistributedHydrology::init() {
   std::string filename;
   bool init_P_from_steady = false, strip_set = false, hold_flag = false;
   {
-    OptionsIsSet("-report_mass_accounting",
-                 "Report to stdout on mass accounting in hydrology models",
-                 report_mass_accounting);
+    report_mass_accounting = OptionsIsSet("-report_mass_accounting",
+                                          "Report to stdout on mass accounting in hydrology models");
 
     stripwidth = m_grid.convert(stripwidth, "m", "km");
     OptionsReal("-hydrology_null_strip",
@@ -78,9 +77,8 @@ void DistributedHydrology::init() {
     if (strip_set == true) {
       stripwidth = m_grid.convert(stripwidth, "km", "m");
     }
-    OptionsIsSet("-init_P_from_steady",
-                 "initialize P from formula P(W) which applies in steady state",
-                 init_P_from_steady);
+    init_P_from_steady = OptionsIsSet("-init_P_from_steady",
+                                      "initialize P from formula P(W) which applies in steady state");
 
     OptionsString("-hydrology_velbase_mag_file",
                   "Specifies a file to get velbase_mag from, for 'distributed' hydrology model",
@@ -115,9 +113,8 @@ void DistributedHydrology::init_bwp() {
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i_set = false, bootstrap_set = false;
   {
-    OptionsIsSet("-i", "PISM input file", i_set);
-    OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                 bootstrap_set);
+    i_set         = OptionsIsSet("-i", "PISM input file");
+    bootstrap_set = OptionsIsSet("-boot_file", "PISM bootstrapping file");
   }
 
   // initialize P: present or -i file or -bootstrap file or set to constant;

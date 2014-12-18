@@ -32,7 +32,7 @@ PetscErrorCode OptionsList(std::string opt, std::string text, std::set<std::stri
                            std::string default_value, std::string &result, bool &flag);
 
 PetscErrorCode OptionsString(std::string option, std::string text,
-                                 std::string &result, bool &flag, bool allow_empty_arg = false);
+                             std::string &result, bool &flag, bool allow_empty_arg = false);
 PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string default_value,
                                       std::vector<std::string>& result, bool &flag);
 PetscErrorCode OptionsStringSet(std::string opt, std::string text, std::string default_value,
@@ -48,8 +48,8 @@ PetscErrorCode OptionsReal(std::string option, std::string text,
 PetscErrorCode OptionsRealArray(std::string option, std::string text,
                                     std::vector<double> &result, bool &is_set);
 
-PetscErrorCode OptionsIsSet(std::string option, bool &result);
-PetscErrorCode OptionsIsSet(std::string option, std::string descr, bool &result);
+bool OptionsIsSet(std::string option);
+bool OptionsIsSet(std::string option, std::string descr);
 
 PetscErrorCode OptionsHasArgument(std::string option, bool &result);
 

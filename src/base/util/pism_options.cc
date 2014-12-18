@@ -34,7 +34,7 @@ PetscErrorCode stop_on_version_option() {
   PetscErrorCode ierr;
 
   bool vSet = false;
-  ierr = OptionsIsSet("-version", vSet); CHKERRQ(ierr);
+  vSet = OptionsIsSet("-version");
   if (vSet == false) {
     return 0;
   }
@@ -174,7 +174,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   stop_on_version_option();
 
   bool usageSet = false;
-  OptionsIsSet("-usage", usageSet);
+  usageSet = OptionsIsSet("-usage");
   if (usageSet == true) {
     show_usage_and_quit(com, execname, usage);
   }
@@ -183,7 +183,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   bool req_absent = false;
   for (size_t ii=0; ii < required_options.size(); ii++) {
     bool set = false;
-    OptionsIsSet(required_options[ii], set);
+    set = OptionsIsSet(required_options[ii]);
     if (set == PETSC_FALSE) {
       req_absent = true;
       verbPrintf(1,com,
@@ -197,7 +197,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 
   // show usage message with -help, but don't fail
   bool helpSet = false;
-  OptionsIsSet("-help", helpSet);
+  helpSet = OptionsIsSet("-help");
   if (helpSet == true) {
     just_show_usage(com, execname, usage);
   }
@@ -497,7 +497,7 @@ PetscErrorCode OptionsIntArray(std::string option, std::string text,
   This unpredictability is bad. We want a function that does not depend on the
   argument given with an option.
  */
-PetscErrorCode OptionsIsSet(std::string option, bool &result) {
+bool OptionsIsSet(std::string option) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
@@ -505,14 +505,11 @@ PetscErrorCode OptionsIsSet(std::string option, bool &result) {
   ierr = PetscOptionsGetString(NULL, option.c_str(), tmp, 1, &flag);
   PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
 
-  result = (flag == PETSC_TRUE);
-
-  return 0;
+  return flag == PETSC_TRUE;
 }
 
 //! A version of OptionsIsSet that prints a -help message.
-PetscErrorCode OptionsIsSet(std::string option, std::string text,
-				bool &result) {
+bool OptionsIsSet(std::string option, std::string text) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
@@ -521,9 +518,7 @@ PetscErrorCode OptionsIsSet(std::string option, std::string text,
                             "", tmp, 1, &flag);
   PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
-  result = (flag == PETSC_TRUE);
-
-  return 0;
+  return flag == PETSC_TRUE;
 }
 
 
@@ -825,7 +820,7 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.flag_from_option("part_redist", "part_redist");
 
   config.scalar_from_option("nu_bedrock", "nu_bedrock");
-  OptionsIsSet("-nu_bedrock", flag);
+  flag = OptionsIsSet("-nu_bedrock");
   if (flag) {
     config.set_flag_from_option("nu_bedrock_set", true);
   }
@@ -871,7 +866,7 @@ PetscErrorCode set_config_from_options(Config &config) {
 
   // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
   // and in particular NOT  "-calving eigen_calving")
-  OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag);
+  flag = OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms");
   if (flag) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
     config.set_flag_from_option("part_grid", true);
@@ -900,8 +895,8 @@ PetscErrorCode set_config_from_options(Config &config) {
                              "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia");
 
   bool test_climate_models = false;
-  OptionsIsSet("-test_climate_models", "Disable ice dynamics to test climate models",
-               test_climate_models);
+  test_climate_models = OptionsIsSet("-test_climate_models",
+                                     "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string_from_option("stress_balance_model", "none");
     config.set_flag_from_option("do_energy", false);

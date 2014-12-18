@@ -53,15 +53,12 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
   sd_param_b            = m_config.get("pdd_std_dev_param_b");
 
   {
-    OptionsIsSet("-pdd_rand",
-                 "Use a PDD implementation based on simulating a random process",
-                 randomized);
-    OptionsIsSet("-pdd_rand_repeatable",
-                 "Use a PDD implementation based on simulating a repeatable random process",
-                 randomized_repeatable);
-    OptionsIsSet("-pdd_fausto",
-                 "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
-                 fausto_params);
+    randomized = OptionsIsSet("-pdd_rand",
+                              "Use a PDD implementation based on simulating a random process");
+    randomized_repeatable = OptionsIsSet("-pdd_rand_repeatable",
+                                         "Use a PDD implementation based on simulating a repeatable random process");
+    fausto_params = OptionsIsSet("-pdd_fausto",
+                                 "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]");
     OptionsString("-pdd_sd_file",
                   "Read standard deviation from file",
                   filename, sd_file_set);

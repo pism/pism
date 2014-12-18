@@ -225,7 +225,7 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   m_velocity_global.copy_to(m_velocity);
   m_velocity.update_ghosts();
 
-  OptionsIsSet("-ssa_view_solution", flag);
+  flag = OptionsIsSet("-ssa_view_solution");
   if (flag) {
     ierr = PetscViewerASCIIOpen(m_grid.com, filename.c_str(), &viewer);
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
@@ -531,8 +531,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
 void SSAFEM::monitor_function(const Vector2 **velocity_global,
                               Vector2 **residual_global) {
   PetscErrorCode ierr;
-  bool monitorFunction = false;
-  OptionsIsSet("-ssa_monitor_function", monitorFunction);
+  bool monitorFunction = OptionsIsSet("-ssa_monitor_function");
   if (monitorFunction == false) {
     return;
   }
@@ -732,8 +731,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
 void SSAFEM::monitor_jacobian(Mat Jac) {
   PetscErrorCode ierr;
-  bool mon_jac = false;
-  OptionsIsSet("-ssa_monitor_jacobian", mon_jac);
+  bool mon_jac = OptionsIsSet("-ssa_monitor_jacobian");
 
   if (mon_jac == false) {
     return;
