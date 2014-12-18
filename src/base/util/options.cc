@@ -23,12 +23,12 @@
 #include "error_handling.hh"
 
 namespace pism {
-namespace options {
+// namespace options {
 
-String string(const std::string& option,
-              const std::string& description,
-              const std::string& default_value,
-              bool allow_empty_arg) {
+StringOption::StringOption(const std::string& option,
+               const std::string& description,
+               const std::string& default_value,
+               bool allow_empty_arg) {
 
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag = PETSC_FALSE;
@@ -48,24 +48,24 @@ String string(const std::string& option,
   if (flag == PETSC_TRUE) {
     if (result.empty()) {
       if (allow_empty_arg) {
-        return String("", true);
+        set("", true);
       } else {
         throw RuntimeError::formatted("command line option '%s' requires an argument.",
                                       option.c_str());
       }
     } else {
-      return String(result, true);
+      set(result, true);
     }
   } else {
-    return String(default_value, false);
+    set(default_value, false);
   }
 }
 
 
-StringList string_list(const std::string& option,
+StringListOption::StringListOption(const std::string& option,
                        const std::string& description,
                        const std::string& default_value) {
-  String input = string(option, description, default_value, false);
+  StringOption input(option, description, default_value, false);
   std::vector<std::string> result;
 
   std::string token;
@@ -74,14 +74,14 @@ StringList string_list(const std::string& option,
     result.push_back(token);
   }
 
-  return StringList(result, input.is_set());
+  set(result, input.is_set());
 }
 
 
-StringSet string_set(const std::string& option,
+StringSetOption::StringSetOption(const std::string& option,
                      const std::string& description,
                      const std::string& default_value) {
-  StringList input = string_list(option, description, default_value);
+  StringListOption input(option, description, default_value);
   std::set<std::string> result;
 
   std::vector<std::string> array = input;
@@ -89,13 +89,13 @@ StringSet string_set(const std::string& option,
     result.insert(array[k]);
   }
 
-  return StringSet(result, input.is_set());
+  set(result, input.is_set());
 }
 
-String keyword(const std::string& option,
-               const std::string& description,
-               const std::string& choices,
-               const std::string& default_value) {
+KeywordOption::KeywordOption(const std::string& option,
+                 const std::string& description,
+                 const std::string& choices,
+                 const std::string& default_value) {
 
   if (choices.empty()) {
     throw RuntimeError::formatted("empty choices argument");
@@ -104,11 +104,12 @@ String keyword(const std::string& option,
   std::string list = "[" + choices + "]";
   std::string long_description = description + " Choose one of " + list;
 
-  String input = string(option, long_description, default_value, false);
+  StringOption input(option, long_description, default_value, false);
   
-  // return the default value if the option was not set
+  // use the default value if the option was not set
   if (not input.is_set()) {
-    return input;
+    set(input, input.is_set());
+    return;
   }
 
   std::string word = input;
@@ -129,9 +130,9 @@ String keyword(const std::string& option,
     }
   }
 
-  // return the choice if it is valid and stop if it is not
+  // use the choice if it is valid and stop if it is not
   if (choices_set.find(word) != choices_set.end()) {
-    return String(word, true);
+    set(word, true);
   } else {
     throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
                                   option.c_str(), word.c_str(), list.c_str());
@@ -139,24 +140,22 @@ String keyword(const std::string& option,
 }
 
 
-
-
-Integer integer(const std::string& option,
+IntegerOption::IntegerOption(const std::string& option,
                 const std::string& description,
                 int default_value) {
-  Real input = real(option, description, default_value);
+  RealOption input(option, description, default_value);
   double result = input;
   if (fabs(result - floor(result)) > 1e-6) {
     throw RuntimeError::formatted("Can't process '%s': (%f is not an integer).",
                                   option.c_str(), result);
   }
-  return Integer((int)result, input.is_set());
+  set(static_cast<int>(result), input.is_set());
 }
 
 
-IntegerList integer_list(const std::string& option,
+IntegerListOption::IntegerListOption(const std::string& option,
                          const std::string& description) {
-  RealList input = real_list(option, description);
+  RealListOption input(option, description);
   std::vector<int> result;
   std::vector<double> array = input;
 
@@ -165,19 +164,19 @@ IntegerList integer_list(const std::string& option,
       throw RuntimeError::formatted("Can't process '%s': (%f is not an integer).",
                                     option.c_str(), array[k]);
     }
-    result.push_back((int)array[k]);
+    result.push_back(static_cast<int>(array[k]));
   }
   
-  return IntegerList(result, input.is_set());
+  set(result, input.is_set());
 }
 
 
-Real real(const std::string& option,
-          const std::string& description,
-          double default_value) {
+RealOption::RealOption(const std::string& option,
+           const std::string& description,
+           double default_value) {
   std::stringstream buffer;
   buffer << default_value;
-  String input = string(option, description, buffer.str(), false);
+  StringOption input(option, description, buffer.str(), false);
 
   std::string str = input;
   char *endptr = NULL;
@@ -186,13 +185,13 @@ Real real(const std::string& option,
     throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
                                   option.c_str(), str.c_str(), str.c_str());
   }
-  return Real(result, input.is_set());
+  set(result, input.is_set());
 }
 
 
-RealList real_list(const std::string& option,
+RealListOption::RealListOption(const std::string& option,
                    const std::string& description) {
-  String input = string(option, description, "", false);
+  StringOption input(option, description, "", false);
   std::vector<double> result;
 
   if (input.is_set()) {
@@ -213,8 +212,8 @@ RealList real_list(const std::string& option,
       }
     }
   }
-  return RealList(result, input.is_set());
+  set(result, input.is_set());
 }
 
-} // end of namespace options
+// } // end of namespace options
 } // end of namespace pism
