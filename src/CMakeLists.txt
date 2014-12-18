@@ -29,6 +29,7 @@ set(PISM_PARALLEL_IO_FLAGS "")
 set(PISMUTIL_SRC
   base/util/PetscInitializer.cc
   base/util/error_handling.cc
+  base/util/options.cc
   base/util/Context.cc
   base/enthalpyConverter.cc
   base/util/IceGrid.cc

@@ -25,6 +25,76 @@ namespace pism {
 
 class Config;
 
+namespace options {
+
+template <typename T>
+class Option {
+public:
+  Option() {
+    m_is_set = false;
+  }
+  Option(T value, bool is_set)
+    : m_value(value) {
+    m_is_set = is_set;
+  }
+  operator T() {
+    return m_value;
+  }
+  bool is_set() {
+    return m_is_set;
+  }
+  T value() {
+    return m_value;
+  }
+private:
+  T m_value;
+  bool m_is_set;
+};
+
+typedef Option<std::string> String;
+typedef Option<std::vector<std::string> > StringList;
+typedef Option<std::set<std::string> > StringSet;
+
+typedef Option<int> Integer;
+typedef Option<std::vector<int> > IntegerList;
+
+typedef Option<double> Real;
+typedef Option<std::vector<double> > RealList;
+
+String string(const std::string& option,
+              const std::string& description,
+              const std::string& default_value,
+              bool allow_empty_arg = false);
+
+StringList string_list(const std::string& option,
+                       const std::string& description,
+                       const std::string& default_value);
+
+StringSet string_set(const std::string& option,
+                     const std::string& description,
+                     const std::string& default_value);
+
+String keyword(const std::string& option,
+               const std::string& description,
+               const std::string& choices,
+               const std::string& default_value);
+
+Integer integer(const std::string& option,
+                const std::string& description,
+                int default_value);
+
+IntegerList integer_list(const std::string& option,
+                         const std::string& description);
+
+Real real(const std::string& option,
+          const std::string& description,
+          double default_value);
+
+RealList real_list(const std::string& option,
+                   const std::string& description);
+
+} // end of namespace options
+
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
