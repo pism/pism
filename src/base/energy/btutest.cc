@@ -151,12 +151,10 @@ int main(int argc, char *argv[]) {
     IceGrid grid(com, config);
     double
       Lx = 1500e3,
-      Ly = Lx,
-      Lz = 4000.0;
+      Ly = Lx;
     int
       Mx = 3,
-      My = Mx,
-      Mz = 41;
+      My = Mx;
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
     config.set_double("grid_Mbz", 11);
@@ -164,15 +162,15 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2,com,
                "  initializing IceGrid from options ...\n");
-    bool flag;
-    double dt_years = 1.0;
-    std::string outname="unnamed_btutest.nc";
-    {
-      OptionsString("-o", "Output file name", outname, flag);
-      OptionsReal("-dt", "Time-step, in years", dt_years, flag);
-      OptionsInt("-Mz", "number of vertical layers in ice", Mz, flag);
-      OptionsReal("-Lz", "height of ice/atmosphere boxr", Lz, flag);
-    }
+
+    options::String outname("-o", "Output file name",
+                            "unnamed_btutest.nc", options::ALLOW_EMPTY);
+
+    options::Real dt_years("-dt", "Time-step, in years", 1.0);
+
+    options::Integer Mz("-Mz", "number of vertical layers in ice", 41);
+
+    options::Real Lz("-Lz", "height of ice/atmosphere boxr", 4000.0);
 
     grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
     grid.set_vertical_levels(Lz, Mz, EQUAL);
@@ -209,7 +207,7 @@ int main(int argc, char *argv[]) {
     verbPrintf(2,com,
                "  user set timestep of %.4f years ...\n"
                "  reset to %.4f years to get integer number of steps ... \n",
-               dt_years, unit_system.convert(dt_seconds, "seconds", "years"));
+               dt_years.value(), unit_system.convert(dt_seconds, "seconds", "years"));
     double max_dt;
     bool restrict_dt;
     btu.max_timestep(0.0, max_dt, restrict_dt);
@@ -263,7 +261,7 @@ int main(int argc, char *argv[]) {
     ghf->shift(+FF); // shift it back for writing
     avghferr /= (grid.Mx() * grid.My());
     verbPrintf(2,grid.com, 
-               "case dt = %.5f:\n", dt_years);
+               "case dt = %.5f:\n", dt_years.value());
     verbPrintf(1,grid.com, 
                "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
     verbPrintf(1,grid.com, 
