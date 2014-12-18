@@ -43,38 +43,34 @@ OceanKill::~OceanKill() {
 }
 
 void OceanKill::init() {
-  std::string filename;
-  bool flag;
-
   verbPrintf(2, m_grid.com,
              "* Initializing calving at a fixed calving front...\n");
 
-  {
-    OptionsString("-ocean_kill_file", "Specifies a file to get ocean_kill thickness from",
-                  filename, flag);
-  }
-
-  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
-  MaskQuery m(*mask);
+  options::String ocean_kill_file("-ocean_kill_file",
+                                  "Specifies a file to get ocean_kill thickness from",
+                                  "", options::DONT_ALLOW_EMPTY);
 
   IceModelVec2S thickness, *tmp;
 
-  if (flag == false) {
-    throw RuntimeError("option -ocean_kill_file is required.");
-  } else {
+  if (ocean_kill_file.is_set()) {
     verbPrintf(2, m_grid.com,
                "  setting fixed calving front location using\n"
-               "  ice thickness from '%s'.\n", filename.c_str());
+               "  ice thickness from '%s'.\n", ocean_kill_file.value().c_str());
 
     thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",
                         "m", "land_ice_thickness");
     thickness.metadata().set_double("valid_min", 0.0);
 
-    thickness.regrid(filename, CRITICAL);
+    thickness.regrid(ocean_kill_file, CRITICAL);
 
     tmp = &thickness;
+  } else {
+    throw RuntimeError("option -ocean_kill_file is required.");
   }
+
+  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
   list.add(m_ocean_kill_mask);

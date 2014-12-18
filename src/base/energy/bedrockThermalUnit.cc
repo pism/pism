@@ -46,22 +46,17 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
   // possibly making Mbz and Lbz arguments of the constructor. It's
   // good to validate Lbz and Mbz here, though.
   {
-    bool i_set, Mbz_set, Lbz_set;
+    options::String i("-i", "PISM input file name", "", options::DONT_ALLOW_EMPTY);
 
-    {
-      OptionsString("-i", "PISM input file name",
-                    m_input_file, i_set);
+    options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer",
+                         m_Mbz);
+    m_Mbz = Mbz;
 
-      int tmp = m_Mbz;
-      OptionsInt("-Mbz", "number of levels in bedrock thermal layer",
-                 tmp, Mbz_set);
-      m_Mbz = tmp;
+    options::Real Lbz("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+                      m_Lbz);
+    m_Lbz = Lbz;
 
-      OptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                  m_Lbz, Lbz_set);
-    }
-
-    if (i_set) {
+    if (i.is_set()) {
       ignore_option(m_grid.com, "-Mbz");
       ignore_option(m_grid.com, "-Lbz");
 
@@ -88,10 +83,10 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
     } else {
       // Bootstrapping
 
-      if (Mbz_set && m_Mbz == 1) {
+      if (Mbz.is_set() && m_Mbz == 1) {
         ignore_option(m_grid.com, "-Lbz");
         m_Lbz = 0;
-      } else if (Mbz_set ^ Lbz_set) {
+      } else if (Mbz.is_set() ^ Lbz.is_set()) {
         throw RuntimeError("please specify both -Mbz and -Lbz");
       }
     }
@@ -113,8 +108,8 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
 
       std::vector<double> z(m_Mbz);
       double dz = m_Lbz / (m_Mbz - 1);
-      for (unsigned int i = 0; i < m_Mbz; ++i) {
-        z[i] = -m_Lbz + i * dz;
+      for (unsigned int k = 0; k < m_Mbz; ++k) {
+        z[k] = -m_Lbz + k * dz;
       }
       z.back() = 0;
       temp.create(m_grid, "litho_temp", "zb", z, attrs);

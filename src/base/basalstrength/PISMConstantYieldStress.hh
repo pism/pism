@@ -45,7 +45,7 @@ public:
 
   virtual void basal_material_yield_stress(IceModelVec2S &result);
 protected:
-  IceModelVec2S tauc;
+  IceModelVec2S m_tauc;
 };
 
 } // end of namespace pism

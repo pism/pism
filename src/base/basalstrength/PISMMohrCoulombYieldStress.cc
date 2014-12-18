@@ -129,7 +129,6 @@ read-in-from-file state or with a default constant value from the config file.
 */
 void MohrCoulombYieldStress::init()
 {
-  bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set;
   std::string filename;
   int start;
 
@@ -162,14 +161,18 @@ void MohrCoulombYieldStress::init()
   m_bed_topography = m_grid.variables().get_2d_scalar("bedrock_altitude");
   m_mask = m_grid.variables().get_2d_mask("mask");
 
-  {
-    plastic_phi_set = OptionsIsSet("-plastic_phi");
-    topg_to_phi_set = OptionsIsSet("-topg_to_phi",
-                                   "Turn on, and specify, the till friction angle parameterization"
-                                   " based on bedrock elevation (topg)");
-    i_set           = OptionsIsSet("-i", "PISM input file");
-    bootstrap       = OptionsIsSet("-boot_file", "PISM bootstrapping file");
-  }
+  options::String
+    i("-i", "PISM input file", "dummy", options::DONT_ALLOW_EMPTY),
+    bootstrap("-boot_file", "PISM bootstrapping file", "dummy", options::DONT_ALLOW_EMPTY);
+
+  options::Real
+    plastic_phi("-plastic_phi", "constant in space till friction angle",
+                m_config.get("default_till_phi"));
+
+  options::RealList
+    topg_to_phi("-topg_to_phi",
+                "Turn on, and specify, the till friction angle parameterization"
+                " based on bedrock elevation (topg)");
 
   // Get the till friction angle from the the context and ignore options that
   // would be used to set it otherwise.
@@ -185,21 +188,22 @@ void MohrCoulombYieldStress::init()
     return;
   }
 
-  if (topg_to_phi_set && plastic_phi_set) {
+  if (topg_to_phi.is_set() && plastic_phi.is_set()) {
     throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
   }
 
-  if (plastic_phi_set) {
+  if (plastic_phi.is_set()) {
 
     m_till_phi.set(m_config.get("default_till_phi"));
 
-  } else if (topg_to_phi_set) {
+  } else if (topg_to_phi.is_set()) {
 
     verbPrintf(2, m_grid.com,
                "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
-    if (i_set || bootstrap) {
-      find_pism_input(filename, bootstrap, start);
+    if (i.is_set() || bootstrap.is_set()) {
+      bool boot = false;
+      find_pism_input(filename, boot, start);
 
       PIO nc(m_grid.com, "guess_mode", m_grid.config.get_unit_system());
 
@@ -216,13 +220,13 @@ void MohrCoulombYieldStress::init()
     }
 
     // note option -topg_to_phi will be read again to get comma separated array of parameters
-    topg_to_phi();
+    this->topg_to_phi();
 
-  } else if (i_set || bootstrap) {
+  } else if (i.is_set() || bootstrap.is_set()) {
+    bool boot = false;
+    find_pism_input(filename, boot, start);
 
-    find_pism_input(filename, bootstrap, start);
-
-    if (i_set) {
+    if (i.is_set()) {
       m_till_phi.read(filename, start);
     } else {
       m_till_phi.regrid(filename, OPTIONAL,
@@ -236,7 +240,7 @@ void MohrCoulombYieldStress::init()
   options::String tauc_to_phi("-tauc_to_phi",
                               "Turn on, and specify, the till friction angle computation"
                               " which uses basal yield stress (tauc) and the rest of the model state",
-                              "", true /* allow and empty argument */);
+                              "", options::ALLOW_EMPTY);
 
   if (tauc_to_phi.is_set()) {
 
@@ -246,9 +250,10 @@ void MohrCoulombYieldStress::init()
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
-      find_pism_input(filename, bootstrap, start);
+      bool boot = false;
+      find_pism_input(filename, boot, start);
 
-      if (bootstrap == false) {
+      if (boot == false) {
         m_tauc.read(filename, start);
       } else {
         m_tauc.regrid(filename, CRITICAL);

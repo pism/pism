@@ -24,9 +24,9 @@ namespace pism {
 
 ConstantYieldStress::ConstantYieldStress(IceGrid &g)
   : YieldStress(g) {
-  tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
+  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  tauc.set_attrs("model_state", 
+  m_tauc.set_attrs("model_state",
                  "yield stress for basal till (plastic or pseudo-plastic model)",
                  "Pa", "");
 }
@@ -36,37 +36,36 @@ ConstantYieldStress::~ConstantYieldStress () {
 }
 
 void ConstantYieldStress::init() {
-  bool i_set, bootstrap, tauc_set;
-  double constant_tauc = m_config.get("default_tauc");
-  std::string filename;
-  int start;
-
   verbPrintf(2, m_grid.com, "* Initializing the constant basal yield stress model...\n");
 
-  {
-    i_set = OptionsIsSet("-i", "PISM input file");
-    bootstrap = OptionsIsSet("-boot_file", "PISM bootstrapping file");
-    OptionsReal("-tauc", "set basal yield stress to a constant (units of Pa)",
-                constant_tauc, tauc_set);
-  }
+  options::String
+    i("-i", "PISM input file", "", options::ALLOW_EMPTY),
+    bootstrap("-boot_file", "PISM bootstrapping file", "", options::ALLOW_EMPTY);
+
+  options::Real
+    tauc("-tauc", "set basal yield stress to a constant (units of Pa)",
+         m_config.get("default_tauc"));
 
   // if -tauc was set we just use that value
-  if (tauc_set) {
-    tauc.set(constant_tauc);
-  } else if (i_set || bootstrap) {
-    find_pism_input(filename, bootstrap, start);
+  if (tauc.is_set()) {
+    m_tauc.set(tauc);
+  } else if (i.is_set() || bootstrap.is_set()) {
+    std::string filename;
+    int start;
+    bool boot = false;
+    find_pism_input(filename, boot, start);
 
-    if (i_set) {
-      tauc.read(filename, start);
+    if (i.is_set()) {
+      m_tauc.read(filename, start);
     } else {
-      tauc.regrid(filename, OPTIONAL,
+      m_tauc.regrid(filename, OPTIONAL,
                   m_config.get("default_tauc"));
     }
   } else {
-    tauc.set(m_config.get("default_tauc"));
+    m_tauc.set(m_config.get("default_tauc"));
   }
 
-  regrid("ConstantYieldStress", &tauc);
+  regrid("ConstantYieldStress", &m_tauc);
 }
 
 
@@ -78,14 +77,14 @@ void ConstantYieldStress::add_vars_to_output(const std::string &/*keyword*/, std
 void ConstantYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                          IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
-    tauc.define(nc, nctype);
+    m_tauc.define(nc, nctype);
   }
 }
 
 
 void ConstantYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
-    tauc.write(nc);
+    m_tauc.write(nc);
   }
 }
 
@@ -96,7 +95,7 @@ void ConstantYieldStress::update(double my_t, double my_dt) {
 
 
 void ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  tauc.copy_to(result);
+  m_tauc.copy_to(result);
 }
 
 } // end of namespace pism
