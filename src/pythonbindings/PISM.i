@@ -271,14 +271,14 @@ using namespace pism;
 %Pism_pointer_pointer_is_always_output(pism::IceFlowLaw)
 
 // These methods are called from PISM.options.
-%rename pism::OptionsInt _optionsInt;
-%rename pism::OptionsReal _optionsReal;
-%rename pism::OptionsString _optionsString;
-%rename pism::OptionsIntArray _optionsIntArray;
-%rename pism::OptionsRealArray _optionsRealArray;
-%rename pism::OptionsStringArray _optionsStringArray;
-%rename pism::OptionsList _optionsList;
-%rename pism::OptionsIsSet optionsIsSet;
+%rename(_optionsInt) pism::OptionsInt;
+%rename(_optionsReal) pism::OptionsReal;
+%rename(_optionsString) pism::OptionsString;
+%rename(_optionsIntArray) pism::OptionsIntArray;
+%rename(_optionsRealArray) pism::OptionsRealArray;
+%rename(_optionsStringArray) pism::OptionsStringArray;
+%rename(_optionsList) pism::OptionsList;
+%rename(optionsIsSet) pism::OptionsIsSet;
 
 // FIXME: remove this
 %rename(_OptionsStringSet) pism::OptionsStringSet;
@@ -295,7 +295,7 @@ using namespace pism;
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
-%rename verbPrintf _verbPrintf;
+%rename(_verbPrintf) verbPrintf;
 
 %extend pism::Vars
 {
@@ -574,7 +574,7 @@ using namespace pism;
 
  /* wrap the enthalpy solver to make testing easier */
 %include "columnSystem.hh"
-%rename pism::enthSystemCtx::lambda get_lambda;
+%rename(get_lambda) pism::enthSystemCtx::lambda;
 %include "enthSystem.hh"
 
 %include "ColumnInterpolation.hh"
