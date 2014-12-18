@@ -129,8 +129,7 @@ read-in-from-file state or with a default constant value from the config file.
 */
 void MohrCoulombYieldStress::init()
 {
-  bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
-    tauc_to_phi_set;
+  bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set;
   std::string filename;
   int start;
 
@@ -170,9 +169,6 @@ void MohrCoulombYieldStress::init()
                                    " based on bedrock elevation (topg)");
     i_set           = OptionsIsSet("-i", "PISM input file");
     bootstrap       = OptionsIsSet("-boot_file", "PISM bootstrapping file");
-    tauc_to_phi_set = OptionsIsSet("-tauc_to_phi", 
-                                   "Turn on, and specify, the till friction angle computation"
-                                   " which uses basal yield stress (tauc) and the rest of the model state");
   }
 
   // Get the till friction angle from the the context and ignore options that
@@ -237,15 +233,16 @@ void MohrCoulombYieldStress::init()
   // regrid if requested, regardless of how initialized
   regrid("MohrCoulombYieldStress", &m_till_phi);
 
-  if (tauc_to_phi_set) {
-    std::string tauc_to_phi_file;
-    bool flag;
-    OptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
-                  tauc_to_phi_file, flag, true);
+  StringOption tauc_to_phi("-tauc_to_phi",
+                           "Turn on, and specify, the till friction angle computation"
+                           " which uses basal yield stress (tauc) and the rest of the model state",
+                           "", true /* allow and empty argument */);
 
-    if (tauc_to_phi_file.empty() == false) {
+  if (tauc_to_phi.is_set()) {
+
+    if (tauc_to_phi.value().empty() == false) {
       // "-tauc_to_phi filename.nc" is given
-      m_tauc.regrid(tauc_to_phi_file, CRITICAL);
+      m_tauc.regrid(tauc_to_phi.value(), CRITICAL);
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
@@ -273,7 +270,7 @@ void MohrCoulombYieldStress::init()
 
     verbPrintf(2, m_grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n");
 
-    tauc_to_phi();
+    this->tauc_to_phi();
 
   } else {
     m_tauc.set(0.0);
