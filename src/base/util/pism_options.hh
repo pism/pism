@@ -33,10 +33,21 @@ typedef enum {ALLOW_EMPTY, DONT_ALLOW_EMPTY} ArgumentFlag;
 
 class String : public Option<std::string> {
 public:
+  // there is no reasonable default; if the option is set, it has to
+  // have a non-empty argument
+  String(const std::string& option,
+         const std::string& description);
+  // there is a reasonable default
   String(const std::string& option,
          const std::string& description,
          const std::string& default_value,
          ArgumentFlag flag = DONT_ALLOW_EMPTY);
+  const char* c_str();
+private:
+  void process(const std::string& option,
+               const std::string& description,
+               const std::string& default_value,
+               ArgumentFlag flag);
 };
 
 class StringList : public Option<std::vector<std::string> > {
@@ -59,6 +70,7 @@ public:
           const std::string& description,
           const std::string& choices,
           const std::string& default_value);
+  const char* c_str();
 };
 
 class Integer : public Option<int> {

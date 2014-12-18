@@ -26,9 +26,21 @@ namespace pism {
 namespace options {
 
 String::String(const std::string& option,
+               const std::string& description) {
+  process(option, description, "", DONT_ALLOW_EMPTY);
+}
+
+String::String(const std::string& option,
                const std::string& description,
                const std::string& default_value,
                ArgumentFlag argument_flag) {
+  process(option, description, default_value, argument_flag);
+}
+
+void String::process(const std::string& option,
+                     const std::string& description,
+                     const std::string& default_value,
+                     ArgumentFlag argument_flag) {
 
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag = PETSC_FALSE;
@@ -61,6 +73,9 @@ String::String(const std::string& option,
   }
 }
 
+const char* String::c_str() {
+  return m_value.c_str();
+}
 
 StringList::StringList(const std::string& option,
                        const std::string& description,
@@ -139,6 +154,9 @@ Keyword::Keyword(const std::string& option,
   }
 }
 
+const char* Keyword::c_str() {
+  return m_value.c_str();
+}
 
 Integer::Integer(const std::string& option,
                 const std::string& description,
