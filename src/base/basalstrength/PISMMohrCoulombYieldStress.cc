@@ -162,8 +162,8 @@ void MohrCoulombYieldStress::init()
   m_mask = m_grid.variables().get_2d_mask("mask");
 
   options::String
-    i("-i", "PISM input file", "dummy", options::DONT_ALLOW_EMPTY),
-    bootstrap("-boot_file", "PISM bootstrapping file", "dummy", options::DONT_ALLOW_EMPTY);
+    i("-i", "PISM input file"),
+    bootstrap("-boot_file", "PISM bootstrapping file");
 
   options::Real
     plastic_phi("-plastic_phi", "constant in space till friction angle",
@@ -246,7 +246,7 @@ void MohrCoulombYieldStress::init()
 
     if (tauc_to_phi.value().empty() == false) {
       // "-tauc_to_phi filename.nc" is given
-      m_tauc.regrid(tauc_to_phi.value(), CRITICAL);
+      m_tauc.regrid(tauc_to_phi, CRITICAL);
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file

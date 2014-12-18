@@ -163,8 +163,7 @@ int main(int argc, char *argv[]) {
     verbPrintf(2,com,
                "  initializing IceGrid from options ...\n");
 
-    options::String outname("-o", "Output file name",
-                            "unnamed_btutest.nc", options::ALLOW_EMPTY);
+    options::String outname("-o", "Output file name", "unnamed_btutest.nc");
 
     options::Real dt_years("-dt", "Time-step, in years", 1.0);
 

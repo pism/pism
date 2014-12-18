@@ -38,9 +38,8 @@ ConstantYieldStress::~ConstantYieldStress () {
 void ConstantYieldStress::init() {
   verbPrintf(2, m_grid.com, "* Initializing the constant basal yield stress model...\n");
 
-  options::String
-    i("-i", "PISM input file", "", options::ALLOW_EMPTY),
-    bootstrap("-boot_file", "PISM bootstrapping file", "", options::ALLOW_EMPTY);
+  options::String i("-i", "PISM input file"),
+    bootstrap("-boot_file", "PISM bootstrapping file");
 
   options::Real
     tauc("-tauc", "set basal yield stress to a constant (units of Pa)",

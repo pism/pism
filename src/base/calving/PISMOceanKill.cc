@@ -47,15 +47,14 @@ void OceanKill::init() {
              "* Initializing calving at a fixed calving front...\n");
 
   options::String ocean_kill_file("-ocean_kill_file",
-                                  "Specifies a file to get ocean_kill thickness from",
-                                  "", options::DONT_ALLOW_EMPTY);
+                                  "Specifies a file to get ocean_kill thickness from");
 
   IceModelVec2S thickness, *tmp;
 
   if (ocean_kill_file.is_set()) {
     verbPrintf(2, m_grid.com,
                "  setting fixed calving front location using\n"
-               "  ice thickness from '%s'.\n", ocean_kill_file.value().c_str());
+               "  ice thickness from '%s'.\n", ocean_kill_file.c_str());
 
     thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",

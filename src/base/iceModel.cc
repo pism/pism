@@ -536,20 +536,11 @@ void IceModel::createVecs() {
   // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or some others (below).
 
-  std::string extra_vars_argument;
-  bool extra_vars_set = false;
-  OptionsString("-extra_vars", "", extra_vars_argument, extra_vars_set);
-  std::set<std::string> ex_vars;
-  if (extra_vars_set == true) {
-    std::istringstream arg(extra_vars_argument);
-    std::string var_name;
+  options::StringSet extras("-extra_vars",
+                            "list of spatially-variable diagnostics to save",
+                            ""); // don't save anything by default
 
-    while (getline(arg, var_name, ',')) {
-      ex_vars.insert(var_name);
-    }
-  }
-
-  if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
+  if (set_contains(extras, "climatic_mass_balance_cumulative")) {
     climatic_mass_balance_cumulative.create(grid,
                                             "climatic_mass_balance_cumulative",
                                             WITHOUT_GHOSTS);
@@ -560,7 +551,7 @@ void IceModel::createVecs() {
 
   std::string o_size = get_output_size("-o_size");
 
-  if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
+  if (set_contains(extras, "flux_divergence") || o_size == "big") {
     flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
     flux_divergence.set_attrs("diagnostic",
                               "flux divergence",
@@ -569,7 +560,7 @@ void IceModel::createVecs() {
     flux_divergence.write_in_glaciological_units = true;
   }
 
-  if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
+  if (set_contains(extras, "grounded_basal_flux_cumulative")) {
     grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
     grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
                                                 "cumulative basal flux into the ice "
@@ -580,7 +571,7 @@ void IceModel::createVecs() {
     grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
+  if (set_contains(extras, "floating_basal_flux_cumulative")) {
     floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
     floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
                                                 "cumulative basal flux into the ice "
@@ -591,7 +582,7 @@ void IceModel::createVecs() {
     floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
+  if (set_contains(extras, "nonneg_flux_cumulative")) {
     nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
     nonneg_flux_2D_cumulative.set_attrs("diagnostic",
                                         "cumulative nonnegative rule flux (positive means ice gain)",
@@ -601,7 +592,7 @@ void IceModel::createVecs() {
     nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(ex_vars, "discharge_flux_cumulative")) {
+  if (set_contains(extras, "discharge_flux_cumulative")) {
     discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
     discharge_flux_2D_cumulative.set_attrs("diagnostic",
                                            "cumulative discharge (calving) flux (positive means ice loss)",
@@ -672,12 +663,11 @@ void IceModel::step(bool do_mass_continuity,
                            melange_back_pressure);
     grid.profiling.end("stress balance");
   } catch (RuntimeError &e) {
-    std::string o_file = "stressbalance_failed.nc";
-    bool o_file_set;
-    OptionsString("-o", "output file name",
-                  o_file, o_file_set);
+    options::String output_file("-o", "output file name",
+                                "output.nc", options::DONT_ALLOW_EMPTY);
 
-    o_file = pism_filename_add_suffix(o_file, "_stressbalance_failed", "");
+    std::string o_file = pism_filename_add_suffix(output_file,
+                                                  "_stressbalance_failed", "");
     dumpToFile(o_file);
 
     throw RuntimeError::formatted("stress balance computation failed. Model state was saved to '%s'",

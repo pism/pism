@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
                             "fem,fd", "fem");
 
     options::String output("-o", "Set the output file name",
-                           "ssa_test_j.nc", options::ALLOW_EMPTY);
+                           "ssa_test_j.nc", options::DONT_ALLOW_EMPTY);
 
     options::Integer verbose("-verbose", "Verbosity level", 2);
     if (verbose.is_set()) {

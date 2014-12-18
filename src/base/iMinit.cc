@@ -61,26 +61,25 @@ namespace pism {
   grid initialization when no -i option is set.
  */
 void IceModel::set_grid_defaults() {
-  bool boot_file_set;
-  std::string filename;
-
   // Logical (as opposed to physical) grid dimensions should not be
   // deduced from a bootstrapping file, so we check if these options
   // are set and stop if they are not.
-  bool Mx_set = OptionsIsSet("-Mx");
-  bool My_set = OptionsIsSet("-My");
-  bool Mz_set = OptionsIsSet("-Mz");
-  bool Lz_set = OptionsIsSet("-Lz");
-  if (not (Mx_set && My_set && Mz_set && Lz_set)) {
+  options::Integer
+    Mx("-Mx", "grid size in X direction", grid.Mx()),
+    My("-My", "grid size in Y direction", grid.My()),
+    Mz("-Mz", "grid size in vertical direction", grid.Mz());
+  options::Real Lz("-Lz", "height of the computational domain", grid.Lz());
+  if (not (Mx.is_set() && My.is_set() && Mz.is_set() && Lz.is_set())) {
     throw RuntimeError("All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
   }
 
   // Get the bootstrapping file name:
 
-  OptionsString("-boot_file", "Specifies the file to bootstrap from",
-                filename, boot_file_set);
+  options::String boot_file("-boot_file",
+                            "Specifies the file to bootstrap from");
+  std::string filename = boot_file;
 
-  if (not boot_file_set) {
+  if (not boot_file.is_set()) {
     throw RuntimeError("Please specify an input file using -i or -boot_file.");
   }
 
@@ -271,22 +270,19 @@ void IceModel::set_grid_from_options() {
   No memory allocation should happen here.
  */
 void IceModel::grid_setup() {
-  bool i_set;
-  std::string filename;
 
   verbPrintf(3, grid.com,
              "Setting up the computational grid...\n");
 
   // Check if we are initializing from a PISM output file:
-  OptionsString("-i", "Specifies a PISM input file",
-                filename, i_set);
+  options::String input_file("-i", "Specifies a PISM input file");
 
-  if (i_set) {
+  if (input_file.is_set()) {
     PIO nc(grid, "guess_mode");
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    nc.open(filename, PISM_READONLY);
+    nc.open(input_file, PISM_READONLY);
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
 
     std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
@@ -308,21 +304,21 @@ void IceModel::grid_setup() {
                  "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
                  "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
                  "     ncatted -a source,global,c,c,PISM %s\n",
-                 filename.c_str(), filename.c_str(), filename.c_str());
+                 input_file.c_str(), input_file.c_str(), input_file.c_str());
     } else if (source.find("PISM") == std::string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
       verbPrintf(1, grid.com,
                  "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
                  "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-                 filename.c_str());
+                 input_file.c_str());
     }
 
     std::vector<std::string> names;
     names.push_back("enthalpy");
     names.push_back("temp");
 
-    nc.open(filename, PISM_READONLY);
+    nc.open(input_file, PISM_READONLY);
 
     bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
@@ -337,7 +333,7 @@ void IceModel::grid_setup() {
     if (var_exists == false) {
       nc.close();
       throw RuntimeError::formatted("file %s has neither enthalpy nor temperature in it",
-                                    filename.c_str());
+                                    input_file.c_str());
     }
 
     nc.close();
