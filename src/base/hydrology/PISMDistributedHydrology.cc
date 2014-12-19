@@ -63,27 +63,27 @@ void DistributedHydrology::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
-  std::string filename;
-  bool init_P_from_steady = false, strip_set = false, hold_flag = false;
   {
-    report_mass_accounting = OptionsIsSet("-report_mass_accounting",
-                                          "Report to stdout on mass accounting in hydrology models");
-
     stripwidth = m_grid.convert(stripwidth, "m", "km");
-    OptionsReal("-hydrology_null_strip",
-                "set the width, in km, of the strip around the edge "
-                "of the computational domain in which hydrology is inactivated",
-                stripwidth, strip_set);
-    if (strip_set == true) {
-      stripwidth = m_grid.convert(stripwidth, "km", "m");
-    }
-    init_P_from_steady = OptionsIsSet("-init_P_from_steady",
-                                      "initialize P from formula P(W) which applies in steady state");
-
-    OptionsString("-hydrology_velbase_mag_file",
-                  "Specifies a file to get velbase_mag from, for 'distributed' hydrology model",
-                  filename, hold_flag);
+    options::Real hydrology_null_strip("-hydrology_null_strip",
+                                       "set the width, in km, of the strip around the edge "
+                                       "of the computational domain in which hydrology is inactivated",
+                                       stripwidth);
+    stripwidth = m_grid.convert(stripwidth, "km", "m");
   }
+
+  options::Bool mass_accounting("-report_mass_accounting",
+                                "Report to stdout on mass accounting in hydrology models");
+  report_mass_accounting = mass_accounting;
+
+  options::Bool
+    init_P_from_steady("-init_P_from_steady",
+                       "initialize P from formula P(W) which applies in steady state");
+
+  options::String
+    hydrology_velbase_mag_file("-hydrology_velbase_mag_file",
+                               "Specifies a file to get velbase_mag from,"
+                               " for 'distributed' hydrology model");
 
   Hydrology::init();
 
@@ -98,10 +98,11 @@ void DistributedHydrology::init() {
     P_from_W_steady(P);
   }
 
-  if (hold_flag) {
+  if (hydrology_velbase_mag_file.is_set()) {
     verbPrintf(2, m_grid.com,
-               "  reading velbase_mag for 'distributed' hydrology from '%s'.\n", filename.c_str());
-    velbase_mag.regrid(filename, CRITICAL_FILL_MISSING, 0.0);
+               "  reading velbase_mag for 'distributed' hydrology from '%s'.\n",
+               hydrology_velbase_mag_file.c_str());
+    velbase_mag.regrid(hydrology_velbase_mag_file, CRITICAL_FILL_MISSING, 0.0);
     hold_velbase_mag = true;
   }
 }
