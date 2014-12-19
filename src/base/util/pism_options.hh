@@ -42,7 +42,6 @@ public:
          const std::string& description,
          const std::string& default_value,
          ArgumentFlag flag = DONT_ALLOW_EMPTY);
-  const char* c_str();
 private:
   void process(const std::string& option,
                const std::string& description,
@@ -72,7 +71,6 @@ public:
           const std::string& description,
           const std::string& choices,
           const std::string& default_value);
-  const char* c_str();
 };
 
 class Integer : public Option<int> {

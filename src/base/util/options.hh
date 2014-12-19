@@ -29,20 +29,23 @@ public:
   Option() {
     m_is_set = false;
   }
-  operator T() {
-    return m_value;
-  }
   bool is_set() {
     return m_is_set;
   }
   T value() {
     return m_value;
   }
+  operator T() {
+    return m_value;
+  }
+  T* operator->() {
+    return &m_value;
+  }
 protected:
-  T m_value;
+  T    m_value;
   bool m_is_set;
   void set(T value, bool is_set) {
-    m_value = value;
+    m_value  = value;
     m_is_set = is_set;
   }
 };

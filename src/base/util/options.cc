@@ -73,10 +73,6 @@ void String::process(const std::string& option,
   }
 }
 
-const char* String::c_str() {
-  return m_value.c_str();
-}
-
 StringList::StringList(const std::string& option,
                        const std::string& description,
                        const std::string& default_value) {
@@ -175,10 +171,6 @@ Keyword::Keyword(const std::string& option,
     throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
                                   option.c_str(), word.c_str(), list.c_str());
   }
-}
-
-const char* Keyword::c_str() {
-  return m_value.c_str();
 }
 
 Integer::Integer(const std::string& option,
