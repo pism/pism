@@ -195,18 +195,17 @@ if __name__ == "__main__":
   config = context.config
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Invert test I"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
-    output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
-    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
-    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
-    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
-    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
-    test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
+  output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+  right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
+  tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
+  tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
+  do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
+  do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
+  do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
+  test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
 
   inv_method = config.get_string("inv_ssa_method")
 

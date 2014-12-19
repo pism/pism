@@ -82,17 +82,16 @@ if __name__ == '__main__':
   if not PISM.optionsIsSet("-ssa_method"):
     config.set_string("ssa_method","fem")
 
-  for o in PISM.OptionsGroup(com,"","SSA Forward"):
-    input_file_name = PISM.optionsString("-i","file to bootstrap from")
-    output_file_name = PISM.optionsString("-o","output file",default="make_synth_ssa.nc")
-    design_prior_scale = PISM.optionsReal("-design_prior_scale","initial guess for design variable to be this factor of the true value",default=design_prior_scale)
-    design_prior_const = PISM.optionsReal("-design_prior_const","initial guess for design variable to be this constant",default=design_prior_const)
-    noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
-    misfit_weight_type = PISM.optionsList(context.com,"-misfit_type","Choice of misfit weight function",["grounded","fast"],"grounded")
-    fast_ice_speed = PISM.optionsReal("-fast_ice_speed","Threshold in m/a for determining if ice is fast", 500.)
-    generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
-    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
-    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+  input_file_name = PISM.optionsString("-i","file to bootstrap from")
+  output_file_name = PISM.optionsString("-o","output file",default="make_synth_ssa.nc")
+  design_prior_scale = PISM.optionsReal("-design_prior_scale","initial guess for design variable to be this factor of the true value",default=design_prior_scale)
+  design_prior_const = PISM.optionsReal("-design_prior_const","initial guess for design variable to be this constant",default=design_prior_const)
+  noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
+  misfit_weight_type = PISM.optionsList(context.com,"-misfit_type","Choice of misfit weight function",["grounded","fast"],"grounded")
+  fast_ice_speed = PISM.optionsReal("-fast_ice_speed","Threshold in m/a for determining if ice is fast", 500.)
+  generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
+  is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+  design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
     
   
   ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)

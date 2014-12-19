@@ -95,11 +95,10 @@ if __name__ == '__main__':
 
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Test Lineaer"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="test_linear.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="test_linear.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
   tc = test_linear(Mx,My)

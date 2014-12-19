@@ -38,12 +38,11 @@ usage = \
 PISM.verbosityLevelFromOptions()
 PISM.show_usage_check_req_opts(context.com,"sia.py",["-i"],usage)
 
-for o in PISM.OptionsGroup(context.com,"","sia"):
-  input_file = PISM.optionsString("-i","input file")
-  output_file = PISM.optionsString("-o","output file",default="sia_"+os.path.basename(input_file))
-  is_regional = PISM.optionsFlag("-regional","Compute SIA using regional model semantics",default=False)
-  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-  PISM.set_config_from_options(context.com,config)
+input_file = PISM.optionsString("-i","input file")
+output_file = PISM.optionsString("-o","output file",default="sia_"+os.path.basename(input_file))
+is_regional = PISM.optionsFlag("-regional","Compute SIA using regional model semantics",default=False)
+verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+PISM.set_config_from_options(context.com,config)
 
 
 periodicity = PISM.XY_PERIODIC

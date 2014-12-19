@@ -46,22 +46,20 @@ class BasalTillStrength:
     
 
   def setFromOptions(self):
-    for o in PISM.OptionsGroup(title="BasalTillStrength"):
-      # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
-      # // from the thickness of the basal melt water bwat
-      # // Note: option is given in kPa.
-      config.scalar_from_option("plastic_c0", "till_c_0")
+    # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
+    # // from the thickness of the basal melt water bwat
+    # // Note: option is given in kPa.
+    config.scalar_from_option("plastic_c0", "till_c_0")
 
-      # // hydrology_pressure_fraction is a parameter in the computation of the till yield stress tau_c
-      # // from the thickness of the basal melt water bwat
-      # // option a pure number (a fraction); no conversion
-      config.scalar_from_option("hydrology_pressure_fraction", "hydrology_pressure_fraction")
+    # // hydrology_pressure_fraction is a parameter in the computation of the till yield stress tau_c
+    # // from the thickness of the basal melt water bwat
+    # // option a pure number (a fraction); no conversion
+    config.scalar_from_option("hydrology_pressure_fraction", "hydrology_pressure_fraction")
 
+    config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure")
 
-      config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure")
-
-      # # // "friction angle" in degrees
-      # config.scalar_from_option("plastic_phi", "default_till_phi")
+    # # // "friction angle" in degrees
+    # config.scalar_from_option("plastic_phi", "default_till_phi")
 
 # The updateYieldStress and getBasalWaterPressure come from iMBasal.
 
@@ -181,12 +179,11 @@ usage = \
 
 PISM.show_usage_check_req_opts(context.com, sys.argv[0], ["-i"], usage)
 
-for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
-  bootfile = PISM.optionsString("-i","input file")
-  output_file = PISM.optionsString("-o","output file",default="tauc2tillphi_"+os.path.basename(bootfile))
+bootfile = PISM.optionsString("-i","input file")
+output_file = PISM.optionsString("-o","output file",default="tauc2tillphi_"+os.path.basename(bootfile))
 
-  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-  PISM.set_config_from_options(context.com,config)
+verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+PISM.set_config_from_options(context.com,config)
 
 grid = PISM.Context().newgrid()
 PISM.model.initGridFromFile(grid,bootfile,

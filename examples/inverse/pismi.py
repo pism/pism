@@ -261,47 +261,47 @@ if __name__ == "__main__":
 
   append_mode = False
   PISM.setVerbosityLevel(1)
-  for o in PISM.OptionsGroup(context.com,"","pismi"):
-    input_filename = PISM.optionsString("-i","input file")
-    append_filename = PISM.optionsString("-a","append file",default=None)
-    output_filename = PISM.optionsString("-o","output file",default=None)
 
-    if (input_filename is None) and (append_filename is None):
-      PISM.verbPrintf(1,com,"\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
-      sys.exit(0)
+  input_filename = PISM.optionsString("-i","input file")
+  append_filename = PISM.optionsString("-a","append file",default=None)
+  output_filename = PISM.optionsString("-o","output file",default=None)
 
-    if (input_filename is not None) and (append_filename is not None):
-      PISM.verbPrintf(1,com,"\nError: Only one of -i/-a is allowed.\n")
-      sys.exit(0)
+  if (input_filename is None) and (append_filename is None):
+    PISM.verbPrintf(1,com,"\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
+    sys.exit(0)
 
-    if (output_filename is not None) and (append_filename is not None):
-      PISM.verbPrintf(1,com,"\nError: Only one of -a/-o is allowed.\n")
-      sys.edit(0)
+  if (input_filename is not None) and (append_filename is not None):
+    PISM.verbPrintf(1,com,"\nError: Only one of -i/-a is allowed.\n")
+    sys.exit(0)
 
-    if append_filename is not None:
-      input_filename = append_filename
-      output_filename = append_filename
-      append_mode = True
+  if (output_filename is not None) and (append_filename is not None):
+    PISM.verbPrintf(1,com,"\nError: Only one of -a/-o is allowed.\n")
+    sys.edit(0)
 
-    inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+  if append_filename is not None:
+    input_filename = append_filename
+    output_filename = append_filename
+    append_mode = True
 
-    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
-    Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
+  inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
 
-    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
-    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
+  do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
+  do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
+  Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-    do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
+  design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+  do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
 
-    prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
+  do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
+  use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
 
-    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+  prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-      "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
+  is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+
+  using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
+    "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
   inv_method = config.get_string("inv_ssa_method")
   

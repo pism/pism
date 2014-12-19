@@ -131,11 +131,10 @@ if __name__ == '__main__':
   #   PISM.verbPrintf(1,context.com,help)
   #   PISM.verbPrintf(1,context.com,usage)
 
-  for o in PISM.OptionsGroup(context.com,"","Test CFBC"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="ssa_test_cfbc.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="ssa_test_cfbc.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
 

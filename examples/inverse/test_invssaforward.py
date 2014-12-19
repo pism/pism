@@ -422,14 +422,14 @@ if __name__ == "__main__":
 
   append_mode = False
   PISM.setVerbosityLevel(1)
-  for o in PISM.OptionsGroup(context.com,"","test_ssaforward"):
-    input_filename = PISM.optionsString("-i","input file")
-    inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
-    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-      "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
+
+  input_filename = PISM.optionsString("-i","input file")
+  inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+  use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
+  design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+  using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
+    "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
   ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename,design_var)
   ssarun.setup()
@@ -488,8 +488,7 @@ if __name__ == "__main__":
 
   ssarun.ssa.linearize_at(zeta1)
 
-  for o in PISM.OptionsGroup(title="test_invssaforward"):
-    test_type = PISM.optionsList(grid.com, "-inv_test", "",["j_design","j_design_transpose","lin","lin_transpose"],"")
+  test_type = PISM.optionsList(grid.com, "-inv_test", "",["j_design","j_design_transpose","lin","lin_transpose"],"")
 
   if test_type == "":
     PISM.verbPrintf(1,com,"Must specify a test type via -inv_test\n")

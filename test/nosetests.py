@@ -10,7 +10,7 @@ Run this to get a coverage report:
 nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/nosetests.py
 """
 
-import PISM
+import PISM, sys
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -159,6 +159,10 @@ def create_special_vecs_test():
 
     tauc = PISM.model.createYieldStressVec(grid)
 
+    strainheat = PISM.model.createStrainHeatingVec(grid)
+
+    u, v, w = PISM.model.create3DVelocityVecs(grid)
+
     hardav = PISM.model.createAveragedHardnessVec(grid)
 
     enthalpy = PISM.model.createEnthalpyVec(grid)
@@ -208,25 +212,40 @@ def create_special_vecs_test():
 
     vecs.add(mask)
 
+    # test getattr
+    vecs.mask
+
     return True
 
 def options_test():
     "Test command-line option handling"
     ctx = PISM.Context()
 
-    for o in PISM.OptionsGroup(ctx.com, "", "Testing options"):
-        M = PISM.optionsInt("-M", "description", default=100)
-        S = PISM.optionsString("-S", "description", default="string")
-        R = PISM.optionsReal("-R", "description", default=1.5)
-        B = PISM.optionsFlag("-B", "description", default=False)
-        IA = PISM.optionsIntArray("-IA", "description", default=[1,2])
-        RA = PISM.optionsRealArray("-RA", "description", default=[2,3])
-        SA = PISM.optionsStringArray("-SA", "description", default="one,two")
+    M = PISM.optionsInt("-M", "description", default=100)
+    M = PISM.optionsInt("-M", "description", default=None)
 
-    for o in PISM.OptionsGroup(None, "", "Trying None for the COMM"):
-        M = PISM.optionsList(ctx.com, "-L", "description", opt_set="one,two", default="one")
-        # without the default
-        SA = PISM.optionsStringArray("-SA", "description")
+    S = PISM.optionsString("-S", "description", default="string")
+    S = PISM.optionsString("-S", "description", default=None)
+
+    R = PISM.optionsReal("-R", "description", default=1.5)
+    R = PISM.optionsReal("-R", "description", default=None)
+
+    B = PISM.optionsFlag("-B", "description", default=False)
+    B = PISM.optionsFlag("B", "description", default=False)
+    B = PISM.optionsFlag("-B", "description", default=None)
+
+    sys.argv.extend(["-IA", "1,2,3"])
+    IA = PISM.optionsIntArray("-IA", "description", default=[1,2])
+    IA = PISM.optionsIntArray("-IA", "description", default=None)
+
+    RA = PISM.optionsRealArray("-RA", "description", default=[2,3])
+    RA = PISM.optionsRealArray("-RA", "description", default=None)
+
+    SA = PISM.optionsStringArray("-SA", "description", default="one,two")
+    SA = PISM.optionsStringArray("-SA", "description", default=None)
+
+    M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default="one")
+    M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default=None)
 
 def modelvecs_test():
     "Test the ModelVecs class"

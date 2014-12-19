@@ -53,11 +53,11 @@ def stream_tauc(x,y):
 if __name__ == '__main__':
   PISM.set_abort_on_sigint(True)
   context = PISM.Context()
-  for o in PISM.OptionsGroup(context.com,"","build_tiny"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
-    output_filename = PISM.optionsString("-o","output file",default="tiny.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
+  output_filename = PISM.optionsString("-o","output file",default="tiny.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   # Build the grid.
   grid = PISM.Context().newgrid()
