@@ -55,46 +55,37 @@ public:
 protected:
   virtual void init_internal()
   {
-    bool file_set, bc_period_set, bc_ref_year_set;
-
     IceGrid &g = Mod::m_grid;
 
-    double bc_period_years = 0,
-      bc_reference_year = 0;
+    options::String file(option_prefix + "_file", "Specifies a file with scalar offsets");
+    options::Integer period(option_prefix + "_period",
+                            "Specifies the length of the climate data period", 0);
+    options::Real bc_reference_year(option_prefix + "_reference_year",
+                                    "Boundary condition reference year", 0.0);
 
-    {
-      OptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
-                    filename, file_set);
-      OptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
-                  bc_period_years, bc_period_set);
-      OptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
-                  bc_reference_year, bc_ref_year_set);
-    }
-
-    if (file_set == false) {
+    if (not file.is_set()) {
       throw RuntimeError::formatted("command-line option %s_file is required.",
                                     option_prefix.c_str());
     }
 
-    if (bc_period_set) {
-      bc_period = (unsigned int)bc_period_years;
-    } else {
-      bc_period = 0;
+    if (period.value() < 0.0) {
+      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+                                    option_prefix.c_str(), period.value());
     }
+    bc_period = (unsigned int)period;
 
-    if (bc_ref_year_set) {
+    if (bc_reference_year.is_set()) {
       bc_reference_time = g.convert(bc_reference_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }
 
-
     verbPrintf(2, g.com,
                "  reading %s data from forcing file %s...\n",
-               offset->short_name.c_str(), filename.c_str());
+               offset->short_name.c_str(), file->c_str());
 
     PIO nc(g.com, "netcdf3", g.config.get_unit_system());
-    nc.open(filename, PISM_READONLY);
+    nc.open(file, PISM_READONLY);
     {
       offset->read(nc, g.time);
     }

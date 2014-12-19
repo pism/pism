@@ -80,16 +80,7 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, config);
 
     // determine test (and whether to report error)
-    std::string testname = "A";
-    bool   test_chosen;
-    ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-    {
-      OptionsString("-test", "Specifies PISM verification test",
-                    testname, test_chosen);
-    }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
+    std::string testname = options::String("-test", "Specifies PISM verification test", "A");
 
     // transform to uppercase:
     transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);

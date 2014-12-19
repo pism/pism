@@ -54,7 +54,7 @@ void IceModel::init_timeseries() {
     throw RuntimeError("you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
   }
 
-  // If neither -ts_filen nor -ts_times is set, we're done.
+  // If neither -ts_file nor -ts_times is set, we're done.
   if (not ts_file.is_set() && not times.is_set()) {
     save_ts = false;
     return;
@@ -69,14 +69,14 @@ void IceModel::init_timeseries() {
     throw;
   }
 
-  if (times.value().size() == 0) {
+  if (times->empty()) {
     throw RuntimeError("no argument for -ts_times option.");
   }
 
   verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
-             ts_file.c_str());
+             ts_file->c_str());
 
-  verbPrintf(2, grid.com, "times requested: %s\n", times.c_str());
+  verbPrintf(2, grid.com, "times requested: %s\n", times->c_str());
 
   current_ts = 0;
 
@@ -110,7 +110,7 @@ void IceModel::init_timeseries() {
       if (current_ts > 0) {
         verbPrintf(2, grid.com,
                    "skipping times before the last record in %s (at %s)\n",
-                   ts_file.c_str(), grid.time->date(time_max).c_str());
+                   ts_file->c_str(), grid.time->date(time_max).c_str());
       }
     }
   }
@@ -196,30 +196,25 @@ void IceModel::write_timeseries() {
 
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_extras() {
-  bool extra_times_set, extra_file_set, extra_vars_set;
-  std::string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
   next_extra = 0;
 
+  options::String extra_file("-extra_file", "Specifies the output file");
 
-  OptionsString("-extra_file", "Specifies the output file",
-                extra_filename, extra_file_set);
+  options::String times("-extra_times", "Specifies times to save at");
 
-  OptionsString("-extra_times", "Specifies times to save at",
-                times, extra_times_set);
-
-  OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
-                vars, extra_vars_set);
+  options::StringSet vars("-extra_vars",
+                          "Specifies a comma-separated list of variables to save", "");
 
   bool split  = options::Bool("-extra_split", "Specifies whether to save to separate files");
   bool append = options::Bool("-extra_append", "append spatial diagnostics");
 
-  if (extra_file_set ^ extra_times_set) {
+  if (extra_file.is_set() ^ times.is_set()) {
     throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");
   }
 
-  if (!extra_file_set && !extra_times_set) {
+  if (!extra_file.is_set() && !times.is_set()) {
     save_extra = false;
     return;
   }
@@ -289,22 +284,16 @@ void IceModel::init_extras() {
                extra_filename.c_str());
   }
 
-  verbPrintf(2, grid.com, "times requested: %s\n", times.c_str());
+  verbPrintf(2, grid.com, "times requested: %s\n", times->c_str());
 
   if (extra_times.size() > 500) {
     verbPrintf(2, grid.com,
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
-  std::string var_name;
-  if (extra_vars_set) {
-    verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str());
-    std::istringstream arg(vars);
-
-    while (getline(arg, var_name, ',')) {
-      extra_vars.insert(var_name);
-    }
-
+  if (vars.is_set()) {
+    verbPrintf(2, grid.com, "variables requested: %s\n", vars.to_string().c_str());
+    extra_vars = vars;
   } else {
     verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
                " Writing model_state, mapping and climate_steady variables...\n");

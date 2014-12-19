@@ -265,13 +265,11 @@ void Config::scalar_from_option(const std::string &name, const std::string &para
 }
 
 void Config::string_from_option(const std::string &name, const std::string &parameter) {
-  std::string value = get_string_quiet(parameter);
-  bool flag;
 
-  OptionsString("-" + name,
-                get_string_quiet(parameter + "_doc"),
-                value, flag);
-  if (flag) {
+  options::String value("-" + name,
+                         get_string_quiet(parameter + "_doc"),
+                         get_string_quiet(parameter));
+  if (value.is_set()) {
     this->set_string_from_option(parameter, value);
   }
 }

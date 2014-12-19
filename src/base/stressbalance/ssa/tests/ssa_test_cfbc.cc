@@ -237,29 +237,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=61;
-    int My=61;
-    std::string output_file = "ssa_test_cfbc.nc";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
+    options::String output_file("-o", "Set the output file name", "ssa_test_cfbc.nc");
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TESTCFBC options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-    {
-      bool flag;
-      int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
-                 Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction",
-                 My, flag);
-      OptionsString("-o", "Set the output file name",
-                    output_file, flag);
-      OptionsInt("-verbose", "Verbosity level",
-                 my_verbosity_level, flag);
-      if (flag) {
-        setVerbosityLevel(my_verbosity_level);
-      }
+    options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
+    if (my_verbosity_level.is_set()) {
+      setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     SSAFactory ssafactory = SSAFDFactory;
 

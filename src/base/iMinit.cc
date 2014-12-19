@@ -304,14 +304,14 @@ void IceModel::grid_setup() {
                  "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
                  "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
                  "     ncatted -a source,global,c,c,PISM %s\n",
-                 input_file.c_str(), input_file.c_str(), input_file.c_str());
+                 input_file->c_str(), input_file->c_str(), input_file->c_str());
     } else if (source.find("PISM") == std::string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
       verbPrintf(1, grid.com,
                  "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
                  "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-                 input_file.c_str());
+                 input_file->c_str());
     }
 
     std::vector<std::string> names;
@@ -333,7 +333,7 @@ void IceModel::grid_setup() {
     if (var_exists == false) {
       nc.close();
       throw RuntimeError::formatted("file %s has neither enthalpy nor temperature in it",
-                                    input_file.c_str());
+                                    input_file->c_str());
     }
 
     nc.close();
@@ -378,8 +378,6 @@ void IceModel::grid_setup() {
   than once (memory allocation is one example).
  */
 void IceModel::model_state_setup() {
-  bool i_set;
-  std::string filename;
 
   reset_counters();
 
@@ -387,11 +385,10 @@ void IceModel::model_state_setup() {
   init_couplers();
 
   // Check if we are initializing from a PISM output file:
-  OptionsString("-i", "Specifies the PISM input file",
-                filename, i_set);
+  options::String input_file("-i", "Specifies the PISM input file");
 
-  if (i_set) {
-    initFromFile(filename);
+  if (input_file.is_set()) {
+    initFromFile(input_file);
 
     regrid(0);
     // Check consistency of geometry after initialization:
@@ -442,53 +439,53 @@ void IceModel::model_state_setup() {
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
-    if (i_set) {
+    if (input_file.is_set()) {
       verbPrintf(2, grid.com,
                  "* Trying to read cumulative climatic mass balance from '%s'...\n",
-                 filename.c_str());
-      climatic_mass_balance_cumulative.regrid(filename, OPTIONAL, 0.0);
+                 input_file->c_str());
+      climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       climatic_mass_balance_cumulative.set(0.0);
     }
   }
 
   if (grounded_basal_flux_2D_cumulative.was_created()) {
-    if (i_set) {
+    if (input_file.is_set()) {
       verbPrintf(2, grid.com,
                  "* Trying to read cumulative grounded basal flux from '%s'...\n",
-                 filename.c_str());
-      grounded_basal_flux_2D_cumulative.regrid(filename, OPTIONAL, 0.0);
+                 input_file->c_str());
+      grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       grounded_basal_flux_2D_cumulative.set(0.0);
     }
   }
 
   if (floating_basal_flux_2D_cumulative.was_created()) {
-    if (i_set) {
+    if (input_file.is_set()) {
       verbPrintf(2, grid.com,
                  "* Trying to read cumulative floating basal flux from '%s'...\n",
-                 filename.c_str());
-      floating_basal_flux_2D_cumulative.regrid(filename, OPTIONAL, 0.0);
+                 input_file->c_str());
+      floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       floating_basal_flux_2D_cumulative.set(0.0);
     }
   }
 
   if (nonneg_flux_2D_cumulative.was_created()) {
-    if (i_set) {
+    if (input_file.is_set()) {
       verbPrintf(2, grid.com,
                  "* Trying to read cumulative nonneg flux from '%s'...\n",
-                 filename.c_str());
-      nonneg_flux_2D_cumulative.regrid(filename, OPTIONAL, 0.0);
+                 input_file->c_str());
+      nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       nonneg_flux_2D_cumulative.set(0.0);
     }
   }
 
-  if (i_set) {
+  if (input_file.is_set()) {
     PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
 
-    nc.open(filename, PISM_READONLY);
+    nc.open(input_file, PISM_READONLY);
     bool run_stats_exists = nc.inq_var("run_stats");
     if (run_stats_exists) {
       nc.read_attributes(run_stats.get_name(), run_stats);
@@ -566,16 +563,13 @@ void IceModel::model_state_setup() {
   In the base class there is only one case: bootstrapping.
  */
 void IceModel::set_vars_from_options() {
-  bool boot_file_set;
-  std::string filename;
 
   verbPrintf(3, grid.com,
              "Setting initial values of model state variables...\n");
 
-  OptionsString("-boot_file", "Specifies the file to bootstrap from",
-                filename, boot_file_set);
+  options::String filename("-boot_file", "Specifies the file to bootstrap from");
 
-  if (boot_file_set) {
+  if (filename.is_set()) {
     bootstrapFromFile(filename);
   } else {
     throw RuntimeError("No input file specified.");

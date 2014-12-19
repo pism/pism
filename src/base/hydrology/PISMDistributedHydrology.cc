@@ -99,7 +99,7 @@ void DistributedHydrology::init() {
   if (hydrology_velbase_mag_file.is_set()) {
     verbPrintf(2, m_grid.com,
                "  reading velbase_mag for 'distributed' hydrology from '%s'.\n",
-               hydrology_velbase_mag_file.c_str());
+               hydrology_velbase_mag_file->c_str());
     velbase_mag.regrid(hydrology_velbase_mag_file, CRITICAL_FILL_MISSING, 0.0);
     hold_velbase_mag = true;
   }

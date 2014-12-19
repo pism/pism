@@ -88,14 +88,14 @@ void PSForceThickness::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing force-to-thickness mass-balance modifier...\n");
 
-  bool file_set = false;
-  OptionsString("-force_to_thickness_file",
-                "Specifies the target thickness file for the force-to-thickness mechanism",
-                m_input_file, file_set, false);
+  options::String input_file("-force_to_thickness_file",
+                             "Specifies the target thickness file for the"
+                             " force-to-thickness mechanism");
 
-  if (file_set == false) {
+  if (not input_file.is_set()) {
     throw RuntimeError("surface model forcing requires the -force_to_thickness_file option.");
   }
+  m_input_file = input_file;
 
   double ftt_alpha = m_grid.convert(m_alpha, "s-1", "yr-1");
   bool ftt_alpha_set = false;

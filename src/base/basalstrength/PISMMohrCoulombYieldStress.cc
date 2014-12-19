@@ -244,7 +244,7 @@ void MohrCoulombYieldStress::init()
 
   if (tauc_to_phi.is_set()) {
 
-    if (tauc_to_phi.value().empty() == false) {
+    if (not tauc_to_phi->empty()) {
       // "-tauc_to_phi filename.nc" is given
       m_tauc.regrid(tauc_to_phi, CRITICAL);
     } else {

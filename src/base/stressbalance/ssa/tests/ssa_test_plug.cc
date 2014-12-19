@@ -176,7 +176,6 @@ PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
 }
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
 
@@ -193,12 +192,10 @@ int main(int argc, char *argv[]) {
 
     setVerbosityLevel(5);
 
-    PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
+    bool
+      usage_set = options::Bool("-usage", "show the usage message"),
+      help_set  = options::Bool("-help", "show the help message");
+    if (usage_set or help_set) {
       PetscPrintf(com,
                   "\n"
                   "usage of SSA_TEST_PLUG:\n"
@@ -207,48 +204,26 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=11;
-    int My=61;
-    std::string output_file = "ssa_test_plug.nc";
 
-    std::set<std::string> ssa_choices;
-    ssa_choices.insert("fem");
-    ssa_choices.insert("fd");
-    std::string driver = "fem";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 11);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
 
-    // double H0dim = 1.;
-    double glen_n = 3.;
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fem");
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TEST_PLUG options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-    {
-      bool flag;
-      int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
-                 Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction",
-                 My, flag);
-      OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
-                  ssa_choices, driver, driver, flag);
+    options::String output_file("-o", "Set the output file name", "ssa_test_plug.nc");
+    options::Real glen_n("-ssa_glen_n", "Glen exponent for the SSA", 3.0);
 
-      OptionsString("-o", "Set the output file name",
-                    output_file, flag);
-      OptionsReal("-ssa_glen_n", "", glen_n, flag);
-
-      OptionsInt("-verbose", "Verbosity level",
-                 my_verbosity_level, flag);
-      if (flag) {
-        setVerbosityLevel(my_verbosity_level);
-      }
+    options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
+    if (my_verbosity_level.is_set()) {
+      setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") {
+    if (method.value() == "fem") {
       ssafactory = SSAFEMFactory;
-    } else if (driver == "fd") {
+    } else if (method.value() == "fd") {
       ssafactory = SSAFDFactory;
     } else {
       /* can't happen */

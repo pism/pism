@@ -163,9 +163,9 @@ public:
 protected:
   void parse_list(const std::string &spec, std::vector<double> &result);
 
-  virtual void process_ys(double &result, bool &flag);
-  virtual void process_y(double &result, bool &flag);
-  virtual void process_ye(double &result, bool &flag);
+  virtual bool process_ys(double &result);
+  virtual bool process_y(double &result);
+  virtual bool process_ye(double &result);
 
   virtual void compute_times(double time_start, double delta, double time_end,
                              const std::string &keyword,

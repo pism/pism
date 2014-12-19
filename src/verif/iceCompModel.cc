@@ -941,28 +941,25 @@ void IceCompModel::reportErrors() {
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
-  std::string filename;
-  bool netcdf_report, append;
   NCTimeseries err("N", "N", grid.config.get_unit_system());
 
   err.set_units("1");
 
   PIO nc(grid.com, "netcdf3", grid.config.get_unit_system()); // OK to use netcdf3
 
-  OptionsString("-report_file", "NetCDF error report file",
-                filename, netcdf_report);
-  append = options::Bool("-append", "Append the NetCDF error report");
+  options::String report_file("-report_file", "NetCDF error report file");
+  bool append = options::Bool("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {
     mode = PISM_READWRITE_MOVE;
   }
 
-  if (netcdf_report) {
-    verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename.c_str());
+  if (report_file.is_set()) {
+    verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
-    nc.open(filename, mode);
+    nc.open(report_file, mode);
     start = nc.inq_dimlen("N");
 
     nc.write_global_attributes(global_attributes);
@@ -998,7 +995,7 @@ void IceCompModel::reportErrors() {
                100*volerr/volexact, maxHerr, avHerr,
                maxetaerr/pow(domeHexact,m));
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("relative_volume");
       err.set_units("percent");
@@ -1032,7 +1029,7 @@ void IceCompModel::reportErrors() {
     verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, basemaxTerr, baseavTerr);
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("maximum_temperature");
       err.set_units("Kelvin");
@@ -1059,7 +1056,7 @@ void IceCompModel::reportErrors() {
     verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, maxTberr, avTberr);
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("maximum_temperature");
       err.set_units("Kelvin");
@@ -1089,7 +1086,7 @@ void IceCompModel::reportErrors() {
     verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
                max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("maximum_sigma");
       err.set_units("J s-1 m-3");
@@ -1112,7 +1109,7 @@ void IceCompModel::reportErrors() {
     verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                grid.convert(maxUerr, "m/second", "m/year"), grid.convert(avUerr, "m/second", "m/year"), grid.convert(maxWerr, "m/second", "m/year"), grid.convert(avWerr, "m/second", "m/year"));
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("maximum_surface_velocity");
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
@@ -1146,7 +1143,7 @@ void IceCompModel::reportErrors() {
                (avvecerr/exactmaxspeed)*100.0,
                grid.convert(maxuberr, "m/second", "m/year"), grid.convert(maxvberr, "m/second", "m/year"));
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("maximum_basal_velocity");
       err.set_units("m/s");
@@ -1183,7 +1180,7 @@ void IceCompModel::reportErrors() {
     verbPrintf(1,grid.com, "           %11.5f\n",
                grid.convert(maxbmelterr, "m/second", "m/year"));
 
-    if (netcdf_report) {
+    if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
       err.set_name("maximum_basal_melt_rate");
       err.set_units("m/s");
@@ -1192,7 +1189,7 @@ void IceCompModel::reportErrors() {
     }
   }
 
-  if (netcdf_report) {
+  if (report_file.is_set()) {
     nc.close();
   }
 

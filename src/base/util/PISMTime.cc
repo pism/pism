@@ -147,36 +147,27 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) {
   return units;
 }
 
-void Time::process_ys(double &result, bool &flag) {
-  OptionsReal("-ys", "Start year", result, flag);
-  if (flag) {
-    result = years_to_seconds(result);
-  } else {
-    result = m_config.get("start_year");
-  }
+bool Time::process_ys(double &result) {
+  options::Real ys("-ys", "Start year", m_config.get("start_year"));
+  result = years_to_seconds(ys);
+  return ys.is_set();
 }
 
-void Time::process_y(double &result, bool &flag) {
-  OptionsReal("-y", "Run length, in years", result, flag);
-  if (flag) {
-    result = years_to_seconds(result);
-  } else {
-    result = m_config.get("run_length_years");  
-  }
+bool Time::process_y(double &result) {
+  options::Real y("-y", "Run length, in years", m_config.get("run_length_years"));
+  result = years_to_seconds(y);
+  return y.is_set();
 }
 
-void Time::process_ye(double &result, bool &flag) {
-  OptionsReal("-ye", "End year", result, flag);
-  if (flag) {
-    result = years_to_seconds(result);
-  } else {
-    result = m_config.get("start_year") + m_config.get("run_length_years");
-  }
+bool Time::process_ye(double &result) {
+  options::Real ye("-ye", "End year",
+                      m_config.get("start_year") + m_config.get("run_length_years"));
+  result = years_to_seconds(ye);
+  return ye.is_set();
 }
 
 void Time::init() {
 
-  bool y_set, ys_set, ye_set;
   double y_seconds, ys_seconds, ye_seconds;
 
   // At this point the calendar and the year length are set (in the
@@ -184,11 +175,9 @@ void Time::init() {
   // override all this by using settings from -time_file, so that is
   // fine, too.
 
-  {
-    process_y(y_seconds, y_set);
-    process_ys(ys_seconds, ys_set);
-    process_ye(ye_seconds, ye_set);
-  }
+  bool y_set = process_y(y_seconds);
+  bool ys_set = process_ys(ys_seconds);
+  bool ye_set = process_ye(ye_seconds);
 
   if (ys_set && ye_set && y_set) {
     throw RuntimeError("all of -y, -ys, -ye are set.");

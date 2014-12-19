@@ -182,14 +182,12 @@ void SSAFEM::solve(TerminationReason::Ptr &reason) {
 void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
   PetscViewer    viewer;
-  std::string filename;
-  bool flag = false;
 
   m_epsilon_ssa = m_config.get("epsilon_ssa");
 
-  OptionsString("-ssa_view", "", filename, flag);
-  if (flag) {
-    ierr = PetscViewerASCIIOpen(m_grid.com, filename.c_str(), &viewer);
+  options::String filename("-ssa_view", "");
+  if (filename.is_set()) {
+    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), &viewer);
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
 
     ierr = PetscViewerASCIIPrintf(viewer, "SNES before SSASolve_FE\n");
@@ -227,7 +225,7 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
   bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
   if (view_solution) {
-    ierr = PetscViewerASCIIOpen(m_grid.com, filename.c_str(), &viewer);
+    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), &viewer);
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");

@@ -90,29 +90,30 @@ void Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
  */
 void Component::regrid(const std::string &module_name, IceModelVec *variable,
                        RegriddingFlag flag) {
-  bool file_set, vars_set;
-  std::set<std::string> vars;
-  std::string file, title = module_name + std::string(" regridding options");
 
   assert(variable != NULL);
 
-  {
-    OptionsString("-regrid_file", "regridding file name", file, file_set);
-    OptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                     "", vars, vars_set);
-  }
+  options::String regrid_file("-regrid_file", "regridding file name");
 
-  if (file_set == false) {
+  options::StringSet regrid_vars("-regrid_vars",
+                                 "comma-separated list of regridding variables",
+                                 "");
+
+  if (not regrid_file.is_set()) {
     return;
   }
 
   NCSpatialVariable &m = variable->metadata();
 
-  if ((vars_set == true && set_contains(vars, m.get_string("short_name")) == true) ||
-      (vars_set == false && flag == REGRID_WITHOUT_REGRID_VARS)) {
-    verbPrintf(2, m_grid.com, "  regridding '%s' from file '%s' ...\n",
-               m.get_string("short_name").c_str(), file.c_str());
-    variable->regrid(file, CRITICAL);
+  if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
+      (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
+
+    verbPrintf(2, m_grid.com,
+               "  %s: regridding '%s' from file '%s' ...\n",
+               module_name.c_str(),
+               m.get_string("short_name").c_str(), regrid_file->c_str());
+
+    variable->regrid(regrid_file, CRITICAL);
   }
 }
 

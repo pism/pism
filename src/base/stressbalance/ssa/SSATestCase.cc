@@ -272,20 +272,17 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
                                           double avg_v) {
   NCTimeseries err("N", "N", grid->config.get_unit_system());
   unsigned int start;
-  std::string filename;
-  bool flag;
   NCVariable global_attributes("PISM_GLOBAL", grid->config.get_unit_system());
 
-  OptionsString("-report_file", "NetCDF error report file",
-                filename, flag);
+  options::String filename("-report_file", "NetCDF error report file");
 
-  if (flag == false) {
+  if (not filename.is_set()) {
     return 0;
   }
 
   err.set_units("1");
 
-  verbPrintf(2, grid->com, "Also writing errors to '%s'...\n", filename.c_str());
+  verbPrintf(2, grid->com, "Also writing errors to '%s'...\n", filename->c_str());
 
   bool append = options::Bool("-append", "Append the NetCDF error report");
 

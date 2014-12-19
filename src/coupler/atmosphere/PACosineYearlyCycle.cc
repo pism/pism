@@ -37,37 +37,32 @@ PACosineYearlyCycle::~PACosineYearlyCycle() {
 }
 
 void PACosineYearlyCycle::init() {
-  bool input_file_flag, scaling_flag;
-  std::string input_file, scaling_file;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
 
-  {
-    OptionsString("-atmosphere_yearly_cycle_file",
-                  "PACosineYearlyCycle input file name",
-                  input_file, input_file_flag);
-    OptionsString("-atmosphere_yearly_cycle_scaling_file",
-                  "PACosineYearlyCycle amplitude scaling input file name",
-                  scaling_file, scaling_flag);
-  }
 
-  if (input_file_flag == false) {
+  options::String input_file("-atmosphere_yearly_cycle_file",
+                             "PACosineYearlyCycle input file name");
+  options::String scaling_file("-atmosphere_yearly_cycle_scaling_file",
+                               "PACosineYearlyCycle amplitude scaling input file name");
+
+  if (not input_file.is_set()) {
     throw RuntimeError("Please specify an '-atmosphere yearly_cycle' input file\n"
                        "using the -atmosphere_yearly_cycle_file option.");
   }
 
   verbPrintf(2, m_grid.com,
              "  Reading mean annual air temperature, mean July air temperature, and\n"
-             "  precipitation fields from '%s'...\n", input_file.c_str());
+             "  precipitation fields from '%s'...\n", input_file->c_str());
 
   m_air_temp_mean_annual.regrid(input_file, CRITICAL);
   m_air_temp_mean_july.regrid(input_file, CRITICAL);
   m_precipitation.regrid(input_file, CRITICAL);
 
-  if (scaling_flag) {
+  if (scaling_file.is_set()) {
 
     if (A == NULL) {
       A = new Timeseries(&m_grid, "amplitude_scaling",
@@ -79,7 +74,7 @@ void PACosineYearlyCycle::init() {
 
     verbPrintf(2, m_grid.com,
                "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
-               scaling_file.c_str());
+               scaling_file->c_str());
 
     PIO nc(m_grid, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);

@@ -54,7 +54,7 @@ void OceanKill::init() {
   if (ocean_kill_file.is_set()) {
     verbPrintf(2, m_grid.com,
                "  setting fixed calving front location using\n"
-               "  ice thickness from '%s'.\n", ocean_kill_file.c_str());
+               "  ice thickness from '%s'.\n", ocean_kill_file->c_str());
 
     thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",

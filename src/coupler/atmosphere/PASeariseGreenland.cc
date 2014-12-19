@@ -56,15 +56,12 @@ void PA_SeaRISE_Greenland::init() {
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
-  bool precip_file_set = false;
-  {
-    std::string option_prefix = "-atmosphere_searise_greenland";
-    OptionsString(option_prefix + "_file",
-                  "Specifies a file with boundary conditions",
-                  m_precip_filename, precip_file_set);
-  }
+  std::string option_prefix = "-atmosphere_searise_greenland";
+  options::String precip_file(option_prefix + "_file",
+                              "Specifies a file with boundary conditions");
+  m_precip_filename = precip_file;
 
-  if (precip_file_set == true) {
+  if (precip_file.is_set()) {
     verbPrintf(2, m_grid.com,
                "  * Option '-atmosphere_searise_greenland %s' is set...\n",
                m_precip_filename.c_str());

@@ -87,14 +87,13 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
 Time_Calendar::~Time_Calendar() {
 }
 
-void Time_Calendar::process_ys(double &result, bool &flag) {
+bool Time_Calendar::process_ys(double &result) {
 
-  std::string tmp;
-  OptionsString("-ys", "Start date", tmp, flag);
+  options::String ys("-ys", "Start date");
 
-  if (flag) {
+  if (ys.is_set()) {
     try {
-      parse_date(tmp, &result);
+      parse_date(ys, &result);
     } catch (RuntimeError &e) {
       e.add_context("processing the -ys option");
       throw;
@@ -102,33 +101,33 @@ void Time_Calendar::process_ys(double &result, bool &flag) {
   } else {
     result = m_config.get("start_year", "years", "seconds");
   }
+  return ys.is_set();
 }
 
-void Time_Calendar::process_y(double &result, bool &flag) {
+bool Time_Calendar::process_y(double &result) {
 
-  int tmp;
-  OptionsInt("-y", "Run length, in years (integer)", tmp, flag);
+  options::Integer y("-y", "Run length, in years (integer)", 0);
 
-  if (flag) {
-    if (tmp < 0) {
+  if (y.is_set()) {
+    if (y < 0) {
       throw RuntimeError::formatted("-y %d is not allowed (run length can't be negative)",
-                                    tmp);
+                                    y.value());
     }
-    result = years_to_seconds(tmp);
+    result = years_to_seconds(y);
   } else {
     result = m_config.get("run_length_years", "years", "seconds");
   }
+  return y.is_set();
 }
 
 
-void Time_Calendar::process_ye(double &result, bool &flag) {
+bool Time_Calendar::process_ye(double &result) {
 
-  std::string tmp;
-  OptionsString("-ye", "Start date", tmp, flag);
+  options::String ye("-ye", "Start date");
 
-  if (flag) {
+  if (ye.is_set()) {
     try {
-      parse_date(tmp, &result);
+      parse_date(ye, &result);
     } catch (RuntimeError &e) {
       e.add_context("processing the -ye option");
       throw;
@@ -137,6 +136,7 @@ void Time_Calendar::process_ye(double &result, bool &flag) {
     result = (m_config.get("start_year", "years", "seconds") +
               m_config.get("run_length_years", "years", "seconds"));
   }
+  return ye.is_set();
 }
 
 
@@ -144,15 +144,12 @@ void Time_Calendar::init() {
 
   Time::init();
 
-  std::string time_file;
-  bool flag;
-  OptionsString("-time_file", "Reads time information from a file",
-                time_file, flag);
+  options::String time_file("-time_file", "Reads time information from a file");
 
-  if (flag) {
+  if (time_file.is_set()) {
     verbPrintf(2, m_com,
                "* Setting time from '%s'...\n",
-               time_file.c_str());
+               time_file->c_str());
 
     ignore_option(m_com, "-y");
     ignore_option(m_com, "-ys");

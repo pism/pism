@@ -71,24 +71,18 @@ void IceEISModel::setFromOptions() {
 
   // set experiment name using command-line options
   {
-    std::string name = "A";
-    char temp = m_experiment;
-    bool EISIIchosen;
-    OptionsString("-eisII", "EISMINT II experiment name",
-                  name, EISIIchosen);
+    std::string experiments = "ABCDEFGHIJKL";
+    std::string name = options::String("-eisII", "EISMINT II experiment name",
+                                       std::string(1, m_experiment));
 
-    if (EISIIchosen == true) {
-      temp = (char)toupper(name.c_str()[0]);
-      if ((temp >= 'A') && (temp <= 'L')) {
-        m_experiment = temp;
-      } else {
-        throw RuntimeError::formatted("option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L; got %c",
-                                      temp);
-      }
-    }
+    if (name.size() != 1 or
+        experiments.find(name) == std::string::npos) {
+      throw RuntimeError::formatted("option -eisII must be a single letter in [%s]; got %s",
+                                    experiments.c_str(), name.c_str());
+    }    
 
-    char tempstr[2] = {temp, 0};
-    config.set_string("EISMINT_II_experiment", tempstr);
+    m_experiment = name[0];
+    config.set_string("EISMINT_II_experiment", name);
   }
 
   IceModel::setFromOptions();

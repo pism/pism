@@ -106,9 +106,8 @@ void PBLingleClark::init() {
 }
 
 void PBLingleClark::correct_topg() {
-  bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
-    topg_exists, topg_initial_exists, regrid_vars_set;
-  std::string boot_filename, regrid_filename;
+  bool use_special_regrid_semantics, topg_exists, topg_initial_exists;
+
   PIO nc(m_grid, "guess_mode");
 
   use_special_regrid_semantics = options::Bool("-regrid_bed_special",
@@ -119,34 +118,32 @@ void PBLingleClark::correct_topg() {
     return;
   }
 
-  OptionsString("-regrid_file", "Specifies the name of a file to regrid from",
-                regrid_filename, regrid_file_set);
+  options::String regrid_file("-regrid_file",
+                              "Specifies the name of a file to regrid from");
 
-  OptionsString("-boot_file", "Specifies the name of the file to bootstrap from",
-                boot_filename, boot_file_set);
+  options::String boot_file("-boot_file",
+                            "Specifies the name of the file to bootstrap from");
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
-  if (not (regrid_file_set && boot_file_set)) {
+  if (not (regrid_file.is_set() and boot_file.is_set())) {
     return;
   }
 
-  nc.open(regrid_filename, PISM_READONLY);
+  nc.open(regrid_file, PISM_READONLY);
 
   topg_initial_exists = nc.inq_var("topg_initial");
   topg_exists = nc.inq_var("topg");
   nc.close();
 
   // Stop if the regridding file does not have both topg and topg_initial.
-  if (!(topg_initial_exists && topg_exists)) {
+  if (not (topg_initial_exists and topg_exists)) {
     return;
   }
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
-  std::set<std::string> regrid_vars;
-  OptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
-                   regrid_vars, regrid_vars_set);
+  options::StringSet regrid_vars("-regrid_vars", "Specifies regridding variables", "");
 
-  if (regrid_vars_set) {
+  if (regrid_vars.is_set()) {
     if (set_contains(regrid_vars, "topg")) {
       verbPrintf(2, m_grid.com,
                  "  Bed elevation correction requested, but -regrid_vars contains topg...\n");
@@ -157,7 +154,7 @@ void PBLingleClark::correct_topg() {
   verbPrintf(2, m_grid.com,
              "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
              "  of the bed deformation from '%s'...\n",
-             boot_filename.c_str(), regrid_filename.c_str());
+             boot_file->c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
@@ -166,8 +163,8 @@ void PBLingleClark::correct_topg() {
                      "m", "bedrock_altitude");
 
   // Get topg and topg_initial from the regridding file.
-  topg_initial.regrid(regrid_filename, CRITICAL);
-  topg_tmp.regrid(regrid_filename, CRITICAL);
+  topg_initial.regrid(regrid_file, CRITICAL);
+  topg_tmp.regrid(regrid_file, CRITICAL);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.

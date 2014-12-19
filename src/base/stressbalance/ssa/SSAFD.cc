@@ -1686,10 +1686,9 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   IceModelVec2S component;
   component.create(m_grid, "temp_storage", WITHOUT_GHOSTS);
 
-  bool flag;
-  OptionsString("-ssafd_matlab",
-                "Save the linear system to an ASCII .m file. Sets the file prefix.",
-                prefix, flag);
+  prefix = options::String("-ssafd_matlab",
+                           "Save the linear system to an ASCII .m file. Sets the file prefix.",
+                           prefix);
 
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m",
            m_grid.convert(m_grid.time->current(), "seconds", "years"));

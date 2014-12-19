@@ -92,9 +92,7 @@ public:
 
   //! Creates a boundary model. Processes command-line options.
   Model* create() {
-    std::vector<std::string> choices;
-    std::string model_list, modifier_list, descr;
-    bool flag = false;
+    std::string model_list, modifier_list, description;
     Model* result = NULL;
 
     // build a list of available models:
@@ -115,22 +113,15 @@ public:
     }
     modifier_list += "]";
 
-    descr =  "Sets up the PISM " + m_option + " model. Available models: " + model_list +
+    description =  "Sets up the PISM " + m_option + " model. Available models: " + model_list +
       " Available modifiers: " + modifier_list;
 
     // Get the command-line option:
-    OptionsStringArray("-" + m_option, descr, m_default_type, choices, flag);
-
-    if (choices.empty()) {
-      if (flag == true) {
-        throw RuntimeError::formatted("option -%s requires an argument.\n", m_option.c_str());
-      }
-      choices.push_back(m_default_type);
-    }
+    options::StringList choices("-" + m_option, description, m_default_type);
 
     // the first element has to be an *actual* model (not a modifier), so we
     // create it:
-    std::vector<std::string>::iterator j = choices.begin();
+    std::vector<std::string>::iterator j = choices->begin();
 
     if (m_models.find(*j) == m_models.end()) {
       throw RuntimeError::formatted("%s model \"%s\" is not available.\n"
@@ -145,7 +136,7 @@ public:
     ++j;
 
     // process remaining arguments:
-    while (j != choices.end()) {
+    while (j != choices->end()) {
       if (m_modifiers.find(*j) == m_modifiers.end()) {
         throw RuntimeError::formatted("%s modifier \"%s\" is not available.\n"
                                       "Available modifiers: %s",

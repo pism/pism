@@ -331,23 +331,11 @@ int main(int argc, char *argv[]) {
       Lx = 900e3,
       Ly = Lx,
       Lz = 4000.0;
-    int
-      Mx = 61,
-      My = 61,
-      Mz = 61;
 
-    std::string output_file = "siafd_test_F.nc";
-    {
-      bool flag;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
-                 Mx, flag);
-      OptionsInt("-My", "Number of grid points in the X direction",
-                 My, flag);
-      OptionsInt("-Mz", "Number of vertical grid levels",
-                 Mz, flag);
-      OptionsString("-o", "Set the output file name",
-                    output_file, flag);
-    }
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
+    options::Integer My("-My", "Number of grid points in the X direction", 61);
+    options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
+    options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
 
     grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
     grid.set_vertical_levels(Lz, Mz, EQUAL);

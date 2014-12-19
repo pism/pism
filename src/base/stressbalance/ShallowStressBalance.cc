@@ -558,11 +558,9 @@ void PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) 
 void PrescribedSliding::init() {
   ShallowStressBalance::init();
 
-  bool flag;
-  std::string input_filename;
-  OptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
-                input_filename, flag);
-  if (flag == false) {
+  options::String input_filename("-prescribed_sliding_file",
+                                 "name of the file to read velocity fields from");
+  if (not input_filename.is_set()) {
     throw RuntimeError("option -prescribed_sliding_file is required.");
   }
 

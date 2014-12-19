@@ -26,6 +26,7 @@
 #include "PISMDiagnostic.hh"
 
 #include "error_handling.hh"
+#include "pism_options.hh"
 
 namespace pism {
 
@@ -118,31 +119,15 @@ void IceModel::update_viewers() {
 
 //! Initialize run-time diagnostic viewers.
 void IceModel::init_viewers() {
-  PetscErrorCode ierr;
-  PetscBool flag;
-  char tmp[TEMPORARY_STRING_LENGTH];
 
-  PetscInt viewer_size = (int)config.get("viewer_size");
-  ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
-                         "", viewer_size, &viewer_size, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsInt");
-
-  if (flag) {
-    config.set_double("viewer_size", viewer_size);
-  }
+  int viewer_size = (int)config.get("viewer_size");
+  options::Integer("-view_size", "specifies desired viewer size", viewer_size);
+  config.set_double("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
-  ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
-                            tmp, TEMPORARY_STRING_LENGTH, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-  std::string var_name;
-  if (flag) {
-    std::istringstream arg(tmp);
-
-    while (getline(arg, var_name, ',')) {
-      map_viewers.insert(var_name);
-    }
-  }
+  map_viewers = options::StringSet("-view_map", 
+                                   "specifies the comma-separated list of map-plane viewers",
+                                   "");
 }
 
 

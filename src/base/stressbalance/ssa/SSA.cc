@@ -114,12 +114,9 @@ void SSA::init() {
   
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
-  bool i_set;
-  std::string filename;
-  OptionsString("-i", "PISM input file",
-                filename, i_set);
+  options::String input_file("-i", "PISM input file");
 
-  if (i_set) {
+  if (input_file.is_set()) {
     bool u_ssa_found, v_ssa_found;
     unsigned int start;
     PIO nc(m_grid, "guess_mode");
@@ -127,7 +124,7 @@ void SSA::init() {
     bool dont_read_initial_guess = options::Bool("-dontreadSSAvels",
                                                  "don't read the initial guess");
 
-    nc.open(filename, PISM_READONLY);
+    nc.open(input_file, PISM_READONLY);
     u_ssa_found = nc.inq_var("u_ssa");
     v_ssa_found = nc.inq_var("v_ssa");
     start = nc.inq_nrecords() - 1;
@@ -136,7 +133,7 @@ void SSA::init() {
     if (u_ssa_found && v_ssa_found && (not dont_read_initial_guess)) {
       verbPrintf(3,m_grid.com,"Reading u_ssa and v_ssa...\n");
 
-      m_velocity.read(filename, start);
+      m_velocity.read(input_file, start);
     }
 
   } else {

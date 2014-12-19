@@ -101,27 +101,14 @@ protected:
 
   void process_options()
   {
-    bool bc_file_set, bc_period_set, bc_ref_year_set;
-
-    int bc_period_years = 0,
-      bc_reference_year = 0;
-
-    bc_period = 0;
-    bc_reference_time = 0;
-
-    {
-      OptionsString(option_prefix + "_file",
-                    "Specifies a file with boundary conditions",
-                    filename, bc_file_set);
-      OptionsInt(option_prefix + "_period",
-                 "Specifies the length of the climate data period (in years)",
-                 bc_period_years, bc_period_set);
-      OptionsInt(option_prefix + "_reference_year",
-                 "Boundary condition reference year",
-                 bc_reference_year, bc_ref_year_set);
-    }
-
-    if (bc_file_set == false) {
+    options::String file(option_prefix + "_file",
+                         "Specifies a file with boundary conditions");
+    if (file.is_set()) {
+      filename = file;
+      verbPrintf(2, Model::m_grid.com,
+                 "  - Reading boundary conditions from '%s'...\n",
+                 filename.c_str());
+    } else {
       // find PISM input file to read data from:
       bool do_regrid; int start;   // will be ignored
       Model::find_pism_input(filename, do_regrid, start);
@@ -129,21 +116,22 @@ protected:
       verbPrintf(2, Model::m_grid.com,
                  "  - Option %s_file is not set. Trying the input file '%s'...\n",
                  option_prefix.c_str(), filename.c_str());
-
-    } else {
-      verbPrintf(2, Model::m_grid.com,
-                 "  - Reading boundary conditions from '%s'...\n",
-                 filename.c_str());
     }
 
-    if (bc_ref_year_set) {
-      bc_reference_time = Model::m_grid.convert(bc_reference_year, "years", "seconds");
+    options::Integer period(option_prefix + "_period",
+                            "Specifies the length of the climate data period (in years)", 0);
+    if (period.value() < 0.0) {
+      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+                                    option_prefix.c_str(), period.value());
     }
+    bc_period = (unsigned int)period;
 
-    if (bc_period_set) {
-      bc_period = (unsigned int)bc_period_years;
+    options::Integer ref_year(option_prefix + "_reference_year",
+                              "Boundary condition reference year", 0);
+    if (ref_year.is_set()) {
+      bc_reference_time = Model::m_grid.convert(ref_year, "years", "seconds");
     } else {
-      bc_period = 0;
+      bc_reference_time = 0;
     }
   }
 

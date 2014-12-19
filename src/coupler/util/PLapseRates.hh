@@ -105,65 +105,58 @@ protected:
 
   virtual void init_internal()
   {
-    std::string filename;
-    bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
-
     IceGrid &g = Mod::m_grid;
 
-    double bc_period_years = 0,
-      bc_reference_year = 0;
+    options::String file(option_prefix + "_file",
+                         "Specifies a file with top-surface boundary conditions");
 
-    {
-      OptionsString(option_prefix + "_file",
-                    "Specifies a file with top-surface boundary conditions",
-                    filename, bc_file_set);
-      OptionsReal(option_prefix + "_period",
-                  "Specifies the length of the climate data period",
-                  bc_period_years, bc_period_set);
-      OptionsReal(option_prefix + "_reference_year",
-                  "Boundary condition reference year",
-                  bc_reference_year, bc_ref_year_set);
-      OptionsReal("-temp_lapse_rate",
-                  "Elevation lapse rate for the temperature, in K per km",
-                  temp_lapse_rate, temp_lapse_rate_set);
-    }
+    options::Integer period(option_prefix + "_period",
+                            "Specifies the length of the climate data period", 0.0);
 
-    if (bc_file_set == false) {
+    options::Real reference_year(option_prefix + "_reference_year",
+                                 "Boundary condition reference year", 0.0);
+
+    options::Real T_lapse_rate("-temp_lapse_rate",
+                               "Elevation lapse rate for the temperature, in K per km",
+                               temp_lapse_rate);
+    temp_lapse_rate = T_lapse_rate;
+
+    if (not file.is_set()) {
       throw RuntimeError::formatted("command-line option %s_file is required.",
                                     option_prefix.c_str());
     }
 
-    if (bc_ref_year_set) {
-      bc_reference_time = Model::m_grid.convert(bc_reference_year, "years", "seconds");
+    if (reference_year.is_set()) {
+      bc_reference_time = Model::m_grid.convert(reference_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }
 
-    if (bc_period_set) {
-      bc_period = (unsigned int)bc_period_years;
-    } else {
-      bc_period = 0;
+    if (period.value() < 0.0) {
+      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+                                    option_prefix.c_str(), period.value());
     }
+    bc_period = (unsigned int)period;
 
     if (reference_surface.was_created() == false) {
       unsigned int buffer_size = (unsigned int) Mod::m_config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
       PIO nc(g.com, "netcdf3", g.config.get_unit_system());
-      nc.open(filename, PISM_READONLY);
+      nc.open(file, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude");
       nc.close();
 
       // if -..._period is not set, make n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
-      if (bc_period_set == false) {
+      if (not period.is_set()) {
         ref_surface_n_records = std::min(ref_surface_n_records, buffer_size);
       }
 
       if (ref_surface_n_records == 0) {
         throw RuntimeError::formatted("can't find reference surface elevation (usurf) in %s.\n",
-                                      filename.c_str());
+                                      file->c_str());
       }
 
       reference_surface.set_n_records(ref_surface_n_records);
@@ -176,9 +169,9 @@ protected:
 
     verbPrintf(2, g.com,
                "    reading reference surface elevation from %s ...\n",
-               filename.c_str());
+               file->c_str());
 
-    reference_surface.init(filename, bc_period, bc_reference_time);
+    reference_surface.init(file, bc_period, bc_reference_time);
 
     surface = g.variables().get_2d_scalar("surface_altitude");
     thk     = g.variables().get_2d_scalar("land_ice_thickness");

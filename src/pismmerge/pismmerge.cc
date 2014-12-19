@@ -163,17 +163,10 @@ int main(int argc, char *argv[])
                PISM_Revision);
     stop_on_version_option();
 
-    bool i_set, o_set, var_name_set, compression_level_set;
-    std::string i_name, o_name, var_name;
-    int compression_level = 0;
-    OptionsString("-i", "Input file name",
-                  i_name, i_set);
-    OptionsString("-o", "Output file name",
-                  o_name, o_set);
-    OptionsString("-v", "Name of the variable to merge",
-                  var_name, var_name_set);
-    OptionsInt("-L", "Output compression level",
-               compression_level, compression_level_set);
+    options::String i_name("-i", "Input file name");
+    options::String output_name("-o", "Output file name");
+    options::String var_name("-v", "Name of the variable to merge");
+    options::Integer compression_level("-L", "Output compression level", 0);
     std::string usage =
       "  Merges output file created using '-o_format quilt'.\n\n"
       "  pismmerge {-i in.nc} [-o out.nc]\n"
@@ -192,16 +185,17 @@ int main(int argc, char *argv[])
     check_input_files(i_name);
 
     // Check the validity of the -L option.
-    if (compression_level_set) {
+    if (compression_level.is_set()) {
       if (compression_level < 0 || compression_level > 9) {
         throw RuntimeError::formatted("invalid compression level: %d.",
-                                      compression_level);
+                                      compression_level.value());
       }
     }
 
     // Set the output file name.
-    if (o_set == false) {
-      if (var_name_set == false) {
+    std::string o_name = output_name;
+    if (not output_name.is_set()) {
+      if (not var_name.is_set()) {
         o_name = output_filename(i_name, "ALL");
       } else {
         o_name = output_filename(i_name, var_name);
@@ -209,7 +203,7 @@ int main(int argc, char *argv[])
     }
 
     if (rank == 0) {
-      if (var_name_set) {
+      if (var_name.is_set()) {
         process_one_variable(var_name, i_name, o_name, compression_level);
       } else {
         process_all_variables(i_name, o_name, compression_level);

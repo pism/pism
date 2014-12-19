@@ -52,15 +52,11 @@ Optionally allows saving of full velocity field.
 Calls dumpToFile() to do the actual work.
  */
 void  IceModel::writeFiles(const std::string &default_filename) {
-  std::string filename = default_filename,
-    config_out;
-  bool o_set;
+  std::string config_out;
 
   stampHistoryEnd();
 
-  {
-    OptionsString("-o", "Output file name", filename, o_set);
-  }
+  options::String filename("-o", "Output file name", default_filename);
 
   if (!ends_with(filename, ".nc")) {
     verbPrintf(2, grid.com,
@@ -69,7 +65,7 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 
   if (get_output_size("-o_size") != "none") {
     verbPrintf(2, grid.com,
-               "Writing model state to file `%s'\n", filename.c_str());
+               "Writing model state to file `%s'\n", filename->c_str());
     dumpToFile(filename);
   }
 }
@@ -443,56 +439,52 @@ void IceModel::initFromFile(const std::string &filename) {
   only) and 0 (everything).
 */
 void IceModel::regrid(int dimensions) {
-  std::string filename;
-  bool regrid_vars_set, regrid_file_set;
-  std::set<std::string> regrid_vars;
 
-  if (! (dimensions == 0 ||
-         dimensions == 2 ||
-         dimensions == 3)) {
+  if (not (dimensions == 0 ||
+           dimensions == 2 ||
+           dimensions == 3)) {
     throw RuntimeError("dimensions can only be 0, 2 or 3");
   }
+  
+  options::String regrid_file("-regrid_file", "Specifies the file to regrid from");
 
-  {
-    OptionsString("-regrid_file", "Specifies the file to regrid from",
-                  filename, regrid_file_set);
+  options::StringSet regrid_vars("-regrid_vars",
+                                 "Specifies the list of variables to regrid",
+                                 "");
 
-    OptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
-                     "", regrid_vars, regrid_vars_set);
-  }
 
   // Return if no regridding is requested:
-  if (!regrid_file_set) {
+  if (not regrid_file.is_set()) {
      return;
   }
 
   if (dimensions != 0) {
     verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",
-               dimensions, filename.c_str());
+               dimensions, regrid_file->c_str());
   } else {
-    verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str());
+    verbPrintf(2, grid.com, "regridding from file %s ...\n",regrid_file->c_str());
   }
 
-  if (regrid_vars.empty()) {
+  if (regrid_vars->empty()) {
     // defaults if user gives no regrid_vars list
-    regrid_vars.insert("litho_temp");
+    regrid_vars->insert("litho_temp");
 
     if (config.get_flag("do_age")) {
-      regrid_vars.insert("age");
+      regrid_vars->insert("age");
     }
 
     if (config.get_flag("do_cold_ice_methods")) {
-      regrid_vars.insert("temp");
+      regrid_vars->insert("temp");
     } else {
-      regrid_vars.insert("enthalpy");
+      regrid_vars->insert("enthalpy");
     }
   }
 
   if (dimensions == 0) {
-    regrid_variables(filename, regrid_vars, 2);
-    regrid_variables(filename, regrid_vars, 3);
+    regrid_variables(regrid_file, regrid_vars, 2);
+    regrid_variables(regrid_file, regrid_vars, 3);
   } else {
-    regrid_variables(filename, regrid_vars, dimensions);
+    regrid_variables(regrid_file, regrid_vars, dimensions);
   }
 }
 
@@ -672,7 +664,7 @@ void IceModel::init_snapshots() {
                snapshots_filename.c_str());
   }
 
-  verbPrintf(2, grid.com, "times requested: %s\n", save_times.c_str());
+  verbPrintf(2, grid.com, "times requested: %s\n", save_times->c_str());
 }
 
   //! Writes a snapshot of the model state (if necessary)
@@ -762,24 +754,21 @@ void IceModel::write_snapshot() {
 
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
-  bool o_set;
 
   backup_interval = config.get("backup_interval");
 
-  {
-    OptionsString("-o", "Output file name", backup_filename, o_set);
-    if (!o_set) {
-      backup_filename = executable_short_name + "_backup.nc";
-    } else {
-      backup_filename = pism_filename_add_suffix(backup_filename, "_backup", "");
-    }
-
-    OptionsReal("-backup_interval", "Automatic backup interval, hours",
-                backup_interval, o_set);
-
-    output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
-                            "small", backup_vars);
+  options::String backup_file("-o", "Output file name");
+  if (backup_file.is_set()) {
+    backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
+  } else {
+    backup_filename = executable_short_name + "_backup.nc";
   }
+
+  backup_interval = options::Real("-backup_interval",
+                                  "Automatic backup interval, hours", backup_interval);
+
+  output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
+                          "small", backup_vars);
 
   last_backup_time = 0.0;
 }

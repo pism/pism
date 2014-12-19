@@ -41,7 +41,6 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
   mbscheme              = NULL;
   faustogreve           = NULL;
   sd_period             = 0;
-  sd_ref_year           = 0;
   sd_ref_time           = 0.0;
   base_ddf.snow         = m_config.get("pdd_factor_snow");
   base_ddf.ice          = m_config.get("pdd_factor_ice");
@@ -56,20 +55,21 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
   randomized = options::Bool("-pdd_rand",
                              "Use a PDD implementation based on simulating a random process");
   randomized_repeatable = options::Bool("-pdd_rand_repeatable",
-                                        "Use a PDD implementation based on simulating a repeatable random process");
+                                        "Use a PDD implementation based on simulating a"
+                                        " repeatable random process");
   fausto_params = options::Bool("-pdd_fausto",
-                                "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]");
+                                "Set PDD parameters using formulas (6) and (7)"
+                                " in [Faustoetal2009]");
 
-  OptionsString("-pdd_sd_file",
-                "Read standard deviation from file",
-                filename, sd_file_set);
-  OptionsInt("-pdd_sd_period",
-             "Length of the standard deviation data period in years",
-             sd_period, sd_period_set);
-  OptionsInt("-pdd_sd_reference_year",
-             "Standard deviation data reference year",
-             sd_ref_year, sd_ref_year_set);
+  options::String file("-pdd_sd_file", "Read standard deviation from file");
+  sd_file_set = file.is_set();
 
+  options::Integer period("-pdd_sd_period",
+                          "Length of the standard deviation data period in years", 0);
+  sd_period = period;
+
+  options::Integer sd_ref_year("-pdd_sd_reference_year",
+                               "Standard deviation data reference year", 0);
 
   if (randomized_repeatable) {
     mbscheme = new PDDrandMassBalance(m_config, true);
@@ -83,11 +83,11 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
     faustogreve = new FaustoGrevePDDObject(m_grid);
   }
 
-  if (sd_ref_year_set) {
+  if (sd_ref_year.is_set()) {
     sd_ref_time = m_grid.convert(sd_ref_year, "years", "seconds");
   }
 
-  if (sd_file_set == true) {
+  if (sd_file_set) {
     // find out how many records there are in the file and set the
     // air_temp_sd buffer size
 
@@ -96,7 +96,7 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
     unsigned int buffer_size = (unsigned int) m_config.get("climate_forcing_buffer_size");
 
     PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
-    nc.open(filename, PISM_READONLY);
+    nc.open(file, PISM_READONLY);
     n_records = nc.inq_nrecords(short_name, "");
     nc.close();
 
@@ -109,7 +109,7 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
 
     if (n_records < 1) {
       throw RuntimeError::formatted("Can't find '%s' in %s.",
-                                    short_name.c_str(), filename.c_str());
+                                    short_name.c_str(), file->c_str());
     }
 
     air_temp_sd.set_n_records(n_records);
@@ -221,11 +221,12 @@ void PSTemperatureIndex::init() {
     usurf = NULL;
   }
 
-  if (sd_file_set == true) {
+  options::String file("-pdd_sd_file", "Read standard deviation from file");
+  if (file.is_set()) {
     verbPrintf(2, m_grid.com,
                "  Reading standard deviation of near-surface temperature from '%s'...\n",
-               filename.c_str());
-    air_temp_sd.init(filename, sd_period, sd_ref_time);
+               file->c_str());
+    air_temp_sd.init(file, sd_period, sd_ref_time);
   } else {
     verbPrintf(2, m_grid.com,
                "  Option -pdd_sd_file is not set. Using a constant value.\n");

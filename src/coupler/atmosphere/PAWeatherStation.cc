@@ -68,23 +68,19 @@ void PAWeatherStation::init() {
              "  for use with scalar data from one weather station\n"
              "  combined with lapse rate corrections...\n");
 
-  std::string filename,
-    option = "-atmosphere_one_station_file";
-  bool bc_file_set = false;
+  std::string option = "-atmosphere_one_station_file";
 
-  {
-    OptionsString(option,
-                  "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.",
-                  filename, bc_file_set);
-  }
+  options::String filename(option,
+                           "Specifies a file containing scalar time-series"
+                           " 'precipitation' and 'air_temp'.");
 
-  if (bc_file_set == false) {
+  if (not filename.is_set()) {
     throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());
   }
 
   verbPrintf(2, m_grid.com,
              "  - Reading air temperature and precipitation from '%s'...\n",
-             filename.c_str());
+             filename->c_str());
 
   PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
   nc.open(filename, PISM_READONLY);

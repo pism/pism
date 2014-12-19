@@ -61,29 +61,30 @@ Hydrology::~Hydrology() {
 
 
 void Hydrology::init() {
-  std::string itbfilename,  // itb = input_to_bed
-              bmeltfilename;
-  bool bmeltfile_set, itbfile_set, itbperiod_set, itbreference_set;
-  double itbperiod_years = 0.0, itbreference_year = 0.0;
 
   verbPrintf(4, m_grid.com,
              "entering Hydrology::init() ...\n");
 
-  {
-    OptionsString("-hydrology_bmelt_file",
-                  "Read time-independent values for bmelt from a file; replaces bmelt computed through conservation of energy",
-                  bmeltfilename, bmeltfile_set);
-    OptionsString("-hydrology_input_to_bed_file",
-                  "A time- and space-dependent file with amount of water (depth per time) which should be added to the amount of water at the ice sheet bed at the given location at the given time; adds to bmelt",
-                  itbfilename, itbfile_set);
-    OptionsReal("-hydrology_input_to_bed_period",
-                "The period (i.e. duration before repeat), in years, of -hydrology_input_to_bed_file data",
-                itbperiod_years, itbperiod_set);
-    OptionsReal("-hydrology_input_to_bed_reference_year",
-                "The reference year for periodizing the -hydrology_input_to_bed_file data",
-                itbreference_year, itbreference_set);
-  }
+  options::String bmelt_file("-hydrology_bmelt_file",
+                             "Read time-independent values for bmelt from a file;"
+                             " replaces bmelt computed through conservation of energy");
+  // itb = input_to_bed
+  options::String itb_file("-hydrology_input_to_bed_file",
+                           "A time- and space-dependent file with amount of water"
+                           " (depth per time) which should be added to the amount of water"
+                           " at the ice sheet bed at the given location at the given time;"
+                           " adds to bmelt");
+
+  options::Real itb_period_years("-hydrology_input_to_bed_period",
+                                 "The period (i.e. duration before repeat), in years,"
+                                 " of -hydrology_input_to_bed_file data", 0.0);
+
+  options::Real itb_reference_year("-hydrology_input_to_bed_reference_year",
+                                   "The reference year for periodizing the"
+                                   " -hydrology_input_to_bed_file data", 0.0);
+
   bool i = options::Bool("-i", "PISM input file");
+
   bool bootstrap = options::Bool("-boot_file", "PISM bootstrapping file");
 
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
@@ -95,36 +96,36 @@ void Hydrology::init() {
   cellarea = m_grid.variables().get_2d_scalar("cell_area");
   mask     = m_grid.variables().get_2d_mask("mask");
 
-
-  if (bmeltfile_set) {
+  if (bmelt_file.is_set()) {
     verbPrintf(2, m_grid.com,
-               "  option -hydrology_bmelt_file seen; reading bmelt from '%s'.\n", bmeltfilename.c_str());
-    bmelt_local.regrid(bmeltfilename, CRITICAL);
+               "  option -hydrology_bmelt_file seen; reading bmelt from '%s'.\n", bmelt_file->c_str());
+    bmelt_local.regrid(bmelt_file, CRITICAL);
     hold_bmelt = true;
   }
 
 
-  if (itbfile_set) {
-    inputtobed_period = (itbperiod_set) ? itbperiod_years : 0.0;
-    inputtobed_reference_time = (itbreference_set) ? m_grid.convert(itbreference_year, "years", "seconds") : 0.0;
+  if (itb_file.is_set()) {
+    inputtobed_period = itb_period_years;
+    inputtobed_reference_time = m_grid.convert(itb_reference_year, "years", "seconds");
 
     unsigned int buffer_size = (unsigned int) m_config.get("climate_forcing_buffer_size");
 
     PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
-    nc.open(itbfilename, PISM_READONLY);
+    nc.open(itb_file, PISM_READONLY);
     unsigned int n_records = nc.inq_nrecords("inputtobed", "");
     nc.close();
 
     // if -..._period is not set, make n_records the minimum of the
     // buffer size and the number of available records. Otherwise try
     // to keep all available records in memory.
-    if (itbperiod_set == false) {
+    if (not itb_period_years.is_set()) {
       n_records = std::min(n_records, buffer_size);
     }
 
     if (n_records == 0) {
-      throw RuntimeError::formatted("can't find 'inputtobed' in -hydrology_input_to_bed file with name '%s'",
-                                    itbfilename.c_str());
+      throw RuntimeError::formatted("can't find 'inputtobed' in -hydrology_input_to_bed"
+                                    " file with name '%s'",
+                                    itb_file->c_str());
     }
 
     verbPrintf(2,m_grid.com,
@@ -135,11 +136,13 @@ void Hydrology::init() {
     inputtobed->set_n_records(n_records);
     inputtobed->create(m_grid, "inputtobed", WITHOUT_GHOSTS);
     inputtobed->set_attrs("climate_forcing",
-                          "amount of water (depth per time like bmelt) which should be put at the ice sheet bed",
+                          "amount of water (depth per time like bmelt)"
+                          " which should be put at the ice sheet bed",
                           "m s-1", "");
     verbPrintf(2,m_grid.com,
-               "    reading 'inputtobed' variable from file '%s' ...\n",itbfilename.c_str());
-    inputtobed->init(itbfilename, inputtobed_period, inputtobed_reference_time);
+               "    reading 'inputtobed' variable from file '%s' ...\n",
+               itb_file->c_str());
+    inputtobed->init(itb_file, inputtobed_period, inputtobed_reference_time);
   }
 
   // initialize till water layer thickness from the context if present,

@@ -189,14 +189,11 @@ std::string IceGrid::init_calendar() {
 
   // Check if -time_file was set and override the setting above if the
   // "calendar" attribute is found.
-  std::string time_file_name;
-  bool time_file_set;
-  OptionsString("-time_file", "name of the file specifying the run duration",
-                time_file_name, time_file_set);
-  if (time_file_set) {
+  options::String time_file("-time_file", "name of the file specifying the run duration");
+  if (time_file.is_set()) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
 
-    nc.open(time_file_name, PISM_READONLY);
+    nc.open(time_file, PISM_READONLY);
     {
       std::string time_name = config.get_string("time_dimension_name");
       bool time_exists = nc.inq_var(time_name);

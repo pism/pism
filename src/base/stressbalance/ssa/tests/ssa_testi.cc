@@ -194,43 +194,22 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=11;
-    int My=61;
-    std::string output_file = "ssa_test_i.nc";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 11);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fem");
 
-    std::set<std::string> ssa_choices;
-    ssa_choices.insert("fem");
-    ssa_choices.insert("fd");
-    std::string driver = "fem";
-
-    ierr = PetscOptionsBegin(com, "", "SSA_TESTI options", "");
-    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-    {
-      bool flag;
-      int my_verbosity_level;
-      OptionsInt("-Mx", "Number of grid points in the X direction",
-                 Mx, flag);
-      OptionsInt("-My", "Number of grid points in the Y direction",
-                 My, flag);
-      OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
-                  ssa_choices, driver, driver, flag);
-
-      OptionsString("-o", "Set the output file name",
-                    output_file, flag);
-      OptionsInt("-verbose", "Verbosity level",
-                 my_verbosity_level, flag);
-      if (flag) {
-        setVerbosityLevel(my_verbosity_level);
-      }
+    options::String output_file("-o", "Set the output file name", "ssa_test_i.nc");
+    options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
+    if (my_verbosity_level.is_set()) {
+      setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd();
-    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") {
+    if (method.value() == "fem") {
       ssafactory = SSAFEMFactory;
-    } else if (driver == "fd") {
+    } else if (method.value() == "fd") {
       ssafactory = SSAFDFactory;
     } else {
       /* can't happen */
