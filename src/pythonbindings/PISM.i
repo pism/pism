@@ -270,20 +270,8 @@ using namespace pism;
 
 %Pism_pointer_pointer_is_always_output(pism::IceFlowLaw)
 
-// These methods are called from PISM.options.
-%rename(_optionsInt) pism::OptionsInt;
-%rename(_optionsReal) pism::OptionsReal;
-%rename(_optionsString) pism::OptionsString;
-%rename(_optionsIntArray) pism::OptionsIntArray;
-%rename(_optionsRealArray) pism::OptionsRealArray;
-%rename(_optionsStringArray) pism::OptionsStringArray;
-%rename(_optionsList) pism::OptionsList;
-%rename(optionsIsSet) pism::OptionsIsSet;
-
-// FIXME: remove this
-%rename(_OptionsStringSet) pism::OptionsStringSet;
-
 %include "options.hh"
+// instantiate templates used by option processing classes below
 %template(OptionStdString) pism::options::Option<std::string>;
 %template(OptionStdVectorStdString) pism::options::Option<std::vector<std::string> >;
 %template(OptionStdSetStdString) pism::options::Option<std::set<std::string> >;
@@ -292,14 +280,16 @@ using namespace pism;
 %template(OptionDouble) pism::options::Option<double>;
 %template(OptionStdVectorDouble) pism::options::Option<std::vector<double> >;
 
-%rename(StringOption) pism::options::String;
-%rename(StringListOption) pism::options::StringList;
-%rename(StringSetOption) pism::options::StringSet;
-%rename(KeywordOption) pism::options::Keyword;
-%rename(IntegerOption) pism::options::Integer;
-%rename(IntegerListOption) pism::options::IntegerList;
-%rename(RealOption) pism::options::Real;
-%rename(RealListOption) pism::options::RealList;
+// rename classes in pism::options (SWIG flattens namespaces)
+%rename(OptionString) pism::options::String;
+%rename(OptionStringList) pism::options::StringList;
+%rename(OptionStringSet) pism::options::StringSet;
+%rename(OptionKeyword) pism::options::Keyword;
+%rename(OptionInteger) pism::options::Integer;
+%rename(OptionIntegerList) pism::options::IntegerList;
+%rename(OptionReal) pism::options::Real;
+%rename(OptionRealList) pism::options::RealList;
+%rename(OptionBool) pism::options::Bool;
 
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.

@@ -38,29 +38,6 @@ PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
   return GlobalSum(comm, &local_sum,  result);
 }
 
-PetscErrorCode optionsGroupBegin(MPI_Comm comm, const std::string &prefix,
-                                 const std::string &mess, const std::string &sec)
-{
-  PetscOptionsPublishCount=(PetscOptionsPublish ? -1 : 1);
-  return PetscOptionsBegin_Private(comm, prefix.c_str(), mess.c_str(), sec.c_str());
-}
-
-void optionsGroupNext()
-{
-  PetscOptionsPublishCount++;
-}
-
-bool optionsGroupContinue()
-{
-  return PetscOptionsPublishCount < 2;
-}
-
-PetscErrorCode optionsGroupEnd()
-{
-  return PetscOptionsEnd_Private();
-}
-
-
 void set_abort_on_sigint(bool abort)
 {
   gSIGINT_is_fatal = abort;

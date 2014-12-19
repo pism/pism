@@ -27,11 +27,6 @@ PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm);
 PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm);
 PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm);
 
-PetscErrorCode optionsGroupBegin(MPI_Comm comm,const std::string &prefix,const std::string &mess,const std::string &sec);
-void optionsGroupNext();
-bool optionsGroupContinue();
-PetscErrorCode optionsGroupEnd();
-
 void set_abort_on_sigint(bool abort);
 
 #endif
