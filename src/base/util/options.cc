@@ -92,6 +92,17 @@ StringList::StringList(const std::string& option,
   set(result, input.is_set());
 }
 
+std::string StringList::print() {
+  std::vector<std::string>::const_iterator j = m_value.begin();
+  std::stringstream buffer;
+  buffer << *j;
+  ++j;
+  while(j != m_value.end()) {
+    buffer << "," << *j;
+    ++j;
+  }
+  return buffer.str();
+}
 
 StringSet::StringSet(const std::string& option,
                      const std::string& description,
@@ -105,6 +116,18 @@ StringSet::StringSet(const std::string& option,
   }
 
   set(result, input.is_set());
+}
+
+std::string StringSet::print() {
+  std::set<std::string>::const_iterator j = m_value.begin();
+  std::stringstream buffer;
+  buffer << *j;
+  ++j;
+  while(j != m_value.end()) {
+    buffer << "," << *j;
+    ++j;
+  }
+  return buffer.str();
 }
 
 Keyword::Keyword(const std::string& option,

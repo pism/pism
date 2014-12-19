@@ -32,8 +32,7 @@ namespace pism {
 //! \brief Stop if -version is set.
 PetscErrorCode stop_on_version_option() {
 
-  bool vSet = false;
-  vSet = OptionsIsSet("-version");
+  options::Bool vSet("-version", "print PISM version");
   if (vSet == false) {
     return 0;
   }
@@ -172,8 +171,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 
   stop_on_version_option();
 
-  bool usageSet = false;
-  usageSet = OptionsIsSet("-usage");
+  options::Bool usageSet("-usage", "print PISM usage");
   if (usageSet == true) {
     show_usage_and_quit(com, execname, usage);
   }
@@ -181,8 +179,8 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   // go through list of required options, and if not given, fail
   bool req_absent = false;
   for (size_t ii=0; ii < required_options.size(); ii++) {
-    bool set = false;
-    set = OptionsIsSet(required_options[ii]);
+
+    options::Bool set(required_options[ii], "a required option");
     if (set == PETSC_FALSE) {
       req_absent = true;
       verbPrintf(1,com,
@@ -195,8 +193,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   }
 
   // show usage message with -help, but don't fail
-  bool helpSet = false;
-  helpSet = OptionsIsSet("-help");
+  options::Bool helpSet("-help", "print help on all options");
   if (helpSet == true) {
     just_show_usage(com, execname, usage);
   }
@@ -584,7 +581,6 @@ PetscErrorCode init_config(MPI_Comm com,
 }
 
 PetscErrorCode set_config_from_options(Config &config) {
-  bool flag;
 
   config.keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy");
   config.keyword_from_option("z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
@@ -819,8 +815,8 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.flag_from_option("part_redist", "part_redist");
 
   config.scalar_from_option("nu_bedrock", "nu_bedrock");
-  flag = OptionsIsSet("-nu_bedrock");
-  if (flag) {
+  options::Bool nu_bedrock("-nu_bedrock", "constant viscosity near margins");
+  if (nu_bedrock) {
     config.set_flag_from_option("nu_bedrock_set", true);
   }
 
@@ -865,8 +861,8 @@ PetscErrorCode set_config_from_options(Config &config) {
 
   // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
   // and in particular NOT  "-calving eigen_calving")
-  flag = OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms");
-  if (flag) {
+  options::Bool pik("-pik", "enable suite of PISM-PIK mechanisms");
+  if (pik) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
     config.set_flag_from_option("part_grid", true);
     config.set_flag_from_option("part_redist", true);
@@ -893,8 +889,7 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.keyword_from_option("stress_balance", "stress_balance_model",
                              "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia");
 
-  bool test_climate_models = false;
-  test_climate_models = OptionsIsSet("-test_climate_models",
+  options::Bool test_climate_models("-test_climate_models",
                                      "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string_from_option("stress_balance_model", "none");

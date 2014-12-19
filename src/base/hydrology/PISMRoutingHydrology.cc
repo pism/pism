@@ -91,20 +91,18 @@ void RoutingHydrology::init() {
              "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool stripset;
-  {
-    report_mass_accounting = OptionsIsSet("-report_mass_accounting",
-                                          "Report to stdout on mass accounting in hydrology models");
 
-    stripwidth = m_grid.convert(stripwidth, "m", "km");
-    OptionsReal("-hydrology_null_strip",
-                "set the width, in km, of the strip around the edge"
-                " of the computational domain in which hydrology is inactivated",
-                stripwidth, stripset);
-    if (stripset) {
-      stripwidth = m_grid.convert(stripwidth, "km", "m");
-    }
-  }
+  options::Bool mass_accounting("-report_mass_accounting",
+                                "Report to stdout on mass accounting in hydrology models");
+  report_mass_accounting = mass_accounting;
+
+  stripwidth = m_grid.convert(stripwidth, "m", "km");
+  options::Real hydrology_null_strip("-hydrology_null_strip",
+                                     "set the width, in km, of the strip around the edge"
+                                     " of the computational domain in which hydrology is inactivated",
+                                     stripwidth);
+  stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
+
 
   Hydrology::init();
 
@@ -116,11 +114,8 @@ void RoutingHydrology::init_bwat() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i, bootstrap;
-  {
-    i         = OptionsIsSet("-i", "PISM input file");
-    bootstrap = OptionsIsSet("-boot_file", "PISM bootstrapping file");
-  }
+  options::Bool i("-i", "PISM input file");
+  options::Bool bootstrap("-boot_file", "PISM bootstrapping file");
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
   IceModelVec2S *W_input = NULL;
@@ -130,10 +125,11 @@ void RoutingHydrology::init_bwat() {
     W_input = m_grid.variables().get_2d_scalar("bwat");
     W.copy_from(*W_input);
   } catch (RuntimeError) {
-    if (i || bootstrap) {
+    if (i.is_set() || bootstrap.is_set()) {
       std::string filename;
       int start;
-      find_pism_input(filename, bootstrap, start);
+      bool boot = false;
+      find_pism_input(filename, boot, start);
       if (i) {
         PIO nc(m_grid, "guess_mode");
         nc.open(filename, PISM_READONLY);

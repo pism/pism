@@ -218,12 +218,10 @@ void SSAFD::init() {
              "  [using the KSP-based finite difference implementation]\n");
 
   // options
-  {
     bool flag;
     OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
                nuh_viewer_size, flag);
-    view_nuh = OptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
-  }
+    view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
   if (m_config.get_flag("calving_front_stress_boundary_condition")) {
     verbPrintf(2,m_grid.com,
@@ -235,7 +233,8 @@ void SSAFD::init() {
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
   std::string tempPrefix;
-  dump_system_matlab = OptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format");
+  dump_system_matlab = options::Bool("-ssafd_matlab",
+                                     "Save linear system in Matlab-readable ASCII format");
 
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;

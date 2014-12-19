@@ -32,35 +32,30 @@ namespace pism {
 
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
-  bool ts_file_set, ts_times_set, ts_vars_set;
-  std::string times, vars;
-  bool append;
 
-  {
-    OptionsString("-ts_file", "Specifies the time-series output file name",
-                  ts_filename, ts_file_set);
+  options::String ts_file("-ts_file", "Specifies the time-series output file name");
+  ts_filename = ts_file;
 
-    OptionsString("-ts_times", "Specifies a MATLAB-style range or a list of requested times",
-                  times, ts_times_set);
+  options::String times("-ts_times", "Specifies a MATLAB-style range or a list of requested times");
 
-    OptionsString("-ts_vars", "Specifies a comma-separated list of veriables to save",
-                  vars, ts_vars_set);
+  options::StringSet vars("-ts_vars", "Specifies a comma-separated list of veriables to save",
+                          "");
 
-    // default behavior is to move the file aside if it exists already; option allows appending
-    append = OptionsIsSet("-ts_append");
-  }
+  // default behavior is to move the file aside if it exists already; option allows appending
+  options::Bool append("-ts_append", "append scalar time-series");
+
 
   IO_Mode mode = PISM_READWRITE;
-  if (append == false) {
+  if (not append.is_set()) {
     mode = PISM_READWRITE_MOVE;
   }
 
-  if (ts_file_set ^ ts_times_set) {
+  if (ts_file.is_set() ^ times.is_set()) {
     throw RuntimeError("you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
   }
 
-  // If neither -ts_filename nor -ts_times is set, we're done.
-  if (!ts_file_set && !ts_times_set) {
+  // If neither -ts_filen nor -ts_times is set, we're done.
+  if (not ts_file.is_set() && not times.is_set()) {
     save_ts = false;
     return;
   }
@@ -74,12 +69,12 @@ void IceModel::init_timeseries() {
     throw;
   }
 
-  if (ts_times.size() == 0) {
+  if (times.value().size() == 0) {
     throw RuntimeError("no argument for -ts_times option.");
   }
 
   verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
-             ts_filename.c_str());
+             ts_file.c_str());
 
   verbPrintf(2, grid.com, "times requested: %s\n", times.c_str());
 
@@ -87,14 +82,9 @@ void IceModel::init_timeseries() {
 
 
   std::string var_name;
-  if (ts_vars_set) {
-    verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str());
-    std::istringstream arg(vars);
-
-    while (getline(arg, var_name, ',')) {
-      ts_vars.insert(var_name);
-    }
-
+  if (vars.is_set()) {
+    verbPrintf(2, grid.com, "variables requested: %s\n", vars.print().c_str());
+    ts_vars = vars;
   } else {
     std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
     while (j != ts_diagnostics.end()) {
@@ -104,7 +94,7 @@ void IceModel::init_timeseries() {
   }
 
   PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
-  nc.open(ts_filename, mode);
+  nc.open(ts_file, mode);
 
   if (append == true) {
     double time_max;
@@ -122,7 +112,7 @@ void IceModel::init_timeseries() {
       if (current_ts > 0) {
         verbPrintf(2, grid.com,
                    "skipping times before the last record in %s (at %s)\n",
-                   ts_filename.c_str(), grid.time->date(time_max).c_str());
+                   ts_file.c_str(), grid.time->date(time_max).c_str());
       }
     }
   }
@@ -135,7 +125,7 @@ void IceModel::init_timeseries() {
   // set the output file:
   std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
-    (j->second)->init(ts_filename);
+    (j->second)->init(ts_file);
     ++j;
   }
 
@@ -208,24 +198,24 @@ void IceModel::write_timeseries() {
 
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_extras() {
-  bool split, extra_times_set, extra_file_set, extra_vars_set;
+  bool extra_times_set, extra_file_set, extra_vars_set;
   std::string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
   next_extra = 0;
 
-  {
-    OptionsString("-extra_file", "Specifies the output file",
-                  extra_filename, extra_file_set);
 
-    OptionsString("-extra_times", "Specifies times to save at",
-                  times, extra_times_set);
+  OptionsString("-extra_file", "Specifies the output file",
+                extra_filename, extra_file_set);
 
-    OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
-                  vars, extra_vars_set);
+  OptionsString("-extra_times", "Specifies times to save at",
+                times, extra_times_set);
 
-    split = OptionsIsSet("-extra_split", "Specifies whether to save to separate files");
-  }
+  OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
+                vars, extra_vars_set);
+
+  options::Bool split("-extra_split", "Specifies whether to save to separate files");
+  options::Bool append("-extra_append", "append spatial diagnostics");
 
   if (extra_file_set ^ extra_times_set) {
     throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");
@@ -247,9 +237,7 @@ void IceModel::init_extras() {
     throw RuntimeError("no argument for -extra_times option.");
   }
 
-  bool append = OptionsIsSet("-extra_append");
-
-  if (append == true && split == true) {
+  if (append.is_set() && split.is_set()) {
     throw RuntimeError("both -extra_split and -extra_append are set.");
   }
 
@@ -291,18 +279,14 @@ void IceModel::init_extras() {
   extra_file_is_ready = false;
   split_extra = false;
 
-  if (split) {
+  if (split.is_set()) {
     split_extra = true;
+    verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
+               extra_filename.c_str());
   } else if (!ends_with(extra_filename, ".nc")) {
     verbPrintf(2, grid.com,
                "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
                extra_filename.c_str());
-  }
-
-  if (split) {
-    verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
-               extra_filename.c_str());
-  } else {
     verbPrintf(2, grid.com, "saving spatial time-series to '%s'; ",
                extra_filename.c_str());
   }
@@ -454,10 +438,10 @@ void IceModel::write_extras() {
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
-    bool append = OptionsIsSet("-extra_append");
+    options::Bool append("-extra_append", "append -extra_file output");
 
     IO_Mode mode = PISM_READWRITE;
-    if (append == false) {
+    if (not append.is_set()) {
       mode = PISM_READWRITE_MOVE;
     }
 

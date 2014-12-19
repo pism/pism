@@ -64,7 +64,6 @@ void Hydrology::init() {
   std::string itbfilename,  // itb = input_to_bed
               bmeltfilename;
   bool bmeltfile_set, itbfile_set, itbperiod_set, itbreference_set;
-  bool i_set, bootstrap;
   double itbperiod_years = 0.0, itbreference_year = 0.0;
 
   verbPrintf(4, m_grid.com,
@@ -83,9 +82,9 @@ void Hydrology::init() {
     OptionsReal("-hydrology_input_to_bed_reference_year",
                 "The reference year for periodizing the -hydrology_input_to_bed_file data",
                 itbreference_year, itbreference_set);
-    i_set = OptionsIsSet("-i", "PISM input file");
-    bootstrap = OptionsIsSet("-boot_file", "PISM bootstrapping file");
   }
+  options::Bool i("-i", "PISM input file");
+  options::Bool bootstrap("-boot_file", "PISM bootstrapping file");
 
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
   // update() method at the current Hydrology time
@@ -152,11 +151,12 @@ void Hydrology::init() {
     Wtil_input = m_grid.variables().get_2d_scalar("tillwat");
     Wtil.copy_from(*Wtil_input);
   } catch (RuntimeError) {
-    if (i_set || bootstrap) {
+    if (i.is_set() || bootstrap.is_set()) {
       std::string filename;
       int start;
-      find_pism_input(filename, bootstrap, start);
-      if (i_set) {
+      bool boot = false;
+      find_pism_input(filename, boot, start);
+      if (i.is_set()) {
         Wtil.read(filename, start);
       } else {
         Wtil.regrid(filename, OPTIONAL,

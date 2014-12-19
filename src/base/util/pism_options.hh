@@ -55,6 +55,7 @@ public:
   StringList(const std::string& option,
              const std::string& description,
              const std::string& default_value);
+  std::string print();
 };
 
 class StringSet : public Option<std::set<std::string> > {
@@ -62,6 +63,7 @@ public:
   StringSet(const std::string& option,
             const std::string& description,
             const std::string& default_value);
+  std::string print();
 };
 
 class Keyword : public Option<std::string> {

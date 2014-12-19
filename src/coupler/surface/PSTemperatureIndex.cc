@@ -52,23 +52,24 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
   sd_param_a            = m_config.get("pdd_std_dev_param_a");
   sd_param_b            = m_config.get("pdd_std_dev_param_b");
 
-  {
-    randomized = OptionsIsSet("-pdd_rand",
-                              "Use a PDD implementation based on simulating a random process");
-    randomized_repeatable = OptionsIsSet("-pdd_rand_repeatable",
-                                         "Use a PDD implementation based on simulating a repeatable random process");
-    fausto_params = OptionsIsSet("-pdd_fausto",
-                                 "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]");
-    OptionsString("-pdd_sd_file",
-                  "Read standard deviation from file",
-                  filename, sd_file_set);
-    OptionsInt("-pdd_sd_period",
-               "Length of the standard deviation data period in years",
-               sd_period, sd_period_set);
-    OptionsInt("-pdd_sd_reference_year",
-               "Standard deviation data reference year",
-               sd_ref_year, sd_ref_year_set);
-  }
+
+  randomized = options::Bool("-pdd_rand",
+                             "Use a PDD implementation based on simulating a random process");
+  randomized_repeatable = options::Bool("-pdd_rand_repeatable",
+                                        "Use a PDD implementation based on simulating a repeatable random process");
+  fausto_params = options::Bool("-pdd_fausto",
+                                "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]");
+
+  OptionsString("-pdd_sd_file",
+                "Read standard deviation from file",
+                filename, sd_file_set);
+  OptionsInt("-pdd_sd_period",
+             "Length of the standard deviation data period in years",
+             sd_period, sd_period_set);
+  OptionsInt("-pdd_sd_reference_year",
+             "Standard deviation data reference year",
+             sd_ref_year, sd_ref_year_set);
+
 
   if (randomized_repeatable) {
     mbscheme = new PDDrandMassBalance(m_config, true);
@@ -167,7 +168,7 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
-                  "ice temperature at the ice surface");
+                              "ice temperature at the ice surface");
   ice_surface_temp.set_units("K");
 }
 

@@ -101,8 +101,8 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
   nc.write_global_attributes(global_attributes);
 
-  bool override_used = OptionsIsSet("-config_override");
-  if (override_used) {
+  options::Bool override_used("-config_override", "use configuration overrides");
+  if (override_used.is_set()) {
     overrides.update_from(config);
     overrides.write(nc);
   }
@@ -618,34 +618,32 @@ void IceModel::init_enthalpy(const std::string &filename,
 
 //! Initializes the snapshot-saving mechanism.
 void IceModel::init_snapshots() {
-  bool save_times_set, save_file_set, split;
-  std::string tmp;
   current_snapshot = 0;
 
-  {
-    OptionsString("-save_file", "Specifies a snapshot filename",
-                  snapshots_filename, save_file_set);
+  options::String save_file("-save_file", "Specifies a snapshot filename",
+                            snapshots_filename);
+  snapshots_filename = save_file;
 
-    OptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
-                  tmp, save_times_set);
+  options::String save_times("-save_times",
+                             "Gives a list or a MATLAB-style range of times to save snapshots at");
 
-    split = OptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files");
+  options::Bool split("-save_split", "Specifies whether to save snapshots to separate files");
 
-    output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
-                            "small", snapshot_vars);
-  }
+  output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
+                          "small", snapshot_vars);
 
-  if (save_file_set ^ save_times_set) {
+
+  if (save_file.is_set() ^ save_times.is_set()) {
     throw RuntimeError("you need to specify both -save_file and -save_times to save snapshots.");
   }
 
-  if (!save_file_set && !save_times_set) {
+  if (!save_file.is_set() && !save_times.is_set()) {
     save_snapshots = false;
     return;
   }
 
   try {
-    grid.time->parse_times(tmp, snapshot_times);    
+    grid.time->parse_times(save_times, snapshot_times);    
   } catch (RuntimeError &e) {
     e.add_context("parsing the -save_times argument");
     throw;
@@ -659,7 +657,7 @@ void IceModel::init_snapshots() {
   snapshots_file_is_ready = false;
   split_snapshots = false;
 
-  if (split) {
+  if (split.is_set()) {
     split_snapshots = true;
   } else if (!ends_with(snapshots_filename, ".nc")) {
     verbPrintf(2, grid.com,
@@ -674,7 +672,7 @@ void IceModel::init_snapshots() {
                snapshots_filename.c_str());
   }
 
-  verbPrintf(2, grid.com, "times requested: %s\n", tmp.c_str());
+  verbPrintf(2, grid.com, "times requested: %s\n", save_times.c_str());
 }
 
   //! Writes a snapshot of the model state (if necessary)

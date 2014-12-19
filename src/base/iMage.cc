@@ -245,7 +245,8 @@ ageSystemCtx::solveThisColumn() for the actual method.
 void IceModel::ageStep() {
   PetscErrorCode  ierr;
 
-  bool viewOneColumn = OptionsIsSet("-view_sys");
+  options::Bool viewOneColumn("-view_sys",
+                              "save column system information to file");
 
   IceModelVec3 *u3, *v3, *w3;
   stress_balance->get_3d_velocity(u3, v3, w3);
@@ -279,7 +280,7 @@ void IceModel::ageStep() {
       // solve the system for this column; call checks that params set
       system.solveThisColumn(x);
 
-      if (viewOneColumn && (i == id && j == jd)) {
+      if (viewOneColumn.is_set() && (i == id && j == jd)) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "\n"
                            "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",

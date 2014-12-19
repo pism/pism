@@ -30,7 +30,8 @@ Config::Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_sys
     m_unit_system(unit_system),
     m_data(name, unit_system) {
   m_options_left_set = false;
-  m_options_left_set = OptionsIsSet("-options_left");
+  options::Bool options_left("-options_left", "report on unused options");
+  m_options_left_set = options_left;
   m_unit_system = unit_system;
 }
 
@@ -225,11 +226,9 @@ void Config::set_flag(const std::string &name, bool value) {
 
 */
 void Config::flag_from_option(const std::string &name, const std::string &flag) {
-  bool foo = false,
-    no_foo = false;
 
-  foo    = OptionsIsSet("-" + name, get_string_quiet(flag + "_doc"));
-  no_foo = OptionsIsSet("-no_" + name);
+  options::Bool foo   ("-" + name, get_string_quiet(flag + "_doc"));
+  options::Bool no_foo("-no_" + name, get_string_quiet(flag + "_doc"));
 
   if (foo && no_foo) {
     throw RuntimeError::formatted("Inconsistent command-line options: both -%s and -no_%s are set.\n",

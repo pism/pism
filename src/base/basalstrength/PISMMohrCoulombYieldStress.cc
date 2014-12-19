@@ -435,8 +435,6 @@ where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
 The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
 */
 void MohrCoulombYieldStress::topg_to_phi() {
-  bool topg_to_phi_set = OptionsIsSet("-topg_to_phi");
-  assert(topg_to_phi_set == true);
 
   double phi_min  = m_config.get("till_topg_to_phi_phi_min"),
          phi_max  = m_config.get("till_topg_to_phi_phi_max"),

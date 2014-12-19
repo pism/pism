@@ -69,7 +69,7 @@ void DistributedHydrology::init() {
                                        "set the width, in km, of the strip around the edge "
                                        "of the computational domain in which hydrology is inactivated",
                                        stripwidth);
-    stripwidth = m_grid.convert(stripwidth, "km", "m");
+    stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
   }
 
   options::Bool mass_accounting("-report_mass_accounting",
@@ -112,11 +112,8 @@ void DistributedHydrology::init_bwp() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i_set = false, bootstrap_set = false;
-  {
-    i_set         = OptionsIsSet("-i", "PISM input file");
-    bootstrap_set = OptionsIsSet("-boot_file", "PISM bootstrapping file");
-  }
+  options::Bool i("-i", "PISM input file");
+  options::Bool bootstrap("-boot_file", "PISM bootstrapping file");
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
@@ -128,11 +125,12 @@ void DistributedHydrology::init_bwp() {
     P_input = m_grid.variables().get_2d_scalar("bwp");
     P.copy_from(*P_input);
   } catch (RuntimeError) {
-    if (i_set || bootstrap_set) {
+    if (i.is_set() || bootstrap.is_set()) {
       std::string filename;
       int start;
+      bool bootstrap_set = false;
       find_pism_input(filename, bootstrap_set, start);
-      if (i_set) {
+      if (i.is_set()) {
         PIO nc(m_grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
         bool bwp_exists = nc.inq_var("bwp");

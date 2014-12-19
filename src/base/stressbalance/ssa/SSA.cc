@@ -120,11 +120,12 @@ void SSA::init() {
                 filename, i_set);
 
   if (i_set) {
-    bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
+    bool u_ssa_found, v_ssa_found;
     unsigned int start;
     PIO nc(m_grid, "guess_mode");
 
-    dont_read_initial_guess = OptionsIsSet("-dontreadSSAvels");
+    options::Bool dont_read_initial_guess("-dontreadSSAvels",
+                                          "don't read the initial guess");
 
     nc.open(filename, PISM_READONLY);
     u_ssa_found = nc.inq_var("u_ssa");
