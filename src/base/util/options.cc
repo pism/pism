@@ -233,5 +233,12 @@ RealList::RealList(const std::string& option,
   set(result, input.is_set());
 }
 
+Bool::Bool(const std::string& option,
+           const std::string& description) {
+  String input(option, description, "", ALLOW_EMPTY);
+
+  set(input.is_set(), input.is_set());
+}
+
 } // end of namespace options
 } // end of namespace pism

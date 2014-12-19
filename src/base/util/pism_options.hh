@@ -100,6 +100,12 @@ public:
            const std::string& description);
 };
 
+class Bool : public Option<bool> {
+public:
+  Bool(const std::string& option,
+       const std::string& description);
+};
+
 } // end of namespace options
 
 PetscErrorCode verbosityLevelFromOptions();
