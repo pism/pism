@@ -92,7 +92,7 @@ StringList::StringList(const std::string& option,
   set(result, input.is_set());
 }
 
-std::string StringList::print() {
+std::string StringList::to_string() {
   std::vector<std::string>::const_iterator j = m_value.begin();
   std::stringstream buffer;
   buffer << *j;
@@ -118,7 +118,7 @@ StringSet::StringSet(const std::string& option,
   set(result, input.is_set());
 }
 
-std::string StringSet::print() {
+std::string StringSet::to_string() {
   std::set<std::string>::const_iterator j = m_value.begin();
   std::stringstream buffer;
   buffer << *j;
@@ -256,11 +256,9 @@ RealList::RealList(const std::string& option,
   set(result, input.is_set());
 }
 
-Bool::Bool(const std::string& option,
-           const std::string& description) {
-  String input(option, description, "", ALLOW_EMPTY);
-
-  set(input.is_set(), input.is_set());
+bool Bool(const std::string& option,
+          const std::string& description) {
+  return String(option, description, "", ALLOW_EMPTY).is_set();
 }
 
 } // end of namespace options

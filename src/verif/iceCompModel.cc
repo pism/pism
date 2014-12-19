@@ -166,7 +166,7 @@ void IceCompModel::setFromOptions() {
 
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
-  bool flag = OptionsIsSet("-eo");
+  bool flag = options::Bool("-eo", "exact only");
   if (flag) {
     exactOnly = PETSC_TRUE;
     verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
@@ -241,7 +241,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   }
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
-  bool biiSet = OptionsIsSet("-bedrock_is_ice");
+  bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
   if (biiSet == PETSC_TRUE) {
     if (testname == 'K') {
       verbPrintf(1,grid.com,
@@ -921,7 +921,7 @@ void IceCompModel::reportErrors() {
   //    -- max |<ub,vb> - <ubexact,vbexact>| error
   //    -- av |<ub,vb> - <ubexact,vbexact>| error
 
-  bool dont_report = OptionsIsSet("-no_report", "Don't report numerical errors");
+  bool dont_report = options::Bool("-no_report", "Don't report numerical errors");
 
   if (dont_report) {
     return;
@@ -951,7 +951,7 @@ void IceCompModel::reportErrors() {
 
   OptionsString("-report_file", "NetCDF error report file",
                 filename, netcdf_report);
-  append = OptionsIsSet("-append", "Append the NetCDF error report");
+  append = options::Bool("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {

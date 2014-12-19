@@ -32,7 +32,7 @@ namespace pism {
 //! \brief Stop if -version is set.
 PetscErrorCode stop_on_version_option() {
 
-  options::Bool vSet("-version", "print PISM version");
+  bool vSet = options::Bool("-version", "print PISM version");
   if (vSet == false) {
     return 0;
   }
@@ -171,7 +171,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 
   stop_on_version_option();
 
-  options::Bool usageSet("-usage", "print PISM usage");
+  bool usageSet = options::Bool("-usage", "print PISM usage");
   if (usageSet == true) {
     show_usage_and_quit(com, execname, usage);
   }
@@ -180,8 +180,8 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   bool req_absent = false;
   for (size_t ii=0; ii < required_options.size(); ii++) {
 
-    options::Bool set(required_options[ii], "a required option");
-    if (set == PETSC_FALSE) {
+    bool set = options::Bool(required_options[ii], "a required option");
+    if (set == false) {
       req_absent = true;
       verbPrintf(1,com,
                  "PISM ERROR: option %s required\n",required_options[ii].c_str());
@@ -193,7 +193,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   }
 
   // show usage message with -help, but don't fail
-  options::Bool helpSet("-help", "print help on all options");
+  bool helpSet = options::Bool("-help", "print help on all options");
   if (helpSet == true) {
     just_show_usage(com, execname, usage);
   }
@@ -815,7 +815,7 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.flag_from_option("part_redist", "part_redist");
 
   config.scalar_from_option("nu_bedrock", "nu_bedrock");
-  options::Bool nu_bedrock("-nu_bedrock", "constant viscosity near margins");
+  bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
     config.set_flag_from_option("nu_bedrock_set", true);
   }
@@ -861,7 +861,7 @@ PetscErrorCode set_config_from_options(Config &config) {
 
   // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
   // and in particular NOT  "-calving eigen_calving")
-  options::Bool pik("-pik", "enable suite of PISM-PIK mechanisms");
+  bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
     config.set_flag_from_option("part_grid", true);
@@ -889,8 +889,8 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.keyword_from_option("stress_balance", "stress_balance_model",
                              "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia");
 
-  options::Bool test_climate_models("-test_climate_models",
-                                     "Disable ice dynamics to test climate models");
+  bool test_climate_models = options::Bool("-test_climate_models",
+                                           "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string_from_option("stress_balance_model", "none");
     config.set_flag_from_option("do_energy", false);

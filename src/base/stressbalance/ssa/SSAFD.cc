@@ -218,10 +218,10 @@ void SSAFD::init() {
              "  [using the KSP-based finite difference implementation]\n");
 
   // options
-    bool flag;
-    OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
-               nuh_viewer_size, flag);
-    view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
+  bool flag;
+  OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
+             nuh_viewer_size, flag);
+  view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
   if (m_config.get_flag("calving_front_stress_boundary_condition")) {
     verbPrintf(2,m_grid.com,
@@ -232,7 +232,6 @@ void SSAFD::init() {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  std::string tempPrefix;
   dump_system_matlab = options::Bool("-ssafd_matlab",
                                      "Save linear system in Matlab-readable ASCII format");
 

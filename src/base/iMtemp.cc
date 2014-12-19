@@ -134,7 +134,7 @@ This method should be kept because it is worth having alternative physics, and
 void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   PetscErrorCode  ierr;
 
-  options::Bool viewOneColumn("-view_sys", "save column system information to a file");
+  bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
 
   const double
     ice_density        = config.get("ice_density"),

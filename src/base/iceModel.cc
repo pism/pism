@@ -927,7 +927,7 @@ void IceModel::init() {
   // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
   // make it wait for a connection.
 #ifdef PISM_WAIT_FOR_GDB
-  options::Bool wait_for_gdb("-wait_for_gdb", wait_for_gdb);
+  bool wait_for_gdb = options::Bool("-wait_for_gdb", "wait for GDB to attach");
   if (wait_for_gdb.is_set()) {
     pism_wait_for_gdb(grid.com, 0);
   }

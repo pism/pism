@@ -174,7 +174,8 @@ void IceRegionalModel::model_state_setup() {
   // Now save the basal melt rate at the beginning of the run.
   bmr_stored.copy_from(basal_melt_rate);
 
-  bool zgwnm = OptionsIsSet("-zero_grad_where_no_model");
+  bool zgwnm = options::Bool("-zero_grad_where_no_model",
+                             "set zero surface gradient in no model strip");
   if (zgwnm) {
     thkstore.set(0.0);
     usurfstore.set(0.0);
@@ -263,7 +264,7 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 void IceRegionalModel::initFromFile(const std::string &filename) {
   PIO nc(grid, "guess_mode");
 
-  bool no_model_strip_set = OptionsIsSet("-no_model_strip", "No-model strip, in km");
+  bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
 
   if (no_model_strip_set) {
     no_model_mask.metadata().set_string("pism_intent", "internal");
@@ -294,7 +295,8 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
     }
   }
 
-  bool zgwnm = OptionsIsSet("-zero_grad_where_no_model");
+  bool zgwnm = options::Bool("-zero_grad_where_no_model",
+                             "zero surface gradient in no model strip");
   if (zgwnm) {
     thkstore.metadata().set_string("pism_intent", "internal");
     usurfstore.metadata().set_string("pism_intent", "internal");
@@ -318,7 +320,7 @@ void IceRegionalModel::set_vars_from_options() {
   // base class reads the -boot_file option and does the bootstrapping:
   IceModel::set_vars_from_options();
 
-  bool nmstripSet = OptionsIsSet("-no_model_strip", 
+  bool nmstripSet = options::Bool("-no_model_strip", 
                                  "width in km of strip near boundary in which modeling is turned off");
 
   if (not nmstripSet) {
@@ -426,8 +428,8 @@ int main(int argc, char *argv[]) {
                PISM_Revision);
     stop_on_version_option();
 
-    bool iset = OptionsIsSet("-i");
-    bool bfset = OptionsIsSet("-boot_file");
+    bool iset = options::Bool("-i", "input file name");
+    bool bfset = options::Bool("-boot_file", "bootstrapping file name");
     std::string usage =
       "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"

@@ -287,7 +287,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   verbPrintf(2, grid->com, "Also writing errors to '%s'...\n", filename.c_str());
 
-  options::Bool append("-append", "Append the NetCDF error report");
+  bool append = options::Bool("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {

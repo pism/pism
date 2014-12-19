@@ -55,7 +55,7 @@ public:
   StringList(const std::string& option,
              const std::string& description,
              const std::string& default_value);
-  std::string print();
+  std::string to_string();
 };
 
 class StringSet : public Option<std::set<std::string> > {
@@ -63,7 +63,7 @@ public:
   StringSet(const std::string& option,
             const std::string& description,
             const std::string& default_value);
-  std::string print();
+  std::string to_string();
 };
 
 class Keyword : public Option<std::string> {
@@ -102,11 +102,8 @@ public:
            const std::string& description);
 };
 
-class Bool : public Option<bool> {
-public:
-  Bool(const std::string& option,
-       const std::string& description);
-};
+bool Bool(const std::string& option,
+          const std::string& description);
 
 } // end of namespace options
 

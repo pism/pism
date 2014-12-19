@@ -142,8 +142,8 @@ void IceModel::set_grid_defaults() {
   grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
 
   // read current time if no option overrides it (avoids unnecessary reporting)
-  options::Bool ys("-ys", "starting time");
-  if (not ys.is_set()) {
+  bool ys = options::Bool("-ys", "starting time");
+  if (not ys) {
     if (input.t_len > 0) {
       grid.time->set_start(input.time);
       verbPrintf(2, grid.com,

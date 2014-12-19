@@ -198,8 +198,8 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     // constants controlling the numerical method:
     bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
-  options::Bool viewOneColumn("-view_sys",
-                              "save column system information to a file");
+  bool viewOneColumn = options::Bool("-view_sys",
+                                     "save column system information to a file");
 
   DrainageCalculator dc(config);
 
@@ -325,7 +325,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       // solve the system
       system.solveThisColumn(Enthnew);
 
-      if (viewOneColumn.is_set() && (i == id && j == jd)) {
+      if (viewOneColumn && (i == id && j == jd)) {
         system.viewColumnInfoMFile(Enthnew);
       }
     }

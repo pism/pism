@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     PetscPrintf(grid.com,"BedSmoother TEST\n");
 
-    bool show = OptionsIsSet("-show");
+    bool show = options::Bool("-show", "turn on diagnostic viewers");
 
     IceModelVec2S topg, usurf, theta;
     topg.create(grid, "topg", WITH_GHOSTS, 1);
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
                 "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
                 theta_min, theta_max);
 
-    bool dump = OptionsIsSet("-dump");
+    bool dump = options::Bool("-dump", "dump bed roughness data");
     if (dump) {
       topg.dump("bedrough_test_topg.nc");
       topg_smoothed.dump("bedrough_test_topg_smoothed.nc");

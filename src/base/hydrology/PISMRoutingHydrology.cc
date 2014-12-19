@@ -92,9 +92,8 @@ void RoutingHydrology::init() {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
 
-  options::Bool mass_accounting("-report_mass_accounting",
-                                "Report to stdout on mass accounting in hydrology models");
-  report_mass_accounting = mass_accounting;
+  report_mass_accounting = options::Bool("-report_mass_accounting",
+                                         "Report to stdout on mass accounting in hydrology models");
 
   stripwidth = m_grid.convert(stripwidth, "m", "km");
   options::Real hydrology_null_strip("-hydrology_null_strip",
@@ -114,8 +113,8 @@ void RoutingHydrology::init_bwat() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  options::Bool i("-i", "PISM input file");
-  options::Bool bootstrap("-boot_file", "PISM bootstrapping file");
+  bool i = options::Bool("-i", "PISM input file");
+  bool bootstrap = options::Bool("-boot_file", "PISM bootstrapping file");
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
   IceModelVec2S *W_input = NULL;
@@ -125,7 +124,7 @@ void RoutingHydrology::init_bwat() {
     W_input = m_grid.variables().get_2d_scalar("bwat");
     W.copy_from(*W_input);
   } catch (RuntimeError) {
-    if (i.is_set() || bootstrap.is_set()) {
+    if (i || bootstrap) {
       std::string filename;
       int start;
       bool boot = false;

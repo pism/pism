@@ -101,8 +101,8 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
   nc.write_global_attributes(global_attributes);
 
-  options::Bool override_used("-config_override", "use configuration overrides");
-  if (override_used.is_set()) {
+  bool override_used = options::Bool("-config_override", "use configuration overrides");
+  if (override_used) {
     overrides.update_from(config);
     overrides.write(nc);
   }
@@ -627,7 +627,7 @@ void IceModel::init_snapshots() {
   options::String save_times("-save_times",
                              "Gives a list or a MATLAB-style range of times to save snapshots at");
 
-  options::Bool split("-save_split", "Specifies whether to save snapshots to separate files");
+  bool split = options::Bool("-save_split", "Specifies whether to save snapshots to separate files");
 
   output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
                           "small", snapshot_vars);
@@ -657,7 +657,7 @@ void IceModel::init_snapshots() {
   snapshots_file_is_ready = false;
   split_snapshots = false;
 
-  if (split.is_set()) {
+  if (split) {
     split_snapshots = true;
   } else if (!ends_with(snapshots_filename, ".nc")) {
     verbPrintf(2, grid.com,

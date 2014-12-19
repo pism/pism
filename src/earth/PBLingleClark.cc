@@ -111,8 +111,8 @@ void PBLingleClark::correct_topg() {
   std::string boot_filename, regrid_filename;
   PIO nc(m_grid, "guess_mode");
 
-  use_special_regrid_semantics = OptionsIsSet("-regrid_bed_special",
-                                              "Correct topg when switching to a different grid");
+  use_special_regrid_semantics = options::Bool("-regrid_bed_special",
+                                               "Correct topg when switching to a different grid");
 
   // Stop if topg correction was not requiested.
   if (not use_special_regrid_semantics) {

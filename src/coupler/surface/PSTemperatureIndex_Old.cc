@@ -92,14 +92,14 @@ void PSTemperatureIndex_Old::init() {
   SurfaceModel::init();
 
   {
-    pdd_rand = OptionsIsSet("-pdd_rand",
-                            "Use a PDD implementation based on simulating a random process");
-    pdd_rand_repeatable = OptionsIsSet("-pdd_rand_repeatable",
-                                       "Use a PDD implementation based on simulating a repeatable random process");
-    fausto_params = OptionsIsSet("-pdd_fausto",
-                                 "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]");
-    pdd_annualize = OptionsIsSet("-pdd_annualize",
-                                 "Compute annual mass balance, removing yearly variations");
+    pdd_rand = options::Bool("-pdd_rand",
+                             "Use a PDD implementation based on simulating a random process");
+    pdd_rand_repeatable = options::Bool("-pdd_rand_repeatable",
+                                        "Use a PDD implementation based on simulating a repeatable random process");
+    fausto_params = options::Bool("-pdd_fausto",
+                                  "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]");
+    pdd_annualize = options::Bool("-pdd_annualize",
+                                  "Compute annual mass balance, removing yearly variations");
 
     OptionsReal("-pdd_factor_snow", "PDD snow factor",
                 base_ddf.snow, pSet);

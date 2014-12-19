@@ -42,11 +42,11 @@ void IceModel::init_timeseries() {
                           "");
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  options::Bool append("-ts_append", "append scalar time-series");
+  bool append = options::Bool("-ts_append", "append scalar time-series");
 
 
   IO_Mode mode = PISM_READWRITE;
-  if (not append.is_set()) {
+  if (not append) {
     mode = PISM_READWRITE_MOVE;
   }
 
@@ -80,10 +80,8 @@ void IceModel::init_timeseries() {
 
   current_ts = 0;
 
-
-  std::string var_name;
   if (vars.is_set()) {
-    verbPrintf(2, grid.com, "variables requested: %s\n", vars.print().c_str());
+    verbPrintf(2, grid.com, "variables requested: %s\n", vars.to_string().c_str());
     ts_vars = vars;
   } else {
     std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -214,8 +212,8 @@ void IceModel::init_extras() {
   OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
                 vars, extra_vars_set);
 
-  options::Bool split("-extra_split", "Specifies whether to save to separate files");
-  options::Bool append("-extra_append", "append spatial diagnostics");
+  bool split  = options::Bool("-extra_split", "Specifies whether to save to separate files");
+  bool append = options::Bool("-extra_append", "append spatial diagnostics");
 
   if (extra_file_set ^ extra_times_set) {
     throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");
@@ -237,7 +235,7 @@ void IceModel::init_extras() {
     throw RuntimeError("no argument for -extra_times option.");
   }
 
-  if (append.is_set() && split.is_set()) {
+  if (append && split) {
     throw RuntimeError("both -extra_split and -extra_append are set.");
   }
 
@@ -279,7 +277,7 @@ void IceModel::init_extras() {
   extra_file_is_ready = false;
   split_extra = false;
 
-  if (split.is_set()) {
+  if (split) {
     split_extra = true;
     verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
                extra_filename.c_str());
@@ -438,10 +436,10 @@ void IceModel::write_extras() {
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
-    options::Bool append("-extra_append", "append -extra_file output");
+    bool append = options::Bool("-extra_append", "append -extra_file output");
 
     IO_Mode mode = PISM_READWRITE;
-    if (not append.is_set()) {
+    if (not append) {
       mode = PISM_READWRITE_MOVE;
     }
 

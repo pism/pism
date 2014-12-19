@@ -72,13 +72,11 @@ void DistributedHydrology::init() {
     stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
   }
 
-  options::Bool mass_accounting("-report_mass_accounting",
-                                "Report to stdout on mass accounting in hydrology models");
-  report_mass_accounting = mass_accounting;
+  report_mass_accounting = options::Bool("-report_mass_accounting",
+                                         "Report to stdout on mass accounting in hydrology models");
 
-  options::Bool
-    init_P_from_steady("-init_P_from_steady",
-                       "initialize P from formula P(W) which applies in steady state");
+  bool init_P_from_steady = options::Bool("-init_P_from_steady",
+                                          "initialize P from formula P(W) which applies in steady state");
 
   options::String
     hydrology_velbase_mag_file("-hydrology_velbase_mag_file",
@@ -112,8 +110,8 @@ void DistributedHydrology::init_bwp() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  options::Bool i("-i", "PISM input file");
-  options::Bool bootstrap("-boot_file", "PISM bootstrapping file");
+  bool i = options::Bool("-i", "PISM input file");
+  bool bootstrap = options::Bool("-boot_file", "PISM bootstrapping file");
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
@@ -125,12 +123,12 @@ void DistributedHydrology::init_bwp() {
     P_input = m_grid.variables().get_2d_scalar("bwp");
     P.copy_from(*P_input);
   } catch (RuntimeError) {
-    if (i.is_set() || bootstrap.is_set()) {
+    if (i || bootstrap) {
       std::string filename;
       int start;
       bool bootstrap_set = false;
       find_pism_input(filename, bootstrap_set, start);
-      if (i.is_set()) {
+      if (i) {
         PIO nc(m_grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
         bool bwp_exists = nc.inq_var("bwp");
