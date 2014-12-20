@@ -290,7 +290,7 @@ void PIO::open(const string &filename, IO_Mode mode) {
       m_nc->set_fill(PISM_NOFILL, old_fill);
     }
   } catch (RuntimeError &e) {
-    e.add_context("opening or creating " + filename);
+    e.add_context("opening or creating \"" + filename + "\"");
     throw;
   }
 }
@@ -300,7 +300,7 @@ void PIO::close() {
   try {
     m_nc->close();
   } catch (RuntimeError &e) {
-    e.add_context("closing " + inq_filename());
+    e.add_context("closing \"" + inq_filename() + "\"");
     throw;
   }
 }
@@ -309,7 +309,7 @@ void PIO::redef() const {
   try {
     m_nc->redef();
   } catch (RuntimeError &e) {
-    e.add_context("switching to define mode; file " + inq_filename());
+    e.add_context("switching to define mode; file \"" + inq_filename() + "\"");
     throw;
   }
 }
@@ -319,7 +319,7 @@ void PIO::enddef() const {
   try {
     m_nc->enddef();
   } catch (RuntimeError &e) {
-    e.add_context("switching to data mode; file " + inq_filename());
+    e.add_context("switching to data mode; file \"" + inq_filename() + "\"");
     throw;
   }
 }
@@ -341,7 +341,7 @@ unsigned int PIO::inq_nrecords() const {
       return this->inq_dimlen(dim);
     }
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of records in file " + inq_filename());
+    e.add_context("getting the number of records in file \"" + inq_filename() + "\"");
     throw;
   }
   return 0;                     // will never happen
@@ -625,7 +625,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
 
     // We're ready to call grid->allocate().
   } catch (RuntimeError &e) {
-    e.add_context("initializing computational grid from " + inq_filename());
+    e.add_context("initializing computational grid from \"" + inq_filename() + "\"");
     throw;
   }
   return 0;
@@ -851,7 +851,7 @@ void PIO::def_time(const string &name, const string &calendar, const string &uni
 
     def_dim(PISM_UNLIMITED, time);
   } catch (RuntimeError &e) {
-    e.add_context("defining the time dimension in " + inq_filename());
+    e.add_context("defining the time dimension in \"" + inq_filename() + "\"");
     throw;
   }
 }
@@ -870,7 +870,7 @@ void PIO::append_time(const string &name, double value) const {
 
     put_vara_double(name, start, count, &value);
   } catch (RuntimeError &e) {
-    e.add_context("appending to the time dimension in " + inq_filename());
+    e.add_context("appending to the time dimension in \"" + inq_filename() + "\"");
     throw;
   }
 }
@@ -884,7 +884,7 @@ void PIO::append_history(const string &history) const {
     string old_history = get_att_text("PISM_GLOBAL", "history");
     put_att_text("PISM_GLOBAL", "history", history + old_history);
   } catch (RuntimeError &e) {
-    e.add_context("appending to the history attribute in " + inq_filename());
+    e.add_context("appending to the history attribute in \"" + inq_filename() + "\"");
     throw;
   }
 }
@@ -1622,7 +1622,7 @@ void PIO::write_global_attributes(const NCVariable &var) const {
     write_attributes(tmp, PISM_DOUBLE, false);
 
   } catch (RuntimeError &e) {
-    e.add_context("writing global attributes to " + inq_filename());
+    e.add_context("writing global attributes to \"" + inq_filename());
     throw;
   }
 }
