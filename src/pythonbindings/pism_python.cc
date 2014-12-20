@@ -21,23 +21,6 @@
 #include "pism_python_signal.hh"
 #include "pism_const.hh"
 
-using namespace pism;
-
-PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
-{
-  return GlobalMax(comm, &local_max,  result);
-}
-
-PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm)
-{
-  return GlobalMin(comm, &local_min,  result);
-}
-
-PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
-{
-  return GlobalSum(comm, &local_sum,  result);
-}
-
 void set_abort_on_sigint(bool abort)
 {
   gSIGINT_is_fatal = abort;

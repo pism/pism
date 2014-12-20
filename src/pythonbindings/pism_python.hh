@@ -23,10 +23,6 @@
 
 #include <string>
 
-PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm);
-PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm);
-PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm);
-
 void set_abort_on_sigint(bool abort);
 
 #endif

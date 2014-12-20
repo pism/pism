@@ -31,6 +31,8 @@
 #include <memory>
 #endif
 
+#include "error_handling.hh"
+
 namespace pism {
 
 extern const char *PISM_Revision;
@@ -57,19 +59,39 @@ inline bool set_contains(std::set<std::string> S, std::string name) {
   return (S.find(name) != S.end());
 }
 
-inline PetscErrorCode GlobalMin(MPI_Comm comm, double *local, double *result, int count = 1)
-{
-  return MPI_Allreduce(local, result, count, MPIU_REAL, MPI_MIN, comm);
+inline void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
+  int err = MPI_Allreduce(local, result, count, MPIU_REAL, op, comm);
+  PISM_CHK(err, 0, "MPI_Allreduce");
 }
 
-inline PetscErrorCode GlobalMax(MPI_Comm comm, double *local, double *result, int count = 1)
-{
-  return MPI_Allreduce(local, result, count, MPIU_REAL, MPI_MAX, comm);
+inline void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MIN);
 }
 
-inline PetscErrorCode GlobalSum(MPI_Comm comm, double *local, double *result, int count = 1)
-{
-  return MPI_Allreduce(local, result, count, MPIU_REAL, MPI_SUM, comm);
+inline void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MAX);
+}
+
+inline void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_SUM);
+}
+
+inline double GlobalMin(MPI_Comm comm, double local) {
+  double result;
+  GlobalMin(comm, &local, &result, 1);
+  return result;
+}
+
+inline double GlobalMax(MPI_Comm comm, double local) {
+  double result;
+  GlobalMax(comm, &local, &result, 1);
+  return result;
+}
+
+inline double GlobalSum(MPI_Comm comm, double local) {
+  double result;
+  GlobalSum(comm, &local, &result, 1);
+  return result;
 }
 
 class Profiling {
