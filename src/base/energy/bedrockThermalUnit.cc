@@ -56,6 +56,7 @@ BedThermalUnit::BedThermalUnit(IceGrid &g)
     m_Lbz = Lbz;
 
     if (i.is_set()) {
+      m_input_file = i;
       ignore_option(m_grid.com, "-Mbz");
       ignore_option(m_grid.com, "-Lbz");
 
@@ -148,7 +149,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
     return;
   }
 
-  if (m_input_file.empty() == false) {
+  if (not m_input_file.empty()) {
     PIO nc(m_grid, "guess_mode");
 
     nc.open(m_input_file, PISM_READONLY);
