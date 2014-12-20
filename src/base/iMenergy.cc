@@ -86,7 +86,7 @@ void IceModel::energyStep() {
 
     vWork3d.update_ghosts(Enth3);
 
-    GlobalSum(grid.com, &myLiquifiedVol,  &gLiquifiedVol);
+    gLiquifiedVol = GlobalSum(grid.com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
       verbPrintf(1,grid.com,
                  "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
@@ -94,9 +94,9 @@ void IceModel::energyStep() {
     }
   }
 
-  GlobalSum(grid.com, &myCFLviolcount,  &CFLviolcount);
+  CFLviolcount = GlobalSum(grid.com, myCFLviolcount);
 
-  GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount);
+  gVertSacrCount = GlobalSum(grid.com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx() * grid.My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
@@ -108,7 +108,7 @@ void IceModel::energyStep() {
     }
   }
 
-  GlobalSum(grid.com, &myBulgeCount,  &gBulgeCount);
+  gBulgeCount = GlobalSum(grid.com, myBulgeCount);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";

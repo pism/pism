@@ -255,9 +255,9 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
   }
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
-  GlobalSum(m_grid.com, &my_icefreelost,  &icefreelost);
-  GlobalSum(m_grid.com, &my_oceanlost,  &oceanlost);
-  GlobalSum(m_grid.com, &my_negativegain,  &negativegain);
+  icefreelost  = GlobalSum(m_grid.com, my_icefreelost);
+  oceanlost    = GlobalSum(m_grid.com, my_oceanlost);
+  negativegain = GlobalSum(m_grid.com, my_negativegain);
 
   if (stripwidth <= 0.0) {
     nullstriplost = 0.0;
@@ -275,7 +275,7 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
     }
   }
 
-  GlobalSum(m_grid.com, &my_nullstriplost,  &nullstriplost);
+  nullstriplost = GlobalSum(m_grid.com, my_nullstriplost);
 }
 
 
@@ -438,7 +438,7 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
     }
   }
 
-  GlobalMax(m_grid.com, &mymaxKW,  &maxKW);
+  maxKW = GlobalMax(m_grid.com, mymaxKW);
 }
 
 

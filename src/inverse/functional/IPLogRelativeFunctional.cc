@@ -28,7 +28,6 @@ J(x)=1
 if \f$|x| = \mathtt{scale}\f$ everywhere.
 */
 PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
-  PetscErrorCode   ierr;
 
   // The local value of the weights
   double value = 0;
@@ -55,12 +54,11 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
     value += log(1 + w*scale_sq/obsMagSq);
   }
 
-  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
+  m_normalization = GlobalSum(m_grid.com, value);
   return 0;
 }
 
 PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
-  PetscErrorCode   ierr;
 
   // The value of the objective
   double value = 0;
@@ -88,7 +86,7 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
 
   value /= m_normalization;
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   return 0;
 }

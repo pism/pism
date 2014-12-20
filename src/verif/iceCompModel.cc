@@ -750,21 +750,21 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
-  GlobalSum(grid.com, &volexact,  &gvolexact);
-  GlobalMax(grid.com, &domeHexact,  &gdomeHexact);
-  GlobalSum(grid.com, &areaexact,  &gareaexact);
+  gvolexact = GlobalSum(grid.com, volexact);
+  gdomeHexact = GlobalMax(grid.com, domeHexact);
+  gareaexact = GlobalSum(grid.com, areaexact);
 
-  GlobalSum(grid.com, &vol,  &gvol);
-  GlobalSum(grid.com, &area,  &garea);
+  gvol = GlobalSum(grid.com, vol);
+  garea = GlobalSum(grid.com, area);
   volerr = fabs(gvol - gvolexact);
   areaerr = fabs(garea - gareaexact);
 
-  GlobalMax(grid.com, &Herr,  &gmaxHerr);
-  GlobalSum(grid.com, &avHerr,  &gavHerr);
+  gmaxHerr = GlobalMax(grid.com, Herr);
+  gavHerr = GlobalSum(grid.com, avHerr);
   gavHerr = gavHerr/(grid.Mx()*grid.My());
-  GlobalMax(grid.com, &etaerr,  &gmaxetaerr);
+  gmaxetaerr = GlobalMax(grid.com, etaerr);
 
-  GlobalMax(grid.com, &domeH,  &gdomeH);
+  gdomeH = GlobalMax(grid.com, domeH);
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
@@ -805,11 +805,11 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
     }
   }
 
-  GlobalMax(grid.com, &maxuberr,  &gmaxuberr);
-  GlobalMax(grid.com, &maxvberr,  &gmaxvberr);
+  gmaxuberr = GlobalMax(grid.com, maxuberr);
+  gmaxvberr = GlobalMax(grid.com, maxvberr);
 
-  GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr);
-  GlobalSum(grid.com, &avvecerr,  &gavvecerr);
+  gmaxvecerr = GlobalMax(grid.com, maxvecerr);
+  gavvecerr = GlobalSum(grid.com, avvecerr);
   gavvecerr = gavvecerr/(grid.Mx()*grid.My());
 
   const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),

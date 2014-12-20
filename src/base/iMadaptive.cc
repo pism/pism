@@ -84,11 +84,11 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
   }
 
 
-  GlobalMax(grid.com, &maxu,  &gmaxu);
-  GlobalMax(grid.com, &maxv,  &gmaxv);
-  GlobalMax(grid.com, &maxw,  &gmaxw);
+  gmaxu = GlobalMax(grid.com, maxu);
+  gmaxv = GlobalMax(grid.com, maxv);
+  gmaxw = GlobalMax(grid.com, maxw);
 
-  GlobalMin(grid.com, &maxtimestep,  &dt_result);
+  dt_result = GlobalMin(grid.com, maxtimestep);
 }
 
 
@@ -125,7 +125,7 @@ void IceModel::max_timestep_cfl_2d(double &dt_result) {
     }
   }
 
-  GlobalMin(grid.com, &maxtimestep,  &dt_result);
+  dt_result = GlobalMin(grid.com, maxtimestep);
 }
 
 

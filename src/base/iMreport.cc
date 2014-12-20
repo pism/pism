@@ -69,7 +69,7 @@ void IceModel::energyStats(double iarea, double &gmeltfrac) {
   }
 
   // communication
-  GlobalSum(grid.com, &meltarea,  &gmeltfrac);
+  gmeltfrac = GlobalSum(grid.com, meltarea);
 
   // normalize fraction correctly
   if (iarea > 0.0) {
@@ -126,7 +126,7 @@ void IceModel::ageStats(double ivol, double &gorigfrac) {
 
 
   // communicate to turn into global original fraction
-  GlobalSum(grid.com, &origvol,   &gorigfrac);
+  gorigfrac = GlobalSum(grid.com, origvol);
 
   // normalize fraction correctly
   if (ivol > 0.0) {
@@ -327,7 +327,7 @@ void IceModel::compute_ice_volume(double &result) {
   }
 
 
-  GlobalSum(grid.com, &volume,  &result);
+  result = GlobalSum(grid.com, volume);
 }
 
 //! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
@@ -366,7 +366,7 @@ void IceModel::compute_sealevel_volume(double &result) {
   const double oceanarea=3.61e14;//in square meters
   volume /= oceanarea;
 
-  GlobalSum(grid.com, &volume,  &result);
+  result = GlobalSum(grid.com, volume);
 }
 
 //! Computes the temperate ice volume, in m^3.
@@ -398,7 +398,7 @@ void IceModel::compute_ice_volume_temperate(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &volume,  &result);
+  result = GlobalSum(grid.com, volume);
 }
 
 //! Computes the cold ice volume, in m^3.
@@ -430,7 +430,7 @@ void IceModel::compute_ice_volume_cold(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &volume,  &result);
+  result = GlobalSum(grid.com, volume);
 }
 
 //! Computes ice area, in m^2.
@@ -451,7 +451,7 @@ void IceModel::compute_ice_area(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &area,  &result);
+  result = GlobalSum(grid.com, area);
 }
 
 //! Computes area of basal ice which is temperate, in m^2.
@@ -477,7 +477,7 @@ void IceModel::compute_ice_area_temperate(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &area,  &result);
+  result = GlobalSum(grid.com, area);
 }
 
 //! Computes area of basal ice which is cold, in m^2.
@@ -503,7 +503,7 @@ void IceModel::compute_ice_area_cold(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &area,  &result);
+  result = GlobalSum(grid.com, area);
 }
 
 //! Computes grounded ice area, in m^2.
@@ -523,7 +523,7 @@ void IceModel::compute_ice_area_grounded(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &area,  &result);
+  result = GlobalSum(grid.com, area);
 }
 
 //! Computes floating ice area, in m^2.
@@ -543,7 +543,7 @@ void IceModel::compute_ice_area_floating(double &result) {
     }
   }
 
-  GlobalSum(grid.com, &area,  &result);
+  result = GlobalSum(grid.com, area);
 }
 
 
@@ -579,7 +579,7 @@ void IceModel::compute_ice_enthalpy(double &result) {
 
   enthalpysum *= config.get("ice_density") * (grid.dx() * grid.dy());
 
-  GlobalSum(grid.com, &enthalpysum,  &result);
+  result = GlobalSum(grid.com, enthalpysum);
 }
 
 } // end of namespace pism

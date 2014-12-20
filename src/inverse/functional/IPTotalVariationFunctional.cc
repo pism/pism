@@ -63,7 +63,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
     } // j
   } // i
 
-  GlobalSum(m_grid.com, &value,  OUTPUT);
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
 

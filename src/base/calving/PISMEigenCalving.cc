@@ -342,9 +342,9 @@ void EigenCalving::max_timestep(double /*my_t*/,
 
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
-  GlobalSum(m_grid.com, &my_calving_rate_mean,  &calving_rate_mean);
-  GlobalSum(m_grid.com, &my_calving_rate_counter,  &calving_rate_counter);
-  GlobalMax(m_grid.com, &my_calving_rate_max,  &calving_rate_max);
+  calving_rate_mean    = GlobalSum(m_grid.com, my_calving_rate_mean);
+  calving_rate_counter = GlobalSum(m_grid.com, my_calving_rate_counter);
+  calving_rate_max     = GlobalMax(m_grid.com, my_calving_rate_max);
 
   calving_rate_mean /= calving_rate_counter;
 

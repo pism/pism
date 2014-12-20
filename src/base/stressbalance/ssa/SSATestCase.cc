@@ -228,15 +228,15 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
   }
 
   unsigned int N = (grid->Mx()*grid->My());
-  GlobalMax(grid->com, &exactvelmax,  &gexactvelmax);
-  GlobalMax(grid->com, &maxuerr,  &gmaxuerr);
-  GlobalMax(grid->com, &maxverr,  &gmaxverr);
-  GlobalSum(grid->com, &avuerr,  &gavuerr);
+  gexactvelmax = GlobalMax(grid->com, exactvelmax);
+  gmaxuerr = GlobalMax(grid->com, maxuerr);
+  gmaxverr = GlobalMax(grid->com, maxverr);
+  gavuerr = GlobalSum(grid->com, avuerr);
   gavuerr = gavuerr / N;
-  GlobalSum(grid->com, &avverr,  &gavverr);
+  gavverr = GlobalSum(grid->com, avverr);
   gavverr = gavverr / N;
-  GlobalMax(grid->com, &maxvecerr,  &gmaxvecerr);
-  GlobalSum(grid->com, &avvecerr,  &gavvecerr);
+  gmaxvecerr = GlobalMax(grid->com, maxvecerr);
+  gavvecerr = GlobalSum(grid->com, avvecerr);
   gavvecerr = gavvecerr / N;
 
   verbPrintf(1,grid->com,

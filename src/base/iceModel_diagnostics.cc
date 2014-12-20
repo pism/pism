@@ -1579,7 +1579,7 @@ void IceModel_ivolg::update(double a, double b) {
     }
   }
 
-  GlobalSum(grid.com, &volume,  &value);
+  value = GlobalSum(grid.com, volume);
 
   ts->append(value, a, b);
 }
@@ -1613,7 +1613,7 @@ void IceModel_ivolf::update(double a, double b) {
     }
   }
 
-  GlobalSum(grid.com, &volume,  &value);
+  value = GlobalSum(grid.com, volume);
 
   ts->append(value, a, b);
 }

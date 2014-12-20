@@ -259,8 +259,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
   }
 
   // check if redistribution should be run once more
-  GlobalSum(grid.com, &remaining_residual_thickness,
-            &remaining_residual_thickness_global);
+  remaining_residual_thickness_global = GlobalSum(grid.com, remaining_residual_thickness);
 
   if (remaining_residual_thickness_global > 0.0) {
     done = false;

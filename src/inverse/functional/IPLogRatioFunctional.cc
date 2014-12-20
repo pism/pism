@@ -28,7 +28,6 @@ J(x)=1
 if  \f$|x| = \mathtt{scale}|u_{\rm obs}| \f$ everywhere.
 */
 PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
-  PetscErrorCode   ierr;
 
   double value = 0;
 
@@ -57,13 +56,12 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
     value += w*v*v;
   }
 
-  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
+  m_normalization = GlobalSum(m_grid.com, value);
 
   return 0;
 }
 
 PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
-  PetscErrorCode   ierr;
 
   // The value of the objective
   double value = 0;
@@ -97,7 +95,7 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
 
   value /= m_normalization;
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   return 0;
 }

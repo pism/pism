@@ -178,7 +178,7 @@ void IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
     }
   }
 
-  GlobalSum(grid.com, &my_total_discharge,  &total_discharge);
+  total_discharge = GlobalSum(grid.com, my_total_discharge);
 
   this->discharge_flux_cumulative += total_discharge;
 }

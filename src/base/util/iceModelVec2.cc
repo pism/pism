@@ -488,7 +488,7 @@ void IceModelVec2S::sum(double &result) {
   }
 
   // find the global sum:
-  GlobalSum(grid->com, &my_result,  &result);
+  result = GlobalSum(grid->com, my_result);
 }
 
 
@@ -501,7 +501,7 @@ void IceModelVec2S::max(double &result) const {
     my_result = std::max(my_result,(*this)(p.i(), p.j()));
   }
 
-  GlobalMax(grid->com, &my_result, &result);
+  result = GlobalMax(grid->com, my_result);
 }
 
 
@@ -514,7 +514,7 @@ void IceModelVec2S::absmax(double &result) const {
     my_result = std::max(my_result,fabs((*this)(p.i(), p.j())));
   }
 
-  GlobalMax(grid->com, &my_result,  &result);
+  result = GlobalMax(grid->com, my_result);
 }
 
 
@@ -527,7 +527,7 @@ void IceModelVec2S::min(double &result) const {
     my_result = std::min(my_result,(*this)(p.i(), p.j()));
   }
 
-  GlobalMin(grid->com, &my_result,  &result);
+  result = GlobalMin(grid->com, my_result);
 }
 
 
@@ -653,8 +653,8 @@ void IceModelVec2Stag::absmaxcomponents(double* z) const {
     my_z[1] = std::max(my_z[1],fabs((*this)(i,j,1)));
   }
 
-  GlobalMax(grid->com, &(my_z[0]), &(z[0]));
-  GlobalMax(grid->com, &(my_z[1]), &(z[1]));
+  z[0] = GlobalMax(grid->com, my_z[0]);
+  z[1] = GlobalMax(grid->com, my_z[1]);
 }
 
 } // end of namespace pism

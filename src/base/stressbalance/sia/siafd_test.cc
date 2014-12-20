@@ -98,10 +98,10 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  GlobalMax(grid.com, &max_strain_heating_error,  &gmax_strain_heating_err);
-  GlobalSum(grid.com, &av_strain_heating_error,  &gav_strain_heating_err);
+  gmax_strain_heating_err = GlobalMax(grid.com, max_strain_heating_error);
+  gav_strain_heating_err = GlobalSum(grid.com, av_strain_heating_error);
   double  gavcount;
-  GlobalSum(grid.com, &avcount,  &gavcount);
+  gavcount = GlobalSum(grid.com, avcount);
   gav_strain_heating_err = gav_strain_heating_err/std::max(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -152,11 +152,11 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
     }
   }
 
-  GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
-  GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
-  GlobalSum(grid.com, &avUerr,  &gavUerr);
+  gmaxUerr = GlobalMax(grid.com, maxUerr);
+  gmaxWerr = GlobalMax(grid.com, maxWerr);
+  gavUerr = GlobalSum(grid.com, avUerr);
   gavUerr = gavUerr/(grid.Mx()*grid.My());
-  GlobalSum(grid.com, &avWerr,  &gavWerr);
+  gavWerr = GlobalSum(grid.com, avWerr);
   gavWerr = gavWerr/(grid.Mx()*grid.My());
   return 0;
 }

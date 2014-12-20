@@ -301,10 +301,10 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  GlobalMax(grid.com, &maxTerr,  &gmaxTerr);
-  GlobalSum(grid.com, &avTerr,  &gavTerr);
+  gmaxTerr = GlobalMax(grid.com, maxTerr);
+  gavTerr = GlobalSum(grid.com, avTerr);
   double  gavcount;
-  GlobalSum(grid.com, &avcount,  &gavcount);
+  gavcount = GlobalSum(grid.com, avcount);
   gavTerr = gavTerr/std::max(gavcount, 1.0);  // avoid div by zero
 }
 
@@ -384,16 +384,16 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   delete [] Tex;  delete [] Tbex;
 
-  GlobalMax(grid.com, &maxTerr,  &gmaxTerr);
-  GlobalSum(grid.com, &avTerr,  &gavTerr);
+  gmaxTerr = GlobalMax(grid.com, maxTerr);
+  gavTerr = GlobalSum(grid.com, avTerr);
   double  gavcount;
-  GlobalSum(grid.com, &avcount,  &gavcount);
+  gavcount = GlobalSum(grid.com, avcount);
   gavTerr = gavTerr/std::max(gavcount,1.0);  // avoid div by zero
 
-  GlobalMax(grid.com, &maxTberr,  &gmaxTberr);
-  GlobalSum(grid.com, &avTberr,  &gavTberr);
+  gmaxTberr = GlobalMax(grid.com, maxTberr);
+  gavTberr = GlobalSum(grid.com, avTberr);
   double  gavbcount;
-  GlobalSum(grid.com, &avbcount,  &gavbcount);
+  gavbcount = GlobalSum(grid.com, avbcount);
   gavTberr = gavTberr/std::max(gavbcount,1.0);  // avoid div by zero
 }
 
@@ -449,11 +449,11 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
 
   double gdomeT, gdomeTexact;
 
-  GlobalMax(grid.com, &Terr,  &gmaxTerr);
-  GlobalSum(grid.com, &avTerr,  &gavTerr);
+  gmaxTerr = GlobalMax(grid.com, Terr);
+  gavTerr = GlobalSum(grid.com, avTerr);
   gavTerr = gavTerr/(grid.Mx()*grid.My());
-  GlobalMax(grid.com, &domeT,  &gdomeT);
-  GlobalMax(grid.com, &domeTexact,  &gdomeTexact);
+  gdomeT = GlobalMax(grid.com, domeT);
+  gdomeTexact = GlobalMax(grid.com, domeTexact);
   centerTerr = fabs(gdomeT - gdomeTexact);
 }
 
@@ -516,10 +516,10 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  GlobalMax(grid.com, &max_strain_heating_err,  &gmax_strain_heating_err);
-  GlobalSum(grid.com, &av_strain_heating_err,  &gav_strain_heating_err);
+  gmax_strain_heating_err = GlobalMax(grid.com, max_strain_heating_err);
+  gav_strain_heating_err = GlobalSum(grid.com, av_strain_heating_err);
   double  gavcount;
-  GlobalSum(grid.com, &avcount,  &gavcount);
+  gavcount = GlobalSum(grid.com, avcount);
   gav_strain_heating_err = gav_strain_heating_err/std::max(gavcount,1.0);  // avoid div by zero
 }
 
@@ -571,11 +571,11 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
     }
   }
 
-  GlobalMax(grid.com, &maxUerr,  &gmaxUerr);
-  GlobalMax(grid.com, &maxWerr,  &gmaxWerr);
-  GlobalSum(grid.com, &avUerr,  &gavUerr);
+  gmaxUerr = GlobalMax(grid.com, maxUerr);
+  gmaxWerr = GlobalMax(grid.com, maxWerr);
+  gavUerr = GlobalSum(grid.com, avUerr);
   gavUerr = gavUerr/(grid.Mx()*grid.My());
-  GlobalSum(grid.com, &avWerr,  &gavWerr);
+  gavWerr = GlobalSum(grid.com, avWerr);
   gavWerr = gavWerr/(grid.Mx()*grid.My());
 }
 
@@ -601,8 +601,8 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
     minbmelterr = std::min(minbmelterr, err);
   }
 
-  GlobalMax(grid.com, &maxbmelterr,  &gmaxbmelterr);
-  GlobalMin(grid.com, &minbmelterr,  &gminbmelterr);
+  gmaxbmelterr = GlobalMax(grid.com, maxbmelterr);
+  gminbmelterr = GlobalMin(grid.com, minbmelterr);
 }
 
 

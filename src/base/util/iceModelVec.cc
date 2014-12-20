@@ -148,8 +148,8 @@ void IceModelVec::range(double &min, double &max) const {
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax;
-    GlobalMin(grid->com, &my_min,  &gmin);
-    GlobalMax(grid->com, &my_max,  &gmax);
+    gmin = GlobalMin(grid->com, my_min);
+    gmax = GlobalMax(grid->com, my_max);
     min = gmin;
     max = gmax;
   } else {
@@ -205,13 +205,13 @@ void IceModelVec::norm(int n, double &out) const {
       throw RuntimeError::formatted("IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))",
          m_name.c_str());
     } else if (n == NORM_1) {
-      GlobalSum(grid->com, &my_norm,  &gnorm);
+      gnorm = GlobalSum(grid->com, my_norm);
     } else if (n == NORM_2) {
       my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
-      GlobalSum(grid->com, &my_norm,  &gnorm);
+      gnorm = GlobalSum(grid->com, my_norm);
       gnorm = sqrt(gnorm);
     } else if (n == NORM_INFINITY) {
-      GlobalMax(grid->com, &my_norm,  &gnorm);
+      gnorm = GlobalMax(grid->com, my_norm);
     } else {
       throw RuntimeError::formatted("IceModelVec::norm(...): unknown norm type (called as %s.norm(...))",
                                     m_name.c_str());
@@ -827,20 +827,20 @@ void IceModelVec::norm_all(int n, std::vector<double> &result) const {
     } else if (n == NORM_1) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
-        GlobalSum(grid->com, &norm_result[k], &result[k]);
+        result[k] = GlobalSum(grid->com, norm_result[k]);
       }
 
     } else if (n == NORM_2) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
         norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
-        GlobalSum(grid->com, &norm_result[k], &result[k]);
+        result[k] = GlobalSum(grid->com, norm_result[k]);
         result[k] = sqrt(result[k]);
       }
 
     } else if (n == NORM_INFINITY) {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        GlobalMax(grid->com, &norm_result[k], &result[k]);
+        result[k] = GlobalMax(grid->com, norm_result[k]);
       }
     } else {
       throw RuntimeError::formatted("IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))",

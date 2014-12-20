@@ -56,7 +56,7 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
     } // j
   } // i
 
-  GlobalSum(m_grid.com, &value,  OUTPUT);
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
 
@@ -110,7 +110,7 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
     } // j
   } // i
 
-  GlobalSum(m_grid.com, &value,  OUTPUT);
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
 

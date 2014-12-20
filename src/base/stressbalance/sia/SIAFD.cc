@@ -678,7 +678,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
     }
   } // i
 
-  GlobalMax(m_grid.com, &my_D_max,  &D_max);
+  D_max = GlobalMax(m_grid.com, my_D_max);
 }
 
 //! \brief Compute diffusivity (diagnostically).
