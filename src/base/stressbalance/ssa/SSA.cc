@@ -26,6 +26,8 @@
 #include "enthalpyConverter.hh"
 #include "error_handling.hh"
 
+#include "SSA_diagnostics.hh"
+
 namespace pism {
 
 SSA::SSA(IceGrid &g, EnthalpyConverter &e)

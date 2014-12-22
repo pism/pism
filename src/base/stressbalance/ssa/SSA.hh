@@ -188,28 +188,6 @@ protected:
   int event_ssa;
 };
 
-
-//! \brief Computes the magnitude of the driving shear stress at the base of
-//! ice (diagnostically).
-class SSA_taud_mag : public Diag<SSA>
-{
-public:
-  SSA_taud_mag(SSA *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
-};
-
-//! @brief Computes the driving shear stress at the base of ice
-//! (diagnostically).
-/*! This is *not* a duplicate of SSB_taud: SSA_taud::compute() uses
-  SSA::compute_driving_stress(), which tries to be smarter near ice margins.
-*/
-class SSA_taud : public Diag<SSA>
-{
-public:
-  SSA_taud(SSA *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
-};
-
 } // end of namespace pism
 
 #endif /* _SSA_H_ */
