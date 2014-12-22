@@ -25,3 +25,14 @@
     SWIG_exception(SWIG_RuntimeError, "Caught an unexpected C++ exception");
   }
  }
+
+%include exception.i
+%exception {
+  try {
+    $action
+  } catch (pism::RuntimeError &e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  } catch (...) {
+    SWIG_exception(SWIG_UnknownError, "unknown C++ exception");
+  }
+}
