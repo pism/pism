@@ -29,40 +29,9 @@
 #include <memory>
 #endif
 
+#include "IO_Flags.hh"
+
 namespace pism {
-
-// This is a subset of NetCDF data-types.
-enum IO_Type {
-  PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
-  PISM_BYTE   = 1,              /* signed 1 byte integer */
-  PISM_CHAR   = 2,              /* ISO/ASCII character */
-  PISM_SHORT  = 3,              /* signed 2 byte integer */
-  PISM_INT    = 4,              /* signed 4 byte integer */
-  PISM_FLOAT  = 5,              /* single precision floating point number */
-  PISM_DOUBLE = 6               /* double precision floating point number */
-};
-
-// This is a subset of NetCDF file modes. Use values that don't match
-// NetCDF flags so that we can detect errors caused by passing these
-// straight to NetCDF.
-enum IO_Mode {
-  PISM_READONLY          = 7,   //!< open an existing file for reading only
-  PISM_READWRITE         = 8,   //!< open an existing file for reading and writing
-  PISM_READWRITE_CLOBBER = 9,   //!< create a file for writing, overwrite if present
-  PISM_READWRITE_MOVE    = 10   //!< create a file for writing, move foo.nc to foo.nc~ if present
-};
-
-// This is the special value corresponding to the "unlimited" dimension length.
-// Gets cast to "int", so it should match the value used by NetCDF.
-enum Dim_Length {
-  PISM_UNLIMITED = 0
-};
-
-// "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
-enum Fill_Mode {
-  PISM_FILL   = 0,
-  PISM_NOFILL = 0x100
-};
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.
 /*!
