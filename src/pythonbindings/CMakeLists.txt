@@ -64,6 +64,20 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     # Get module dependencies:
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
+    list(APPEND PISM_Python_deps
+      petsc_version.i
+      pism_ColumnSystem.i
+      pism_IceGrid.i
+      pism_IceModelVec.i
+      pism_PIO.i
+      pism_SSA.i
+      pism_Timeseries.i
+      pism_Vars.i
+      pism_exception.i
+      pism_inverse.i
+      pism_options.i
+      )
+
     if(Pism_USE_TAO)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TAO" APPEND)
     endif()
