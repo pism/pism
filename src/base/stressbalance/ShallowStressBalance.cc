@@ -26,6 +26,8 @@
 
 #include "error_handling.hh"
 
+#include "SSB_diagnostics.hh"
+
 namespace pism {
 
 using mask::ice_free;

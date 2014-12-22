@@ -28,7 +28,6 @@
 
 namespace pism {
 
-class Vars;
 class IceFlowLaw;
 class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
@@ -111,47 +110,6 @@ protected:
   IceModelVec2V m_velocity, *m_vel_bc;
   IceModelVec2Int *bc_locations;
   IceModelVec2S basal_frictional_heating;
-};
-
-class SSB_beta : public Diag<ShallowStressBalance>
-{
-public:
-  SSB_beta(ShallowStressBalance *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
-};
-
-//! \brief Computes the gravitational driving stress (diagnostically).
-class SSB_taud : public Diag<ShallowStressBalance>
-{
-public:
-  SSB_taud(ShallowStressBalance *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
-};
-
-//! \brief Computes the magnitude of the gravitational driving stress
-//! (diagnostically).
-class SSB_taud_mag : public Diag<ShallowStressBalance>
-{
-public:
-  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
-};
-
-//! @brief Computes the basal shear stress @f$ \tau_b @f$.
-class SSB_taub : public Diag<ShallowStressBalance>
-{
-public:
-  SSB_taub(ShallowStressBalance *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
-};
-
-//! \brief Computes the magnitude of the basal shear stress
-//! (diagnostically).
-class SSB_taub_mag : public Diag<ShallowStressBalance>
-{
-public:
-  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g);
-  virtual void compute(IceModelVec* &result);
 };
 
 //! Returns zero velocity field, zero friction heating, and zero for D^2.
