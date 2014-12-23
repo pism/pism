@@ -120,6 +120,8 @@ public:
     (void)ts_dict;
   }
 
+  const IceGrid& get_grid() const;
+
 protected:
   virtual void find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &m_grid;

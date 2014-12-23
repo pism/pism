@@ -30,6 +30,10 @@
 
 namespace pism {
 
+const IceGrid& Component::get_grid() const {
+  return m_grid;
+}
+
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
