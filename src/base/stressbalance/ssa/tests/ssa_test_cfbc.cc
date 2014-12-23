@@ -89,7 +89,7 @@ PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
     throw RuntimeError("ssa_test_cfbc error: have to use the SSAFD solver.");
   }
 
-  SSAFD_nuH nuH(ssafd, *grid);
+  SSAFD_nuH nuH(ssafd);
 
   IceModelVec* result;
   nuH.compute(result);

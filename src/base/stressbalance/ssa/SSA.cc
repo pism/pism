@@ -355,30 +355,30 @@ void SSA::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   if (dict["taud"] != NULL) {
     delete dict["taud"];
   }
-  dict["taud"] = new SSA_taud(this, m_grid);
+  dict["taud"] = new SSA_taud(this);
 
   if (dict["taud_mag"] != NULL) {
     delete dict["taud_mag"];
   }
-  dict["taud_mag"] = new SSA_taud_mag(this, m_grid);
+  dict["taud_mag"] = new SSA_taud_mag(this);
 }
 
-SSA_taud::SSA_taud(SSA *m, IceGrid &g)
-  : Diag<SSA>(m, g) {
+SSA_taud::SSA_taud(SSA *m)
+  : Diag<SSA>(m) {
 
-  dof = 2;
+  m_dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_x", grid));
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_y", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taud_x", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taud_y", m_grid));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < dof; ++k) {
-    vars[k].set_string("comment",
+  for (int k = 0; k < m_dof; ++k) {
+    m_vars[k].set_string("comment",
                        "this is the driving stress used by the SSA solver");
   }
 }
@@ -386,24 +386,24 @@ SSA_taud::SSA_taud(SSA *m, IceGrid &g)
 void SSA_taud::compute(IceModelVec* &output) {
 
   IceModelVec2V *result = new IceModelVec2V;
-  result->create(grid, "result", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
-  result->metadata(1) = vars[1];
+  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->metadata(1) = m_vars[1];
 
   model->compute_driving_stress(*result);
 
   output = result;
 }
 
-SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g)
-  : Diag<SSA>(m, g) {
+SSA_taud_mag::SSA_taud_mag(SSA *m)
+  : Diag<SSA>(m) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_mag", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taud_mag", m_grid));
 
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
-  vars[0].set_string("comment",
+  m_vars[0].set_string("comment",
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
@@ -411,12 +411,12 @@ void SSA_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "taud_mag", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
-  SSA_taud diag(model, grid);
+  SSA_taud diag(model);
 
   diag.compute(tmp);
 

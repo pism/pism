@@ -21,54 +21,54 @@
 
 namespace pism {
 
-Hydrology_bwat::Hydrology_bwat(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "bwat", grid));
+Hydrology_bwat::Hydrology_bwat(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwat", m_grid));
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
 
 void Hydrology_bwat::compute(IceModelVec* &output) {
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "bwat", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "bwat", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   model->subglacial_water_thickness(*result);
   output = result;
 }
 
-Hydrology_bwp::Hydrology_bwp(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "bwp", grid));
+Hydrology_bwp::Hydrology_bwp(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwp", m_grid));
   set_attrs("pressure of transportable water in subglacial layer", "", "Pa", "Pa", 0);
 }
 
 
 void Hydrology_bwp::compute(IceModelVec* &output) {
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "bwp", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "bwp", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   model->subglacial_water_pressure(*result);
   output = result;
 }
 
 
-Hydrology_bwprel::Hydrology_bwprel(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "bwprel", grid));
+Hydrology_bwprel::Hydrology_bwprel(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwprel", m_grid));
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
-  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.config.get("fill_value"));
 }
 
 
 void Hydrology_bwprel::compute(IceModelVec* &output) {
-  double fill = grid.config.get("fill_value");
+  double fill = m_grid.config.get("fill_value");
   IceModelVec2S *Po     = new IceModelVec2S,
                 *result = new IceModelVec2S;
-  result->create(grid, "bwprel", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
-  Po->create(grid, "Po_temporary", WITHOUT_GHOSTS);
+  result->create(m_grid, "bwprel", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  Po->create(m_grid, "Po_temporary", WITHOUT_GHOSTS);
 
   model->subglacial_water_pressure(*result);
   model->overburden_pressure(*Po);
@@ -76,7 +76,7 @@ void Hydrology_bwprel::compute(IceModelVec* &output) {
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*Po);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*Po)(i,j) > 0.0) {
@@ -90,9 +90,9 @@ void Hydrology_bwprel::compute(IceModelVec* &output) {
 }
 
 
-Hydrology_effbwp::Hydrology_effbwp(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "effbwp", grid));
+Hydrology_effbwp::Hydrology_effbwp(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "effbwp", m_grid));
   set_attrs("effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)",
             "", "Pa", "Pa", 0);
 }
@@ -101,9 +101,9 @@ Hydrology_effbwp::Hydrology_effbwp(Hydrology *m, IceGrid &g)
 void Hydrology_effbwp::compute(IceModelVec* &output) {
   IceModelVec2S *P      = new IceModelVec2S,
                 *result = new IceModelVec2S;
-  result->create(grid, "effbwp", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
-  P->create(grid, "P_temporary", WITHOUT_GHOSTS);
+  result->create(m_grid, "effbwp", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  P->create(m_grid, "P_temporary", WITHOUT_GHOSTS);
 
   model->subglacial_water_pressure(*P);
   model->overburden_pressure(*result);
@@ -113,9 +113,9 @@ void Hydrology_effbwp::compute(IceModelVec* &output) {
 }
 
 
-Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "hydrobmelt", grid));
+Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "hydrobmelt", m_grid));
   set_attrs("the version of bmelt seen by the hydrology model",
             "", "m s-1", "m/year", 0);
 }
@@ -123,8 +123,8 @@ Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m, IceGrid &g)
 
 void Hydrology_hydrobmelt::compute(IceModelVec* &output) {
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "hydrobmelt", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "hydrobmelt", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   // the value reported diagnostically is merely the last value filled
   (model->bmelt_local).copy_to(*result);
@@ -132,9 +132,9 @@ void Hydrology_hydrobmelt::compute(IceModelVec* &output) {
 }
 
 
-Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "hydroinput", grid));
+Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "hydroinput", m_grid));
   set_attrs("total water input into subglacial hydrology layer",
             "", "m s-1", "m/year", 0);
 }
@@ -142,8 +142,8 @@ Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m, IceGrid &g)
 
 void Hydrology_hydroinput::compute(IceModelVec* &output) {
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "hydroinput", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "hydroinput", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   // the value reported diagnostically is merely the last value filled
   (model->total_input).copy_to(*result);
@@ -151,9 +151,9 @@ void Hydrology_hydroinput::compute(IceModelVec* &output) {
 }
 
 
-Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m, IceGrid &g)
-    : Diag<Hydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "wallmelt", grid));
+Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "wallmelt", m_grid));
   set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water",
             "", "m s-1", "m/year", 0);
 }
@@ -161,8 +161,8 @@ Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m, IceGrid &g)
 
 void Hydrology_wallmelt::compute(IceModelVec* &output) {
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "wallmelt", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "wallmelt", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   model->wall_melt(*result);
   output = result;

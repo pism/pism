@@ -181,13 +181,13 @@ void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &d
                                                std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   // bwp is state
-  dict["bwprel"] = new Hydrology_bwprel(this, m_grid);
-  dict["effbwp"] = new Hydrology_effbwp(this, m_grid);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid);
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid);
-  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, m_grid);
+  dict["bwprel"] = new Hydrology_bwprel(this);
+  dict["effbwp"] = new Hydrology_effbwp(this);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
+  dict["hydroinput"] = new Hydrology_hydroinput(this);
+  dict["wallmelt"] = new Hydrology_wallmelt(this);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this);
+  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this);
 }
 
 
@@ -502,9 +502,9 @@ void DistributedHydrology::update(double icet, double icedt) {
 }
 
 
-DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g)
-    : Diag<DistributedHydrology>(m, g) {
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "hydrovelbase_mag", grid));
+DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m)
+  : Diag<DistributedHydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "hydrovelbase_mag", m_grid));
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
             "", "m s-1", "m/year", 0);
 }
@@ -512,8 +512,8 @@ DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(Dis
 
 void DistributedHydrology_hydrovelbase_mag::compute(IceModelVec* &output) {
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   // the value reported diagnostically is merely the last value filled
   (model->velbase_mag).copy_to(*result);

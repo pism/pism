@@ -177,13 +177,13 @@ void Hydrology::init() {
 
 void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["bwat"] = new Hydrology_bwat(this, m_grid);
-  dict["bwp"] = new Hydrology_bwp(this, m_grid);
-  dict["bwprel"] = new Hydrology_bwprel(this, m_grid);
-  dict["effbwp"] = new Hydrology_effbwp(this, m_grid);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid);
+  dict["bwat"] = new Hydrology_bwat(this);
+  dict["bwp"] = new Hydrology_bwp(this);
+  dict["bwprel"] = new Hydrology_bwprel(this);
+  dict["effbwp"] = new Hydrology_effbwp(this);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
+  dict["hydroinput"] = new Hydrology_hydroinput(this);
+  dict["wallmelt"] = new Hydrology_wallmelt(this);
 }
 
 

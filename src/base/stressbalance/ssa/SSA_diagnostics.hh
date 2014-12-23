@@ -29,7 +29,7 @@ namespace pism {
 class SSA_taud_mag : public Diag<SSA>
 {
 public:
-  SSA_taud_mag(SSA *m, IceGrid &g);
+  SSA_taud_mag(SSA *m);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -41,7 +41,7 @@ public:
 class SSA_taud : public Diag<SSA>
 {
 public:
-  SSA_taud(SSA *m, IceGrid &g);
+  SSA_taud(SSA *m);
   virtual void compute(IceModelVec* &result);
 };
 

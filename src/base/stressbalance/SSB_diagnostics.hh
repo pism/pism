@@ -27,7 +27,7 @@ class Vars;
 class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_beta(ShallowStressBalance *m, IceGrid &g);
+  SSB_beta(ShallowStressBalance *m);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -35,7 +35,7 @@ public:
 class SSB_taud : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud(ShallowStressBalance *m, IceGrid &g);
+  SSB_taud(ShallowStressBalance *m);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -44,7 +44,7 @@ public:
 class SSB_taud_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g);
+  SSB_taud_mag(ShallowStressBalance *m);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -52,7 +52,7 @@ public:
 class SSB_taub : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub(ShallowStressBalance *m, IceGrid &g);
+  SSB_taub(ShallowStressBalance *m);
   virtual void compute(IceModelVec* &result);
 };
 
@@ -61,7 +61,7 @@ public:
 class SSB_taub_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g);
+  SSB_taub_mag(ShallowStressBalance *m);
   virtual void compute(IceModelVec* &result);
 };
 

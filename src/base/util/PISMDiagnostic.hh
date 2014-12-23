@@ -56,10 +56,10 @@ class Vars;
 class Diagnostic
 {
 public:
-  Diagnostic(IceGrid &g)
-    : grid(g) {
-    output_datatype = PISM_FLOAT;
-    dof = 1;
+  Diagnostic(const IceGrid &g)
+    : m_grid(g) {
+    m_output_datatype = PISM_FLOAT;
+    m_dof = 1;
   }
   virtual ~Diagnostic() {}
 
@@ -76,7 +76,7 @@ public:
 
   //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
   virtual int get_nvars() {
-    return dof;
+    return m_dof;
   }
 
   //! Reset vertical levels corresponding to the z dimension.
@@ -84,9 +84,9 @@ public:
    */
   virtual void set_zlevels(std::vector<double> &zlevels)
   {
-    for (int j = 0; j < dof; ++j) {
-      if (vars[j].get_z().get_name() == "z") {
-        vars[j].set_levels(zlevels);
+    for (int j = 0; j < m_dof; ++j) {
+      if (m_vars[j].get_z().get_name() == "z") {
+        m_vars[j].set_levels(zlevels);
       }
     }
   }
@@ -94,18 +94,18 @@ public:
   //! Get a pointer to a metadata object corresponding to variable number N.
   virtual NCSpatialVariable get_metadata(int N = 0)
   {
-    if (N >= dof) {
-      return NCSpatialVariable(grid.config.get_unit_system(), "missing", grid);
+    if (N >= m_dof) {
+      return NCSpatialVariable(m_grid.config.get_unit_system(), "missing", m_grid);
     }
 
-    return vars[N];
+    return m_vars[N];
   }
 
   //! Define NetCDF variables corresponding to a diagnostic quantity.
   virtual void define(const PIO &nc)
   {
-    for (int j = 0; j < dof; ++j) {
-      vars[j].define(nc, output_datatype, true);
+    for (int j = 0; j < m_dof; ++j) {
+      m_vars[j].define(nc, m_output_datatype, true);
     }
   }
 
@@ -117,29 +117,29 @@ public:
                            int N = 0) {
     PetscErrorCode ierr;
 
-    if (N >= dof) {
-      throw RuntimeError::formatted("invalid N (>= dof)");
+    if (N >= m_dof) {
+      throw RuntimeError::formatted("invalid N (>= m_dof)");
     }
 
-    vars[N].set_string("pism_intent", "diagnostic");
+    m_vars[N].set_string("pism_intent", "diagnostic");
 
-    vars[N].set_string("long_name", my_long_name);
+    m_vars[N].set_string("long_name", my_long_name);
 
-    vars[N].set_string("standard_name", my_standard_name);
+    m_vars[N].set_string("standard_name", my_standard_name);
 
-    ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
+    ierr = m_vars[N].set_units(my_units); CHKERRQ(ierr);
 
     if (my_glaciological_units != "") {
-      ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
+      ierr = m_vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
     }
 
     return 0;
   }
 protected:
-  IceGrid &grid;                //!< the grid
-  int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  IO_Type output_datatype;      //!< data type to use in the file
-  std::vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
+  const IceGrid &m_grid;                //!< the grid
+  int m_dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
+  IO_Type m_output_datatype;      //!< data type to use in the file
+  std::vector<NCSpatialVariable> m_vars; //!< metadata corresponding to NetCDF variables
 };
 
 //! A template derived from Diagnostic, adding a "Model".
@@ -147,8 +147,8 @@ template <class Model>
 class Diag : public Diagnostic
 {
 public:
-  Diag(Model *m, IceGrid &g)
-    : Diagnostic(g), model(m) {}
+  Diag(Model *m)
+    : Diagnostic(m->get_grid()), model(m) {}
 protected:
   Model *model;
 };
@@ -157,51 +157,51 @@ protected:
 class TSDiagnostic
 {
 public:
-  TSDiagnostic(IceGrid &g)
-    : grid(g), ts(NULL) {
+  TSDiagnostic(const IceGrid &g)
+    : m_grid(g), m_ts(NULL) {
   }
 
   virtual ~TSDiagnostic() {
-    delete ts;
+    delete m_ts;
   }
 
   virtual void update(double a, double b) = 0;
 
   virtual void save(double a, double b) {
-    if (ts) {
-      ts->interp(a, b);
+    if (m_ts) {
+      m_ts->interp(a, b);
     }
   }
 
   virtual void flush() {
-    if (ts) {
-      ts->flush();
+    if (m_ts) {
+      m_ts->flush();
     }
   }
 
   virtual void init(std::string filename) {
-    if (ts) {
-      ts->init(filename);
+    if (m_ts) {
+      m_ts->init(filename);
     }
   }
 
   virtual std::string get_string(std::string name) {
-    return ts->get_metadata().get_string(name);
+    return m_ts->get_metadata().get_string(name);
   }
 
 protected:
-  IceGrid &grid;                //!< the grid
-  DiagnosticTimeseries *ts;
+  const IceGrid &m_grid;                //!< the grid
+  DiagnosticTimeseries *m_ts;
 };
 
 template <class Model>
 class TSDiag : public TSDiagnostic
 {
 public:
-  TSDiag(Model *m, IceGrid &g)
-    : TSDiagnostic(g), model(m) {
-    time_units = grid.time->CF_units_string();
-    time_dimension_name = grid.config.get_string("time_dimension_name");
+  TSDiag(Model *m)
+    : TSDiagnostic(m->get_grid()), model(m) {
+    time_units = m_grid.time->CF_units_string();
+    time_dimension_name = m_grid.config.get_string("time_dimension_name");
   }
 protected:
   Model *model;

@@ -182,14 +182,14 @@ void RoutingHydrology::write_variables(const std::set<std::string> &vars, const 
 void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
-  dict["bwp"] = new Hydrology_bwp(this, m_grid);
-  dict["bwprel"] = new Hydrology_bwprel(this, m_grid);
-  dict["effbwp"] = new Hydrology_effbwp(this, m_grid);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, m_grid);
-  dict["hydroinput"] = new Hydrology_hydroinput(this, m_grid);
-  dict["wallmelt"] = new Hydrology_wallmelt(this, m_grid);
+  dict["bwp"] = new Hydrology_bwp(this);
+  dict["bwprel"] = new Hydrology_bwprel(this);
+  dict["effbwp"] = new Hydrology_effbwp(this);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
+  dict["hydroinput"] = new Hydrology_hydroinput(this);
+  dict["wallmelt"] = new Hydrology_wallmelt(this);
   // add diagnostic that only makes sense if transport is modeled
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, m_grid);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this);
 }
 
 
@@ -788,13 +788,13 @@ void RoutingHydrology::update(double icet, double icedt) {
 }
 
 
-RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g)
-    : Diag<RoutingHydrology>(m, g) {
+RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m)
+  : Diag<RoutingHydrology>(m) {
 
   // set metadata:
-  dof = 2;
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "bwatvel[0]", grid));
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "bwatvel[1]", grid));
+  m_dof = 2;
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwatvel[0]", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwatvel[1]", m_grid));
 
   set_attrs("velocity of water in subglacial layer, i-offset", "",
             "m s-1", "m year-1", 0);
@@ -806,9 +806,9 @@ RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid 
 void RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  result->create(grid, "bwatvel", WITHOUT_GHOSTS);
-  result->metadata(0) = vars[0];
-  result->metadata(1) = vars[1];
+  result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
   model->velocity_staggered(*result);

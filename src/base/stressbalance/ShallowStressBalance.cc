@@ -71,11 +71,11 @@ ShallowStressBalance::~ShallowStressBalance() {
 
 void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["beta"]     = new SSB_beta(this, m_grid);
-  dict["taub"]     = new SSB_taub(this, m_grid);
-  dict["taub_mag"] = new SSB_taub_mag(this, m_grid);
-  dict["taud"]     = new SSB_taud(this, m_grid);
-  dict["taud_mag"] = new SSB_taud_mag(this, m_grid);
+  dict["beta"]     = new SSB_beta(this);
+  dict["taub"]     = new SSB_taub(this);
+  dict["taub_mag"] = new SSB_taub_mag(this);
+  dict["taud"]     = new SSB_taud(this);
+  dict["taud_mag"] = new SSB_taud_mag(this);
 }
 
 
@@ -340,22 +340,22 @@ void ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModel
   }
 }
 
-SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g)
-  : Diag<ShallowStressBalance>(m, g) {
+SSB_taud::SSB_taud(ShallowStressBalance *m)
+  : Diag<ShallowStressBalance>(m) {
 
-  dof = 2;
+  m_dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_x", grid));
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_y", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taud_x", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taud_y", m_grid));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < dof; ++k) {
-    vars[k].set_string("comment",
+  for (int k = 0; k < m_dof; ++k) {
+    m_vars[k].set_string("comment",
                        "this field is purely diagnostic (not used by the model)");
   }
 }
@@ -369,22 +369,22 @@ void SSB_taud::compute(IceModelVec* &output) {
   IceModelVec2S *thickness, *surface;
 
   IceModelVec2V *result = new IceModelVec2V;
-  result->create(grid, "result", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
-  result->metadata(1) = vars[1];
+  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->metadata(1) = m_vars[1];
 
-  thickness = grid.variables().get_2d_scalar("land_ice_thickness");
-  surface = grid.variables().get_2d_scalar("surface_altitude");
+  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  surface = m_grid.variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = grid.config.get("standard_gravity"),
-    ice_density = grid.config.get("ice_density");
+  double standard_gravity = m_grid.config.get("standard_gravity"),
+    ice_density = m_grid.config.get("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*surface);
   list.add(*thickness);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double pressure = ice_density * standard_gravity * (*thickness)(i,j);
@@ -400,15 +400,15 @@ void SSB_taud::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g)
-  : Diag<ShallowStressBalance>(m, g) {
+SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
+  : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taud_mag", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taud_mag", m_grid));
 
   set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
-  vars[0].set_string("comment",
+  m_vars[0].set_string("comment",
                      "this field is purely diagnostic (not used by the model)");
 }
 
@@ -416,12 +416,12 @@ void SSB_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "taud_mag", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
-  SSB_taud diag(model, grid);
+  SSB_taud diag(model);
 
   diag.compute(tmp);
 
@@ -438,21 +438,21 @@ void SSB_taud_mag::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g)
-  : Diag<ShallowStressBalance>(m, g) {
-  dof = 2;
+SSB_taub::SSB_taub(ShallowStressBalance *m)
+  : Diag<ShallowStressBalance>(m) {
+  m_dof = 2;
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_x", grid));
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_y", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taub_x", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taub_y", m_grid));
 
   set_attrs("X-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 0);
   set_attrs("Y-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < dof; ++k) {
-    vars[k].set_string("comment",
+  for (int k = 0; k < m_dof; ++k) {
+    m_vars[k].set_string("comment",
                        "this field is purely diagnostic (not used by the model)");
   }
 }
@@ -461,16 +461,16 @@ SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g)
 void SSB_taub::compute(IceModelVec* &output) {
 
   IceModelVec2V *result = new IceModelVec2V;
-  result->create(grid, "result", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
-  result->metadata(1) = vars[1];
+  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->metadata(1) = m_vars[1];
 
   IceModelVec2V *velocity;
   model->get_2D_advective_velocity(velocity);
 
   IceModelVec2V &vel = *velocity;
-  IceModelVec2S *tauc = grid.variables().get_2d_scalar("tauc");
-  IceModelVec2Int *mask = grid.variables().get_2d_mask("mask");
+  IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
+  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 
@@ -481,7 +481,7 @@ void SSB_taub::compute(IceModelVec* &output) {
   list.add(*tauc);
   list.add(vel);
   list.add(*mask);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.grounded_ice(i,j)) {
@@ -497,15 +497,15 @@ void SSB_taub::compute(IceModelVec* &output) {
   output = result;
 }
 
-SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g)
-  : Diag<ShallowStressBalance>(m, g) {
+SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
+  : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "taub_mag", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "taub_mag", m_grid));
 
   set_attrs("magnitude of the basal shear stress at the base of ice", "",
             "Pa", "Pa", 0);
-  vars[0].set_string("comment",
+  m_vars[0].set_string("comment",
                      "this field is purely diagnostic (not used by the model)");
 }
 
@@ -513,12 +513,12 @@ void SSB_taub_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "taub_mag", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "taub_mag", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
-  SSB_taub diag(model, grid);
+  SSB_taub diag(model);
 
   diag.compute(tmp);
 
@@ -569,10 +569,10 @@ void PrescribedSliding::init() {
   m_velocity.regrid(input_filename, CRITICAL);
 }
 
-SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g)
-  : Diag<ShallowStressBalance>(m, g) {
+SSB_beta::SSB_beta(ShallowStressBalance *m)
+  : Diag<ShallowStressBalance>(m) {
   // set metadata:
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "beta", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "beta", m_grid));
 
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }
@@ -581,11 +581,11 @@ void SSB_beta::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  result->create(grid, "beta", WITHOUT_GHOSTS);
-  result->metadata() = vars[0];
+  result->create(m_grid, "beta", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec2S *tauc = grid.variables().get_2d_scalar("tauc");
+  IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 
@@ -597,7 +597,7 @@ void SSB_beta::compute(IceModelVec* &output) {
   list.add(*result);
   list.add(*tauc);
   list.add(*velocity);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);

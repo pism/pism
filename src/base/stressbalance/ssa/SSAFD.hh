@@ -128,7 +128,7 @@ SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &);
 class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
-  SSAFD_nuH(SSAFD *m, IceGrid &g);
+  SSAFD_nuH(SSAFD *m);
   virtual void compute(IceModelVec* &result);
 };
 

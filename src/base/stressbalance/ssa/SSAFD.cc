@@ -1747,14 +1747,14 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   return 0;
 }
 
-SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g)
-  : Diag<SSAFD>(m, g) {
+SSAFD_nuH::SSAFD_nuH(SSAFD *m)
+  : Diag<SSAFD>(m) {
 
   // set metadata:
-  dof = 2;
+  m_dof = 2;
 
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "nuH[0]", grid));
-  vars.push_back(NCSpatialVariable(grid.config.get_unit_system(), "nuH[1]", grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "nuH[0]", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "nuH[1]", m_grid));
 
   set_attrs("ice thickness times effective viscosity, i-offset", "",
             "Pa s m", "kPa s m", 0);
@@ -1765,9 +1765,9 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g)
 void SSAFD_nuH::compute(IceModelVec* &output) {
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  result->create(grid, "nuH", WITH_GHOSTS);
-  result->metadata() = vars[0];
-  result->metadata(1) = vars[1];
+  result->create(m_grid, "nuH", WITH_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
   model->nuH.copy_to(*result);
@@ -1779,7 +1779,7 @@ void SSAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &ts_dict) {
   SSA::get_diagnostics(dict, ts_dict);
 
-  dict["nuH"] = new SSAFD_nuH(this, m_grid);
+  dict["nuH"] = new SSAFD_nuH(this);
 }
 
 } // end of namespace pism
