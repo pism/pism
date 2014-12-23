@@ -107,7 +107,7 @@ Unit NCVariable::get_glaciological_units() const {
 
 //! 3D version
 NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
-                                     IceGrid &g, const std::vector<double> &zlevels)
+                                     const IceGrid &g, const std::vector<double> &zlevels)
   : NCVariable("unnamed", system),
     m_x("x", system),
     m_y("y", system),
@@ -118,7 +118,7 @@ NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string
 
 //! 2D version
 NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
-                                     IceGrid &g)
+                                     const IceGrid &g)
   : NCVariable("unnamed", system),
     m_x("x", system),
     m_y("y", system),
@@ -128,7 +128,7 @@ NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string
   init_internal(name, g, z);
 }
 
-void NCSpatialVariable::init_internal(const std::string &name, IceGrid &g,
+void NCSpatialVariable::init_internal(const std::string &name, const IceGrid &g,
                                       const std::vector<double> &z_levels) {
   m_time_dimension_name = "t";        // will be overriden later
 

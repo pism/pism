@@ -64,8 +64,8 @@ unsigned int IceModelVec2T::get_n_records() {
   return n_records;
 }
 
-void IceModelVec2T::create(IceGrid &my_grid, const std::string &my_short_name,
-                                     bool local, int width) {
+void IceModelVec2T::create(const IceGrid &my_grid, const std::string &my_short_name,
+                           bool local, int width) {
 
   if (local) {
     throw RuntimeError("IceModelVec2T cannot be 'local'");
@@ -74,7 +74,7 @@ void IceModelVec2T::create(IceGrid &my_grid, const std::string &my_short_name,
   IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width);
 
   // initialize the m_da3 member:
-  m_da3 = grid->get_dm(this->n_records, this->m_da_stencil_width);
+  m_da3 = m_grid->get_dm(this->n_records, this->m_da_stencil_width);
 
   // allocate the 3D Vec:
   DMCreateGlobalVector(*m_da3, &m_v3);
@@ -126,7 +126,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(*grid, "guess_mode");
+  PIO nc(*m_grid, "guess_mode");
   std::string name_found;
   bool exists, found_by_standard_name;
   nc.open(filename, PISM_READONLY);
@@ -157,20 +157,20 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   if (time_found) {
     // we're found the time dimension
-    NCTimeseries time_dimension(dimname, dimname, grid->config.get_unit_system());
+    NCTimeseries time_dimension(dimname, dimname, m_grid->config.get_unit_system());
 
-    time_dimension.set_units(grid->time->units_string());
-    nc.read_timeseries(time_dimension, grid->time, time);
+    time_dimension.set_units(m_grid->time->units_string());
+    nc.read_timeseries(time_dimension, m_grid->time, time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
     if (time.size() > 1) {
       if (bounds_name.empty() == false) {
         // read time bounds data from a file
-        NCTimeBounds tb(bounds_name, dimname, grid->config.get_unit_system());
+        NCTimeBounds tb(bounds_name, dimname, m_grid->config.get_unit_system());
         tb.set_units(time_dimension.get_string("units"));
 
-        nc.read_time_bounds(tb, grid->time, time_bounds);
+        nc.read_time_bounds(tb, m_grid->time, time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -335,30 +335,30 @@ void IceModelVec2T::update(unsigned int start) {
   N = kept + missing;
 
   if (this->get_n_records() > 1 || getVerbosityLevel() > 4) {
-    verbPrintf(2, grid->com,
+    verbPrintf(2, m_grid->com,
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
                metadata().get_string("long_name").c_str(), m_name.c_str(), missing,
-               grid->time->date(time_bounds[start*2]).c_str(),
-               grid->time->date(time_bounds[start*2 + 1]).c_str(),
-               grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
-               grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
+               m_grid->time->date(time_bounds[start*2]).c_str(),
+               m_grid->time->date(time_bounds[start*2 + 1]).c_str(),
+               m_grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
+               m_grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
     m_report_range = false;
   } else {
     m_report_range = true;
   }
 
-  PIO nc(*grid, "guess_mode");
+  PIO nc(*m_grid, "guess_mode");
   nc.open(filename, PISM_READONLY);
 
   for (unsigned int j = 0; j < missing; ++j) {
     m_metadata[0].regrid(nc, start + j,
                          CRITICAL, m_report_range, 0.0, m_v);
 
-    verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
+    verbPrintf(5, m_grid->com, " %s: reading entry #%02d, year %s...\n",
                       m_name.c_str(),
                       start + j,
-                      grid->time->date(time[start + j]).c_str());
+                      m_grid->time->date(time[start + j]).c_str());
     set_record(kept + j);
   }
 
@@ -377,7 +377,7 @@ void IceModelVec2T::discard(int number) {
 
   get_array(a2);
   get_array3(a3);
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (unsigned int k = 0; k < N; ++k) {
@@ -395,7 +395,7 @@ void IceModelVec2T::set_record(int n) {
 
   get_array(a2);
   get_array3(a3);
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a3[i][j][n] = a2[i][j];
   }
@@ -409,7 +409,7 @@ void IceModelVec2T::get_record(int n) {
 
   get_array(a2);
   get_array3(a3);
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a2[i][j] = a3[i][j][n];
   }
@@ -470,7 +470,7 @@ void IceModelVec2T::interp(double my_t) {
  */
 void IceModelVec2T::average(double my_t, double my_dt) {
   double **a2;
-  double dt_years = grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
+  double dt_years = m_grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
   // if only one record, nothing to do
   if (time.size() == 1) {
@@ -492,7 +492,7 @@ void IceModelVec2T::average(double my_t, double my_dt) {
   init_interpolation(ts);
 
   get_array(a2);         // calls begin_access()
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     average(i, j, a2[i][j]); // NB! order
   }
@@ -516,7 +516,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   std::vector<double> times_requested(ts_length);
   if (m_period != 0) {
     for (unsigned int k = 0; k < ts_length; ++k) {
-      times_requested[k] = grid->time->mod(ts[k] - m_reference_time, m_period);
+      times_requested[k] = m_grid->time->mod(ts[k] - m_reference_time, m_period);
     }
   } else {
     for (unsigned int k = 0; k < ts_length; ++k) {

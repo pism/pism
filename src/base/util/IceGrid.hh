@@ -177,7 +177,7 @@ public:
   // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
   //                          const std::string &filename);
 
-  PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
+  PISMDM::Ptr get_dm(int dm_dof, int stencil_width) const;
 
   void report_parameters() const;
 
@@ -189,7 +189,7 @@ public:
                                int &j_bottom, int &j_top);
   std::vector<double> compute_interp_weights(double x, double y);
 
-  unsigned int kBelowHeight(double height);
+  unsigned int kBelowHeight(double height) const;
 
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
@@ -280,7 +280,7 @@ private:
   //! half width of the ice model grid in y-direction (m)
   double m_Ly;
 
-  std::map<int,PISMDM::WeakPtr> m_dms;
+  mutable std::map<int,PISMDM::WeakPtr> m_dms;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
@@ -301,9 +301,9 @@ private:
   void compute_horizontal_spacing();
   void compute_horizontal_coordinates();
 
-  DM create_dm(int da_dof, int stencil_width);
+  DM create_dm(int da_dof, int stencil_width) const;
 
-  int dm_key(int, int);
+  int dm_key(int, int) const;
   std::string init_calendar();
 
   bool is_equally_spaced() const;
@@ -333,7 +333,7 @@ inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width)
  */
 class PointsWithGhosts {
 public:
-  PointsWithGhosts(IceGrid &g, unsigned int stencil_width = 1) {
+  PointsWithGhosts(const IceGrid &g, unsigned int stencil_width = 1) {
     m_i_first = g.xs() - stencil_width;
     m_i_last  = g.xs() + g.xm() + stencil_width - 1;
     m_j_first = g.ys() - stencil_width;
@@ -381,7 +381,7 @@ private:
  */
 class Points : public PointsWithGhosts {
 public:
-  Points(IceGrid &g) : PointsWithGhosts(g, 0) {}
+  Points(const IceGrid &g) : PointsWithGhosts(g, 0) {}
 };
 
 } // end of namespace pism

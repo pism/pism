@@ -112,7 +112,7 @@ void IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
                                        IceModelVec3  &enthalpy,
                                        IceModelVec2S &hardav) const {
 
-  IceGrid *grid = thickness.get_grid();
+  const IceGrid *grid = thickness.get_grid();
 
   IceModelVec::AccessList list;
   list.add(thickness);

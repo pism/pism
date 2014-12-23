@@ -103,8 +103,8 @@ public:
   virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
   using IceModelVec2S::create;
-  virtual void create(IceGrid &mygrid, const std::string &my_short_name,
-                                bool local, int width = 1);
+  virtual void create(const IceGrid &mygrid, const std::string &my_short_name,
+                      bool local, int width = 1);
   virtual void init(const std::string &filename, unsigned int period,
                               double reference_time);
   virtual void init_constant(double value);

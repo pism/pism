@@ -47,7 +47,7 @@ class PIO
 {
 public:
   PIO(MPI_Comm com, const std::string &mode, const UnitSystem &units_system);
-  PIO(IceGrid &g, const std::string &mode);
+  PIO(const IceGrid &g, const std::string &mode);
   PIO(const PIO &other);
   ~PIO();
 
@@ -126,16 +126,16 @@ public:
 
   std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
 
-  PetscErrorCode get_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count,
+  PetscErrorCode get_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count,
                          unsigned int t, Vec g) const;
 
-  PetscErrorCode put_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count, Vec g) const;
+  PetscErrorCode put_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count, Vec g) const;
 
-  void regrid_vec(IceGrid *grid, const std::string &var_name,
+  void regrid_vec(const IceGrid *grid, const std::string &var_name,
                   const std::vector<double> &zlevels_out,
                   unsigned int t_start, Vec g) const;
 
-  void regrid_vec_fill_missing(IceGrid *grid, const std::string &var_name,
+  void regrid_vec_fill_missing(const IceGrid *grid, const std::string &var_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
                                double default_value,
@@ -216,7 +216,7 @@ private:
 
   int k_below(double z, const std::vector<double> &zlevels) const;
 
-  PetscErrorCode regrid(IceGrid *grid, const std::vector<double> &zlevels_out,
+  PetscErrorCode regrid(const IceGrid *grid, const std::vector<double> &zlevels_out,
                         LocalInterpCtx *lic, Vec g) const;
 
   void detect_mode(const std::string &filename);

@@ -31,16 +31,17 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   begin_end_access_use_dof = false;
 }
 
-void  IceModelVec2V::create(IceGrid &my_grid, const std::string &short_name, IceModelVecKind ghostedp,
-                                      unsigned int stencil_width) {
+void  IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name,
+                            IceModelVecKind ghostedp,
+                            unsigned int stencil_width) {
 
   IceModelVec2::create(my_grid, short_name, ghostedp,
                        stencil_width, m_dof);
 
-  UnitSystem sys = grid->config.get_unit_system();
+  UnitSystem sys = m_grid->config.get_unit_system();
 
-  m_metadata[0] = NCSpatialVariable(sys, "u" + short_name, *grid);
-  m_metadata[1] = NCSpatialVariable(sys, "v" + short_name, *grid);
+  m_metadata[0] = NCSpatialVariable(sys, "u" + short_name, *m_grid);
+  m_metadata[1] = NCSpatialVariable(sys, "v" + short_name, *m_grid);
 
   m_name = "vel" + short_name;
 }
@@ -55,7 +56,7 @@ void IceModelVec2V::magnitude(IceModelVec2S &result) const {
   list.add(*this);
   list.add(result);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = (*this)(i, j).magnitude();

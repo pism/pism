@@ -46,7 +46,7 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @return 0 on success
  */
 
-PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
+PetscErrorCode IceModelVec3Custom::create(const IceGrid &mygrid,
                                           const std::string &short_name,
                                           const std::string &z_name,
                                           const std::vector<double> &my_zlevels,
@@ -55,21 +55,21 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
   assert(m_v == NULL);
 
   m_has_ghosts = false;
-  grid         = &mygrid;
+  m_grid         = &mygrid;
   m_name       = short_name;
   zlevels      = my_zlevels;
   m_n_levels   = zlevels.size();
 
   m_da_stencil_width = 1;
 
-  m_da = grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
   ierr = DMCreateGlobalVector(*m_da, &m_v); CHKERRQ(ierr);
 
   m_dof = 1;
 
-  m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
-                                         m_name, *grid, zlevels));
+  m_metadata.push_back(NCSpatialVariable(m_grid->config.get_unit_system(),
+                                         m_name, *m_grid, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();

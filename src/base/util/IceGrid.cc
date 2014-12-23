@@ -281,7 +281,7 @@ void IceGrid::set_vertical_levels(double Lz, unsigned int Mz,
 
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
-unsigned int IceGrid::kBelowHeight(double height) {
+unsigned int IceGrid::kBelowHeight(double height) const {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(PETSC_COMM_SELF,
                 "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", m_rank, height);
@@ -780,7 +780,7 @@ void IceGrid::check_parameters() {
 
 }
 
-PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) {
+PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   PISMDM::Ptr result;
 
   if (da_dof < 0 || da_dof > 10000) {
@@ -817,7 +817,7 @@ double IceGrid::convert(double value, const std::string &unit1, const std::strin
   return config.get_unit_system().convert(value, unit1, unit2);
 }
 
-DM IceGrid::create_dm(int da_dof, int stencil_width) {
+DM IceGrid::create_dm(int da_dof, int stencil_width) const {
   DM result;
 
   verbPrintf(3, com,
@@ -856,7 +856,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) {
 }
 
 // Computes the key corresponding to the DM with given dof and stencil_width.
-int IceGrid::dm_key(int da_dof, int stencil_width) {
+int IceGrid::dm_key(int da_dof, int stencil_width) const {
   return 10000 * da_dof + stencil_width;
 }
 

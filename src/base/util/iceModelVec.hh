@@ -167,13 +167,15 @@ public:
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec> ConstPtr;
 #else
   typedef std::shared_ptr<IceModelVec> Ptr;
+  typedef std::shared_ptr<const IceModelVec> ConstPtr;
 #endif
 
   virtual bool was_created() const;
-  IceGrid* get_grid() const {
-    return grid;
+  const IceGrid* get_grid() const {
+    return m_grid;
   }
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
@@ -255,7 +257,7 @@ protected:
   //! stores metadata (NetCDF variable attributes)
   std::vector<NCSpatialVariable> m_metadata;
 
-  IceGrid *grid;
+  const IceGrid *m_grid;
 
   unsigned int m_dof;                     //!< number of "degrees of freedom" per grid point
   unsigned int m_da_stencil_width;      //!< stencil width supported by the DA
@@ -365,7 +367,7 @@ public:
 #endif
     return static_cast<double***>(array)[i][j][k];
   }
-  virtual void create(IceGrid &my_grid, const std::string &my_short_name,
+  virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const PIO &nc, const unsigned int time);
@@ -384,13 +386,15 @@ public:
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec2S> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec2S> ConstPtr;
 #else
   typedef std::shared_ptr<IceModelVec2S> Ptr;
+  typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
 #endif
 
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  virtual void  create(IceGrid &my_grid, const std::string &my_name,
+  virtual void  create(const IceGrid &my_grid, const std::string &my_name,
                                  IceModelVecKind ghostedp, int width = 1);
   void allocate_proc0_copy(Vec &result) const;
   void put_on_proc0(Vec onp0) const;
@@ -460,8 +464,10 @@ public:
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec2Int> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec2Int> ConstPtr;
 #else
   typedef std::shared_ptr<IceModelVec2Int> Ptr;
+  typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
 #endif
 
   inline int as_int(int i, int j) const {
@@ -572,12 +578,14 @@ public:
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec2V> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec2V> ConstPtr;
 #else
   typedef std::shared_ptr<IceModelVec2V> Ptr;
+  typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
 #endif
 
   using IceModelVec2::create;
-  virtual void create(IceGrid &my_grid, const std::string &my_short_name,
+  virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_to(IceModelVec &destination) const;
   virtual void add(double alpha, IceModelVec &x);
@@ -638,7 +646,7 @@ public:
     begin_end_access_use_dof = true;
   }
   using IceModelVec2::create;
-  virtual void create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
+  virtual void create(const IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                 unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
@@ -700,7 +708,7 @@ public:
   }
 
 protected:
-  virtual void allocate(IceGrid &mygrid, const std::string &my_short_name,
+  virtual void allocate(const IceGrid &mygrid, const std::string &my_short_name,
                                   IceModelVecKind ghostedp, const std::vector<double> &levels,
                                   unsigned int stencil_width = 1);
 };
@@ -714,11 +722,13 @@ public:
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec3> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec3> ConstPtr;
 #else
   typedef std::shared_ptr<IceModelVec3> Ptr;
+  typedef std::shared_ptr<const IceModelVec3> ConstPtr;
 #endif
 
-  virtual void create(IceGrid &mygrid, const std::string &my_short_name,
+  virtual void create(const IceGrid &mygrid, const std::string &my_short_name,
                       IceModelVecKind ghostedp,
                       unsigned int stencil_width = 1);
 

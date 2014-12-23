@@ -42,7 +42,7 @@ IceModelVec::IceModelVec() {
   m_dof = 1;                    // default
   begin_end_access_use_dof = true;
 
-  grid = NULL;
+  m_grid = NULL;
 
   m_has_ghosts = true;
 
@@ -148,8 +148,8 @@ void IceModelVec::range(double &min, double &max) const {
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax;
-    gmin = GlobalMin(grid->com, my_min);
-    gmax = GlobalMax(grid->com, my_max);
+    gmin = GlobalMin(m_grid->com, my_min);
+    gmax = GlobalMax(m_grid->com, my_max);
     min = gmin;
     max = gmax;
   } else {
@@ -205,13 +205,13 @@ void IceModelVec::norm(int n, double &out) const {
       throw RuntimeError::formatted("IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))",
          m_name.c_str());
     } else if (n == NORM_1) {
-      gnorm = GlobalSum(grid->com, my_norm);
+      gnorm = GlobalSum(m_grid->com, my_norm);
     } else if (n == NORM_2) {
       my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
-      gnorm = GlobalSum(grid->com, my_norm);
+      gnorm = GlobalSum(m_grid->com, my_norm);
       gnorm = sqrt(gnorm);
     } else if (n == NORM_INFINITY) {
-      gnorm = GlobalMax(grid->com, my_norm);
+      gnorm = GlobalMax(m_grid->com, my_norm);
     } else {
       throw RuntimeError::formatted("IceModelVec::norm(...): unknown norm type (called as %s.norm(...))",
                                     m_name.c_str());
@@ -323,7 +323,7 @@ void IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
   DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v);
   double ***source_a = static_cast<double***>(tmp_v);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
                        count*sizeof(PetscScalar));
@@ -349,7 +349,7 @@ void IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
   DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v);
   double ***result_a = static_cast<double***>(tmp_v);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
                        count*sizeof(PetscScalar));
@@ -491,7 +491,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   Vec tmp;
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str());
+    ierr = PetscPrintf(m_grid->com, "  Regridding %s...\n", m_name.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
@@ -519,7 +519,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   Vec tmp;
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str());
+    ierr = PetscPrintf(m_grid->com, "  Reading %s...\n", m_name.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
@@ -554,7 +554,7 @@ void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   name to find the variable to read attributes from.
  */
 void IceModelVec::read_attributes(const std::string &filename, int N) {
-  PIO nc(*grid, "netcdf3");     // OK to use netcdf3
+  PIO nc(*m_grid, "netcdf3");     // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);
   nc.read_attributes(metadata(N).get_name(),
@@ -581,7 +581,7 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
   Vec tmp;
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str());
+    ierr = PetscPrintf(m_grid->com, "  Writing %s...\n", m_name.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
@@ -604,14 +604,14 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO nc(*grid, grid->config.get_string("output_format"));
+  PIO nc(*m_grid, m_grid->config.get_string("output_format"));
 
   nc.open(filename, PISM_READWRITE_CLOBBER);
-  nc.def_time(grid->config.get_string("time_dimension_name"),
-              grid->time->calendar(),
-              grid->time->units_string());
-  nc.append_time(grid->config.get_string("time_dimension_name"),
-                 grid->time->current());
+  nc.def_time(m_grid->config.get_string("time_dimension_name"),
+              m_grid->time->calendar(),
+              m_grid->time->units_string());
+  nc.append_time(m_grid->config.get_string("time_dimension_name"),
+                 m_grid->time->current());
 
   write(nc, PISM_DOUBLE);
 
@@ -746,16 +746,16 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   // DM object. So we want the bigger of the two numbers here.
   unsigned int N = std::max(m_dof, m_n_levels);
 
-  bool out_of_range = (i < grid->xs() - ghost_width) ||
-    (i > grid->xs() + grid->xm() + ghost_width) ||
-    (j < grid->ys() - ghost_width) ||
-    (j > grid->ys() + grid->ym() + ghost_width) ||
+  bool out_of_range = (i < m_grid->xs() - ghost_width) ||
+    (i > m_grid->xs() + m_grid->xm() + ghost_width) ||
+    (j < m_grid->ys() - ghost_width) ||
+    (j > m_grid->ys() + m_grid->ym() + ghost_width) ||
     (k >= N);
 
   assert(out_of_range == false);
 
   if (array == NULL) {
-    PetscPrintf(grid->com,
+    PetscPrintf(m_grid->com,
                 "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
                 m_name.c_str());
   }
@@ -827,20 +827,20 @@ void IceModelVec::norm_all(int n, std::vector<double> &result) const {
     } else if (n == NORM_1) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
-        result[k] = GlobalSum(grid->com, norm_result[k]);
+        result[k] = GlobalSum(m_grid->com, norm_result[k]);
       }
 
     } else if (n == NORM_2) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
         norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
-        result[k] = GlobalSum(grid->com, norm_result[k]);
+        result[k] = GlobalSum(m_grid->com, norm_result[k]);
         result[k] = sqrt(result[k]);
       }
 
     } else if (n == NORM_INFINITY) {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        result[k] = GlobalMax(grid->com, norm_result[k]);
+        result[k] = GlobalMax(m_grid->com, norm_result[k]);
       }
     } else {
       throw RuntimeError::formatted("IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))",
@@ -857,7 +857,7 @@ void IceModelVec::norm_all(int n, std::vector<double> &result) const {
 
 void IceModelVec::write(const std::string &filename, IO_Type nctype) const {
 
-  PIO nc(*grid, grid->config.get_string("output_format"));
+  PIO nc(*m_grid, m_grid->config.get_string("output_format"));
 
   // We expect the file to be present and ready to write into.
   nc.open(filename, PISM_READWRITE);
@@ -869,7 +869,7 @@ void IceModelVec::write(const std::string &filename, IO_Type nctype) const {
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
 
-  PIO nc(*grid, "guess_mode");
+  PIO nc(*m_grid, "guess_mode");
 
   nc.open(filename, PISM_READONLY);
 
@@ -881,7 +881,7 @@ void IceModelVec::read(const std::string &filename, unsigned int time) {
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
 
-  PIO nc(*grid, "guess_mode");
+  PIO nc(*m_grid, "guess_mode");
 
   nc.open(filename, PISM_READONLY);
 

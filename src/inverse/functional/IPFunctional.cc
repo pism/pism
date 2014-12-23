@@ -22,7 +22,7 @@ namespace pism {
 
 PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
-  IceGrid &grid = *x.get_grid();
+  const IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
@@ -55,7 +55,7 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
 
 PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
   PetscErrorCode ierr;
-  IceGrid &grid = *x.get_grid();
+  const IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;

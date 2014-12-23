@@ -40,7 +40,7 @@ m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
-  IceGrid &grid = *m_d0.get_grid();
+  const IceGrid &grid = *m_d0.get_grid();
 
   double stressScale = grid.config.get("design_param_tauc_scale");
   m_constraintsScale = grid.Lx()*grid.Ly()*4*stressScale;

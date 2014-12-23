@@ -73,7 +73,7 @@ class IceGrid;
 */
 class Timeseries {
 public:
-  Timeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
+  Timeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
   Timeseries(MPI_Comm com, const UnitSystem &units_system,
              const std::string &name, const std::string &dimension_name);
   
@@ -161,7 +161,7 @@ private:
 */
 class DiagnosticTimeseries : public Timeseries {
 public:
-  DiagnosticTimeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
+  DiagnosticTimeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
   ~DiagnosticTimeseries();
 
   PetscErrorCode init(const std::string &filename);

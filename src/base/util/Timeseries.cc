@@ -31,7 +31,7 @@
 
 namespace pism {
 
-Timeseries::Timeseries(IceGrid *g, const std::string &name, const std::string &dimension_name)
+Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
   : m_unit_system(g->config.get_unit_system()),
     dimension(dimension_name, dimension_name, m_unit_system),
     var(name, dimension_name, m_unit_system),
@@ -309,7 +309,7 @@ int Timeseries::length() {
 
 //----- DiagnosticTimeseries
 
-DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, const std::string &name, const std::string &dimension_name)
+DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
   : Timeseries(g, name, dimension_name) {
 
   buffer_size = (size_t)g->config.get("timeseries_buffer_size");

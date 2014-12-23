@@ -113,7 +113,7 @@ PIO::PIO(MPI_Comm c, const string &mode, const UnitSystem &units_system)
   constructor(c, mode);
 }
 
-PIO::PIO(IceGrid &grid, const string &mode)
+PIO::PIO(const IceGrid &grid, const string &mode)
   : m_unit_system(grid.config.get_unit_system()) {
   constructor(grid.com, mode);
   if (m_nc) {
@@ -973,7 +973,7 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
  *
  * Vec result has to be "global" (i.e. without ghosts).
  */
-PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
+PetscErrorCode PIO::get_vec(const IceGrid *grid, const string &var_name,
                             unsigned int z_count, unsigned int t_start, Vec result) const {
   try {
     PetscErrorCode ierr;
@@ -1053,7 +1053,7 @@ IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
  *
  * This method always writes to the last record in the file.
  */
-PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int z_count, Vec input) const {
+PetscErrorCode PIO::put_vec(const IceGrid *grid, const string &var_name, unsigned int z_count, Vec input) const {
   try {
     PetscErrorCode ierr;
 
@@ -1115,7 +1115,7 @@ LocalInterpCtx* PIO::get_interp_context(const string &name,
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
-void PIO::regrid_vec(IceGrid *grid, const string &var_name,
+void PIO::regrid_vec(const IceGrid *grid, const string &var_name,
                      const vector<double> &zlevels_out,
                      unsigned int t_start, Vec result) const {
   try {
@@ -1159,7 +1159,7 @@ void PIO::regrid_vec(IceGrid *grid, const string &var_name,
  * @param default_value default value to replace `_FillValue` with
  * @param[out] result resulting interpolated field
  */
-void PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_name,
+void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
                                   const vector<double> &zlevels_out,
                                   unsigned int t_start,
                                   double default_value,
@@ -1241,7 +1241,7 @@ int PIO::k_below(double z, const vector<double> &zlevels) const {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
+PetscErrorCode PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
                            LocalInterpCtx *lic, Vec result) const {
   const int Y = 2, Z = 3; // indices, just for clarity
   PetscErrorCode ierr;

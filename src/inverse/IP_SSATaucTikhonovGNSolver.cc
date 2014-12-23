@@ -45,7 +45,7 @@ IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   PetscErrorCode ierr;
-  IceGrid &grid = *m_d0.get_grid();
+  const IceGrid &grid = *m_d0.get_grid();
   m_comm = grid.com;
 
   unsigned int design_stencil_width = m_d0.get_stencil_width();

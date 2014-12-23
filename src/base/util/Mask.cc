@@ -28,7 +28,7 @@ void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
   list.add(thickness);
   list.add(out_mask);
   list.add(out_surface);
-  IceGrid *grid = bed.get_grid();
+  const IceGrid *grid = bed.get_grid();
   
   unsigned int stencil = out_mask.get_stencil_width();
   assert(bed.get_stencil_width()         >= stencil);

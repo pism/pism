@@ -228,7 +228,7 @@ protected:
 
   virtual PetscErrorCode construct();
   
-  IceGrid *m_grid;
+  const IceGrid *m_grid;
   
   ForwardProblem &m_forward;
 

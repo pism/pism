@@ -38,7 +38,7 @@ namespace pism {
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-void  IceModelVec2S::create(IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
+void  IceModelVec2S::create(const IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
   assert(m_v == NULL);
   IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof);
 }
@@ -194,7 +194,7 @@ void IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y) {
   list.add(v_x);
   list.add(v_y);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*this)(i,j) = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
@@ -209,7 +209,7 @@ void IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   IceModelVec::AccessList list(*this);
   list.add(M);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M(i,j) <= 0.0) {
@@ -236,12 +236,12 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = grid->get_dm(1, 0);
+  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
   DMGetGlobalVector(*da2, &tmp);
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str());
+    ierr = PetscPrintf(m_grid->com, "  Writing %s...\n", m_name.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
@@ -264,7 +264,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   }
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str());
+    ierr = PetscPrintf(m_grid->com, "  Reading %s...\n", m_name.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
@@ -272,7 +272,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = grid->get_dm(1, 0);
+  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -303,13 +303,13 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   }
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str());
+    ierr = PetscPrintf(m_grid->com, "  Regridding %s...\n", m_name.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = grid->get_dm(1, 0);
+  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -345,8 +345,8 @@ void IceModelVec2::view(int viewer_size) const {
       title = long_name + " (" + units + ")";
 
     if (not map_viewers[c_name]) {
-      map_viewers[c_name].reset(new Viewer(grid->com, title, viewer_size,
-                                           grid->Lx(), grid->Ly()));
+      map_viewers[c_name].reset(new Viewer(m_grid->com, title, viewer_size,
+                                           m_grid->Lx(), m_grid->Ly()));
     }
 
     viewers[j] = map_viewers[c_name];
@@ -364,7 +364,7 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = grid->get_dm(1, 0);
+  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
   DMGetGlobalVector(*da2, &tmp);
 
@@ -403,40 +403,40 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_x(int i, int j) const {
-  return ((*this)(i + 1,j) - (*this)(i - 1,j)) / (2 * grid->dx());
+  return ((*this)(i + 1,j) - (*this)(i - 1,j)) / (2 * m_grid->dx());
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_y(int i, int j) const {
-  return ((*this)(i,j + 1) - (*this)(i,j - 1)) / (2 * grid->dy());
+  return ((*this)(i,j + 1) - (*this)(i,j - 1)) / (2 * m_grid->dy());
 }
 
 
 //! \brief Returns the x-derivative at East staggered point i+1/2,j approximated 
 //! using centered (obvious) finite differences.
 double IceModelVec2S::diff_x_stagE(int i, int j) const {
-  return ((*this)(i+1,j) - (*this)(i,j)) / (grid->dx());
+  return ((*this)(i+1,j) - (*this)(i,j)) / (m_grid->dx());
 }
 
 //! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
 //! using centered finite differences.
 double IceModelVec2S::diff_y_stagE(int i, int j) const {
   return ((*this)(i+1,j+1) + (*this)(i,j+1)
-           - (*this)(i+1,j-1) - (*this)(i,j-1)) / (4* grid->dy());
+           - (*this)(i+1,j-1) - (*this)(i,j-1)) / (4* m_grid->dy());
 }
 
 //! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
 //! using centered finite differences.
 double IceModelVec2S::diff_x_stagN(int i, int j) const {
   return ((*this)(i+1,j+1) + (*this)(i+1,j)
-           - (*this)(i-1,j+1) - (*this)(i-1,j)) / (4* grid->dx());
+           - (*this)(i-1,j+1) - (*this)(i-1,j)) / (4* m_grid->dx());
 }
 
 //! \brief Returns the y-derivative at North staggered point i,j+1/2 approximated 
 //! using centered (obvious) finite differences.
 double IceModelVec2S::diff_y_stagN(int i, int j) const {
-  return ((*this)(i,j+1) - (*this)(i,j)) / (grid->dy());
+  return ((*this)(i,j+1) - (*this)(i,j)) / (m_grid->dy());
 }
 
 
@@ -444,14 +444,14 @@ double IceModelVec2S::diff_y_stagN(int i, int j) const {
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
 double IceModelVec2S::diff_x_p(int i, int j) const {
-  if (grid->periodicity() & X_PERIODIC) {
+  if (m_grid->periodicity() & X_PERIODIC) {
     return diff_x(i,j);
   }
   
   if (i == 0) {
-    return ((*this)(i + 1,j) - (*this)(i,j)) / (grid->dx());
-  } else if (i == (int)grid->Mx() - 1) {
-    return ((*this)(i,j) - (*this)(i - 1,j)) / (grid->dx());
+    return ((*this)(i + 1,j) - (*this)(i,j)) / (m_grid->dx());
+  } else if (i == (int)m_grid->Mx() - 1) {
+    return ((*this)(i,j) - (*this)(i - 1,j)) / (m_grid->dx());
   } else {
     return diff_x(i,j);
  }
@@ -461,14 +461,14 @@ double IceModelVec2S::diff_x_p(int i, int j) const {
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
 double IceModelVec2S::diff_y_p(int i, int j) const {
-  if (grid->periodicity() & Y_PERIODIC) {
+  if (m_grid->periodicity() & Y_PERIODIC) {
     return diff_y(i,j);
   }
   
   if (j == 0) {
-    return ((*this)(i,j + 1) - (*this)(i,j)) / (grid->dy());
-  } else if (j == (int)grid->My() - 1) {
-    return ((*this)(i,j) - (*this)(i,j - 1)) / (grid->dy());
+    return ((*this)(i,j + 1) - (*this)(i,j)) / (m_grid->dy());
+  } else if (j == (int)m_grid->My() - 1) {
+    return ((*this)(i,j) - (*this)(i,j - 1)) / (m_grid->dy());
   } else {
     return diff_y(i,j);
   }
@@ -483,12 +483,12 @@ void IceModelVec2S::sum(double &result) {
   IceModelVec::AccessList list(*this);
   
   // sum up the local part:
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     my_result += (*this)(p.i(), p.j());
   }
 
   // find the global sum:
-  result = GlobalSum(grid->com, my_result);
+  result = GlobalSum(m_grid->com, my_result);
 }
 
 
@@ -496,12 +496,12 @@ void IceModelVec2S::sum(double &result) {
 void IceModelVec2S::max(double &result) const {
   IceModelVec::AccessList list(*this);
 
-  double my_result = (*this)(grid->xs(),grid->ys());
-  for (Points p(*grid); p; p.next()) {
+  double my_result = (*this)(m_grid->xs(),m_grid->ys());
+  for (Points p(*m_grid); p; p.next()) {
     my_result = std::max(my_result,(*this)(p.i(), p.j()));
   }
 
-  result = GlobalMax(grid->com, my_result);
+  result = GlobalMax(m_grid->com, my_result);
 }
 
 
@@ -510,11 +510,11 @@ void IceModelVec2S::absmax(double &result) const {
 
   IceModelVec::AccessList list(*this);
   double my_result = 0.0;
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     my_result = std::max(my_result,fabs((*this)(p.i(), p.j())));
   }
 
-  result = GlobalMax(grid->com, my_result);
+  result = GlobalMax(m_grid->com, my_result);
 }
 
 
@@ -522,12 +522,12 @@ void IceModelVec2S::absmax(double &result) const {
 void IceModelVec2S::min(double &result) const {
   IceModelVec::AccessList list(*this);
 
-  double my_result = (*this)(grid->xs(),grid->ys());
-  for (Points p(*grid); p; p.next()) {
+  double my_result = (*this)(m_grid->xs(),m_grid->ys());
+  for (Points p(*m_grid); p; p.next()) {
     my_result = std::min(my_result,(*this)(p.i(), p.j()));
   }
 
-  result = GlobalMin(grid->com, my_result);
+  result = GlobalMin(m_grid->com, my_result);
 }
 
 
@@ -543,22 +543,23 @@ void IceModelVec2::set_component(unsigned int n, IceModelVec2S &source) {
   IceModelVec2::set_dof(source.get_dm(), source.m_v, n);
 }
 
-void  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceModelVecKind ghostedp,
-                                     unsigned int stencil_width, int my_dof) {
+void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
+                           IceModelVecKind ghostedp,
+                           unsigned int stencil_width, int my_dof) {
 
   assert(m_v == NULL);
 
   m_dof  = my_dof;
-  grid = &my_grid;
+  m_grid = &my_grid;
 
-  if ((m_dof != 1) || (stencil_width > grid->config.get("grid_max_stencil_width"))) {
+  if ((m_dof != 1) || (stencil_width > m_grid->config.get("grid_max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
   } else {
-    m_da_stencil_width = grid->config.get("grid_max_stencil_width");
+    m_da_stencil_width = m_grid->config.get("grid_max_stencil_width");
   }
 
   // initialize the da member:
-  m_da = grid->get_dm(this->m_dof, this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->m_dof, this->m_da_stencil_width);
 
   if (ghostedp) {
     DMCreateLocalVector(*m_da, &m_v);
@@ -570,8 +571,8 @@ void  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceMod
   m_name       = my_name;
 
   if (m_dof == 1) {
-    m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
-                                           my_name, *grid));
+    m_metadata.push_back(NCSpatialVariable(m_grid->config.get_unit_system(),
+                                           my_name, *m_grid));
   } else {
 
     for (unsigned int j = 0; j < m_dof; ++j) {
@@ -579,8 +580,8 @@ void  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceMod
 
       snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
                m_name.c_str(), j);
-      m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
-                                             tmp, *grid));
+      m_metadata.push_back(NCSpatialVariable(m_grid->config.get_unit_system(),
+                                             tmp, *m_grid));
     }
   }
 }
@@ -598,7 +599,7 @@ void IceModelVec2S::copy_to(IceModelVec &destination) const {
 }
 
 // IceModelVec2Stag
-void IceModelVec2Stag::create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
+void IceModelVec2Stag::create(const IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
 
   IceModelVec2::create(my_grid, my_short_name, ghostedp, stencil_width, m_dof);
@@ -612,7 +613,7 @@ void IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) const {
   IceModelVec::AccessList list(*this);
   list.add(result);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j) = 0.25 * ((*this)(i,j,0) + (*this)(i,j,1)
@@ -629,7 +630,7 @@ void IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) const {
   IceModelVec::AccessList list(*this);
   list.add(result);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j).u = 0.5 * ((*this)(i-1,j,0) + (*this)(i,j,0));
@@ -646,15 +647,15 @@ void IceModelVec2Stag::absmaxcomponents(double* z) const {
   double my_z[2] = {0.0, 0.0};
 
   IceModelVec::AccessList list(*this);
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     my_z[0] = std::max(my_z[0],fabs((*this)(i,j,0)));
     my_z[1] = std::max(my_z[1],fabs((*this)(i,j,1)));
   }
 
-  z[0] = GlobalMax(grid->com, my_z[0]);
-  z[1] = GlobalMax(grid->com, my_z[1]);
+  z[0] = GlobalMax(m_grid->com, my_z[0]);
+  z[1] = GlobalMax(m_grid->com, my_z[1]);
 }
 
 } // end of namespace pism

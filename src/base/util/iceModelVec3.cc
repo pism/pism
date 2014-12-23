@@ -46,19 +46,19 @@ IceModelVec3D::~IceModelVec3D() {
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-void IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_name,
+void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
                              IceModelVecKind ghostedp, const std::vector<double> &levels,
                              unsigned int stencil_width) {
 
   assert(m_v == NULL);
   
-  grid = &my_grid;
+  m_grid = &my_grid;
 
   zlevels = levels;
   m_n_levels = (unsigned int)zlevels.size();
   m_da_stencil_width = stencil_width;
 
-  m_da = grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
@@ -70,8 +70,8 @@ void IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_name,
 
   m_name = my_name;
 
-  m_metadata.push_back(NCSpatialVariable(grid->config.get_unit_system(),
-                                         my_name, *grid, zlevels));
+  m_metadata.push_back(NCSpatialVariable(m_grid->config.get_unit_system(),
+                                         my_name, *m_grid, zlevels));
 }
 
 bool IceModelVec3D::isLegalLevel(double z) const {
@@ -140,11 +140,11 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
 void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
   double    **slice_val;
 
-  PISMDM::Ptr da2 = grid->get_dm(1, grid->config.get("grid_max_stencil_width"));
+  PISMDM::Ptr da2 = m_grid->get_dm(1, m_grid->config.get("grid_max_stencil_width"));
 
   IceModelVec::AccessList list(*this);
   DMDAVecGetArray(*da2, gslice, &slice_val);
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     slice_val[i][j] = getValZ(i,j,z);
   }
@@ -160,7 +160,7 @@ void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
   IceModelVec::AccessList list(*this);
   list.add(gslice);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     gslice(i, j) = getValZ(i, j, z);
   }
@@ -174,7 +174,7 @@ void  IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
   list.add(surface_values);
   list.add(H);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     surface_values(i, j) = getValZ(i, j, H(i, j));
   }
@@ -205,8 +205,9 @@ void  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
   PISM_PETSC_CHK(ierr, "PetscMemcpy");
 }
 
-void  IceModelVec3::create(IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp,
-                                     unsigned int stencil_width) {
+void  IceModelVec3::create(const IceGrid &my_grid, const std::string &my_name,
+                           IceModelVecKind ghostedp,
+                           unsigned int stencil_width) {
 
   IceModelVec3D::allocate(my_grid, my_name, ghostedp,
                           my_grid.z(), stencil_width);
