@@ -6,6 +6,7 @@
 
 %{
 #include "enthSystem.hh"
+#include "ColumnInterpolation.hh"
 %}
 
 /* wrap the enthalpy solver to make testing easier */

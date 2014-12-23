@@ -1,3 +1,7 @@
+%{
+#include "pism_options.hh"
+%}
+
 %include "options.hh"
 // instantiate templates used by option processing classes below
 %template(OptionStdString) pism::options::Option<std::string>;

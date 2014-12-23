@@ -70,6 +70,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_IceGrid.i
       pism_IceModelVec.i
       pism_PIO.i
+      pism_SIA.i
       pism_SSA.i
       pism_Timeseries.i
       pism_Vars.i

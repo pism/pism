@@ -24,6 +24,9 @@
 %typemap(out,noblock=1) int {
 PyPetsc_ChkErrQ($1); %set_output(VOID_Object);
 }
+%{
+#include "exactTestsIJ.h"
+%}
 %include "exactTestsIJ.h"
 // FIXME! I don't know how to undo the output typemap.
 // %typemap(out,noblock=1) int = PREVIOUS;

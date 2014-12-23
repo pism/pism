@@ -31,17 +31,13 @@
 // of PISM headers being wrapped.
 
 #include "PISMUnits.hh"
-#include "exactTestsIJ.h"
 #include "pism_python.hh"
 
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
 #include "PISMMohrCoulombYieldStress.hh"
-#include "pism_options.hh"
-#include "SIAFD.hh"
 #include "error_handling.hh"
-#include "ColumnInterpolation.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -232,7 +228,7 @@
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
 // following works for now.
 
-// The SWIG builtin typecheck for a const char [] (used, e.g., with overloaded methods) checks that 
+// The SWIG built-in typecheck for a const char [] (used, e.g., with overloaded methods) checks that 
 // the string is zero length. So we have this bug fix from SWIG developer William Fulton here.
 %typemap(typecheck,noblock=1,precedence=SWIG_TYPECHECK_STRING, fragment="SWIG_AsCharPtrAndSize") const char[] {
  int res = SWIG_AsCharPtrAndSize($input, 0, NULL, 0);
@@ -291,8 +287,7 @@ using pism::StressBalance;
 
 %include pism_SSA.i
 
-%include "stressbalance/SSB_Modifier.hh"
-%include "stressbalance/sia/SIAFD.hh"
+%include pism_SIA.i
 
 /* The regional model implements some classes derived from SSAFD and
  * SIAFD, so this %include has to appear after %including the rest of
