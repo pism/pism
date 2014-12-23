@@ -92,7 +92,7 @@ class IceModelVec;
 class Component {
 public:
   /** Create a Component instance given a grid. */
-  Component(IceGrid &g)
+  Component(const IceGrid &g)
     : m_grid(g), m_config(g.config) {}
   virtual ~Component() {}
 
@@ -124,7 +124,7 @@ public:
 
 protected:
   virtual void find_pism_input(std::string &filename, bool &regrid, int &start);
-  IceGrid &m_grid;
+  const IceGrid &m_grid;
   const Config &m_config;
 
   /** @brief This flag determines whether a variable is read from the
@@ -143,7 +143,7 @@ class Component_TS : public Component
 {
 public:
   /** Create an instance of Component_TS given a grid. */
-  Component_TS(IceGrid &g)
+  Component_TS(const IceGrid &g)
     : Component(g)
   { m_t = m_dt = GSL_NAN; }
   virtual ~Component_TS() {}

@@ -74,7 +74,7 @@ class Config;
 */
 class BedSmoother {
 public:
-  BedSmoother(IceGrid &g, int MAX_GHOSTS);
+  BedSmoother(const IceGrid &g, int MAX_GHOSTS);
   virtual ~BedSmoother();
 
   virtual void preprocess_bed(IceModelVec2S &topg);
@@ -91,7 +91,7 @@ protected:
   //! smoothed bed elevation; set by calling preprocess_bed()
   IceModelVec2S topgsmooth;
 
-  IceGrid &grid;
+  const IceGrid &grid;
   const Config &config;
   IceModelVec2S maxtl, C2, C3, C4;
 
