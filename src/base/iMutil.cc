@@ -221,4 +221,8 @@ void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   // empty
 }
 
+const IceGrid& IceModel::get_grid() const {
+  return grid;
+}
+
 } // end of namespace pism

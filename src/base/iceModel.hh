@@ -133,6 +133,8 @@ public:
   // see iMinit.cc
   virtual void grid_setup();
 
+  const IceGrid& get_grid() const;
+
   virtual void allocate_submodels();
   virtual void allocate_enthalpy_converter();
   virtual void allocate_stressbalance();
