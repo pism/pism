@@ -22,7 +22,7 @@
 
 namespace pism {
 
-PO_delta_MBP::PO_delta_MBP(IceGrid &g, OceanModel* in)
+PO_delta_MBP::PO_delta_MBP(const IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, in),
     shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
     shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)

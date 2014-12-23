@@ -30,7 +30,7 @@ namespace pism {
 */
 class BedDef : public Component_TS {
 public:
-  BedDef(IceGrid &g);
+  BedDef(const IceGrid &g);
   virtual ~BedDef() {}
   virtual void init();
   virtual void update(double my_t, double my_dt) = 0;
@@ -53,7 +53,7 @@ protected:
 //! Pointwide isostasy bed deformation model.
 class PBPointwiseIsostasy : public BedDef {
 public:
-  PBPointwiseIsostasy(IceGrid &g); 
+  PBPointwiseIsostasy(const IceGrid &g); 
   virtual ~PBPointwiseIsostasy() {}
   virtual void init();
   virtual void update(double my_t, double my_dt);

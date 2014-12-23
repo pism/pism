@@ -36,7 +36,7 @@ namespace pism {
 */
 class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_H1NormFunctional2S(IceGrid &grid, ///< computational grid
+  IP_H1NormFunctional2S(const IceGrid &grid, ///< computational grid
                         double cL2, ///< The constant \f$c_{L^2}\f$.
                         double cH1, ///< The constant \f$c_{H^1}\f$.
                         IceModelVec2Int *dirichletLocations=NULL ///< Nodes where the function will be set to zero prior to integration.

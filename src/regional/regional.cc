@@ -97,7 +97,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   }
 }
 
-SSAFD_Regional::SSAFD_Regional(IceGrid &g, EnthalpyConverter &e)
+SSAFD_Regional::SSAFD_Regional(const IceGrid &g, EnthalpyConverter &e)
   : SSAFD(g, e) {
   // empty
 }

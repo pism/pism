@@ -28,7 +28,7 @@
 
 namespace pism {
 
-PAWeatherStation::PAWeatherStation(IceGrid &g)
+PAWeatherStation::PAWeatherStation(const IceGrid &g)
   : AtmosphereModel(g),
     m_precipitation(&g, "precipitation", g.config.get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", g.config.get_string("time_dimension_name")),

@@ -25,7 +25,7 @@
 
 namespace pism {
 
-EigenCalving::EigenCalving(IceGrid &g,
+EigenCalving::EigenCalving(const IceGrid &g,
                                    StressBalance *stress_balance)
   : Component(g), m_stencil_width(2), m_mask(NULL),
     m_stress_balance(stress_balance) {

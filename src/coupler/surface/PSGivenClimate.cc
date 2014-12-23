@@ -21,7 +21,7 @@
 
 namespace pism {
 
-PSGivenClimate::PSGivenClimate(IceGrid &g)
+PSGivenClimate::PSGivenClimate(const IceGrid &g)
   : PGivenClimate<PSModifier,SurfaceModel>(g, NULL)
 {
   option_prefix = "-surface_given";

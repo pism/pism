@@ -29,7 +29,7 @@ namespace pism {
 class PSGivenClimate : public PGivenClimate<PSModifier,SurfaceModel>
 {
 public:
-  PSGivenClimate(IceGrid &g);
+  PSGivenClimate(const IceGrid &g);
   virtual ~PSGivenClimate();
 
   virtual void attach_atmosphere_model(AtmosphereModel *input);

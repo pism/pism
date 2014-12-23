@@ -23,7 +23,7 @@
 
 namespace pism {
 
-CalvingAtThickness::CalvingAtThickness(IceGrid &g)
+CalvingAtThickness::CalvingAtThickness(const IceGrid &g)
   : Component(g) {
   m_calving_threshold = m_config.get("thickness_calving_threshold");
 

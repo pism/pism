@@ -26,7 +26,7 @@
 namespace pism {
 
 ///// Elevation-dependent temperature and surface mass balance.
-PSElevation::PSElevation(IceGrid &g)
+PSElevation::PSElevation(const IceGrid &g)
   : SurfaceModel(g),
     climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid)

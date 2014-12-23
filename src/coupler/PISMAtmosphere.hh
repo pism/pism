@@ -31,7 +31,7 @@ class IceModelVec2S;
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component_TS {
 public:
-  AtmosphereModel(IceGrid &g)
+  AtmosphereModel(const IceGrid &g)
     : Component_TS(g) {};
 
   virtual void init() = 0;

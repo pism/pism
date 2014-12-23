@@ -54,7 +54,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
-  SIAFD(IceGrid &g, EnthalpyConverter &e);
+  SIAFD(const IceGrid &g, EnthalpyConverter &e);
 
   virtual ~SIAFD();
 

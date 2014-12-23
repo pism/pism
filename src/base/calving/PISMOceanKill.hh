@@ -34,7 +34,7 @@ namespace pism {
  */
 class OceanKill : public Component {
 public:
-  OceanKill(IceGrid &g);
+  OceanKill(const IceGrid &g);
   virtual ~OceanKill();
 
   virtual void init();

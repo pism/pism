@@ -30,7 +30,7 @@ namespace pism {
 //! present-day temperature parameterization and stored precipitation data.
 class PA_SeaRISE_Greenland : public PAYearlyCycle {
 public:
-  PA_SeaRISE_Greenland(IceGrid &g);
+  PA_SeaRISE_Greenland(const IceGrid &g);
   virtual ~PA_SeaRISE_Greenland();
 
   virtual void init();

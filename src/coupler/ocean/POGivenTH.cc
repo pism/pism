@@ -56,7 +56,7 @@ POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
   limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
 }
 
-POGivenTH::POGivenTH(IceGrid &g)
+POGivenTH::POGivenTH(const IceGrid &g)
   : PGivenClimate<POModifier,OceanModel>(g, NULL) {
 
   option_prefix   = "-ocean_th";

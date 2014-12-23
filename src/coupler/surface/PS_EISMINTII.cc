@@ -26,7 +26,7 @@
 
 namespace pism {
 
-PS_EISMINTII::PS_EISMINTII(IceGrid &g, int experiment)
+PS_EISMINTII::PS_EISMINTII(const IceGrid &g, int experiment)
   : PSFormulas(g), m_experiment(experiment) {
   // empty
 }

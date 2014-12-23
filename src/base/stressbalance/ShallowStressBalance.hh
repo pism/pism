@@ -36,7 +36,7 @@ class IceBasalResistancePlasticLaw;
 class ShallowStressBalance : public Component
 {
 public:
-  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e);
+  ShallowStressBalance(const IceGrid &g, EnthalpyConverter &e);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -121,7 +121,7 @@ protected:
 class ZeroSliding : public ShallowStressBalance
 {
 public:
-  ZeroSliding(IceGrid &g, EnthalpyConverter &e);
+  ZeroSliding(const IceGrid &g, EnthalpyConverter &e);
   virtual ~ZeroSliding();
   
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
@@ -140,7 +140,7 @@ public:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(IceGrid &g, EnthalpyConverter &e);
+  PrescribedSliding(const IceGrid &g, EnthalpyConverter &e);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual void init();

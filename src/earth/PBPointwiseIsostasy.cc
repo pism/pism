@@ -25,7 +25,7 @@
 
 namespace pism {
 
-PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g)
+PBPointwiseIsostasy::PBPointwiseIsostasy(const IceGrid &g)
   : BedDef(g) {
   PetscErrorCode ierr;
 

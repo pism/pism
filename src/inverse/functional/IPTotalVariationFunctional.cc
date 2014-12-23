@@ -20,9 +20,9 @@
 
 namespace pism {
 
-IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid,
-  double c, double exponent, double eps,
-  IceModelVec2Int *dirichletLocations) :
+IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(const IceGrid &grid,
+                                                           double c, double exponent, double eps,
+                                                           IceModelVec2Int *dirichletLocations) :
     IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations),
     m_c(c), m_lebesgue_exp(exponent), m_epsilon_sq(eps*eps) {
 }

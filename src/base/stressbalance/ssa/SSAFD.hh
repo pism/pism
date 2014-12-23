@@ -32,7 +32,7 @@ class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(IceGrid &g, EnthalpyConverter &e);
+  SSAFD(const IceGrid &g, EnthalpyConverter &e);
   virtual ~SSAFD();
 
   virtual void init();
@@ -121,7 +121,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &);
+SSA * SSAFDFactory(const IceGrid &, EnthalpyConverter &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.

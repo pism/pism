@@ -29,7 +29,7 @@ namespace pism {
 class PO_delta_SMB : public PScalarForcing<OceanModel,POModifier>
 {
 public:
-  PO_delta_SMB(IceGrid &g, OceanModel* in);
+  PO_delta_SMB(const IceGrid &g, OceanModel* in);
   virtual ~PO_delta_SMB();
 
   virtual void init();

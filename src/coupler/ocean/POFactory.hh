@@ -26,7 +26,7 @@ namespace pism {
 
 class POFactory : public PCFactory<OceanModel,POModifier> {
 public:
-  POFactory(IceGrid& g)
+  POFactory(const IceGrid& g)
     : PCFactory<OceanModel,POModifier>(g)
   {
     add_standard_types();

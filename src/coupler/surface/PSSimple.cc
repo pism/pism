@@ -28,7 +28,7 @@
 namespace pism {
 
 ///// Simple PISM surface model.
-PSSimple::PSSimple(IceGrid &g)
+PSSimple::PSSimple(const IceGrid &g)
   : SurfaceModel(g),
     climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {

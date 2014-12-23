@@ -29,7 +29,7 @@ class StressBalance;
 class EigenCalving : public Component
 {
 public:
-  EigenCalving(IceGrid &g,
+  EigenCalving(const IceGrid &g,
                StressBalance *stress_balance);
   virtual ~EigenCalving();
 

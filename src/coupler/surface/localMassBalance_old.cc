@@ -313,7 +313,7 @@ PetscScalar PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(PetscScal
 }
 
 
-FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(IceGrid &g)
+FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(const IceGrid &g)
   : grid(g), config(g.config) {
 
   beta_ice_w = config.get("pdd_fausto_beta_ice_w");

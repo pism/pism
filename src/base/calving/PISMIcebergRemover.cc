@@ -25,7 +25,7 @@
 
 namespace pism {
 
-IcebergRemover::IcebergRemover(IceGrid &g)
+IcebergRemover::IcebergRemover(const IceGrid &g)
   : Component(g) {
 
   m_iceberg_mask.create(m_grid, "iceberg_mask", WITHOUT_GHOSTS);

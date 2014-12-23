@@ -33,7 +33,7 @@ namespace pism {
 */
 class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IPMeanSquareFunctional2S(IceGrid &grid, 
+  IPMeanSquareFunctional2S(const IceGrid &grid, 
                            IceModelVec2S *weights=NULL) :  ///< Vector of weights (NULL implies all weights are 1)
     IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
@@ -64,7 +64,7 @@ private:
 */
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  IPMeanSquareFunctional2V(IceGrid &grid, IceModelVec2S *weights=NULL) :
+  IPMeanSquareFunctional2V(const IceGrid &grid, IceModelVec2S *weights=NULL) :
     IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 

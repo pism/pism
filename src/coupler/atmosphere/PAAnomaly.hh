@@ -28,7 +28,7 @@ namespace pism {
 class PAAnomaly : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  PAAnomaly(IceGrid &g, AtmosphereModel* in);
+  PAAnomaly(const IceGrid &g, AtmosphereModel* in);
   virtual ~PAAnomaly();
 
   virtual void init();

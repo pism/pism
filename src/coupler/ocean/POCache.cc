@@ -27,7 +27,7 @@
 
 namespace pism {
 
-POCache::POCache(IceGrid &g, OceanModel* in)
+POCache::POCache(const IceGrid &g, OceanModel* in)
   : POModifier(g, in) {
 
   m_next_update_time = m_grid.time->current();

@@ -25,7 +25,7 @@
 
 namespace pism {
 
-Hydrology::Hydrology(IceGrid &g)
+Hydrology::Hydrology(const IceGrid &g)
   : Component_TS(g)
 {
   thk        = NULL;

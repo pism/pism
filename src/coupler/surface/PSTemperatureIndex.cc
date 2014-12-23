@@ -34,7 +34,7 @@ namespace pism {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex::PSTemperatureIndex(IceGrid &g)
+PSTemperatureIndex::PSTemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 

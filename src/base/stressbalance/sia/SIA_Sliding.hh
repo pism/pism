@@ -32,7 +32,7 @@ namespace pism {
 class SIA_Sliding : public ShallowStressBalance
 {
 public:
-  SIA_Sliding(IceGrid &g, EnthalpyConverter &e);
+  SIA_Sliding(const IceGrid &g, EnthalpyConverter &e);
 
   virtual ~SIA_Sliding();
 

@@ -32,7 +32,7 @@ namespace pism {
 */
 class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  IPTotalVariationFunctional2S(IceGrid &grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(const IceGrid &grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
 
   virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);

@@ -43,7 +43,7 @@ class OceanModel;
 class StressBalance : public Component
 {
 public:
-  StressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
+  StressBalance(const IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.

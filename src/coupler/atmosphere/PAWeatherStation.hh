@@ -36,7 +36,7 @@ namespace pism {
  */
 class PAWeatherStation : public AtmosphereModel {
 public:
-  PAWeatherStation(IceGrid &g);
+  PAWeatherStation(const IceGrid &g);
   virtual ~PAWeatherStation();
 
   virtual void init();

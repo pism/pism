@@ -33,7 +33,7 @@ namespace pism {
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_L2NormFunctional2S(IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
+  IP_L2NormFunctional2S(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
@@ -55,7 +55,7 @@ private:
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  IP_L2NormFunctional2V(IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
+  IP_L2NormFunctional2V(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2V &x, double *v);

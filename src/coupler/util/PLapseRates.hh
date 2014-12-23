@@ -36,7 +36,7 @@ template <class Model, class Mod>
 class PLapseRates : public Mod
 {
 public:
-  PLapseRates(IceGrid &g, Model* in)
+  PLapseRates(const IceGrid &g, Model* in)
     : Mod(g, in)
   {
     surface = thk = NULL;
@@ -105,7 +105,7 @@ protected:
 
   virtual void init_internal()
   {
-    IceGrid &g = Mod::m_grid;
+    const IceGrid &g = Mod::m_grid;
 
     options::String file(option_prefix + "_file",
                          "Specifies a file with top-surface boundary conditions");

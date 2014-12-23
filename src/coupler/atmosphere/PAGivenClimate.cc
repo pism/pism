@@ -22,7 +22,7 @@
 
 namespace pism {
 
-PAGivenClimate::PAGivenClimate(IceGrid &g)
+PAGivenClimate::PAGivenClimate(const IceGrid &g)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
 {
   option_prefix = "-atmosphere_given";

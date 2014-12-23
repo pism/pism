@@ -28,7 +28,7 @@ namespace pism {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PSConstantPIK::PSConstantPIK(IceGrid &g)
+PSConstantPIK::PSConstantPIK(const IceGrid &g)
   : SurfaceModel(g) {
 
   climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);

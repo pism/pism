@@ -34,7 +34,7 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid &g, Model* in)
+  PScalarForcing(const IceGrid &g, Model* in)
     : Mod(g, in), input(in) {}
 
   virtual ~PScalarForcing()
@@ -55,7 +55,7 @@ public:
 protected:
   virtual void init_internal()
   {
-    IceGrid &g = Mod::m_grid;
+    const IceGrid &g = Mod::m_grid;
 
     options::String file(option_prefix + "_file", "Specifies a file with scalar offsets");
     options::Integer period(option_prefix + "_period",

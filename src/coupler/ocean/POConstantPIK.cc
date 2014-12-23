@@ -27,7 +27,7 @@
 
 namespace pism {
 
-POConstantPIK::POConstantPIK(IceGrid &g)
+POConstantPIK::POConstantPIK(const IceGrid &g)
   : OceanModel(g),
     shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
     shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)

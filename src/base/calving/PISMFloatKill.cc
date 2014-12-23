@@ -23,7 +23,7 @@
 
 namespace pism {
 
-FloatKill::FloatKill(IceGrid &g)
+FloatKill::FloatKill(const IceGrid &g)
   : Component(g) {
   // empty
 }

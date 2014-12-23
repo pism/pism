@@ -37,7 +37,7 @@ template<class IMVecType>
 class IPFunctional {
 
 public:
-  IPFunctional(IceGrid &grid)
+  IPFunctional(const IceGrid &grid)
     : m_grid(grid),
       m_element_index(m_grid),
       m_quadrature(grid, 1.0),
@@ -64,7 +64,7 @@ public:
   virtual PetscErrorCode gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
 protected:
-  IceGrid &m_grid;
+  const IceGrid &m_grid;
 
   FEElementMap m_element_index;
   FEQuadrature_Scalar m_quadrature;
@@ -92,7 +92,7 @@ template<class IMVecType>
 class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
-  IPInnerProductFunctional(IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
+  IPInnerProductFunctional(const IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a, b)\f$.
   virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;

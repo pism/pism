@@ -32,7 +32,7 @@ class EnthalpyConverter;
 class SSB_Modifier : public Component
 {
 public:
-  SSB_Modifier(IceGrid &g, EnthalpyConverter &e);
+  SSB_Modifier(const IceGrid &g, EnthalpyConverter &e);
   virtual ~SSB_Modifier();
 
   virtual void init() {
@@ -80,7 +80,7 @@ protected:
 class ConstantInColumn : public SSB_Modifier
 {
 public:
-  ConstantInColumn(IceGrid &g, EnthalpyConverter &e);
+  ConstantInColumn(const IceGrid &g, EnthalpyConverter &e);
   virtual ~ConstantInColumn();
 
   virtual void init();

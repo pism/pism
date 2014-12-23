@@ -22,7 +22,7 @@
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(IceGrid &g)
+ConstantYieldStress::ConstantYieldStress(const IceGrid &g)
   : YieldStress(g) {
   m_tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
   // PROPOSED standard_name = land_ice_basal_material_yield_stress

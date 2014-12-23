@@ -106,7 +106,7 @@ private:
   Subclasses of SSA should provide an associated function pointer matching the
   SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &);
+typedef SSA * (*SSAFactory)(const IceGrid &, EnthalpyConverter &);
 
 
 //! PISM's SSA solver.
@@ -145,7 +145,7 @@ class SSA : public ShallowStressBalance
   friend class SSA_taub;
   friend class SSA_beta;
 public:
-  SSA(IceGrid &g, EnthalpyConverter &e);
+  SSA(const IceGrid &g, EnthalpyConverter &e);
   virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;

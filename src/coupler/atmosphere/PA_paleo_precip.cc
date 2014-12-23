@@ -21,7 +21,7 @@
 
 namespace pism {
 
-PA_paleo_precip::PA_paleo_precip(IceGrid &g, AtmosphereModel* in)
+PA_paleo_precip::PA_paleo_precip(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", m_grid),
     precipitation(g.config.get_unit_system(), "precipitation", m_grid)

@@ -31,7 +31,7 @@ namespace pism {
 
 ///// PISMSurfaceModel base class:
 
-SurfaceModel::SurfaceModel(IceGrid &g)
+SurfaceModel::SurfaceModel(const IceGrid &g)
   : Component_TS(g) {
   atmosphere = NULL;
 }

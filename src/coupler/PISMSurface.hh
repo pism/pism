@@ -35,7 +35,7 @@ class IceModelVec2S;
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component_TS {
 public:
-  SurfaceModel(IceGrid &g);
+  SurfaceModel(const IceGrid &g);
   virtual ~SurfaceModel();
 
   // the interface:

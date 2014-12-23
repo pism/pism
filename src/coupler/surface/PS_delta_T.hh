@@ -33,7 +33,7 @@ namespace pism {
 class PS_delta_T : public PScalarForcing<SurfaceModel,PSModifier>
 {
 public:
-  PS_delta_T(IceGrid &g, SurfaceModel* in);
+  PS_delta_T(const IceGrid &g, SurfaceModel* in);
   virtual ~PS_delta_T();
 
   virtual void init();

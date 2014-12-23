@@ -25,7 +25,7 @@
 
 namespace pism {
 
-SSB_Modifier::SSB_Modifier(IceGrid &g, EnthalpyConverter &e)
+SSB_Modifier::SSB_Modifier(const IceGrid &g, EnthalpyConverter &e)
   : Component(g), EC(e) {
 
   D_max = 0.0;
@@ -63,7 +63,7 @@ void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
 
-ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e)
+ConstantInColumn::ConstantInColumn(const IceGrid &g, EnthalpyConverter &e)
   : SSB_Modifier(g, e)
 {
   IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_grid.config, &EC);

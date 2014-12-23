@@ -31,7 +31,7 @@ namespace pism {
  *
  *
  */
-SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e)
+SSAFEM::SSAFEM(const IceGrid &g, EnthalpyConverter &e)
   : SSA(g, e), m_element_index(g), m_quadrature(m_grid, 1.0), m_quadrature_vector(m_grid, 1.0) {
   PetscErrorCode ierr = allocate_fem();
   if (ierr != 0) {
@@ -45,7 +45,7 @@ typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat,
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 #endif
 
-SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec) {
+SSA* SSAFEMFactory(const IceGrid &g, EnthalpyConverter &ec) {
   return new SSAFEM(g, ec);
 }
 

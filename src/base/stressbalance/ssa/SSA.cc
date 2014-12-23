@@ -30,7 +30,7 @@
 
 namespace pism {
 
-SSA::SSA(IceGrid &g, EnthalpyConverter &e)
+SSA::SSA(const IceGrid &g, EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
 {
   mask = NULL;

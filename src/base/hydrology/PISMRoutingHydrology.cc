@@ -25,7 +25,7 @@
 
 namespace pism {
 
-RoutingHydrology::RoutingHydrology(IceGrid &g)
+RoutingHydrology::RoutingHydrology(const IceGrid &g)
     : Hydrology(g)
 {
   stripwidth = m_config.get("hydrology_null_strip_width");

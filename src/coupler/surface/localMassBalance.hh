@@ -188,7 +188,7 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid &g);
+  FaustoGrevePDDObject(const IceGrid &g);
   virtual ~FaustoGrevePDDObject() {}
 
   virtual PetscErrorCode update_temp_mj(IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon);
@@ -200,7 +200,7 @@ public:
                                              DegreeDayFactors &ddf);
 
 protected:
-  IceGrid &grid;
+  const IceGrid &grid;
   const Config &config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;

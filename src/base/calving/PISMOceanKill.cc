@@ -26,7 +26,7 @@
 
 namespace pism {
 
-OceanKill::OceanKill(IceGrid &g)
+OceanKill::OceanKill(const IceGrid &g)
   : Component(g) {
 
   m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,

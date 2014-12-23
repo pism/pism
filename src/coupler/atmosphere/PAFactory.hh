@@ -27,7 +27,7 @@ namespace pism {
 
 class PAFactory : public PCFactory<AtmosphereModel,PAModifier> {
 public:
-  PAFactory(IceGrid& g)
+  PAFactory(const IceGrid& g)
     : PCFactory<AtmosphereModel,PAModifier>(g)
   {
     add_standard_types();

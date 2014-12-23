@@ -28,7 +28,7 @@
 
 namespace pism {
 
-PBLingleClark::PBLingleClark(IceGrid &g)
+PBLingleClark::PBLingleClark(const IceGrid &g)
   : BedDef(g) {
 
   if (allocate() != 0) {

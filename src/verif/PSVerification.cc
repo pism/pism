@@ -44,7 +44,7 @@ const PetscScalar PSVerification::Tmin = 223.15;  // K
 const PetscScalar PSVerification::LforFG = 750000; // m
 const PetscScalar PSVerification::ApforG = 200; // m
 
-PSVerification::PSVerification(IceGrid &g,
+PSVerification::PSVerification(const IceGrid &g,
                                EnthalpyConverter *EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty

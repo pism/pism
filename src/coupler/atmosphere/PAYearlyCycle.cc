@@ -28,7 +28,7 @@
 
 namespace pism {
 
-PAYearlyCycle::PAYearlyCycle(IceGrid &g)
+PAYearlyCycle::PAYearlyCycle(const IceGrid &g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 

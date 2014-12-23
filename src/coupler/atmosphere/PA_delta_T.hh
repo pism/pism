@@ -27,7 +27,7 @@ namespace pism {
 class PA_delta_T : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_delta_T(IceGrid &g, AtmosphereModel* in);
+  PA_delta_T(const IceGrid &g, AtmosphereModel* in);
   virtual ~PA_delta_T() {}
 
   virtual void init();

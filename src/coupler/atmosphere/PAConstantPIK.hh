@@ -26,7 +26,7 @@ namespace pism {
 
 class PAConstantPIK : public AtmosphereModel {
 public:
-  PAConstantPIK(IceGrid &g);
+  PAConstantPIK(const IceGrid &g);
   virtual void init();
   virtual void update(double my_t, double my_dt);
   virtual void mean_precipitation(IceModelVec2S &result);

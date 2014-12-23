@@ -28,7 +28,7 @@
 
 namespace pism {
 
-StressBalance::StressBalance(IceGrid &g,
+StressBalance::StressBalance(const IceGrid &g,
                              ShallowStressBalance *sb,
                              SSB_Modifier *ssb_mod)
   : Component(g), m_stress_balance(sb), m_modifier(ssb_mod) {

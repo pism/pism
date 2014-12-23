@@ -33,7 +33,7 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid &g, Input *in)
+  PGivenClimate(const IceGrid &g, Input *in)
     : Model(g, in) {}
 
   virtual ~PGivenClimate() {

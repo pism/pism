@@ -26,7 +26,7 @@ namespace pism {
 class POModifier : public Modifier<OceanModel>
 {
 public:
-  POModifier(IceGrid &g, OceanModel* in)
+  POModifier(const IceGrid &g, OceanModel* in)
     : Modifier<OceanModel>(g, in) {}
   virtual ~POModifier() {}
 

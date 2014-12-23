@@ -27,7 +27,7 @@ namespace pism {
 
 template<int DOF, class U> class SNESProblem {
 public:
-  SNESProblem(IceGrid &g);
+  SNESProblem(const IceGrid &g);
 
   virtual ~SNESProblem();
 
@@ -55,7 +55,7 @@ protected:
 
   virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
 
-  IceGrid     &m_grid;
+  const IceGrid &m_grid;
 
   Vec          m_X;
   SNES         m_snes;
@@ -98,7 +98,7 @@ PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DMDALocalInfo *info,
 
 
 template<int DOF, class U>
-SNESProblem<DOF,U>::SNESProblem(IceGrid &g) :
+SNESProblem<DOF,U>::SNESProblem(const IceGrid &g) :
   m_grid(g)
 {
   PetscErrorCode ierr;

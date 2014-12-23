@@ -34,7 +34,7 @@ namespace pism {
 
 class PSConstantPIK : public SurfaceModel {
 public:
-  PSConstantPIK(IceGrid &g);
+  PSConstantPIK(const IceGrid &g);
 
   virtual void init();
 

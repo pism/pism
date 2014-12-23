@@ -26,7 +26,7 @@ namespace pism {
 class PAModifier : public Modifier<AtmosphereModel>
 {
 public:
-  PAModifier(IceGrid &g, AtmosphereModel* in)
+  PAModifier(const IceGrid &g, AtmosphereModel* in)
     : Modifier<AtmosphereModel>(g, in) {}
   virtual ~PAModifier() {}
 

@@ -244,7 +244,7 @@ Profiling::Profiling() {
   PetscClassIdRegister("PISM", &m_classid);
 }
 
-void Profiling::begin(const char * name) {
+void Profiling::begin(const char * name) const {
   PetscLogEvent event = 0;
 
   if (m_events.find(name) == m_events.end()) {
@@ -257,7 +257,7 @@ void Profiling::begin(const char * name) {
   PetscLogEventBegin(event, 0, 0, 0, 0);
 }
 
-void Profiling::end(const char * name) {
+void Profiling::end(const char * name) const {
   PetscLogEvent event = 0;
   if (m_events.find(name) == m_events.end()) {
     abort();                    // should never happen
@@ -267,7 +267,7 @@ void Profiling::end(const char * name) {
   PetscLogEventEnd(event, 0, 0, 0, 0);
 }
 
-void Profiling::stage_begin(const char * name) {
+void Profiling::stage_begin(const char * name) const {
   PetscLogStage stage = 0;
 
   if (m_stages.find(name) == m_stages.end()) {
@@ -280,7 +280,7 @@ void Profiling::stage_begin(const char * name) {
   PetscLogStagePush(stage);
 }
 
-void Profiling::stage_end(const char * name) {
+void Profiling::stage_end(const char * name) const {
   (void) name;
   PetscLogStagePop();
 }

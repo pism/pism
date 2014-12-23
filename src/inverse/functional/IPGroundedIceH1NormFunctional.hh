@@ -40,7 +40,7 @@ namespace pism {
 */
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IPGroundedIceH1NormFunctional2S(IceGrid &grid, double cL2, 
+  IPGroundedIceH1NormFunctional2S(const IceGrid &grid, double cL2, 
                                   double cH1, IceModelVec2Int &ice_mask, IceModelVec2Int *dirichletLocations=NULL) :
     IPInnerProductFunctional<IceModelVec2S>(grid),
     m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};

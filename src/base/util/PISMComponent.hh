@@ -218,7 +218,7 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(IceGrid &g, Model* in)
+  Modifier(const IceGrid &g, Model* in)
     : Model(g), input_model(in) {}
   virtual ~Modifier()
   {

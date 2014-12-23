@@ -20,7 +20,7 @@
 
 namespace pism {
 
-PALapseRates::PALapseRates(IceGrid &g, AtmosphereModel* in)
+PALapseRates::PALapseRates(const IceGrid &g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
     precipitation(g.config.get_unit_system(), "precipitation", g),
     air_temp(g.config.get_unit_system(), "air_temp", g)

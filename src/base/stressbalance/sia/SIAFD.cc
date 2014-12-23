@@ -27,7 +27,7 @@
 
 namespace pism {
 
-SIAFD::SIAFD(IceGrid &g, EnthalpyConverter &e)
+SIAFD::SIAFD(const IceGrid &g, EnthalpyConverter &e)
   : SSB_Modifier(g, e) {
 
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");

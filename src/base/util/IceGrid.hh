@@ -309,8 +309,8 @@ private:
   bool is_equally_spaced() const;
 
   // Hide copy constructor / assignment operator.
-  IceGrid(IceGrid const &);
-  IceGrid & operator=(IceGrid const &);
+  IceGrid(const IceGrid &);
+  IceGrid & operator=(const IceGrid &);
 };
 
 double radius(const IceGrid &grid, int i, int j);

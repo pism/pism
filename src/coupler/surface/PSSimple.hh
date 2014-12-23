@@ -40,7 +40,7 @@ namespace pism {
 */
 class PSSimple : public SurfaceModel {
 public:
-  PSSimple(IceGrid &g);
+  PSSimple(const IceGrid &g);
 
   virtual void init();
   virtual void update(double my_t, double my_dt);

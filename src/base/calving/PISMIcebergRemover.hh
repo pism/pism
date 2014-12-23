@@ -45,7 +45,7 @@ namespace pism {
 class IcebergRemover : public Component
 {
 public:
-  IcebergRemover(IceGrid &g);
+  IcebergRemover(const IceGrid &g);
   virtual ~IcebergRemover();
 
   virtual void init();

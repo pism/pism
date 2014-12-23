@@ -43,7 +43,7 @@ namespace pism {
 */
 class PSTemperatureIndex : public SurfaceModel {
 public:
-  PSTemperatureIndex(IceGrid &g);
+  PSTemperatureIndex(const IceGrid &g);
   virtual ~PSTemperatureIndex();
   virtual void update(double my_t, double my_dt);
   virtual void init();
