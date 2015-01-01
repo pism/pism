@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -79,7 +79,7 @@ void Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
  * Regrid a variable by processing -regrid_file and -regrid_vars.
  *
  * @param[in] module_name Module name, used to annotate options when run with -help.
-
+ *
  * @param[out] variable pointer to an IceModelVec; @c variable has to
  *             have metadata set for this to work.
  *
@@ -89,8 +89,6 @@ void Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
  *            variable is only regridded if both =-regrid_file= and
  *            =-regrid_vars= are set *and* the name of the variable is
  *            found in the set of names given with =-regrid_vars=.
- *
- * @return 0 on success
  */
 void Component::regrid(const std::string &module_name, IceModelVec *variable,
                        RegriddingFlag flag) {

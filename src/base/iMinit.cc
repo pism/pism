@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 //documentation comment in iceModel.cc for the order in which they are called.
 
 #include <petscdmda.h>
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 
 #include "iceModel.hh"

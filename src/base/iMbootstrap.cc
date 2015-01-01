@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2015 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -26,7 +26,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
-#include <assert.h>
+#include <cassert>
 #include "error_handling.hh"
 
 namespace pism {

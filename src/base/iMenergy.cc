@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "enthalpyConverter.hh"
-#include <assert.h>
+#include <cassert>
 
 namespace pism {
 

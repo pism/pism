@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #include "pism_options.hh"
 #include "PISMVars.hh"
 #include "Mask.hh"
-#include <assert.h>
+#include <cassert>
 #include "error_handling.hh"
 
 namespace pism {

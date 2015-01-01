@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include <assert.h>
+#include <cassert>
 
 #include "iceModelVec.hh"
 #include "iceModelVec2T.hh"

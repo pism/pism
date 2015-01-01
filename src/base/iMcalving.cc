@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2015 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 
 #include <cmath>
 #include <petscdmda.h>
-#include <assert.h>
+#include <cassert>
 
 #include "iceModel.hh"
 #include "pism_signal.h"

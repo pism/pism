@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <cmath>
 #include <cstring>
 #include <petscdmda.h>
-#include <assert.h>
+#include <cassert>
 
 #include "iceModel.hh"
 #include "Mask.hh"
