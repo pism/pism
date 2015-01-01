@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -88,7 +88,7 @@ protected:
 PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
 {
   double Lx=L, Ly = L;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, NOT_PERIODIC);
   return 0;
@@ -100,11 +100,11 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
-  enthalpyconverter = new EnthalpyConverter(config);
+  m_enthalpyconverter = new EnthalpyConverter(m_config);
 
   // Use constant hardness
-  config.set_string("ssa_flow_law", "isothermal_glen");
-  config.set_double("ice_softness", pow(B0, -glen_n));
+  m_config.set_string("ssa_flow_law", "isothermal_glen");
+  m_config.set_double("ice_softness", pow(B0, -glen_n));
   return 0;
 }
 
@@ -112,51 +112,51 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set_double("epsilon_ssa", 0.0);
+  m_config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_double("epsilon_ssa", 0.0);
 
   // Ensure we never use the strength extension.
-  ssa->strength_extension->set_min_thickness(H0/2);
+  m_ssa->strength_extension->set_min_thickness(H0/2);
 
   // Set constant coefficients.
-  thickness.set(H0);
-  tauc.set(tauc0);
+  m_thickness.set(H0);
+  m_tauc.set(tauc0);
 
 
   // Set boundary conditions (Dirichlet all the way around).
-  bc_mask.set(0.0);
+  m_bc_mask.set(0.0);
 
   IceModelVec::AccessList list;
-  list.add(vel_bc);
-  list.add(bc_mask);
-  list.add(bed);
-  list.add(surface);
+  list.add(m_vel_bc);
+  list.add(m_bc_mask);
+  list.add(m_bed);
+  list.add(m_surface);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid->x(i), myy=grid->y(j);
+    const double myx = m_grid->x(i), myy=m_grid->y(j);
 
-    bed(i,j) = -myx*(dhdx);
-    surface(i,j) = bed(i,j) + H0;
+    m_bed(i,j) = -myx*(dhdx);
+    m_surface(i,j) = m_bed(i,j) + H0;
 
-    bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
-                 (i == 0) || (i == (int)grid->Mx() - 1));
+    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
+                 (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
-      bc_mask(i,j) = 1;
+      m_bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+      m_vel_bc(i,j).u = myu;
+      m_vel_bc(i,j).v = myv;
     }
   }
 
-  vel_bc.update_ghosts();
-  bc_mask.update_ghosts();
-  bed.update_ghosts();
-  surface.update_ghosts();
+  m_vel_bc.update_ghosts();
+  m_bc_mask.update_ghosts();
+  m_bed.update_ghosts();
+  m_surface.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
 
   return 0;
 }
@@ -165,8 +165,8 @@ PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
                                               double *u, double *v)
 {
-  double earth_grav = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
+  double earth_grav = m_config.get("standard_gravity"),
+    ice_rho = m_config.get("ice_density");
   double f = ice_rho * earth_grav * H0* dhdx;
   double ynd = y/L;
 

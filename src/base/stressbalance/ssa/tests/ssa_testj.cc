@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -65,7 +65,7 @@ PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
 
   double halfWidth = 300.0e3;  // 300.0 km half-width
   double Lx = halfWidth, Ly = halfWidth;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, XY_PERIODIC);
   return 0;
@@ -73,69 +73,69 @@ PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
 
 PetscErrorCode SSATestCaseJ::initializeSSAModel()
 {
-  config.set_flag("do_pseudo_plastic_till", false);
+  m_config.set_flag("do_pseudo_plastic_till", false);
 
-  enthalpyconverter = new EnthalpyConverter(config);
-  config.set_string("ssa_flow_law", "isothermal_glen");
+  m_enthalpyconverter = new EnthalpyConverter(m_config);
+  m_config.set_string("ssa_flow_law", "isothermal_glen");
 
   return 0;
 }
 
 PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 {
-  tauc.set(0.0);    // irrelevant for test J
-  bed.set(0.0); // assures shelf is floating
-  ice_mask.set(MASK_FLOATING);
+  m_tauc.set(0.0);    // irrelevant for test J
+  m_bed.set(0.0); // assures shelf is floating
+  m_ice_mask.set(MASK_FLOATING);
 
-  double enth0  = enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
-  enthalpy.set(enth0);
+  double enth0  = m_enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
+  m_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
-  double ocean_rho = config.get("sea_water_density"),
-    ice_rho = config.get("ice_density");
-  const double nu0 = grid->convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  double ocean_rho = m_config.get("sea_water_density"),
+    ice_rho = m_config.get("ice_density");
+  const double nu0 = m_grid->convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a
   // constant viscosity by settting the strength_extension
   // thickness larger than the given ice thickness. (max = 770m).
-  ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(800);
+  m_ssa->strength_extension->set_notional_strength(nu0 * H0);
+  m_ssa->strength_extension->set_min_thickness(800);
 
   IceModelVec::AccessList list;
-  list.add(thickness);
-  list.add(surface);
-  list.add(bc_mask);
-  list.add(vel_bc);
+  list.add(m_thickness);
+  list.add(m_surface);
+  list.add(m_bc_mask);
+  list.add(m_vel_bc);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double junk1, myu, myv, H;
-    const double myx = grid->x(i), myy = grid->y(j);
+    const double myx = m_grid->x(i), myy = m_grid->y(j);
 
     // set H,h on regular grid
     exactJ(myx, myy, &H, &junk1, &myu, &myv);
 
-    thickness(i,j) = H;
-    surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+    m_thickness(i,j) = H;
+    m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
 
     // special case at center point: here we set vel_bc at (i,j) by marking
     // this grid point as SHEET and setting vel_bc approriately
-    if ((i == (grid->Mx())/2) && (j == (grid->My())/2)) {
-      bc_mask(i,j) = 1;
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+    if ((i == (m_grid->Mx())/2) && (j == (m_grid->My())/2)) {
+      m_bc_mask(i,j) = 1;
+      m_vel_bc(i,j).u = myu;
+      m_vel_bc(i,j).v = myv;
     }
   }
 
   // communicate what we have set
-  surface.update_ghosts();
-  thickness.update_ghosts();
-  bc_mask.update_ghosts();
-  vel_bc.update_ghosts();
+  m_surface.update_ghosts();
+  m_thickness.update_ghosts();
+  m_bc_mask.update_ghosts();
+  m_vel_bc.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -81,7 +81,7 @@ protected:
 PetscErrorCode SSATestCaseExp::initializeGrid(int Mx,int My)
 {
   double Lx=L, Ly = L;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, NOT_PERIODIC);
   return 0;
@@ -91,11 +91,11 @@ PetscErrorCode SSATestCaseExp::initializeGrid(int Mx,int My)
 PetscErrorCode SSATestCaseExp::initializeSSAModel()
 {
   // Use a pseudo-plastic law with linear till
-  config.set_flag("do_pseudo_plastic_till", true);
-  config.set_double("pseudo_plastic_q", 1.0);
+  m_config.set_flag("do_pseudo_plastic_till", true);
+  m_config.set_double("pseudo_plastic_q", 1.0);
 
   // The following is irrelevant because we will force linear rheology later.
-  enthalpyconverter = new EnthalpyConverter(config);
+  m_enthalpyconverter = new EnthalpyConverter(m_config);
 
   return 0;
 }
@@ -104,48 +104,48 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 {
 
   // Force linear rheology
-  ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(4000*10);
+  m_ssa->strength_extension->set_notional_strength(nu0 * H0);
+  m_ssa->strength_extension->set_min_thickness(4000*10);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_flag("compute_surf_grad_inward_ssa", true);
 
   // Set constants for most coefficients.
-  thickness.set(H0);
-  surface.set(H0);
-  bed.set(0.);
+  m_thickness.set(H0);
+  m_surface.set(H0);
+  m_bed.set(0.);
   // double threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
   // double tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
   // printf("tauc0=%g\n",tauc0);
-  tauc.set(tauc0);
+  m_tauc.set(tauc0);
 
 
   // Set boundary conditions (Dirichlet all the way around).
-  bc_mask.set(0.0);
+  m_bc_mask.set(0.0);
 
   IceModelVec::AccessList list;
-  list.add(vel_bc);
-  list.add(bc_mask);
-  for (Points p(*grid); p; p.next()) {
+  list.add(m_vel_bc);
+  list.add(m_bc_mask);
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid->x(i), myy=grid->y(j);
+    const double myx = m_grid->x(i), myy=m_grid->y(j);
 
-    bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
-                 (i == 0) || (i == (int)grid->Mx() - 1));
+    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
+                 (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
-      bc_mask(i,j) = 1;
+      m_bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+      m_vel_bc(i,j).u = myu;
+      m_vel_bc(i,j).v = myv;
     }
   }
 
-  vel_bc.update_ghosts();
-  bc_mask.update_ghosts();
+  m_vel_bc.update_ghosts();
+  m_bc_mask.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
 
   return 0;
 }
@@ -155,9 +155,9 @@ PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/,
                                              double x, double /*y*/,
                                              double *u, double *v)
 {
-  double tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
+  double tauc_threshold_velocity = m_config.get("pseudo_plastic_uthreshold",
                                                    "m/year", "m/second");
-  double v0 = grid->convert(100.0, "m/year", "m/second");
+  double v0 = m_grid->convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
   double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
   *u = v0*exp(-alpha*(x-L));

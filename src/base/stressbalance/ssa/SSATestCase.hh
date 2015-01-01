@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2015 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -90,19 +90,19 @@ protected:
                                double avg_u,
                                double avg_v);
   MPI_Comm m_com;
-  Config &config;
-  IceGrid::Ptr grid;
+  Config &m_config;
+  IceGrid::Ptr m_grid;
 
   // SSA model variables.
-  EnthalpyConverter *enthalpyconverter;
+  EnthalpyConverter *m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S  surface, thickness, bed, tauc, melange_back_pressure;
-  IceModelVec3 enthalpy;
-  IceModelVec2V vel_bc;
-  IceModelVec2Int ice_mask, bc_mask;
+  IceModelVec2S  m_surface, m_thickness, m_bed, m_tauc, m_melange_back_pressure;
+  IceModelVec3 m_enthalpy;
+  IceModelVec2V m_vel_bc;
+  IceModelVec2Int m_ice_mask, m_bc_mask;
 
-  SSA *ssa;
+  SSA *m_ssa;
 };
 
 } // end of namespace pism

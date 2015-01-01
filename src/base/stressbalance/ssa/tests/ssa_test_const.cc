@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -86,7 +86,7 @@ protected:
 PetscErrorCode SSATestCaseConst::initializeGrid(int Mx,int My)
 {
   double Lx=L, Ly = L;
-  grid = IceGrid::Shallow(m_com, config, Lx, Ly,
+  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, NOT_PERIODIC);
   return 0;
@@ -95,14 +95,14 @@ PetscErrorCode SSATestCaseConst::initializeGrid(int Mx,int My)
 
 PetscErrorCode SSATestCaseConst::initializeSSAModel()
 {
-  config.set_flag("do_pseudo_plastic_till", true);
-  config.set_double("pseudo_plastic_q", basal_q);
+  m_config.set_flag("do_pseudo_plastic_till", true);
+  m_config.set_double("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  config.set_flag("do_pseudo_plastic_till", true);
+  m_config.set_flag("do_pseudo_plastic_till", true);
 
   // The following is irrelevant because we will force linear rheology later.
-  enthalpyconverter = new EnthalpyConverter(config);
+  m_enthalpyconverter = new EnthalpyConverter(m_config);
 
   return 0;
 }
@@ -111,48 +111,48 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 {
 
   // Force linear rheology
-  ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(0.5*H0);
+  m_ssa->strength_extension->set_notional_strength(nu0 * H0);
+  m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_flag("compute_surf_grad_inward_ssa", true);
 
   // Set constant thickness, tauc
-  bc_mask.set(MASK_GROUNDED);
-  thickness.set(H0);
-  tauc.set(tauc0);
+  m_bc_mask.set(MASK_GROUNDED);
+  m_thickness.set(H0);
+  m_tauc.set(tauc0);
 
   IceModelVec::AccessList list;
-  list.add(vel_bc);
-  list.add(bc_mask);
-  list.add(bed);
-  list.add(surface);
+  list.add(m_vel_bc);
+  list.add(m_bc_mask);
+  list.add(m_bed);
+  list.add(m_surface);
 
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid->x(i), myy=grid->y(j);
+    const double myx = m_grid->x(i), myy=m_grid->y(j);
 
-    bed(i,j) = -myx*(dhdx);
-    surface(i,j) = bed(i,j) + H0;
+    m_bed(i,j) = -myx*(dhdx);
+    m_surface(i,j) = m_bed(i,j) + H0;
 
-    bool edge = ((j == 0) || (j == (int)grid->My() - 1) ||
-                 (i == 0) || (i == (int)grid->Mx() - 1));
+    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
+                 (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
-      bc_mask(i,j) = 1;
+      m_bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+      m_vel_bc(i,j).u = myu;
+      m_vel_bc(i,j).v = myv;
     }
   }
 
-  vel_bc.update_ghosts();
-  bc_mask.update_ghosts();
-  bed.update_ghosts();
-  surface.update_ghosts();
+  m_vel_bc.update_ghosts();
+  m_bc_mask.update_ghosts();
+  m_bed.update_ghosts();
+  m_surface.update_ghosts();
 
-  ssa->set_boundary_conditions(bc_mask, vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
 
   return 0;
 }
@@ -161,10 +161,10 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 PetscErrorCode SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
  double /*x*/, double /*y*/, double *u, double *v)
 {
-  double earth_grav = config.get("standard_gravity"),
-    tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
+  double earth_grav = m_config.get("standard_gravity"),
+    tauc_threshold_velocity = m_config.get("pseudo_plastic_uthreshold",
                                          "m/year", "m/second"),
-    ice_rho = config.get("ice_density");
+    ice_rho = m_config.get("ice_density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
