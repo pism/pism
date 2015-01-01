@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,12 +39,12 @@ protected:
   PetscErrorCode allocate();
   PetscErrorCode deallocate();
   // Vecs on processor 0:
-  Vec Hp0,                      //!< ice thickness
-    bedp0,                      //!< bed elevation
-    Hstartp0,                   //!< initial (start-of-the-run) thickness
-    bedstartp0,                 //!< initial bed elevation
-    upliftp0;                   //!< bed uplift
-  BedDeformLC bdLC;
+  Vec m_Hp0,                      //!< ice thickness
+    m_bedp0,                      //!< bed elevation
+    m_Hstartp0,                   //!< initial (start-of-the-run) thickness
+    m_bedstartp0,                 //!< initial bed elevation
+    m_upliftp0;                   //!< bed uplift
+  BedDeformLC m_bdLC;
 };
 
 } // end of namespace pism

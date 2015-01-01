@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,13 +41,14 @@ public:
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
   void compute_uplift(double dt_beddef);
-  double t_beddef_last;         //!< last bed deformation update year
 
-  IceModelVec2S topg_initial;
-  IceModelVec2S topg_last;      //!< last bed elevation
-  IceModelVec2S *thk,           //!< pointer to the current ice thickness
-    *topg,                      //!< pointer to the current bed elevation
-    *uplift;                    //!< pointer to the bed uplift rate field
+  double m_t_beddef_last;         //!< last bed deformation update year
+
+  IceModelVec2S m_topg_initial;
+  IceModelVec2S m_topg_last;      //!< last bed elevation
+  IceModelVec2S *m_thk,           //!< pointer to the current ice thickness
+    *m_topg,                      //!< pointer to the current bed elevation
+    *m_uplift;                    //!< pointer to the bed uplift rate field
 };
 
 //! Pointwide isostasy bed deformation model.
@@ -59,7 +60,7 @@ public:
   virtual void update(double my_t, double my_dt);
 protected:
   PetscErrorCode allocate();
-  IceModelVec2S thk_last;       //!< last ice thickness
+  IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 
 } // end of namespace pism

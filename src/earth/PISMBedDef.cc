@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,11 +29,11 @@ namespace pism {
 BedDef::BedDef(const IceGrid &g)
   : Component_TS(g) {
 
-  thk    = NULL;
-  topg   = NULL;
-  uplift = NULL;
+  m_thk    = NULL;
+  m_topg   = NULL;
+  m_uplift = NULL;
 
-  t_beddef_last = GSL_NAN;
+  m_t_beddef_last = GSL_NAN;
 
   PetscErrorCode ierr = pismbeddef_allocate();
   if (ierr != 0) {
@@ -44,12 +44,12 @@ BedDef::BedDef(const IceGrid &g)
 PetscErrorCode BedDef::pismbeddef_allocate() {
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
-  topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
-  topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
+  m_topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
+  m_topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
                          "m", "");
 
-  topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
-  topg_last.set_attrs("model_state", "bedrock surface elevation",
+  m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  m_topg_last.set_attrs("model_state", "bedrock surface elevation",
                       "m", "bedrock_altitude");
 
   return 0;
@@ -62,32 +62,32 @@ void BedDef::add_vars_to_output(const std::string &/*keyword*/, std::set<std::st
 void BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   if (set_contains(vars, "topg_initial")) {
-    topg_initial.define(nc, nctype);
+    m_topg_initial.define(nc, nctype);
   }
 }
 
 void BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "topg_initial")) {
-    topg_initial.write(nc);
+    m_topg_initial.write(nc);
   }
 }
 
 void BedDef::init() {
-  t_beddef_last = m_grid.time->start();
+  m_t_beddef_last = m_grid.time->start();
 
-  thk    = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  topg   = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  uplift = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
+  m_thk    = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  m_topg   = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  m_uplift = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
   // Save the bed elevation at the beginning of the run:
-  topg_initial.copy_from(*topg);
+  m_topg_initial.copy_from(*m_topg);
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
 void BedDef::compute_uplift(double dt_beddef) {
-  topg->add(-1, topg_last, *uplift);
+  m_topg->add(-1, m_topg_last, *m_uplift);
   //! uplift = (topg - topg_last) / dt
-  uplift->scale(1.0 / dt_beddef);
+  m_uplift->scale(1.0 / dt_beddef);
 }
 
 } // end of namespace pism

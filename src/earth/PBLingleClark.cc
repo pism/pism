@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,21 +47,21 @@ PBLingleClark::~PBLingleClark() {
 
 PetscErrorCode PBLingleClark::allocate() {
 
-  topg_initial.allocate_proc0_copy(Hp0);
-  topg_initial.allocate_proc0_copy(bedp0);
-  topg_initial.allocate_proc0_copy(Hstartp0);
-  topg_initial.allocate_proc0_copy(bedstartp0);
-  topg_initial.allocate_proc0_copy(upliftp0);
+  m_topg_initial.allocate_proc0_copy(m_Hp0);
+  m_topg_initial.allocate_proc0_copy(m_bedp0);
+  m_topg_initial.allocate_proc0_copy(m_Hstartp0);
+  m_topg_initial.allocate_proc0_copy(m_bedstartp0);
+  m_topg_initial.allocate_proc0_copy(m_upliftp0);
 
   bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
 
   if (m_grid.rank() == 0) {
-    bdLC.settings(m_config, use_elastic_model,
+    m_bdLC.settings(m_config, use_elastic_model,
                   m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
                   4,     // use Z = 4 for now; to reduce global drift?
-                  &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
+                  &m_Hstartp0, &m_bedstartp0, &m_upliftp0, &m_Hp0, &m_bedp0);
 
-    bdLC.alloc();
+    m_bdLC.alloc();
   }
 
   return 0;
@@ -70,15 +70,15 @@ PetscErrorCode PBLingleClark::allocate() {
 PetscErrorCode PBLingleClark::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&Hp0);
+  ierr = VecDestroy(&m_Hp0);
   PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&bedp0);
+  ierr = VecDestroy(&m_bedp0);
   PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&Hstartp0);
+  ierr = VecDestroy(&m_Hstartp0);
   PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&bedstartp0);
+  ierr = VecDestroy(&m_bedstartp0);
   PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&upliftp0);
+  ierr = VecDestroy(&m_upliftp0);
   PISM_PETSC_CHK(ierr, "VecDestroy");
 
   return 0;
@@ -93,15 +93,15 @@ void PBLingleClark::init() {
 
   correct_topg();
 
-  topg->copy_to(topg_last);
+  m_topg->copy_to(m_topg_last);
 
-  thk->put_on_proc0(Hstartp0);
-  topg->put_on_proc0(bedstartp0);
-  uplift->put_on_proc0(upliftp0);
+  m_thk->put_on_proc0(m_Hstartp0);
+  m_topg->put_on_proc0(m_bedstartp0);
+  m_uplift->put_on_proc0(m_upliftp0);
 
   if (m_grid.rank() == 0) {
-    bdLC.init();
-    bdLC.uplift_init();
+    m_bdLC.init();
+    m_bdLC.uplift_init();
   }
 }
 
@@ -163,21 +163,21 @@ void PBLingleClark::correct_topg() {
                      "m", "bedrock_altitude");
 
   // Get topg and topg_initial from the regridding file.
-  topg_initial.regrid(regrid_file, CRITICAL);
+  m_topg_initial.regrid(regrid_file, CRITICAL);
   topg_tmp.regrid(regrid_file, CRITICAL);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.
 
-  topg_tmp.add(-1.0, topg_initial);
+  topg_tmp.add(-1.0, m_topg_initial);
   // Now topg_tmp contains the change in bed elevation computed during the run
   // that produced -regrid_file.
 
   // Apply this change to topg from -boot_file:
-  topg->add(1.0, topg_tmp);
+  m_topg->add(1.0, topg_tmp);
 
   // Store the corrected topg as the new "topg_initial".
-  topg->copy_to(topg_initial);
+  m_topg->copy_to(m_topg_initial);
 
   return;
 }
@@ -197,31 +197,31 @@ void PBLingleClark::update(double my_t, double my_dt) {
   double t_final = m_t + m_dt;
 
   // Check if it's time to update:
-  double dt_beddef = t_final - t_beddef_last; // in seconds
+  double dt_beddef = t_final - m_t_beddef_last; // in seconds
   if ((dt_beddef < m_config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < m_grid.time->end()) ||
       dt_beddef < 1e-12) {
     return;
   }
 
-  t_beddef_last = t_final;
+  m_t_beddef_last = t_final;
 
-  thk->put_on_proc0(Hp0);
-  topg->put_on_proc0(bedp0);
+  m_thk->put_on_proc0(m_Hp0);
+  m_topg->put_on_proc0(m_bedp0);
 
   if (m_grid.rank() == 0) {  // only processor zero does the step
-    bdLC.step(dt_beddef, // time step, in seconds
+    m_bdLC.step(dt_beddef, // time step, in seconds
               t_final - m_grid.time->start()); // time since the start of the run, in seconds
   }
 
-  topg->get_from_proc0(bedp0);
+  m_topg->get_from_proc0(m_bedp0);
 
   //! Finally, we need to update bed uplift and topg_last.
   compute_uplift(dt_beddef);
-  topg->copy_to(topg_last);
+  m_topg->copy_to(m_topg_last);
 
   //! Increment the topg state counter. SIAFD relies on this!
-  topg->inc_state_counter();
+  m_topg->inc_state_counter();
 }
 
 } // end of namespace pism
