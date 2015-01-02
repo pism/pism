@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,6 +40,9 @@ public:
   }
   T* operator->() {
     return &m_value;
+  }
+  bool operator==(const T& other) {
+    return m_value == other;
   }
 protected:
   T    m_value;
