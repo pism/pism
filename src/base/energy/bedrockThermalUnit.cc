@@ -185,6 +185,9 @@ double BedThermalUnit::get_vertical_spacing() {
   }
 }
 
+unsigned int BedThermalUnit::Mbz() {
+  return m_Mbz;
+}
 
 void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   if (temp.was_created()) {

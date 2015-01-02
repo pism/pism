@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -662,11 +662,9 @@ void IceCompModel::fillBasalMeltRateSolnTestO() {
 void IceCompModel::initTestsKO() {
 
   if (testname == 'K') {
-    bool Mbz_set;
-    int Mbz;
-    OptionsInt("-Mbz", "Number of levels in the bedrock thermal model",
-               Mbz, Mbz_set);
-    if (Mbz_set && Mbz < 2) {
+    options::Integer Mbz("-Mbz", "Number of levels in the bedrock thermal model",
+                         btu->Mbz());
+    if (Mbz.is_set() && Mbz < 2) {
       throw RuntimeError("pismv test K requires a bedrock thermal layer 1000m deep");
     }
   }

@@ -38,16 +38,15 @@
 namespace pism {
 
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
-void  IceModel::setFromOptions() {
-  bool flag;
+void IceModel::setFromOptions() {
 
   verbPrintf(3, grid.com,
              "Processing physics-related command-line options...\n");
 
   set_config_from_options(config);
 
-  OptionsInt("-id", "Specifies the sounding row", id, flag);
-  OptionsInt("-jd", "Specifies the sounding column", jd, flag);
+  id = options::Integer("-id", "Specifies the sounding row", id);
+  jd = options::Integer("-jd", "Specifies the sounding column", jd);
 
   // Set global attributes using the config database:
   global_attributes.set_string("title", config.get_string("run_title"));

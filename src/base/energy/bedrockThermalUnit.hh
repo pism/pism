@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,6 +104,8 @@ public:
   virtual void bootstrap();
 
   double get_vertical_spacing();
+
+  unsigned int Mbz();
 protected:
 
   IceModelVec3Custom temp;

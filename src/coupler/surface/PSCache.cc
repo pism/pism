@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -66,18 +66,15 @@ PSCache::~PSCache() {
 
 void PSCache::init() {
   int update_interval = m_update_interval_years;
-  bool flag;
 
   input_model->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the 'caching' surface model modifier...\n");
 
-  {
-    OptionsInt("-surface_cache_update_interval",
-               "Interval (in years) between surface model updates",
-               update_interval, flag);
-  }
+  update_interval = options::Integer("-surface_cache_update_interval",
+                                     "Interval (in years) between surface model updates",
+                                     update_interval);
 
   if (update_interval <= 0) {
     throw RuntimeError::formatted("-surface_cache_update_interval has to be strictly positive.");

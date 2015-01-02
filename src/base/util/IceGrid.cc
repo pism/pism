@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -354,32 +354,28 @@ void IceGrid::compute_ownership_ranges() {
 }
 
 void IceGrid::ownership_ranges_from_options() {
-  bool Nx_set, Ny_set;
-  int Nx = m_Nx, Ny = m_Ny;
-  OptionsInt("-Nx", "Number of processors in the x direction",
-             Nx, Nx_set);
-  OptionsInt("-Ny", "Number of processors in the y direction",
-             Ny, Ny_set);
+  options::Integer Nx("-Nx", "Number of processors in the x direction", m_Nx);
+  options::Integer Ny("-Ny", "Number of processors in the y direction", m_Ny);
   m_Nx = Nx;
   m_Ny = Ny;
 
-  if (Nx_set ^ Ny_set) {
+  if (Nx.is_set() ^ Ny.is_set()) {
     throw RuntimeError("Please set both -Nx and -Ny.");
   }
 
-  if ((!Nx_set) && (!Ny_set)) {
+  if ((not Nx.is_set()) && (not Ny.is_set())) {
     compute_nprocs();
     compute_ownership_ranges();
   } else {
 
     if ((Mx() / Nx) < 2) {
       throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    Mx(), Nx);
+                                    Mx(), Nx.value());
     }
 
     if ((My() / Ny) < 2) {
       throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    My(), Ny);
+                                    My(), Ny.value());
     }
 
     if (Nx * Ny != m_size) {
@@ -387,36 +383,24 @@ void IceGrid::ownership_ranges_from_options() {
                                     m_size);
     }
 
-    bool procs_x_set, procs_y_set;
-    std::vector<int> tmp_x, tmp_y;
-    OptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
-                    tmp_x, procs_x_set);
-    OptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
-                    tmp_y, procs_y_set);
+    options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)");
+    options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)");
 
-    if (procs_x_set ^ procs_y_set) {
+    if (procs_x.is_set() ^ procs_y.is_set()) {
       throw RuntimeError("Please set both -procs_x and -procs_y.");
     }
 
-    if (procs_x_set && procs_y_set) {
-      if (tmp_x.size() != (unsigned int)Nx) {
+    if (procs_x.is_set() && procs_y.is_set()) {
+      if (procs_x->size() != (unsigned int)Nx) {
         throw RuntimeError("-Nx has to be equal to the -procs_x size.");
       }
 
-      if (tmp_y.size() != (unsigned int)Ny) {
+      if (procs_y->size() != (unsigned int)Ny) {
         throw RuntimeError("-Ny has to be equal to the -procs_y size.");
       }
 
-      m_procs_x.resize(Nx);
-      m_procs_y.resize(Ny);
-
-      for (int j=0; j < Nx; j++) {
-        m_procs_x[j] = tmp_x[j];
-      }
-
-      for (int j=0; j < Ny; j++) {
-        m_procs_y[j] = tmp_y[j];
-      }
+      m_procs_x = procs_x;
+      m_procs_y = procs_y;
     } else {
       compute_ownership_ranges();
     }

@@ -213,14 +213,29 @@ void IceModel::set_grid_from_options() {
     }
 
     // Number of grid points
+    options::Integer mx("-Mx", "Number of grid points in the Y direction",
+                        Mx);
+    options::Integer my("-My", "Number of grid points in the X direction",
+                        My);
+    options::Integer mz("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
+                        Mz);
+    Mx = mx;
+    My = my;
+    Mz = mz;
+
+    // validate inputs
     {
-      bool Mx_set = false, My_set = false, Mz_set = false;
-      OptionsInt("-Mx", "Number of grid points in the Y direction",
-                 Mx, Mx_set);
-      OptionsInt("-My", "Number of grid points in the X direction",
-                 My, My_set);
-      OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-                 Mz, Mz_set);
+      if (Mx < 3 || My < 3 || Mz < 2) {
+        throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
+                                      "(have to have Mx >= 3, My >= 3, Mz >= 2).",
+                                      Mx, My, Mz);
+      }
+
+      if (Lx <= 0.0 || Ly <= 0.0 || Lz <= 0.0) {
+        throw RuntimeError::formatted("-Lx %f -Ly %f -Lz %f is invalid\n"
+                                      "(Lx, Ly, Lz have to be positive).",
+                                      Lx / 1000.0, Ly / 1000.0, Lz);
+      }
     }
 
     // Vertical spacing (respects -z_spacing)
@@ -229,20 +244,7 @@ void IceModel::set_grid_from_options() {
     }
   }
 
-  // validate inputs
-  {
-    if (Mx < 3 || My < 3 || Mz < 2) {
-      throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
-                                    "(have to have Mx >= 3, My >= 3, Mz >= 2).",
-                                    Mx, My, Mz);
-    }
 
-    if (Lx <= 0.0 || Ly <= 0.0 || Lz <= 0.0) {
-      throw RuntimeError::formatted("-Lx %f -Ly %f -Lz %f is invalid\n"
-                                    "(Lx, Ly, Lz have to be positive).",
-                                    Lx / 1000.0, Ly / 1000.0, Lz);
-    }
-  }
 
   // Use the information obtained above:
   //

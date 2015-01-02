@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -218,9 +218,9 @@ void SSAFD::init() {
              "  [using the KSP-based finite difference implementation]\n");
 
   // options
-  bool flag;
-  OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
-             nuh_viewer_size, flag);
+  options::Integer viewer_size("-ssa_nuh_viewer_size", "nuH viewer size",
+                               nuh_viewer_size);
+  nuh_viewer_size = viewer_size;
   view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
   if (m_config.get_flag("calving_front_stress_boundary_condition")) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -897,12 +897,9 @@ void IceModel::run() {
 
   grid.profiling.stage_end("time-stepping loop");
 
-  bool flag;
-  int pause_time = 0;
-  OptionsInt("-pause", "Pause after the run, seconds",
-             pause_time, flag);
+  options::Integer pause_time("-pause", "Pause after the run, seconds", 0);
   if (pause_time > 0) {
-    verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time);
+    verbPrintf(2,grid.com,"pausing for %d secs ...\n", pause_time.value());
     ierr = PetscSleep(pause_time);
     PISM_PETSC_CHK(ierr, "PetscSleep");
   }

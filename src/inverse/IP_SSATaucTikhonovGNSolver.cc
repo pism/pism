@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -115,8 +115,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 
   m_tikhonov_adaptive = options::Bool("-tikhonov_adaptive", "Tikhonov adaptive");
   
-  m_iter_max = 1000; bool flag;
-  OptionsInt("-inv_gn_iter_max", "", m_iter_max, flag);  
+  m_iter_max = 1000;
+  m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");

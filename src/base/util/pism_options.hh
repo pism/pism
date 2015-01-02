@@ -108,11 +108,6 @@ bool Bool(const std::string& option,
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
-PetscErrorCode OptionsInt(std::string option, std::string text,
-                              int &result, bool &is_set);
-PetscErrorCode OptionsIntArray(std::string option, std::string text,
-                                   std::vector<int> &result, bool &is_set);
-
 PetscErrorCode OptionsReal(std::string option, std::string text,
                                double &result, bool &is_set);
 PetscErrorCode OptionsRealArray(std::string option, std::string text,
