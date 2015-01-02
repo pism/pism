@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -54,6 +54,7 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
 PetscErrorCode GetTime(PetscLogDouble *result);
 
 bool ends_with(std::string str, std::string suffix);
+std::string join(const std::vector<std::string> &strings, const std::string &separator);
 
 inline bool set_contains(std::set<std::string> S, std::string name) {
   return (S.find(name) != S.end());

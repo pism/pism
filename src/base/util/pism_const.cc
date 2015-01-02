@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -115,6 +115,17 @@ bool ends_with(std::string str, std::string suffix) {
   return false;
 }
 
+//* Concatenate `strings`, inserting `separator` between elements.
+std::string join(const std::vector<std::string> &strings, const std::string &separator) {
+  std::vector<std::string>::const_iterator j = strings.begin();
+  std::string result = *j;
+  ++j;
+  while (j != strings.end()) {
+    result += separator + *j;
+    ++j;
+  }
+  return result;
+}
 
 //! Checks if a vector of doubles is strictly increasing.
 bool is_increasing(const std::vector<double> &a) {
