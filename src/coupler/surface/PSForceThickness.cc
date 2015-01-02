@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -97,28 +97,25 @@ void PSForceThickness::init() {
   }
   m_input_file = input_file;
 
-  double ftt_alpha = m_grid.convert(m_alpha, "s-1", "yr-1");
-  bool ftt_alpha_set = false;
-  OptionsReal("-force_to_thickness_alpha",
-              "Specifies the value of force-to-thickness alpha in per-year units",
-              ftt_alpha, ftt_alpha_set);
+  options::Real ftt_alpha("-force_to_thickness_alpha",
+                          "Specifies the value of force-to-thickness alpha in per-year units",
+                          m_grid.convert(m_alpha, "s-1", "yr-1"));
 
-  bool ftt_alpha_ice_free_set = false;
-  OptionsReal("-force_to_thickness_ice_free_alpha_factor",
-              "Set the multiplicative factor for alpha to use in ice-free areas",
-              m_alpha_ice_free_factor, ftt_alpha_ice_free_set);
+  m_alpha_ice_free_factor = options::Real("-force_to_thickness_ice_free_alpha_factor",
+                                          "Set the multiplicative factor for alpha to use in ice-free areas",
+                                          m_alpha_ice_free_factor);
 
-  bool ftt_ice_free_thickness_threshold_set = false;
-  OptionsReal("-force_to_thickness_ice_free_thickness_threshold",
-              "Specifies the ice thickness threshold used to determine whether a location is ice-free, in m",
-              m_ice_free_thickness_threshold, ftt_ice_free_thickness_threshold_set);
+  m_ice_free_thickness_threshold = options::Real("-force_to_thickness_ice_free_thickness_threshold",
+                                                 "Specifies the ice thickness threshold"
+                                                 " used to determine whether a location is ice-free, in m",
+                                                 m_ice_free_thickness_threshold);
 
   m_ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   m_pism_mask     = m_grid.variables().get_2d_mask("mask");
 
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
-  if (ftt_alpha_set == true) {
+  if (ftt_alpha.is_set()) {
     verbPrintf(3, m_grid.com, "    option -force_to_thickness_alpha seen\n");
     m_alpha = m_grid.convert(ftt_alpha, "yr-1", "s-1");
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -134,13 +134,10 @@ void SSAFEM::init() {
 //! Opportunity to modify behaviour based on command-line options.
 /*! Called from SSAFEM::init */
 void SSAFEM::setFromOptions() {
-  PetscErrorCode ierr;
-
-  bool flag = false;
   m_dirichletScale = 1.0e9;
-  ierr = OptionsReal("-ssa_fe_dirichlet_scale",
-                     "Enforce Dirichlet conditions with this additional scaling",
-                     m_dirichletScale, flag);
+  m_dirichletScale = options::Real("-ssa_fe_dirichlet_scale",
+                                   "Enforce Dirichlet conditions with this additional scaling",
+                                   m_dirichletScale);
 }
 
 //! Solve the SSA.  The FEM solver exchanges time for memory by computing

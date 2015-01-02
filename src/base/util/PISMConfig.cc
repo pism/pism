@@ -253,14 +253,11 @@ void Config::flag_from_option(const std::string &name, const std::string &flag) 
   converting again.)
 */
 void Config::scalar_from_option(const std::string &name, const std::string &parameter) {
-  double value = get_quiet(parameter);
-  bool flag;
-
-  OptionsReal("-" + name,
-              get_string_quiet(parameter + "_doc"),
-              value, flag);
-  if (flag) {
-    this->set_scalar_from_option(parameter, value);
+  options::Real option("-" + name,
+                       get_string_quiet(parameter + "_doc"),
+                       get_quiet(parameter));
+  if (option.is_set()) {
+    this->set_scalar_from_option(parameter, option);
   }
 }
 

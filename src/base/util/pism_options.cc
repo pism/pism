@@ -233,131 +233,6 @@ PetscErrorCode OptionsInt(std::string option, std::string text,
   return 0;
 }
 
-//! \brief Process a command-line option taking a real number as an argument.
-PetscErrorCode OptionsReal(std::string option, std::string text,
-			       double &result, bool &is_set) {
-  PetscErrorCode ierr;
-  char str[TEMPORARY_STRING_LENGTH];
-  PetscBool flag;
-  char *endptr;
-
-  memset(str, 0, TEMPORARY_STRING_LENGTH);
-  snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
-
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,
-                            TEMPORARY_STRING_LENGTH, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  is_set = (flag == PETSC_TRUE);
-
-  if (is_set == false) {
-    return 0;
-  }
-
-  if (strlen(str) == 0) {
-    throw RuntimeError::formatted("command line option '%s' requires an argument.",
-                                  option.c_str());
-  }
-
-  result = strtod(str, &endptr);
-  if (*endptr != '\0') {
-    throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
-                                  option.c_str(), str, str);
-  }
-
-  return 0;
-}
-//! \brief Process a command-line option taking a comma-separated list of reals
-//! as an argument.
-PetscErrorCode OptionsRealArray(std::string option, std::string text,
-				    std::vector<double> &result, bool &is_set) {
-  PetscErrorCode ierr;
-  char str[TEMPORARY_STRING_LENGTH];
-  PetscBool flag;
-
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-                            "none", str,
-                            TEMPORARY_STRING_LENGTH, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  is_set = (flag == PETSC_TRUE);
-
-  if (is_set) {
-    std::istringstream arg(str);
-    std::string tmp;
-
-    result.clear();
-    while(getline(arg, tmp, ',')) {
-      double d;
-      char *endptr;
-
-      d = strtod(tmp.c_str(), &endptr);
-      if (*endptr != '\0') {
-        throw RuntimeError::formatted("Can't parse %s (%s is not a number).",
-                                      tmp.c_str(), tmp.c_str());
-      }
-      else {
-        result.push_back(d);
-      }
-    }
-  }
-
-  return 0;
-}
-
-//! \brief Process a command-line option taking a comma-separated list of
-//! integers as an argument.
-PetscErrorCode OptionsIntArray(std::string option, std::string text,
-				   std::vector<int> &result, bool &is_set) {
-  std::vector<double> tmp;
-
-  OptionsRealArray(option, text, tmp, is_set);
-
-  result.clear();
-  for (unsigned int j = 0; j < tmp.size(); ++j) {
-    result.push_back(static_cast<int>(tmp[j]));
-  }
-
-  return 0;
-}
-
-//! Checks if an option is present in the PETSc option database.
-/*!
-
-  This is (essentially) a reimplementation of PetscOptionsHasName, except that
-  this *always* sets `flag` to PETSC_TRUE if an option is present.
-
-  PetscOptionsHasName, on the other hand, sets `flag` to PETSC_FALSE if an
-  option was set as "-foo FALSE", "-foo NO" or "-foo 0". Note that if one uses
-  "-foo 0.0", PetscOptionsHasName will set `flag` to PETSC_TRUE.
-
-  This unpredictability is bad. We want a function that does not depend on the
-  argument given with an option.
- */
-bool OptionsIsSet(std::string option) {
-  PetscErrorCode ierr;
-  char tmp[1];
-  PetscBool flag;
-
-  ierr = PetscOptionsGetString(NULL, option.c_str(), tmp, 1, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
-
-  return flag == PETSC_TRUE;
-}
-
-//! A version of OptionsIsSet that prints a -help message.
-bool OptionsIsSet(std::string option, std::string text) {
-  PetscErrorCode ierr;
-  char tmp[1];
-  PetscBool flag;
-
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-                            "", tmp, 1, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  return flag == PETSC_TRUE;
-}
-
 //! Initializes the config parameter and flag database.
 /*!
   Processes -config and -config_override command line options.
@@ -556,21 +431,19 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.scalar_from_option("till_log_factor_transportable_water",
                             "till_log_factor_transportable_water");
 
-  bool topg_to_phi_set;
-  std::vector<double> inarray(4);
   // read the comma-separated list of four values
-  OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
-                   inarray, topg_to_phi_set);
-  if (topg_to_phi_set == true) {
-    if (inarray.size() != 4) {
+  options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max");
+  if (topg_to_phi.is_set()) {
+    if (topg_to_phi->size() != 4) {
       throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
-                                    inarray.size());
+                                    topg_to_phi->size());
     }
+    std::vector<double> p = topg_to_phi.value();
     config.set_flag("till_use_topg_to_phi", true);
-    config.set_double("till_topg_to_phi_phi_min", inarray[0]);
-    config.set_double("till_topg_to_phi_phi_max", inarray[1]);
-    config.set_double("till_topg_to_phi_topg_min",inarray[2]);
-    config.set_double("till_topg_to_phi_topg_max",inarray[3]);
+    config.set_double("till_topg_to_phi_phi_min", p[0]);
+    config.set_double("till_topg_to_phi_phi_max", p[1]);
+    config.set_double("till_topg_to_phi_topg_min", p[2]);
+    config.set_double("till_topg_to_phi_topg_max", p[3]);
   }
 
   config.flag_from_option("tauc_slippery_grounding_lines",

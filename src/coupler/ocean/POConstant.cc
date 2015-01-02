@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -55,11 +55,12 @@ void POConstant::init() {
     verbPrintf(2, m_grid.com, "* Initializing the constant ocean model...\n");
   }
 
-  OptionsReal("-shelf_base_melt_rate",
-              "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-              mymeltrate, meltrate_set);
+  options::Real meltrate("-shelf_base_melt_rate",
+                         "Specifies a sub shelf ice-equivalent melt rate in meters/year",
+                         mymeltrate);
 
-  if (meltrate_set) {
+  if (meltrate.is_set()) {
+    mymeltrate = meltrate;
     verbPrintf(2, m_grid.com,
                "    - option '-shelf_base_melt_rate' seen, "
                "setting basal sub shelf basal melt rate to %.2f m/year ... \n",

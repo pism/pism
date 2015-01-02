@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -167,7 +167,6 @@ void IceRegionalModel::createVecs() {
 }
 
 void IceRegionalModel::model_state_setup() {
-  PetscErrorCode ierr;
 
   IceModel::model_state_setup();
 
@@ -181,17 +180,15 @@ void IceRegionalModel::model_state_setup() {
     usurfstore.set(0.0);
   }
 
-  bool nmstripSet;
-  double stripkm = 0.0;
-  ierr = OptionsReal("-no_model_strip", 
-                         "width in km of strip near boundary in which modeling is turned off",
-                         stripkm, nmstripSet);
+  options::Real strip_km("-no_model_strip", 
+                        "width in km of strip near boundary in which modeling is turned off",
+                        0.0);
 
-  if (nmstripSet) {
+  if (strip_km.is_set()) {
     verbPrintf(2, grid.com,
                "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
-               stripkm);
-    set_no_model_strip(grid.convert(stripkm, "km", "m"));
+               strip_km.value());
+    set_no_model_strip(grid.convert(strip_km, "km", "m"));
   }
 }
 

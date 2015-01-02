@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -87,7 +87,7 @@ PSTemperatureIndex_Old::~PSTemperatureIndex_Old() {
 }
 
 void PSTemperatureIndex_Old::init() {
-  bool           pdd_rand, pdd_rand_repeatable, fausto_params, pSet;
+  bool pdd_rand, pdd_rand_repeatable, fausto_params;
 
   SurfaceModel::init();
 
@@ -101,18 +101,18 @@ void PSTemperatureIndex_Old::init() {
     pdd_annualize = options::Bool("-pdd_annualize",
                                   "Compute annual mass balance, removing yearly variations");
 
-    OptionsReal("-pdd_factor_snow", "PDD snow factor",
-                base_ddf.snow, pSet);
-    OptionsReal("-pdd_factor_ice", "PDD ice factor",
-                base_ddf.ice, pSet);
-    OptionsReal("-pdd_refreeze", "PDD refreeze fraction",
-                base_ddf.refreezeFrac, pSet);
+    base_ddf.snow = options::Real("-pdd_factor_snow", "PDD snow factor",
+                                  base_ddf.snow);
+    base_ddf.ice = options::Real("-pdd_factor_ice", "PDD ice factor",
+                                 base_ddf.ice);
+    base_ddf.refreezeFrac = options::Real("-pdd_refreeze", "PDD refreeze fraction",
+                                          base_ddf.refreezeFrac);
 
-    OptionsReal("-pdd_std_dev", "PDD standard deviation",
-                base_pddStdDev, pSet);
-    OptionsReal("-pdd_positive_threshold_temp",
-                "PDD uses this temp in K to determine 'positive' temperatures",
-                base_pddThresholdTemp, pSet);
+    base_pddStdDev = options::Real("-pdd_std_dev", "PDD standard deviation",
+                                   base_pddStdDev);
+    base_pddThresholdTemp = options::Real("-pdd_positive_threshold_temp",
+                                          "PDD uses this temp in K to determine 'positive' temperatures",
+                                          base_pddThresholdTemp);
   }
 
   verbPrintf(2, m_grid.com,

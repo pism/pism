@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,6 @@ PALapseRates::~PALapseRates() {
 }
 
 void PALapseRates::init() {
-  bool precip_lapse_rate_set;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -56,11 +55,9 @@ void PALapseRates::init() {
 
   init_internal();
 
-  {
-    OptionsReal("-precip_lapse_rate",
-                "Elevation lapse rate for the surface mass balance, in m/year per km",
-                precip_lapse_rate, precip_lapse_rate_set);
-  }
+  precip_lapse_rate = options::Real("-precip_lapse_rate",
+                                    "Elevation lapse rate for the surface mass balance, in m/year per km",
+                                    precip_lapse_rate);
 
   verbPrintf(2, m_grid.com,
              "   air temperature lapse rate: %3.3f K per km\n"

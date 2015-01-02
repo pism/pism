@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -59,16 +59,10 @@ void POConstantPIK::init() {
 
   ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
-  double meltfactor_pik = meltfactor;
-  bool meltfactorSet = false;
-
-  OptionsReal("-meltfactor_pik",
-              "Use as a melt factor as in sub-shelf-melting parameterization of [@ref Martinetal2011]",
-              meltfactor_pik, meltfactorSet);
-
-  if (meltfactorSet) {
-    meltfactor = meltfactor_pik;
-  }
+  meltfactor = options::Real("-meltfactor_pik",
+                             "Use as a melt factor as in sub-shelf-melting"
+                             " parameterization of [@ref Martinetal2011]",
+                             meltfactor);
 }
 
 void POConstantPIK::update(double my_t, double my_dt) {

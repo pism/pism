@@ -107,15 +107,6 @@ bool Bool(const std::string& option,
 
 PetscErrorCode verbosityLevelFromOptions();
 
-// handy functions for processing options:
-PetscErrorCode OptionsReal(std::string option, std::string text,
-                               double &result, bool &is_set);
-PetscErrorCode OptionsRealArray(std::string option, std::string text,
-                                    std::vector<double> &result, bool &is_set);
-
-bool OptionsIsSet(std::string option);
-bool OptionsIsSet(std::string option, std::string descr);
-
 PetscErrorCode ignore_option(MPI_Comm com, std::string name);
 PetscErrorCode check_old_option_and_stop(std::string old_name, std::string new_name);
 PetscErrorCode stop_if_set(std::string name);

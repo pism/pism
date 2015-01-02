@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,6 @@ PSLapseRates::~PSLapseRates() {
 }
 
 void PSLapseRates::init() {
-  bool smb_lapse_rate_set;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -58,11 +57,9 @@ void PSLapseRates::init() {
 
   init_internal();
 
-  {
-    OptionsReal("-smb_lapse_rate",
-                "Elevation lapse rate for the surface mass balance, in m/year per km",
-                smb_lapse_rate, smb_lapse_rate_set);
-  }
+  smb_lapse_rate = options::Real("-smb_lapse_rate",
+                                 "Elevation lapse rate for the surface mass balance, in m/year per km",
+                                 smb_lapse_rate);
 
   verbPrintf(2, m_grid.com,
              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"

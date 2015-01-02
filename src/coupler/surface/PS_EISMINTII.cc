@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -71,37 +71,30 @@ void PS_EISMINTII::init() {
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  bool option_set = false;
-  OptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set);
+  m_T_min = options::Real("-Tmin", "T min, Kelvin", m_T_min);
 
-  double
-    myMmax = m_grid.convert(m_M_max, "m/s",        "m/year"),
-    mySb   = m_grid.convert(m_S_b,   "m/second/m", "m/year/km"),
-    myST   = m_grid.convert(m_S_T,   "K/m",        "K/km"),
-    myRel  = m_grid.convert(m_R_el,  "m",          "km");
-
-  OptionsReal("-Mmax", "Maximum accumulation, m/year",
-              myMmax, option_set);
-  if (option_set) {
-    m_M_max = m_grid.convert(myMmax, "m/year", "m/second");
+  options::Real Mmax("-Mmax", "Maximum accumulation, m/year",
+                     m_grid.convert(m_M_max, "m/s", "m/year"));
+  if (Mmax.is_set()) {
+    m_M_max = m_grid.convert(Mmax, "m/year", "m/second");
   }
 
-  OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
-              mySb, option_set);
-  if (option_set) {
-    m_S_b = m_grid.convert(mySb, "m/year/km", "m/second/m");
+  options::Real Sb("-Sb", "radial gradient of accumulation rate, (m/year)/km",
+                   m_grid.convert(m_S_b,   "m/second/m", "m/year/km"));
+  if (Sb.is_set()) {
+    m_S_b = m_grid.convert(Sb, "m/year/km", "m/second/m");
   }
 
-  OptionsReal("-ST", "radial gradient of surface temperature, K/km",
-              myST, option_set);
-  if (option_set) {
-    m_S_T = m_grid.convert(myST, "K/km", "K/m");
+  options::Real ST("-ST", "radial gradient of surface temperature, K/km",
+                   m_grid.convert(m_S_T, "K/m", "K/km"));
+  if (ST.is_set()) {
+    m_S_T = m_grid.convert(ST, "K/km", "K/m");
   }
 
-  OptionsReal("-Rel", "radial distance to equilibrium line, km",
-              myRel, option_set);
-  if (option_set) {
-    m_R_el = m_grid.convert(myRel, "km", "m");
+  options::Real Rel("-Rel", "radial distance to equilibrium line, km",
+                    m_grid.convert(m_R_el, "m", "km"));
+  if (Rel.is_set()) {
+    m_R_el = m_grid.convert(Rel, "km", "m");
   }
 
   initialize_using_formulas();

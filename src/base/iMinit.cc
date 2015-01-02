@@ -178,44 +178,37 @@ void IceModel::set_grid_from_options() {
   {
     // Domain size
     {
-      bool Lx_set = false, Ly_set = false, Lz_set = false;
-      double
-        Lx_km = Lx / 1000.0,
-        Ly_km = Ly / 1000.0;
-      OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-                  Ly_km,  Ly_set);
-      OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-                  Lx_km,  Lx_set);
-      OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-                  Lz,  Lz_set);
-      Lx = Lx_km * 1000.0;
-      Ly = Ly_km * 1000.0;
+      Lx = 1000.0 * options::Real("-Lx", "Half of the grid extent in the Y direction, in km",
+                                  Lx / 1000.0);
+      Ly = 1000.0 * options::Real("-Ly", "Half of the grid extent in the X direction, in km",
+                                  Ly / 1000.0);
+      Lz = options::Real("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
+                         Lz);
     }
 
     // Alternatively: domain size and extent
     {
-      std::vector<double> x_range, y_range;
-      bool x_range_set = false, y_range_set = false;
-      OptionsRealArray("-x_range", "min,max x coordinate values",
-                       x_range, x_range_set);
-      OptionsRealArray("-y_range", "min,max y coordinate values",
-                       y_range, y_range_set);
+      options::RealList x_range("-x_range", "min,max x coordinate values");
+      options::RealList y_range("-y_range", "min,max y coordinate values");
 
-      if (x_range_set && y_range_set) {
-        if (x_range.size() != 2 || y_range.size() != 2) {
+      if (x_range.is_set() && y_range.is_set()) {
+        if (x_range->size() != 2 || y_range->size() != 2) {
           throw RuntimeError("-x_range and/or -y_range argument is invalid.");
         }
-        x0 = (x_range[0] + x_range[1]) / 2.0;
-        y0 = (y_range[0] + y_range[1]) / 2.0;
-        Lx = (x_range[1] - x_range[0]) / 2.0;
-        Ly = (y_range[1] - y_range[0]) / 2.0;
+        std::vector<double>
+          x = x_range.value(),
+          y = y_range.value();
+        x0 = (x[0] + x[1]) / 2.0;
+        y0 = (y[0] + y[1]) / 2.0;
+        Lx = (x[1] - x[0]) / 2.0;
+        Ly = (y[1] - y[0]) / 2.0;
       }
     }
 
     // Number of grid points
-    options::Integer mx("-Mx", "Number of grid points in the Y direction",
+    options::Integer mx("-Mx", "Number of grid points in the X direction",
                         Mx);
-    options::Integer my("-My", "Number of grid points in the X direction",
+    options::Integer my("-My", "Number of grid points in the Y direction",
                         My);
     options::Integer mz("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
                         Mz);
@@ -243,8 +236,6 @@ void IceModel::set_grid_from_options() {
       spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
     }
   }
-
-
 
   // Use the information obtained above:
   //
