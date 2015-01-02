@@ -201,91 +201,6 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   return 0;
 }
 
-//! \brief Process a command-line option taking a string as an argument.
-PetscErrorCode OptionsString(std::string option, std::string text,
-                             std::string &result, bool &is_set, bool allow_empty_arg) {
-  PetscErrorCode ierr;
-  char tmp[TEMPORARY_STRING_LENGTH];
-  PetscBool flag;
-
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-                            result.c_str(), tmp,
-                            TEMPORARY_STRING_LENGTH, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  is_set = (flag == PETSC_TRUE);
-
-  if (is_set) {
-    if (strlen(tmp) == 0) {
-      if (allow_empty_arg) {
-        result.clear();
-      } else {
-        throw RuntimeError::formatted("command line option '%s' requires an argument.\n",
-                                      option.c_str());
-      }
-    } else {
-      result = tmp;
-    }
-  }
-
-  return 0;
-}
-
-//! PISM wrapper replacing PetscOptionsStringArray.
-PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string default_value,
-				      std::vector<std::string>& result, bool &flag) {
-  PetscErrorCode ierr;
-  char tmp[TEMPORARY_STRING_LENGTH];
-  PetscBool opt_set = PETSC_FALSE;
-
-  ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
-                            tmp, TEMPORARY_STRING_LENGTH, &opt_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  result.clear();
-
-  std::string word;
-  if (opt_set) {
-    std::istringstream arg(tmp);
-    while (getline(arg, word, ',')) {
-      result.push_back(word);
-    }
-
-    if (result.empty()) {
-      throw RuntimeError::formatted("command line option '%s' requires an argument.\n",
-                                    opt.c_str());
-    }
-
-    flag = true;
-  } else {                      // parse the default list given
-    std::istringstream arg(default_value);
-    while (getline(arg, word, ',')) {
-      result.push_back(word);
-    }
-
-    flag = false;
-  }
-
-  return 0;
-}
-
-//! Process a command-line option and return a set of strings.
-PetscErrorCode OptionsStringSet(std::string opt, std::string text, std::string default_value,
-				    std::set<std::string>& result, bool &flag) {
-  std::vector<std::string> tmp;
-
-  OptionsStringArray(opt, text, default_value, tmp, flag);
-
-  result.clear();
-  std::vector<std::string>::iterator j = tmp.begin();
-  while(j != tmp.end()) {
-    result.insert(*j);
-    ++j;
-  }
-
-  return 0;
-}
-
 //! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode OptionsInt(std::string option, std::string text,
 			      int &result, bool &is_set) {
@@ -443,27 +358,6 @@ bool OptionsIsSet(std::string option, std::string text) {
   return flag == PETSC_TRUE;
 }
 
-
-/**
- * Checks if a command-line option `option` is set and is given an argument.
- *
- * @param option name of the option
- * @param result true if `option` is set and has an argument, `false` otherwise
- *
- * @return 0 on success
- */
-PetscErrorCode OptionsHasArgument(std::string option, bool &result) {
-  std::string tmp;
-
-  OptionsString(option, "", tmp, result, true);
-
-  if (result == false || tmp.empty() == true) {
-    result = false;
-  }
-
-  return 0;
-}
-
 //! Initializes the config parameter and flag database.
 /*!
   Processes -config and -config_override command line options.
@@ -471,30 +365,20 @@ PetscErrorCode OptionsHasArgument(std::string option, bool &result) {
 PetscErrorCode init_config(MPI_Comm com,
 			   Config &config, Config &overrides,
 			   bool process_options) {
-  PetscErrorCode ierr;
 
-  std::string alt_config = PISM_DefaultConfigFile,
-    override_config;
-  bool use_alt_config, use_override_config;
-
-  ierr = PetscOptionsBegin(com, "", "PISM config file options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-  {
-    OptionsString("-config", "Specifies the name of an alternative config file",
-                  alt_config, use_alt_config);
-    OptionsString("-config_override", "Specifies a config override file name",
-                  override_config, use_override_config);
-  }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
+  options::String alt_config("-config",
+                             "Specifies the name of an alternative config file",
+                             PISM_DefaultConfigFile);
+  options::String override_config("-config_override",
+                                  "Specifies a config override file name");
 
   config.read(alt_config);
 
-  if (use_override_config) {
+  if (override_config.is_set()) {
     overrides.read(override_config);
     config.import_from(overrides);
     verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
-               override_config.c_str());
+               override_config->c_str());
   }
 
   if (process_options) {
@@ -707,9 +591,8 @@ PetscErrorCode set_config_from_options(Config &config) {
   // argument: MohrCoulombYieldStress interprets that as "set
   // constant till friction angle using the default read from a config
   // file or an override file".
-  bool plastic_phi_set = false;
-  OptionsHasArgument("-plastic_phi", plastic_phi_set);
-  if (plastic_phi_set == true) {
+  bool plastic_phi_set = options::Bool("-plastic_phi", "use constant till_phi");
+  if (plastic_phi_set) {
     config.scalar_from_option("plastic_phi", "default_till_phi");
   }
 
