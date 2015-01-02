@@ -213,9 +213,9 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (method.value() == "fem") {
+    if (method == "fem") {
       ssafactory = SSAFEMFactory;
-    } else if (method.value() == "fd") {
+    } else if (method == "fd") {
       ssafactory = SSAFDFactory;
     } else {
       /* can't happen */
