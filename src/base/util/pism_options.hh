@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -108,9 +108,6 @@ bool Bool(const std::string& option,
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
-PetscErrorCode OptionsList(std::string opt, std::string text, std::set<std::string> choices,
-                           std::string default_value, std::string &result, bool &flag);
-
 PetscErrorCode OptionsString(std::string option, std::string text,
                              std::string &result, bool &flag, bool allow_empty_arg = false);
 PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string default_value,

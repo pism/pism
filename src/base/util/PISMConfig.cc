@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -281,24 +281,15 @@ void Config::string_from_option(const std::string &name, const std::string &para
  * keyword given in a comma-separated list "choices_list".
  */
 void Config::keyword_from_option(const std::string &name,
-                                               const std::string &parameter,
-                                               const std::string &choices_list) {
-  std::istringstream arg(choices_list);
-  std::set<std::string> choices;
-  std::string keyword, tmp;
-  bool flag;
+                                 const std::string &parameter,
+                                 const std::string &choices) {
 
-  // Split the list:
-  while (getline(arg, tmp, ',')) {
-    choices.insert(tmp);
-  }
+  options::Keyword keyword("-" + name,
+                           this->get_string_quiet(parameter + "_doc"),
+                           choices,
+                           this->get_string_quiet(parameter));
 
-  OptionsList("-" + name,
-              get_string_quiet(parameter + "_doc"),
-              choices,
-              get_string_quiet(parameter), keyword, flag);
-
-  if (flag) {
+  if (keyword.is_set()) {
     this->set_string_from_option(parameter, keyword);
   }
 }

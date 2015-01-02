@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -118,25 +118,21 @@ void IceFlowLawFactory::setType(const std::string &type)
 
 void IceFlowLawFactory::setFromOptions()
 {
-  bool flag;
-  std::string my_type_name;
-
   {
     // build the list of choices
     std::map<std::string,IceFlowLawCreator>::iterator j = flow_laws.begin();
-    std::set<std::string> choices;
+    std::vector<std::string> choices;
     while (j != flow_laws.end()) {
-      choices.insert(j->first);
+      choices.push_back(j->first);
       ++j;
     }
 
-    OptionsList("-" + prefix + "flow_law", "flow law type", choices,
-                type_name, my_type_name, flag);
+    options::Keyword type("-" + prefix + "flow_law", "flow law type",
+                          join(choices, ","), type_name);
 
-    if (flag) {
-      setType(my_type_name);
+    if (type.is_set()) {
+      setType(type);
     }
-
   }
 }
 

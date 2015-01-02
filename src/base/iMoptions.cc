@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -89,22 +89,14 @@ void  IceModel::setFromOptions() {
 
 //! Set the output file size using a command-line option.
 void IceModel::output_size_from_option(const std::string &option,
-                                                 const std::string &description,
-                                                 const std::string &default_value,
-                                                 std::set<std::string> &result) {
+                                       const std::string &description,
+                                       const std::string &default_value,
+                                       std::set<std::string> &result) {
 
-  std::set<std::string> choices;
-  std::string keyword;
-  bool flag;
+  options::Keyword o_size(option, description, "none,small,medium,big",
+                          default_value);
 
-  choices.insert("none");
-  choices.insert("small");
-  choices.insert("medium");
-  choices.insert("big");
-  OptionsList(option, description, choices,
-              default_value, keyword, flag);
-
-  set_output_size(keyword, result);
+  set_output_size(o_size, result);
 }
 
 //! Assembles a list of variables corresponding to an output file size.
@@ -218,15 +210,7 @@ void IceModel::set_output_size(const std::string &keyword,
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
 std::string IceModel::get_output_size(const std::string &option) {
-  std::set<std::string> choices;
-  std::string keyword;
-  bool flag;
-  choices.insert("none");
-  choices.insert("small");
-  choices.insert("medium");
-  choices.insert("big");
-  OptionsList(option, "UNKNOWN", choices, "UNKNOWN", keyword, flag);
-  return keyword;
+  return options::Keyword(option, "no description", "none,small,medium,big", "no default");
 }
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -196,80 +196,6 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   bool helpSet = options::Bool("-help", "print help on all options");
   if (helpSet == true) {
     just_show_usage(com, execname, usage);
-  }
-
-  return 0;
-}
-
-
-/*
-   note on pass-by-reference for options: For the last argument "flag" to
-   PetscOptionsXXXX(....,&flag), the flag always indicates whether the option
-   has been set. Therefore "flag" is altered by this function call. For other
-   arguments "value" to PetscOptionsXXXX(....,&value,&flag), the value of
-   "value" is only set if the user specified the option. Therefore "flag"
-   should always be given a local PetscBool variable if we want to preserve
-   previously set IceModel flags. By contrast, for various parameters "value"
-   we can use the IceModel parameter itself without fear of overwriting
-   defaults unless, of course, the user wants them overwritten. It is also o.k.
-   to have a local variable for "value", and then proceed to set the IceModel
-   member accordingly.
-*/
-
-//! PISM wrapper replacing PetscOptionsEList.
-/*
-  Ignores everything after the first colon, i.e. if "-foo bar" is allowed, then
-  "-foo bar:baz" is also allowed.
-
-  This is to make it possible to pass a parameter to a module selected using a
-  command-line option without adding one mode option.
- */
-PetscErrorCode OptionsList(std::string option, std::string description,
-                           std::set<std::string> choices, std::string default_value,
-                           std::string &result, bool &flag) {
-  PetscErrorCode ierr;
-  char tmp[TEMPORARY_STRING_LENGTH];
-  std::string list, descr;
-  PetscBool opt_set = PETSC_FALSE;
-
-  if (choices.empty()) {
-    throw RuntimeError::formatted("OptionsList: empty choices argument");
-  }
-
-  std::set<std::string>::iterator j = choices.begin();
-  list = "[" + *j++;
-  while (j != choices.end()) {
-    list += ", " + (*j++);
-  }
-  list += "]";
-
-  descr = description + " Choose one of " + list;
-
-  ierr = PetscOptionsString(option.c_str(), descr.c_str(), "", default_value.c_str(),
-                            tmp, TEMPORARY_STRING_LENGTH, &opt_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  // return the default value if the option was not set
-  if (!opt_set) {
-    flag = false;
-    result = default_value;
-    return 0;
-  }
-
-  std::string keyword = tmp;
-  // find ":" and discard everything that goes after
-  size_t n = keyword.find(":");
-  if (n != std::string::npos) {
-    keyword.resize(n);
-  }
-
-  // return the choice if it is valid and stop if it is not
-  if (choices.find(keyword) != choices.end()) {
-    flag = true;
-    result = tmp;
-  } else {
-    throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
-                                  option.c_str(), tmp, list.c_str());
   }
 
   return 0;
@@ -593,18 +519,11 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity");
 
   {
-    bool energy_set;
-    std::string energy;
-    std::set<std::string> choices;
-    choices.insert("none");
-    choices.insert("cold");
-    choices.insert("enthalpy");
+    options::Keyword energy("-energy",
+                            "choose the energy model (one of 'none', 'cold', 'enthalpy')",
+                            "none,cold,enthalpy", "enthalpy");
 
-    OptionsList("-energy",
-                "choose the energy model (one of 'none', 'cold', 'enthalpy')",
-                choices, "enthalpy", energy, energy_set);
-
-    if (energy_set == true) {
+    if (energy.is_set()) {
       if (energy == "none") {
         config.set_flag_from_option("do_energy", false);
         // Allow selecting cold ice flow laws in isothermal mode. 
@@ -616,7 +535,7 @@ PetscErrorCode set_config_from_options(Config &config) {
         config.set_flag_from_option("do_energy", true);
         config.set_flag_from_option("do_cold_ice_methods", false);
       } else {
-        // can't happen (OptionsList validates its input)
+        // can't happen (options::Keyword validates its input)
         assert(false);
       }
     }
