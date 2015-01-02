@@ -77,39 +77,6 @@ PetscErrorCode verbosityLevelFromOptions() {
   return 0;
 }
 
-//! Print a warning telling the user that an option was ignored.
-PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
-  PetscErrorCode ierr;
-  PetscBool option_is_set;
-
-  char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
-
-  if (option_is_set) {
-    verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
-               name.c_str());
-  }
-
-  return 0;
-}
-
-//! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
-PetscErrorCode check_old_option_and_stop(std::string old_name, std::string new_name) {
-  PetscErrorCode ierr;
-  PetscBool option_is_set;
-
-  char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(NULL, old_name.c_str(), tmp, 1, &option_is_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
-
-  if (option_is_set) {
-    throw RuntimeError::formatted("command-line option '%s' is deprecated. Please use '%s' instead.",
-                                  old_name.c_str(), new_name.c_str());
-  }
-
-  return 0;
-}
 
 //!Stop if an option `name` is set.
 PetscErrorCode stop_if_set(std::string name) {
@@ -585,20 +552,20 @@ PetscErrorCode set_config_from_options(Config &config) {
   config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor");
 
   // old options
-  check_old_option_and_stop("-sliding_scale_brutal",
+  options::deprecated("-sliding_scale_brutal",
                             "-brutal_sliding' and '-brutal_sliding_scale");
-  check_old_option_and_stop("-ssa_sliding", "-stress_balance ...");
-  check_old_option_and_stop("-ssa_floating_only", "-stress_balance ...");
-  check_old_option_and_stop("-sia", "-stress_balance ...");
-  check_old_option_and_stop("-no_sia", "-stress_balance ...");
-  check_old_option_and_stop("-hold_tauc", "-yield_stress constant");
-  check_old_option_and_stop("-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc");
-  check_old_option_and_stop("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX");
-  check_old_option_and_stop("-calving_at_thickness",
+  options::deprecated("-ssa_sliding", "-stress_balance ...");
+  options::deprecated("-ssa_floating_only", "-stress_balance ...");
+  options::deprecated("-sia", "-stress_balance ...");
+  options::deprecated("-no_sia", "-stress_balance ...");
+  options::deprecated("-hold_tauc", "-yield_stress constant");
+  options::deprecated("-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc");
+  options::deprecated("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX");
+  options::deprecated("-calving_at_thickness",
                             "-calving thickness_calving -thickness_calving_threshold XXX");
-  check_old_option_and_stop("-float_kill", "-calving float_kill");
-  check_old_option_and_stop("-no_energy", "-energy none");
-  check_old_option_and_stop("-cold", "-energy cold");
+  options::deprecated("-float_kill", "-calving float_kill");
+  options::deprecated("-no_energy", "-energy none");
+  options::deprecated("-cold", "-energy cold");
 
   return 0;
 }

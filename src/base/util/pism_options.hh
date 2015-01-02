@@ -103,12 +103,12 @@ public:
 bool Bool(const std::string& option,
           const std::string& description);
 
+void deprecated(const std::string &old_name, const std::string &new_name);
+void ignore(MPI_Comm com, std::string name);
 } // end of namespace options
 
 PetscErrorCode verbosityLevelFromOptions();
 
-PetscErrorCode ignore_option(MPI_Comm com, std::string name);
-PetscErrorCode check_old_option_and_stop(std::string old_name, std::string new_name);
 PetscErrorCode stop_if_set(std::string name);
 
 // usage message and required options; drivers use these
@@ -126,8 +126,6 @@ PetscErrorCode init_config(MPI_Comm com,
                            bool process_options = false);
 
 PetscErrorCode set_config_from_options(Config &config);
-
-
 } // end of namespace pism
 
 #endif /* _PISM_OPTIONS_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 PISM Authors
+// Copyright (C) 2004--2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -180,8 +180,8 @@ void MohrCoulombYieldStress::init()
   if (till_phi_input != NULL) {
     m_till_phi.copy_from(*till_phi_input);
 
-    ignore_option(m_grid.com, "-plastic_phi");
-    ignore_option(m_grid.com, "-topg_to_phi");
+    options::ignore(m_grid.com, "-plastic_phi");
+    options::ignore(m_grid.com, "-topg_to_phi");
 
     // We do not allow re-gridding in this case.
 

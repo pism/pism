@@ -333,14 +333,14 @@ void IceModel::grid_setup() {
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
-    ignore_option(grid.com, "-Mx");
-    ignore_option(grid.com, "-My");
-    ignore_option(grid.com, "-Mz");
-    ignore_option(grid.com, "-Mbz");
-    ignore_option(grid.com, "-Lx");
-    ignore_option(grid.com, "-Ly");
-    ignore_option(grid.com, "-Lz");
-    ignore_option(grid.com, "-z_spacing");
+    options::ignore(grid.com, "-Mx");
+    options::ignore(grid.com, "-My");
+    options::ignore(grid.com, "-Mz");
+    options::ignore(grid.com, "-Mbz");
+    options::ignore(grid.com, "-Lx");
+    options::ignore(grid.com, "-Ly");
+    options::ignore(grid.com, "-Lz");
+    options::ignore(grid.com, "-z_spacing");
   } else {
     set_grid_defaults();
     set_grid_from_options();

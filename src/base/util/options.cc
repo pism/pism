@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -251,6 +251,29 @@ RealList::RealList(const std::string& option,
 bool Bool(const std::string& option,
           const std::string& description) {
   return String(option, description, "", ALLOW_EMPTY).is_set();
+}
+
+//! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
+void deprecated(const std::string &old_name, const std::string &new_name) {
+
+  String option(old_name, "no description", "default");
+
+  if (option.is_set()) {
+    throw RuntimeError::formatted("command-line option '%s' is deprecated."
+                                  " Please use '%s' instead.",
+                                  old_name.c_str(), new_name.c_str());
+  }
+}
+
+//! Print a warning telling the user that an option was ignored.
+void ignore(MPI_Comm com, std::string name) {
+
+  String option(name, "no description", "default");
+
+  if (option.is_set()) {
+    verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
+               name.c_str());
+  }
 }
 
 } // end of namespace options

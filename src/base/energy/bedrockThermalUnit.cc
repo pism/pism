@@ -57,8 +57,8 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
 
     if (i.is_set()) {
       m_input_file = i;
-      ignore_option(m_grid.com, "-Mbz");
-      ignore_option(m_grid.com, "-Lbz");
+      options::ignore(m_grid.com, "-Mbz");
+      options::ignore(m_grid.com, "-Lbz");
 
       // If we're initializing from a file we need to get the number of bedrock
       // levels and the depth of the bed thermal layer from it:
@@ -84,7 +84,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
       // Bootstrapping
 
       if (Mbz.is_set() && m_Mbz == 1) {
-        ignore_option(m_grid.com, "-Lbz");
+        options::ignore(m_grid.com, "-Lbz");
         m_Lbz = 0;
       } else if (Mbz.is_set() ^ Lbz.is_set()) {
         throw RuntimeError("please specify both -Mbz and -Lbz");

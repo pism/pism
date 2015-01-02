@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -151,9 +151,9 @@ void Time_Calendar::init() {
                "* Setting time from '%s'...\n",
                time_file->c_str());
 
-    ignore_option(m_com, "-y");
-    ignore_option(m_com, "-ys");
-    ignore_option(m_com, "-ye");
+    options::ignore(m_com, "-y");
+    options::ignore(m_com, "-ys");
+    options::ignore(m_com, "-ye");
 
     init_from_file(time_file);
   }
