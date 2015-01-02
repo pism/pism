@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
     PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
     ierr = PetscOptionsHasName(NULL, "-help", &help_set);
     PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
+    if ((usage_set==true) || (help_set==true)) {
       PetscPrintf(com,
                   "\n"
                   "usage of SIAFD_TEST:\n"

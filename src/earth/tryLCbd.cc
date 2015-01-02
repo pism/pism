@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,24 +73,33 @@ int main(int argc, char *argv[]) {
     DM          da2;
     Vec         H, bed, Hstart, bedstart, uplift;
     
-    PetscBool  include_elastic = PETSC_FALSE,
-                do_uplift = PETSC_FALSE;
-    double H0 = 1000.0;            // ice disc load thickness
+    bool
+      include_elastic = false,
+      do_uplift       = false;
+    double H0         = 1000.0; // ice disc load thickness
 
     if (argc >= 2) {
       // FIXME:  should use PETSC-style options
       switch (argv[1][0]) {
         case '1':
-          include_elastic = PETSC_FALSE;  do_uplift = PETSC_FALSE;  H0 = 1000.0;
+          include_elastic = false;
+          do_uplift       = false;
+          H0              = 1000.0;
           break;
         case '2':
-          include_elastic = PETSC_TRUE;  do_uplift = PETSC_FALSE;  H0 = 1000.0;
+          include_elastic = true;
+          do_uplift       = false;
+          H0              = 1000.0;
           break;
         case '3':
-          include_elastic = PETSC_FALSE;  do_uplift = PETSC_TRUE;  H0 = 0.0;
+          include_elastic = false;
+          do_uplift       = true;
+          H0              = 0.0;
           break;
         case '4':
-          include_elastic = PETSC_TRUE;  do_uplift = PETSC_TRUE;  H0 = 1000.0;
+          include_elastic = true;
+          do_uplift       = true;
+          H0              = 1000.0;
           break;
         default:
           break; // accept default which is scenario 1
@@ -100,12 +109,14 @@ int main(int argc, char *argv[]) {
     const double tfinalyears = 150.0e3;  // total run time
 
     // FIXME: should accept options here
-    const int    Mx = 193, 
-                      My = 129;
+    const int
+      Mx = 193, 
+      My = 129;
 
-    const double Lx = 3000.0e3, 
-                      Ly = 2000.0e3;
-    const int    Z = 2;
+    const double
+      Lx = 3000.0e3, 
+      Ly = 2000.0e3;
+    const int Z = 2;
     const double dtyears = 100.0;
     
     if (rank == 0) { // only runs on proc 0; all sequential
@@ -182,7 +193,7 @@ int main(int argc, char *argv[]) {
       
       const double peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
-      if (do_uplift == PETSC_TRUE) {
+      if (do_uplift == true) {
         double **upl;
         ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl);
         PISM_PETSC_CHK(ierr, "VecGetArray2d");

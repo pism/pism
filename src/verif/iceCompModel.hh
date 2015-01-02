@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,8 +58,8 @@ public:
 
 protected:
   // related to all (or most) tests
-  PetscBool   exactOnly;
-  int          testname;
+  bool exactOnly;
+  int testname;
   virtual void additionalAtStartTimestep();
   virtual void additionalAtEndTimestep();
   // all tests except K
@@ -71,10 +71,10 @@ protected:
 
   // related to tests A B C D E H
   void initTestABCDEH();
-  void fillSolnTestABCDH();  // only used with exactOnly == PETSC_TRUE
+  void fillSolnTestABCDH();  // only used with exactOnly == true
   
   // related to test E
-  void fillSolnTestE();  // only used with exactOnly == PETSC_TRUE
+  void fillSolnTestE();  // only used with exactOnly == true
 
   // test E only
   void computeBasalVelocityErrors(double &exactmaxspeed,
@@ -86,13 +86,13 @@ protected:
   // related to test L
   IceModelVec2S   vHexactL;
   void initTestL();
-  void fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
+  void fillSolnTestL();  // only used with exactOnly == true
 
   // related to tests F G; see iCMthermo.cc
   virtual void temperatureStep(double* vertSacrCount, double* bulgeCount);
   void initTestFG();
   void getCompSourcesTestFG();
-  void fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE
+  void fillSolnTestFG();  // only used with exactOnly == true
   // tests F and G
   void computeTemperatureErrors(double &gmaxTerr, double &gavTerr);
   // tests F and G
@@ -109,8 +109,8 @@ protected:
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();
   void fillTemperatureSolnTestsKO();  // used in initialzation
-  //   and with exactOnly == PETSC_TRUE
-  void fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
+  //   and with exactOnly == true
+  void fillBasalMeltRateSolnTestO();  // used only with exactOnly == true
  // tests K and O only
   void computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
                                                     double &gmaxTberr, double &gavTberr);
@@ -123,8 +123,8 @@ protected:
   static const double secpera;
 
 private:
-  double        f;       // ratio of ice density to bedrock density
-  PetscBool         bedrock_is_ice_forK;
+  double f;       // ratio of ice density to bedrock density
+  bool bedrock_is_ice_forK;
 
   // see iCMthermo.cc
   static const double Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant

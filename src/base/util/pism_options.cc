@@ -65,12 +65,12 @@ PetscErrorCode verbosityLevelFromOptions() {
   ierr = setVerbosityLevel(2);
   ierr = PetscOptionsGetInt(NULL, "-verbose", &myLevel, &levelSet);
   PISM_PETSC_CHK(ierr, "PetscOptionsGetInt");
-  if (levelSet == PETSC_TRUE) {
+  if (levelSet == true) {
     ierr = setVerbosityLevel(myLevel);
   } else {
     ierr = PetscOptionsHasName(NULL, "-verbose", &verbose);
     PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    if (verbose == PETSC_TRUE) {
+    if (verbose == true) {
       ierr = setVerbosityLevel(3);
     }
   }
@@ -145,16 +145,16 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
-  for (size_t ii=0; ii < required_options.size(); ii++) {
+  for (size_t k=0; k < required_options.size(); k++) {
 
-    bool set = options::Bool(required_options[ii], "a required option");
+    bool set = options::Bool(required_options[k], "a required option");
     if (set == false) {
       req_absent = true;
       verbPrintf(1,com,
-                 "PISM ERROR: option %s required\n",required_options[ii].c_str());
+                 "PISM ERROR: option %s required\n",required_options[k].c_str());
     }
   }
-  if (req_absent == PETSC_TRUE) {
+  if (req_absent == true) {
     verbPrintf(1,com,"\n");
     show_usage_and_quit(com, execname, usage);
   }
@@ -180,7 +180,7 @@ PetscErrorCode OptionsInt(std::string option, std::string text,
                             TEMPORARY_STRING_LENGTH, &flag);
   PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
-  is_set = (flag == PETSC_TRUE);
+  is_set = (flag == true);
 
   if (is_set == false) {
     return 0;
@@ -553,7 +553,7 @@ PetscErrorCode set_config_from_options(Config &config) {
 
   // old options
   options::deprecated("-sliding_scale_brutal",
-                            "-brutal_sliding' and '-brutal_sliding_scale");
+                      "-brutal_sliding' and '-brutal_sliding_scale");
   options::deprecated("-ssa_sliding", "-stress_balance ...");
   options::deprecated("-ssa_floating_only", "-stress_balance ...");
   options::deprecated("-sia", "-stress_balance ...");

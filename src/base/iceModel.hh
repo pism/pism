@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -390,10 +390,10 @@ protected:
   virtual void energyStats(double iarea,double &gmeltfrac);
   virtual void ageStats(double ivol, double &gorigfrac);
   virtual void summary(bool tempAndAge);
-  virtual void summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
-                                          double delta_t,
-                                          double volume, double area,
-                                          double meltfrac, double max_diffusivity);
+  virtual void summaryPrintLine(bool printPrototype, bool tempAndAge,
+                                double delta_t,
+                                double volume, double area,
+                                double meltfrac, double max_diffusivity);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:

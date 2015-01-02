@@ -851,7 +851,7 @@ void IceModel::run() {
   verbPrintf(2, grid.com, "running forward ...\n");
 
   stdout_flags.erase(); // clear it out
-  summaryPrintLine(PETSC_TRUE, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
+  summaryPrintLine(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
   summary(do_energy);  // report starting state
 

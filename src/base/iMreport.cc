@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -173,7 +173,7 @@ void IceModel::summary(bool tempAndAge) {
   stress_balance->get_max_diffusivity(max_diffusivity);
 
   // main report: 'S' line
-  summaryPrintLine(PETSC_FALSE, tempAndAge, dt,
+  summaryPrintLine(false, tempAndAge, dt,
                    gvolume,garea,meltfrac,max_diffusivity);
 }
 
@@ -215,10 +215,10 @@ For more description and examples, see the PISM User's Manual.
 Derived classes of IceModel may redefine this method and print alternate
 information.
  */
-void IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
-                                          double delta_t,
-                                          double volume,  double area,
-                                          double /* meltfrac */,  double max_diffusivity) {
+void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
+                                double delta_t,
+                                double volume,  double area,
+                                double /* meltfrac */,  double max_diffusivity) {
   const bool do_energy = config.get_flag("do_energy");
   const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
@@ -235,7 +235,7 @@ void IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
     snprintf(areascalestr, sizeof(areascalestr), "10^%1d_", log10scalearea);
   }
 
-  if (printPrototype == PETSC_TRUE) {
+  if (printPrototype == true) {
     verbPrintf(2,grid.com,
                "P         time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
     verbPrintf(2,grid.com,
@@ -257,7 +257,7 @@ void IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
     mass_cont_sub_dtsum += delta_t;
   }
 
-  if ((tempAndAge == PETSC_TRUE) || (!do_energy) || (getVerbosityLevel() > 2)) {
+  if ((tempAndAge == true) || (!do_energy) || (getVerbosityLevel() > 2)) {
     char tempstr[90]    = "",
          velunitstr[90] = "";
 

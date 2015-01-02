@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
     PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
     ierr = PetscOptionsHasName(NULL, "-help", &help_set);
     PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
+    if ((usage_set==true) || (help_set==true)) {
       PetscPrintf(com,
                   "\n"
                   "usage:\n"

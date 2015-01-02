@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
       "notes:\n"
       "  * one of -i or -boot_file is required\n"
       "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
+    if ((iset == false) && (bfset == false)) {
       ierr = PetscPrintf(com,
                          "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");

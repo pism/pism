@@ -339,11 +339,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
     case 'K':
       for (unsigned int k = 0; k < grid.Mz(); k++) {
         exactK(grid.time->current(), grid.z(k), &Tex[k], &FF,
-               (bedrock_is_ice_forK==PETSC_TRUE));
+               (bedrock_is_ice_forK==true));
       }
       for (unsigned int k = 0; k < Mbz; k++) {
         exactK(grid.time->current(), zblevels[k], &Tbex[k], &FF,
-               (bedrock_is_ice_forK==PETSC_TRUE));
+               (bedrock_is_ice_forK==true));
       }
       break;
     case 'O':
@@ -618,7 +618,7 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
     case 'K':
       for (unsigned int k=0; k<grid.Mz(); k++) {
         exactK(grid.time->current(), grid.z(k), &Tcol[k], &FF,
-               (bedrock_is_ice_forK==PETSC_TRUE));
+               (bedrock_is_ice_forK==true));
       }
       break;
     case 'O':
@@ -697,7 +697,7 @@ void BTU_Verification::bootstrap() {
     case 'K':
       for (unsigned int k = 0; k < m_Mbz; k++) {
         if (exactK(m_grid.time->current(), zlevels[k], &Tbcol[k], &FF,
-                   (bedrock_is_ice==PETSC_TRUE))) {
+                   (bedrock_is_ice==true))) {
           throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                         zlevels[k]);
         }

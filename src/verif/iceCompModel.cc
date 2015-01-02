@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -53,8 +53,8 @@ IceCompModel::IceCompModel(IceGrid &g, Config &conf, Config &conf_overrides, int
 
   // defaults for IceCompModel:
   testname = mytest;
-  exactOnly = PETSC_FALSE;
-  bedrock_is_ice_forK = PETSC_FALSE;
+  exactOnly = false;
+  bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
   config.set_double("sia_enhancement_factor", 1.0);
@@ -168,7 +168,7 @@ void IceCompModel::setFromOptions() {
      exact solution. */
   bool flag = options::Bool("-eo", "exact only");
   if (flag) {
-    exactOnly = PETSC_TRUE;
+    exactOnly = true;
     verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
   }
 
@@ -242,14 +242,14 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
   bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
-  if (biiSet == PETSC_TRUE) {
+  if (biiSet == true) {
     if (testname == 'K') {
       verbPrintf(1,grid.com,
                  "setting material properties of bedrock to those of ice in Test K\n");
       config.set_double("bedrock_thermal_density", config.get("ice_density"));
       config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
       config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
-      bedrock_is_ice_forK = PETSC_TRUE;
+      bedrock_is_ice_forK = true;
     } else {
       verbPrintf(1,grid.com,
                  "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
@@ -292,7 +292,7 @@ void IceCompModel::allocate_stressbalance() {
 
     IceFlowLaw *ice = stress_balance->get_ssb_modifier()->get_flow_law();
 
-    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
+    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == false) {
       verbPrintf(1, grid.com,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
     }
@@ -821,7 +821,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
 
 void IceCompModel::additionalAtStartTimestep() {
 
-  if (exactOnly == PETSC_TRUE && testname != 'K') {
+  if (exactOnly == true && testname != 'K') {
     dt_force = config.get("maximum_time_step_years", "years", "seconds");
   }
 
@@ -839,7 +839,7 @@ void IceCompModel::additionalAtEndTimestep() {
 
   // do nothing at the end of the time step unless the user has asked for the
   // exact solution to overwrite the numerical solution
-  if (exactOnly == PETSC_FALSE) {
+  if (exactOnly == false) {
     return;
   }
 
