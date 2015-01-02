@@ -88,6 +88,10 @@ StringList::StringList(const std::string& option,
   set(result, input.is_set());
 }
 
+const std::string& StringList::operator[](size_t index) const {
+  return m_value[index];
+}
+
 std::string StringList::to_string() {
   std::vector<std::string>::const_iterator j = m_value.begin();
   std::stringstream buffer;
@@ -203,6 +207,9 @@ IntegerList::IntegerList(const std::string& option,
   set(result, input.is_set());
 }
 
+const int& IntegerList::operator[](size_t index) const {
+  return m_value[index];
+}
 
 Real::Real(const std::string& option,
            const std::string& description,
@@ -246,6 +253,10 @@ RealList::RealList(const std::string& option,
     }
   }
   set(result, input.is_set());
+}
+
+const double& RealList::operator[](size_t index) const {
+  return m_value[index];
 }
 
 bool Bool(const std::string& option,

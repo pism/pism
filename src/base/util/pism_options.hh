@@ -55,6 +55,7 @@ public:
              const std::string& description,
              const std::string& default_value);
   std::string to_string();
+  const std::string& operator[](size_t index) const;
 };
 
 class StringSet : public Option<std::set<std::string> > {
@@ -84,6 +85,7 @@ class IntegerList : public Option<std::vector<int> > {
 public:
   IntegerList(const std::string& option,
               const std::string& description);
+  const int& operator[](size_t index) const;
 };
 
 
@@ -98,6 +100,7 @@ class RealList : public Option<std::vector<double> > {
 public:
   RealList(const std::string& option,
            const std::string& description);
+  const double& operator[](size_t index) const;
 };
 
 bool Bool(const std::string& option,

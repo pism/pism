@@ -23,4 +23,8 @@
 %rename(OptionRealList) pism::options::RealList;
 %rename(OptionBool) pism::options::Bool;
 
+%ignore pism::options::StringList::operator[];
+%ignore pism::options::IntegerList::operator[];
+%ignore pism::options::RealList::operator[];
+
 %include "pism_options.hh"
