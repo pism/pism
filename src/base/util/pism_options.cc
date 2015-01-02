@@ -405,12 +405,11 @@ PetscErrorCode set_config_from_options(Config &config) {
       throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
                                     topg_to_phi->size());
     }
-    std::vector<double> p = topg_to_phi.value();
     config.set_flag("till_use_topg_to_phi", true);
-    config.set_double("till_topg_to_phi_phi_min", p[0]);
-    config.set_double("till_topg_to_phi_phi_max", p[1]);
-    config.set_double("till_topg_to_phi_topg_min", p[2]);
-    config.set_double("till_topg_to_phi_topg_max", p[3]);
+    config.set_double("till_topg_to_phi_phi_min", topg_to_phi[0]);
+    config.set_double("till_topg_to_phi_phi_max", topg_to_phi[1]);
+    config.set_double("till_topg_to_phi_topg_min", topg_to_phi[2]);
+    config.set_double("till_topg_to_phi_topg_max", topg_to_phi[3]);
   }
 
   config.flag_from_option("tauc_slippery_grounding_lines",

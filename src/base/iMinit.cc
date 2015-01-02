@@ -195,13 +195,10 @@ void IceModel::set_grid_from_options() {
         if (x_range->size() != 2 || y_range->size() != 2) {
           throw RuntimeError("-x_range and/or -y_range argument is invalid.");
         }
-        std::vector<double>
-          x = x_range.value(),
-          y = y_range.value();
-        x0 = (x[0] + x[1]) / 2.0;
-        y0 = (y[0] + y[1]) / 2.0;
-        Lx = (x[1] - x[0]) / 2.0;
-        Ly = (y[1] - y[0]) / 2.0;
+        x0 = (x_range[0] + x_range[1]) / 2.0;
+        y0 = (y_range[0] + y_range[1]) / 2.0;
+        Lx = (x_range[1] - x_range[0]) / 2.0;
+        Ly = (y_range[1] - y_range[0]) / 2.0;
       }
     }
 
