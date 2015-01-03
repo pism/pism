@@ -151,9 +151,9 @@ void Time_Calendar::init() {
                "* Setting time from '%s'...\n",
                time_file->c_str());
 
-    options::ignore(m_com, "-y");
-    options::ignore(m_com, "-ys");
-    options::ignore(m_com, "-ye");
+    options::ignored(m_com, "-y");
+    options::ignored(m_com, "-ys");
+    options::ignored(m_com, "-ye");
 
     init_from_file(time_file);
   }

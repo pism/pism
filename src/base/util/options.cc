@@ -277,7 +277,7 @@ void deprecated(const std::string &old_name, const std::string &new_name) {
 }
 
 //! Print a warning telling the user that an option was ignored.
-void ignore(MPI_Comm com, std::string name) {
+void ignored(MPI_Comm com, const std::string &name) {
 
   String option(name, "no description", "default");
 

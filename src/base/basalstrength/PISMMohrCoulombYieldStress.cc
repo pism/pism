@@ -180,8 +180,8 @@ void MohrCoulombYieldStress::init()
   if (till_phi_input != NULL) {
     m_till_phi.copy_from(*till_phi_input);
 
-    options::ignore(m_grid.com, "-plastic_phi");
-    options::ignore(m_grid.com, "-topg_to_phi");
+    options::ignored(m_grid.com, "-plastic_phi");
+    options::ignored(m_grid.com, "-topg_to_phi");
 
     // We do not allow re-gridding in this case.
 
