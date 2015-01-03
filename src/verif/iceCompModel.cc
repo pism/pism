@@ -323,7 +323,7 @@ void IceCompModel::allocate_couplers() {
 void IceCompModel::set_vars_from_options() {
 
   // -boot_file command-line option is not allowed here.
-  stop_if_set("-boot_file");
+  options::forbidden("-boot_file");
 
   strain_heating3_comp.set(0.0);
 

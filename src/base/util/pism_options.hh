@@ -108,11 +108,10 @@ bool Bool(const std::string& option,
 
 void deprecated(const std::string &old_name, const std::string &new_name);
 void ignore(MPI_Comm com, std::string name);
+void forbidden(const std::string &name);
 } // end of namespace options
 
 PetscErrorCode verbosityLevelFromOptions();
-
-PetscErrorCode stop_if_set(std::string name);
 
 // usage message and required options; drivers use these
 PetscErrorCode stop_on_version_option();

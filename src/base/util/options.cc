@@ -287,5 +287,15 @@ void ignore(MPI_Comm com, std::string name) {
   }
 }
 
+//!Stop if an option `name` is set.
+void forbidden(const std::string &name) {
+  bool option_is_set = options::Bool(name, "no description");
+
+  if (option_is_set) {
+    throw RuntimeError::formatted("command-line option '%s' is not allowed.",
+                                  name.c_str());
+  }
+}
+
 } // end of namespace options
 } // end of namespace pism

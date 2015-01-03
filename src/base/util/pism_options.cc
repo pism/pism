@@ -75,24 +75,6 @@ PetscErrorCode verbosityLevelFromOptions() {
   return 0;
 }
 
-
-//!Stop if an option `name` is set.
-PetscErrorCode stop_if_set(std::string name) {
-  PetscErrorCode ierr;
-  PetscBool option_is_set;
-
-  char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
-
-  if (option_is_set) {
-    throw RuntimeError::formatted("command-line option '%s' is not allowed.",
-                                  name.c_str());
-  }
-
-  return 0;
-}
-
 //! \brief Print a usage message.
 PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string usage) {
   verbPrintf(1,com,
