@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2014 Torsten Albrecht
+// Copyright (C) 2011-2015 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 #include "error_handling.hh"
+#include "pism_options.hh"
 
 namespace pism {
 
@@ -32,7 +33,6 @@ namespace pism {
 
 void IceModel::calculateFractureDensity() {
   const double dx = grid.dx(), dy = grid.dy(), Mx = grid.Mx(), My = grid.My();
-  PetscErrorCode ierr;
 
   IceModelVec2S
     &vFDnew = vWork2d[0],
@@ -77,10 +77,7 @@ void IceModel::calculateFractureDensity() {
 
   //options
   /////////////////////////////////////////////////////////
-  double soft_residual = 1.0;
-  PetscBool fracture_soft;
-  ierr = PetscOptionsGetScalar(NULL, "-fracture_softening", &soft_residual, &fracture_soft);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetScalar");
+  double soft_residual = options::Real("-fracture_softening", "soft_residual", 1.0);
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
   // more: T. Albrecht, A. Levermann; Fracture-induced softening for
@@ -96,57 +93,46 @@ void IceModel::calculateFractureDensity() {
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  PetscInt  Nparamf=4;
-  double inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
-  PetscBool  fractures_set;
-  ierr = PetscOptionsGetRealArray(NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
+  double
+    gamma         = 1.0,
+    initThreshold = 7.0e4,
+    gammaheal     = 0.0,
+    healThreshold = 2.0e-10;
 
-  if (Nparamf != 4) {
-    throw RuntimeError("option -fractures requires exactly 4 arguments");
+  options::RealList fractures("-fractures", "gamma, initThreshold, gammaheal, healThreshold");
+
+  if (fractures.is_set()) {
+    if (fractures->size() != 4) {
+      throw RuntimeError("option -fractures requires exactly 4 arguments");
+    }
+    gamma         = fractures[0];
+    initThreshold = fractures[1];
+    gammaheal     = fractures[2];
+    healThreshold = fractures[3];
   }
-  double gamma = inarrayf[0],
-    initThreshold = inarrayf[1],
-    gammaheal     = inarrayf[2],
-    healThreshold = inarrayf[3];
 
   verbPrintf(3, grid.com,
              "PISM-PIK INFO: fracture density is found with parameters:\n"
              " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
              gamma, initThreshold, gammaheal, healThreshold, soft_residual);
 
-  PetscBool do_fracground;
-  ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground);
-  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+  bool do_fracground = options::Bool("-do_frac_on_grounded",
+                                     "model fracture density in grounded areas");
 
-  double fdBoundaryValue = 0.0;
-  ierr = PetscOptionsGetScalar(NULL, "-phi0", &fdBoundaryValue, NULL);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetScalar");
+  double fdBoundaryValue = options::Real("-phi0", "phi0", 0.0);
 
-  PetscBool constant_healing;
-  ierr = PetscOptionsHasName(NULL,"-constant_healing",&constant_healing);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetScalar");
+  bool constant_healing = options::Bool("-constant_healing", "constant healing");
 
-  PetscBool fracture_weighted_healing;
-  ierr = PetscOptionsHasName(NULL,"-fracture_weighted_healing",
-                             &fracture_weighted_healing);
-  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+  bool fracture_weighted_healing = options::Bool("-fracture_weighted_healing",
+                                                 "fracture weighted healing");
 
-  PetscBool max_shear_stress;
-  ierr = PetscOptionsHasName(NULL,"-max_shear",&max_shear_stress);
-  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+  bool max_shear_stress = options::Bool("-max_shear", "max shear");
 
-  PetscBool lefm;
-  ierr = PetscOptionsHasName(NULL,"-lefm",&lefm);
-  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+  bool lefm = options::Bool("-lefm", "lefm");
 
-  PetscBool constant_fd;
-  ierr = PetscOptionsHasName(NULL,"-constant_fd",&constant_fd);
-  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+  bool constant_fd = options::Bool("-constant_fd", "constant fd");
 
-  PetscBool fd2d_scheme;
-  ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme);
-  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+  bool fd2d_scheme = options::Bool("-scheme_fd2d", "scheme fd2d");
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();

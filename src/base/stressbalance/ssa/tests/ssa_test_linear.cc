@@ -167,7 +167,6 @@ PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/,
 
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
 
@@ -184,11 +183,9 @@ int main(int argc, char *argv[]) {
 
     setVerbosityLevel(5);
 
-    PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+    bool
+      usage_set = options::Bool("-usage", "print usage info"),
+      help_set  = options::Bool("-help", "print help info");
     if ((usage_set==true) || (help_set==true)) {
       PetscPrintf(com,
                   "\n"

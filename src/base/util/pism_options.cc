@@ -58,22 +58,20 @@ PetscErrorCode stop_on_version_option() {
 See verbPrintf().
  */
 PetscErrorCode verbosityLevelFromOptions() {
-  PetscErrorCode ierr;
-  PetscInt       myLevel;
-  PetscBool     verbose, levelSet;
 
-  ierr = setVerbosityLevel(2);
-  ierr = PetscOptionsGetInt(NULL, "-verbose", &myLevel, &levelSet);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetInt");
-  if (levelSet == true) {
-    ierr = setVerbosityLevel(myLevel);
+  setVerbosityLevel(2);
+
+  options::String just_verbose("-verbose", "verbosity level", "");
+
+  if (just_verbose.is_set() and just_verbose->empty()) {
+    setVerbosityLevel(3);
   } else {
-    ierr = PetscOptionsHasName(NULL, "-verbose", &verbose);
-    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    if (verbose == true) {
-      ierr = setVerbosityLevel(3);
+    options::Integer verbose("-verbose", "verbosity level", 2);
+    if (verbose.is_set()) {
+      setVerbosityLevel(verbose);
     }
   }
+
   return 0;
 }
 

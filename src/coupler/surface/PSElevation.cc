@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 #include "error_handling.hh"
+#include "pism_options.hh"
 
 namespace pism {
 
@@ -35,54 +36,77 @@ PSElevation::PSElevation(const IceGrid &g)
 }
 
 void PSElevation::init() {
-  PetscErrorCode ierr;
-  PetscBool T_is_set, m_is_set, m_limits_set;
+  bool m_limits_set = false;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
              "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n");
 
+  // options
   {
-    PetscInt T_param_number = 4;
-    double T_array[4] = {-5, 0, 1325, 1350};
+    // ice surface temperature
+    {
+      // set defaults:
+      T_min   = m_grid.convert(-5.0, "Celsius", "Kelvin");
+      T_max   = m_grid.convert(0.0, "Celsius", "Kelvin");
+      z_T_min = 1325.0;
+      z_T_max = 1350.0;
 
-    ierr = PetscOptionsGetRealArray(NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
-
-    T_min = m_grid.convert(T_array[0], "Celsius", "Kelvin");
-    T_max = m_grid.convert(T_array[1], "Celsius", "Kelvin");
-    z_T_min = T_array[2];
-    z_T_max = T_array[3];
-
-    PetscInt m_param_number = 5;
-    double m_array[5] = {-3, 4, 1100, 1450, 1700};
-
-    ierr = PetscOptionsGetRealArray(NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
-
-    m_min = m_grid.convert(m_array[0], "m year-1", "m s-1");
-    m_max = m_grid.convert(m_array[1], "m year-1", "m s-1");
-    z_m_min = m_array[2];
-    z_ELA = m_array[3];
-    z_m_max = m_array[4];
-
-    PetscInt Nlimitsparam= 2;
-    double limitsarray[2] = {0, 0};
-
-    ierr = PetscOptionsGetRealArray(NULL,
-                                    "-climatic_mass_balance_limits",
-                                    limitsarray, &Nlimitsparam, &m_limits_set);
-    PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
-
-    if (m_limits_set) {
-      m_limit_min = m_grid.convert(limitsarray[0], "m year-1", "m s-1");
-      m_limit_max = m_grid.convert(limitsarray[1], "m year-1", "m s-1");
-    } else {
-      m_limit_min = m_min;
-      m_limit_max = m_max;
+      options::RealList IST("-ice_surface_temp", "ice surface temperature parameterization");
+      if (IST.is_set()) {
+        if (IST->size() != 4) {
+          throw RuntimeError("option -ice_surface_temp requires an argument"
+                             " (comma-separated list of 4 numbers)");
+        }
+        T_min   = m_grid.convert(IST[0], "Celsius", "Kelvin");
+        T_max   = m_grid.convert(IST[1], "Celsius", "Kelvin");
+        z_T_min = IST[2];
+        z_T_max = IST[3];
+      }
     }
 
+    // climatic mass balance
+    {
+      // set defaults:
+      m_min   = m_grid.convert(-3.0, "m year-1", "m s-1");
+      m_max   = m_grid.convert(4.0, "m year-1", "m s-1");
+      z_m_min = 1100.0;
+      z_ELA   = 1450.0;
+      z_m_max = 1700.0;
+
+      options::RealList CMB("-climatic_mass_balance",
+                            "climatic mass balance parameterization");
+      if (CMB.is_set()) {
+        if (CMB->size() != 5) {
+          throw RuntimeError("-climatic_mass_balance requires an argument"
+                             " (comma-separated list of 5 numbers)");
+        }
+        m_min   = m_grid.convert(CMB[0], "m year-1", "m s-1");
+        m_max   = m_grid.convert(CMB[1], "m year-1", "m s-1");
+        z_m_min = CMB[2];
+        z_ELA   = CMB[3];
+        z_m_max = CMB[4];
+      }
+    }
+
+    // limits of the climatic mass balance
+    {
+      options::RealList m_limits("-climatic_mass_balance_limits",
+                                 "lower and upper limits of the climatic mass balance");
+      m_limits_set = m_limits.is_set();
+      if (m_limits.is_set()) {
+        if (m_limits->size() != 2) {
+          throw RuntimeError("-climatic_mass_balance_limits requires an argument"
+                             " (a comma-separated list of 2 numbers)");
+        }
+        m_limit_min = m_grid.convert(m_limits[0], "m year-1", "m s-1");
+        m_limit_max = m_grid.convert(m_limits[1], "m year-1", "m s-1");
+      } else {
+        m_limit_min = m_min;
+        m_limit_max = m_max;
+      }
+    }
   }
 
   verbPrintf(3, m_grid.com,

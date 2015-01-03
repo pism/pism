@@ -39,25 +39,19 @@ const IceGrid& Component::get_grid() const {
   IceModel uses to initialize from.
 */
 void Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
-  PetscErrorCode ierr;
-  PetscBool i_set, boot_file_set;
 
   // read file names:
-  char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(NULL, "-i", i_file, 
-                               PETSC_MAX_PATH_LEN, &i_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
-  ierr = PetscOptionsGetString(NULL, "-boot_file", boot_file_file, 
-                               PETSC_MAX_PATH_LEN, &boot_file_set);
-  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
-  if (i_set) {
-    if (boot_file_set) {
+  options::String
+    i("-i", "input file name"),
+    boot_file("-boot_file", "bootstrapping file name");
+
+  if (i.is_set()) {
+    if (boot_file.is_set()) {
       throw RuntimeError("both '-i' and '-boot_file' are used.");
     }
-    filename = i_file;
-  }
-  else if (boot_file_set) {
-    filename = boot_file_file;
+    filename = i;
+  } else if (boot_file.is_set()) {
+    filename = boot_file;
   }
 
   PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
@@ -66,7 +60,7 @@ void Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
   last_record = nc.inq_nrecords() - 1;
   nc.close();
 
-  if (boot_file_set) {
+  if (boot_file.is_set()) {
     do_regrid = true;
     start = 0;
   } else {
