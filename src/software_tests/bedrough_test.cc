@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler
+// Copyright (C) 2010--2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
     double Lx = 1200e3;
     IceGrid grid(com, config);

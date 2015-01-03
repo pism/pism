@@ -88,7 +88,6 @@ public:
   const int& operator[](size_t index) const;
 };
 
-
 class Real : public Option<double> {
 public:
   Real(const std::string& option,
@@ -111,23 +110,26 @@ void ignored(MPI_Comm com, const std::string &name);
 void forbidden(const std::string &name);
 } // end of namespace options
 
-PetscErrorCode verbosityLevelFromOptions();
+void verbosityLevelFromOptions();
 
 // usage message and required options; drivers use these
-PetscErrorCode stop_on_version_option();
+void stop_on_version_option();
 
-PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage);
+void show_usage_and_quit(MPI_Comm com,
+                         const std::string &execname,
+                         const std::string &usage);
 
-PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
-                                         std::vector<std::string> required_options,
-                                         std::string usage);
+void show_usage_check_req_opts(MPI_Comm com,
+                               const std::string &execname,
+                               const std::vector<std::string> &required_options,
+                               const std::string &usage);
 
 // config file initialization:
-PetscErrorCode init_config(MPI_Comm com,
-                           Config &config, Config &overrides,
-                           bool process_options = false);
+void init_config(MPI_Comm com,
+                 Config &config, Config &overrides,
+                 bool process_options = false);
 
-PetscErrorCode set_config_from_options(Config &config);
+void set_config_from_options(Config &config);
 } // end of namespace pism
 
 #endif /* _PISM_OPTIONS_H_ */

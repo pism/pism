@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,15 +44,14 @@ static inline char pism_toupper(char c)
 }
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
-  MPI_Comm        com = MPI_COMM_WORLD;
+  MPI_Comm com = MPI_COMM_WORLD;
 
   PetscInitializer petsc(argc, argv, help);
   com = PETSC_COMM_WORLD;
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    verbosityLevelFromOptions();
 
     verbPrintf(2, com, "PISMV %s (verification mode)\n",
                PISM_Revision);

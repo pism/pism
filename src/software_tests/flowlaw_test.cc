@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of Pism.
 //
@@ -38,7 +38,6 @@ static char help[] =
   "meaningful inputs and output appear at stdout.\n";
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;
 
@@ -51,7 +50,7 @@ int main(int argc, char *argv[]) {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
     EnthalpyConverter EC(config);
 

@@ -30,16 +30,12 @@
 namespace pism {
 
 //! \brief Stop if -version is set.
-PetscErrorCode stop_on_version_option() {
+void stop_on_version_option() {
 
   bool vSet = options::Bool("-version", "print PISM version");
-  if (vSet == false) {
-    return 0;
+  if (vSet) {
+    throw RuntimeError("FIXME: EARLY TERMINATION due to -version");
   }
-
-  // FIXME!
-  // PISMEndQuiet();
-  return 0;
 }
 
 //! Determine verbosity level from user options.
@@ -57,7 +53,7 @@ PetscErrorCode stop_on_version_option() {
 \endverbatim
 See verbPrintf().
  */
-PetscErrorCode verbosityLevelFromOptions() {
+void verbosityLevelFromOptions() {
 
   setVerbosityLevel(2);
 
@@ -71,17 +67,18 @@ PetscErrorCode verbosityLevelFromOptions() {
       setVerbosityLevel(verbose);
     }
   }
-
-  return 0;
 }
 
 //! \brief Print a usage message.
-PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string usage) {
-  verbPrintf(1,com,
-             "%s is a PISM (http://www.pism-docs.org) executable.\nOptions cheat-sheet:\n",
+void just_show_usage(MPI_Comm com,
+                     const std::string &execname,
+                     const std::string &usage) {
+  verbPrintf(1, com,
+             "%s is a PISM (http://www.pism-docs.org) executable.\n"
+             "Options cheat-sheet:\n",
              execname.c_str());
-  verbPrintf(1,com,usage.c_str());
-  verbPrintf(1,com,
+  verbPrintf(1, com, usage.c_str());
+  verbPrintf(1, com,
              "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
              "For more help with PISM:\n"
              "  1. download PDF User's Manual:\n"
@@ -92,29 +89,29 @@ PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string u
              "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
              "  5. email for help:  help@pism-docs.org\n",
              execname.c_str(), execname.c_str());
-  return 0;
 }
 
 
 //! @brief Show provided usage message and quit. (Consider using
 //! show_usage_check_req_opts() in preference to this one.)
-PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage) {
+void show_usage_and_quit(MPI_Comm com,
+                         const std::string &execname,
+                         const std::string &usage) {
 
   stop_on_version_option();
 
   just_show_usage(com, execname, usage);
 
-  // FIXME!
-  // PISMEndQuiet();
-  return 0;
+  throw RuntimeError("FIXME: EARLY TERMINATION due to -usage or -help");
 }
 
 
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
-					 std::vector<std::string> required_options,
-					 std::string usage) {
+void show_usage_check_req_opts(MPI_Comm com,
+                               const std::string &execname,
+                               const std::vector<std::string> &required_options,
+                               const std::string &usage) {
 
   stop_on_version_option();
 
@@ -134,6 +131,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
                  "PISM ERROR: option %s required\n",required_options[k].c_str());
     }
   }
+
   if (req_absent == true) {
     verbPrintf(1,com,"\n");
     show_usage_and_quit(com, execname, usage);
@@ -144,49 +142,15 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   if (helpSet == true) {
     just_show_usage(com, execname, usage);
   }
-
-  return 0;
-}
-
-//! \brief Process a command-line option taking an integer as an argument.
-PetscErrorCode OptionsInt(std::string option, std::string text,
-			      int &result, bool &is_set) {
-  PetscErrorCode ierr;
-  char str[TEMPORARY_STRING_LENGTH];
-  PetscBool flag;
-  char *endptr;
-
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
-                            TEMPORARY_STRING_LENGTH, &flag);
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
-
-  is_set = (flag == true);
-
-  if (is_set == false) {
-    return 0;
-  }
-
-  if (strlen(str) == 0) {
-    throw RuntimeError::formatted("command line option '%s' requires an argument.",
-                                  option.c_str());
-  }
-
-  result = (int) strtol(str, &endptr, 10);
-  if (*endptr != '\0') {
-    throw RuntimeError::formatted("Can't parse '%s %s': (%s is not an integer).\n",
-                                  option.c_str(), str, str);
-  }
-
-  return 0;
 }
 
 //! Initializes the config parameter and flag database.
 /*!
   Processes -config and -config_override command line options.
  */
-PetscErrorCode init_config(MPI_Comm com,
-			   Config &config, Config &overrides,
-			   bool process_options) {
+void init_config(MPI_Comm com,
+                 Config &config, Config &overrides,
+                 bool process_options) {
 
   options::String alt_config("-config",
                              "Specifies the name of an alternative config file",
@@ -208,11 +172,9 @@ PetscErrorCode init_config(MPI_Comm com,
   }
 
   config.print_to_stdout();
-
-  return 0;
 }
 
-PetscErrorCode set_config_from_options(Config &config) {
+void set_config_from_options(Config &config) {
 
   config.keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy");
   config.keyword_from_option("z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
@@ -545,8 +507,6 @@ PetscErrorCode set_config_from_options(Config &config) {
   options::deprecated("-float_kill", "-calving float_kill");
   options::deprecated("-no_energy", "-energy none");
   options::deprecated("-cold", "-energy cold");
-
-  return 0;
 }
 
 } // end of namespace pism

@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    verbosityLevelFromOptions();
 
     verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
                PISM_Revision);

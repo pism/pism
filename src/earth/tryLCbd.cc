@@ -60,14 +60,14 @@ int main(int argc, char *argv[]) {
   PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
+  MPI_Comm_rank(com, &rank);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
     BedDeformLC bdlc;
     DM          da2;

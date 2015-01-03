@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -35,7 +35,6 @@ static char help[] =
 using namespace pism;
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;
   PetscInitializer petsc(argc, argv, help);
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    verbosityLevelFromOptions();
 
     verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
                PISM_Revision);
