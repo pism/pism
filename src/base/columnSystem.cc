@@ -229,7 +229,7 @@ void TridiagonalSystem::save_system(std::ostream &output,
 void TridiagonalSystem::save_system_with_solution(const std::string &filename,
                                                   unsigned int M,
                                                   const std::vector<double> &x) {
-  std::ofstream output(filename);
+  std::ofstream output(filename.c_str());
   output << "% system has 1-norm = " << norm1(M)
          << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
 
