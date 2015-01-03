@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,9 +23,9 @@
 
 namespace pism {
 
-ColumnInterpolation::ColumnInterpolation(const std::vector<double> &z_coarse,
-                                         const std::vector<double> &z_fine)
-  : m_z_fine(z_fine), m_z_coarse(z_coarse) {
+ColumnInterpolation::ColumnInterpolation(const std::vector<double> &new_z_coarse,
+                                         const std::vector<double> &new_z_fine)
+  : m_z_fine(new_z_fine), m_z_coarse(new_z_coarse) {
   init_interpolation();
 }
 

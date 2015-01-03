@@ -47,9 +47,9 @@ public:
 protected:
   T    m_value;
   bool m_is_set;
-  void set(T value, bool is_set) {
-    m_value  = value;
-    m_is_set = is_set;
+  void set(T new_value, bool new_flag) {
+    m_value  = new_value;
+    m_is_set = new_flag;
   }
 };
 

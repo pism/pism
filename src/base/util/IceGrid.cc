@@ -96,10 +96,10 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   std::string word = config.get_string("grid_periodicity");
   m_periodicity = string_to_periodicity(word);
 
-  unsigned int Mz = config.get("grid_Mz");
-  double Lz = config.get("grid_Lz");
+  unsigned int tmp_Mz = config.get("grid_Mz");
+  double tmp_Lz = config.get("grid_Lz");
   SpacingType spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
-  set_vertical_levels(Lz, Mz, spacing);
+  set_vertical_levels(tmp_Lz, tmp_Mz, spacing);
 
   m_Lx  = config.get("grid_Lx");
   m_Ly  = config.get("grid_Ly");
@@ -234,16 +234,16 @@ which may not even be a grid created by this routine).
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-void IceGrid::set_vertical_levels(double Lz, unsigned int Mz,
+void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
                                   SpacingType spacing) {
 
   double lambda = config.get("grid_lambda");
 
-  if (Mz < 2) {
+  if (new_Mz < 2) {
     throw RuntimeError("IceGrid::set_vertical_levels(): Mz must be at least 2.");
   }
 
-  if (Lz <= 0) {
+  if (new_Lz <= 0) {
     throw RuntimeError("IceGrid::set_vertical_levels(): Lz must be positive.");
   }
 
@@ -251,27 +251,27 @@ void IceGrid::set_vertical_levels(double Lz, unsigned int Mz,
     throw RuntimeError("IceGrid::set_vertical_levels(): lambda must be positive.");
   }
 
-  m_z.resize(Mz);
+  m_z.resize(new_Mz);
 
   // Fill the levels in the ice:
   switch (spacing) {
   case EQUAL: {
-    double dz = Lz / ((double) Mz - 1);
+    double dz = new_Lz / ((double) new_Mz - 1);
 
     // Equal spacing
-    for (unsigned int k=0; k < Mz - 1; k++) {
+    for (unsigned int k=0; k < new_Mz - 1; k++) {
       m_z[k] = dz * ((double) k);
     }
-    m_z[Mz - 1] = Lz;  // make sure it is exactly equal
+    m_z[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
     break;
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k=0; k < Mz - 1; k++) {
-      const double zeta = ((double) k) / ((double) Mz - 1);
-      m_z[k] = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+    for (unsigned int k=0; k < new_Mz - 1; k++) {
+      const double zeta = ((double) k) / ((double) new_Mz - 1);
+      m_z[k] = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
-    m_z[Mz - 1] = Lz;  // make sure it is exactly equal
+    m_z[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
     break;
   }
   default:
@@ -473,23 +473,23 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   m_z = new_zlevels;
 }
 
-void IceGrid::set_size_and_extent(double x0, double y0, double Lx, double Ly,
-                                  unsigned int Mx, unsigned int My, Periodicity p) {
-  set_size(Mx, My);
-  set_extent(x0, y0, Lx, Ly);
+void IceGrid::set_size_and_extent(double new_x0, double new_y0, double new_Lx, double new_Ly,
+                                  unsigned int new_Mx, unsigned int new_My, Periodicity p) {
+  set_size(new_Mx, new_My);
+  set_extent(new_x0, new_y0, new_Lx, new_Ly);
   set_periodicity(p);
 }
 
-void IceGrid::set_extent(double x0, double y0, double Lx, double Ly) {
-  m_x0 = x0;
-  m_y0 = y0;
-  m_Lx = Lx;
-  m_Ly = Ly;
+void IceGrid::set_extent(double new_x0, double new_y0, double new_Lx, double new_Ly) {
+  m_x0 = new_x0;
+  m_y0 = new_y0;
+  m_Lx = new_Lx;
+  m_Ly = new_Ly;
 }
 
-void IceGrid::set_size(unsigned int Mx, unsigned int My) {
-  m_Mx = Mx;
-  m_My = My;
+void IceGrid::set_size(unsigned int new_Mx, unsigned int new_My) {
+  m_Mx = new_Mx;
+  m_My = new_My;
 }
 
 //! Compute horizontal spacing parameters `dx` and `dy` using `Mx`, `My`, `Lx`, `Ly` and periodicity.
@@ -921,21 +921,21 @@ double IceGrid::dy() const {
 }
 
 double IceGrid::dz_min() const {
-  double dz_min = m_z.back();
+  double result = m_z.back();
   for (unsigned int k = 0; k < m_z.size() - 1; ++k) {
     const double dz = m_z[k + 1] - m_z[k];
-    dz_min = std::min(dz, dz_min);
+    result = std::min(dz, result);
   }
-  return dz_min;
+  return result;
 }
 
 double IceGrid::dz_max() const {
-  double dz_max = 0.0;
+  double result = 0.0;
   for (unsigned int k = 0; k < m_z.size() - 1; ++k) {
     const double dz = m_z[k + 1] - m_z[k];
-    dz_max = std::max(dz, dz_max);
+    result = std::max(dz, result);
   }
-  return dz_max;
+  return result;
 }
 
 double IceGrid::Lx() const {

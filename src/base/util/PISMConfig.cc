@@ -25,8 +25,8 @@
 
 namespace pism {
 
-Config::Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system)
-  : m_com(com),
+Config::Config(MPI_Comm new_com, const std::string &name, const UnitSystem &unit_system)
+  : m_com(new_com),
     m_unit_system(unit_system),
     m_data(name, unit_system) {
   m_options_left_set = options::Bool("-options_left", "report on unused options");

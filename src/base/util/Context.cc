@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,8 +21,8 @@
 
 namespace pism {
 
-Context::Context(Config &config)
-  : m_config(config), m_EC(config) {
+Context::Context(Config &new_config)
+  : m_config(new_config), m_EC(new_config) {
 }
 
 MPI_Comm Context::com() const {
