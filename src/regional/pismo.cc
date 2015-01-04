@@ -423,7 +423,10 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2,com, "PISMO %s (regional outlet-glacier run mode)\n",
                PISM_Revision);
-    stop_on_version_option();
+
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
 
     bool iset = options::Bool("-i", "input file name");
     bool bfset = options::Bool("-boot_file", "bootstrapping file name");
@@ -438,15 +441,20 @@ int main(int argc, char *argv[]) {
       "notes:\n"
       "  * one of -i or -boot_file is required\n"
       "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((!iset) && (!bfset)) {
+    if ((not iset) && (not bfset)) {
       ierr = PetscPrintf(com,
                          "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
-      show_usage_and_quit(com, "pismo", usage);
+      show_usage(com, "pismo", usage);
+      return 0;
     } else {
       std::vector<std::string> required;
       required.clear();
-      show_usage_check_req_opts(com, "pismo", required, usage);
+
+      bool done = show_usage_check_req_opts(com, "pismo", required, usage);
+      if (done) {
+        return 0;
+      }
     }
 
     UnitSystem unit_system;

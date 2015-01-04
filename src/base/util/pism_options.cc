@@ -29,15 +29,6 @@
 
 namespace pism {
 
-//! \brief Stop if -version is set.
-void stop_on_version_option() {
-
-  bool vSet = options::Bool("-version", "print PISM version");
-  if (vSet) {
-    throw RuntimeError("FIXME: EARLY TERMINATION due to -version");
-  }
-}
-
 //! Determine verbosity level from user options.
 /*!
 \verbatim
@@ -70,9 +61,7 @@ void verbosityLevelFromOptions() {
 }
 
 //! \brief Print a usage message.
-void just_show_usage(MPI_Comm com,
-                     const std::string &execname,
-                     const std::string &usage) {
+void show_usage(MPI_Comm com, const std::string &execname, const std::string &usage) {
   verbPrintf(1, com,
              "%s is a PISM (http://www.pism-docs.org) executable.\n"
              "Options cheat-sheet:\n",
@@ -91,57 +80,42 @@ void just_show_usage(MPI_Comm com,
              execname.c_str(), execname.c_str());
 }
 
-
-//! @brief Show provided usage message and quit. (Consider using
-//! show_usage_check_req_opts() in preference to this one.)
-void show_usage_and_quit(MPI_Comm com,
-                         const std::string &execname,
-                         const std::string &usage) {
-
-  stop_on_version_option();
-
-  just_show_usage(com, execname, usage);
-
-  throw RuntimeError("FIXME: EARLY TERMINATION due to -usage or -help");
-}
-
-
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-void show_usage_check_req_opts(MPI_Comm com,
+bool show_usage_check_req_opts(MPI_Comm com,
                                const std::string &execname,
                                const std::vector<std::string> &required_options,
                                const std::string &usage) {
+  const bool
+    keep_running = false,
+    terminate = true;
 
-  stop_on_version_option();
-
-  bool usageSet = options::Bool("-usage", "print PISM usage");
-  if (usageSet == true) {
-    show_usage_and_quit(com, execname, usage);
+  if (options::Bool("-usage", "print PISM usage")) {
+    show_usage(com, execname, usage);
+    return terminate;
   }
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
-  for (size_t k=0; k < required_options.size(); k++) {
-
-    bool set = options::Bool(required_options[k], "a required option");
-    if (set == false) {
+  for (size_t k = 0; k < required_options.size(); ++k) {
+    if (not options::Bool(required_options[k], "a required option")) {
       req_absent = true;
-      verbPrintf(1,com,
-                 "PISM ERROR: option %s required\n",required_options[k].c_str());
+      verbPrintf(1, com,
+                 "PISM ERROR: option %s required\n", required_options[k].c_str());
     }
   }
 
-  if (req_absent == true) {
-    verbPrintf(1,com,"\n");
-    show_usage_and_quit(com, execname, usage);
+  if (req_absent) {
+    verbPrintf(1, com, "\n");
+    show_usage(com, execname, usage);
+    return terminate;
   }
 
-  // show usage message with -help, but don't fail
-  bool helpSet = options::Bool("-help", "print help on all options");
-  if (helpSet == true) {
-    just_show_usage(com, execname, usage);
+  // show usage message with -help, but don't stop
+  if (options::Bool("-help", "print help on all options")) {
+    show_usage(com, execname, usage);
   }
+  return keep_running;
 }
 
 //! Initializes the config parameter and flag database.

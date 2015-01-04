@@ -55,18 +55,26 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2, com, "PISMV %s (verification mode)\n",
                PISM_Revision);
-    stop_on_version_option();
+
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
+
+    std::string usage =
+      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
+      "where:\n"
+      "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
+      "  -no_report  do not give error report at end of run\n"
+      "  -eo         do not do numerical run; exact solution only\n"
+      "(see User's Manual for tests I and J).\n";
 
     std::vector<std::string> required;
     required.push_back("-test");
-    show_usage_check_req_opts(com, "pismv", required,
-                              "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
-                              "where:\n"
-                              "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
-                              "  -no_report  do not give error report at end of run\n"
-                              "  -eo         do not do numerical run; exact solution only\n"
-                              "(see User's Manual for tests I and J).\n"
-                              );
+
+    bool done = show_usage_check_req_opts(com, "pismv", required, usage);
+    if (done) {
+      return 0;
+    }
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),

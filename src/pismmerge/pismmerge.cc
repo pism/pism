@@ -143,8 +143,7 @@ int process_all_variables(std::string input_file, std::string output_file,
   return 0;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com = MPI_COMM_WORLD;
@@ -161,7 +160,9 @@ int main(int argc, char *argv[])
 
     verbPrintf(2,com, "PISM-MERGE %s (output file merging tool)\n",
                PISM_Revision);
-    stop_on_version_option();
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
 
     options::String i_name("-i", "Input file name");
     options::String output_name("-o", "Output file name");
@@ -180,7 +181,11 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> required;
     required.push_back("-i");
-    show_usage_check_req_opts(com, "pismmerge", required, usage);
+
+    bool done = show_usage_check_req_opts(com, "pismmerge", required, usage);
+    if (done) {
+      return 0;
+    }
 
     check_input_files(i_name);
 

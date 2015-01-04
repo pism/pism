@@ -112,14 +112,11 @@ void forbidden(const std::string &name);
 
 void verbosityLevelFromOptions();
 
-// usage message and required options; drivers use these
-void stop_on_version_option();
+void show_usage(MPI_Comm com, const std::string &execname, const std::string &usage);
 
-void show_usage_and_quit(MPI_Comm com,
-                         const std::string &execname,
-                         const std::string &usage);
-
-void show_usage_check_req_opts(MPI_Comm com,
+//! @brief Returns true if PISM should terminate after printing some
+//! messages to stdout.
+bool show_usage_check_req_opts(MPI_Comm com,
                                const std::string &execname,
                                const std::vector<std::string> &required_options,
                                const std::string &usage);

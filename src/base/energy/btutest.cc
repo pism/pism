@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -118,23 +118,32 @@ int main(int argc, char *argv[]) {
     verbosityLevelFromOptions();
     verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
                PISM_Revision);
-    stop_on_version_option();
+
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
+
+    std::string usage =
+      "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
+      "where these are required because they are used in BedThermalUnit:\n"
+      "  -Mbz           number of bedrock thermal layer levels to use\n"
+      "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
+      "and these are allowed:\n"
+      "  -o             output file name; NetCDF format\n"
+      "  -ys            start year in using Test K\n"
+      "  -ye            end year in using Test K\n"
+      "  -dt            time step B (= positive float) in years\n"
+      "  -Mz            number of ice levels to use\n"
+      "  -Lz            height of ice/atmospher box\n";
 
     // check required options
     std::vector<std::string> required;
     required.push_back("-Mbz");
-    show_usage_check_req_opts(com, "btutest", required,
-                              "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
-                              "where these are required because they are used in BedThermalUnit:\n"
-                              "  -Mbz           number of bedrock thermal layer levels to use\n"
-                              "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
-                              "and these are allowed:\n"
-                              "  -o             output file name; NetCDF format\n"
-                              "  -ys            start year in using Test K\n"
-                              "  -ye            end year in using Test K\n"
-                              "  -dt            time step B (= positive float) in years\n"
-                              "  -Mz            number of ice levels to use\n"
-                              "  -Lz            height of ice/atmospher box\n");
+
+    bool done = show_usage_check_req_opts(com, "btutest", required, usage);
+    if (done) {
+      return 0;
+    }
 
     verbPrintf(2,com,
                "btutest tests BedThermalUnit and IceModelVec3BTU\n");

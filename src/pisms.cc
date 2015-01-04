@@ -46,14 +46,23 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
                PISM_Revision);
-    stop_on_version_option();
+
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
+
+    std::string usage =
+      "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
+      "where major option chooses type of simplified experiment:\n"
+      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n";
 
     std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
-    show_usage_check_req_opts(com, "pisms", required,
-                              "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
-                              "where major option chooses type of simplified experiment:\n"
-                              "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n");
+
+    bool done = show_usage_check_req_opts(com, "pisms", required, usage);
+    if (done) {
+      return 0;
+    }
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
