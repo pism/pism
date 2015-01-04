@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,10 +39,10 @@ namespace pism {
 const double PSVerification::ablationRateOutside = 0.02; // m/year
 const double PSVerification::secpera = 3.15569259747e7;
 
-const PetscScalar PSVerification::ST = 1.67e-5;
-const PetscScalar PSVerification::Tmin = 223.15;  // K
-const PetscScalar PSVerification::LforFG = 750000; // m
-const PetscScalar PSVerification::ApforG = 200; // m
+const double PSVerification::ST = 1.67e-5;
+const double PSVerification::Tmin = 223.15;  // K
+const double PSVerification::LforFG = 750000; // m
+const double PSVerification::ApforG = 200; // m
 
 PSVerification::PSVerification(const IceGrid &g,
                                EnthalpyConverter *EC, int test)
@@ -79,7 +79,7 @@ void PSVerification::update_KO() {
  * @return 0 on success
  */
 void PSVerification::update_L() {
-  PetscScalar     A0, T0;
+  double     A0, T0;
 
   ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
@@ -176,7 +176,7 @@ void PSVerification::update_ABCDEH(double time) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    PetscScalar xx = m_grid.x(i), yy = m_grid.y(j),
+    double xx = m_grid.x(i), yy = m_grid.y(j),
       r = radius(m_grid, i, j);
     switch (m_testname) {
     case 'A':

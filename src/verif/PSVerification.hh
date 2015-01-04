@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,10 +48,10 @@ private:
   // both here and in IceCompModel).
   static const double secpera, ablationRateOutside;
 
-  static const PetscScalar ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const PetscScalar Tmin;    // K;       minimum temperature (at center)
-  static const PetscScalar LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const PetscScalar ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double Tmin;    // K;       minimum temperature (at center)
+  static const double LforFG;  // m;  exact radius of tests F&G ice sheet
+  static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
 
 };
 
