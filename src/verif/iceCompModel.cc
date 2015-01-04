@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <petscdmda.h>
 #include <assert.h>
 
 #include <vector>     // STL vector container; sortable; used in test L
@@ -446,7 +445,7 @@ struct rgridReverseSort {
 };
 
 void IceCompModel::initTestL() {
-  PetscErrorCode  ierr;
+  int ierr;
   double     A0, T0;
 
   assert(testname == 'L');
