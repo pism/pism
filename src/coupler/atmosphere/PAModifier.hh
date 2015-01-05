@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define _PAMODIFIER_H_
 
 #include "PISMAtmosphere.hh"
+#include "Modifier.hh"
 
 namespace pism {
 
