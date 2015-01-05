@@ -128,7 +128,7 @@ protected:
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual void regrid(const std::string &module_name, IceModelVec *variable,
-                                RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
+                      RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to
@@ -185,13 +185,14 @@ public:
    * @param[in] t time corresponding to the beginning of the time-step, in seconds
    * @param[in] dt length of the time-step, in seconds
    *
-   * @return 0 on success
    */
   virtual void update(double t, double dt) = 0;
 
 protected:
-  double m_t,                   //!< Last time used as an argument for the update() method.
-    m_dt;                               //!< Last time-step used as an argument for the update() method.
+  //! Last time used as an argument for the update() method.
+  double m_t;
+  //! Last time-step used as an argument for the update() method.
+  double m_dt;
 };
 
 } // end of namespace pism
