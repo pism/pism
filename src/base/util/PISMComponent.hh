@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -92,9 +92,8 @@ class IceModelVec;
 class Component {
 public:
   /** Create a Component instance given a grid. */
-  Component(const IceGrid &g)
-    : m_grid(g), m_config(g.config) {}
-  virtual ~Component() {}
+  Component(const IceGrid &g);
+  virtual ~Component();
 
   //! \brief Adds more variable names to result (to let sub-models respect
   //! -o_size or -save_size).
@@ -114,11 +113,7 @@ public:
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict)
-  {
-    (void)dict;
-    (void)ts_dict;
-  }
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 
   const IceGrid& get_grid() const;
 
@@ -143,19 +138,12 @@ class Component_TS : public Component
 {
 public:
   /** Create an instance of Component_TS given a grid. */
-  Component_TS(const IceGrid &g)
-    : Component(g)
-  { m_t = m_dt = GSL_NAN; }
-  virtual ~Component_TS() {}
+  Component_TS(const IceGrid &g);
+  virtual ~Component_TS();
 
   //! \brief Reports the maximum time-step the model can take at t. Sets
   //! dt to -1 if any time-step is OK.
-  virtual void max_timestep(double t, double &dt, bool &restrict)
-  {
-    (void)t;
-    dt = -1;
-    restrict = false;
-  }
+  virtual void max_timestep(double t, double &dt, bool &restrict);
 
   //! Update the *state* of a component, if necessary.
   /**

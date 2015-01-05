@@ -30,6 +30,21 @@
 
 namespace pism {
 
+Component::Component(const IceGrid &g)
+  : m_grid(g), m_config(g.config) {
+  // empty
+}
+
+Component::~Component() {
+  // empty
+}
+
+void Component::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                std::map<std::string, TSDiagnostic*> &ts_dict) {
+  (void)dict;
+  (void)ts_dict;
+}
+
 const IceGrid& Component::get_grid() const {
   return m_grid;
 }
@@ -111,6 +126,21 @@ void Component::regrid(const std::string &module_name, IceModelVec *variable,
 
     variable->regrid(regrid_file, CRITICAL);
   }
+}
+
+Component_TS::Component_TS(const IceGrid &g)
+  : Component(g) {
+  m_t = m_dt = GSL_NAN;
+}
+
+Component_TS::~Component_TS() {
+  // empty
+}
+
+void Component_TS::max_timestep(double t, double &dt, bool &restrict) {
+  (void)t;
+  dt = -1;
+  restrict = false;
 }
 
 } // end of namespace pism
