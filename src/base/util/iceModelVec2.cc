@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -205,7 +205,7 @@ void IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y) {
 }
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`. 
-void IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
+void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
   IceModelVec::AccessList list(*this);
   list.add(M);
 

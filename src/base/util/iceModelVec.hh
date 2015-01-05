@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -402,7 +402,7 @@ public:
   virtual void  copy_to(IceModelVec &destination) const;
   void  get_array(double** &a);
   virtual void set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
-  virtual void mask_by(IceModelVec2S &M, double fill = 0.0);
+  virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
   virtual void add(double alpha, IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
   virtual void sum(double &result);
