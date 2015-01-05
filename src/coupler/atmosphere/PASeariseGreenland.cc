@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -119,7 +119,10 @@ void PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
     c_mj     = m_config.get("snow_temp_fausto_c_mj"),
     kappa_mj = m_config.get("snow_temp_fausto_kappa_mj");
 
-  IceModelVec2S &h = *m_surfelev, &lat_degN = *m_lat, &lon_degE = *m_lon;
+  const IceModelVec2S
+    &h        = *m_surfelev,
+    &lat_degN = *m_lat,
+    &lon_degE = *m_lon;
 
   IceModelVec::AccessList list;
   list.add(h);

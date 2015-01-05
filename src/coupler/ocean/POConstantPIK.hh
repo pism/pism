@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,7 @@ public:
                                           IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
-  IceModelVec2S *ice_thickness; // is not owned by this class
+  const IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:
   //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]

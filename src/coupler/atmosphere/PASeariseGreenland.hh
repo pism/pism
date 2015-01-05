@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -37,7 +37,7 @@ public:
   virtual void update(double my_t, double my_dt);
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
-  IceModelVec2S *m_lat, *m_lon, *m_surfelev;
+  const IceModelVec2S *m_lat, *m_lon, *m_surfelev;
 };
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -77,7 +77,7 @@ public:
   };
 private:
   IceModelVec2S shelfbtemp, shelfbmassflux;
-  IceModelVec2S *ice_thickness;
+  const IceModelVec2S *ice_thickness;
   IceModelVec2T *theta_ocean, *salinity_ocean;
 
   void pointwise_update(const POGivenTHConstants &constants,

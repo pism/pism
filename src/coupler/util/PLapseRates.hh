@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -97,7 +97,7 @@ public:
 
 protected:
   IceModelVec2T reference_surface;
-  IceModelVec2S *surface, *thk;
+  const IceModelVec2S *surface, *thk;
   unsigned int bc_period;
   double bc_reference_time,          // in seconds
     temp_lapse_rate;

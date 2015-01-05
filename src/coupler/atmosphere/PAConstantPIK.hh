@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ public:
   virtual void temp_snapshot(IceModelVec2S &result);
   virtual void init_timeseries(const std::vector<double> &ts);
 protected:
-  IceModelVec2S *usurf, *lat;
+  const IceModelVec2S *usurf, *lat;
   std::string input_file;
   IceModelVec2S precipitation, air_temp;
   NCSpatialVariable air_temp_snapshot;
