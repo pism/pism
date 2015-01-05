@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -139,7 +139,7 @@ protected:
 class MaskQuery
 {
 public:
-  MaskQuery(IceModelVec2Int &m) : mask(m) {}
+  MaskQuery(const IceModelVec2Int &m) : mask(m) {}
   
   inline bool ocean(int i, int j) {
     return mask::ocean(mask.as_int(i, j));
@@ -207,7 +207,7 @@ public:
   }
 
 protected:
-  IceModelVec2Int &mask;
+  const IceModelVec2Int &mask;
 };
 
 } // end of namespace pism
