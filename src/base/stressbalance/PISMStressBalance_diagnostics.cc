@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -81,7 +81,7 @@ PSB_velbar::PSB_velbar(StressBalance *m)
 void PSB_velbar::compute(IceModelVec* &output) {
 
   IceModelVec3 *u3, *v3, *w3;
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   IceModelVec2V *result;
   double *u_ij, *v_ij;
   double icefree_thickness = m_grid.config.get("mask_icefree_thickness_standard");
@@ -156,10 +156,8 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
 void PSB_velbar_mag::compute(IceModelVec* &output) {
   IceModelVec *tmp;
   IceModelVec2V *velbar_vec;
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness"),
-    *result = NULL;
 
-  result = new IceModelVec2S;
+  IceModelVec2S *result = new IceModelVec2S;
   result->create(m_grid, "velbar_mag", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
@@ -174,6 +172,8 @@ void PSB_velbar_mag::compute(IceModelVec* &output) {
 
   // compute its magnitude:
   velbar_vec->magnitude(*result);
+
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   // mask out ice-free areas:
   result->mask_by(*thickness, m_grid.config.get("fill_value", "m/year", "m/s"));
@@ -195,7 +195,7 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m)
 }
 
 void PSB_flux_mag::compute(IceModelVec* &output) {
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness"),
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness"),
     *result = NULL;
   IceModelVec *tmp = NULL;
 
@@ -241,7 +241,7 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
 
 void PSB_velbase_mag::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
-  IceModelVec2S tmp, *result, *thickness;
+  IceModelVec2S tmp, *result;
 
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
 
@@ -251,7 +251,7 @@ void PSB_velbase_mag::compute(IceModelVec* &output) {
 
   model->get_3d_velocity(u3, v3, w3);
 
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   u3->getHorSlice(*result, 0.0); // result = u_{z=0}
   v3->getHorSlice(tmp, 0.0);    // tmp = v_{z=0}
@@ -278,7 +278,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
 void PSB_velsurf_mag::compute(IceModelVec* &output) {
 
   IceModelVec3 *u3, *v3, *w3;
-  IceModelVec2S tmp, *result, *thickness;
+  IceModelVec2S tmp, *result;
 
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
 
@@ -288,7 +288,7 @@ void PSB_velsurf_mag::compute(IceModelVec* &output) {
 
   model->get_3d_velocity(u3, v3, w3);
 
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   u3->getSurfaceValues(*result, *thickness);
   v3->getSurfaceValues(tmp, *thickness);
@@ -328,7 +328,7 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
 void PSB_velsurf::compute(IceModelVec* &output) {
   IceModelVec2V *result;
   IceModelVec3 *u3, *v3, *w3;
-  IceModelVec2S *thickness, tmp;
+  IceModelVec2S tmp;
   double fill_value = m_grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2V;
@@ -340,7 +340,7 @@ void PSB_velsurf::compute(IceModelVec* &output) {
 
   model->get_3d_velocity(u3, v3, w3);
 
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   u3->getSurfaceValues(tmp, *thickness);
   result->set_component(0, tmp);

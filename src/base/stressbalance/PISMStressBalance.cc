@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -180,7 +180,7 @@ The vertical integral is computed by the trapezoid rule.
 void StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                               IceModelVec2S *basal_melt_rate,
                                               IceModelVec3 &result) {
-  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
@@ -363,10 +363,10 @@ void StressBalance::compute_volumetric_strain_heating() {
   IceModelVec3 *u, *v;
   m_modifier->get_horizontal_3d_velocity(u, v);
 
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 
-  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   double
@@ -391,7 +391,8 @@ void StressBalance::compute_volumetric_strain_heating() {
     double
       *u_ij, *u_w, *u_n, *u_e, *u_s,
       *v_ij, *v_w, *v_n, *v_e, *v_s;
-    double *Sigma, *E_ij;
+    double *Sigma;
+    const double *E_ij;
 
     double west = 1, east = 1, south = 1, north = 1,
       D_x = 0,                // 1/(dx), 1/(2dx), or 0
