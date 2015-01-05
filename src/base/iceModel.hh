@@ -234,8 +234,6 @@ protected:
     basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     vLongitude, //!< Longitude; ghosted to compute cell areas
     vLatitude,  //!< Latitude; ghosted to compute cell areas
-    bed_topography,             //!< bed topography; ghosted
-    bed_uplift_rate,    //!< bed uplift rate; no ghosts
     geothermal_flux,   //!< geothermal flux; no ghosts
     vFD,    //!< fracture density
     vFG,    //!< fracture growth rate

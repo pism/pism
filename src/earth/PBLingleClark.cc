@@ -93,11 +93,9 @@ void PBLingleClark::init() {
 
   correct_topg();
 
-  m_topg->copy_to(m_topg_last);
-
   m_thk->put_on_proc0(m_Hstartp0);
-  m_topg->put_on_proc0(m_bedstartp0);
-  m_uplift->put_on_proc0(m_upliftp0);
+  m_topg.put_on_proc0(m_bedstartp0);
+  m_uplift.put_on_proc0(m_upliftp0);
 
   if (m_grid.rank() == 0) {
     m_bdLC.init();
@@ -174,10 +172,10 @@ void PBLingleClark::correct_topg() {
   // that produced -regrid_file.
 
   // Apply this change to topg from -boot_file:
-  m_topg->add(1.0, topg_tmp);
+  m_topg.add(1.0, topg_tmp);
 
   // Store the corrected topg as the new "topg_initial".
-  m_topg->copy_to(m_topg_initial);
+  m_topg.copy_to(m_topg_initial);
 
   return;
 }
@@ -207,21 +205,21 @@ void PBLingleClark::update(double my_t, double my_dt) {
   m_t_beddef_last = t_final;
 
   m_thk->put_on_proc0(m_Hp0);
-  m_topg->put_on_proc0(m_bedp0);
+  m_topg.put_on_proc0(m_bedp0);
 
   if (m_grid.rank() == 0) {  // only processor zero does the step
     m_bdLC.step(dt_beddef, // time step, in seconds
               t_final - m_grid.time->start()); // time since the start of the run, in seconds
   }
 
-  m_topg->get_from_proc0(m_bedp0);
+  m_topg.get_from_proc0(m_bedp0);
 
   //! Finally, we need to update bed uplift and topg_last.
   compute_uplift(dt_beddef);
-  m_topg->copy_to(m_topg_last);
+  m_topg.copy_to(m_topg_last);
 
   //! Increment the topg state counter. SIAFD relies on this!
-  m_topg->inc_state_counter();
+  m_topg.inc_state_counter();
 }
 
 } // end of namespace pism

@@ -34,6 +34,10 @@ public:
   virtual ~BedDef() {}
   virtual void init();
   virtual void update(double my_t, double my_dt) = 0;
+
+  const IceModelVec2S& bed_elevation() const;
+  const IceModelVec2S& uplift() const;
+
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                 IO_Type nctype);
@@ -42,20 +46,30 @@ protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
   void compute_uplift(double dt_beddef);
 
-  double m_t_beddef_last;         //!< last bed deformation update year
+  //! time of the last bed deformation update
+  double m_t_beddef_last;
 
+  //! current bed elevation
+  IceModelVec2S m_topg;
+
+  //! bed elevation at the beginning of a run
   IceModelVec2S m_topg_initial;
-  IceModelVec2S m_topg_last;      //!< last bed elevation
-  IceModelVec2S *m_thk,           //!< pointer to the current ice thickness
-    *m_topg,                      //!< pointer to the current bed elevation
-    *m_uplift;                    //!< pointer to the bed uplift rate field
+
+  //! bed elevation at the time of the last update
+  IceModelVec2S m_topg_last;
+
+  //! bed uplift rate
+  IceModelVec2S m_uplift;
+
+  //! pointer to the current ice thickness
+  IceModelVec2S *m_thk;
 };
 
 //! Pointwide isostasy bed deformation model.
 class PBPointwiseIsostasy : public BedDef {
 public:
   PBPointwiseIsostasy(const IceGrid &g); 
-  virtual ~PBPointwiseIsostasy() {}
+  virtual ~PBPointwiseIsostasy();
   virtual void init();
   virtual void update(double my_t, double my_dt);
 protected:

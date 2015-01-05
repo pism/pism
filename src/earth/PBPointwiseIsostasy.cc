@@ -36,6 +36,10 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(const IceGrid &g)
 
 }
 
+PBPointwiseIsostasy::~PBPointwiseIsostasy() {
+  // empty
+}
+
 PetscErrorCode PBPointwiseIsostasy::allocate() {
 
   m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
@@ -51,7 +55,6 @@ void PBPointwiseIsostasy::init() {
              "* Initializing the pointwise isostasy bed deformation model...\n");
 
   m_thk->copy_to(m_thk_last);
-  m_topg->copy_to(m_topg_last);
 }
 
 //! Updates the pointwise isostasy model.
@@ -83,19 +86,19 @@ void PBPointwiseIsostasy::update(double my_t, double my_dt) {
   //! Our goal: topg = topg_last - f*(thk - thk_last)
 
   //! Step 1: topg = topg_last - f*thk
-  m_topg_last.add(-f, *m_thk, *m_topg);
+  m_topg_last.add(-f, *m_thk, m_topg);
   //! Step 2: topg = topg + f*thk_last = (topg_last - f*thk) + f*thk_last = topg_last - f*(thk - thk_last)
-  m_topg->add(f, m_thk_last);
+  m_topg.add(f, m_thk_last);
   //! This code is written this way to avoid allocating temp. storage for (thk - thk_last).
 
   //! Finally, we need to update bed uplift, topg_last and thk_last.
   compute_uplift(dt_beddef);
 
   m_thk->copy_to(m_thk_last);
-  m_topg->copy_to(m_topg_last);
+  m_topg.copy_to(m_topg_last);
 
   //! Increment the topg state counter. SIAFD relies on this!
-  m_topg->inc_state_counter();
+  m_topg.inc_state_counter();
 }
 
 } // end of namespace pism

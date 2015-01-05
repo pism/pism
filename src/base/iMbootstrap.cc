@@ -172,14 +172,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  bed_topography.regrid(filename, OPTIONAL,
-                        config.get("bootstrapping_bed_value_no_var"));
   basal_melt_rate.regrid(filename, OPTIONAL,
                          config.get("bootstrapping_bmelt_value_no_var"));
   geothermal_flux.regrid(filename, OPTIONAL,
                          config.get("bootstrapping_geothermal_flux_value_no_var"));
-  bed_uplift_rate.regrid(filename, OPTIONAL,
-                         config.get("bootstrapping_uplift_value_no_var"));
 
   ice_thickness.regrid(filename, OPTIONAL,
                        config.get("bootstrapping_H_value_no_var"));

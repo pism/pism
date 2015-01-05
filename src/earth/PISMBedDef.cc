@@ -30,8 +30,6 @@ BedDef::BedDef(const IceGrid &g)
   : Component_TS(g) {
 
   m_thk    = NULL;
-  m_topg   = NULL;
-  m_uplift = NULL;
 
   m_t_beddef_last = GSL_NAN;
 
@@ -44,23 +42,43 @@ BedDef::BedDef(const IceGrid &g)
 PetscErrorCode BedDef::pismbeddef_allocate() {
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
+  m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  m_topg.set_attrs("model_state", "bedrock surface elevation",
+                   "m", "bedrock_altitude");
+
   m_topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
-  m_topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
-                         "m", "");
+  m_topg_initial.set_attrs("model_state",
+                           "bedrock surface elevation (at the beginning of the run)",
+                           "m", "");
 
   m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg_last.set_attrs("model_state", "bedrock surface elevation",
-                      "m", "bedrock_altitude");
+                        "m", "bedrock_altitude");
+
+  m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
+  m_uplift.set_attrs("model_state", "bedrock uplift rate",
+                     "m s-1", "tendency_of_bedrock_altitude");
+  m_uplift.set_glaciological_units("m year-1");
+  m_uplift.write_in_glaciological_units = true;
 
   return 0;
 }
+
+const IceModelVec2S& BedDef::bed_elevation() const {
+  return m_topg;
+}
+
+const IceModelVec2S& BedDef::uplift() const {
+  return m_uplift;
+}
+
 
 void BedDef::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("topg_initial");
 }
 
 void BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                            IO_Type nctype) {
+                              IO_Type nctype) {
   if (set_contains(vars, "topg_initial")) {
     m_topg_initial.define(nc, nctype);
   }
@@ -75,19 +93,47 @@ void BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
 void BedDef::init() {
   m_t_beddef_last = m_grid.time->start();
 
-  m_thk    = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  m_topg   = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  m_uplift = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
+  m_t  = GSL_NAN;
+  m_dt = GSL_NAN;
 
-  // Save the bed elevation at the beginning of the run:
-  m_topg_initial.copy_from(*m_topg);
+  m_thk = m_grid.variables().get_2d_scalar("land_ice_thickness");
+
+  std::string input_file;
+  bool do_regrid = false;
+  int start = -1;
+  find_pism_input(input_file, do_regrid, start);
+
+  // read bed elevation and uplift rate from file
+  verbPrintf(2, m_grid.com,
+             "    reading bed topography and bed uplift rate\n"
+             "    from %s ... \n",
+             input_file.c_str());
+  if (do_regrid) {
+    // bootstrapping
+    m_topg.regrid(input_file, OPTIONAL,
+                  config.get("bootstrapping_bed_value_no_var"));
+    m_uplift.regrid(filename, OPTIONAL,
+                    config.get("bootstrapping_uplift_value_no_var"));
+  } else {
+    // re-starting
+    m_topg.read(input_file, start); // fails if not found!
+    m_uplift.read(input_file, start); // fails if not found!
+  }
+
+  // process -regrid_file and -regrid_vars
+  regrid("BedDef", &m_topg);
+  regrid("BedDef", &m_uplift);
+
+  // this should be the last thing we do here
+  m_topg.copy_to(m_topg_initial);
+  m_topg.copy_to(m_topg_last);
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
 void BedDef::compute_uplift(double dt_beddef) {
-  m_topg->add(-1, m_topg_last, *m_uplift);
+  m_topg.add(-1, m_topg_last, m_uplift);
   //! uplift = (topg - topg_last) / dt
-  m_uplift->scale(1.0 / dt_beddef);
+  m_uplift.scale(1.0 / dt_beddef);
 }
 
 } // end of namespace pism

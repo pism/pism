@@ -257,12 +257,6 @@ void IceModel::createVecs() {
   ice_thickness.metadata().set_double("valid_min", 0.0);
   grid.variables().add(ice_thickness);
 
-  // bedrock surface elevation
-  bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
-  bed_topography.set_attrs("model_state", "bedrock surface elevation",
-                           "m", "bedrock_altitude");
-  grid.variables().add(bed_topography);
-
   if (config.get_flag("sub_groundingline")) {
     gl_mask.create(grid, "gl_mask", WITHOUT_GHOSTS);
     gl_mask.set_attrs("internal",
@@ -324,14 +318,6 @@ void IceModel::createVecs() {
                                  "Pa", "");
     grid.variables().add(basal_yield_stress);
   }
-
-  // bedrock uplift rate
-  bed_uplift_rate.create(grid, "dbdt", WITHOUT_GHOSTS);
-  bed_uplift_rate.set_attrs("model_state", "bedrock uplift rate",
-                            "m s-1", "tendency_of_bedrock_altitude");
-   bed_uplift_rate.set_glaciological_units("m year-1");
-  bed_uplift_rate.write_in_glaciological_units = true;
-  grid.variables().add(bed_uplift_rate);
 
   // basal melt rate
   basal_melt_rate.create(grid, "bmelt", WITHOUT_GHOSTS);
