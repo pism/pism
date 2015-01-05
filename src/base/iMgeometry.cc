@@ -74,9 +74,9 @@ void IceModel::updateSurfaceElevationAndMask() {
  *
  * @return 0 on success.
  */
-void IceModel::update_mask(IceModelVec2S &bed,
-                                     IceModelVec2S &thickness,
-                                     IceModelVec2Int &result) {
+void IceModel::update_mask(const IceModelVec2S &bed,
+                           const IceModelVec2S &thickness,
+                           IceModelVec2Int &result) {
   double sea_level;
 
   assert(ocean != NULL);
@@ -112,9 +112,9 @@ void IceModel::update_mask(IceModelVec2S &bed,
  *
  * @return 0 on success.
  */
-void IceModel::update_surface_elevation(IceModelVec2S &bed,
-                                                  IceModelVec2S &thickness,
-                                                  IceModelVec2S &result) {
+void IceModel::update_surface_elevation(const IceModelVec2S &bed,
+                                        const IceModelVec2S &thickness,
+                                        IceModelVec2S &result) {
   double sea_level;
 
   assert(ocean != NULL);
