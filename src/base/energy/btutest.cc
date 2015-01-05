@@ -66,43 +66,6 @@ void BTU_Test::bootstrap() {
   }
 }
 
-
-static PetscErrorCode createVecs(IceGrid &grid) {
-  IceModelVec2S *bedtoptemp = new IceModelVec2S,
-                *ghf        = new IceModelVec2S;
-
-  ghf->create(grid, "bheatflx", WITHOUT_GHOSTS);
-  ghf->set_attrs("",
-                 "upward geothermal flux at bedrock thermal layer base",
-                 "W m-2", "");
-  ghf->set_glaciological_units("mW m-2");
-  grid.variables().add(*ghf);
-
-  bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS);
-  bedtoptemp->set_attrs("",
-                        "temperature at top of bedrock thermal layer",
-                        "K", "");
-  grid.variables().add(*bedtoptemp);
-
-  grid.variables().lock();
-
-  return 0;
-}
-
-
-static PetscErrorCode doneWithIceInfo(Vars &variables) {
-  // Get the names of all the variables allocated earlier:
-  std::set<std::string> vars = variables.keys();
-  std::set<std::string>::iterator i = vars.begin();
-  while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i);
-    delete var;
-    i++;
-  }
-  return 0;
-}
-
-
 int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
@@ -188,17 +151,26 @@ int main(int argc, char *argv[]) {
     grid.allocate();
 
     // allocate tools and IceModelVecs
-    createVecs(grid);
+    IceModelVec2S bedtoptemp, ghf;
+    {
+      ghf.create(grid, "bheatflx", WITHOUT_GHOSTS);
+      ghf.set_attrs("",
+                     "upward geothermal flux at bedrock thermal layer base",
+                     "W m-2", "");
+      ghf.set_glaciological_units("mW m-2");
 
-    // these vars are owned by this driver, outside of BedThermalUnit
-    IceModelVec2S *bedtoptemp, *ghf;
+      ghf.set(0.042);  // see Test K
 
-    // top of bedrock layer temperature; filled from Test K exact values
-    bedtoptemp = grid.variables().get_2d_scalar("bedtoptemp");
-    // lithosphere (bottom of bedrock layer) heat flux; has constant value
-    ghf = grid.variables().get_2d_scalar("bheatflx");
+      grid.variables().add(ghf);
 
-    ghf->set(0.042);  // see Test K
+      bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
+      bedtoptemp.set_attrs("",
+                            "temperature at top of bedrock thermal layer",
+                            "K", "");
+      grid.variables().add(bedtoptemp);
+
+      grid.variables().lock();
+    }
 
     // initialize BTU object:
     BTU_Test btu(grid);
@@ -223,20 +195,20 @@ int main(int argc, char *argv[]) {
                "  BedThermalUnit reports max timestep of %.4f years ...\n",
                unit_system.convert(max_dt, "seconds", "years"));
 
-
     // actually do the time-stepping
     verbPrintf(2,com,"  running ...\n");
     for (int n = 0; n < N; n++) {
-      const double time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
+      // time at start of time-step
+      const double time = grid.time->start() + dt_seconds * (double)n;
 
       // compute exact ice temperature at z=0 at time y
-      IceModelVec::AccessList list(*bedtoptemp);
+      IceModelVec::AccessList list(bedtoptemp);
       for (Points p(grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         double TT, FF; // Test K:  use TT, ignore FF
         exactK(time, 0.0, &TT, &FF, 0);
-        (*bedtoptemp)(i,j) = TT;
+        bedtoptemp(i,j) = TT;
       }
       // we are not communicating anything, which is fine
 
@@ -245,14 +217,13 @@ int main(int argc, char *argv[]) {
       verbPrintf(2,com,".");
     }
 
-    verbPrintf(2,com,"\n  done ...\n");
+    verbPrintf(2, com, "\n  done ...\n");
 
     // compute final output heat flux G_0 at z=0; reuse ghf for this purpose
-    ghf->set_name("bheatflx0");
-    ghf->set_attrs("",
-                   "upward geothermal flux at ice/bedrock interface",
-                   "W m-2", "");
-    btu.get_upward_geothermal_flux(*ghf);
+    ghf.set_name("bheatflx0");
+    ghf.set_attrs("", "upward geothermal flux at ice/bedrock interface",
+                  "W m-2", "");
+    btu.get_upward_geothermal_flux(ghf);
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT
@@ -263,21 +234,21 @@ int main(int argc, char *argv[]) {
 
     // compute numerical error
     double maxghferr, avghferr;
-    ghf->shift(-FF);
-    ghf->norm(NORM_INFINITY,maxghferr);
-    ghf->norm(NORM_1,avghferr);
-    ghf->shift(+FF); // shift it back for writing
+    ghf.shift(-FF);
+    ghf.norm(NORM_INFINITY, maxghferr);
+    ghf.norm(NORM_1, avghferr);
+    ghf.shift(+FF); // shift it back for writing
     avghferr /= (grid.Mx() * grid.My());
-    verbPrintf(2,grid.com, 
+    verbPrintf(2, grid.com, 
                "case dt = %.5f:\n", dt_years.value());
-    verbPrintf(1,grid.com, 
+    verbPrintf(1, grid.com, 
                "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
-    verbPrintf(1,grid.com, 
+    verbPrintf(1, grid.com, 
                "bheatflx0  :       max    prcntmax          av\n");
-    verbPrintf(1,grid.com, 
+    verbPrintf(1, grid.com, 
                "           %11.7f  %11.7f  %11.7f\n", 
-               maxghferr,100.0*maxghferr/FF,avghferr);
-    verbPrintf(1,grid.com, "NUM ERRORS DONE\n");
+               maxghferr, 100.0*maxghferr/FF, avghferr);
+    verbPrintf(1, grid.com, "NUM ERRORS DONE\n");
 
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
@@ -293,12 +264,11 @@ int main(int argc, char *argv[]) {
     btu.define_variables(vars, pio, PISM_DOUBLE);
     btu.write_variables(vars, pio);
 
-    bedtoptemp->write(pio);
-    ghf->write(pio);
+    bedtoptemp.write(pio);
+    ghf.write(pio);
 
     pio.close();
 
-    doneWithIceInfo(grid.variables());
     verbPrintf(2,com, "done.\n");
   }
   catch (...) {
