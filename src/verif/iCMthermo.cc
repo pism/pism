@@ -27,6 +27,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -62,7 +63,11 @@ void IceCompModel::initTestFG() {
   dummy1 = new double[Mz];  dummy2 = new double[Mz];
   dummy3 = new double[Mz];  dummy4 = new double[Mz];
 
+  IceModelVec2S bed_topography;
+  bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
   bed_topography.set(0);
+  beddef->set_elevation(bed_topography);
+
   geothermal_flux.set(Ggeo);
 
   double *T = new double[grid.Mz()];
@@ -669,7 +674,11 @@ void IceCompModel::initTestsKO() {
     }
   }
 
-  bed_topography.set(0.0);
+  IceModelVec2S bed_topography;
+  bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+  bed_topography.set(0);
+  beddef->set_elevation(bed_topography);
+
   geothermal_flux.set(0.042);
   ice_thickness.set(3000.0);
   ice_thickness.copy_to(ice_surface_elevation);

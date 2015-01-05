@@ -762,6 +762,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (beddef) {
+    const IceModelVec2S &bed_topography = beddef->bed_elevation();
     int topg_state_counter = bed_topography.get_state_counter();
 
     grid.profiling.begin("bed deformation");

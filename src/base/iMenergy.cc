@@ -23,6 +23,7 @@
 #include "PISMOcean.hh"
 #include "enthalpyConverter.hh"
 #include <cassert>
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -189,6 +190,8 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   Enth3.getHorSlice(result, 0.0);
 
   MaskQuery mask(vMask);
+
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   IceModelVec::AccessList list;
   list.add(bed_topography);

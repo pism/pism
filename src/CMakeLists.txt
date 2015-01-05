@@ -165,6 +165,7 @@ set(PISMEARTH_SRC
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
   earth/PBLingleClark.cc
+  earth/PBNull.cc
   earth/deformation.cc
   earth/greens.cc
   earth/cubature.c

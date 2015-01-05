@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "PS_EISMINTII.hh"
 
 #include "error_handling.hh"
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -39,7 +40,7 @@ IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
   // overridden by the command-line option "-energy enthalpy"
   config.set_flag("do_cold_ice_methods", true);
 
-  // see EISMINT II description; choose no ocean interaction, 
+  // see EISMINT II description; choose no ocean interaction,
   config.set_flag("is_dry_simulation", true);
 
   // purely SIA, and E=1
@@ -79,7 +80,7 @@ void IceEISModel::setFromOptions() {
         experiments.find(name) == std::string::npos) {
       throw RuntimeError::formatted("option -eisII must be a single letter in [%s]; got %s",
                                     experiments.c_str(), name.c_str());
-    }    
+    }
 
     m_experiment = name[0];
     config.set_string("EISMINT_II_experiment", name);
@@ -105,10 +106,10 @@ void IceEISModel::allocate_stressbalance() {
   } else {
     my_stress_balance = new ZeroSliding(grid, *EC);
   }
-  
+
   // ~StressBalance() will de-allocate my_stress_balance and modifier.
   stress_balance = new StressBalance(grid, my_stress_balance, modifier);
-  
+
 }
 
 void IceEISModel::allocate_couplers() {
@@ -123,10 +124,10 @@ void IceEISModel::allocate_couplers() {
   }
 }
 
-void IceEISModel::generateTroughTopography() {
+void IceEISModel::generateTroughTopography(IceModelVec2S &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
-  
+
   const double b0    = 1000.0;  // plateau elevation
   const double L     = 750.0e3; // half-width of computational domain
   const double w     = 200.0e3; // trough width
@@ -134,35 +135,35 @@ void IceEISModel::generateTroughTopography() {
   const double dx61  = (2*L) / 60; // = 25.0e3
 
   IceModelVec::AccessList list;
-  list.add(bed_topography);
+  list.add(result);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid.dx(), ewd = j * grid.dy();
     if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
         (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
-      bed_topography(i,j) = 1000.0 - std::max(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
+      result(i,j) = 1000.0 - std::max(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
     } else {
-      bed_topography(i,j) = 1000.0;
+      result(i,j) = 1000.0;
     }
   }
 }
 
 
-void IceEISModel::generateMoundTopography() {
+void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
-  
+
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
 
   IceModelVec::AccessList list;
-  list.add(bed_topography);
+  list.add(result);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid.dx(), ewd = j * grid.dy();
-    bed_topography(i,j) = fabs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
+    result(i,j) = fabs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
 }
 
@@ -172,27 +173,34 @@ void IceEISModel::set_vars_from_options() {
 
   // initialize from EISMINT II formulas
   verbPrintf(2, grid.com,
-             "initializing variables from EISMINT II experiment %c formulas... \n", 
+             "initializing variables from EISMINT II experiment %c formulas... \n",
              m_experiment);
 
-  if ((m_experiment == 'I') || (m_experiment == 'J')) {
-    generateTroughTopography();
-  } 
-  if ((m_experiment == 'K') || (m_experiment == 'L')) {
-    generateMoundTopography();
-  } 
+  {
+    IceModelVec2S bed_topography;
+    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
 
-  // communicate b in any case; it will be horizontally-differentiated
-  bed_topography.update_ghosts();
+    if ((m_experiment == 'I') || (m_experiment == 'J')) {
+      generateTroughTopography(bed_topography);
+    }
+    if ((m_experiment == 'K') || (m_experiment == 'L')) {
+      generateMoundTopography(bed_topography);
+    }
 
-  basal_melt_rate.set(0.0); 
+    beddef->set_elevation(bed_topography);
+  }
+
+  // no experiments have uplift at start
+  bed_topography.set(0.0);
+  beddef->set_uplift(bed_topography);
+
+  basal_melt_rate.set(0.0);
   geothermal_flux.set(0.042); // EISMINT II value; J m-2 s-1
-  bed_uplift_rate.set(0.0); // no experiments have uplift at start
   ice_thickness.set(0.0); // start with zero ice
 
   // regrid 2D variables
   regrid(2);
-  
+
   // this IceModel bootstrap method should do right thing because of
   // variable settings above and init of coupler above
   putTempAtDepth();

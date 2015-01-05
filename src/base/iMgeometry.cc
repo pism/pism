@@ -29,6 +29,7 @@
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
 #include "error_handling.hh"
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -50,6 +51,7 @@ using namespace mask;
   solver problems associated to not-attached-to-grounded ice.
 */
 void IceModel::updateSurfaceElevationAndMask() {
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   update_mask(bed_topography, ice_thickness, vMask);
   update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
@@ -536,6 +538,8 @@ void IceModel::massContExplicitStep() {
   IceModelVec2V *vel_advective;
   stress_balance->get_2D_advective_velocity(vel_advective);
 
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+
   IceModelVec::AccessList list;
   list.add(cell_area);
   list.add(ice_thickness);
@@ -904,6 +908,8 @@ void IceModel::update_floatation_mask() {
   gl_mask.set(0.0);
   gl_mask_x.set(0.0);
   gl_mask_y.set(0.0);
+
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);

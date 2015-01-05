@@ -937,7 +937,7 @@ void IceModel::allocate_bed_deformation() {
 
   if (beddef == NULL) {
     if (model == "none") {
-      beddef = NULL;
+      beddef = new PBNull(grid);
       return;
     }
 

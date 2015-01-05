@@ -40,6 +40,7 @@
 #include "PSVerification.hh"
 #include "Mask.hh"
 #include "error_handling.hh"
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -330,7 +331,10 @@ void IceCompModel::set_vars_from_options() {
              "initializing Test %c from formulas ...\n",testname);
 
   // all have no uplift
-  bed_uplift_rate.set(0.0);
+  IceModelVec2S bed_uplift;
+  bed_uplift.create(grid, "uplift", WITHOUT_GHOSTS);
+  bed_uplift.set(0);
+  beddef->set_uplift(bed_uplift);
 
   // this is the correct initialization for Test O (and every other
   // test; they all generate zero basal melt rate)
@@ -422,11 +426,17 @@ void IceCompModel::initTestABCDEH() {
 
   ice_thickness.update_ghosts();
 
-  if (testname == 'H') {
-    ice_thickness.copy_to(bed_topography);
-    bed_topography.scale(-f);
-  } else {  // flat bed case otherwise
-    bed_topography.set(0.0);
+  {
+    IceModelVec2S bed_topography;
+    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+
+    if (testname == 'H') {
+      ice_thickness.copy_to(bed_topography);
+      bed_topography.scale(-f);
+    } else {  // flat bed case otherwise
+      bed_topography.set(0.0);
+    }
+    beddef->set_elevation(bed_topography);
   }
 }
 
@@ -510,17 +520,22 @@ void IceCompModel::initTestL() {
     throw RuntimeError("test L: exactL_list(..) failed");
   }
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(bed_topography);
+  {
+    IceModelVec2S bed_topography;
+    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
 
-  for (k = 0; k < MM; k++) {
-    ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
-    bed_topography(rrv[k].i, rrv[k].j) = bb[k];
+    IceModelVec::AccessList list;
+    list.add(ice_thickness);
+    list.add(bed_topography);
+
+    for (k = 0; k < MM; k++) {
+      ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
+      bed_topography(rrv[k].i, rrv[k].j) = bb[k];
+    }
+
+    ice_thickness.update_ghosts(); 
+    beddef->set_elevation(bed_topography);
   }
-
-  ice_thickness.update_ghosts(); 
-  bed_topography.update_ghosts(); 
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
   ice_thickness.copy_to(vHexactL);
@@ -584,10 +599,17 @@ void IceCompModel::fillSolnTestABCDH() {
 
   ice_thickness.update_ghosts();
 
-  if (testname == 'H') {
-    ice_thickness.copy_to(bed_topography);
-    bed_topography.scale(-f);
-    bed_topography.update_ghosts();
+  {
+    IceModelVec2S bed_topography;
+    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+
+    if (testname == 'H') {
+      ice_thickness.copy_to(bed_topography);
+      bed_topography.scale(-f);
+    } else {
+      bed_topography.set(0.0);
+    }
+    beddef->set_elevation(bed_topography);
   }
 }
 
@@ -1225,8 +1247,13 @@ void IceCompModel::reportErrors() {
  */
 void IceCompModel::test_V_init() {
 
-  // initialize the bed topography
-  bed_topography.set(-1000);
+  {
+    // initialize the bed topography
+    IceModelVec2S bed_topography;
+    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.set(-1000);
+    beddef->set_elevation(bed_topography);
+  }
 
   // set SSA boundary conditions:
   double upstream_velocity = grid.convert(300.0, "m/year", "m/second"),

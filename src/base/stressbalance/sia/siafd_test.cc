@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
     ICMEnthalpyConverter EC(config);
     ThermoGlenArrIce ice(grid.com, "sia_", config, &EC);
 
-    IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
+    IceModelVec2S ice_surface_elevation, ice_thickness;
     IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
@@ -363,12 +363,6 @@ int main(int argc, char *argv[]) {
                             "m", "land_ice_thickness");
     ice_thickness.metadata().set_double("valid_min", 0.0);
     vars.add(ice_thickness);
-
-    // bedrock surface elevation
-    bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
-    bed_topography.set_attrs("model_state", "bedrock surface elevation",
-                             "m", "bedrock_altitude");
-    vars.add(bed_topography);
 
     // age of the ice; is not used here
     age.create(grid, "age", WITHOUT_GHOSTS);

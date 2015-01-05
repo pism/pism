@@ -29,6 +29,7 @@
 #include "PISMTime.hh"
 
 #include "error_handling.hh"
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -342,6 +343,8 @@ void IceModel::compute_sealevel_volume(double &result) {
   }
   double sea_level;
   ocean->sea_level_elevation(sea_level);
+
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   IceModelVec::AccessList list;
   list.add(vMask);

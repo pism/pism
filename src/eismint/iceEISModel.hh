@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,8 +42,8 @@ public:
 protected:
   char m_experiment;
 
-  virtual void generateTroughTopography();  // for experiments I,J
-  virtual void generateMoundTopography();   // for experiments K,L
+  virtual void generateTroughTopography(IceModelVec2S &result);  // for experiments I,J
+  virtual void generateMoundTopography(IceModelVec2S &result);   // for experiments K,L
 };
 
 } // end of namespace pism

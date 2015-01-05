@@ -64,6 +64,15 @@ PetscErrorCode BedDef::pismbeddef_allocate() {
   return 0;
 }
 
+void BedDef::set_elevation(const IceModelVec2S &input) {
+  m_topg.copy_from(input);
+  m_topg.update_ghosts();
+}
+
+void BedDef::set_uplift(const IceModelVec2S &input) {
+  m_uplift.copy_from(input);
+}
+
 const IceModelVec2S& BedDef::bed_elevation() const {
   return m_topg;
 }
@@ -111,9 +120,9 @@ void BedDef::init() {
   if (do_regrid) {
     // bootstrapping
     m_topg.regrid(input_file, OPTIONAL,
-                  config.get("bootstrapping_bed_value_no_var"));
-    m_uplift.regrid(filename, OPTIONAL,
-                    config.get("bootstrapping_uplift_value_no_var"));
+                  m_config.get("bootstrapping_bed_value_no_var"));
+    m_uplift.regrid(input_file, OPTIONAL,
+                    m_config.get("bootstrapping_uplift_value_no_var"));
   } else {
     // re-starting
     m_topg.read(input_file, start); // fails if not found!

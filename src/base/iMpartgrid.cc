@@ -25,6 +25,7 @@
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
+#include "PISMBedDef.hh"
 
 namespace pism {
 
@@ -135,6 +136,8 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
 void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool &done) {
 
   bool reduce_frontal_thickness = config.get_flag("part_grid_reduce_frontal_thickness");
+
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   update_mask(bed_topography, ice_thickness, vMask);
 
