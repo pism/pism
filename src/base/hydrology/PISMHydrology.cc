@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -91,7 +91,7 @@ void Hydrology::init() {
   // update() method at the current Hydrology time
 
   thk      = m_grid.variables().get_2d_scalar("thk");
-  bed      = m_grid.variables().get_2d_scalar("topg");
+  bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
   bmelt    = m_grid.variables().get_2d_scalar("bmelt");
   cellarea = m_grid.variables().get_2d_scalar("cell_area");
   mask     = m_grid.variables().get_2d_mask("mask");
