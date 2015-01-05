@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,10 +43,10 @@ public:
   void lock();
   bool is_available(const std::string &name) const;
   IceModelVec* get(const std::string &name) const;
-  IceModelVec2S* get_2d_scalar(const std::string &name) const;
-  IceModelVec2V* get_2d_vector(const std::string &name) const;
-  IceModelVec2Int* get_2d_mask(const std::string &name) const;
-  IceModelVec3* get_3d_scalar(const std::string &name) const;
+  const IceModelVec2S* get_2d_scalar(const std::string &name) const;
+  const IceModelVec2V* get_2d_vector(const std::string &name) const;
+  const IceModelVec2Int* get_2d_mask(const std::string &name) const;
+  const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
 private:

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -141,7 +141,7 @@ IceModelVec* Vars::get_internal(const std::string &name) const {
   return NULL;
 }
 
-IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
+const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
   IceModelVec2S *tmp = dynamic_cast<IceModelVec2S*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D scalar variable '" + name + "' is not available");
@@ -149,7 +149,7 @@ IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
   return tmp;
 }
 
-IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
+const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
   IceModelVec2V *tmp = dynamic_cast<IceModelVec2V*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D vector variable '" + name + "' is not available");
@@ -157,7 +157,7 @@ IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
   return tmp;
 }
 
-IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
+const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
   IceModelVec2Int *tmp = dynamic_cast<IceModelVec2Int*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D mask variable '" + name + "' is not available");
@@ -165,7 +165,7 @@ IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
   return tmp;
 }
 
-IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
+const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
   IceModelVec3* tmp = dynamic_cast<IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("3D scalar variable '" + name + "' is not available");
