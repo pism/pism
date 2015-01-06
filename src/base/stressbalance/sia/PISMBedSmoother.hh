@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,14 +77,14 @@ public:
   BedSmoother(const IceGrid &g, int MAX_GHOSTS);
   virtual ~BedSmoother();
 
-  virtual void preprocess_bed(IceModelVec2S &topg);
+  virtual void preprocess_bed(const IceModelVec2S &topg);
 
   // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
   virtual void get_smoothing_domain(int &Nx_out, int &Ny_out);
 
-  virtual void get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
-                                          IceModelVec2Int &mask, IceModelVec2S *thksmooth);
-  virtual void get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
+  virtual void get_smoothed_thk(const IceModelVec2S &usurf, const IceModelVec2S &thk,
+                                const IceModelVec2Int &mask, IceModelVec2S *thksmooth);
+  virtual void get_theta(const IceModelVec2S &usurf, IceModelVec2S *theta);
 
   const IceModelVec2S& get_smoothed_bed();
 protected:
@@ -109,7 +109,7 @@ protected:
     maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
     C2p0, C3p0, C4p0;
 
-  virtual void preprocess_bed(IceModelVec2S &topg,
+  virtual void preprocess_bed(const IceModelVec2S &topg,
                               unsigned int Nx_in, unsigned int Ny_in);
 
   void smooth_the_bed_on_proc0();

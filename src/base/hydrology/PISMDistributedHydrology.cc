@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -116,9 +116,9 @@ void DistributedHydrology::init_bwp() {
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   const double bwp_default = m_config.get("bootstrapping_bwp_value_no_var");
-  IceModelVec2S *P_input = NULL;
 
   try {
+    const IceModelVec2S *P_input = NULL;
     // FIXME: this is not an "exceptional" situation...
     P_input = m_grid.variables().get_2d_scalar("bwp");
     P.copy_from(*P_input);

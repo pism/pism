@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,7 +60,7 @@ protected:
   IceModelVec2S m_iceberg_mask;
   Vec m_mask_p0;
 
-  IceModelVec2Int *m_bcflag;
+  const IceModelVec2Int *m_bcflag;
 };
 
 } // end of namespace pism

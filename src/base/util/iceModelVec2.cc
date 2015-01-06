@@ -586,7 +586,7 @@ void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
   }
 }
 
-void IceModelVec2S::add(double alpha, IceModelVec &x) {
+void IceModelVec2S::add(double alpha, const IceModelVec &x) {
   add_2d<IceModelVec2S>(this, alpha, &x, this);
 }
 

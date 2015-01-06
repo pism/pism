@@ -276,7 +276,7 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
     }
     list.add(*lon);
     list.add(*usurf);
-    faustogreve->update_temp_mj(usurf, lat, lon);
+    faustogreve->update_temp_mj(*usurf, *lat, *lon);
   }
 
   const PetscScalar sigmalapserate = m_config.get("pdd_std_dev_lapse_lat_rate"),

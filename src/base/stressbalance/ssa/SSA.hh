@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -170,22 +170,25 @@ protected:
 
   virtual void solve() = 0;
 
-  IceModelVec2Int *mask;
-  IceModelVec2S *thickness, *tauc, *surface, *bed;
-  IceModelVec2S *driving_stress_x;
-  IceModelVec2S *driving_stress_y;
-  IceModelVec2V taud;
-  IceModelVec3 *enthalpy;
-  IceModelVec2S *gl_mask;
+  const IceModelVec2Int *m_mask;
+  const IceModelVec2S *m_thickness;
+  const IceModelVec2S *m_tauc;
+  const IceModelVec2S *m_surface;
+  const IceModelVec2S *m_bed;
+  const IceModelVec2S *m_driving_stress_x;
+  const IceModelVec2S *m_driving_stress_y;
+  IceModelVec2V m_taud;
+  const IceModelVec3 *m_enthalpy;
+  const IceModelVec2S *m_gl_mask;
 
-  std::string stdout_ssa;
+  std::string m_stdout_ssa;
 
   // objects used by the SSA solver (internally)
   PISMDM::Ptr  m_da;               // dof=2 DA
   IceModelVec2V m_velocity_global; // global vector for solution
 
   // profiling
-  int event_ssa;
+  int m_event_ssa;
 };
 
 } // end of namespace pism

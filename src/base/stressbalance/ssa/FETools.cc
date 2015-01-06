@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -99,7 +99,8 @@ void FEDOFMap::extractLocalDOFs(int i, int j, double const*const*x_global, doubl
   x_local[3] = x_global[i][j + 1];
 }
 
-void FEDOFMap::extractLocalDOFs(int i, int j, IceModelVec2S &x_global, double *x_local) const
+void FEDOFMap::extractLocalDOFs(int i, int j,
+                                const IceModelVec2S &x_global, double *x_local) const
 {
   x_local[0] = x_global(i, j);
   x_local[1] = x_global(i + 1, j);
@@ -119,7 +120,8 @@ void FEDOFMap::extractLocalDOFs(int i, int j, Vector2 const*const*x_global,
   x_local[3] = x_global[i][j + 1];
 }
 
-void FEDOFMap::extractLocalDOFs(int i, int j, IceModelVec2V &x_global,
+void FEDOFMap::extractLocalDOFs(int i, int j,
+                                const IceModelVec2V &x_global,
                                 Vector2 *x_local) const
 {
   x_local[0] = x_global(i, j);
@@ -135,7 +137,7 @@ void FEDOFMap::extractLocalDOFs(double const*const*x_global, double *x_local) co
   extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
 
-void FEDOFMap::extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const
+void FEDOFMap::extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const
 {
   extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
@@ -146,7 +148,7 @@ void FEDOFMap::extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) 
 }
 
 //! Extract vector degrees of freedom for the element specified previously with FEDOFMap::reset
-void FEDOFMap::extractLocalDOFs(IceModelVec2V &x_global, Vector2 *x_local) const
+void FEDOFMap::extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local) const
 {
   extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
@@ -372,7 +374,7 @@ void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j, const FEDOFMa
 
 
 void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
-                                                     IceModelVec2S &x_global, double *vals) {
+                                                     const IceModelVec2S &x_global, double *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
@@ -390,7 +392,8 @@ void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j,
 }
 
 void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j,
-                                                     const FEDOFMap &dof, IceModelVec2S &x_global,
+                                                     const FEDOFMap &dof,
+                                                     const IceModelVec2S &x_global,
                                                      double *vals, double *dx, double *dy) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, dx, dy);
@@ -472,7 +475,8 @@ void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMa
 }
 
 void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
-                                                     IceModelVec2V &x_global, Vector2 *vals) {
+                                                     const IceModelVec2V &x_global,
+                                                     Vector2 *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
@@ -491,7 +495,7 @@ void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMa
 }
 
 void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
-                                                     IceModelVec2V &x_global,
+                                                     const IceModelVec2V &x_global,
                                                      Vector2 *vals, double (*Dv)[3]) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, Dv);
@@ -522,7 +526,7 @@ DirichletData::~DirichletData() {
   }
 }
 
-void DirichletData::init(IceModelVec2Int *indices, double weight) {
+void DirichletData::init(const IceModelVec2Int *indices, double weight) {
   init_impl(indices, NULL, weight);
 }
 
@@ -530,8 +534,9 @@ void DirichletData::finish() {
   finish_impl(NULL);
 }
 
-void DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *values,
-                                        double weight) {
+void DirichletData::init_impl(const IceModelVec2Int *indices,
+                              const IceModelVec *values,
+                              double weight) {
   m_weight  = weight;
 
   if (indices != NULL) {
@@ -544,7 +549,7 @@ void DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *values,
   }
 }
 
-void DirichletData::finish_impl(IceModelVec *values) {
+void DirichletData::finish_impl(const IceModelVec *values) {
   if (m_indices != NULL) {
     m_indices->end_access();
     m_indices = NULL;
@@ -572,8 +577,9 @@ DirichletData_Scalar::DirichletData_Scalar()
   : m_values(NULL) {
 }
 
-void DirichletData_Scalar::init(IceModelVec2Int *indices, IceModelVec2S *values,
-                                          double weight) {
+void DirichletData_Scalar::init(const IceModelVec2Int *indices,
+                                const IceModelVec2S *values,
+                                double weight) {
   m_values = values;
   init_impl(indices, m_values, weight);
 }
@@ -664,8 +670,9 @@ DirichletData_Vector::DirichletData_Vector()
   : m_values(NULL) {
 }
 
-void DirichletData_Vector::init(IceModelVec2Int *indices, IceModelVec2V *values,
-                                          double weight) {
+void DirichletData_Vector::init(const IceModelVec2Int *indices,
+                                const IceModelVec2V *values,
+                                double weight) {
   m_values = values;
   init_impl(indices, m_values, weight);
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -126,9 +126,9 @@ void ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   \param[in] mask (used to determine if floating or grounded)
   \param[out] result
  */
-void ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &velocity,
-                                                            IceModelVec2S &tauc,
-                                                            IceModelVec2Int &mask,
+void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &velocity,
+                                                            const IceModelVec2S &tauc,
+                                                            const IceModelVec2Int &mask,
                                                             IceModelVec2S &result) {
   MaskQuery m(mask);
 
@@ -171,8 +171,9 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
-void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                                       IceModelVec2 &result) {
+void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                                             const IceModelVec2Int &mask,
+                                                             IceModelVec2 &result) {
   double    dx = m_grid.dx(), dy = m_grid.dy();
 
   if (result.get_ndof() != 2) {
@@ -253,8 +254,9 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velo
 
 //! \brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
-void ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                         IceModelVec2 &result) {
+void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
+                                               const IceModelVec2Int &mask,
+                                               IceModelVec2 &result) {
   double    dx = m_grid.dx(), dy = m_grid.dy();
 
   if (result.get_ndof() != 3) {
@@ -366,15 +368,14 @@ SSB_taud::SSB_taud(ShallowStressBalance *m)
  * cases at ice margins.
  */
 void SSB_taud::compute(IceModelVec* &output) {
-  IceModelVec2S *thickness, *surface;
 
   IceModelVec2V *result = new IceModelVec2V;
   result->create(m_grid, "result", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  surface = m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *surface = m_grid.variables().get_2d_scalar("surface_altitude");
 
   double standard_gravity = m_grid.config.get("standard_gravity"),
     ice_density = m_grid.config.get("ice_density");
@@ -469,8 +470,8 @@ void SSB_taub::compute(IceModelVec* &output) {
   model->get_2D_advective_velocity(velocity);
 
   IceModelVec2V &vel = *velocity;
-  IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
-  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 
@@ -585,7 +586,7 @@ void SSB_beta::compute(IceModelVec* &output) {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
+  const IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 

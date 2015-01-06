@@ -209,7 +209,7 @@ void SSAFD::init() {
 
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.
-  if (surface == NULL) {
+  if (m_surface == NULL) {
     throw RuntimeError("The finite difference SSA solver requires a surface elevation.\n"
                        "An explicit driving stress was specified instead and cannot be used.");
   }
@@ -281,10 +281,10 @@ void SSAFD::assemble_rhs() {
   m_b.set(0.0);
 
   // get driving stress components
-  compute_driving_stress(taud);
+  compute_driving_stress(m_taud);
 
   IceModelVec::AccessList list;
-  list.add(taud);
+  list.add(m_taud);
   list.add(m_b);
 
   if (m_vel_bc && bc_locations) {
@@ -293,9 +293,9 @@ void SSAFD::assemble_rhs() {
   }
 
   if (use_cfbc) {
-    list.add(*thickness);
-    list.add(*bed);
-    list.add(*mask);
+    list.add(*m_thickness);
+    list.add(*m_bed);
+    list.add(*m_mask);
   }
 
   if (use_cfbc && m_melange_back_pressure != NULL) {
@@ -313,12 +313,12 @@ void SSAFD::assemble_rhs() {
     }
 
     if (use_cfbc) {
-      double H_ij = (*thickness)(i,j);
-      int M_ij = mask->as_int(i,j),
-        M_e = mask->as_int(i + 1,j),
-        M_w = mask->as_int(i - 1,j),
-        M_n = mask->as_int(i,j + 1),
-        M_s = mask->as_int(i,j - 1);
+      double H_ij = (*m_thickness)(i,j);
+      int M_ij = m_mask->as_int(i,j),
+        M_e = m_mask->as_int(i + 1,j),
+        M_w = m_mask->as_int(i - 1,j),
+        M_n = m_mask->as_int(i,j + 1),
+        M_s = m_mask->as_int(i,j - 1);
 
       // Note: this sets velocities at both ice-free ocean and ice-free
       // bedrock to zero. This means that we need to set boundary conditions
@@ -354,7 +354,7 @@ void SSAFD::assemble_rhs() {
         }
 
         const double H_ij2 = H_ij*H_ij,
-          b     = (*bed)(i,j),
+          b     = (*m_bed)(i,j),
           rho_g = rho_ice * standard_gravity;
 
         double ocean_pressure;
@@ -385,8 +385,8 @@ void SSAFD::assemble_rhs() {
         // Note that if the current cell is "marginal" but not a CFBC
         // location, the following two lines are equaivalent to the "usual
         // case" below.
-        m_b(i, j).u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
-        m_b(i, j).v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
+        m_b(i, j).u = m_taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
+        m_b(i, j).v = m_taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -397,8 +397,8 @@ void SSAFD::assemble_rhs() {
     }   // end of "if (use_cfbc)"
 
     // usual case: use already computed driving stress
-    m_b(i, j).u = taud(i, j).u;
-    m_b(i, j).v = taud(i, j).v;
+    m_b(i, j).u = m_taud(i, j).u;
+    m_b(i, j).v = m_taud(i, j).v;
   }
 }
 
@@ -497,9 +497,9 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   IceModelVec::AccessList list;
   list.add(nuH);
-  list.add(*tauc);
+  list.add(*m_tauc);
   list.add(vel);
-  list.add(*mask);
+  list.add(*m_mask);
 
   if (m_vel_bc && bc_locations) {
     list.add(*bc_locations);
@@ -507,15 +507,15 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   const bool sub_gl = m_config.get_flag("sub_groundingline");
   if (sub_gl) {
-    list.add(*gl_mask);
+    list.add(*m_gl_mask);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
   bool nu_bedrock_set=m_config.get_flag("nu_bedrock_set");
   if (nu_bedrock_set) {
-    list.add(*thickness);
-    list.add(*bed);
-    list.add(*surface);
+    list.add(*m_thickness);
+    list.add(*m_bed);
+    list.add(*m_surface);
   }
   double nu_bedrock=m_config.get("nu_bedrock");
   double HminFrozen=0.0;
@@ -547,23 +547,23 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // be prescribed and is a temperature-independent free (user determined) parameter
 
       // direct neighbors
-      int  M_e = mask->as_int(i + 1,j),
-        M_w = mask->as_int(i - 1,j),
-        M_n = mask->as_int(i,j + 1),
-        M_s = mask->as_int(i,j - 1);
+      int  M_e = m_mask->as_int(i + 1,j),
+        M_w = m_mask->as_int(i - 1,j),
+        M_n = m_mask->as_int(i,j + 1),
+        M_s = m_mask->as_int(i,j - 1);
 
-      if ((*thickness)(i,j) > HminFrozen) {
-        if ((*bed)(i-1,j) > (*surface)(i,j) && ice_free_land(M_w)) {
-          c_w = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
+      if ((*m_thickness)(i,j) > HminFrozen) {
+        if ((*m_bed)(i-1,j) > (*m_surface)(i,j) && ice_free_land(M_w)) {
+          c_w = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i-1,j));
         }
-        if ((*bed)(i+1,j) > (*surface)(i,j) && ice_free_land(M_e)) {
-          c_e = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+        if ((*m_bed)(i+1,j) > (*m_surface)(i,j) && ice_free_land(M_e)) {
+          c_e = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
         }
-        if ((*bed)(i,j+1) > (*surface)(i,j) && ice_free_land(M_n)) {
-          c_n = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
+        if ((*m_bed)(i,j+1) > (*m_surface)(i,j) && ice_free_land(M_n)) {
+          c_n = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i,j+1));
         }
-        if ((*bed)(i,j-1) > (*surface)(i,j) && ice_free_land(M_s)) {
-          c_s = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+        if ((*m_bed)(i,j-1) > (*m_surface)(i,j) && ice_free_land(M_s)) {
+          c_s = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
         }
       }
     }
@@ -578,20 +578,20 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
     int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
-    int M_ij = mask->as_int(i,j);
+    int M_ij = m_mask->as_int(i,j);
 
     if (use_cfbc) {
       int
         // direct neighbors
-        M_e = mask->as_int(i + 1,j),
-        M_w = mask->as_int(i - 1,j),
-        M_n = mask->as_int(i,j + 1),
-        M_s = mask->as_int(i,j - 1),
+        M_e = m_mask->as_int(i + 1,j),
+        M_w = m_mask->as_int(i - 1,j),
+        M_n = m_mask->as_int(i,j + 1),
+        M_s = m_mask->as_int(i,j - 1),
         // "diagonal" neighbors
-        M_ne = mask->as_int(i + 1,j + 1),
-        M_se = mask->as_int(i + 1,j - 1),
-        M_nw = mask->as_int(i - 1,j + 1),
-        M_sw = mask->as_int(i - 1,j - 1);
+        M_ne = m_mask->as_int(i + 1,j + 1),
+        M_se = m_mask->as_int(i + 1,j - 1),
+        M_nw = m_mask->as_int(i - 1,j + 1),
+        M_sw = m_mask->as_int(i - 1,j - 1);
 
       // Note: this sets velocities at both ice-free ocean and ice-free
       // bedrock to zero. This means that we need to set boundary conditions
@@ -728,7 +728,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     double beta = 0.0;
     if (include_basal_shear) {
       if (grounded_ice(M_ij)) {
-        beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        beta = basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
       } else if (ice_free_land(M_ij)) {
         // apply drag even in this case, to help with margins; note ice free
         // areas already have a strength extension
@@ -737,7 +737,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       if (sub_gl) {
         // reduce the basal drag at grid cells that are partially grounded:
         if (icy(M_ij)) {
-          beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          beta = (*m_gl_mask)(i,j) * basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
         }
       }
     }
@@ -971,7 +971,7 @@ void SSAFD::picard_manager(double nuH_regularization,
   // set the initial guess:
   m_velocity.copy_to(m_velocity_global);
 
-  stdout_ssa.clear();
+  m_stdout_ssa.clear();
 
   bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
 
@@ -987,7 +987,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     if (very_verbose) {
       snprintf(tempstr, 100, "  %2d:", k);
-      stdout_ssa += tempstr;
+      m_stdout_ssa += tempstr;
     }
 
     // in preparation of measuring change of effective viscosity:
@@ -998,7 +998,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     if (very_verbose) {
 
-      stdout_ssa += "A:";
+      m_stdout_ssa += "A:";
     }
 
     // Call PETSc to solve linear system by iterative method; "inner iteration":
@@ -1036,7 +1036,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     if (very_verbose) {
       snprintf(tempstr, 100, "S:%d,%d: ", (int)ksp_iterations, reason);
-      stdout_ssa += tempstr;
+      m_stdout_ssa += tempstr;
     }
 
     // Communicate so that we have stencil width for evaluation of effective
@@ -1063,13 +1063,13 @@ void SSAFD::picard_manager(double nuH_regularization,
       snprintf(tempstr, 100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                nuH_norm, nuH_norm_change/nuH_norm);
 
-      stdout_ssa += tempstr;
+      m_stdout_ssa += tempstr;
 
       // assume that high verbosity shows interest in immediate
       // feedback about SSA iterations
-      verbPrintf(2, m_grid.com, stdout_ssa.c_str());
+      verbPrintf(2, m_grid.com, m_stdout_ssa.c_str());
 
-      stdout_ssa.clear();
+      m_stdout_ssa.clear();
     }
 
     outer_iterations = k + 1;
@@ -1097,17 +1097,17 @@ void SSAFD::picard_manager(double nuH_regularization,
     snprintf(tempstr, 100, "... =%5d outer iterations, ~%3.1f KSP iterations each\n",
              (int)outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
 
-    stdout_ssa += tempstr;
+    m_stdout_ssa += tempstr;
   } else if (verbose) {
     // at default verbosity, just record last nuH_norm_change and iterations
     snprintf(tempstr, 100, "%5d outer iterations, ~%3.1f KSP iterations each\n",
              (int)outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
 
-    stdout_ssa += tempstr;
+    m_stdout_ssa += tempstr;
   }
 
   if (verbose) {
-    stdout_ssa = "  SSA: " + stdout_ssa;
+    m_stdout_ssa = "  SSA: " + m_stdout_ssa;
   }
 }
 
@@ -1184,32 +1184,32 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
 void SSAFD::compute_hardav_staggered() {
-  double *E_ij, *E_offset;
+  const double *E_ij, *E_offset;
 
   std::vector<double> E(m_grid.Mz());
 
   IceModelVec::AccessList list;
-  list.add(*thickness);
-  list.add(*enthalpy);
+  list.add(*m_thickness);
+  list.add(*m_enthalpy);
   list.add(hardness);
-  list.add(*mask);
+  list.add(*m_mask);
 
-  MaskQuery m(*mask);
+  MaskQuery m(*m_mask);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    enthalpy->getInternalColumn(i,j,&E_ij);
+    m_enthalpy->getInternalColumn(i,j,&E_ij);
     for (int o=0; o<2; o++) {
       const int oi = 1-o, oj=o;
       double H;
 
       if (m.icy(i,j) && m.icy(i+oi,j+oj)) {
-        H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+        H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+oi,j+oj));
       } else if (m.icy(i,j)) {
-        H = (*thickness)(i,j);
+        H = (*m_thickness)(i,j);
       }  else {
-        H = (*thickness)(i+oi,j+oj);
+        H = (*m_thickness)(i+oi,j+oj);
       }
 
       if (H == 0) {
@@ -1217,7 +1217,7 @@ void SSAFD::compute_hardav_staggered() {
         continue;
       }
 
-      enthalpy->getInternalColumn(i+oi,j+oj,&E_offset);
+      m_enthalpy->getInternalColumn(i+oi,j+oj,&E_offset);
       // build a column of enthalpy values a the current location:
       for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
         E[k] = 0.5 * (E_ij[k] + E_offset[k]);
@@ -1352,7 +1352,7 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   list.add(result);
   list.add(uv);
   list.add(hardness);
-  list.add(*thickness);
+  list.add(*m_thickness);
 
   double ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
@@ -1365,7 +1365,7 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+      const double H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+oi,j+oj));
 
       if (H < strength_extension->get_min_thickness()) {
         result(i,j,o) = strength_extension->get_notional_strength();
@@ -1436,15 +1436,15 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   const double dx = m_grid.dx(), dy = m_grid.dy();
 
-  MaskQuery m(*mask);
+  MaskQuery m(*m_mask);
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(*m_mask);
   list.add(m_work);
   list.add(m_velocity);
 
   assert(m_velocity.get_stencil_width() >= 2);
-  assert(mask->get_stencil_width()      >= 2);
+  assert(m_mask->get_stencil_width()      >= 2);
   assert(m_work.get_stencil_width()     >= 1);
 
   for (PointsWithGhosts p(m_grid); p; p.next()) {
@@ -1479,7 +1479,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   list.add(result);
   list.add(hardness);
-  list.add(*thickness);
+  list.add(*m_thickness);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1488,12 +1488,12 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
     // i-offset
     {
       if (m.icy(i,j) && m.icy(i+1,j)) {
-        H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+1,j));
+        H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+1,j));
       }
       else if (m.icy(i,j)) {
-        H = (*thickness)(i,j);
+        H = (*m_thickness)(i,j);
       } else {
-        H = (*thickness)(i+1,j);
+        H = (*m_thickness)(i+1,j);
       }
 
       if (H >= strength_extension->get_min_thickness()) {
@@ -1523,11 +1523,11 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
     // j-offset
     {
       if (m.icy(i,j) && m.icy(i,j+1)) {
-        H = 0.5 * ((*thickness)(i,j) + (*thickness)(i,j+1));
+        H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i,j+1));
       } else if (m.icy(i,j)) {
-        H = (*thickness)(i,j);
+        H = (*m_thickness)(i,j);
       } else {
-        H = (*thickness)(i,j+1);
+        H = (*m_thickness)(i,j+1);
       }
 
       if (H >= strength_extension->get_min_thickness()) {
@@ -1636,23 +1636,23 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 
-  const int M_ij = mask->as_int(i,j),
+  const int M_ij = m_mask->as_int(i,j),
     // direct neighbors
-    M_e = mask->as_int(i + 1,j),
-    M_w = mask->as_int(i - 1,j),
-    M_n = mask->as_int(i,j + 1),
-    M_s = mask->as_int(i,j - 1),
+    M_e = m_mask->as_int(i + 1,j),
+    M_w = m_mask->as_int(i - 1,j),
+    M_n = m_mask->as_int(i,j + 1),
+    M_s = m_mask->as_int(i,j - 1),
     // "diagonal" neighbors
-    M_ne = mask->as_int(i + 1,j + 1),
-    M_se = mask->as_int(i + 1,j - 1),
-    M_nw = mask->as_int(i - 1,j + 1),
-    M_sw = mask->as_int(i - 1,j - 1);
+    M_ne = m_mask->as_int(i + 1,j + 1),
+    M_se = m_mask->as_int(i + 1,j - 1),
+    M_nw = m_mask->as_int(i - 1,j + 1),
+    M_sw = m_mask->as_int(i - 1,j - 1);
 
   if (ssa_dirichlet_bc) {
     return icy(M_ij) &&
       (ice_free(M_e) || ice_free(M_w) || ice_free(M_n) || ice_free(M_s) ||
-       ice_free(M_ne) || ice_free(M_se) || ice_free(M_nw) || ice_free(M_sw));}
-  else {
+       ice_free(M_ne) || ice_free(M_se) || ice_free(M_nw) || ice_free(M_sw));
+  } else {
     return icy(M_ij) &&
       (ice_free_ocean(M_e) || ice_free_ocean(M_w) ||
        ice_free_ocean(M_n) || ice_free_ocean(M_s) ||

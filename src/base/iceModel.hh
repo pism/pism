@@ -490,6 +490,7 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual void init_viewers();
   virtual void update_viewers();
+  virtual void view_field(const IceModelVec *field);
   std::set<std::string> map_viewers, slice_viewers;
   int     id, jd;            // sounding indexes
   std::map<std::string,Viewer::Ptr> viewers;

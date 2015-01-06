@@ -162,7 +162,7 @@ void SSAFEM::solve() {
     throw RuntimeError::formatted("SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
   } else if (getVerbosityLevel() > 2) {
-    stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
+    m_stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
 }
 
@@ -200,9 +200,9 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
   }
 
-  stdout_ssa.clear();
+  m_stdout_ssa.clear();
   if (getVerbosityLevel() >= 2) {
-    stdout_ssa = "  SSA: ";
+    m_stdout_ssa = "  SSA: ";
   }
 
   // Solve:
@@ -241,8 +241,9 @@ stores the values of the coefficients at the quadrature points of each
 element so that these interpolated values do not need to be computed
 during each outer iteration of the nonlinear solve.*/
 void SSAFEM::cacheQuadPtValues() {
+  const double
+    *Enth_e[4];
   double
-    *Enth_e[4],
     *Enth_q[4];
 
   double ice_density = m_config.get("ice_density");
@@ -254,21 +255,21 @@ void SSAFEM::cacheQuadPtValues() {
   GeometryCalculator gc(sea_level, m_config);
 
   IceModelVec::AccessList list;
-  list.add(*enthalpy);
+  list.add(*m_enthalpy);
   bool driving_stress_explicit;
-  if ((driving_stress_x != NULL) && (driving_stress_y != NULL)) {
+  if ((m_driving_stress_x != NULL) && (m_driving_stress_y != NULL)) {
     driving_stress_explicit = true;
-    list.add(*driving_stress_x);
-    list.add(*driving_stress_y);
+    list.add(*m_driving_stress_x);
+    list.add(*m_driving_stress_y);
   } else {
     // The class SSA ensures in this case that 'surface' is available
     driving_stress_explicit = false;
-    list.add(*surface);
+    list.add(*m_surface);
   }
 
-  list.add(*thickness);
-  list.add(*bed);
-  list.add(*tauc);
+  list.add(*m_thickness);
+  list.add(*m_bed);
+  list.add(*m_tauc);
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
@@ -278,16 +279,16 @@ void SSAFEM::cacheQuadPtValues() {
       double hq[FEQuadrature::Nq], hxq[FEQuadrature::Nq], hyq[FEQuadrature::Nq];
       double ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
       if (driving_stress_explicit) {
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *driving_stress_x, ds_xq);
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *driving_stress_y, ds_yq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_x, ds_xq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_y, ds_yq);
       } else {
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *surface, hq, hxq, hyq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_surface, hq, hxq, hyq);
       }
 
       double Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *thickness, Hq);
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *bed, bq);
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *tauc, taucq);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_thickness, Hq);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_bed, bq);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, taucq);
 
       const int ij = m_element_index.flatten(i, j);
       SSACoefficients *coefficients = &m_coefficients[4*ij];
@@ -314,10 +315,10 @@ void SSAFEM::cacheQuadPtValues() {
 
       // Obtain the values of enthalpy at each vertical level at each of the vertices
       // of the current element.
-      enthalpy->getInternalColumn(i, j, &Enth_e[0]);
-      enthalpy->getInternalColumn(i+1, j, &Enth_e[1]);
-      enthalpy->getInternalColumn(i+1, j+1, &Enth_e[2]);
-      enthalpy->getInternalColumn(i, j+1, &Enth_e[3]);
+      m_enthalpy->getInternalColumn(i, j, &Enth_e[0]);
+      m_enthalpy->getInternalColumn(i+1, j, &Enth_e[1]);
+      m_enthalpy->getInternalColumn(i+1, j+1, &Enth_e[2]);
+      m_enthalpy->getInternalColumn(i, j+1, &Enth_e[3]);
 
       // We now want to interpolate to the quadrature points at each of the
       // vertical levels.  It would be nice to use quadrature::computeTestFunctionValues,

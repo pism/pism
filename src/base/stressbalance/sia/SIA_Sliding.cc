@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,21 +29,21 @@ namespace pism {
 SIA_Sliding::SIA_Sliding(const IceGrid &g, EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
 {
-  verification_mode = false;
-  eisII_experiment = "";
+  m_verification_mode = false;
+  m_eisII_experiment = "";
 
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
+    m_work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
     snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
-    work_2d_stag[i].set_name(namestr);
+    m_work_2d_stag[i].set_name(namestr);
 
   }
 
-  work_2d.create(m_grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);
+  m_work_2d.create(m_grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);
 
   {
     IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &EC);
@@ -67,18 +67,18 @@ void SIA_Sliding::init() {
 
   ShallowStressBalance::init();
 
-  standard_gravity = m_config.get("standard_gravity");
-  verification_mode = m_config.get_flag("sia_sliding_verification_mode");
+  m_standard_gravity = m_config.get("standard_gravity");
+  m_verification_mode = m_config.get_flag("sia_sliding_verification_mode");
 
   if (m_config.is_set("EISMINT_II_experiment")) {
-    eisII_experiment = m_config.get_string("EISMINT_II_experiment");
+    m_eisII_experiment = m_config.get_string("EISMINT_II_experiment");
   }
 
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  mask      = m_grid.variables().get_2d_mask("mask");
-  surface   = m_grid.variables().get_2d_scalar("surface_altitude");
-  bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
+  m_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  m_mask      = m_grid.variables().get_2d_mask("mask");
+  m_surface   = m_grid.variables().get_2d_scalar("surface_altitude");
+  m_bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  m_enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 }
 
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.
@@ -95,7 +95,7 @@ void SIA_Sliding::init() {
   The strain heating contribution is ignored by this code.
  */
 void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
-  IceModelVec2Stag &h_x = work_2d_stag[0], &h_y = work_2d_stag[1];
+  IceModelVec2Stag &h_x = m_work_2d_stag[0], &h_y = m_work_2d_stag[1];
 
   (void) fast;
   (void) melange_back_pressure;
@@ -106,16 +106,16 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
     minimum_temperature_for_sliding = m_config.get("minimum_temperature_for_sliding"),
     ice_rho = m_config.get("ice_density");
 
-  MaskQuery m(*mask);
+  MaskQuery m(*m_mask);
 
   IceModelVec::AccessList list;
   list.add(h_x);
   list.add(h_y);
 
-  list.add(*mask);
-  list.add(*surface);
-  list.add(*bed);
-  list.add(*enthalpy);
+  list.add(*m_mask);
+  list.add(*m_surface);
+  list.add(*m_bed);
+  list.add(*m_enthalpy);
 
   list.add(m_velocity);
   list.add(basal_frictional_heating);
@@ -139,9 +139,9 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
         alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
 
       // change r1200: new meaning of H
-      const double H = (*surface)(i,j) - (*bed)(i,j);
+      const double H = (*m_surface)(i,j) - (*m_bed)(i,j);
 
-      double T = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0), EC.getPressureFromDepth(H));
+      double T = EC.getAbsTemp(m_enthalpy->getValZ(i,j,0.0), EC.getPressureFromDepth(H));
 
       double basalC = basalVelocitySIA(myx, myy, H, T,
                                        alpha, mu_sliding,
@@ -151,7 +151,7 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
       // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
       // in ice streams this result will be *overwritten* by
       //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-      const double P = ice_rho * standard_gravity * H;
+      const double P = ice_rho * m_standard_gravity * H;
       basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
     }
   }
@@ -189,7 +189,7 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
     beta_CC_grad = m_config.get("beta_CC") * ice_rho * m_config.get("standard_gravity"),
     secpera = m_grid.convert(1.0, "year", "seconds");
 
-  if (verification_mode) {
+  if (m_verification_mode) {
     // test 'E' mode
     const double r1 = 200e3, r2 = 700e3,   /* define region of sliding */
       theta1 = 10 * (M_PI/180), theta2 = 40 * (M_PI/180);
@@ -209,22 +209,22 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
       const double mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
       double muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot)
         * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
-      return muE * ice_rho * standard_gravity * H;
+      return muE * ice_rho * m_standard_gravity * H;
     } else {
       return 0.0;
     }
   }
 
-  if ((eisII_experiment == "G") || (eisII_experiment == "H")) {
+  if ((m_eisII_experiment == "G") || (m_eisII_experiment == "H")) {
     const double  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
     double pressure = EC.getPressureFromDepth(H);
     double E = EC.getEnthPermissive(T, 0.0, pressure);
 
-    if (eisII_experiment == "G") {
-      return Bfactor * ice_rho * standard_gravity * H;
-    } else if (eisII_experiment == "H") {
+    if (m_eisII_experiment == "G") {
+      return Bfactor * ice_rho * m_standard_gravity * H;
+    } else if (m_eisII_experiment == "H") {
       if (EC.isTemperate(E, pressure)) {
-        return Bfactor * ice_rho * standard_gravity * H; // ditto case G
+        return Bfactor * ice_rho * m_standard_gravity * H; // ditto case G
       } else {
         return 0.0;
       }
@@ -234,7 +234,7 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
 
   // the "usual" case:
   if (T + beta_CC_grad * H > min_T) {
-    const double p_over = ice_rho * standard_gravity * H;
+    const double p_over = ice_rho * m_standard_gravity * H;
     return mu * p_over;
   } else {
     return 0;
@@ -270,26 +270,26 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
-  IceModelVec2S &eta = work_2d;
+  IceModelVec2S &eta = m_work_2d;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
   IceModelVec::AccessList list;
-  list.add(*thickness);
+  list.add(*m_thickness);
   list.add(eta);
 
   unsigned int GHOSTS = eta.get_stencil_width();
-  assert(thickness->get_stencil_width() >= GHOSTS);
+  assert(m_thickness->get_stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    eta(i,j) = pow((*thickness)(i,j), etapow);
+    eta(i,j) = pow((*m_thickness)(i,j), etapow);
   }
 
   list.add(h_x);
   list.add(h_y);
-  list.add(*bed);
+  list.add(*m_bed);
 
   // now use Mahaffy on eta to get grad h on the staggered grid;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
@@ -297,7 +297,7 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
   assert(h_x.get_stencil_width()  >= 1);
   assert(h_y.get_stencil_width()  >= 1);
   assert(eta.get_stencil_width()  >= 2);
-  assert(bed->get_stencil_width() >= 2);
+  assert(m_bed->get_stencil_width() >= 2);
 
   for (int o=0; o<2; o++) {
 
@@ -316,8 +316,8 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
           h_y(i,j,o) = 0.0;
         }
         // now add bed slope to get actual h_x,h_y
-        h_x(i,j,o) += bed->diff_x_stagE(i,j);
-        h_y(i,j,o) += bed->diff_y_stagE(i,j);
+        h_x(i,j,o) += m_bed->diff_x_stagE(i,j);
+        h_y(i,j,o) += m_bed->diff_y_stagE(i,j);
       } else {        // J-offset
         const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
         if (mean_eta > 0.0) {
@@ -330,8 +330,8 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
           h_x(i,j,o) = 0.0;
         }
         // now add bed slope to get actual h_x,h_y
-        h_y(i,j,o) += bed->diff_y_stagN(i,j);
-        h_x(i,j,o) += bed->diff_x_stagN(i,j);
+        h_y(i,j,o) += m_bed->diff_y_stagN(i,j);
+        h_x(i,j,o) += m_bed->diff_x_stagN(i,j);
       }
     }
   }
@@ -346,23 +346,23 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
   const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
-  IceModelVec2S
-    &b = *bed,
-    &H = *thickness,
-    &h = *surface;
+  const IceModelVec2S
+    &b = *m_bed,
+    &H = *m_thickness,
+    &h = *m_surface;
 
   IceModelVec::AccessList list;
   list.add(h_x);
   list.add(h_y);
-  list.add(*bed);
-  list.add(*thickness);
-  list.add(*surface);
+  list.add(*m_bed);
+  list.add(*m_thickness);
+  list.add(*m_surface);
 
   assert(h_x.get_stencil_width() >= 1);
   assert(h_y.get_stencil_width() >= 1);
-  assert(bed->get_stencil_width()       >= 2);
-  assert(thickness->get_stencil_width() >= 2);
-  assert(surface->get_stencil_width()   >= 2);
+  assert(m_bed->get_stencil_width()       >= 2);
+  assert(m_thickness->get_stencil_width() >= 2);
+  assert(m_surface->get_stencil_width()   >= 2);
 
   for (int o=0; o<2; o++) {
 
@@ -472,16 +472,16 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
 void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
-  IceModelVec2S &h = *surface;
+  const IceModelVec2S &h = *m_surface;
 
   IceModelVec::AccessList list;
   list.add(h_x);
   list.add(h_y);
-  list.add(*surface);
+  list.add(*m_surface);
 
   assert(h_x.get_stencil_width() >= 1);
   assert(h_y.get_stencil_width() >= 1);
-  assert(surface->get_stencil_width() >= 2);
+  assert(m_surface->get_stencil_width() >= 2);
 
   for (int o=0; o<2; o++) {
     for (PointsWithGhosts p(m_grid); p; p.next()) {

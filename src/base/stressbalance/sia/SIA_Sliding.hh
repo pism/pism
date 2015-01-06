@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -66,14 +66,15 @@ protected:
                                   double H, double T,
                                   double /*alpha*/, double mu,
                                   double min_T) const;
-  IceModelVec2Int *mask;
-  IceModelVec2S *thickness, *surface, *bed, work_2d;
-  IceModelVec3 *enthalpy;
-  IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
-  double standard_gravity;
+  const IceModelVec2Int *m_mask;
+  const IceModelVec2S *m_thickness, *m_surface, *m_bed;
+  IceModelVec2S m_work_2d;
+  const IceModelVec3 *m_enthalpy;
+  IceModelVec2Stag m_work_2d_stag[2]; // for the surface gradient
+  double m_standard_gravity;
 
-  bool verification_mode;
-  std::string eisII_experiment;
+  bool m_verification_mode;
+  std::string m_eisII_experiment;
 };
 
 } // end of namespace pism

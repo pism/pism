@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2014 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2014, 2015 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -376,8 +376,9 @@ PetscErrorCode FaustoGrevePDDObject_Old::setDegreeDayFactors(PetscInt i, PetscIn
 /*!
 Unfortunately this duplicates code in PA_SeaRISE_Greenland::update();
  */
-PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(IceModelVec2S *surfelev,
-                                                        IceModelVec2S *lat, IceModelVec2S *lon) {
+PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(const IceModelVec2S &surfelev,
+                                                        const IceModelVec2S &lat,
+                                                        const IceModelVec2S &lon) {
 
   const PetscReal 
     d_mj     = config.get("snow_temp_fausto_d_mj"),      // K
@@ -386,14 +387,14 @@ PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(IceModelVec2S *surfelev,
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
   
   IceModelVec::AccessList list;
-  list.add(*surfelev);
-  list.add(*lat);
-  list.add(*lon);
+  list.add(surfelev);
+  list.add(lat);
+  list.add(lon);
   list.add(temp_mj);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    temp_mj(i,j) = d_mj + gamma_mj * (*surfelev)(i, j) + c_mj * (*lat)(i, j) + kappa_mj * (-(*lon)(i, j));
+    temp_mj(i,j) = d_mj + gamma_mj * surfelev(i, j) + c_mj * lat(i, j) + kappa_mj * (-lon(i, j));
   }
 
   return 0;

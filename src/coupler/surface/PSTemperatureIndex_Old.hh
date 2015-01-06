@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -73,7 +73,7 @@ protected:
   //! and ice is melted, but some snow melt refreezes)
     runoff_rate;          //!< diagnostic output meltwater runoff rate
 
-  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex_Old must hold these
+  const IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex_Old must hold these
   //!pointers in order to use object which
   //!needs 3D location to determine degree
   //!day factors.

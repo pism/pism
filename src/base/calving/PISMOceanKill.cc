@@ -68,7 +68,7 @@ void OceanKill::init() {
     throw RuntimeError("option -ocean_kill_file is required.");
   }
 
-  IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list;

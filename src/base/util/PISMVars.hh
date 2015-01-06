@@ -42,7 +42,8 @@ public:
   void remove(const std::string &name);
   void lock();
   bool is_available(const std::string &name) const;
-  IceModelVec* get(const std::string &name) const;
+
+  const IceModelVec* get(const std::string &name) const;
   const IceModelVec2S* get_2d_scalar(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
   const IceModelVec2Int* get_2d_mask(const std::string &name) const;

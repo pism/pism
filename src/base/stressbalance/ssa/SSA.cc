@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -33,23 +33,23 @@ namespace pism {
 SSA::SSA(const IceGrid &g, EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
 {
-  mask = NULL;
-  thickness = NULL;
-  tauc = NULL;
-  surface = NULL;
-  bed = NULL;
-  enthalpy = NULL;
-  driving_stress_x = NULL;
-  driving_stress_y = NULL;
-  gl_mask = NULL;
+  m_mask = NULL;
+  m_thickness = NULL;
+  m_tauc = NULL;
+  m_surface = NULL;
+  m_bed = NULL;
+  m_enthalpy = NULL;
+  m_driving_stress_x = NULL;
+  m_driving_stress_y = NULL;
+  m_gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(m_config);
 
-  taud.create(m_grid, "taud", WITHOUT_GHOSTS);
-  taud.set_attrs("diagnostic",
+  m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
+  m_taud.set_attrs("diagnostic",
                  "X-component of the driving shear stress at the base of ice",
                  "Pa", "", 0);
-  taud.set_attrs("diagnostic",
+  m_taud.set_attrs("diagnostic",
                  "Y-component of the driving shear stress at the base of ice",
                  "Pa", "", 1);
 
@@ -97,22 +97,22 @@ void SSA::init() {
              "  [using the %s flow law]\n", flow_law->name().c_str());
   
   if (m_config.get_flag("sub_groundingline")) {
-    gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
+    m_gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
   }
 
-  mask      = m_grid.variables().get_2d_mask("mask");
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  tauc      = m_grid.variables().get_2d_scalar("tauc");
+  m_mask      = m_grid.variables().get_2d_mask("mask");
+  m_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  m_tauc      = m_grid.variables().get_2d_scalar("tauc");
 
   try {
-    surface = m_grid.variables().get_2d_scalar("surface_altitude");
+    m_surface = m_grid.variables().get_2d_scalar("surface_altitude");
   } catch (RuntimeError) {
-    driving_stress_x = m_grid.variables().get_2d_scalar("ssa_driving_stress_x");
-    driving_stress_y = m_grid.variables().get_2d_scalar("ssa_driving_stress_y");
+    m_driving_stress_x = m_grid.variables().get_2d_scalar("ssa_driving_stress_x");
+    m_driving_stress_y = m_grid.variables().get_2d_scalar("ssa_driving_stress_y");
   }
 
-  bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
+  m_bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  m_enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
   
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
@@ -154,7 +154,7 @@ void SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
 
   if (not fast) {
     solve();
-    compute_basal_frictional_heating(m_velocity, *tauc, *mask,
+    compute_basal_frictional_heating(m_velocity, *m_tauc, *m_mask,
                                      basal_frictional_heating);
   }
 }
@@ -173,7 +173,7 @@ minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
 void SSA::compute_driving_stress(IceModelVec2V &result) {
-  IceModelVec2S &thk = *thickness; // to improve readability (below)
+  const IceModelVec2S &thk = *m_thickness; // to improve readability (below)
 
   const double n = flow_law->exponent(), // frequently n = 3
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -186,12 +186,12 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   bool compute_surf_grad_inward_ssa = m_config.get_flag("compute_surf_grad_inward_ssa");
   bool use_eta = (m_config.get_string("surface_gradient_method") == "eta");
 
-  MaskQuery m(*mask);
+  MaskQuery m(*m_mask);
 
   IceModelVec::AccessList list;
-  list.add(*surface);
-  list.add(*bed);
-  list.add(*mask);
+  list.add(*m_surface);
+  list.add(*m_bed);
+  list.add(*m_mask);
   list.add(thk);
   list.add(result);
 
@@ -216,13 +216,13 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
         }
         // now add bed slope to get actual h_x,h_y
         // FIXME: there is no reason to assume user's bed is periodized
-        h_x += bed->diff_x(i,j);
-        h_y += bed->diff_y(i,j);
+        h_x += m_bed->diff_x(i,j);
+        h_y += m_bed->diff_y(i,j);
       } else {  // floating or eta transformation is not used
         if (compute_surf_grad_inward_ssa) {
           // Special case for verification tests.
-          h_x = surface->diff_x_p(i,j);
-          h_y = surface->diff_y_p(i,j);
+          h_x = m_surface->diff_x_p(i,j);
+          h_y = m_surface->diff_y_p(i,j);
         } else {              // general case
 
           // To compute the x-derivative we use
@@ -266,8 +266,8 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
             }
 
             if (east + west > 0) {
-              h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
-                                           east * surface->diff_x_stagE(i,j));
+              h_x = 1.0 / (west + east) * (west * m_surface->diff_x_stagE(i-1,j) +
+                                           east * m_surface->diff_x_stagE(i,j));
             } else {
               h_x = 0.0;
             }
@@ -299,8 +299,8 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
             }
 
             if (north + south > 0) {
-              h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +
-                                             north * surface->diff_y_stagN(i,j));
+              h_y = 1.0 / (south + north) * (south * m_surface->diff_y_stagN(i,j-1) +
+                                             north * m_surface->diff_y_stagN(i,j));
             } else {
               h_y = 0.0;
             }
@@ -317,7 +317,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
 }
 
 void SSA::stdout_report(std::string &result) {
-  result = stdout_ssa;
+  result = m_stdout_ssa;
 }
 
 

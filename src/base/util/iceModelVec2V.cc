@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -126,11 +126,11 @@ void IceModelVec2V::rename(const std::string & short_name,
   }
 }
 
-void IceModelVec2V::add(double alpha, IceModelVec &x) {
+void IceModelVec2V::add(double alpha, const IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-void IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) const {
+void IceModelVec2V::add(double alpha, const IceModelVec &x, IceModelVec &result) const {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 

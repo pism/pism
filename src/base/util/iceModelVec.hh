@@ -193,7 +193,7 @@ public:
   virtual void  range(double &min, double &max) const;
   virtual void  norm(int n, double &out) const;
   virtual void  norm_all(int n, std::vector<double> &result) const;
-  virtual void  add(double alpha, IceModelVec &x);
+  virtual void  add(double alpha, const IceModelVec &x);
   virtual void  squareroot();
   virtual void  shift(double alpha);
   virtual void  scale(double alpha);
@@ -403,7 +403,7 @@ public:
   void  get_array(double** &a);
   virtual void set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
-  virtual void add(double alpha, IceModelVec &x);
+  virtual void add(double alpha, const IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
   virtual void sum(double &result);
   virtual void min(double &result) const;
@@ -588,8 +588,8 @@ public:
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_to(IceModelVec &destination) const;
-  virtual void add(double alpha, IceModelVec &x);
-  virtual void add(double alpha, IceModelVec &x, IceModelVec &result) const;
+  virtual void add(double alpha, const IceModelVec &x);
+  virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
 
   // I/O:
   virtual void get_array(Vector2 ** &a);

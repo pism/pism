@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -236,7 +236,7 @@ void IceModelVec::squareroot() {
 
 
 //! Result: v <- v + alpha * x. Calls VecAXPY.
-void IceModelVec::add(double alpha, IceModelVec &x) {
+void IceModelVec::add(double alpha, const IceModelVec &x) {
   assert(m_v != NULL && x.m_v != NULL);
 
   checkCompatibility("add", x);
@@ -557,8 +557,7 @@ void IceModelVec::read_attributes(const std::string &filename, int N) {
   PIO nc(*m_grid, "netcdf3");     // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);
-  nc.read_attributes(metadata(N).get_name(),
-                     metadata(N));
+  nc.read_attributes(metadata(N).get_name(), metadata(N));
   nc.close();
 }
 

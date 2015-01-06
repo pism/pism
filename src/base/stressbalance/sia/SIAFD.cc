@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -272,7 +272,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
-  IceModelVec2S &h = *surface;
+  const IceModelVec2S &h = *surface;
 
   IceModelVec::AccessList list;
   list.add(h_x);
@@ -348,8 +348,10 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
  */
 void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
-  IceModelVec2S &h = *surface, &b = *bed,
-    &w_i = work_2d[0], &w_j = work_2d[1]; // averaging weights
+  const IceModelVec2S &h = *surface, &b = *bed;
+  IceModelVec2S
+    &w_i = work_2d[0],
+    &w_j = work_2d[1]; // averaging weights
 
   MaskQuery m(*mask);
 
@@ -560,7 +562,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
   list.add(h_x);
   list.add(h_y);
 
-  double *age_ij, *age_offset;
+  const double *age_ij, *age_offset;
   if (use_age) {
     list.add(*age);
   }
@@ -570,7 +572,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
     list.add(delta[1]);
   }
 
-  double *E_ij, *E_offset;
+  const double *E_ij, *E_offset;
   list.add(*enthalpy);
 
   assert(theta.get_stencil_width()      >= 2);

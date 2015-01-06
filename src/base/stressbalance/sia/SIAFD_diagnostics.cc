@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,9 +45,8 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
 }
 
 void SIAFD_schoofs_theta::compute(IceModelVec* &output) {
-  IceModelVec2S *result, *surface;
-
-  surface = m_grid.variables().get_2d_scalar("surface_altitude");
+  IceModelVec2S *result;
+  const IceModelVec2S *surface = m_grid.variables().get_2d_scalar("surface_altitude");
 
   result = new IceModelVec2S;
   result->create(m_grid, "schoofs_theta", WITHOUT_GHOSTS);
@@ -90,8 +89,9 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m)
 }
 
 void SIAFD_thksmooth::compute(IceModelVec* &output) {
-  IceModelVec2S *result, *surface, *thickness;
-  IceModelVec2Int *mask;
+  IceModelVec2S *result;
+  const IceModelVec2S *surface, *thickness;
+  const IceModelVec2Int *mask;
 
   surface   = m_grid.variables().get_2d_scalar("surface_altitude");
   thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");

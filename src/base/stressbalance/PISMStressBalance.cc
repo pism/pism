@@ -135,15 +135,15 @@ void StressBalance::get_volumetric_strain_heating(IceModelVec3* &result) {
   result = &m_strain_heating;
 }
 
-void StressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity,
-                                                                IceModelVec2Int &mask,
-                                                                IceModelVec2 &result) {
+void StressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                                      const IceModelVec2Int &mask,
+                                                      IceModelVec2 &result) {
   m_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result);
 }
 
-void StressBalance::compute_2D_stresses(IceModelVec2V &velocity,
-                                                  IceModelVec2Int &mask,
-                                                  IceModelVec2 &result) {
+void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
+                                        const IceModelVec2Int &mask,
+                                        IceModelVec2 &result) {
   m_stress_balance->compute_2D_stresses(velocity, mask, result);
 }
 

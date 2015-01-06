@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ public:
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
-  IceModelVec2S *usurf;
+  const IceModelVec2S *usurf;
   double T_min, T_max, z_T_min, z_T_max,
     m_min, m_max, m_limit_min, m_limit_max,
     z_m_min, z_ELA, z_m_max;

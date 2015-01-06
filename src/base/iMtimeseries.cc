@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2014 Constantine Khroulev
+// Copyright (C) 2009-2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -300,18 +300,17 @@ void IceModel::init_extras() {
 
     std::set<std::string> vars_set = grid.variables().keys();
 
-    std::set<std::string>::iterator i = vars_set.begin();
-    while (i != vars_set.end()) {
-      IceModelVec *var = grid.variables().get(*i);
-      NCSpatialVariable &m = var->metadata();
+    std::set<std::string>::iterator i;
+    for (i = vars_set.begin(); i != vars_set.end(); ++i) {
+      const NCSpatialVariable &m = grid.variables().get(*i)->metadata();
 
       std::string intent = m.get_string("pism_intent");
-      if ((intent == "model_state") ||
-          (intent == "mapping") ||
-          (intent == "climate_steady")) {
+
+      if (intent == "model_state" ||
+          intent == "mapping"     ||
+          intent == "climate_steady") {
         extra_vars.insert(*i);
       }
-      i++;
     }
 
     std::set<std::string> list;

@@ -147,7 +147,7 @@ void Hydrology::init() {
 
   // initialize till water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  IceModelVec2S *Wtil_input = NULL;
+  const IceModelVec2S *Wtil_input = NULL;
 
   try {
     // FIXME: this is not an exceptional situation...

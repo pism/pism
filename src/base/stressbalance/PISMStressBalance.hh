@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -100,11 +100,13 @@ public:
   // for the calving, etc.:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
-  virtual void compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
+  virtual void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                                 const IceModelVec2Int &mask,
                                                  IceModelVec2 &result);
 
   //! \brief Get the components of the 2D deviatoric stress tensor.
-  virtual void compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
+  virtual void compute_2D_stresses(const IceModelVec2V &velocity,
+                                   const IceModelVec2Int &mask,
                                    IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.

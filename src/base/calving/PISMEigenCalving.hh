@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,7 +50,7 @@ protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
   const int m_stencil_width;
-  IceModelVec2Int *m_mask;
+  const IceModelVec2Int *m_mask;
   StressBalance *m_stress_balance;
   double m_K;
   bool m_restrict_timestep;

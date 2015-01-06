@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -117,8 +117,9 @@ void RoutingHydrology::init_bwat() {
   bool bootstrap = options::Bool("-boot_file", "PISM bootstrapping file");
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
-  IceModelVec2S *W_input = NULL;
+
   try {
+    const IceModelVec2S *W_input = NULL;
     // FIXME: this is not an "exceptional" situation...
     // a variable called "bwat" is already in context
     W_input = m_grid.variables().get_2d_scalar("bwat");

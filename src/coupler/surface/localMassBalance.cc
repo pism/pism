@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -345,15 +345,19 @@ PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
 /*!
 Unfortunately this duplicates code in PA_SeaRISE_Greenland::update();
  */
-PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
-                                                    IceModelVec2S *lat, IceModelVec2S *lon) {
+PetscErrorCode FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
+                                                    const IceModelVec2S &lat,
+                                                    const IceModelVec2S &lon) {
   const double
     d_mj     = config.get("snow_temp_fausto_d_mj"),      // K
     gamma_mj = config.get("snow_temp_fausto_gamma_mj"),  // K m-1
     c_mj     = config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
 
-  IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
+  const IceModelVec2S
+    &h        = surfelev,
+    &lat_degN = lat,
+    &lon_degE = lon;
 
   IceModelVec::AccessList list;
   list.add(h);

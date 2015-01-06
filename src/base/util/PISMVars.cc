@@ -115,7 +115,7 @@ void Vars::lock() {
 /*!
  * Checks standard_name first, then short name
  */
-IceModelVec* Vars::get(const std::string &name) const {
+const IceModelVec* Vars::get(const std::string &name) const {
   IceModelVec *tmp = get_internal(name);
   if (tmp == NULL) {
     throw RuntimeError("variable '" + name + "' is not available");

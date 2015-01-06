@@ -127,8 +127,7 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-void MohrCoulombYieldStress::init()
-{
+void MohrCoulombYieldStress::init() {
   std::string filename;
   int start;
 
@@ -176,7 +175,7 @@ void MohrCoulombYieldStress::init()
 
   // Get the till friction angle from the the context and ignore options that
   // would be used to set it otherwise.
-  IceModelVec2S *till_phi_input = m_grid.variables().get_2d_scalar("tillphi");
+  const IceModelVec2S *till_phi_input = m_grid.variables().get_2d_scalar("tillphi");
   if (till_phi_input != NULL) {
     m_till_phi.copy_from(*till_phi_input);
 

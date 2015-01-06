@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -71,10 +71,10 @@ protected:
     snow_depth;            //!< snow depth (reset once a year)
   IceModelVec2T air_temp_sd;
 
-  IceModelVec2S *lat, *lon, *usurf;
+  const IceModelVec2S *lat, *lon, *usurf;
   //!< PSTemperatureIndex must hold these pointers in order to use
   //! object which needs 3D location to determine degree day factors.
-  IceModelVec2Int *mask;
+  const IceModelVec2Int *mask;
 
   NCSpatialVariable ice_surface_temp;
 

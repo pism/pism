@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -72,16 +72,17 @@ public:
     result = &basal_frictional_heating;
   }
 
-  virtual void compute_2D_principal_strain_rates(IceModelVec2V &velocity,
-                                                           IceModelVec2Int &mask,
-                                                           IceModelVec2 &result);
+  virtual void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                                 const IceModelVec2Int &mask,
+                                                 IceModelVec2 &result);
 
-  virtual void compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                             IceModelVec2 &result);
+  virtual void compute_2D_stresses(const IceModelVec2V &velocity,
+                                   const IceModelVec2Int &mask,
+                                   IceModelVec2 &result);
 
-  virtual void compute_basal_frictional_heating(IceModelVec2V &velocity,
-                                                IceModelVec2S &tauc,
-                                                IceModelVec2Int &mask,
+  virtual void compute_basal_frictional_heating(const IceModelVec2V &velocity,
+                                                const IceModelVec2S &tauc,
+                                                const IceModelVec2Int &mask,
                                                 IceModelVec2S &result);
   // helpers:
 
@@ -107,8 +108,9 @@ protected:
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
 
-  IceModelVec2V m_velocity, *m_vel_bc;
-  IceModelVec2Int *bc_locations;
+  IceModelVec2V m_velocity;
+  const IceModelVec2V *m_vel_bc;
+  const IceModelVec2Int *bc_locations;
   IceModelVec2S basal_frictional_heating;
 };
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -95,7 +95,7 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-void BedSmoother::preprocess_bed(IceModelVec2S &topg) {
+void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
 
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
@@ -129,7 +129,7 @@ const IceModelVec2S& BedSmoother::get_smoothed_bed() {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-void BedSmoother::preprocess_bed(IceModelVec2S &topg,
+void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
                                  unsigned int Nx_in, unsigned int Ny_in) {
 
   if ((Nx_in >= grid.Mx()) || (Ny_in >= grid.My())) {
@@ -293,9 +293,9 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
-                                   IceModelVec2S &thk,
-                                   IceModelVec2Int &mask,
+void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
+                                   const IceModelVec2S &thk,
+                                   const IceModelVec2Int &mask,
                                    IceModelVec2S *thksmooth) {
   MaskQuery M(mask);
   IceModelVec2S &result = *thksmooth;
@@ -362,7 +362,7 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
+void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S *theta) {
 
   if ((Nx < 0) || (Ny < 0)) {
     theta->set(1.0);

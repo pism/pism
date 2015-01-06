@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -309,7 +309,7 @@ void PSTemperatureIndex::update(double my_t, double my_dt) {
     assert(lat != NULL && lon != NULL && usurf != NULL);
     list.add(*lon);
     list.add(*usurf);
-    faustogreve->update_temp_mj(usurf, lat, lon);
+    faustogreve->update_temp_mj(*usurf, *lat, *lon);
   }
 
   const double sigmalapserate = m_config.get("pdd_std_dev_lapse_lat_rate"),

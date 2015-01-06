@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,9 +103,10 @@ protected:
   virtual void compute_diffusivity_staggered(IceModelVec2Stag &result);
 
   // pointers to input fields:
-  IceModelVec2S *bed, *thickness, *surface;
-  IceModelVec2Int *mask;
-  IceModelVec3 *age, *enthalpy;
+  const IceModelVec2S *bed;
+  const IceModelVec2S *thickness, *surface;
+  const IceModelVec2Int *mask;
+  const IceModelVec3 *age, *enthalpy;
 
   // temporary storage:
   IceModelVec2S work_2d[2];         // for eta, theta and the smoothed thickness

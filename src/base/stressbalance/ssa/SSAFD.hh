@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -92,7 +92,7 @@ protected:
   IceModelVec2V m_b;            // right hand side
   double m_scaling;
 
-  IceModelVec2S *fracture_density, *m_melange_back_pressure;
+  const IceModelVec2S *fracture_density, *m_melange_back_pressure;
   IceModelVec2V m_velocity_old;
 
   unsigned int m_default_pc_failure_count,

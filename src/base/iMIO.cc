@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -135,7 +135,7 @@ void IceModel::dumpToFile(const std::string &filename) {
 void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_input,
                                          IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  IceModelVec *v;
+  const IceModelVec *v;
 
   // Define all the variables:
   {
@@ -213,16 +213,13 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
   // Write all the IceModel variables:
   std::set<std::string>::iterator i;
-  for (i = vars.begin(); i != vars.end();) {
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    if (grid.variables().is_available(*i)) {
+      grid.variables().get(*i)->write(nc);
 
-    if (not grid.variables().is_available(*i)) {
-      ++i;
-    } else {
-      v = grid.variables().get(*i);
-      v->write(nc); // use the default data type
-
-      vars.erase(i++);          // note that it only erases variables that were
-                                // found (and saved)
+      // note that it only erases variables that were found (and
+      // saved)
+      vars.erase(i);
     }
   }
 
@@ -286,14 +283,14 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     if (diag == NULL) {
       ++i;
     } else {
-      v = NULL;
+      IceModelVec *v_diagnostic = NULL;
 
-      diag->compute(v);
+      diag->compute(v_diagnostic);
 
-      v->write_in_glaciological_units = true;
-      v->write(nc, PISM_FLOAT); // diagnostic quantities are always written in float
+      v_diagnostic->write_in_glaciological_units = true;
+      v_diagnostic->write(nc, PISM_FLOAT); // diagnostic quantities are always written in float
 
-      delete v;
+      delete v_diagnostic;
 
       vars.erase(i++);
     }
@@ -335,12 +332,12 @@ void IceModel::write_model_state(const PIO &nc) {
 
 
 
-  //! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
-  /*!
-    Before this is run, the method IceModel::grid_setup() determines the number of
-    grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
-    box from the same input file.
-  */
+//! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
+/*!
+  Before this is run, the method IceModel::grid_setup() determines the number of
+  grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
+  box from the same input file.
+*/
 void IceModel::initFromFile(const std::string &filename) {
   PIO nc(grid, "guess_mode");
 
@@ -355,20 +352,24 @@ void IceModel::initFromFile(const std::string &filename) {
   // Read the model state, mapping and climate_steady variables:
   std::set<std::string> vars = grid.variables().keys();
 
-  std::set<std::string>::iterator i = vars.begin();
-  while (i != vars.end()) {
-    IceModelVec *var = grid.variables().get(*i++);
+  std::set<std::string>::iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    IceModelVec *var = grid.variables().get(*i);
     NCSpatialVariable &m = var->metadata();
 
-    std::string intent = m.get_string("pism_intent");
-    if ((intent == "model_state") || (intent == "mapping") ||
-        (intent == "climate_steady")) {
+    std::string
+      intent     = m.get_string("pism_intent"),
+      short_name = m.get_string("short_name");
+
+    if (intent == "model_state" ||
+        intent == "mapping"     ||
+        intent == "climate_steady") {
 
       // skip "age", "enthalpy", and "Href" for now: we'll take care
       // of them a little later
-      if (m.get_string("short_name") == "enthalpy" ||
-          m.get_string("short_name") == "age"      ||
-          m.get_string("short_name") == "Href") {
+      if (short_name == "enthalpy" ||
+          short_name == "age"      ||
+          short_name == "Href") {
         continue;
       }
 

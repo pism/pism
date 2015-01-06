@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,12 +195,12 @@ void IceModel::list_diagnostics() {
                   "======== Available %dD quantities with dedicated storage ========\n",
                   d);
 
-      std::set<std::string>::iterator j = list.begin();
-      while(j != list.end()) {
-        IceModelVec *v = grid.variables().get(*j);
+      std::set<std::string>::iterator j;
+      for (j = list.begin(); j != list.end(); ++j) {
+        const IceModelVec *v = grid.variables().get(*j);
 
         if (v != NULL && v->get_ndims() == d) {
-          NCSpatialVariable var = v->metadata();
+          const NCSpatialVariable &var = v->metadata();
 
           std::string
             name                = var.get_name(),
@@ -208,16 +208,14 @@ void IceModel::list_diagnostics() {
             glaciological_units = var.get_string("glaciological_units"),
             long_name           = var.get_string("long_name");
 
-          if (glaciological_units.empty() == false) {
+          if (not glaciological_units.empty()) {
             units = glaciological_units;
           }
 
-            PetscPrintf(grid.com,
-                        "   Name: %s [%s]\n"
-                        "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
+          PetscPrintf(grid.com,
+                      "   Name: %s [%s]\n"
+                      "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
         }
-
-        ++j;
       }
     }
 
@@ -411,8 +409,8 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m)
 
 void IceModel_proc_ice_area::compute(IceModelVec* &output) {
 
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  IceModelVec2Int *ice_mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2Int *ice_mask = m_grid.variables().get_2d_mask("mask");
 
   IceModelVec2S *result = new IceModelVec2S;
   result->create(m_grid, "proc_ice_area", WITHOUT_GHOSTS);
@@ -458,10 +456,11 @@ void IceModel_temp::compute(IceModelVec* &output) {
   result->create(m_grid, "temp", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
 
-  double *Tij, *Enthij; // columns of these values
+  double *Tij;
+  const double *Enthij; // columns of these values
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -506,10 +505,11 @@ void IceModel_temp_pa::compute(IceModelVec* &output) {
   result->create(m_grid, "temp_pa", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 
-  double *Tij, *Enthij; // columns of these values
+  double *Tij;
+  const double *Enthij; // columns of these values
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -560,10 +560,10 @@ void IceModel_temppabase::compute(IceModelVec* &output) {
   result->create(m_grid, "temp_pa_base", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
 
-  double *Enthij; // columns of these values
+  const double *Enthij; // columns of these values
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -674,8 +674,8 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m)
 
 void IceModel_tempbase::compute(IceModelVec* &output) {
 
-  IceModelVec2S *result = NULL,
-    *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec2S *result = NULL;
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   IceModel_enthalpybase enth(model);
 
@@ -725,7 +725,8 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
 
 void IceModel_tempsurf::compute(IceModelVec* &output) {
 
-  IceModelVec2S *result, *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  IceModelVec2S *result;
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   IceModel_enthalpysurf enth(model);
 

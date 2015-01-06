@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -201,13 +201,16 @@ public:
   FaustoGrevePDDObject_Old(const IceGrid &g);
   virtual ~FaustoGrevePDDObject_Old() {}
 
-  virtual PetscErrorCode update_temp_mj(IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon);
+  virtual PetscErrorCode update_temp_mj(const IceModelVec2S &surfelev,
+                                        const IceModelVec2S &lat,
+                                        const IceModelVec2S &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
     for IceModelVec2S temp_mj. */
-  virtual PetscErrorCode setDegreeDayFactors(
-                                             PetscInt i, PetscInt j,
-                                             PetscScalar /* usurf */, PetscScalar lat, PetscScalar /* lon */,
+  virtual PetscErrorCode setDegreeDayFactors(PetscInt i, PetscInt j,
+                                             PetscScalar /* usurf */,
+                                             PetscScalar lat,
+                                             PetscScalar /* lon */,
                                              DegreeDayFactors_Old &ddf);
 
 protected:

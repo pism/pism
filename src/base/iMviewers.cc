@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,89 +30,80 @@
 
 namespace pism {
 
+void IceModel::view_field(const IceModelVec *field) {
+  unsigned int viewer_size = (unsigned int)config.get("viewer_size");
+
+  unsigned int dims = field->get_ndims();
+
+  if (dims != 2) {
+    throw RuntimeError("map-plane views of 3D quantities are not supported.");
+  }
+
+  if (field->get_ndof() == 1) {    // scalar fields
+    std::string name = field->metadata().get_string("short_name");
+    Viewer::Ptr viewer = viewers[name];
+
+    if (not viewer) {
+      viewers[name].reset(new Viewer(grid.com, name, viewer_size, grid.Lx(), grid.Ly()));
+      viewer = viewers[name];
+    }
+
+    const IceModelVec2S *v2d = dynamic_cast<const IceModelVec2S*>(field);
+    if (v2d == NULL) {
+      throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+    }
+
+    v2d->view(viewer, Viewer::Ptr());
+
+  } else if (field->get_ndof() == 2) { // vector fields
+    std::string
+      name_1 = field->metadata(0).get_string("short_name"),
+      name_2 = field->metadata(1).get_string("short_name");
+    Viewer::Ptr
+      v1 = viewers[name_1],
+      v2 = viewers[name_2];
+
+    if (not v1) {
+      viewers[name_1].reset(new Viewer(grid.com, name_1, viewer_size, grid.Lx(), grid.Ly()));
+      v1 = viewers[name_1];
+    }
+
+    if (not v2) {
+      viewers[name_2].reset(new Viewer(grid.com, name_2, viewer_size, grid.Lx(), grid.Ly()));
+      v2 = viewers[name_2];
+    }
+
+    const IceModelVec2 *v2d = dynamic_cast<const IceModelVec2*>(field);
+    if (v2d == NULL) {
+      throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+    }
+
+    v2d->view(v1, v2);
+  }
+}
+
 //! Update the runtime graphical viewers.
 /*!
 Most viewers are updated by this routine, but some other are updated elsewhere.
  */
 void IceModel::update_viewers() {
-  std::set<std::string>::iterator i;
-
-  unsigned int viewer_size = (unsigned int)config.get("viewer_size");
 
   // map-plane viewers
+  std::set<std::string>::iterator i;
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
-    IceModelVec *v = NULL;
-    bool de_allocate = false;
 
-    // if not found, try to compute:
-    if (not grid.variables().is_available(*i)) {
-      de_allocate = true;
+    if (grid.variables().is_available(*i)) {
+      this->view_field(grid.variables().get(*i));
+    } else {
+      // if not found, try to compute:
       Diagnostic *diag = diagnostics[*i];
+      IceModelVec *v = NULL;
 
       if (diag) {
         diag->compute(v);
-      } else {
-        v = NULL;
+        this->view_field(v);
+        delete v;
       }
-    } else {
-      v = grid.variables().get(*i);
-    }
-
-    // if still not found, ignore
-    if (v == NULL) {
-      continue;
-    }
-
-    unsigned int dims = v->get_ndims();
-
-    if (dims != 2) {
-      throw RuntimeError("map-plane views of 3D quantities are not supported.");
-    }
-
-    if (v->get_ndof() == 1) {    // scalar fields
-      std::string name = v->metadata().get_string("short_name");
-      Viewer::Ptr viewer = viewers[name];
-
-      if (not viewer) {
-        viewers[name].reset(new Viewer(grid.com, name, viewer_size, grid.Lx(), grid.Ly()));
-        viewer = viewers[name];
-      }
-
-      IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
-      if (v2d == NULL) {
-        throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
-      }
-
-      v2d->view(viewer, Viewer::Ptr());
-
-    } else if (v->get_ndof() == 2) { // vector fields
-      std::string
-        name_1 = v->metadata(0).get_string("short_name"),
-        name_2 = v->metadata(1).get_string("short_name");
-      Viewer::Ptr
-        v1 = viewers[name_1],
-        v2 = viewers[name_2];
-
-      if (not v1) {
-        viewers[name_1].reset(new Viewer(grid.com, name_1, viewer_size, grid.Lx(), grid.Ly()));
-        v1 = viewers[name_1];
-      }
-
-      if (not v2) {
-        viewers[name_2].reset(new Viewer(grid.com, name_2, viewer_size, grid.Lx(), grid.Ly()));
-        v2 = viewers[name_2];
-      }
-
-      IceModelVec2 *v2d = dynamic_cast<IceModelVec2*>(v);
-      if (v2d == NULL) {
-        throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
-      }
-
-      v2d->view(v1, v2);
-    }
-
-    if (de_allocate) {
-      delete v;
     }
   }
 }

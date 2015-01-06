@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,7 @@ namespace pism {
 
 
 //! \brief PISM's default basal yield stress model which applies the Mohr-Coulomb model of deformable, pressurized till.
-class MohrCoulombYieldStress : public YieldStress
-{
+class MohrCoulombYieldStress : public YieldStress {
 public:
   MohrCoulombYieldStress(const IceGrid &g, Hydrology *hydro);
 
@@ -51,8 +50,8 @@ public:
 protected:
   IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
   IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
-  IceModelVec2S *m_bed_topography;
-  IceModelVec2Int *m_mask;
+  const IceModelVec2S *m_bed_topography;
+  const IceModelVec2Int *m_mask;
   Hydrology *m_hydrology;
 
   void topg_to_phi();

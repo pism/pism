@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -246,20 +246,20 @@ public:
   ~FEDOFMap();
 
   // scalar
-  void extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const;
+  void extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const;
   void extractLocalDOFs(double const*const*x_global, double *x_local) const;
 
-  void extractLocalDOFs(int i, int j, IceModelVec2S &x_global, double *x_local) const;
+  void extractLocalDOFs(int i, int j, const IceModelVec2S &x_global, double *x_local) const;
   void extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const;
 
   void addLocalResidualBlock(const double *y, IceModelVec2S &y_global);
   void addLocalResidualBlock(const double *y, double **yg);
 
   // vector
-  void extractLocalDOFs(IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local) const;
   void extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void extractLocalDOFs(int i, int j, IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(int i, int j, const IceModelVec2V &x_global, Vector2 *x_local) const;
   void extractLocalDOFs(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
 
   void addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global);
@@ -436,9 +436,9 @@ public:
   void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, double const*const*x_global, 
                                   double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2S &x_global,
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, const IceModelVec2S &x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2S &x_global, 
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, const IceModelVec2S &x_global, 
                                   double *vals, double *dx, double *dy);
 private:
   double m_tmp[Nk];
@@ -457,9 +457,9 @@ public:
   void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
                                   Vector2 *vals, double (*Dv)[3]);
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, const IceModelVec2V &x_global,  
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, const IceModelVec2V &x_global,  
                                   Vector2 *vals, double (*Dv)[3]);
 private:
   Vector2 m_tmp[Nk];
@@ -470,24 +470,24 @@ class DirichletData {
 public:
   DirichletData();
   ~DirichletData();
-  void init(IceModelVec2Int *indices, double weight = 1.0);
+  void init(const IceModelVec2Int *indices, double weight = 1.0);
   void constrain(FEDOFMap &dofmap);
   operator bool() {
     return m_indices != NULL;
   }
   void finish();
 protected:
-  void init_impl(IceModelVec2Int *indices, IceModelVec *values, double weight = 1.0);
-  void finish_impl(IceModelVec *values);
+  void init_impl(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
+  void finish_impl(const IceModelVec *values);
   double           m_indices_e[FEQuadrature::Nk];
-  IceModelVec2Int *m_indices;
+  const IceModelVec2Int *m_indices;
   double           m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
 public:
   DirichletData_Scalar();
-  void init(IceModelVec2Int *indices, IceModelVec2S *values, double weight = 1.0);
+  void init(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
   void update(FEDOFMap &dofmap, double* x_e);
   void update_homogeneous(FEDOFMap &dofmap, double* x_e);
   void fix_residual(const double **x, double **r);
@@ -495,13 +495,13 @@ public:
   void fix_jacobian(Mat J);
   void finish();
 protected:
-  IceModelVec2S *m_values;
+  const IceModelVec2S *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector();
-  void init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
+  void init(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
   void update(FEDOFMap &dofmap, Vector2* x_e);
   void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
   void fix_residual(const Vector2 **x, Vector2 **r);
@@ -509,7 +509,7 @@ public:
   void fix_jacobian(Mat J);
   void finish();
 protected:
-  IceModelVec2V *m_values;
+  const IceModelVec2V *m_values;
 };
 
 } // end of namespace pism

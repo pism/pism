@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -51,7 +51,7 @@ public:
 protected:
   std::string input_file;
   IceModelVec2S climatic_mass_balance, ice_surface_temp;
-  IceModelVec2S *lat, *usurf;
+  const IceModelVec2S *lat, *usurf;
 };
 
 } // end of namespace pism

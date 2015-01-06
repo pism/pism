@@ -129,11 +129,11 @@ protected:
   IceModelVec2S total_input, bmelt_local;
 
   // pointers into IceModel; these describe the ice sheet and the source
-  IceModelVec2S *thk,   // ice thickness
+  const IceModelVec2S *thk,   // ice thickness
     *bed,   // bed elevation (not all models need this)
     *cellarea, // projection-dependent area of each cell, used in mass reporting
     *bmelt; // ice sheet basal melt rate
-  IceModelVec2Int *mask;// floating, grounded, etc. mask
+  const IceModelVec2Int *mask;// floating, grounded, etc. mask
 
   bool hold_bmelt;
 
