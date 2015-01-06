@@ -33,12 +33,12 @@ class IceModelVec3;
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
-// FIXME: 1) make Vars take and return "const IceModelVec*" 2) use smart pointers
+// FIXME: use smart pointers
 class Vars {
 public:
   Vars();
-  void add(IceModelVec &);
-  void add(IceModelVec &, const std::string &name);
+  void add(const IceModelVec &);
+  void add(const IceModelVec &, const std::string &name);
   void remove(const std::string &name);
   void lock();
   bool is_available(const std::string &name) const;
@@ -52,8 +52,8 @@ public:
   std::set<std::string> keys() const;
 private:
   bool m_locked;
-  IceModelVec* get_internal(const std::string &name) const;
-  std::map<std::string, IceModelVec*> m_variables;
+  const IceModelVec* get_internal(const std::string &name) const;
+  std::map<std::string, const IceModelVec*> m_variables;
   //! stores standard names of variables that
   //! have standard names, allowing looking them
   //! up using either short or standard names and

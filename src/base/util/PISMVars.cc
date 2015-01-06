@@ -41,7 +41,7 @@ bool Vars::is_available(const std::string &name) const {
 }
 
 //! \brief Add an IceModelVec v using the name `name`.
-void Vars::add(IceModelVec &v, const std::string &name) {
+void Vars::add(const IceModelVec &v, const std::string &name) {
   if (m_locked) {
     throw RuntimeError("this pism::Vars instance is locked");
   }
@@ -54,7 +54,7 @@ void Vars::add(IceModelVec &v, const std::string &name) {
 
   This code will only work for IceModelVecs with dof == 1.
 */
-void Vars::add(IceModelVec &v) {
+void Vars::add(const IceModelVec &v) {
   if (m_locked) {
     throw RuntimeError("this pism::Vars instance is locked");
   }
@@ -85,7 +85,7 @@ void Vars::remove(const std::string &name) {
     throw RuntimeError("this pism::Vars instance is locked");
   }
 
-  IceModelVec *v = m_variables[name];
+  const IceModelVec *v = m_variables[name];
   const NCSpatialVariable &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
@@ -116,14 +116,14 @@ void Vars::lock() {
  * Checks standard_name first, then short name
  */
 const IceModelVec* Vars::get(const std::string &name) const {
-  IceModelVec *tmp = get_internal(name);
+  const IceModelVec *tmp = get_internal(name);
   if (tmp == NULL) {
     throw RuntimeError("variable '" + name + "' is not available");
   }
   return tmp;
 }
 
-IceModelVec* Vars::get_internal(const std::string &name) const {
+const IceModelVec* Vars::get_internal(const std::string &name) const {
   if (not m_locked) {
     throw RuntimeError("pism::Vars is not fully initialized yet");
   }
@@ -133,7 +133,7 @@ IceModelVec* Vars::get_internal(const std::string &name) const {
     return m_variables.find(short_name)->second;
   }
 
-  std::map<std::string,IceModelVec*>::const_iterator k = m_variables.find(name);
+  std::map<std::string,const IceModelVec*>::const_iterator k = m_variables.find(name);
   if (k != m_variables.end()) {
     return (k->second);
   }
@@ -142,7 +142,7 @@ IceModelVec* Vars::get_internal(const std::string &name) const {
 }
 
 const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
-  IceModelVec2S *tmp = dynamic_cast<IceModelVec2S*>(this->get_internal(name));
+  const IceModelVec2S *tmp = dynamic_cast<const IceModelVec2S*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D scalar variable '" + name + "' is not available");
   }
@@ -150,7 +150,7 @@ const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
 }
 
 const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
-  IceModelVec2V *tmp = dynamic_cast<IceModelVec2V*>(this->get_internal(name));
+  const IceModelVec2V *tmp = dynamic_cast<const IceModelVec2V*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D vector variable '" + name + "' is not available");
   }
@@ -158,7 +158,7 @@ const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
 }
 
 const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
-  IceModelVec2Int *tmp = dynamic_cast<IceModelVec2Int*>(this->get_internal(name));
+  const IceModelVec2Int *tmp = dynamic_cast<const IceModelVec2Int*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D mask variable '" + name + "' is not available");
   }
@@ -166,7 +166,7 @@ const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
 }
 
 const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
-  IceModelVec3* tmp = dynamic_cast<IceModelVec3*>(this->get_internal(name));
+  const IceModelVec3* tmp = dynamic_cast<const IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("3D scalar variable '" + name + "' is not available");
   }
@@ -187,7 +187,7 @@ std::set<std::string> Vars::keys() const {
   }
 
   std::set<std::string> result;
-  std::map<std::string,IceModelVec*>::const_iterator i = m_variables.begin();
+  std::map<std::string,const IceModelVec*>::const_iterator i = m_variables.begin();
   while (i != m_variables.end()) {
     result.insert(i->first);
     ++i;
