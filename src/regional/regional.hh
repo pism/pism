@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2014, 2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -40,8 +40,8 @@ public:
   virtual void init();
   virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
-  IceModelVec2Int *no_model_mask;
-  IceModelVec2S   *usurfstore;   
+  const IceModelVec2Int *no_model_mask;
+  const IceModelVec2S   *usurfstore;
 };
 
 //! \brief A version of the SSA stress balance with tweaks for outlet glacier
@@ -54,8 +54,8 @@ public:
   virtual void init();
   virtual void compute_driving_stress(IceModelVec2V &taud);
 protected:
-  IceModelVec2Int *no_model_mask;    
-  IceModelVec2S   *usurfstore, *thkstore;
+  const IceModelVec2Int *no_model_mask;
+  const IceModelVec2S   *usurfstore, *thkstore;
 };
 
 class RegionalDefaultYieldStress : public MohrCoulombYieldStress
@@ -67,7 +67,7 @@ public:
   virtual void init();
   virtual void basal_material_yield_stress(IceModelVec2S &result);
 protected:
-  IceModelVec2Int *no_model_mask;
+  const IceModelVec2Int *no_model_mask;
 };
 
 } // end of namespace pism

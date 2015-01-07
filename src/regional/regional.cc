@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,8 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
 
   SIAFD::compute_surface_gradient(h_x, h_y);
 
-  IceModelVec2Int &nmm = *no_model_mask;
-  IceModelVec2S &hst = *usurfstore; // convenience
+  const IceModelVec2Int &nmm = *no_model_mask;
+  const IceModelVec2S &hst = *usurfstore; // convenience
 
   const int Mx = m_grid.Mx(), My = m_grid.My();
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
@@ -125,7 +125,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   SSAFD::compute_driving_stress(result);
 
-  IceModelVec2Int &nmm = *no_model_mask;
+  const IceModelVec2Int &nmm = *no_model_mask;
 
   IceModelVec::AccessList list;
   list.add(result);
