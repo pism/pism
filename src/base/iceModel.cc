@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -236,14 +236,14 @@ PetscErrorCode IceModel::createVecs() {
 
   // age of ice but only if age will be computed
   if (config.get_flag("do_age")) {
-    ierr = tau3.create(grid, "age", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = age3.create(grid, "age", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_age
-    ierr = tau3.set_attrs("model_state", "age of ice",
+    ierr = age3.set_attrs("model_state", "age of ice",
                           "s", ""); CHKERRQ(ierr);
-    ierr = tau3.set_glaciological_units("years");
-    tau3.write_in_glaciological_units = true;
-    tau3.metadata().set_double("valid_min", 0.0);
-    ierr = variables.add(tau3); CHKERRQ(ierr);
+    ierr = age3.set_glaciological_units("years");
+    age3.write_in_glaciological_units = true;
+    age3.metadata().set_double("valid_min", 0.0);
+    ierr = variables.add(age3); CHKERRQ(ierr);
   }
 
   // ice upper surface elevation

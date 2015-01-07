@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ public:
   double  dx, dy, dtAge, dzEQ;
   // pointers which should be set before calling initForAllColumns()
   double  *u, *v, *w;
-  IceModelVec3 *tau3;
+  IceModelVec3 *age3;
 
 protected: // used internally
   double nuEQ;
@@ -59,7 +59,7 @@ ageSystemCtx::ageSystemCtx(int my_Mz, const std::string &my_prefix)
   u = NULL;
   v = NULL;
   w = NULL;
-  tau3 = NULL;
+  age3 = NULL;
 }
 
 
@@ -72,7 +72,7 @@ PetscErrorCode ageSystemCtx::initAllColumns() {
   if (u == NULL) { SETERRQ(PETSC_COMM_SELF, 6,"un-initialized pointer u in ageSystemCtx"); }
   if (v == NULL) { SETERRQ(PETSC_COMM_SELF, 7,"un-initialized pointer v in ageSystemCtx"); }
   if (w == NULL) { SETERRQ(PETSC_COMM_SELF, 8,"un-initialized pointer w in ageSystemCtx"); }
-  if (tau3 == NULL) { SETERRQ(PETSC_COMM_SELF, 9,"un-initialized pointer tau3 in ageSystemCtx"); }
+  if (age3 == NULL) { SETERRQ(PETSC_COMM_SELF, 9,"un-initialized pointer age3 in ageSystemCtx"); }
   nuEQ = dtAge / dzEQ; // derived constant
   initAllDone = true;
   return 0;
@@ -137,7 +137,7 @@ PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
   // set up system: 0 <= k < m_ks
   for (unsigned int k = 0; k < m_ks; k++) {
     planeStar<double> ss;  // note ss.ij = tau[k]
-    ierr = tau3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
+    ierr = age3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
     // do lowest-order upwinding, explicitly for horizontal
     rhs[k] =  (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx
                          : u[k] * (ss.ij  - ss.w) / dx;
@@ -253,8 +253,8 @@ PetscErrorCode IceModel::ageStep() {
   system.u     = new double[fMz];
   system.v     = new double[fMz];
   system.w     = new double[fMz];
-  // system needs access to tau3 for planeStar()
-  system.tau3  = &tau3;
+  // system needs access to age3 for planeStar()
+  system.age3  = &age3;
   // this checks that all needed constants and pointers got set
   ierr = system.initAllColumns(); CHKERRQ(ierr);
 
@@ -263,7 +263,7 @@ PetscErrorCode IceModel::ageStep() {
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(tau3);
+  list.add(age3);
   list.add(*u3);
   list.add(*v3);
   list.add(*w3);
@@ -309,7 +309,7 @@ PetscErrorCode IceModel::ageStep() {
 
   delete [] system.u;  delete [] system.v;  delete [] system.w;
 
-  ierr = vWork3d.update_ghosts(tau3); CHKERRQ(ierr);
+  ierr = vWork3d.update_ghosts(age3); CHKERRQ(ierr);
 
   return 0;
 }

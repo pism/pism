@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2015 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -51,7 +51,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const std::string &filename) {
   // save age, temperature, and enthalpy "revision numbers". If they
   // changed, then the corresponding field was initialized using
   // regridding.
-  int age_revision = tau3.get_state_counter(),
+  int age_revision = age3.get_state_counter(),
     temperature_revision = T3.get_state_counter(),
     enthalpy_revision = Enth3.get_state_counter();
 
@@ -64,12 +64,12 @@ PetscErrorCode IceModel::bootstrapFromFile(const std::string &filename) {
   {
     // set the initial age of the ice if appropriate
     if (config.get_flag("do_age")) {
-      if (age_revision == tau3.get_state_counter()) {
+      if (age_revision == age3.get_state_counter()) {
         ierr = verbPrintf(2, grid.com,
                           " - setting initial age to %.4f years\n",
                           config.get("initial_age_of_ice_years"));
         CHKERRQ(ierr);
-        ierr = tau3.set(config.get("initial_age_of_ice_years", "years", "seconds")); CHKERRQ(ierr);
+        ierr = age3.set(config.get("initial_age_of_ice_years", "years", "seconds")); CHKERRQ(ierr);
 
       } else {
         ierr = verbPrintf(2, grid.com,

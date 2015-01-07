@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -428,13 +428,13 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
     ierr = nc.inq_var("age", age_exists); CHKERRQ(ierr);
 
     if (age_exists) {
-      ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
+      ierr = age3.read(filename, last_record); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com,
                         "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
                         "  Setting it to zero...\n",
                         filename.c_str()); CHKERRQ(ierr);
-      ierr = tau3.set(0.0); CHKERRQ(ierr);
+      ierr = age3.set(0.0); CHKERRQ(ierr);
     }
   }
 
@@ -460,7 +460,7 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
   the NetCDF file specified by `-regrid_file`.
 
   The default, if `-regrid_vars` is not given, is to regrid the 3
-  dimensional quantities `tau3`, `Tb3` and either `T3` or `Enth3`. This is
+  dimensional quantities `age3`, `Tb3` and either `T3` or `Enth3`. This is
   consistent with one standard purpose of regridding, which is to stick with
   current geometry through the downscaling procedure. Most of the time the user
   should carefully specify which variables to regrid.

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -281,7 +281,7 @@ protected:
   IceModelVec3
   T3,             //!< absolute temperature of ice; K (ghosted)
     Enth3,          //!< enthalpy; J / kg (ghosted)
-    tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
+    age3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
   double   dt,     //!< mass continuity time step, s
