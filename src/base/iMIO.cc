@@ -354,7 +354,8 @@ void IceModel::initFromFile(const std::string &filename) {
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
-    IceModelVec *var = grid.variables().get(*i);
+    // FIXME: remove const_cast. This is bad.
+    IceModelVec *var = const_cast<IceModelVec*>(grid.variables().get(*i));
     NCSpatialVariable &m = var->metadata();
 
     std::string
@@ -498,7 +499,8 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
       continue;
     }
 
-    IceModelVec *v = grid.variables().get(*i);
+    // FIXME: remove const_cast. This is bad.
+    IceModelVec *v = const_cast<IceModelVec*>(grid.variables().get(*i));
     NCSpatialVariable &m = v->metadata();
 
     if (v->get_ndims() != ndims) {
