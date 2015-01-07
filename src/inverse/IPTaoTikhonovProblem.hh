@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,12 +30,16 @@ namespace pism {
 template<class ForwardProblem> class IPTaoTikhonovProblem;
 
 //! Iteration callback class for IPTaoTikhonovProblem
-/*! A class for objects receiving iteration callbacks from a IPTaoTikhonovProblem.  These 
-  callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
-  IPTaoTikhonovProblemListeners are ususally used via a reference counted pointer 
-  IPTaoTikhonovProblemListener::Ptr to allow for good memory management when Listeners are 
-  created as subclasses of python classes. It would have been better to nest this inside of 
-  IPTaoTikhonovProblem, but SWIG has a hard time with nested classes, so it's outer instead.*/
+/** A class for objects receiving iteration callbacks from a
+ * IPTaoTikhonovProblem. These callbacks can be used to monitor the
+ * solution, plot iterations, print diagnostic messages, etc.
+ * IPTaoTikhonovProblemListeners are ususally used via a reference
+ * counted pointer IPTaoTikhonovProblemListener::Ptr to allow for good
+ * memory management when Listeners are created as subclasses of
+ * python classes. It would have been better to nest this inside of
+ * IPTaoTikhonovProblem, but SWIG has a hard time with nested classes,
+ * so it's outer instead.
+ */
 template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
 #ifdef PISM_USE_TR1
@@ -152,7 +156,6 @@ public:
   (F')^t (\nabla J_S)^t.
   \f]
   </ol>
-
 */
 template<class ForwardProblem> class IPTaoTikhonovProblem
 {
@@ -232,36 +235,58 @@ protected:
   
   ForwardProblem &m_forward;
 
-  DesignVec m_d;           ///< Current iterate of design parameter
-  DesignVec m_dGlobal;     ///< Initial iterate of design parameter, stored without ghosts for the benefit of TAO.
-  DesignVec &m_d0;         ///< A-priori estimate of design parameter
-  DesignVec m_d_diff;      ///< Storage for (m_d-m_d0)
+  /// Current iterate of design parameter
+  DesignVec m_d;
+  /// Initial iterate of design parameter, stored without ghosts for the benefit of TAO.
+  DesignVec m_dGlobal;
+  /// A-priori estimate of design parameter
+  DesignVec &m_d0;
+  /// Storage for (m_d-m_d0)
+  DesignVec m_d_diff;
 
-  StateVec &m_u_obs;       ///< State parameter to match via F(d)=u_obs 
-  StateVec m_u_diff;       ///< Storage for F(d)-u_obs
+  /// State parameter to match via F(d)=u_obs
+  StateVec &m_u_obs;
+  /// Storage for F(d)-u_obs
+  StateVec m_u_diff;
 
-  StateVec m_adjointRHS;   ///< Temporary storage used in gradient computation.
+  /// Temporary storage used in gradient computation.
+  StateVec m_adjointRHS;
 
-  DesignVec m_grad_design; ///< Gradient of \f$J_D\f$ at the current iterate.
-  DesignVec m_grad_state;  ///< Gradient of \f$J_S\f$ at the current iterate.
-  DesignVec m_grad;        /**< Weighted sum of the design and state gradients
-                              corresponding to the gradient of the Tikhonov functional \f$J\f$. */
+  /// Gradient of \f$J_D\f$ at the current iterate.
+  DesignVec m_grad_design;
+  /// Gradient of \f$J_S\f$ at the current iterate.
+  DesignVec m_grad_state;
+  /** Weighted sum of the design and state gradients corresponding to
+   * the gradient of the Tikhonov functional \f$J\f$.
+   */
+  DesignVec m_grad;
 
-  double m_eta;         ///<  Penalty parameter/Lagrange multiplier.
+  ///  Penalty parameter/Lagrange multiplier.
+  double m_eta;
 
-  double m_val_design;  ///<  Value of \f$J_D\f$ at the current iterate.
-  double m_val_state;   ///<  Value of \f$J_S\f$ at the current iterate.
+  ///  Value of \f$J_D\f$ at the current iterate.
+  double m_val_design;
+  ///  Value of \f$J_S\f$ at the current iterate.
+  double m_val_state;
 
-  IPFunctional<IceModelVec2S> &m_designFunctional;  //<! Implementation of \f$J_D\f$.
-  IPFunctional<IceModelVec2V> &m_stateFunctional;   //<! Implementation of \f$J_S\f$.
+  /// Implementation of \f$J_D\f$.
+  IPFunctional<IceModelVec2S> &m_designFunctional;
+  /// Implementation of \f$J_S\f$.
+  IPFunctional<IceModelVec2V> &m_stateFunctional;
 
-  std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
+  /// List of iteration callbacks.
+  std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners;
 
-  double m_tikhonov_atol;  ///< Convergence parameter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
-  double m_tikhonov_rtol;  /**< Convergence parameter: convergence stops when \f$||J_D||_2 \f$ is 
-                              less than m_tikhonov_rtol times the maximum of the gradient of \f$J_S\f$ and
-                              \f$(1/\eta)J_D\f$.  This occurs when the two terms forming the sum of the gradient
-                              of \f$J\f$ point in roughly opposite directions with the same magnitude. */
+  /// Convergence parameter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
+  double m_tikhonov_atol;
+
+  /** Convergence parameter: convergence stops when \f$||J_D||_2 \f$
+   * is less than m_tikhonov_rtol times the maximum of the gradient of
+   * \f$J_S\f$ and \f$(1/\eta)J_D\f$. This occurs when the two terms
+   * forming the sum of the gradient of \f$J\f$ point in roughly
+   * opposite directions with the same magnitude.
+  */
+  double m_tikhonov_rtol;
 
 };
 
@@ -303,7 +328,8 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikhonovProblem() {}
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
-  typedef TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,&IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
+  typedef TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,
+                             &IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
   ObjGradCallback::connect(tao,*this);
   TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
   TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);

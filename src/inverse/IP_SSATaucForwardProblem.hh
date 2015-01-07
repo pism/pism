@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -169,27 +169,36 @@ protected:
   PetscErrorCode construct();
   PetscErrorCode destruct();
 
-  IceModelVec2S   *m_zeta;                   ///< Current value of zeta, provided from caller.
-  IceModelVec2S   m_dzeta_local;             ///< Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
+  /// Current value of zeta, provided from caller.
+  IceModelVec2S   *m_zeta;
+  /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
+  IceModelVec2S   m_dzeta_local;
 
-  IceModelVec2Int *m_fixed_tauc_locations;   ///< Locations where \f$\tau_c\f$ should not be adjusted.
+  /// Locations where \f$\tau_c\f$ should not be adjusted.
+  IceModelVec2Int *m_fixed_tauc_locations;
 
-  IPDesignVariableParameterization &m_tauc_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+  /// The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+  IPDesignVariableParameterization &m_tauc_param;
 
-  IceModelVec2V  m_du_global;                ///< Temporary storage when state vectors need to be used without ghosts.
-  IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
+  /// Temporary storage when state vectors need to be used without ghosts.
+  IceModelVec2V  m_du_global;
+  /// Temporary storage when state vectors need to be used with ghosts.
+  IceModelVec2V  m_du_local;
 
   FEElementMap m_element_index;
   FEQuadrature_Scalar m_quadrature;
   FEQuadrature_Vector m_quadrature_vector;
   FEDOFMap     m_dofmap;
 
-  KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
-  Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose
+  /// KSP used in \ref apply_linearization and \ref apply_linearization_transpose
+  KSP  m_ksp;
+  /// Mat used in \ref apply_linearization and \ref apply_linearization_transpose
+  Mat  m_J_state;
 
   SNESConvergedReason m_reason;
 
-  bool m_rebuild_J_state;                    ///< Flag indicating that the state jacobian matrix needs rebuilding.
+  /// Flag indicating that the state jacobian matrix needs rebuilding.
+  bool m_rebuild_J_state;
 };
 
 } // end of namespace pism
