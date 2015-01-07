@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
-    config.set_string("calendar", "none");
+    config.set_string("calendar", "360_day");
 
     IceGrid g(com, config);
     IceEISModel m(g, config, overrides);
