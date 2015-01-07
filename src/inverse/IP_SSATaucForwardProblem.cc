@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -96,7 +96,6 @@ kept.
 */
 PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
 {
-  IceModelVec2S *m_tauc = tauc;
 
   m_zeta = &new_zeta;
 
@@ -107,8 +106,11 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
   double tauc_q[FEQuadrature::Nq];
   IceModelVec::AccessList list(*m_tauc);
 
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-    ys = m_element_index.ys, ym = m_element_index.ym;
+  int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, tauc_q);
@@ -260,8 +262,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = bc_locations;
+  const IceModelVec2V   *m_dirichletValues    = m_vel_bc;
   double           m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[FEQuadrature::Nk];
@@ -425,8 +427,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 
   DirichletData_Vector  dirichletBC;
   // Aliases to help with notation consistency.
-  IceModelVec2Int      *m_dirichletLocations = bc_locations;
-  IceModelVec2V        *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int      *m_dirichletLocations = bc_locations;
+  const IceModelVec2V        *m_dirichletValues    = m_vel_bc;
   double                m_dirichletWeight    = m_dirichletScale;
 
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
@@ -591,8 +593,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = bc_locations;
+  const IceModelVec2V   *m_dirichletValues    = m_vel_bc;
   double           m_dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
