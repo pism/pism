@@ -55,6 +55,11 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
   m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
 
+  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
+  m_tauc_copy.set_attrs("diagnostic",
+                        "yield stress for basal till (plastic or pseudo-plastic model)",
+                        "Pa", "");
+
 #if PETSC_VERSION_LT(3,5,0)
   DMCreateMatrix(*m_da, "baij", &m_J_state);
 #else
@@ -85,6 +90,25 @@ PetscErrorCode IP_SSATaucForwardProblem::destruct() {
   return 0;
 }
 
+void IP_SSATaucForwardProblem::init() {
+
+  // This calls SSA::init(), which calls pism::Vars::get_2d_scalar()
+  // to set m_tauc.
+  SSAFEM::init();
+
+  // The purpose of this change is to make the forward model (SSAFEM)
+  // see changes to tauc made in set_design() below.
+  //
+  // As far as I can tell in this context tauc does not come from a
+  // yield stress model, so this should do no harm.
+  //
+  // I don't know if this is necessary, though. Before this change
+  // set_design used to mess with values in the field pointed to by
+  // SSA::m_tauc *which we do not own*. (This is bad.)
+  // -- CK, January 7, 2015
+  m_tauc = &m_tauc_copy;
+}
+
 //! Sets the current value of of the design paramter \f$\zeta\f$.
 /*! This method sets \f$\zeta\f$ but does not solve the %SSA.
 It it intended for inverse methods that simultaneously compute
@@ -97,14 +121,16 @@ kept.
 PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
 {
 
+  IceModelVec2S &tauc = m_tauc_copy;
+
   m_zeta = &new_zeta;
 
   // Convert zeta to tauc.
-  m_tauc_param.convertToDesignVariable(*m_zeta, *m_tauc);
+  m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points in m_coefficients.
   double tauc_q[FEQuadrature::Nq];
-  IceModelVec::AccessList list(*m_tauc);
+  IceModelVec::AccessList list(tauc);
 
   int
     xs = m_element_index.xs,
@@ -113,7 +139,7 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
     ym = m_element_index.ym;
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, tauc_q);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {

@@ -343,13 +343,18 @@ int main(int argc, char *argv[]) {
     ICMEnthalpyConverter EC(config);
     ThermoGlenArrIce ice(grid.com, "sia_", config, &EC);
 
-    IceModelVec2S ice_surface_elevation, ice_thickness;
+    IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
     Vars &vars = grid.variables();
+
+    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.set_attrs("model_state", "bedrock surface elevation",
+                             "m", "bedrock_altitude");
+    vars.add(bed_topography);
 
     // ice upper surface elevation
     ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);

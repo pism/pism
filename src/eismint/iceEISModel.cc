@@ -176,23 +176,26 @@ void IceEISModel::set_vars_from_options() {
              "initializing variables from EISMINT II experiment %c formulas... \n",
              m_experiment);
 
-  {
-    IceModelVec2S bed_topography;
-    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+  IceModelVec2S tmp;
+  tmp.create(grid, "topg", WITHOUT_GHOSTS);
 
+  // set bed topography
+  {
     if ((m_experiment == 'I') || (m_experiment == 'J')) {
-      generateTroughTopography(bed_topography);
+      generateTroughTopography(tmp);
     }
     if ((m_experiment == 'K') || (m_experiment == 'L')) {
-      generateMoundTopography(bed_topography);
+      generateMoundTopography(tmp);
     }
 
-    beddef->set_elevation(bed_topography);
+    beddef->set_elevation(tmp);
   }
 
-  // no experiments have uplift at start
-  bed_topography.set(0.0);
-  beddef->set_uplift(bed_topography);
+  // set bed uplift; no experiments have uplift at start
+  {
+    tmp.set(0.0);
+    beddef->set_uplift(tmp);
+  }
 
   basal_melt_rate.set(0.0);
   geothermal_flux.set(0.042); // EISMINT II value; J m-2 s-1

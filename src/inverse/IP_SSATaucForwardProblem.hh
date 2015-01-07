@@ -111,6 +111,8 @@ public:
 
   virtual ~IP_SSATaucForwardProblem();
 
+  void init();
+
   //! Selects nodes where \f$\tau_c\f$ (more specifically \f$\zeta\f$) should not be adjusted.
   /*! The paramter \a locations should be set to 1 at each node where \f$\tau_c\f$
     is fixed. The forward map then effectively treats the design space as the subspace
@@ -173,6 +175,8 @@ protected:
   IceModelVec2S   *m_zeta;
   /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
   IceModelVec2S   m_dzeta_local;
+  /// Storage for tauc (avoids modifying fields obtained via pism::Vars)
+  IceModelVec2S m_tauc_copy;
 
   /// Locations where \f$\tau_c\f$ should not be adjusted.
   IceModelVec2Int *m_fixed_tauc_locations;
