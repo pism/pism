@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -264,8 +264,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = bc_locations;
+  const IceModelVec2V   *m_dirichletValues    = m_vel_bc;
   double           m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[FEQuadrature::Nk];
@@ -450,8 +450,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 
   DirichletData_Vector dirichletBC;
   // Aliases to help with notation consistency.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = bc_locations;
+  const IceModelVec2V   *m_dirichletValues = m_vel_bc;
   double        m_dirichletWeight = m_dirichletScale;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                    m_dirichletWeight);
@@ -619,8 +619,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = bc_locations;
+  const IceModelVec2V   *m_dirichletValues    = m_vel_bc;
   double        m_dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
