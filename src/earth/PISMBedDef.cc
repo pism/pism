@@ -67,6 +67,12 @@ PetscErrorCode BedDef::pismbeddef_allocate() {
   // let other models read uplift
   m_grid.variables().add(m_uplift);
 
+  // Set default values (we set them early so that pismv can override
+  // them in IceCompModel::set_vars_from_options(), which is called
+  // before BedDef::init()).
+  m_topg.set(0.0);
+  m_uplift.set(0.0);
+
   return 0;
 }
 
@@ -137,9 +143,7 @@ void BedDef::init() {
       m_uplift.read(input_file, start); // fails if not found!
     }
   } else {
-    // no input file provided
-    m_topg.set(0.0);
-    m_uplift.set(0.0);
+    // do nothing, keeping values set elsewhere
   }
 
   // process -regrid_file and -regrid_vars
