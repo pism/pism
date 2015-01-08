@@ -53,34 +53,40 @@ const IceGrid& Component::get_grid() const {
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
-void Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
+bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
 
-  // read file names:
+  // read file name options:
   options::String
     i("-i", "input file name"),
     boot_file("-boot_file", "bootstrapping file name");
 
-  if (i.is_set()) {
-    if (boot_file.is_set()) {
+  if (i.is_set() or boot_file.is_set()) {
+    if (i.is_set() and boot_file.is_set()) {
       throw RuntimeError("both '-i' and '-boot_file' are used.");
     }
-    filename = i;
-  } else if (boot_file.is_set()) {
-    filename = boot_file;
-  }
 
-  PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
-  unsigned int last_record;
-  nc.open(filename, PISM_READONLY);
-  last_record = nc.inq_nrecords() - 1;
-  nc.close();
+    filename = i.is_set() ? i : boot_file;
 
-  if (boot_file.is_set()) {
-    do_regrid = true;
-    start = 0;
+    PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
+    unsigned int last_record;
+    nc.open(filename, PISM_READONLY);
+    last_record = nc.inq_nrecords() - 1;
+    nc.close();
+
+    if (boot_file.is_set()) {
+      do_regrid = true;
+      start     = 0;
+    } else {
+      do_regrid = false;
+      start     = last_record;
+    }
+
+    return true;
   } else {
+    filename.clear();
     do_regrid = false;
-    start = last_record;
+    start     = -1;
+    return false;
   }
 }
 

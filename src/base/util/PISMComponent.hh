@@ -118,7 +118,7 @@ public:
   const IceGrid& get_grid() const;
 
 protected:
-  virtual void find_pism_input(std::string &filename, bool &regrid, int &start);
+  virtual bool find_pism_input(std::string &filename, bool &regrid, int &start);
   const IceGrid &m_grid;
   const Config &m_config;
 
