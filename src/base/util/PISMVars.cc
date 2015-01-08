@@ -41,7 +41,7 @@ bool Vars::is_available(const std::string &name) const {
 }
 
 //! \brief Add an IceModelVec v using the name `name`.
-void Vars::add(const IceModelVec &v, const std::string &name) {
+void Vars::add(const IceModelVec &v, const std::string &name) const {
   if (m_locked) {
     throw RuntimeError("this pism::Vars instance is locked");
   }
@@ -54,7 +54,7 @@ void Vars::add(const IceModelVec &v, const std::string &name) {
 
   This code will only work for IceModelVecs with dof == 1.
 */
-void Vars::add(const IceModelVec &v) {
+void Vars::add(const IceModelVec &v) const {
   if (m_locked) {
     throw RuntimeError("this pism::Vars instance is locked");
   }
@@ -68,14 +68,16 @@ void Vars::add(const IceModelVec &v) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError("Vars::add(): an IceModelVec with the standard_name '" + standard_name + "' was added already.");
+      throw RuntimeError::formatted("Vars::add(): an IceModelVec with the standard_name '%s' was added already.",
+                                    standard_name.c_str());
     }
   }
 
   if (m_variables[name] == NULL) {
     m_variables[name] = &v;
   } else {
-    throw RuntimeError("Vars::add(): an IceModelVec with the short_name '" + name + "' was added already.");
+    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s' was added already.",
+                                  name.c_str());
   }
 }
 
@@ -118,7 +120,7 @@ void Vars::lock() {
 const IceModelVec* Vars::get(const std::string &name) const {
   const IceModelVec *tmp = get_internal(name);
   if (tmp == NULL) {
-    throw RuntimeError("variable '" + name + "' is not available");
+    throw RuntimeError::formatted("variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -144,7 +146,7 @@ const IceModelVec* Vars::get_internal(const std::string &name) const {
 const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
   const IceModelVec2S *tmp = dynamic_cast<const IceModelVec2S*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError("2D scalar variable '" + name + "' is not available");
+    throw RuntimeError::formatted("2D scalar variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -152,7 +154,7 @@ const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
 const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
   const IceModelVec2V *tmp = dynamic_cast<const IceModelVec2V*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError("2D vector variable '" + name + "' is not available");
+    throw RuntimeError::formatted("2D vector variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -160,7 +162,7 @@ const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
 const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
   const IceModelVec2Int *tmp = dynamic_cast<const IceModelVec2Int*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError("2D mask variable '" + name + "' is not available");
+    throw RuntimeError::formatted("2D mask variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -168,7 +170,7 @@ const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
 const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
   const IceModelVec3* tmp = dynamic_cast<const IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError("3D scalar variable '" + name + "' is not available");
+    throw RuntimeError::formatted("3D scalar variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
