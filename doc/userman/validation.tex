@@ -13,8 +13,7 @@ To clarify the experimental setup, Figure \ref{fig:labgumexperiment} reproduces 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=6.0in,keepaspectratio=true]{labgumexperiment}
-\caption{Reproduction of Figures 2(c) and 2(d) from \cite{SayagWorster2013}.  Left: experimental  apparatus used for ``constant-flux release'' experiment.  Right: snapshot of constant-flux
-experiment (plan view), showing an axisymmetric front.}
+\caption{Reproduction of Figures 2(c) and 2(d) from \cite{SayagWorster2013}.  Left: experimental  apparatus used for ``constant-flux release'' experiment.  Right: snapshot of constant-flux experiment (plan view), showing an axisymmetric front.}
 \label{fig:labgumexperiment}
 \end{figure}
 
@@ -22,7 +21,7 @@ The closest glaciological analog would be an ice sheet on a flat bed fed by posi
 
 The flow though the input hole is assumed to be constant across the hole, so the input ``climate'' has uses \texttt{-surface given} with a field \texttt{climatic_mass_balance} (in the bootstrapping file) which is a positive constant in the hole and zero outside.
 
-Sayag \& Worster estimate Glen exponent $n = 5.9$ for the flow law of their gum suspension, using regression of laboratory measurements of the radius.  Resetting this exponent is one of several changes to the configuration parameters, compared to PISM ice sheet defaults.  This is done in part by overriddubg at run time by using the \texttt{-config_override} option.  See \texttt{examples/gumparams.cdl} for these settings.
+Sayag \& Worster estimate Glen exponent $n = 5.9$ for the flow law of their gum suspension, using regression of laboratory measurements of the radius.  Resetting this exponent is one of several changes to the configuration parameters, compared to PISM ice sheet defaults.  This is done in part by overriding parameters at run time by using the \texttt{-config_override} option.  See \texttt{examples/labgum/preprocess.py} for these settings.
 
 To run the example, first do
 \begin{verbatim}
