@@ -116,23 +116,30 @@ void BedDef::init() {
   std::string input_file;
   bool do_regrid = false;
   int start = -1;
-  find_pism_input(input_file, do_regrid, start);
 
-  // read bed elevation and uplift rate from file
-  verbPrintf(2, m_grid.com,
-             "    reading bed topography and bed uplift rate\n"
-             "    from %s ... \n",
-             input_file.c_str());
-  if (do_regrid) {
-    // bootstrapping
-    m_topg.regrid(input_file, OPTIONAL,
-                  m_config.get("bootstrapping_bed_value_no_var"));
-    m_uplift.regrid(input_file, OPTIONAL,
-                    m_config.get("bootstrapping_uplift_value_no_var"));
+  bool input_given = find_pism_input(input_file, do_regrid, start);
+
+  if (input_given) {
+    // read bed elevation and uplift rate from file
+    verbPrintf(2, m_grid.com,
+               "    reading bed topography and bed uplift rate\n"
+               "    from %s ... \n",
+               input_file.c_str());
+    if (do_regrid) {
+      // bootstrapping
+      m_topg.regrid(input_file, OPTIONAL,
+                    m_config.get("bootstrapping_bed_value_no_var"));
+      m_uplift.regrid(input_file, OPTIONAL,
+                      m_config.get("bootstrapping_uplift_value_no_var"));
+    } else {
+      // re-starting
+      m_topg.read(input_file, start); // fails if not found!
+      m_uplift.read(input_file, start); // fails if not found!
+    }
   } else {
-    // re-starting
-    m_topg.read(input_file, start); // fails if not found!
-    m_uplift.read(input_file, start); // fails if not found!
+    // no input file provided
+    m_topg.set(0.0);
+    m_uplift.set(0.0);
   }
 
   // process -regrid_file and -regrid_vars
