@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);
-    config.set_string("calendar", "360_day");
+    config.set_string("calendar", "none");
 
     IceGrid g(com, config);
 
