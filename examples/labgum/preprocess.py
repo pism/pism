@@ -15,9 +15,9 @@ except:
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and a configuration overrides file.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-Mx', default=53,
-                   help='number of points in each direction on a square grid; note MX -> cell width cases: 53 -> 10mm,  105 -> 5mm, 209 -> 2.5mm, 521 -> 1mm')
-parser.add_argument('-o', metavar='FILENAME', default='initlab53.nc',
+parser.add_argument('-Mx', default=52,
+                   help='number of points in each direction on a square grid; note MX -> cell width cases: 52 -> 10mm,  104 -> 5mm, 209 -> 2.5mm, 520 -> 1mm')
+parser.add_argument('-o', metavar='FILENAME', default='initlab52.nc',
                    help='output file name to create (NetCDF)')
 args = parser.parse_args()
 
@@ -73,20 +73,19 @@ create_config()
 # shear-thinning fluid, which is Xanthan gum 1% solution
 Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
-flux = 3.8173e-3 # kg s-1;  = 3 g s-1; Sayag personal communication
+flux = 3.0e-3    # kg s-1;  = 3 g s-1; Sayag personal communication
 pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; Sayag personal communication
-rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg (though it should not matter)
 
 # set up the grid:
 Mx = int(args.Mx)
 My = Mx
 print "  creating grid of Mx = %d by My = %d points ..." % (Mx,My)
-x = np.linspace(-Lx,Lx,Mx)
-y = np.linspace(-Ly,Ly,My)
-dx = x[1]-x[0]
-dy = dx
+dx = (2.0 * Lx) / float(Mx)
+dy = (2.0 * Ly) / float(My)
 print "  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx*1000.0,dy*1000.0)
+x = np.linspace(-Lx-dx/2.0,Lx+dx/2.0,Mx)
+y = np.linspace(-Ly-dy/2.0,Ly+dy/2.0,My)
 
 # create dummy fields
 [xx,yy] = np.meshgrid(x,y);  # if there were "ndgrid" in numpy we would use it
@@ -97,16 +96,14 @@ artm = np.zeros((Mx,My)) + 273.15 + temp; # 20 degrees Celsius
 
 # smb = flux as m s-1, but scaled so that the total is correct even on a coarse grid
 smb = np.zeros((Mx,My));
-smb[xx**2 + yy**2 <= pipeR**2] = 1.0;
+smb[xx**2 + yy**2 <= pipeR**2 + 1.0e-10] = 1.0;
 smbpos = sum(sum(smb))
 if smbpos==0:
   print "gridding ERROR: no cells have positive input flux ... ending now"
   sys.exit(1)
 else:
   print "  input flux > 0 at %d cells ..." % smbpos
-smb = (flux / (rho * smbpos * dx**2)) * smb
-# convert to [kg m-2 s-1]
-smb = smb * rho
+smb = (flux / (smbpos * dx*dy)) * smb  # [flux] = kg s-1  so now  [smb] = kg m-2 s-1
 
 # Write the data:
 nc = CDF(args.o, "w",format='NETCDF3_CLASSIC') # for netCDF4 module

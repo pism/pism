@@ -43,38 +43,45 @@ The preprocessing stage builds a NetCDF file suitable for PISM bootstrapping.
 It is built at exactly the run-time resolution in order to make the flux
 into the center of the "ice" sheet have the correct value given the small size
 of the positive mass flux area.  Also it creates `gumparams.nc` which contains
-`pism_overrides` attributes, which set parameters.
+`pism_overrides` attributes, the special parameters for this experiment.
 
     $ ./preprocess.py
 
-Now view `initlab53.nc`; only the `climatic_mass_balance` variable is
-interesting.  Now we run for 746 model seconds (compare Sayag & Worster (2013))
-on an 10 mm grid (520 mm / 52 subintervals) using 4 processors:
+Now view `initlab52.nc`.  Only the `climatic_mass_balance` variable is
+interesting.
 
-    $ ./rungum.sh 4 53 &> out.lab53
+Now we run for 746 model seconds (Sayag & Worster, 2013) on a 10 mm grid
+(520 mm / 52 subintervals) using 4 processors:
 
-This run generates `out.lab53` from `stderr` and `stdout`,
-and it also generates diagnostic NetCDF files `ts_lab53.nc` and `ex_lab53.nc`.
-It took about 5 minutes on a 2013 laptop.  When it is done, you can show the
-modeled radius compared to the experimental data (R. Sayag, personal
-communication):
+    $ ./rungum.sh 4 52 &> out.lab52
 
-    $ ./showradius.py -o r53.png -d constantflux3.txt ts_lab53.nc
+This run generates `out.lab52` from `stderr` and `stdout`,
+and it also generates diagnostic NetCDF files `ts_lab52.nc` and `ex_lab52.nc`.
+It takes about 5 minutes on a 2013 laptop.
 
 Results are better on finer grids because the input pipe radius is only 8 mm.
 For example, this uses a 5 mm grid, and takes about an hour to run:
 
-    $ ./preprocess.py -Mx 105 -o initlab105.nc
-    $ ./rungum.sh 4 105 &> out.lab105
+    $ ./preprocess.py -Mx 104 -o initlab104.nc
+    $ ./rungum.sh 4 104 &> out.lab104
 
-while the next uses a 2.5 mm grid, and takes several hours to run:
-
-    $ ./preprocess.py -Mx 209 -o initlab209.nc
-    $ ./rungum.sh 4 209 &> out.lab209
-
-Note you can compare multiple runs to the data in one figure:
+You can compare multiple runs to the experimental data on radius (R. Sayag,
+personal communication):
 
     $ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
 
-To experiment with different configuration constants, edit and
-rerun `preprocess.py`.
+## higher resolutions
+
+For a 2.5 mm grid taking several hours to run, do:
+
+    $ ./preprocess.py -Mx 208 -o initlab208.nc
+    $ ./rungum.sh 4 208 &> out.lab208
+
+More processors (NN) are recommended for a 1.0 mm grid:
+
+    $ ./preprocess.py -Mx 520 -o initlab520.nc
+    $ ./rungum.sh NN 520 &> out.lab520
+
+To experiment with different configuration constants, edit and rerun
+`preprocess.py`.
+
