@@ -24,14 +24,14 @@ Running the example spinup
 
 Next look at the script which would run (i.e. a dry-run):
 
-    $ PISM_DO=echo ./antspinCC.sh N | less 
+    $ PISM_DO=echo ./antspinCC.sh 4 | less
 
 Then actually do the run in the background, saving its `stdout` output in a
 file; this will take a number of processor-hours:
 
-    $ ./antspinCC.sh N &> out.ant30km &
+    $ ./antspinCC.sh 4 &> out.ant30km
 
-This is a 30 km grid run with N processes.  The first
+This is a 30 km grid (the default) run with 4 processes.  The first
 stage essentially smooths the surface, the second stage improves the enthalpy
 field, and then the third stage uses the "full" physics.  (I.e. sliding plus
 PIK calving front physics).
@@ -45,4 +45,3 @@ SeaRISE experiments
 To perform the actual SeaRISE experiments, see scripts in PISM release `stable0.4`.
 Look in `examples/searise-antarctica`.  These scripts will require modifications
 to run under more recent versions of PISM.
-
