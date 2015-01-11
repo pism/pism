@@ -14,30 +14,34 @@ modeling strategy in this example is explained in
 Getting and preprocessing the data
 ---------
 
-This script downloads `Antarctica_5km_dev1.0.nc` with `wget` and uses NCO to
-preprocess to PISM-ready condition:
+This script downloads `Antarctica_5km_dev1.0.nc` with `wget` and uses NCO to preprocess to PISM-ready condition:
 
     $ ./preprocess.sh
 
-Running the example spinup
+Running the coarse-grid spinup
 ---------
 
-Next look at the script which would run (i.e. a dry-run):
+Next look at what the run script will do (i.e. a dry-run):
 
-    $ PISM_DO=echo ./antspinCC.sh 4 | less
+    $ PISM_DO=echo ./antspin-coarse.sh 4
 
-Then actually do the run in the background, saving its `stdout` output in a
-file; this will take a number of processor-hours:
+Then actually do the run, saving its `stdout` output in a file; this will take a number of processor-hours:
 
-    $ ./antspinCC.sh 4 &> out.ant30km
+    $ ./antspin-coarse.sh 4 &> out.ant30km
 
-This is a 30 km grid (the default) run with 4 processes.  The first
-stage essentially smooths the surface, the second stage improves the enthalpy
-field, and then the third stage uses the "full" physics.  (I.e. sliding plus
-PIK calving front physics).
+This is a 30 km grid (the default) run with 4 processes.  The first stage essentially smooths the surface, the second stage improves the enthalpy field (a "no mass continuity" run), and then the third stage uses the "full" physics, which has sliding and PIK calving-front physics.
 
-Higher-resolution runs can be achieved by modifying the script; reset the `GRID`
-and `SKIP` variables.  Different parameter values can be set also.
+Adjust the `antspin-coarse.sh` script to use other grids for this coarse grid stage.
+
+Regridding to a fine grid to complete the spinup
+---------
+
+This is a 15 km grid run with 4 processes which continues the above "third" stage using the "full" physics, which has sliding and PIK calving-front physics.
+
+    $ PISM_DO=echo ./antspin-regridtofine.sh 4
+    $ ./antspin-regridtofine.sh 4 &> out.ant15km
+
+Adjust the `antspin-regridtofine.sh` script to use other grids for the fine grid stage.
 
 SeaRISE experiments
 ---------
