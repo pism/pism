@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -253,14 +253,14 @@ void IceModel::ageStep() {
 
   ageSystemCtx system(grid.z(), "age",
                       grid.dx(), grid.dy(), dt_TempAge,
-                      &tau3, u3, v3, w3); // linear system to solve in each column
+                      &age3, u3, v3, w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
   std::vector<double> x(Mz_fine);   // space for solution
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(tau3);
+  list.add(age3);
   list.add(*u3);
   list.add(*v3);
   list.add(*w3);
@@ -294,7 +294,7 @@ void IceModel::ageStep() {
     }
   }
 
-  vWork3d.update_ghosts(tau3);
+  vWork3d.update_ghosts(age3);
 }
 
 

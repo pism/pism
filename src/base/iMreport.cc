@@ -104,7 +104,7 @@ void IceModel::ageStats(double ivol, double &gorigfrac) {
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(ice_thickness);
-  list.add(tau3);
+  list.add(age3);
 
   const double one_year = grid.convert(1.0, "year", "seconds");
 
@@ -114,7 +114,7 @@ void IceModel::ageStats(double ivol, double &gorigfrac) {
 
     if (mask.icy(i, j)) {
       // accumulate volume of ice which is original
-      tau3.getInternalColumn(i,j,&tau);
+      age3.getInternalColumn(i,j,&tau);
       const int  ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k=1; k<=ks; k++) {
         // ice in segment is original if it is as old as one year less than current time

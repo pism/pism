@@ -234,14 +234,14 @@ void IceModel::createVecs() {
 
   // age of ice but only if age will be computed
   if (config.get_flag("do_age")) {
-    tau3.create(grid, "age", WITH_GHOSTS, WIDE_STENCIL);
+    age3.create(grid, "age", WITH_GHOSTS, WIDE_STENCIL);
     // PROPOSED standard_name = land_ice_age
-    tau3.set_attrs("model_state", "age of ice",
+    age3.set_attrs("model_state", "age of ice",
                    "s", "");
-    tau3.set_glaciological_units("years");
-    tau3.write_in_glaciological_units = true;
-    tau3.metadata().set_double("valid_min", 0.0);
-    grid.variables().add(tau3);
+    age3.set_glaciological_units("years");
+    age3.write_in_glaciological_units = true;
+    age3.metadata().set_double("valid_min", 0.0);
+    grid.variables().add(age3);
   }
 
   // ice upper surface elevation
@@ -908,6 +908,8 @@ explanations of their intended uses.
 void IceModel::init() {
   PetscErrorCode ierr;
 
+  grid.profiling.begin("initialization");
+
   // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
   // make it wait for a connection.
 #ifdef PISM_WAIT_FOR_GDB
@@ -965,6 +967,8 @@ void IceModel::init() {
     MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);
 
   }
+
+  grid.profiling.end("initialization");
 }
 
 // FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -265,8 +265,7 @@ void EigenCalving::max_timestep(double /*my_t*/,
   double dt_min = m_grid.convert(0.001, "years", "seconds");
 
   // Distance (grid cells) from calving front where strain rate is evaluated
-  int offset = m_stencil_width,
-    i0 = 0, j0 = 0;
+  int offset = m_stencil_width;
   double
     my_calving_rate_max     = 0.0,
     my_calving_rate_mean    = 0.0,
@@ -329,15 +328,10 @@ void EigenCalving::max_timestep(double /*my_t*/,
       calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
       my_calving_rate_counter += 1.0;
       my_calving_rate_mean += calving_rate_horizontal;
-      if (my_calving_rate_max < calving_rate_horizontal) {
-        i0 = i;
-        j0 = j;
-      }
-      my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
+      my_calving_rate_max = PetscMax(my_calving_rate_max, calving_rate_horizontal);
     } else {
       calving_rate_horizontal = 0.0;
     }
-
   }
 
 
@@ -346,7 +340,11 @@ void EigenCalving::max_timestep(double /*my_t*/,
   calving_rate_counter = GlobalSum(m_grid.com, my_calving_rate_counter);
   calving_rate_max     = GlobalMax(m_grid.com, my_calving_rate_max);
 
-  calving_rate_mean /= calving_rate_counter;
+  if (calving_rate_counter > 0.0) {
+    calving_rate_mean /= calving_rate_counter;
+  } else {
+    calving_rate_mean = 0.0;
+  }
 
   double denom = calving_rate_max / m_grid.dx();
   const double epsilon = m_grid.convert(0.001 / (m_grid.dx() + m_grid.dy()), "seconds", "years");
@@ -354,12 +352,11 @@ void EigenCalving::max_timestep(double /*my_t*/,
   my_dt = 1.0 / (denom + epsilon);
 
   verbPrintf(2, m_grid.com,
-             "!!!!! c_rate = %.0f m/year (dt=%.5f a) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
+             "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
              m_grid.convert(calving_rate_max, "m/s", "m/year"),
              m_grid.convert(my_dt, "seconds", "years"),
-             i0, j0,
              m_grid.convert(calving_rate_mean, "m/s", "m/year"),
-             calving_rate_counter);
+             (int)calving_rate_counter);
 
   my_dt = std::max(my_dt, dt_min);
 }

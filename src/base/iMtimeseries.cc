@@ -399,6 +399,8 @@ void IceModel::write_extras() {
     return;
   }
 
+  grid.profiling.begin("extra_file reporting");
+
   if (split_extra) {
     extra_file_is_ready = false;        // each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
@@ -472,6 +474,8 @@ void IceModel::write_extras() {
   flush_timeseries();
 
   last_extra = current_time;
+
+  grid.profiling.end("extra_file reporting");
 }
 
 //! Computes the maximum time-step we can take and still hit all the requested years.
