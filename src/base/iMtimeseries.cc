@@ -201,6 +201,7 @@ void IceModel::init_extras() {
   next_extra = 0;
 
   options::String extra_file("-extra_file", "Specifies the output file");
+  extra_filename = extra_file;
 
   options::String times("-extra_times", "Specifies times to save at");
 
@@ -220,7 +221,7 @@ void IceModel::init_extras() {
   }
 
   try {
-    grid.time->parse_times(times, extra_times);    
+    grid.time->parse_times(times, extra_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -extra_times argument");
     throw;
@@ -268,9 +269,9 @@ void IceModel::init_extras() {
     nc.close();
   }
 
-  save_extra = true;
+  save_extra          = true;
   extra_file_is_ready = false;
-  split_extra = false;
+  split_extra         = false;
 
   if (split) {
     split_extra = true;
