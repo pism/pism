@@ -6,7 +6,7 @@ export TWENTYKMGRID="-Mx 300 -My 300 -Lz 5000 -Lbz 2000 -Mz 81 -Mbz 21"
 export FIFTEENKMGRID="-Mx 400 -My 400 -Lz 5000 -Lbz 2000 -Mz 81 -Mbz 21"
 export TWELVEKMGRID="-Mx 500 -My 500 -Lz 5000 -Lbz 2000 -Mz 101 -Mbz 31"
 export TENKMGRID="-Mx 600 -My 600 -Lz 5000 -Lbz 2000 -Mz 101 -Mbz 31"
-export SEVENKMGRID="-Mx 900 -My 900 -Lz 5000 -Lbz 2000 -Mz 151 -Mbz 31"
+export SEVENKMGRID="-Mx 800 -My 800 -Lz 5000 -Lbz 2000 -Mz 151 -Mbz 31"
 export FIVEKMGRID="-Mx 1200 -My 1200 -Lz 5000 -Lbz 2000 -Mz 201 -Mbz 51"
 
 # skips
