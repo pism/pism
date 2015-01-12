@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,6 +38,15 @@ class PSB_velbar_mag : public Diag<StressBalance>
 {
 public:
   PSB_velbar_mag(StressBalance *m);
+  void compute(IceModelVec* &result);
+};
+
+//! \brief Computes uflux and vflux, components of vertically-integrated horizontal
+//! flux of ice.
+class PSB_flux : public Diag<StressBalance>
+{
+public:
+  PSB_flux(StressBalance *m);
   void compute(IceModelVec* &result);
 };
 

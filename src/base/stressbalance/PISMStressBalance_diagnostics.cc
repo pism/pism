@@ -33,7 +33,8 @@ void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["bfrict"]   = new PSB_bfrict(this);
 
   dict["velbar_mag"]     = new PSB_velbar_mag(this);
-  dict["flux_mag"]     = new PSB_flux_mag(this);
+  dict["flux"]           = new PSB_flux(this);
+  dict["flux_mag"]       = new PSB_flux_mag(this);
   dict["velbase_mag"]    = new PSB_velbase_mag(this);
   dict["velsurf_mag"]    = new PSB_velsurf_mag(this);
 
@@ -79,63 +80,42 @@ PSB_velbar::PSB_velbar(StressBalance *m)
 }
 
 void PSB_velbar::compute(IceModelVec* &output) {
-
-  IceModelVec3 *u3, *v3, *w3;
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   IceModelVec2V *result;
-  double *u_ij, *v_ij;
-  double icefree_thickness = m_grid.config.get("mask_icefree_thickness_standard");
 
-  result = new IceModelVec2V;
-  result->create(m_grid, "bar", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  // get the thickness
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+
+  // Compute the vertically-integrated horizontal ice flux:
+  PSB_flux flux(model);
+  IceModelVec *tmp;
+  flux.compute(tmp);
+  result = dynamic_cast<IceModelVec2V*>(tmp);
+  if (result == NULL) {
+    throw RuntimeError("dynamic cast failure");
+  }
+  // NB: the call above allocates memory
+
+  // Override metadata set by the flux computation
+  result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  model->get_3d_velocity(u3, v3, w3);
-
   IceModelVec::AccessList list;
-  list.add(*u3);
-  list.add(*v3);
   list.add(*thickness);
   list.add(*result);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
+    double thk = (*thickness)(i,j);
 
-    double u_sum = 0, v_sum = 0,
-      thk = (*thickness)(i,j);
-    int ks = m_grid.kBelowHeight(thk);
-
-    // an "ice-free" cell:
-    if (thk < icefree_thickness) {
-      (*result)(i,j).u = 0;
-      (*result)(i,j).v = 0;
-      continue;
+    // Ice flux is masked already, but we need to check for division
+    // by zero anyway.
+    if (thk > 0.0) {
+      (*result)(i,j) /= thk;
+    } else {
+      (*result)(i,j).u = 0.0;
+      (*result)(i,j).v = 0.0;
     }
-
-    // an ice-filled cell:
-    u3->getInternalColumn(i, j, &u_ij);
-    v3->getInternalColumn(i, j, &v_ij);
-
-    if (thk <= m_grid.z(1)) {
-      (*result)(i,j).u = u_ij[0];
-      (*result)(i,j).v = v_ij[0];
-      continue;
-    }
-
-    for (int k = 1; k <= ks; ++k) {
-      u_sum += (m_grid.z(k) - m_grid.z(k-1)) * (u_ij[k] + u_ij[k-1]);
-      v_sum += (m_grid.z(k) - m_grid.z(k-1)) * (v_ij[k] + v_ij[k-1]);
-    }
-
-    // Finish the trapezoidal rule integration (times 1/2) and turn this
-    // integral into a vertical average. Note that we ignore the ice between
-    // z(ks) and the surface, so in order to have a true average we
-    // divide by z(ks) and not thk.
-    (*result)(i,j).u = 0.5 * u_sum / m_grid.z(ks);
-    (*result)(i,j).v = 0.5 * v_sum / m_grid.z(ks);
   }
-
 
   output = result;
 }
@@ -182,6 +162,91 @@ void PSB_velbar_mag::compute(IceModelVec* &output) {
   output = result;
 }
 
+
+PSB_flux::PSB_flux(StressBalance *m)
+  : Diag<StressBalance>(m) {
+
+  m_dof = 2;
+
+  // set metadata:
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "uflux", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "vflux", m_grid));
+
+  set_attrs("Vertically integrated horizontal flux of ice in the X direction",
+            "",                 // no CF standard name
+            "m2 s-1", "m2 year-1", 0);
+  set_attrs("Vertically integrated horizontal flux of ice in the Y direction",
+            "",                 // no CF standard name
+            "m2 s-1", "m2 year-1", 1);
+}
+
+void PSB_flux::compute(IceModelVec* &output) {
+  IceModelVec3 *u3, *v3, *w3;
+  IceModelVec2V *result;
+  double *u_ij, *v_ij;
+  double icefree_thickness = m_grid.config.get("mask_icefree_thickness_standard");
+
+  result = new IceModelVec2V;
+  result->create(m_grid, "flux", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+
+  // get the thickness
+  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+
+  model->get_3d_velocity(u3, v3, w3);
+
+  IceModelVec::AccessList list;
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*thickness);
+  list.add(*result);
+
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double u_sum = 0, v_sum = 0,
+      thk = (*thickness)(i,j);
+    int ks = m_grid.kBelowHeight(thk);
+
+    // an "ice-free" cell:
+    if (thk < icefree_thickness) {
+      (*result)(i,j).u = 0;
+      (*result)(i,j).v = 0;
+      continue;
+    }
+
+    // an ice-filled cell:
+    u3->getInternalColumn(i, j, &u_ij);
+    v3->getInternalColumn(i, j, &v_ij);
+
+    if (thk <= m_grid.z(1)) {
+      (*result)(i,j).u = u_ij[0];
+      (*result)(i,j).v = v_ij[0];
+      continue;
+    }
+
+    for (int k = 1; k <= ks; ++k) {
+      u_sum += (m_grid.z(k) - m_grid.z(k-1)) * (u_ij[k] + u_ij[k-1]);
+      v_sum += (m_grid.z(k) - m_grid.z(k-1)) * (v_ij[k] + v_ij[k-1]);
+    }
+
+    // Finish the trapezoidal rule integration (multiply by 1/2).
+    (*result)(i,j).u = 0.5 * u_sum;
+    (*result)(i,j).v = 0.5 * v_sum;
+
+    // The top surface of the ice is not aligned with the grid, so
+    // we have at most dz meters of ice above grid.z(ks).
+    // Assume that its velocity is (u_ij[ks], v_ij[ks]) and add its
+    // contribution.
+    (*result)(i,j).u += u_ij[ks] * (thk - m_grid.z(ks));
+    (*result)(i,j).v += v_ij[ks] * (thk - m_grid.z(ks));
+  }
+
+  output = result;
+}
+
+
 PSB_flux_mag::PSB_flux_mag(StressBalance *m)
   : Diag<StressBalance>(m) {
 
@@ -198,7 +263,7 @@ void PSB_flux_mag::compute(IceModelVec* &output) {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   IceModelVec *tmp = NULL;
 
-  // Compute the vertically-average horizontal ice velocity:
+  // Compute the vertically-averaged horizontal ice velocity:
   PSB_velbar_mag velbar_mag(model);
   velbar_mag.compute(tmp);
   // NB: the call above allocates memory
