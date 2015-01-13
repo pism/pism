@@ -110,9 +110,8 @@ StringSet::StringSet(const std::string& option,
   StringList input(option, description, default_value);
   std::set<std::string> result;
 
-  std::vector<std::string> array = input;
-  for (unsigned int k = 0; k < array.size(); ++k) {
-    result.insert(array[k]);
+  for (unsigned int k = 0; k < input->size(); ++k) {
+    result.insert(input[k]);
   }
 
   set(result, input.is_set());
@@ -194,14 +193,13 @@ IntegerList::IntegerList(const std::string& option,
                          const std::string& description) {
   RealList input(option, description);
   std::vector<int> result;
-  std::vector<double> array = input;
 
-  for (unsigned int k = 0; k < array.size(); ++k) {
-    if (fabs(array[k] - floor(array[k])) > 1e-6) {
+  for (unsigned int k = 0; k < input->size(); ++k) {
+    if (fabs(input[k] - floor(input[k])) > 1e-6) {
       throw RuntimeError::formatted("Can't process '%s': (%f is not an integer).",
-                                    option.c_str(), array[k]);
+                                    option.c_str(), input[k]);
     }
-    result.push_back(static_cast<int>(array[k]));
+    result.push_back(static_cast<int>(input[k]));
   }
   
   set(result, input.is_set());
