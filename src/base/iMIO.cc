@@ -212,6 +212,9 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
   }
   // Write all the IceModel variables:
+
+  // Make a copy to avoid modifying the container we're iterating over.
+  std::set<std::string> vars_copy = vars;
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
     if (grid.variables().is_available(*i)) {
@@ -219,9 +222,10 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
       // note that it only erases variables that were found (and
       // saved)
-      vars.erase(i);
+      vars_copy.erase(*i);
     }
   }
+  vars = vars_copy;
 
   // Write bed-deformation-related variables:
   if (beddef != NULL) {
