@@ -181,11 +181,12 @@ void IceEISModel::set_vars_from_options() {
 
   // set bed topography
   {
-    if ((m_experiment == 'I') || (m_experiment == 'J')) {
+    if (m_experiment == 'I' or m_experiment == 'J') {
       generateTroughTopography(tmp);
-    }
-    if ((m_experiment == 'K') || (m_experiment == 'L')) {
+    } else if (m_experiment == 'K' or m_experiment == 'L') {
       generateMoundTopography(tmp);
+    } else {
+      tmp.set(0.0);
     }
 
     beddef->set_elevation(tmp);
