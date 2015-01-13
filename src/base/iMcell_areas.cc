@@ -137,12 +137,8 @@ void IceModel::compute_cell_areas() {
 #elif (PISM_USE_PROJ4==0)      // no proj.4
 
 void IceModel::compute_cell_areas() {
-  PetscErrorCode ierr;
-
   // proj.4 was not found; use uncorrected areas.
   cell_area.set(grid.dx() * grid.dy());
-
-  return 0;
 }
 
 #else  // PISM_USE_PROJ4 is not set
