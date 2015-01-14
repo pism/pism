@@ -26,13 +26,13 @@
 #include "NCVariable.hh"
 #include "pism_const.hh"
 
-#include "IceGrid.hh"
 #include "Viewer.hh"
 #include "Vector2.hh"
 #include "StarStencil.hh"
 
 namespace pism {
 
+class IceGrid;
 class PIO;
 class LocalInterpCtx;
 
