@@ -45,6 +45,8 @@ void String::process(const std::string& option,
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag = PETSC_FALSE;
 
+  memset(tmp, 0, TEMPORARY_STRING_LENGTH);
+
   PetscErrorCode ierr;
   ierr = PetscOptionsString(option.c_str(),
                             description.c_str(),
