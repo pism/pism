@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -85,8 +85,6 @@ public:
   PetscErrorCode inq_grid(const std::string &var_name, IceGrid *grid, Periodicity periodicity) const;
 
   void inq_units(const std::string &name, bool &has_units, Unit &units) const;
-
-  grid_info inq_grid_info(const std::string &name, Periodicity p) const;
 
   void def_dim(unsigned long int length, const NCVariable &metadata) const;
 
@@ -192,6 +190,8 @@ public:
 
   void read_valid_range(const std::string &name, NCVariable &variable) const;
 
+  std::string backend_type() const;
+
 private:
   MPI_Comm m_com;
   std::string m_mode;
@@ -228,6 +228,8 @@ private:
 class grid_info {
 public:
   grid_info();
+  grid_info(const PIO &file, const std::string &variable, Periodicity p);
+
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
   double time,                  //!< current time (seconds)
@@ -238,6 +240,8 @@ public:
     z_min,                      //!< minimal value of the z dimension
     z_max;                      //!< maximal value of the z dimension
   std::vector<double> x, y, z;       //!< coordinates
+private:
+  void reset();
 };
 
 } // end of namespace pism

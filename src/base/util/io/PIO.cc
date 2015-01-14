@@ -174,6 +174,9 @@ void PIO::detect_mode(const string &filename) {
   m_nc->set_local_extent(m_xs, m_xm, m_ys, m_ym);
 }
 
+std::string PIO::backend_type() const {
+  return m_mode;
+}
 
 /**
  * Check if the storage order of a variable in the current file
@@ -600,7 +603,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
     assert(grid != NULL);
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input = inq_grid_info(var_name, periodicity);
+    grid_info input(*this, var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
@@ -658,99 +661,6 @@ void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
     has_units = true;
   } catch (RuntimeError &e) {
     e.add_context("getting units of variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
-    throw;
-  }
-}
-
-
-grid_info PIO::inq_grid_info(const string &name, Periodicity p) const {
-  try {
-    vector<string> dims;
-    bool exists, found_by_standard_name;
-    string name_found;
-    grid_info result;
-
-    // try "name" as the standard_name first, then as the short name:
-    inq_var(name, name, exists, name_found, found_by_standard_name);
-
-    if (exists == false) {
-      throw RuntimeError("variable " + name + " is missing");
-    }
-
-    m_nc->inq_vardimid(name_found, dims);
-
-    // use "global" dimensions (as opposed to dimensions of a patch)
-    if (m_mode == "quilt") {
-      for (unsigned int i = 0; i < dims.size(); ++i) {
-        if (dims[i] == "x_patch") {
-          dims[i] = "x";
-        }
-
-        if (dims[i] == "y_patch") {
-          dims[i] = "y";
-        }
-      }
-    }
-
-    for (unsigned int i = 0; i < dims.size(); ++i) {
-      string dimname = dims[i];
-
-      AxisType dimtype = inq_dimtype(dimname);
-
-      switch (dimtype) {
-      case X_AXIS:
-        {
-          m_nc->inq_dimlen(dimname, result.x_len);
-          double x_min = 0.0, x_max = 0.0;
-          inq_dim_limits(dimname, &x_min, &x_max);
-          get_dim(dimname, result.x);
-          result.x0 = 0.5 * (x_min + x_max);
-          result.Lx = 0.5 * (x_max - x_min);
-          if (p & X_PERIODIC) {
-            const double dx = result.x[1] - result.x[0];
-            result.Lx += 0.5 * dx;
-          }
-          break;
-        }
-      case Y_AXIS:
-        {
-          m_nc->inq_dimlen(dimname, result.y_len);
-          double y_min = 0.0, y_max = 0.0;
-          inq_dim_limits(dimname, &y_min, &y_max);
-          get_dim(dimname, result.y);
-          result.y0 = 0.5 * (y_min + y_max);
-          result.Ly = 0.5 * (y_max - y_min);
-          if (p & Y_PERIODIC) {
-            const double dy = result.y[1] - result.y[0];
-            result.Ly += 0.5 * dy;
-          }
-          break;
-        }
-      case Z_AXIS:
-        {
-          m_nc->inq_dimlen(dimname, result.z_len);
-          inq_dim_limits(dimname, &result.z_min, &result.z_max);
-          get_dim(dimname, result.z);
-          break;
-        }
-      case T_AXIS:
-        {
-          m_nc->inq_dimlen(dimname, result.t_len);
-          inq_dim_limits(dimname, NULL, &result.time);
-          break;
-        }
-      default:
-        {
-          throw RuntimeError::formatted("can't figure out which direction dimension '%s' corresponds to.",
-                                        dimname.c_str());
-        }
-      } // switch
-    }   // for loop
-
-    return result;
-
-  } catch (RuntimeError &e) {
-    e.add_context("getting grid information using variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1107,7 +1017,7 @@ LocalInterpCtx* PIO::get_interp_context(const string &name,
   if (exists == false) {
     throw RuntimeError("variable " + name + " is missing in " + inq_filename());
   } else {
-    grid_info gi = inq_grid_info(name, grid.periodicity());
+    grid_info gi(*this, name, grid.periodicity());
 
     return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }
@@ -1897,7 +1807,7 @@ void PIO::write_time_bounds(const NCTimeBounds &metadata,
   }
 }
 
-grid_info::grid_info() {
+void grid_info::reset() {
 
   t_len = 0;
   time  = 0;
@@ -1913,6 +1823,100 @@ grid_info::grid_info() {
   z_len = 0;
   z_min = 0;
   z_max = 0;
+}
+
+grid_info::grid_info() {
+  reset();
+}
+
+grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p) {
+  try {
+    bool exists, found_by_standard_name;
+    string name_found;
+
+    reset();
+
+    // try "variable" as the standard_name first, then as the short name:
+    file.inq_var(variable, variable, exists, name_found, found_by_standard_name);
+
+    if (exists == false) {
+      throw RuntimeError::formatted("variable \"%s\" is missing", variable.c_str());
+    }
+
+    vector<string> dims = file.inq_vardims(name_found);
+
+    // use "global" dimensions (as opposed to dimensions of a patch)
+    if (file.backend_type() == "quilt") {
+      for (unsigned int i = 0; i < dims.size(); ++i) {
+        if (dims[i] == "x_patch") {
+          dims[i] = "x";
+        }
+
+        if (dims[i] == "y_patch") {
+          dims[i] = "y";
+        }
+      }
+    }
+
+    for (unsigned int i = 0; i < dims.size(); ++i) {
+      string dimname = dims[i];
+
+      AxisType dimtype = file.inq_dimtype(dimname);
+
+      switch (dimtype) {
+      case X_AXIS:
+        {
+          this->x_len = file.inq_dimlen(dimname);
+          double x_min = 0.0, x_max = 0.0;
+          file.inq_dim_limits(dimname, &x_min, &x_max);
+          file.get_dim(dimname, this->x);
+          this->x0 = 0.5 * (x_min + x_max);
+          this->Lx = 0.5 * (x_max - x_min);
+          if (p & X_PERIODIC) {
+            const double dx = this->x[1] - this->x[0];
+            this->Lx += 0.5 * dx;
+          }
+          break;
+        }
+      case Y_AXIS:
+        {
+          this->y_len = file.inq_dimlen(dimname);
+          double y_min = 0.0, y_max = 0.0;
+          file.inq_dim_limits(dimname, &y_min, &y_max);
+          file.get_dim(dimname, this->y);
+          this->y0 = 0.5 * (y_min + y_max);
+          this->Ly = 0.5 * (y_max - y_min);
+          if (p & Y_PERIODIC) {
+            const double dy = this->y[1] - this->y[0];
+            this->Ly += 0.5 * dy;
+          }
+          break;
+        }
+      case Z_AXIS:
+        {
+          this->z_len = file.inq_dimlen(dimname);
+          file.inq_dim_limits(dimname, &this->z_min, &this->z_max);
+          file.get_dim(dimname, this->z);
+          break;
+        }
+      case T_AXIS:
+        {
+          this->t_len = file.inq_dimlen(dimname);
+          file.inq_dim_limits(dimname, NULL, &this->time);
+          break;
+        }
+      default:
+        {
+          throw RuntimeError::formatted("can't figure out which direction dimension '%s' corresponds to.",
+                                        dimname.c_str());
+        }
+      } // switch
+    }   // for loop
+  } catch (RuntimeError &e) {
+    e.add_context("getting grid information using variable '%s' in '%s'", variable.c_str(),
+                  file.inq_filename().c_str());
+    throw;
+  }
 }
 
 } // end of namespace pism
