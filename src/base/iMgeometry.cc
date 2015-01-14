@@ -30,6 +30,7 @@
 #include "PISMIcebergRemover.hh"
 #include "error_handling.hh"
 #include "PISMBedDef.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

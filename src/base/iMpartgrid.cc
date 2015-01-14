@@ -18,14 +18,13 @@
 
 #include <cmath>
 #include <cstring>
-#include <petscdmda.h>
-#include <cassert>
 
 #include "iceModel.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
 #include "PISMBedDef.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

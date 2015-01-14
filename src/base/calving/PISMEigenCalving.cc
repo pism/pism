@@ -22,6 +22,7 @@
 #include "PISMStressBalance.hh"
 #include "Mask.hh"
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

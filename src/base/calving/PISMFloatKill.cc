@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "PISMFloatKill.hh"
 #include "Mask.hh"
 #include "iceModelVec.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

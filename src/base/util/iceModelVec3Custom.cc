@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+
 #include "iceModelVec3Custom.hh"
 #include "PISMConfig.hh"
-
-#include <cassert>
+#include "IceGrid.hh"
 
 namespace pism {
 

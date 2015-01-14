@@ -31,6 +31,7 @@
 #include "PISMEigenCalving.hh"
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

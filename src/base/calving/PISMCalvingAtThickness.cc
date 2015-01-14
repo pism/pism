@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "PISMCalvingAtThickness.hh"
 #include "Mask.hh"
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 
@@ -52,7 +53,7 @@ void CalvingAtThickness::init() {
  * @return 0 on success
  */
 void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
-                                              IceModelVec2S &ice_thickness) {
+                                IceModelVec2S &ice_thickness) {
   MaskQuery M(m_old_mask);
 
   // this call fills ghosts of m_old_mask

@@ -35,6 +35,7 @@ struct DegreeDayFactors_Old {
     refreezeFrac;  //!< fraction of melted snow which refreezes as ice
 };
 
+class Config;
 
 //! \brief Base class for a model which computes surface mass flux rate (ice
 //! thickness per time) from precipitation and temperature.

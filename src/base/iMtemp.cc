@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,6 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+
 #include "iceModel.hh"
 #include "tempSystem.hh"
 #include "Mask.hh"
@@ -26,9 +28,8 @@
 #include "bedrockThermalUnit.hh"
 #include "pism_options.hh"
 
-#include <cassert>
-
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

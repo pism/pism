@@ -17,12 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+
 #include "PISMOceanKill.hh"
 #include "pism_options.hh"
 #include "PISMVars.hh"
 #include "Mask.hh"
-#include <cassert>
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

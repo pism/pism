@@ -24,6 +24,7 @@
 #include "PISMStressBalance.hh"
 #include "error_handling.hh"
 #include "pism_options.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

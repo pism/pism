@@ -21,18 +21,16 @@
 #include <petsctime.h>
 #include <petscsys.h>
 
-#include "PIO.hh"
-#include "pism_const.hh"
 #include <sstream>
 #include <ctime>
 #include <algorithm>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
-#include "NCVariable.hh"
-
+#include "pism_const.hh"
 #include "error_handling.hh"
 
 extern FILE *petsc_history;

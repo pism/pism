@@ -315,7 +315,7 @@ void IceModel::grid_setup() {
       var_exists = nc.inq_var(names[i]);
 
       if (var_exists == true) {
-        nc.inq_grid(names[i], &grid, grid.periodicity());
+        IceGrid::FromFile(nc, names[i], grid.periodicity(), &grid);
         break;
       }
     }

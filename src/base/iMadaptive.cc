@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "iceModel.hh"
 #include <petscvec.h>
+#include <sstream>
+#include <algorithm>
+
+#include "iceModel.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 #include "bedrockThermalUnit.hh"
@@ -26,8 +29,7 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "PISMHydrology.hh"
-#include <sstream>
-#include <algorithm>
+#include "IceGrid.hh"
 
 namespace pism {
 

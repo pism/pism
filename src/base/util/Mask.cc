@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2014, 2015 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+
 #include "Mask.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

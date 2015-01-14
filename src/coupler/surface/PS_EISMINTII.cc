@@ -23,6 +23,7 @@
 #include "pism_options.hh"
 #include <stdexcept>
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

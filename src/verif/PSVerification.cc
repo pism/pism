@@ -33,6 +33,7 @@
 #include "tests/exactTestL.h"
 
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

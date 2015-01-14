@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,8 @@ inline bool pism_is_valid_calendar_name(std::string name) {
 
   return false;
 }
+
+class Config;
 
 //! \brief Time management class.
 /*!

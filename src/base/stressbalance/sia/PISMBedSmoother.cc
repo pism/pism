@@ -18,6 +18,7 @@
 
 #include "PISMBedSmoother.hh"
 #include "Mask.hh"
+#include "IceGrid.hh"
 
 #include "error_handling.hh"
 

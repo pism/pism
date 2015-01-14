@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include "IPGroundedIceH1NormFunctional.hh"
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

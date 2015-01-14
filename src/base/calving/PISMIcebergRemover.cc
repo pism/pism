@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "Mask.hh"
 #include "PISMVars.hh"
 #include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

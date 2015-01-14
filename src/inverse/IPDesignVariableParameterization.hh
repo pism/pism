@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,8 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+
+class Config;
 
 //! Encapsulates a parameterization of a design variable (e.g. \f$\tau_c\f$ for SSA inversions)
 //! as a function of a different parameter \f$\zeta\f$.

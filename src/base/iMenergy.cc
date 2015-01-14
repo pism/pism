@@ -24,6 +24,7 @@
 #include "enthalpyConverter.hh"
 #include <cassert>
 #include "PISMBedDef.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

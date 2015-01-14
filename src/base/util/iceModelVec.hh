@@ -29,6 +29,7 @@
 #include "Viewer.hh"
 #include "Vector2.hh"
 #include "StarStencil.hh"
+#include "DM.hh"
 
 namespace pism {
 

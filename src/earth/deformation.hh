@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,12 @@
 #ifndef __deformation_hh
 #define __deformation_hh
 
-#include "NCVariable.hh"
 #include <petscvec.h>
 #include <fftw3.h>
 
 namespace pism {
+
+class Config;
 
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!

@@ -17,11 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+#include <algorithm>            // for std::min
+
 #include "PSCache.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
-#include <cassert>
-#include <algorithm>            // for std::min
+#include "IceGrid.hh"
 
 #include "error_handling.hh"
 

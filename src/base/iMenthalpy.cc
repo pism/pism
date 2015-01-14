@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2014 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2015 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "bedrockThermalUnit.hh"
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

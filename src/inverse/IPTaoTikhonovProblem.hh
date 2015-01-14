@@ -20,10 +20,12 @@
 #ifndef IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 #define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 
+#include <cassert>
+
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
-#include <assert.h>
 #include "PISMConfig.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

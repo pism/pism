@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPTotalVariationFunctional.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 
