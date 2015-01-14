@@ -968,15 +968,9 @@ void PIO::put_vec(const IceGrid *grid, const string &var_name,
 LocalInterpCtx* PIO::get_interp_context(const string &name,
                                         const IceGrid &grid,
                                         const vector<double> &zlevels) const {
-  bool exists = inq_var(name);
-
-  if (exists == false) {
-    throw RuntimeError("variable " + name + " is missing in " + inq_filename());
-  } else {
     grid_info gi(*this, name, grid.periodicity());
 
     return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
-  }
 }
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
