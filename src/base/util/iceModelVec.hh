@@ -174,21 +174,13 @@ public:
 #endif
 
   virtual bool was_created() const;
-  const IceGrid* get_grid() const {
-    return m_grid;
-  }
+  const IceGrid* get_grid() const;
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
-  unsigned int get_ndof() const {
-    return m_dof;
-  }
+  unsigned int get_ndof() const;
   unsigned int get_stencil_width() const;
-  int nlevels() const {
-    return m_n_levels;
-  }
-  std::vector<double>  get_levels() const {
-    return zlevels;
-  }
+  int nlevels() const;
+  std::vector<double> get_levels() const;
 
   virtual void  range(double &min, double &max) const;
   virtual void  norm(int n, double &out) const;
@@ -348,27 +340,16 @@ class IceModelVec2S;
     j-offset). */
 class IceModelVec2 : public IceModelVec {
 public:
-  IceModelVec2() : IceModelVec() {}
+  IceModelVec2();
   virtual void view(int viewer_size) const;
   virtual void view(Viewer::Ptr v1, Viewer::Ptr v2) const;
   // component-wise access:
   virtual void get_component(unsigned int n, IceModelVec2S &result) const;
   virtual void set_component(unsigned int n, IceModelVec2S &source);
-  inline double& operator() (int i, int j, int k) {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, k);
-#endif
-    return static_cast<double***>(array)[i][j][k];
-  }
-
-  inline const double& operator() (int i, int j, int k) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, k);
-#endif
-    return static_cast<double***>(array)[i][j][k];
-  }
+  inline double& operator() (int i, int j, int k);
+  inline const double& operator() (int i, int j, int k) const;
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
-                                IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
+                      IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const PIO &nc, const unsigned int time);
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
@@ -382,7 +363,7 @@ class IceModelVec2S : public IceModelVec2 {
   friend class IceModelVec2V;
   friend class IceModelVec2Stag;
 public:
-  IceModelVec2S() { begin_end_access_use_dof = false; }
+  IceModelVec2S();
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec2S> Ptr;
@@ -395,7 +376,7 @@ public:
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
   virtual void  create(const IceGrid &my_grid, const std::string &my_name,
-                                 IceModelVecKind ghostedp, int width = 1);
+                       IceModelVecKind ghostedp, int width = 1);
   void allocate_proc0_copy(Vec &result) const;
   void put_on_proc0(Vec onp0) const;
   void get_from_proc0(Vec onp0);
@@ -422,38 +403,9 @@ public:
   /*!
     Note that i corresponds to the x direction and j to the y.
   */
-  inline double& operator() (int i, int j) {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    return static_cast<double**>(array)[i][j];
-  }
-
-  inline const double& operator()(int i, int j) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    return static_cast<double**>(array)[i][j];
-  }
-
-  inline planeStar<double> star(int i, int j) {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-    check_array_indices(i+1, j, 0);
-    check_array_indices(i-1, j, 0);
-    check_array_indices(i, j+1, 0);
-    check_array_indices(i, j-1, 0);
-#endif
-    planeStar<double> result;
-
-    result.ij = operator()(i,j);
-    result.e =  operator()(i+1,j);
-    result.w =  operator()(i-1,j);
-    result.n =  operator()(i,j+1);
-    result.s =  operator()(i,j-1);
-
-    return result;
-  }
+  inline double& operator() (int i, int j);
+  inline const double& operator()(int i, int j) const;
+  inline planeStar<double> star(int i, int j);
 };
 
 
@@ -470,32 +422,8 @@ public:
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
 #endif
 
-  inline int as_int(int i, int j) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    const double **a = (const double**) array;
-    return static_cast<int>(floor(a[i][j] + 0.5));
-  }
-
-  inline planeStar<int> int_star(int i, int j) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-    check_array_indices(i+1, j, 0);
-    check_array_indices(i-1, j, 0);
-    check_array_indices(i, j+1, 0);
-    check_array_indices(i, j-1, 0);
-#endif
-
-    planeStar<int> result;
-    result.ij = as_int(i,j);
-    result.e =  as_int(i+1,j);
-    result.w =  as_int(i-1,j);
-    result.n =  as_int(i,j+1);
-    result.s =  as_int(i,j-1);
-
-    return result;
-  }
+  inline int as_int(int i, int j) const;
+  inline planeStar<int> int_star(int i, int j) const;
 };
 
 //! \brief A class representing a horizontal velocity at a certain grid point.
@@ -574,7 +502,7 @@ public:
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
-  ~IceModelVec2V() {}
+  ~IceModelVec2V();
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec2V> Ptr;
@@ -586,7 +514,7 @@ public:
 
   using IceModelVec2::create;
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
-                                IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+                      IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_to(IceModelVec &destination) const;
   virtual void add(double alpha, const IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
@@ -594,39 +522,9 @@ public:
   // I/O:
   virtual void get_array(Vector2 ** &a);
   virtual void magnitude(IceModelVec2S &result) const;
-  inline Vector2& operator()(int i, int j) {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    return static_cast<Vector2**>(array)[i][j];
-  }
-
-  inline const Vector2& operator()(int i, int j) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    return static_cast<Vector2**>(array)[i][j];
-  }
-
-  inline planeStar<Vector2> star(int i, int j) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-    check_array_indices(i+1, j, 0);
-    check_array_indices(i-1, j, 0);
-    check_array_indices(i, j+1, 0);
-    check_array_indices(i, j-1, 0);
-#endif
-    planeStar<Vector2> result;
-
-    result.ij = operator()(i,j);
-    result.e =  operator()(i+1,j);
-    result.w =  operator()(i-1,j);
-    result.n =  operator()(i,j+1);
-    result.s =  operator()(i,j-1);
-
-    return result;
-  }
-
+  inline Vector2& operator()(int i, int j);
+  inline const Vector2& operator()(int i, int j) const;
+  inline planeStar<Vector2> star(int i, int j) const;
   // Metadata, etc:
   virtual void set_name(const std::string &name, int component = 0);
   virtual void rename(const std::string &short_name, const std::string &long_name,
@@ -641,13 +539,10 @@ public:
 //! components are not called `u` and `v` (to avoid confusion).
 class IceModelVec2Stag : public IceModelVec2 {
 public:
-  IceModelVec2Stag() : IceModelVec2() {
-    m_dof = 2;
-    begin_end_access_use_dof = true;
-  }
+  IceModelVec2Stag();
   using IceModelVec2::create;
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
-                                unsigned int stencil_width = 1);
+                      unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
   virtual void absmaxcomponents(double* z) const;
@@ -656,30 +551,12 @@ public:
   /*! The ij member of the return value is set to 0, since it has no meaning in
     this context.
   */
-  inline planeStar<double> star(int i, int j) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-    check_array_indices(i+1, j, 0);
-    check_array_indices(i-1, j, 0);
-    check_array_indices(i, j+1, 0);
-    check_array_indices(i, j-1, 0);
-#endif
-    planeStar<double> result;
-
-    result.ij = 0.0;             // has no meaning in this context
-    result.e =  operator()(i, j, 0);
-    result.w =  operator()(i-1, j, 0);
-    result.n =  operator()(i, j, 1);
-    result.s =  operator()(i, j-1, 1);
-
-    return result;
-  }
+  inline planeStar<double> star(int i, int j) const;
 };
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
 //! fields.
-class IceModelVec3D : public IceModelVec
-{
+class IceModelVec3D : public IceModelVec {
 public:
   IceModelVec3D();
   virtual ~IceModelVec3D();
@@ -693,32 +570,20 @@ public:
   virtual double    getValZ(int i, int j, double z) const;
   virtual bool isLegalLevel(double z) const;
 
-  inline double& operator() (int i, int j, int k) {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, k);
-#endif
-    return static_cast<double***>(array)[i][j][k];
-  }
-
-  inline const double& operator() (int i, int j, int k) const {
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, k);
-#endif
-    return static_cast<double***>(array)[i][j][k];
-  }
-
+  inline double& operator() (int i, int j, int k);
+  inline const double& operator() (int i, int j, int k) const;
 protected:
   virtual void allocate(const IceGrid &mygrid, const std::string &my_short_name,
-                                  IceModelVecKind ghostedp, const std::vector<double> &levels,
-                                  unsigned int stencil_width = 1);
+                        IceModelVecKind ghostedp, const std::vector<double> &levels,
+                        unsigned int stencil_width = 1);
 };
 
 
 //! Class for a 3d DA-based Vec for ice scalar quantities.
 class IceModelVec3 : public IceModelVec3D {
 public:
-  IceModelVec3() {}
-  virtual ~IceModelVec3() {}
+  IceModelVec3();
+  virtual ~IceModelVec3();
 
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IceModelVec3> Ptr;
@@ -738,6 +603,9 @@ public:
 };
 
 } // end of namespace pism
+
+// include inline methods; contents are wrapped in namespace pism {...}
+#include "IceModelVec_inline.hh"
 
 #endif /* __IceModelVec_hh */
 

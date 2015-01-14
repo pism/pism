@@ -77,6 +77,23 @@ int IceModelVec::get_state_counter() const {
   return m_state_counter;
 }
 
+const IceGrid* IceModelVec::get_grid() const {
+  return m_grid;
+}
+
+unsigned int IceModelVec::get_ndof() const {
+  return m_dof;
+}
+
+int IceModelVec::nlevels() const {
+  return m_n_levels;
+}
+
+std::vector<double> IceModelVec::get_levels() const {
+  return zlevels;
+}
+
+
 //! \brief Increment the object state counter.
 /*!
  * See the documentation of get_state_counter(). This method is the

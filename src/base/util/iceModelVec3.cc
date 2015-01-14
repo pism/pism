@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,14 @@ IceModelVec3D::IceModelVec3D() : IceModelVec() {
 
 IceModelVec3D::~IceModelVec3D() {
   destroy();
+}
+
+IceModelVec3::IceModelVec3() {
+  // empty
+}
+
+IceModelVec3::~IceModelVec3() {
+  // empty
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.

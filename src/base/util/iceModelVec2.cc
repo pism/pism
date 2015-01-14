@@ -38,10 +38,30 @@ namespace pism {
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
+IceModelVec2::IceModelVec2()
+  : IceModelVec() {
+  // empty
+}
+
+IceModelVec2V::~IceModelVec2V() {
+  // empty
+}
+
+IceModelVec2S::IceModelVec2S() {
+  begin_end_access_use_dof = false;
+}
+
+IceModelVec2Stag::IceModelVec2Stag()
+  : IceModelVec2() {
+  m_dof = 2;
+  begin_end_access_use_dof = true;
+}
+
 void  IceModelVec2S::create(const IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
   assert(m_v == NULL);
   IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof);
 }
+
 
 void IceModelVec2S::get_array(double** &a) {
   begin_access();
