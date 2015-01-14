@@ -968,9 +968,9 @@ void PIO::put_vec(const IceGrid *grid, const string &var_name,
 LocalInterpCtx* PIO::get_interp_context(const string &name,
                                         const IceGrid &grid,
                                         const vector<double> &zlevels) const {
-    grid_info gi(*this, name, grid.periodicity());
+  grid_info gi(*this, name, grid.periodicity());
 
-    return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
+  return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
 }
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
@@ -1001,8 +1001,17 @@ void PIO::regrid_vec(const IceGrid *grid, const string &var_name,
       get_vara_double(var_name, start, count, lic->a);
     }
 
-    regrid(grid, zlevels_out, lic.get(), result);
+    // interpolate
+    {
+      double *output_array = NULL;
+      PetscErrorCode ierr = VecGetArray(result, &output_array);
+      PISM_PETSC_CHK(ierr, "VecGetArray");
 
+      regrid(grid, zlevels_out, lic.get(), output_array);
+
+      ierr = VecRestoreArray(result, &output_array);
+      PISM_PETSC_CHK(ierr, "VecRestoreArray");
+    }
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
                   var_name.c_str(), inq_filename().c_str());
@@ -1063,7 +1072,17 @@ void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
       }
     }
 
-    regrid(grid, zlevels_out, lic.get(), result);
+    // interpolate
+    {
+      double *output_array = NULL;
+      PetscErrorCode ierr = VecGetArray(result, &output_array);
+      PISM_PETSC_CHK(ierr, "VecGetArray");
+
+      regrid(grid, zlevels_out, lic.get(), output_array);
+
+      ierr = VecRestoreArray(result, &output_array);
+      PISM_PETSC_CHK(ierr, "VecRestoreArray");
+    }
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
                   var_name.c_str(), inq_filename().c_str());
@@ -1096,13 +1115,19 @@ int PIO::k_below(double z, const vector<double> &zlevels) const {
  * - the definition of the input grid
  * - the definition of the output grid
  * - input array (lic->a)
- * - output array (Vec result)
+ * - output array (double *output_array)
  *
+ * The `output_array` is expected to be big enough to contain
+ * `grid.xm()*`grid.ym()*length(zlevels_out)` numbers.
+ * 
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
 void PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
-                 LocalInterpCtx *lic, Vec result) const {
+                 LocalInterpCtx *lic, double *output_array) const {
+  // We'll work with the raw storage here so that the array we are filling is
+  // indexed the same way as the buffer we are pulling from (input_array)
+
   const int Y = 2, Z = 3; // indices, just for clarity
 
   vector<double> &zlevels_in = lic->zlevels;
@@ -1110,14 +1135,9 @@ void PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
   double *input_array = lic->a;
 
   // array sizes for mapping from logical to "flat" indices
-  int y_count = lic->count[Y],
+  int
+    y_count = lic->count[Y],
     z_count = lic->count[Z];
-
-  // We'll work with the raw storage here so that the array we are filling is
-  // indexed the same way as the buffer we are pulling from (input_array)
-  double *output_array;
-  PetscErrorCode ierr = VecGetArray(result, &output_array);
-  PISM_PETSC_CHK(ierr, "VecGetArray");
 
   // NOTE: make sure that the traversal order is correct!
   for (Points p(*grid); p; p.next()) {
@@ -1196,9 +1216,6 @@ void PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
       // done with the point at (x,y,z)
     }
   }
-
-  ierr = VecRestoreArray(result, &output_array);
-  PISM_PETSC_CHK(ierr, "VecRestoreArray");
 }
 
 

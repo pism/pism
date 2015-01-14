@@ -216,7 +216,7 @@ private:
   int k_below(double z, const std::vector<double> &zlevels) const;
 
   void regrid(const IceGrid *grid, const std::vector<double> &zlevels_out,
-              LocalInterpCtx *lic, Vec g) const;
+              LocalInterpCtx *lic, double *output_array) const;
 
   void detect_mode(const std::string &filename);
 
