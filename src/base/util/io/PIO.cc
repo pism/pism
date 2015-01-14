@@ -99,8 +99,8 @@ static NCFile::Ptr create_backend(MPI_Comm com, string mode) {
 //! \brief The code shared by different PIO constructors.
 void PIO::constructor(MPI_Comm c, const string &mode) {
   m_com  = c;
-  m_mode = mode;
-  m_nc   = create_backend(m_com, m_mode);
+  m_backend_type = mode;
+  m_nc   = create_backend(m_com, m_backend_type);
 
   if (mode != "guess_mode" && not m_nc) {
     throw RuntimeError("failed to allocate an I/O backend (class PIO)");
@@ -125,7 +125,7 @@ PIO::PIO(const PIO &other)
   : m_unit_system(other.m_unit_system) {
   m_com  = other.m_com;
   m_nc   = other.m_nc;
-  m_mode = other.m_mode;
+  m_backend_type = other.m_backend_type;
 }
 
 PIO::~PIO() {
@@ -159,7 +159,7 @@ void PIO::detect_mode(const string &filename) {
     m_nc = create_backend(m_com, modes[j]);
 
     if (m_nc) {
-      m_mode = modes[j];
+      m_backend_type = modes[j];
       verbPrintf(3, m_com,
                  "  - Using the %s backend to read from %s...\n",
                  modes[j].c_str(), filename.c_str());
@@ -175,7 +175,7 @@ void PIO::detect_mode(const string &filename) {
 }
 
 std::string PIO::backend_type() const {
-  return m_mode;
+  return m_backend_type;
 }
 
 /**
@@ -258,7 +258,7 @@ void PIO::open(const string &filename, IO_Mode mode) {
   try {
 
     if (mode == PISM_READONLY || mode == PISM_READWRITE) {
-      if (not m_nc && m_mode == "guess_mode") {
+      if (not m_nc && m_backend_type == "guess_mode") {
         detect_mode(filename);
       }
     }
