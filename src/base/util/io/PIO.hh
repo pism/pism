@@ -26,18 +26,18 @@
 #include <vector>
 #include <string>
 
-#include "IceGrid.hh"           // Needed for Periodicity enum declaration.
 #include "PISMNCFile.hh"
 
 namespace pism {
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
-class grid_info;
+class IceGrid;
 class LocalInterpCtx;
 class NCVariable;
 class NCTimeseries;
 class NCTimeBounds;
+class Time;
 
 //! \brief High-level PISM I/O class.
 /*!
@@ -81,8 +81,6 @@ public:
   AxisType inq_dimtype(const std::string &name) const;
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
-
-  PetscErrorCode inq_grid(const std::string &var_name, IceGrid *grid, Periodicity periodicity) const;
 
   void inq_units(const std::string &name, bool &has_units, Unit &units) const;
 
@@ -222,26 +220,6 @@ private:
   void detect_mode(const std::string &filename);
 
   void constructor(MPI_Comm com, const std::string &mode);
-};
-
-//! \brief Contains parameters of an input file grid.
-class grid_info {
-public:
-  grid_info();
-  grid_info(const PIO &file, const std::string &variable, Periodicity p);
-
-  // dimension lengths
-  unsigned int t_len, x_len, y_len, z_len;
-  double time,                  //!< current time (seconds)
-    x0,                         //!< x-coordinate of the domain center
-    y0,                         //!< y-coordinate of the domain center
-    Lx,                         //!< domain half-width
-    Ly,                         //!< domain half-height
-    z_min,                      //!< minimal value of the z dimension
-    z_max;                      //!< maximal value of the z dimension
-  std::vector<double> x, y, z;       //!< coordinates
-private:
-  void reset();
 };
 
 } // end of namespace pism

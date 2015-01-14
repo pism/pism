@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #ifndef __grid_hh
 #define __grid_hh
 
-#include <petscdmda.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -28,6 +27,7 @@
 
 #include <cassert>
 
+#include "DM.hh"
 #include "pism_const.hh"
 
 namespace pism {
@@ -35,35 +35,33 @@ namespace pism {
 class Time;
 class Prof;
 class Config;
+class PIO;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 Periodicity string_to_periodicity(const std::string &keyword);
 SpacingType string_to_spacing(const std::string &keyword);
-/** Wrapper around PETSc's DM. Simplifies memory management.
- *
- * The constructor takes ownership of the dm argument passed to it.
- *
- * The destructor call DMDestroy().
- */
-class PISMDM {
-public:
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<PISMDM> Ptr;
-  typedef std::tr1::weak_ptr<PISMDM> WeakPtr;
-#else
-  typedef std::shared_ptr<PISMDM> Ptr;
-  typedef std::weak_ptr<PISMDM> WeakPtr;
-#endif
-  PISMDM(DM dm);
-  ~PISMDM();
-  DM get() const;
-  operator DM() const;
-private:
-  DM m_dm;
-};
 
+//! \brief Contains parameters of an input file grid.
+class grid_info {
+public:
+  grid_info();
+  grid_info(const PIO &file, const std::string &variable, Periodicity p);
+
+  // dimension lengths
+  unsigned int t_len, x_len, y_len, z_len;
+  double time,                  //!< current time (seconds)
+    x0,                         //!< x-coordinate of the domain center
+    y0,                         //!< y-coordinate of the domain center
+    Lx,                         //!< domain half-width
+    Ly,                         //!< domain half-height
+    z_min,                      //!< minimal value of the z dimension
+    z_max;                      //!< maximal value of the z dimension
+  std::vector<double> x, y, z;       //!< coordinates
+private:
+  void reset();
+};
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -162,6 +160,9 @@ public:
                     Periodicity p);
 
   static Ptr Create(MPI_Comm c, const Config &config);
+
+  static void FromFile(const PIO &file, const std::string var_name, Periodicity p,
+                       IceGrid *output);
 
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,
                            unsigned int Mx, unsigned int My, Periodicity p);

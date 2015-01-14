@@ -54,28 +54,6 @@ SpacingType string_to_spacing(const std::string &keyword) {
   }
 }
 
-PISMDM::PISMDM(DM dm) {
-  m_dm = dm;
-}
-
-PISMDM::~PISMDM() {
-  PetscErrorCode ierr = DMDestroy(&m_dm); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    // We can't do anything about this failure. We can't recover
-    // from it, and it is almost certainly caused by a programming
-    // error. So, we call abort().
-    abort();
-  }
-}
-
-DM PISMDM::get() const {
-  return m_dm;
-}
-
-PISMDM::operator DM() const {
-  return m_dm;
-}
-
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c) {
 
@@ -175,6 +153,46 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
 
   return result;
 }
+
+//! \brief Sets grid parameters using data read from the file.
+void IceGrid::FromFile(const PIO &file, const std::string var_name,
+                       Periodicity periodicity,
+                       IceGrid *output) {
+  try {
+    assert(output != NULL);
+
+    // The following call may fail because var_name does not exist. (And this is fatal!)
+    grid_info input(file, var_name, periodicity);
+
+    // if we have no vertical grid information, create a fake 2-level vertical grid.
+    if (input.z.size() < 2) {
+      double Lz = output->config.get("grid_Lz");
+      verbPrintf(3, output->com,
+                 "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
+                 "         Using 2 levels and Lz of %3.3fm\n",
+                 var_name.c_str(), file.inq_filename().c_str(), Lz);
+
+      input.z.clear();
+      input.z.push_back(0);
+      input.z.push_back(Lz);
+    }
+
+    output->set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
+                              input.x_len, input.y_len,
+                              periodicity);
+    output->set_vertical_levels(input.z);
+
+    output->time->set_start(input.time);
+    output->time->init(); // re-initialize to take the new start time into account
+
+    // We're ready to call output->allocate().
+  } catch (RuntimeError &e) {
+    e.add_context("initializing computational grid from \"%s\"",
+                  file.inq_filename().c_str());
+    throw;
+  }
+}
+
 
 /**
  * Select a calendar using the "calendar" configuration parameter, the
@@ -961,6 +979,120 @@ double IceGrid::y0() const {
 //! \brief Returns the distance from the point (i,j) to the origin.
 double radius(const IceGrid &grid, int i, int j) {
   return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
+}
+
+// grid_info
+
+void grid_info::reset() {
+
+  t_len = 0;
+  time  = 0;
+
+  x_len = 0;
+  x0    = 0;
+  Lx    = 0;
+
+  y_len = 0;
+  y0    = 0;
+  Ly    = 0;
+
+  z_len = 0;
+  z_min = 0;
+  z_max = 0;
+}
+
+grid_info::grid_info() {
+  reset();
+}
+
+grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p) {
+  try {
+    bool exists, found_by_standard_name;
+    std::string name_found;
+
+    reset();
+
+    // try "variable" as the standard_name first, then as the short name:
+    file.inq_var(variable, variable, exists, name_found, found_by_standard_name);
+
+    if (exists == false) {
+      throw RuntimeError::formatted("variable \"%s\" is missing", variable.c_str());
+    }
+
+    std::vector<std::string> dims = file.inq_vardims(name_found);
+
+    // use "global" dimensions (as opposed to dimensions of a patch)
+    if (file.backend_type() == "quilt") {
+      for (unsigned int i = 0; i < dims.size(); ++i) {
+        if (dims[i] == "x_patch") {
+          dims[i] = "x";
+        }
+
+        if (dims[i] == "y_patch") {
+          dims[i] = "y";
+        }
+      }
+    }
+
+    for (unsigned int i = 0; i < dims.size(); ++i) {
+      std::string dimname = dims[i];
+
+      AxisType dimtype = file.inq_dimtype(dimname);
+
+      switch (dimtype) {
+      case X_AXIS:
+        {
+          this->x_len = file.inq_dimlen(dimname);
+          double x_min = 0.0, x_max = 0.0;
+          file.inq_dim_limits(dimname, &x_min, &x_max);
+          file.get_dim(dimname, this->x);
+          this->x0 = 0.5 * (x_min + x_max);
+          this->Lx = 0.5 * (x_max - x_min);
+          if (p & X_PERIODIC) {
+            const double dx = this->x[1] - this->x[0];
+            this->Lx += 0.5 * dx;
+          }
+          break;
+        }
+      case Y_AXIS:
+        {
+          this->y_len = file.inq_dimlen(dimname);
+          double y_min = 0.0, y_max = 0.0;
+          file.inq_dim_limits(dimname, &y_min, &y_max);
+          file.get_dim(dimname, this->y);
+          this->y0 = 0.5 * (y_min + y_max);
+          this->Ly = 0.5 * (y_max - y_min);
+          if (p & Y_PERIODIC) {
+            const double dy = this->y[1] - this->y[0];
+            this->Ly += 0.5 * dy;
+          }
+          break;
+        }
+      case Z_AXIS:
+        {
+          this->z_len = file.inq_dimlen(dimname);
+          file.inq_dim_limits(dimname, &this->z_min, &this->z_max);
+          file.get_dim(dimname, this->z);
+          break;
+        }
+      case T_AXIS:
+        {
+          this->t_len = file.inq_dimlen(dimname);
+          file.inq_dim_limits(dimname, NULL, &this->time);
+          break;
+        }
+      default:
+        {
+          throw RuntimeError::formatted("can't figure out which direction dimension '%s' corresponds to.",
+                                        dimname.c_str());
+        }
+      } // switch
+    }   // for loop
+  } catch (RuntimeError &e) {
+    e.add_context("getting grid information using variable '%s' in '%s'", variable.c_str(),
+                  file.inq_filename().c_str());
+    throw;
+  }
 }
 
 } // end of namespace pism

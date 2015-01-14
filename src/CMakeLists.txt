@@ -33,8 +33,8 @@ set(PISMUTIL_SRC
   base/util/Context.cc
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
-  base/util/IceGrid.cc
   base/util/ColumnInterpolation.cc
+  base/util/DM.cc
   base/util/Viewer.cc
   base/util/Mask.cc
   base/util/NCVariable.cc
