@@ -77,10 +77,10 @@ protected:
   virtual void massContExplicitStep();
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<Vector2> input_velocity,
-                                     planeStar<double> input_flux,
-                                     planeStar<double> &output_velocity,
-                                     planeStar<double> &output_flux);
+                                     StarStencil<Vector2> input_velocity,
+                                     StarStencil<double> input_flux,
+                                     StarStencil<double> &output_velocity,
+                                     StarStencil<double> &output_flux);
   virtual void enthalpyAndDrainageStep(double* vertSacrCount,
                                                  double* liquifiedVol,
                                                  double* bulgeCount);
@@ -341,10 +341,10 @@ void IceRegionalModel::massContExplicitStep() {
 
 void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
                                              int i, int j,
-                                             planeStar<Vector2> input_velocity,
-                                             planeStar<double> input_flux,
-                                             planeStar<double> &output_velocity,
-                                             planeStar<double> &output_flux) {
+                                             StarStencil<Vector2> input_velocity,
+                                             StarStencil<double> input_flux,
+                                             StarStencil<double> &output_velocity,
+                                             StarStencil<double> &output_flux) {
 
   IceModel::cell_interface_fluxes(dirichlet_bc, i, j,
                                   input_velocity,
@@ -352,7 +352,7 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
                                   output_velocity,
                                   output_flux);
 
-  planeStar<int> nmm = no_model_mask.int_star(i,j);
+  StarStencil<int> nmm = no_model_mask.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
 
   for (int n = 0; n < 4; ++n) {

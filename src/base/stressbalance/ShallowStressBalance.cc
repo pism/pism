@@ -194,8 +194,8 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
       continue;
     }
 
-    planeStar<int> m = mask.int_star(i,j);
-    planeStar<Vector2> U = velocity.star(i,j);
+    StarStencil<int> m = mask.int_star(i,j);
+    StarStencil<Vector2> U = velocity.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
@@ -281,8 +281,8 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
       continue;
     }
 
-    planeStar<int> m = mask.int_star(i,j);
-    planeStar<Vector2> U = velocity.star(i,j);
+    StarStencil<int> m = mask.int_star(i,j);
+    StarStencil<Vector2> U = velocity.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,

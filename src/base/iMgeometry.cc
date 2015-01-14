@@ -163,9 +163,9 @@ void IceModel::update_surface_elevation(const IceModelVec2S &bed,
  * @param[in,out] SSA_velocity SSA velocity to be adjusted
  * @param[in,out] SIA_flux SIA flux to be adjusted
  */
-void IceModel::adjust_flow(planeStar<int> mask,
-                           planeStar<double> &SSA_velocity,
-                           planeStar<double> &SIA_flux) {
+void IceModel::adjust_flow(StarStencil<int> mask,
+                           StarStencil<double> &SSA_velocity,
+                           StarStencil<double> &SIA_flux) {
 
   // Prepare to loop over neighbors:
   // directions
@@ -302,16 +302,16 @@ void IceModel::adjust_flow(planeStar<int> mask,
  */
 void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<Vector2> in_SSA_velocity,
-                                     planeStar<double> in_SIA_flux,
-                                     planeStar<double> &out_SSA_velocity,
-                                     planeStar<double> &out_SIA_flux) {
+                                     StarStencil<Vector2> in_SSA_velocity,
+                                     StarStencil<double> in_SIA_flux,
+                                     StarStencil<double> &out_SSA_velocity,
+                                     StarStencil<double> &out_SIA_flux) {
 
-  planeStar<int> mask = vMask.int_star(i,j);
+  StarStencil<int> mask = vMask.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
 
-  planeStar<int> bc_mask;
-  planeStar<Vector2> bc_velocity;
+  StarStencil<int> bc_mask;
+  StarStencil<Vector2> bc_velocity;
   if (dirichlet_bc) {
     bc_mask = vBCMask.int_star(i,j);
     bc_velocity = vBCvel.star(i,j);
@@ -621,7 +621,7 @@ void IceModel::massContExplicitStep() {
       my_basal_melt_rate = basal_melt_rate(i, j);
     }
 
-    planeStar<double> Q, v;
+    StarStencil<double> Q, v;
     cell_interface_fluxes(dirichlet_bc, i, j,
                           vel_advective->star(i, j), Qdiff->star(i, j),
                           v, Q);

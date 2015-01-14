@@ -10,6 +10,8 @@ using pism::Profiling;
 using pism::Vars;
 using pism::Unit;
 using pism::UnitSystem;
+using pism::Vector2;
+using pism::StarStencil;
 %}
 
 %Pism_pointer_reference_is_always_output(pism::IceModelVec2S)
@@ -148,3 +150,4 @@ using pism::UnitSystem;
 
 %ignore pism::planeStar::operator[];
 %include "iceModelVec.hh"
+%include "Vector2.hh"

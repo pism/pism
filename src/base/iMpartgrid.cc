@@ -34,9 +34,9 @@ namespace pism {
 
 //! @brief Compute threshold thickness used when deciding if a
 //! partially-filled cell should be considered 'full'.
-double IceModel::get_threshold_thickness(planeStar<int> M,
-                                            planeStar<double> H,
-                                            planeStar<double> h,
+double IceModel::get_threshold_thickness(StarStencil<int> M,
+                                            StarStencil<double> H,
+                                            StarStencil<double> h,
                                             double bed_elevation,
                                             bool reduce_frontal_thickness) {
   // get mean ice thickness and surface elevation over adjacent
@@ -155,9 +155,9 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         continue;
       }
 
-      planeStar<int> m = vMask.int_star(i,j);
+      StarStencil<int> m = vMask.int_star(i,j);
       int N = 0; // number of empty or partially filled neighbors
-      planeStar<bool> neighbors;
+      StarStencil<bool> neighbors;
       neighbors.set(false);
 
       if (mask::ice_free_ocean(m.e)) {

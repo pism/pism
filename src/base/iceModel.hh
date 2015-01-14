@@ -349,13 +349,13 @@ protected:
                                         IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<Vector2> input_velocity,
-                                     planeStar<double> input_flux,
-                                     planeStar<double> &output_velocity,
-                                     planeStar<double> &output_flux);
-  virtual void adjust_flow(planeStar<int> mask,
-                           planeStar<double> &SSA_velocity,
-                           planeStar<double> &SIA_flux);
+                                     StarStencil<Vector2> input_velocity,
+                                     StarStencil<double> input_flux,
+                                     StarStencil<double> &output_velocity,
+                                     StarStencil<double> &output_flux);
+  virtual void adjust_flow(StarStencil<int> mask,
+                           StarStencil<double> &SSA_velocity,
+                           StarStencil<double> &SIA_flux);
   virtual void massContExplicitStep();
   virtual void update_floatation_mask();
   virtual void do_calving();
@@ -376,9 +376,9 @@ protected:
   virtual void calculateFractureDensity();
 
   // see iMpartgrid.cc
-  double get_threshold_thickness(planeStar<int> Mask,
-                                 planeStar<double> thickness,
-                                 planeStar<double> surface_elevation,
+  double get_threshold_thickness(StarStencil<int> Mask,
+                                 StarStencil<double> thickness,
+                                 StarStencil<double> surface_elevation,
                                  double bed_elevation,
                                  bool reduce_frontal_thickness);
   virtual void residual_redistribution(IceModelVec2S &residual);

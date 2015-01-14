@@ -53,7 +53,7 @@ inline const double& IceModelVec2S::operator()(int i, int j) const {
   return static_cast<double**>(array)[i][j];
 }
 
-inline planeStar<double> IceModelVec2S::star(int i, int j) {
+inline StarStencil<double> IceModelVec2S::star(int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
   check_array_indices(i+1, j, 0);
@@ -61,7 +61,7 @@ inline planeStar<double> IceModelVec2S::star(int i, int j) {
   check_array_indices(i, j+1, 0);
   check_array_indices(i, j-1, 0);
 #endif
-  planeStar<double> result;
+  StarStencil<double> result;
 
   result.ij = operator()(i,j);
   result.e =  operator()(i+1,j);
@@ -72,7 +72,7 @@ inline planeStar<double> IceModelVec2S::star(int i, int j) {
   return result;
 }
 
-inline planeStar<double> IceModelVec2Stag::star(int i, int j) const {
+inline StarStencil<double> IceModelVec2Stag::star(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
   check_array_indices(i+1, j, 0);
@@ -80,7 +80,7 @@ inline planeStar<double> IceModelVec2Stag::star(int i, int j) const {
   check_array_indices(i, j+1, 0);
   check_array_indices(i, j-1, 0);
 #endif
-  planeStar<double> result;
+  StarStencil<double> result;
 
   result.ij = 0.0;             // has no meaning in this context
   result.e =  operator()(i, j, 0);
@@ -99,7 +99,7 @@ inline int IceModelVec2Int::as_int(int i, int j) const {
   return static_cast<int>(floor(a[i][j] + 0.5));
 }
 
-inline planeStar<int> IceModelVec2Int::int_star(int i, int j) const {
+inline StarStencil<int> IceModelVec2Int::int_star(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
   check_array_indices(i+1, j, 0);
@@ -108,7 +108,7 @@ inline planeStar<int> IceModelVec2Int::int_star(int i, int j) const {
   check_array_indices(i, j-1, 0);
 #endif
 
-  planeStar<int> result;
+  StarStencil<int> result;
   result.ij = as_int(i,j);
   result.e =  as_int(i+1,j);
   result.w =  as_int(i-1,j);
@@ -133,7 +133,7 @@ inline const Vector2& IceModelVec2V::operator()(int i, int j) const {
   return static_cast<Vector2**>(array)[i][j];
 }
 
-inline planeStar<Vector2> IceModelVec2V::star(int i, int j) const {
+inline StarStencil<Vector2> IceModelVec2V::star(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
   check_array_indices(i+1, j, 0);
@@ -141,7 +141,7 @@ inline planeStar<Vector2> IceModelVec2V::star(int i, int j) const {
   check_array_indices(i, j+1, 0);
   check_array_indices(i, j-1, 0);
 #endif
-  planeStar<Vector2> result;
+  StarStencil<Vector2> result;
 
   result.ij = operator()(i,j);
   result.e =  operator()(i+1,j);

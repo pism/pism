@@ -28,6 +28,8 @@
 
 #include "IceGrid.hh"
 #include "Viewer.hh"
+#include "Vector2.hh"
+#include "StarStencil.hh"
 
 namespace pism {
 
@@ -302,33 +304,6 @@ public:
   };
 };
 
-enum Direction {North = 0, East, South, West};
-
-//! \brief Star stencil points (in the map-plane).
-template <typename T>
-struct planeStar {
-  T ij, e, w, n, s;
-  void set(T input) {
-    ij = e = w = n = s = input;
-  }
-
-  //! Get the element corresponding to a given direction.
-  //! Use foo.ij to get the value at i,j (center of the star).
-  inline T& operator[](Direction direction) {
-    switch (direction) {
-    default:                    // just to silence the warning
-    case North:
-      return n;
-    case East:
-      return e;
-    case South:
-      return s;
-    case West:
-      return w;
-    }
-  }
-};
-
 class IceModelVec2S;
 
 /** Class for a 2d DA-based Vec.
@@ -405,7 +380,7 @@ public:
   */
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
-  inline planeStar<double> star(int i, int j);
+  inline StarStencil<double> star(int i, int j);
 };
 
 
@@ -423,77 +398,7 @@ public:
 #endif
 
   inline int as_int(int i, int j) const;
-  inline planeStar<int> int_star(int i, int j) const;
-};
-
-//! \brief A class representing a horizontal velocity at a certain grid point.
-class Vector2 {
-public:
-  Vector2() : u(0), v(0) {}
-  Vector2(double a, double b) : u(a), v(b) {}
-
-  //! Magnitude squared.
-  inline double magnitude_squared() const {
-    return u*u + v*v;
-  }
-  //! Magnitude.
-  inline double magnitude() const {
-    return sqrt(magnitude_squared());
-  }
-
-  inline Vector2& operator=(const Vector2 &other) {
-    // NOTE: we don't check for self-assignment because there is no memory
-    // (de-)allocation here.
-    u = other.u;
-    v = other.v;
-    return *this;
-  }
-
-  inline Vector2& operator+=(const Vector2 &other) {
-    u += other.u;
-    v += other.v;
-    return *this;
-  }
-
-  inline Vector2& operator-=(const Vector2 &other) {
-    u -= other.u;
-    v -= other.v;
-    return *this;
-  }
-
-  inline Vector2& operator*=(const double &a) {
-    u *= a;
-    v *= a;
-    return *this;
-  }
-
-  inline Vector2& operator/=(const double &a) {
-    u /= a;
-    v /= a;
-    return *this;
-  }
-
-  //! \brief Adds two vectors.
-  inline Vector2 operator+(const Vector2 &other) const {
-    return Vector2(u + other.u, v + other.v);
-  }
-
-  //! \brief Substracts two vectors.
-  inline Vector2 operator-(const Vector2 &other) const {
-    return Vector2(u - other.u, v - other.v);
-  }
-
-  //! \brief Scales a vector.
-  inline Vector2 operator*(const double &a) const {
-    return Vector2(u * a, v * a);
-  }
-
-  //! \brief Scales a vector.
-  inline Vector2 operator/(const double &a) const {
-    return Vector2(u / a, v / a);
-  }
-
-  double u, v;
+  inline StarStencil<int> int_star(int i, int j) const;
 };
 
 /** Class for storing and accessing 2D vector fields used in IceModel.
@@ -524,7 +429,7 @@ public:
   virtual void magnitude(IceModelVec2S &result) const;
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
-  inline planeStar<Vector2> star(int i, int j) const;
+  inline StarStencil<Vector2> star(int i, int j) const;
   // Metadata, etc:
   virtual void set_name(const std::string &name, int component = 0);
   virtual void rename(const std::string &short_name, const std::string &long_name,
@@ -541,8 +446,8 @@ class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag();
   using IceModelVec2::create;
-  virtual void create(const IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
-                      unsigned int stencil_width = 1);
+  virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
+                      IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
   virtual void absmaxcomponents(double* z) const;
@@ -551,7 +456,7 @@ public:
   /*! The ij member of the return value is set to 0, since it has no meaning in
     this context.
   */
-  inline planeStar<double> star(int i, int j) const;
+  inline StarStencil<double> star(int i, int j) const;
 };
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
@@ -560,14 +465,13 @@ class IceModelVec3D : public IceModelVec {
 public:
   IceModelVec3D();
   virtual ~IceModelVec3D();
-public:
 
   void  setColumn(int i, int j, double c);
   void  setInternalColumn(int i, int j, double *valsIN);
   void  getInternalColumn(int i, int j, double **valsOUT);
   void  getInternalColumn(int i, int j, const double **valsOUT) const;
 
-  virtual double    getValZ(int i, int j, double z) const;
+  virtual double getValZ(int i, int j, double z) const;
   virtual bool isLegalLevel(double z) const;
 
   inline double& operator() (int i, int j, int k);
