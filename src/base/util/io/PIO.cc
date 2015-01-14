@@ -844,11 +844,9 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
  *
  * Vec result has to be "global" (i.e. without ghosts).
  */
-PetscErrorCode PIO::get_vec(const IceGrid *grid, const string &var_name,
-                            unsigned int z_count, unsigned int t_start, Vec result) const {
+void PIO::get_vec(const IceGrid *grid, const string &var_name,
+                  unsigned int z_count, unsigned int t_start, Vec result) const {
   try {
-    PetscErrorCode ierr;
-
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
@@ -859,7 +857,7 @@ PetscErrorCode PIO::get_vec(const IceGrid *grid, const string &var_name,
                             start, count, imap);
 
     double *a_petsc;
-    ierr = VecGetArray(result, &a_petsc);
+    PetscErrorCode ierr = VecGetArray(result, &a_petsc);
     PISM_PETSC_CHK(ierr, "VecGetArray");
 
     bool mapped_io = true;
@@ -877,7 +875,6 @@ PetscErrorCode PIO::get_vec(const IceGrid *grid, const string &var_name,
     e.add_context("reading variable '%s' from '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
-  return 0;
 }
 
 unsigned int PIO::inq_nattrs(const string &var_name) const {
@@ -924,10 +921,9 @@ IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
  *
  * This method always writes to the last record in the file.
  */
-PetscErrorCode PIO::put_vec(const IceGrid *grid, const string &var_name, unsigned int z_count, Vec input) const {
+void PIO::put_vec(const IceGrid *grid, const string &var_name,
+                  unsigned int z_count, Vec input) const {
   try {
-    PetscErrorCode ierr;
-
     unsigned int t_length;
     m_nc->inq_dimlen(grid->config.get_string("time_dimension_name"), t_length);
 
@@ -943,7 +939,7 @@ PetscErrorCode PIO::put_vec(const IceGrid *grid, const string &var_name, unsigne
                             start, count, imap);
 
     double *a_petsc;
-    ierr = VecGetArray(input, &a_petsc);
+    PetscErrorCode ierr = VecGetArray(input, &a_petsc);
     PISM_PETSC_CHK(ierr, "VecGetArray");
 
     if (grid->config.get_string("output_variable_order") == "xyz") {
@@ -961,7 +957,6 @@ PetscErrorCode PIO::put_vec(const IceGrid *grid, const string &var_name, unsigne
     e.add_context("writing variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
-  return 0;
 }
 
 //! \brief Get the interpolation context (grid information) for an input file.
@@ -1112,10 +1107,9 @@ int PIO::k_below(double z, const vector<double> &zlevels) const {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-PetscErrorCode PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
-                           LocalInterpCtx *lic, Vec result) const {
+void PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
+                 LocalInterpCtx *lic, Vec result) const {
   const int Y = 2, Z = 3; // indices, just for clarity
-  PetscErrorCode ierr;
 
   vector<double> &zlevels_in = lic->zlevels;
   unsigned int nlevels = zlevels_out.size();
@@ -1128,7 +1122,7 @@ PetscErrorCode PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_ou
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
   double *output_array;
-  ierr = VecGetArray(result, &output_array);
+  PetscErrorCode ierr = VecGetArray(result, &output_array);
   PISM_PETSC_CHK(ierr, "VecGetArray");
 
   // NOTE: make sure that the traversal order is correct!
@@ -1211,8 +1205,6 @@ PetscErrorCode PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_ou
 
   ierr = VecRestoreArray(result, &output_array);
   PISM_PETSC_CHK(ierr, "VecRestoreArray");
-
-  return 0;
 }
 
 

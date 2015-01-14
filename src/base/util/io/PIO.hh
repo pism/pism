@@ -122,10 +122,11 @@ public:
 
   std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
 
-  PetscErrorCode get_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count,
-                         unsigned int t, Vec g) const;
+  void get_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count,
+               unsigned int t, Vec g) const;
 
-  PetscErrorCode put_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count, Vec g) const;
+  void put_vec(const IceGrid *grid, const std::string &var_name,
+               unsigned int z_count, Vec g) const;
 
   void regrid_vec(const IceGrid *grid, const std::string &var_name,
                   const std::vector<double> &zlevels_out,
@@ -214,8 +215,8 @@ private:
 
   int k_below(double z, const std::vector<double> &zlevels) const;
 
-  PetscErrorCode regrid(const IceGrid *grid, const std::vector<double> &zlevels_out,
-                        LocalInterpCtx *lic, Vec g) const;
+  void regrid(const IceGrid *grid, const std::vector<double> &zlevels_out,
+              LocalInterpCtx *lic, Vec g) const;
 
   void detect_mode(const std::string &filename);
 
