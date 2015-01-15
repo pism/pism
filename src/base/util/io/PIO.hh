@@ -21,7 +21,6 @@
 
 #include "PISMUnits.hh"
 
-#include <petscvec.h>
 #include <map>
 #include <vector>
 #include <string>
@@ -123,20 +122,20 @@ public:
   std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
 
   void get_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count,
-               unsigned int t, Vec g) const;
+               unsigned int t, double *output) const;
 
   void put_vec(const IceGrid *grid, const std::string &var_name,
-               unsigned int z_count, Vec g) const;
+               unsigned int z_count, const double *input) const;
 
   void regrid_vec(const IceGrid *grid, const std::string &var_name,
                   const std::vector<double> &zlevels_out,
-                  unsigned int t_start, Vec g) const;
+                  unsigned int t_start, double *output) const;
 
   void regrid_vec_fill_missing(const IceGrid *grid, const std::string &var_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
                                double default_value,
-                               Vec g) const ;
+                               double *output) const ;
 
   void get_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
@@ -146,7 +145,7 @@ public:
   void put_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
-                       double *op) const;
+                       const double *op) const;
 
   void get_varm_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
@@ -156,7 +155,8 @@ public:
   void put_varm_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap, double *op) const;
+                       const std::vector<unsigned int> &imap,
+                       const double *op) const;
 
   void set_local_extent(unsigned int xs, unsigned int xm,
                         unsigned int ys, unsigned int ym);

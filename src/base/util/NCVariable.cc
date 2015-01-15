@@ -266,8 +266,19 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
     }
   }
 
-  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
-  nc.get_vec(m_grid, name_found, nlevels, time, v);
+  // make sure we have at least one level
+  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1);
+
+  {
+    double *output_array = NULL;
+    PetscErrorCode ierr = VecGetArray(v, &output_array);
+    PISM_PETSC_CHK(ierr, "VecGetArray");
+
+    nc.get_vec(m_grid, name_found, nlevels, time, output_array);
+
+    ierr = VecRestoreArray(v, &output_array);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray");
+  }
 
   bool input_has_units;
   Unit input_units(get_units().get_system(), "1");
@@ -315,8 +326,18 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
 
   // Actually write data:
   unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
-  nc.put_vec(m_grid, name_found, nlevels, v);
 
+  {
+    double *input_array = NULL;
+    PetscErrorCode ierr = VecGetArray(v, &input_array);
+    PISM_PETSC_CHK(ierr, "VecGetArray");
+
+    nc.put_vec(m_grid, name_found, nlevels, input_array);
+
+    ierr = VecRestoreArray(v, &input_array);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray");
+  }
+  
   if (write_in_glaciological_units) {
     convert_vec(v, get_glaciological_units(), get_units()); // restore the units
   }
@@ -358,17 +379,26 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 
   if (exists == true) {                      // the variable was found successfully
 
-    if (flag == OPTIONAL_FILL_MISSING ||
-        flag == CRITICAL_FILL_MISSING) {
-      verbPrintf(2, m_com,
-                 "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-                 default_value, get_string("units").c_str(), get_name().c_str(),
-                 nc.inq_filename().c_str());
+    {
+      double *output_array = NULL;
+      ierr = VecGetArray(v, &output_array);
+      PISM_PETSC_CHK(ierr, "VecGetArray");
 
-      nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
-                                 t_start, default_value, v);
-    } else {
-      nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, v);
+      if (flag == OPTIONAL_FILL_MISSING ||
+          flag == CRITICAL_FILL_MISSING) {
+        verbPrintf(2, m_com,
+                   "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+                   default_value, get_string("units").c_str(), get_name().c_str(),
+                   nc.inq_filename().c_str());
+
+        nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
+                                   t_start, default_value, output_array);
+      } else {
+        nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, output_array);
+      }
+
+      ierr = VecRestoreArray(v, &output_array);
+      PISM_PETSC_CHK(ierr, "VecRestoreArray");
     }
 
     // Now we need to get the units string from the file and convert the units,

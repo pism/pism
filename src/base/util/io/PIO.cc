@@ -838,14 +838,9 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
   }
 }
 
-//! \brief Read a PETSc Vec using the grid "grid".
-/*!
- * Assumes that double corresponds to C++ double.
- *
- * Vec result has to be "global" (i.e. without ghosts).
- */
+//! \brief Read an array distributed according to the grid.
 void PIO::get_vec(const IceGrid *grid, const string &var_name,
-                  unsigned int z_count, unsigned int t_start, Vec result) const {
+                  unsigned int z_count, unsigned int t_start, double *output) const {
   try {
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
@@ -856,20 +851,13 @@ void PIO::get_vec(const IceGrid *grid, const string &var_name,
                             0, z_count,
                             start, count, imap);
 
-    double *a_petsc;
-    PetscErrorCode ierr = VecGetArray(result, &a_petsc);
-    PISM_PETSC_CHK(ierr, "VecGetArray");
-
     bool mapped_io = true;
     use_mapped_io(var_name, mapped_io);
     if (mapped_io == true) {
-      get_varm_double(var_name, start, count, imap, (double*)a_petsc);
+      get_varm_double(var_name, start, count, imap, output);
     } else {
-      get_vara_double(var_name, start, count, (double*)a_petsc);
+      get_vara_double(var_name, start, count, output);
     }
-
-    ierr = VecRestoreArray(result, &a_petsc);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", var_name.c_str(), inq_filename().c_str());
@@ -913,16 +901,12 @@ IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
 }
 
 
-//! \brief Write a PETSc Vec using the grid "grid".
+//! \brief Write an array distributed according to the grid.
 /*!
- * Assumes that double corresponds to C++ double.
- *
- * Vec input has to be "global" (i.e. without ghosts).
- *
  * This method always writes to the last record in the file.
  */
 void PIO::put_vec(const IceGrid *grid, const string &var_name,
-                  unsigned int z_count, Vec input) const {
+                  unsigned int z_count, const double *input) const {
   try {
     unsigned int t_length;
     m_nc->inq_dimlen(grid->config.get_string("time_dimension_name"), t_length);
@@ -938,21 +922,15 @@ void PIO::put_vec(const IceGrid *grid, const string &var_name,
                             0, z_count,
                             start, count, imap);
 
-    double *a_petsc;
-    PetscErrorCode ierr = VecGetArray(input, &a_petsc);
-    PISM_PETSC_CHK(ierr, "VecGetArray");
-
     if (grid->config.get_string("output_variable_order") == "xyz") {
       // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
       // orders in the memory and in NetCDF files are the same.
-      put_vara_double(var_name, start, count, (double*)a_petsc);
+      put_vara_double(var_name, start, count, input);
     } else {
       // Revert to "mapped" I/O otherwise.
-      put_varm_double(var_name, start, count, imap, (double*)a_petsc);
+      put_varm_double(var_name, start, count, imap, input);
     }
 
-    ierr = VecRestoreArray(input, &a_petsc);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray");
   } catch (RuntimeError &e) {
     e.add_context("writing variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
@@ -977,7 +955,7 @@ LocalInterpCtx* PIO::get_interp_context(const string &name,
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
 void PIO::regrid_vec(const IceGrid *grid, const string &var_name,
                      const vector<double> &zlevels_out,
-                     unsigned int t_start, Vec result) const {
+                     unsigned int t_start, double *output) const {
   try {
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
@@ -1002,16 +980,7 @@ void PIO::regrid_vec(const IceGrid *grid, const string &var_name,
     }
 
     // interpolate
-    {
-      double *output_array = NULL;
-      PetscErrorCode ierr = VecGetArray(result, &output_array);
-      PISM_PETSC_CHK(ierr, "VecGetArray");
-
-      regrid(grid, zlevels_out, lic.get(), output_array);
-
-      ierr = VecRestoreArray(result, &output_array);
-      PISM_PETSC_CHK(ierr, "VecRestoreArray");
-    }
+    regrid(grid, zlevels_out, lic.get(), output);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
                   var_name.c_str(), inq_filename().c_str());
@@ -1032,7 +1001,7 @@ void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
                                   const vector<double> &zlevels_out,
                                   unsigned int t_start,
                                   double default_value,
-                                  Vec result) const {
+                                  double *output) const {
   try {
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
@@ -1073,16 +1042,7 @@ void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
     }
 
     // interpolate
-    {
-      double *output_array = NULL;
-      PetscErrorCode ierr = VecGetArray(result, &output_array);
-      PISM_PETSC_CHK(ierr, "VecGetArray");
-
-      regrid(grid, zlevels_out, lic.get(), output_array);
-
-      ierr = VecRestoreArray(result, &output_array);
-      PISM_PETSC_CHK(ierr, "VecRestoreArray");
-    }
+    regrid(grid, zlevels_out, lic.get(), output);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
                   var_name.c_str(), inq_filename().c_str());
@@ -1293,7 +1253,7 @@ void PIO::get_vara_double(const string &variable_name,
 void PIO::put_vara_double(const string &variable_name,
                           const vector<unsigned int> &start,
                           const vector<unsigned int> &count,
-                          double *op) const {
+                          const double *op) const {
   try {
     m_nc->enddef();
     m_nc->put_vara_double(variable_name, start, count, op);
@@ -1320,7 +1280,8 @@ void PIO::get_varm_double(const string &variable_name,
 void PIO::put_varm_double(const string &variable_name,
                           const vector<unsigned int> &start,
                           const vector<unsigned int> &count,
-                          const vector<unsigned int> &imap, double *op) const {
+                          const vector<unsigned int> &imap,
+                          const double *op) const {
   try {
     m_nc->enddef();
     m_nc->put_varm_double(variable_name, start, count, imap, op);
