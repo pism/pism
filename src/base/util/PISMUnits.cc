@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,9 +18,6 @@
  */
 
 #include "PISMUnits.hh"
-#include <gsl/gsl_math.h>       // GSL_NAN
-#include <petscsys.h>
-#include <cstdio>
 
 #include <error_handling.hh>
 
@@ -169,25 +166,6 @@ double UnitConverter::operator()(double input) const {
 
 void UnitConverter::convert_doubles(double *data, size_t length) const {
   cv_convert_doubles(m_converter, data, length, data);
-}
-
-PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
-  PetscErrorCode ierr;
-
-  UnitConverter c(from, to);
-
-  PetscInt data_size = 0;
-  ierr = VecGetLocalSize(v, &data_size);
-  PISM_PETSC_CHK(ierr, "VecGetLocalSize");
-
-  double *data = NULL;
-  ierr = VecGetArray(v, &data);
-  PISM_PETSC_CHK(ierr, "VecGetArray");
-  c.convert_doubles(data, data_size);
-  ierr = VecRestoreArray(v, &data);
-  PISM_PETSC_CHK(ierr, "VecRestoreArray");
-
-  return 0;
 }
 
 void convert_doubles(double *data, size_t data_size,

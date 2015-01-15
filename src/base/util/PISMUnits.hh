@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,6 @@
 
 #include <udunits2.h>
 #include <string>
-#include <petscvec.h>
 
 #ifdef PISM_USE_TR1
 #include <tr1/memory>
@@ -113,17 +112,6 @@ private:
   UnitConverter(const UnitConverter &);
   UnitConverter& operator=(UnitConverter const &);
 };
-
-/**
- * Convert a PETSc Vec from the units in `from` into units in `to` (in place).
- *
- * @param[in,out] v data
- * @param[in] from source units
- * @param[in] to destination units
- *
- * @return 0 on success
- */
-PetscErrorCode convert_vec(Vec v, Unit from, Unit to);
 
 /** Convert an array of doubles from units in `from` into units int `to` (in place).
  * 
