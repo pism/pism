@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,8 +18,6 @@
 
 #ifndef __enthalpyConverter_hh
 #define __enthalpyConverter_hh
-
-#include <petscsys.h>
 
 namespace pism {
 
