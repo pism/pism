@@ -23,7 +23,8 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <petscsys.h>
+#include <petscvec.h>
+
 #include "PISMUnits.hh"
 #include "PIO.hh"
 
