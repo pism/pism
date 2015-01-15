@@ -966,4 +966,23 @@ void IceModelVec::AccessList::add(const IceModelVec &vec) {
   m_vecs.push_back(&vec);
 }
 
+void convert_vec(Vec v, Unit from, Unit to) {
+  PetscErrorCode ierr;
+
+  UnitConverter c(from, to);
+
+  PetscInt data_size = 0;
+  ierr = VecGetLocalSize(v, &data_size);
+  PISM_PETSC_CHK(ierr, "VecGetLocalSize");
+
+  double *data = NULL;
+  ierr = VecGetArray(v, &data);
+  PISM_PETSC_CHK(ierr, "VecGetArray");
+
+  c.convert_doubles(data, data_size);
+
+  ierr = VecRestoreArray(v, &data);
+  PISM_PETSC_CHK(ierr, "VecRestoreArray");
+}
+
 } // end of namespace pism

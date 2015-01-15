@@ -507,6 +507,15 @@ public:
   void  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
 };
 
+/**
+ * Convert a PETSc Vec from the units in `from` into units in `to` (in place).
+ *
+ * @param[in,out] v data
+ * @param[in] from source units
+ * @param[in] to destination units
+ */
+void convert_vec(Vec v, Unit from, Unit to);
+
 } // end of namespace pism
 
 // include inline methods; contents are wrapped in namespace pism {...}
