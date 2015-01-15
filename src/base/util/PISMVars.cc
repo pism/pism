@@ -22,6 +22,14 @@
 
 #include "error_handling.hh"
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::dynamic_pointer_cast;
+#else
+#include <memory>
+using std::dynamic_pointer_cast;
+#endif
+
 namespace pism {
 
 Vars::Vars() {
@@ -33,8 +41,12 @@ bool Vars::is_available(const std::string &name) const {
   if (m_standard_names.find(name) != m_standard_names.end()) {
     return true;
   }
-  // check if "name" is a short name
+  // check if "name" is a short name of a read-only variable
   if (m_variables.find(name) != m_variables.end()) {
+    return true;
+  }
+  // check if "name" is a short name of a "shared" variable
+  if (m_variables_shared.find(name) != m_variables_shared.end()) {
     return true;
   }
   return false;
@@ -44,6 +56,10 @@ bool Vars::is_available(const std::string &name) const {
 void Vars::add(const IceModelVec &v, const std::string &name) const {
   if (m_locked) {
     throw RuntimeError("this pism::Vars instance is locked");
+  }
+  if (m_variables.find(name) != m_variables.end()) {
+    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s' was added already.",
+                                  name.c_str());
   }
   m_variables[name] = &v;
 }
@@ -132,12 +148,23 @@ const IceModelVec* Vars::get_internal(const std::string &name) const {
   std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
     std::string short_name = j->second;
-    return m_variables.find(short_name)->second;
+
+    std::map<std::string,const IceModelVec*>::const_iterator k = m_variables.find(short_name);
+    if (k != m_variables.end()) {
+      return k->second;
+    } else {
+      return NULL;
+    }
   }
 
   std::map<std::string,const IceModelVec*>::const_iterator k = m_variables.find(name);
   if (k != m_variables.end()) {
     return (k->second);
+  }
+
+  IceModelVec::Ptr shared = get_internal_shared(name);
+  if ((bool)shared) {
+    return shared.get();
   }
 
   return NULL;
@@ -189,13 +216,156 @@ std::set<std::string> Vars::keys() const {
   }
 
   std::set<std::string> result;
-  std::map<std::string,const IceModelVec*>::const_iterator i = m_variables.begin();
-  while (i != m_variables.end()) {
+  std::map<std::string,const IceModelVec*>::const_iterator i;
+  for (i = m_variables.begin(); i != m_variables.end(); ++i) {
     result.insert(i->first);
-    ++i;
   }
 
   return result;
+}
+
+void Vars::add_shared(IceModelVec::Ptr variable) const {
+  if (m_locked) {
+    throw RuntimeError("this pism::Vars instance is locked");
+  }
+
+  const NCSpatialVariable &m = variable->metadata();
+  std::string name = variable->name();
+
+  if (m.has_attribute("standard_name")) {
+
+    std::string standard_name = m.get_string("standard_name");
+    if (m_standard_names[standard_name].empty()) {
+      m_standard_names[standard_name] = name;
+    } else {
+      throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the standard_name '%s' was added already.",
+                                    standard_name.c_str());
+    }
+  }
+
+  if (m_variables_shared.find(name) == m_variables_shared.end()) {
+    m_variables_shared[name] = variable;
+  } else {
+    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s' was added already.",
+                                  name.c_str());
+  }
+}
+
+
+void Vars::add_shared(IceModelVec::Ptr variable, const std::string &name) const {
+  if (m_locked) {
+    throw RuntimeError("this pism::Vars instance is locked");
+  }
+  if (m_variables_shared.find(name) != m_variables_shared.end()) {
+    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s' was added already.",
+                                  name.c_str());
+  }
+  m_variables_shared[name] = variable;
+}
+
+
+bool Vars::is_available_shared(const std::string &name) const {
+
+  // check the standard name
+  if (m_standard_names.find(name) != m_standard_names.end()) {
+    std::string short_name = m_standard_names[name];
+    // return true if the corresponding short name is one of a
+    // "shared" variable
+    if (m_variables_shared.find(short_name) != m_variables_shared.end()) {
+      return true;
+    }
+    return false;
+  }
+
+  // check if "name" is a short name of a "shared" variable
+  if (m_variables_shared.find(name) != m_variables_shared.end()) {
+    return true;
+  }
+  return false;
+}
+
+
+IceModelVec::Ptr Vars::get_shared(const std::string &name) const {
+  IceModelVec::Ptr tmp = get_internal_shared(name);
+  if (not (bool)tmp) {
+    throw RuntimeError::formatted("shared variable %s is not available", name.c_str());
+  }
+  return tmp;
+}
+
+
+IceModelVec2S::Ptr Vars::get_2d_scalar_shared(const std::string &name) const {
+  IceModelVec2S::Ptr tmp = dynamic_pointer_cast<IceModelVec2S,IceModelVec>(this->get_internal_shared(name));
+  if (not (bool)tmp) {
+    throw RuntimeError::formatted("shared 2D scalar variable '%s' is not available", name.c_str());
+  }
+  return tmp;
+}
+
+
+IceModelVec2V::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
+  IceModelVec2V::Ptr tmp = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(this->get_internal_shared(name));
+  if (not (bool)tmp) {
+    throw RuntimeError::formatted("shared 2D vector variable '%s' is not available", name.c_str());
+  }
+  return tmp;
+}
+
+
+IceModelVec2Int::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
+  IceModelVec2Int::Ptr tmp = dynamic_pointer_cast<IceModelVec2Int,IceModelVec>(this->get_internal_shared(name));
+  if (not (bool)tmp) {
+    throw RuntimeError::formatted("shared 2D mask variable '%s' is not available", name.c_str());
+  }
+  return tmp;
+}
+
+
+IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
+  IceModelVec3::Ptr tmp = dynamic_pointer_cast<IceModelVec3,IceModelVec>(this->get_internal_shared(name));
+  if (not (bool)tmp) {
+    throw RuntimeError::formatted("shared 3D scalar variable '%s' is not available", name.c_str());
+  }
+  return tmp;
+}
+
+
+std::set<std::string> Vars::keys_shared() const {
+  if (not m_locked) {
+    throw RuntimeError("pism::Vars is not fully initialized yet");
+  }
+
+  std::set<std::string> result;
+  std::map<std::string,IceModelVec::Ptr>::const_iterator i;
+  for (i = m_variables_shared.begin(); i != m_variables_shared.end(); ++i) {
+    result.insert(i->first);
+  }
+
+  return result;
+}
+
+IceModelVec::Ptr Vars::get_internal_shared(const std::string &name) const {
+  if (not m_locked) {
+    throw RuntimeError("pism::Vars is not fully initialized yet");
+  }
+  std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
+  if (j != m_standard_names.end()) {
+    std::string short_name = j->second;
+
+    std::map<std::string,IceModelVec::Ptr>::const_iterator k = m_variables_shared.find(short_name);
+    if (k != m_variables_shared.end()) {
+      return k->second;
+    } else {
+      return IceModelVec::Ptr();
+    }
+  }
+
+  std::map<std::string,IceModelVec::Ptr>::const_iterator k = m_variables_shared.find(name);
+  if (k != m_variables_shared.end()) {
+    return (k->second);
+  }
+
+  return IceModelVec::Ptr();
 }
 
 } // end of namespace pism

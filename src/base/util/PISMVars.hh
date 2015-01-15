@@ -23,13 +23,10 @@
 #include <set>
 #include <string>
 
-namespace pism {
+// We have to include this to get IceModelVec...::Ptr definitions.
+#include "iceModelVec.hh"
 
-class IceModelVec;
-class IceModelVec2S;
-class IceModelVec2V;
-class IceModelVec2Int;
-class IceModelVec3;
+namespace pism {
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
@@ -50,6 +47,17 @@ public:
   const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
+
+  void add_shared(IceModelVec::Ptr) const;
+  void add_shared(IceModelVec::Ptr, const std::string &name) const;
+  bool is_available_shared(const std::string &name) const;
+  IceModelVec::Ptr get_shared(const std::string &name) const;
+  IceModelVec2S::Ptr get_2d_scalar_shared(const std::string &name) const;
+  IceModelVec2V::Ptr get_2d_vector_shared(const std::string &name) const;
+  IceModelVec2Int::Ptr get_2d_mask_shared(const std::string &name) const;
+  IceModelVec3::Ptr get_3d_scalar_shared(const std::string &name) const;
+
+  std::set<std::string> keys_shared() const;
 private:
   bool m_locked;
   const IceModelVec* get_internal(const std::string &name) const;
@@ -61,6 +69,11 @@ private:
   //! (strings) to pointers (represented by
   //! "variables").
   mutable std::map<std::string, std::string> m_standard_names;
+
+  //! variables in *shared ownership*
+  mutable std::map<std::string, IceModelVec::Ptr> m_variables_shared;
+
+  IceModelVec::Ptr get_internal_shared(const std::string &name) const;
 
   // Hide copy constructor / assignment operator.
   Vars(Vars const &);
