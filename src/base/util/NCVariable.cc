@@ -92,7 +92,10 @@ PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units)
 
   m_glaciological_units = Unit(m_units.get_system(), new_units);
 
-  assert(UnitConverter::are_convertible(m_units, m_glaciological_units) == true);
+  if (not UnitConverter::are_convertible(m_units, m_glaciological_units)) {
+    throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
+                                  this->get_string("units").c_str(), new_units.c_str());
+  }
 
   return 0;
 }
@@ -185,7 +188,9 @@ NCSpatialVariable::~NCSpatialVariable() {
 }
 
 void NCSpatialVariable::set_levels(const std::vector<double> &levels) {
-  assert(levels.size() >= 1);
+  if (levels.size() < 1) {
+    throw RuntimeError("argument \"levels\" has to have length 1 or greater");
+  }
   m_zlevels = levels;
 }
 
@@ -444,7 +449,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     }
 
     // If it is optional, fill with the provided default value.
-    assert(UnitConverter::are_convertible(get_units(), get_glaciological_units()) == true);
+    // UnitConverter constructor will make sure that units are compatible.
     UnitConverter c(this->get_units(), this->get_glaciological_units());
 
     std::string spacer(get_name().size(), ' ');
@@ -473,7 +478,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   ierr = VecMax(v, NULL, &max);
   PISM_PETSC_CHK(ierr, "VecMax");
 
-  assert(UnitConverter::are_convertible(get_units(), get_glaciological_units()) == true);
+  // UnitConverter constructor will make sure that units are compatible.
   UnitConverter c(this->get_units(), this->get_glaciological_units());
   min = c(min);
   max = c(max);
@@ -749,8 +754,12 @@ const std::map<std::string,std::vector<double> >& NCVariable::get_all_doubles() 
 //! Set a string attribute.
 void NCVariable::set_string(const std::string &name, const std::string &value) {
 
-  assert(name != "units");
-  assert(name != "glaciological_units");
+  if (name == "units" or name == "glaciological_units") {
+    throw RuntimeError::formatted("Use NCVariable::set_%s() to set %s."
+                                  " (Called as %s.set_string(\"%s\", \"%s\"))",
+                                  name.c_str(), name.c_str(),
+                                  get_name().c_str(), name.c_str(), value.c_str());
+  }
 
   if (name == "short_name") {
     set_name(name);
