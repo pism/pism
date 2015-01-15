@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -108,11 +108,18 @@ protected:
   unsigned int m_n_spatial_dims;
 
 private:
-  Unit m_units,                   //!< internal (PISM) units
-    m_glaciological_units; //!< \brief for diagnostic variables: units
-  //!< to use when writing to a NetCDF file and for standard out reports
-  std::map<std::string, std::string> m_strings;  //!< string and boolean attributes
-  std::map<std::string, std::vector<double> > m_doubles; //!< scalar and array attributes
+  //! internal (PISM) units
+  Unit m_units;
+
+  //! @brief for diagnostic variables: units to use when writing to a
+  //! NetCDF file and for standard out reports
+  Unit m_glaciological_units;
+
+  //! string and boolean attributes
+  std::map<std::string, std::string> m_strings;
+
+  //! scalar and array attributes
+  std::map<std::string, std::vector<double> > m_doubles;
   std::string m_short_name;
 };
 
