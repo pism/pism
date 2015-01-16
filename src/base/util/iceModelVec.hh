@@ -19,13 +19,9 @@
 #ifndef __IceModelVec_hh
 #define __IceModelVec_hh
 
-#include <cstring>
-#include <cstdlib>
-#include <petscdmda.h>
+#include <petscvec.h>
 
 #include "NCVariable.hh"
-#include "pism_const.hh"
-
 #include "Viewer.hh"
 #include "Vector2.hh"
 #include "StarStencil.hh"
@@ -279,9 +275,9 @@ protected:
   NormType int_to_normtype(int input) const;
 
   void get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
-                         unsigned int count=1) const;
+               unsigned int count=1) const;
   void set_dof(PISMDM::Ptr da_source, Vec source, unsigned int n,
-                         unsigned int count=1);
+               unsigned int count=1);
 private:
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);

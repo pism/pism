@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include "PSFormulas.hh"
 #include "PISMAtmosphere.hh"
+#include "pism_const.hh"
 
 namespace pism {
 
