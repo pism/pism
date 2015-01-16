@@ -1364,8 +1364,14 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     }
 
     vector<double> bounds(2);
-    double fill_value = 0.0;
+    if (var.has_attribute("valid_min")) {
+      bounds[0]  = var.get_double("valid_min");
+    }
+    if (var.has_attribute("valid_max")) {
+      bounds[1]  = var.get_double("valid_max");
+    }
 
+    double fill_value = 0.0;
     if (var.has_attribute("_FillValue")) {
       fill_value = var.get_double("_FillValue");
     }
@@ -1374,16 +1380,11 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     // matching the ones in the output.
     if (write_in_glaciological_units) {
 
-      assert(UnitConverter::are_convertible(var.get_units(),
-                                            var.get_glaciological_units()) == true);
       UnitConverter c(var.get_units(), var.get_glaciological_units());
 
-      bounds[0]  = c(var.get_double("valid_min"));
-      bounds[1]  = c(var.get_double("valid_max"));
+      bounds[0]  = c(bounds[0]);
+      bounds[1]  = c(bounds[1]);
       fill_value = c(fill_value);
-    } else {
-      bounds[0] = var.get_double("valid_min");
-      bounds[1] = var.get_double("valid_max");
     }
 
     if (var.has_attribute("_FillValue")) {
@@ -1406,7 +1407,7 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
         name  = i->first,
         value = i->second;
 
-      if (name == "units" || name == "glaciological_units" || value.empty()) {
+      if (name == "units" or name == "glaciological_units" or value.empty()) {
         continue;
       }
 
@@ -1420,10 +1421,10 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
       string name  = j->first;
       vector<double> values = j->second;
 
-      if (name == "valid_min" ||
-          name == "valid_max" ||
-          name == "valid_range" ||
-          name == "_FillValue" ||
+      if (name == "valid_min"   or
+          name == "valid_max"   or
+          name == "valid_range" or
+          name == "_FillValue"  or
           values.empty()) {
         continue;
       }
@@ -1470,7 +1471,7 @@ void PIO::write_global_attributes(const NCVariable &var) const {
 void PIO::read_valid_range(const string &name, NCVariable &variable) const {
   try {
     // Never reset valid_min/max if they were set internally
-    if (variable.has_attribute("valid_min") ||
+    if (variable.has_attribute("valid_min") or
         variable.has_attribute("valid_max")) {
       return;
     }
