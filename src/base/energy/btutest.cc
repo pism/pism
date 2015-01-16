@@ -235,8 +235,8 @@ int main(int argc, char *argv[]) {
     // compute numerical error
     double maxghferr, avghferr;
     ghf.shift(-FF);
-    ghf.norm(NORM_INFINITY, maxghferr);
-    ghf.norm(NORM_1, avghferr);
+    maxghferr = ghf.norm(NORM_INFINITY);
+    avghferr  = ghf.norm(NORM_1);
     ghf.shift(+FF); // shift it back for writing
     avghferr /= (grid.Mx() * grid.My());
     verbPrintf(2, grid.com, 

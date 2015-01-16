@@ -365,9 +365,10 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   dWeight = 1/m_eta;
   sWeight = 1;
   
-  m_grad_design.norm(NORM_2,designNorm);
-  m_grad_state.norm(NORM_2,stateNorm);
-  m_grad.norm(NORM_2,sumNorm);
+  designNorm = m_grad_design.norm(NORM_2);
+  stateNorm  = m_grad_state.norm(NORM_2);
+  sumNorm    = m_grad.norm(NORM_2);
+
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
   

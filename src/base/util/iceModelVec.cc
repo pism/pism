@@ -106,8 +106,6 @@ void IceModelVec::inc_state_counter() {
 }
 
 IceModelVec::~IceModelVec() {
-  printf("IceModelVec::~IceModelVec() is called (name = %s)\n",
-         m_name.c_str());
   destroy();
 }
 

@@ -1162,21 +1162,20 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
  */
 void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
-  std::vector<double> nuNorm, nuChange;
-
   const double area = m_grid.dx() * m_grid.dy();
-#define MY_NORM     NORM_1
+  const NormType MY_NORM = NORM_1;
 
   // Test for change in nu
   nuH_old.add(-1, nuH);
 
-  nuH_old.norm_all(MY_NORM, nuChange);
-  nuH.norm_all(MY_NORM, nuNorm);
+  std::vector<double>
+    nuNorm   = nuH.norm_all(MY_NORM),
+    nuChange = nuH_old.norm_all(MY_NORM);
 
   nuChange[0] *= area;
   nuChange[1] *= area;
-  nuNorm[0] *= area;
-  nuNorm[1] *= area;
+  nuNorm[0]   *= area;
+  nuNorm[1]   *= area;
 
   norm_change = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
   norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));

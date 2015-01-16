@@ -238,12 +238,13 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
   dWeight = m_alpha;
   sWeight = 1;
 
-  m_grad_design.norm(NORM_2,designNorm);
-  m_grad_state.norm(NORM_2,stateNorm);
+  designNorm = m_grad_design.norm(NORM_2);
+  stateNorm  = m_grad_state.norm(NORM_2);
+
   designNorm *= dWeight;
   stateNorm  *= sWeight;
 
-  m_gradient.norm(NORM_2,sumNorm);
+  sumNorm = m_gradient.norm(NORM_2);
 
   verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",
              designNorm,stateNorm,sumNorm);
