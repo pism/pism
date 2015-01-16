@@ -426,7 +426,7 @@ void SSA_taud_mag::compute(IceModelVec* &output) {
     throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
   }
 
-  taud->magnitude(*result);
+  result->set_to_magnitude(*taud);
 
   delete tmp;
 

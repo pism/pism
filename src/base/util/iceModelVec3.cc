@@ -176,8 +176,8 @@ void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
 
 
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2S gsurf.
-void  IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
-                                               const IceModelVec2S &H) const {
+void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
+                                    const IceModelVec2S &H) const {
   IceModelVec::AccessList list(*this);
   list.add(surface_values);
   list.add(H);

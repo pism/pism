@@ -284,7 +284,7 @@ void DistributedHydrology::update_velbase_mag(IceModelVec2S &result_velbase_mag)
   IceModelVec2V* Ubase; // ice sliding velocity
   // velbase_mag = |v_b|
   stressbalance->get_2D_advective_velocity(Ubase);
-  Ubase->magnitude(result_velbase_mag);
+  result_velbase_mag.set_to_magnitude(*Ubase);
 }
 
 

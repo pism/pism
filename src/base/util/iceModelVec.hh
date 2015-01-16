@@ -202,9 +202,10 @@ public:
   virtual std::string name() const;
   virtual void  set_glaciological_units(const std::string &units);
   virtual void  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
-                                    const std::string &my_units, const std::string &my_standard_name, int component = 0);
+                          const std::string &my_units, const std::string &my_standard_name,
+                          int component = 0);
   virtual void  rename(const std::string &short_name, const std::string &long_name,
-                                 const std::string &standard_name, int component = 0);
+                       const std::string &standard_name, int component = 0);
   virtual void  read_attributes(const std::string &filename, int component = 0);
   virtual void  define(const PIO &nc, IO_Type output_datatype) const;
 
@@ -215,9 +216,9 @@ public:
   void  write(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
 
   void  regrid(const std::string &filename, RegriddingFlag flag,
-                         double default_value = 0.0);
+               double default_value = 0.0);
   void  regrid(const PIO &nc, RegriddingFlag flag,
-                         double default_value = 0.0);
+               double default_value = 0.0);
 
   virtual void  begin_access() const;
   virtual void  end_access() const;
@@ -333,6 +334,8 @@ protected:
   virtual void write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
 };
 
+class IceModelVec2V;
+
 /** A class for storing and accessing scalar 2D fields.
     IceModelVec2S is just IceModelVec2 with "dof == 1" */
 class IceModelVec2S : public IceModelVec2 {
@@ -358,7 +361,8 @@ public:
   void get_from_proc0(Vec onp0);
   virtual void  copy_to(IceModelVec &destination) const;
   void  get_array(double** &a);
-  virtual void set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
+  virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
+  virtual void set_to_magnitude(const IceModelVec2V &input);
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
   virtual void add(double alpha, const IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
@@ -427,7 +431,6 @@ public:
 
   // I/O:
   virtual void get_array(Vector2 ** &a);
-  virtual void magnitude(IceModelVec2S &result) const;
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
   inline StarStencil<Vector2> star(int i, int j) const;

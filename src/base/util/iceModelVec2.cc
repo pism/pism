@@ -209,7 +209,8 @@ void IceModelVec2S::get_from_proc0(Vec onp0) {
 
   Does not communicate.
  */
-void IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y) {
+void IceModelVec2S::set_to_magnitude(const IceModelVec2S &v_x,
+                                     const IceModelVec2S &v_y) {
   IceModelVec::AccessList list(*this);
   list.add(v_x);
   list.add(v_y);
@@ -222,6 +223,18 @@ void IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y) {
 
   inc_state_counter();          // mark as modified
   
+}
+
+void IceModelVec2S::set_to_magnitude(const IceModelVec2V &input) {
+  IceModelVec::AccessList list;
+  list.add(*this);
+  list.add(input);
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*this)(i, j) = input(i, j).magnitude();
+  }
 }
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`. 

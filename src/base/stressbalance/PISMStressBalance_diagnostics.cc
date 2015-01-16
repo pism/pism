@@ -151,7 +151,7 @@ void PSB_velbar_mag::compute(IceModelVec* &output) {
   }
 
   // compute its magnitude:
-  velbar_vec->magnitude(*result);
+  result->set_to_magnitude(*velbar_vec);
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 

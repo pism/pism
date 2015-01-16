@@ -51,18 +51,6 @@ void IceModelVec2V::get_array(Vector2** &a) {
   a = static_cast<Vector2**>(array);
 }
 
-void IceModelVec2V::magnitude(IceModelVec2S &result) const {
-  IceModelVec::AccessList list;
-  list.add(*this);
-  list.add(result);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i, j) = (*this)(i, j).magnitude();
-  }
-}
-
 void IceModelVec2V::set_name(const std::string &new_name, int component) {
   (void) component;
 
