@@ -503,7 +503,7 @@ void IceModelVec::set_attrs(const std::string &my_pism_intent,
 /*! Stops if the variable was not found and `critical` == true.
  */
 void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
-                                        double default_value) {
+                              double default_value) {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -518,15 +518,22 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
   if (m_has_ghosts) {
     DMGetGlobalVector(*m_da, &tmp);
+  } else {
+    tmp = m_v;
+  }
 
-    metadata(0).regrid(nc, flag, m_report_range, default_value, tmp);
+  double *tmp_array = NULL;
+  ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
 
+  metadata(0).regrid(nc, flag, m_report_range, default_value, tmp_array);
+
+  ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+
+  if (m_has_ghosts) {
     DMGlobalToLocalBegin(*m_da, tmp, INSERT_VALUES, m_v);
     DMGlobalToLocalEnd(*m_da, tmp, INSERT_VALUES, m_v);
 
     DMRestoreGlobalVector(*m_da, &tmp);
-  } else {
-    metadata(0).regrid(nc, flag, m_report_range, default_value, m_v);
   }
 }
 
@@ -546,15 +553,22 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 
   if (m_has_ghosts) {
     DMGetGlobalVector(*m_da, &tmp);
+  } else {
+    tmp = m_v;
+  }
 
-    metadata(0).read(nc, time, tmp);
+  double *tmp_array = NULL;
+  ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
 
+  metadata(0).read(nc, time, tmp_array);
+
+  ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+
+  if (m_has_ghosts) {
     DMGlobalToLocalBegin(*m_da, tmp, INSERT_VALUES, m_v);
     DMGlobalToLocalEnd(*m_da, tmp, INSERT_VALUES, m_v);
 
     DMRestoreGlobalVector(*m_da, &tmp);
-  } else {
-    metadata(0).read(nc, time, m_v);
   }
 }
 
@@ -609,12 +623,19 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
     DMGetGlobalVector(*m_da, &tmp);
 
     this->copy_to_vec(m_da, tmp);
-
-    metadata(0).write(nc, nctype, write_in_glaciological_units, tmp);
-
-    DMRestoreGlobalVector(*m_da, &tmp);
   } else {
-    metadata(0).write(nc, nctype, write_in_glaciological_units, m_v);
+    tmp = m_v;
+  }
+
+  double *tmp_array = NULL;
+  ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
+
+  metadata(0).write(nc, nctype, write_in_glaciological_units, tmp_array);
+
+  ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+
+  if (m_has_ghosts) {
+    DMRestoreGlobalVector(*m_da, &tmp);
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -352,13 +352,18 @@ void IceModelVec2T::update(unsigned int start) {
   nc.open(filename, PISM_READONLY);
 
   for (unsigned int j = 0; j < missing; ++j) {
+    double *tmp_array = NULL;
+    PetscErrorCode ierr = VecGetArray(m_v, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
+
     m_metadata[0].regrid(nc, start + j,
-                         CRITICAL, m_report_range, 0.0, m_v);
+                         CRITICAL, m_report_range, 0.0, tmp_array);
+
+    ierr = VecRestoreArray(m_v, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
     verbPrintf(5, m_grid->com, " %s: reading entry #%02d, year %s...\n",
-                      m_name.c_str(),
-                      start + j,
-                      m_grid->time->date(time[start + j]).c_str());
+               m_name.c_str(),
+               start + j,
+               m_grid->time->date(time[start + j]).c_str());
     set_record(kept + j);
   }
 
