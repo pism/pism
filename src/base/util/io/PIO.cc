@@ -1407,7 +1407,9 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
         name  = i->first,
         value = i->second;
 
-      if (name == "units" or name == "glaciological_units" or value.empty()) {
+      if (name == "units" or
+          name == "glaciological_units" or
+          value.empty()) {
         continue;
       }
 
@@ -1433,7 +1435,8 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("writing attributes of variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
+    e.add_context("writing attributes of variable '%s' to '%s'",
+                  var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
