@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <gsl/gsl_math.h>
-#include <assert.h>
 
 #include "Timeseries.hh"
 #include "pism_const.hh"
@@ -66,8 +65,7 @@ void Timeseries::set_bounds_units() {
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
-  PetscErrorCode ierr;
+void Timeseries::read(const PIO &nc, Time *time_manager) {
 
   bool exists, found_by_standard_name;
   std::vector<std::string> dims;
@@ -136,13 +134,11 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
                                   nc.inq_filename().c_str());
   }
 
-  ierr = report_range(); CHKERRQ(ierr);
-
-  return 0;
+  report_range();
 }
 
 //! \brief Report the range of a time-series stored in `values`.
-PetscErrorCode Timeseries::report_range() {
+void Timeseries::report_range() {
   double min, max;
 
   // min_element and max_element return iterators; "*" is used to get
@@ -150,7 +146,6 @@ PetscErrorCode Timeseries::report_range() {
   min = *std::min_element(values.begin(), values.end());
   max = *std::max_element(values.begin(), values.end());
 
-  assert(UnitConverter::are_convertible(var.get_units(), var.get_glaciological_units()) == true);
   UnitConverter c(var.get_units(), var.get_glaciological_units());
   min = c(min);
   max = c(max);
@@ -163,12 +158,10 @@ PetscErrorCode Timeseries::report_range() {
              var.get_name().c_str(),
              var.get_string("long_name").c_str(), spacer.c_str(), min, max,
              var.get_string("glaciological_units").c_str());
-
-  return 0;
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
-PetscErrorCode Timeseries::write(const PIO &nc) {
+void Timeseries::write(const PIO &nc) {
   // write the dimensional variable; this call should go first
   nc.write_timeseries(dimension, 0, time);
   nc.write_timeseries(var, 0, values);
@@ -177,8 +170,6 @@ PetscErrorCode Timeseries::write(const PIO &nc) {
     set_bounds_units();
     nc.write_time_bounds(bounds, 0, time_bounds);
   }
-
-  return 0;
 }
 
 /** Scale all values stored in this instance by `scaling_factor`.
@@ -283,12 +274,11 @@ double Timeseries::average(double t, double dt, unsigned int N) {
 }
 
 //! Append a pair (t,v) to the timeseries.
-PetscErrorCode Timeseries::append(double v, double a, double b) {
+void Timeseries::append(double v, double a, double b) {
   time.push_back(b);
   values.push_back(v);
   time_bounds.push_back(a);
   time_bounds.push_back(b);
-  return 0;
 }
 
 NCTimeseries& Timeseries::get_metadata() {
@@ -331,7 +321,7 @@ DiagnosticTimeseries::~DiagnosticTimeseries() {
  * If this DiagnosticTimeseries object is reporting a "rate of change",
  * append() has to be called with the "cumulative" quantity as the V argument.
  */
-PetscErrorCode DiagnosticTimeseries::append(double V, double /*a*/, double b) {
+void DiagnosticTimeseries::append(double V, double /*a*/, double b) {
 
   if (rate_of_change && v.empty()) {
     v_previous = V;
@@ -345,13 +335,11 @@ PetscErrorCode DiagnosticTimeseries::append(double V, double /*a*/, double b) {
     t.pop_front();
     v.pop_front();
   }
-
-  return 0;
 }
 
 //! \brief Use linear interpolation to find the value of a scalar diagnostic
 //! quantity at time `T` and store the obtained pair (T, value).
-PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
+void DiagnosticTimeseries::interp(double a, double b) {
 
   if (t.empty()) {
     throw RuntimeError("DiagnosticTimeseries::interp(...): interpolation buffer is empty");
@@ -362,7 +350,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
     values.push_back(GSL_NAN);
     time_bounds.push_back(a);
     time_bounds.push_back(b);
-    return 0;
+    return;
   }
 
   if ((b < t[0]) || (b > t[1])) {
@@ -396,10 +384,9 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   if (time.size() == buffer_size) {
     flush();
   }
-
-  return 0;
 }
-PetscErrorCode DiagnosticTimeseries::init(const std::string &filename) {
+
+void DiagnosticTimeseries::init(const std::string &filename) {
   PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
@@ -426,24 +413,22 @@ PetscErrorCode DiagnosticTimeseries::init(const std::string &filename) {
 
   output_filename = filename;
   start = len;
-
-  return 0;
 }
 
 
   //! Writes data to a file.
-PetscErrorCode DiagnosticTimeseries::flush() {
+void DiagnosticTimeseries::flush() {
   PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never
   // used:
   if (output_filename.empty()) {
-    return 0;
+    return;
   }
 
   if (time.empty()) {
-    return 0;
+    return;
   }
 
   nc.open(output_filename, PISM_READWRITE);
@@ -473,8 +458,6 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   time_bounds.clear();
 
   nc.close();
-
-  return 0;
 }
 
 void DiagnosticTimeseries::reset() {
