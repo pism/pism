@@ -106,6 +106,8 @@ void IceModelVec::inc_state_counter() {
 }
 
 IceModelVec::~IceModelVec() {
+  printf("IceModelVec::~IceModelVec() is called (name = %s)\n",
+         m_name.c_str());
   destroy();
 }
 
@@ -205,37 +207,40 @@ See src/trypetsc/localVecMax.c.
 dof > 1. You might want to use norm_all() for IceModelVec2Stag,
 though.
  */
-void IceModelVec::norm(int n, double &out) const {
+double IceModelVec::norm(int n) const {
   PetscErrorCode ierr;
-  double my_norm, gnorm;
+  double result;
   assert(m_v != NULL);
 
   NormType type = int_to_normtype(n);
 
-  ierr = VecNorm(m_v, type, &my_norm);
-  PISM_PETSC_CHK(ierr, "VecNorm");
+  ierr = VecNorm(m_v, type, &result); PISM_PETSC_CHK(ierr, "VecNorm");
 
   if (m_has_ghosts == true) {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
-    //   otherwise GlobalSum; carefully in NORM_2 case
-    if (n == NORM_1_AND_2) {
-      throw RuntimeError::formatted("IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))",
-         m_name.c_str());
-    } else if (n == NORM_1) {
-      gnorm = GlobalSum(m_grid->com, my_norm);
-    } else if (n == NORM_2) {
-      my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
-      gnorm = GlobalSum(m_grid->com, my_norm);
-      gnorm = sqrt(gnorm);
-    } else if (n == NORM_INFINITY) {
-      gnorm = GlobalMax(m_grid->com, my_norm);
-    } else {
+    // otherwise GlobalSum; carefully in NORM_2 case
+
+    switch(type) {
+    case NORM_1: {
+      return GlobalSum(m_grid->com, result);
+    }
+    case NORM_2: {
+      // undo sqrt in VecNorm before sum, sum up, take sqrt
+      return sqrt(GlobalSum(m_grid->com, result*result));
+    }
+    case NORM_INFINITY: {
+      return GlobalMax(m_grid->com, result);
+    }
+    case NORM_1_AND_2:
+      throw RuntimeError::formatted("IceModelVec::norm(...): NORM_1_AND_2 not"
+                                    " implemented (called as %s.norm(...))",
+                                    m_name.c_str());
+    default:
       throw RuntimeError::formatted("IceModelVec::norm(...): unknown norm type (called as %s.norm(...))",
                                     m_name.c_str());
     }
-    out = gnorm;
   } else {
-    out = my_norm;
+    return result;
   }
 }
 
@@ -244,11 +249,9 @@ void IceModelVec::norm(int n, double &out) const {
 Name avoids clash with sqrt() in math.h.
  */
 void IceModelVec::squareroot() {
-  PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  ierr = VecSqrtAbs(m_v);
-  PISM_PETSC_CHK(ierr, "VecSqrtAbs");
+  PetscErrorCode ierr = VecSqrtAbs(m_v); PISM_PETSC_CHK(ierr, "VecSqrtAbs");
 }
 
 
@@ -842,53 +845,52 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
 }
 
 //! \brief Computes the norm of all components.
-void IceModelVec::norm_all(int n, std::vector<double> &result) const {
-  PetscErrorCode ierr;
+std::vector<double> IceModelVec::norm_all(int n) const {
 
-  assert(n == NORM_1 || n == NORM_2 || n == NORM_INFINITY);
-
-  std::vector<double> norm_result(m_dof);
-  result.resize(m_dof);
+  std::vector<double> result(m_dof);
 
   NormType type = this->int_to_normtype(n);
 
-  ierr = VecStrideNormAll(m_v, type, &norm_result[0]);
+  PetscErrorCode ierr = VecStrideNormAll(m_v, type, &result[0]);
   PISM_PETSC_CHK(ierr, "VecStrideNormAll");
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
-    //   otherwise GlobalSum; carefully in NORM_2 case
-    if (n == NORM_1_AND_2) {
-      throw RuntimeError::formatted("IceModelVec::norm_all(...): NORM_1_AND_2 not implemented (called as %s.norm_all(...))",
+    // otherwise GlobalSum; carefully in NORM_2 case
+    switch (type) {
+    case NORM_1_AND_2: {
+      throw RuntimeError::formatted("IceModelVec::norm_all(...): NORM_1_AND_2"
+                                    " not implemented (called as %s.norm_all(...))",
                                     m_name.c_str());
-    } else if (n == NORM_1) {
 
+    }
+    case NORM_1: {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        result[k] = GlobalSum(m_grid->com, norm_result[k]);
+        result[k] = GlobalSum(m_grid->com, result[k]);
       }
-
-    } else if (n == NORM_2) {
-
+      return result;
+    }
+    case NORM_2: {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
-        result[k] = GlobalSum(m_grid->com, norm_result[k]);
-        result[k] = sqrt(result[k]);
+        // undo sqrt in VecNorm before sum; sum up; take sqrt
+        result[k] = sqrt(GlobalSum(m_grid->com, result[k]*result[k]));
       }
-
-    } else if (n == NORM_INFINITY) {
+      return result;
+    }
+    case NORM_INFINITY: {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        result[k] = GlobalMax(m_grid->com, norm_result[k]);
+        result[k] = GlobalMax(m_grid->com, result[k]);
       }
-    } else {
-      throw RuntimeError::formatted("IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))",
+      return result;
+    }
+    default: {
+      throw RuntimeError::formatted("IceModelVec::norm_all(...): unknown norm type"
+                                    " (called as %s.norm_all(...))",
                                     m_name.c_str());
+    }
     }
   } else {
-
-    for (unsigned int k = 0; k < m_dof; ++k) {
-      result[k] = norm_result[k];
-    }
-
+    return result;
   }
 }
 

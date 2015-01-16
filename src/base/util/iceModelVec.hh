@@ -182,8 +182,8 @@ public:
   std::vector<double> get_levels() const;
 
   virtual void  range(double &min, double &max) const;
-  virtual void  norm(int n, double &out) const;
-  virtual void  norm_all(int n, std::vector<double> &result) const;
+  double norm(int n) const;
+  std::vector<double> norm_all(int n) const;
   virtual void  add(double alpha, const IceModelVec &x);
   virtual void  squareroot();
   virtual void  shift(double alpha);
