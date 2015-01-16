@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -120,7 +120,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
     NCTimeBounds tmp_bounds = bounds;
     tmp_bounds.set_name(time_bounds_name);
 
-    ierr = tmp_bounds.set_units(tmp_dim.get_string("units")); CHKERRQ(ierr);
+    tmp_bounds.set_units(tmp_dim.get_string("units"));
 
     nc.read_time_bounds(tmp_bounds, time_manager, time_bounds);
   } else {

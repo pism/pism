@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,6 +68,7 @@ public:
   //! thickness.
   virtual void update_cumulative()
   {
+    // the default implementation is empty
   }
 
   //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
@@ -91,7 +92,7 @@ public:
     }
   }
 
-  //! Get a pointer to a metadata object corresponding to variable number N.
+  //! Get a metadata object corresponding to variable number N.
   virtual NCSpatialVariable get_metadata(int N = 0)
   {
     if (N >= m_dof) {
@@ -110,15 +111,13 @@ public:
   }
 
   //! \brief A method for setting common variable attributes.
-  PetscErrorCode set_attrs(std::string my_long_name,
-                           std::string my_standard_name,
-                           std::string my_units,
-                           std::string my_glaciological_units,
-                           int N = 0) {
-    PetscErrorCode ierr;
-
+  void set_attrs(std::string my_long_name,
+                 std::string my_standard_name,
+                 std::string my_units,
+                 std::string my_glaciological_units,
+                 int N = 0) {
     if (N >= m_dof) {
-      throw RuntimeError::formatted("invalid N (>= m_dof)");
+      throw RuntimeError::formatted("N (%d) >= m_dof (%d)", N, m_dof);
     }
 
     m_vars[N].set_string("pism_intent", "diagnostic");
@@ -127,13 +126,11 @@ public:
 
     m_vars[N].set_string("standard_name", my_standard_name);
 
-    ierr = m_vars[N].set_units(my_units); CHKERRQ(ierr);
+    m_vars[N].set_units(my_units);
 
-    if (my_glaciological_units != "") {
-      ierr = m_vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
+    if (not my_glaciological_units.empty()) {
+      m_vars[N].set_glaciological_units(my_glaciological_units);
     }
-
-    return 0;
   }
 protected:
   const IceGrid &m_grid;                //!< the grid
