@@ -932,7 +932,8 @@ void PIO::put_vec(const IceGrid *grid, const string &var_name,
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
+    e.add_context("writing variable '%s' to '%s' in PIO::put_vec()",
+                  var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
