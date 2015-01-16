@@ -23,7 +23,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <petscvec.h>
 
 #include "PISMUnits.hh"
 
@@ -76,8 +75,8 @@ public:
   virtual ~NCVariable();
 
   // setters
-  PetscErrorCode set_units(const std::string &unit_spec);
-  PetscErrorCode set_glaciological_units(const std::string &unit_spec);
+  void set_units(const std::string &unit_spec);
+  void set_glaciological_units(const std::string &unit_spec);
 
   void set_double(const std::string &name, double value);
   void set_doubles(const std::string &name, const std::vector<double> &values);
@@ -106,7 +105,7 @@ public:
   typedef std::map<std::string,std::vector<double> > DoubleAttrs;
   const DoubleAttrs& get_all_doubles() const;
 
-  PetscErrorCode report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
+  void report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
 
 protected:
   unsigned int m_n_spatial_dims;
@@ -145,22 +144,22 @@ public:
 
   void set_time_independent(bool flag);
 
-  PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
-  PetscErrorCode write(const PIO &file, IO_Type nctype,
-                       bool write_in_glaciological_units, Vec v) const;
+  void read(const PIO &file, unsigned int time, double *output);
+  void write(const PIO &file, IO_Type nctype,
+             bool write_in_glaciological_units, const double *input) const;
 
-  PetscErrorCode regrid(const PIO &file,
-                        RegriddingFlag flag,
-                        bool report_range,
-                        double default_value, Vec v);
-  PetscErrorCode regrid(const PIO &file,
-                        unsigned int t_start,
-                        RegriddingFlag flag,
-                        bool report_range,
-                        double default_value, Vec v);
+  void regrid(const PIO &file,
+              RegriddingFlag flag,
+              bool report_range,
+              double default_value, double *output);
+  void regrid(const PIO &file,
+              unsigned int t_start,
+              RegriddingFlag flag,
+              bool report_range,
+              double default_value, double *output);
 
-  PetscErrorCode define(const PIO &nc, IO_Type nctype,
-                        bool write_in_glaciological_units) const;
+  void define(const PIO &nc, IO_Type nctype,
+              bool write_in_glaciological_units) const;
 
   NCVariable& get_x();
   NCVariable& get_y();
@@ -177,9 +176,9 @@ private:
   NCVariable m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
-  PetscErrorCode report_range(double min, double max, bool found_by_standard_name);
-  PetscErrorCode check_range(const std::string &filename, Vec v);
-  PetscErrorCode define_dimensions(const PIO &nc) const;
+  void report_range(double min, double max, bool found_by_standard_name);
+  void check_range(const std::string &filename, double min, double max);
+  void define_dimensions(const PIO &nc) const;
 
   void init_internal(const std::string &name, const IceGrid &g,
                      const std::vector<double> &z_levels);
@@ -194,7 +193,7 @@ public:
 
   std::string get_dimension_name() const;
 
-  virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
+  virtual void define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
 };
@@ -205,7 +204,7 @@ public:
   NCTimeBounds(const std::string &name, const std::string &dimension_name,
                const UnitSystem &system);
   virtual ~NCTimeBounds();
-  virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
+  virtual void define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_bounds_name;
 };

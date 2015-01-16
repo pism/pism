@@ -18,20 +18,38 @@
 
 #include <sstream>
 #include <set>
-#include <assert.h>
-#include <gsl/gsl_math.h>
+#include <cassert>
+#include <algorithm>
 
 #include "NCVariable.hh"
 #include "PIO.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
-#include "PISMTime.hh"
 
 #include "PISMConfig.hh"
 #include "error_handling.hh"
 
 namespace pism {
+
+static void compute_range(MPI_Comm com, double *data, size_t data_size, double *min, double *max) {
+  double
+    min_result = data[0],
+    max_result = data[0];
+  for (size_t k = 0; k < data_size; ++k) {
+    min_result = std::min(min_result, data[k]);
+    max_result = std::max(max_result, data[k]);
+  }
+
+  if (min) {
+    *min = GlobalMin(com, min_result);
+  }
+
+  if (max) {
+    *max = GlobalMax(com, max_result);
+  }
+}
+
 
 NCVariable::NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims)
   : m_n_spatial_dims(ndims),
@@ -61,7 +79,7 @@ unsigned int NCVariable::get_n_spatial_dimensions() const {
 }
 
 //! Set the internal units.
-PetscErrorCode NCVariable::set_units(const std::string &new_units) {
+void NCVariable::set_units(const std::string &new_units) {
 
   // Do not use NCVariable::set_string here, because it is written in
   // a way that forces users to use set_units() to set units.
@@ -72,15 +90,13 @@ PetscErrorCode NCVariable::set_units(const std::string &new_units) {
 
   // Set the glaciological units too (ensures internal consistency):
   m_glaciological_units = m_units;
-
-  return 0;
 }
 
 //! Set the glaciological (output) units.
 /*! These units are used for output (if write_in_glaciological_units is set)
   and for standard out reports.
  */
-PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units) {
+void NCVariable::set_glaciological_units(const std::string &new_units) {
   // Save the human-friendly version of the string; this is to avoid getting
   // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
   // (and thus violating the CF conventions).
@@ -96,8 +112,6 @@ PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units)
     throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
                                   this->get_string("units").c_str(), new_units.c_str());
   }
-
-  return 0;
 }
 
 Unit NCVariable::get_units() const {
@@ -202,10 +216,10 @@ void NCSpatialVariable::set_time_independent(bool flag) {
   }
 }
 
-//! Read a variable from a file into a \b global Vec v.
+//! Read a variable from a file into an array `output`.
 /*! This also converts the data from input units to internal units if needed.
  */
-PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) {
+void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
 
   assert(m_grid != NULL);
 
@@ -215,7 +229,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   nc.inq_var(get_name(), get_string("standard_name"),
              variable_exists, name_found, found_by_standard_name);
 
-  if (!variable_exists) {
+  if (not variable_exists) {
     throw RuntimeError::formatted("Can't find '%s' (%s) in '%s'.",
                                   get_name().c_str(),
                                   get_string("standard_name").c_str(), nc.inq_filename().c_str());
@@ -255,17 +269,12 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
 
     if (axes.size() != matching_dim_count) {
 
-      // Join input dimension names:
-      j = input_dims.begin();
-      std::string tmp = *j++;
-      while (j != input_dims.end()) {
-        tmp += std::string(", ") + *j++;
-      }
-
       // Print the error message and stop:
       throw RuntimeError::formatted("found the %dD variable %s (%s) in '%s' while trying to read\n"
                                     "'%s' ('%s'), which is %d-dimensional.",
-                                    input_ndims, name_found.c_str(), tmp.c_str(), nc.inq_filename().c_str(),
+                                    input_ndims, name_found.c_str(),
+                                    join(input_dims, ",").c_str(),
+                                    nc.inq_filename().c_str(),
                                     get_name().c_str(), get_string("long_name").c_str(),
                                     static_cast<int>(axes.size()));
     }
@@ -274,23 +283,14 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   // make sure we have at least one level
   unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1);
 
-  {
-    double *output_array = NULL;
-    PetscErrorCode ierr = VecGetArray(v, &output_array);
-    PISM_PETSC_CHK(ierr, "VecGetArray");
-
-    nc.get_vec(m_grid, name_found, nlevels, time, output_array);
-
-    ierr = VecRestoreArray(v, &output_array);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray");
-  }
+  nc.get_vec(m_grid, name_found, nlevels, time, output);
 
   bool input_has_units;
   Unit input_units(get_units().get_system(), "1");
 
   nc.inq_units(name_found, input_has_units, input_units);
 
-  if (has_attribute("units") && (!input_has_units)) {
+  if (has_attribute("units") && (not input_has_units)) {
     const std::string &units_string = get_string("units"),
       &long_name = get_string("long_name");
     verbPrintf(2, m_com,
@@ -302,17 +302,17 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   }
 
   // Convert data:
-  convert_vec(v, input_units, get_units());
-
-  return 0;
+  size_t size = m_grid->xm() * m_grid->ym() * nlevels;
+  convert_doubles(output, size, input_units, get_units());
 }
 
 //! \brief Write a \b global Vec `v` to a variable.
 /*!
   Defines a variable and converts the units if needed.
  */
-PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
-                                        bool write_in_glaciological_units, Vec v) const {
+void NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
+                              bool write_in_glaciological_units,
+                              const double *input) const {
 
   // find or define the variable
   std::string name_found;
@@ -320,37 +320,32 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
   nc.inq_var(get_name(), get_string("standard_name"),
              exists, name_found, found_by_standard_name);
 
-  if (!exists) {
+  if (not exists) {
     define(nc, nctype, write_in_glaciological_units);
     name_found = get_name();
   }
 
+  // make sure we have at least one level
+  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1);
+
   if (write_in_glaciological_units) {
-    convert_vec(v, get_units(), get_glaciological_units());
+    size_t data_size = m_grid->xm() * m_grid->ym() * nlevels;
+
+    // create a temporary array, convert to glaciological units, and
+    // save
+    std::vector<double> tmp(data_size);
+    for (size_t k = 0; k < data_size; ++k) {
+      tmp[k] = input[k];
+    }
+
+    convert_doubles(&tmp[0], tmp.size(), get_units(), get_glaciological_units());
+    nc.put_vec(m_grid, name_found, nlevels, &tmp[0]);
+  } else {
+    nc.put_vec(m_grid, name_found, nlevels, input);
   }
-
-  // Actually write data:
-  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
-
-  {
-    double *input_array = NULL;
-    PetscErrorCode ierr = VecGetArray(v, &input_array);
-    PISM_PETSC_CHK(ierr, "VecGetArray");
-
-    nc.put_vec(m_grid, name_found, nlevels, input_array);
-
-    ierr = VecRestoreArray(v, &input_array);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray");
-  }
-  
-  if (write_in_glaciological_units) {
-    convert_vec(v, get_glaciological_units(), get_units()); // restore the units
-  }
-
-  return 0;
 }
 
-//! \brief Regrid from a NetCDF file into a \b global Vec `v`.
+//! \brief Regrid from a NetCDF file into a distributed array `output`.
 /*!
   - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
     variable was not found in the input file
@@ -360,21 +355,19 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
     variable was not found in the input file
   - uses the last record in the file
  */
-PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
-                                         double default_value, Vec v) {
+void NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
+                               double default_value, double *output) {
   unsigned int t_length = nc.inq_nrecords(get_name(), get_string("standard_name"));
 
-  this->regrid(nc, t_length - 1, flag, do_report_range, default_value, v);
-
-  return 0;
+  this->regrid(nc, t_length - 1, flag, do_report_range, default_value, output);
 }
 
-PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
-                                         RegriddingFlag flag, bool do_report_range,
-                                         double default_value, Vec v) {
-  PetscErrorCode ierr;
-
+void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
+                               RegriddingFlag flag, bool do_report_range,
+                               double default_value, double *output) {
   assert(m_grid != NULL);
+
+  const size_t data_size = m_grid->xm() * m_grid->ym() * m_zlevels.size();
 
   // Find the variable
   bool exists, found_by_standard_name;
@@ -382,40 +375,30 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
   nc.inq_var(get_name(), get_string("standard_name"),
              exists, name_found, found_by_standard_name);
 
-  if (exists == true) {                      // the variable was found successfully
+  if (exists) {                      // the variable was found successfully
 
-    {
-      double *output_array = NULL;
-      ierr = VecGetArray(v, &output_array);
-      PISM_PETSC_CHK(ierr, "VecGetArray");
+    if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
+      verbPrintf(2, m_com,
+                 "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+                 default_value, get_string("units").c_str(), get_name().c_str(),
+                 nc.inq_filename().c_str());
 
-      if (flag == OPTIONAL_FILL_MISSING ||
-          flag == CRITICAL_FILL_MISSING) {
-        verbPrintf(2, m_com,
-                   "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-                   default_value, get_string("units").c_str(), get_name().c_str(),
-                   nc.inq_filename().c_str());
-
-        nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
-                                   t_start, default_value, output_array);
-      } else {
-        nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, output_array);
-      }
-
-      ierr = VecRestoreArray(v, &output_array);
-      PISM_PETSC_CHK(ierr, "VecRestoreArray");
+      nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
+                                 t_start, default_value, output);
+    } else {
+      nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, output);
     }
 
-    // Now we need to get the units string from the file and convert the units,
-    // because check_range and report_range expect the data to be in PISM (MKS)
-    // units.
+    // Now we need to get the units string from the file and convert
+    // the units, because check_range and report_range expect data to
+    // be in PISM (MKS) units.
 
-    bool input_has_units;
+    bool input_has_units = false;
     Unit input_units(get_units().get_system(), "1");
 
     nc.inq_units(name_found, input_has_units, input_units);
 
-    if (input_has_units == false) {
+    if (not input_has_units) {
       input_units = get_units();
       if (get_string("units") != "") {
         verbPrintf(2, m_com,
@@ -428,28 +411,26 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     }
 
     // Convert data:
-    convert_vec(v, input_units, get_units());
+    convert_doubles(output, data_size, input_units, get_units());
 
     // Read the valid range info:
     nc.read_valid_range(name_found, *this);
 
+    double min = 0.0, max = 0.0;
+    compute_range(m_grid->com, output, data_size, &min, &max);
+    
     // Check the range and warn the user if needed:
-    check_range(nc.inq_filename(), v);
+    check_range(nc.inq_filename(), min, max);
 
-    if (do_report_range == true) {
+    if (do_report_range) {
       // We can report the success, and the range now:
       verbPrintf(2, m_com, "  FOUND ");
-      {
-        double min = 0.0, max = 0.0;
-        ierr = VecMin(v, NULL, &min); PISM_PETSC_CHK(ierr, "VecMin");
-        ierr = VecMax(v, NULL, &max); PISM_PETSC_CHK(ierr, "VecMax");
 
-        this->report_range(min, max, found_by_standard_name);
-      }
+      this->report_range(min, max, found_by_standard_name);
     }
   } else {                // couldn't find the variable
-    if (flag == CRITICAL ||
-        flag == CRITICAL_FILL_MISSING) { // if it's critical, print an error message and stop
+    if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
+      // if it's critical, print an error message and stop
       throw RuntimeError::formatted("Can't find '%s' in the regridding file '%s'.",
                                     get_name().c_str(), nc.inq_filename().c_str());
     }
@@ -466,17 +447,17 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                get_string("long_name").c_str(),
                spacer.c_str(), c(default_value),
                get_string("glaciological_units").c_str());
-    ierr = VecSet(v, default_value);
-    PISM_PETSC_CHK(ierr, "VecSet");
-  } // end of if (exists)
 
-  return 0;
+    for (size_t k = 0; k < data_size; ++k) {
+      output[k] = default_value;
+    }
+  } // end of if (exists)
 }
 
 
 //! Report the range of a \b global Vec `v`.
-PetscErrorCode NCSpatialVariable::report_range(double min, double max,
-                                               bool found_by_standard_name) {
+void NCSpatialVariable::report_range(double min, double max,
+                                     bool found_by_standard_name) {
 
   // UnitConverter constructor will make sure that units are compatible.
   UnitConverter c(this->get_units(), this->get_glaciological_units());
@@ -504,7 +485,6 @@ PetscErrorCode NCSpatialVariable::report_range(double min, double max,
     }
 
   } else {
-
     verbPrintf(2, m_com,
                " %s / %-10s\n"
                "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
@@ -512,22 +492,10 @@ PetscErrorCode NCSpatialVariable::report_range(double min, double max,
                get_string("long_name").c_str(), spacer.c_str(), min, max,
                get_string("glaciological_units").c_str());
   }
-
-  return 0;
 }
 
 //! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
-PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v) {
-  PetscReal min = 0.0, max = 0.0;
-  PetscErrorCode ierr;
-
-  assert(m_grid != NULL);
-
-  // Vec v is always global here (so VecMin and VecMax work as expected)
-  ierr = VecMin(v, NULL, &min);
-  PISM_PETSC_CHK(ierr, "VecMin");
-  ierr = VecMax(v, NULL, &max);
-  PISM_PETSC_CHK(ierr, "VecMax");
+void NCSpatialVariable::check_range(const std::string &filename, double min, double max) {
 
   const std::string &units_string = get_string("units");
 
@@ -555,24 +523,22 @@ PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v
                                     valid_max, units_string.c_str());
     }
   }
-
-  return 0;
 }
 
 //! \brief Define dimensions a variable depends on.
-PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
+void NCSpatialVariable::define_dimensions(const PIO &nc) const {
   bool exists;
 
   // x
   exists = nc.inq_dim(get_x().get_name());
-  if (!exists) {
+  if (not exists) {
     nc.def_dim(m_grid->Mx(), m_x);
     nc.put_dim(get_x().get_name(), m_grid->x());
   }
 
   // y
   exists = nc.inq_dim(get_y().get_name());
-  if (!exists) {
+  if (not exists) {
     nc.def_dim(m_grid->My(), m_y);
     nc.put_dim(get_y().get_name(), m_grid->y());
   }
@@ -581,24 +547,22 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   std::string z_name = get_z().get_name();
   if (z_name.empty() == false) {
     exists = nc.inq_dim(z_name);
-    if (!exists) {
+    if (not exists) {
       unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
       nc.def_dim(nlevels, m_z);
       nc.put_dim(z_name, m_zlevels);
     }
   }
-
-  return 0;
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
-                                         bool write_in_glaciological_units) const {
+void NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
+                               bool write_in_glaciological_units) const {
   std::vector<std::string> dims;
 
   bool exists = nc.inq_var(get_name());
   if (exists) {
-    return 0;
+    return;
   }
 
   define_dimensions(nc);
@@ -606,18 +570,19 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
   // order here
-  if (ends_with(get_name(), "_bounds") && variable_order == "zyx") {
+  if (ends_with(get_name(), "_bounds") and variable_order == "zyx") {
     variable_order = "yxz";
   }
 
-  std::string x = get_x().get_name(),
+  std::string
+    x = get_x().get_name(),
     y = get_y().get_name(),
     z = get_z().get_name(),
     t = m_time_dimension_name;
 
   nc.redef();
 
-  if (t.empty() == false) {
+  if (not t.empty()) {
     dims.push_back(t);
   }
 
@@ -635,7 +600,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
     dims.push_back(x);
   }
 
-  if (z.empty() == false) {
+  if (not z.empty()) {
     dims.push_back(z);
   }
 
@@ -649,8 +614,6 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
   nc.def_var(get_name(), nctype, dims);
 
   nc.write_attributes(*this, nctype, write_in_glaciological_units);
-
-  return 0;
 }
 
 NCVariable& NCSpatialVariable::get_x() {
@@ -729,7 +692,8 @@ double NCVariable::get_double(const std::string &name) const {
   if (j != m_doubles.end()) {
     return (j->second)[0];
   } else {
-    return GSL_NAN;
+    throw RuntimeError::formatted("variable \"%s\" does not have a double attribute \"%s\"",
+                                  get_name().c_str(), name.c_str());
   }
 }
 
@@ -785,7 +749,7 @@ std::string NCVariable::get_string(const std::string &name) const {
   }
 }
 
-PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
+void NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
 
   // Print text attributes:
   const NCVariable::StringAttrs &strings = this->get_all_strings();
@@ -823,7 +787,6 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
     }
 
   }
-  return 0;
 }
 
 NCTimeseries::NCTimeseries(const std::string &name, const std::string &dimension_name,
@@ -842,11 +805,11 @@ std::string NCTimeseries::get_dimension_name() const {
 }
 
 //! Define a NetCDF variable corresponding to a time-series.
-PetscErrorCode NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
+void NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
 
   bool exists = nc.inq_var(get_name());
   if (exists) {
-    return 0;
+    return;
   }
 
   nc.redef();
@@ -866,8 +829,6 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
   }
 
   nc.write_attributes(*this, PISM_FLOAT, true);
-
-  return 0;
 }
 
 /// NCTimeBounds
@@ -882,7 +843,7 @@ NCTimeBounds::~NCTimeBounds() {
   // empty
 }
 
-PetscErrorCode NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
+void NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
   std::vector<std::string> dims;
   bool exists = false;
   
@@ -892,7 +853,7 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
 
   exists = nc.inq_var(get_name());
   if (exists) {
-    return 0;
+    return;
   }
 
   nc.redef();
@@ -917,8 +878,6 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
   nc.def_var(get_name(), nctype, dims);
 
   nc.write_attributes(*this, nctype, true);
-
-  return 0;
 }
 
 } // end of namespace pism
