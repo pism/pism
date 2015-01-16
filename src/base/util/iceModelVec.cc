@@ -153,26 +153,20 @@ GlobalMax,GlobalMin \e are needed, when m_has_ghosts==true, to get correct
 values because Vecs created with DACreateLocalVector() are of type
 VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
-void IceModelVec::range(double &min, double &max) const {
-  double my_min = 0.0, my_max = 0.0, gmin = 0.0, gmax = 0.0;
+Range IceModelVec::range() const {
+  Range result;
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  ierr = VecMin(m_v, NULL, &my_min);
-  PISM_PETSC_CHK(ierr, "VecMin");
-  ierr = VecMax(m_v, NULL, &my_max);
-  PISM_PETSC_CHK(ierr, "VecMax");
+  ierr = VecMin(m_v, NULL, &result.min); PISM_PETSC_CHK(ierr, "VecMin");
+  ierr = VecMax(m_v, NULL, &result.max); PISM_PETSC_CHK(ierr, "VecMax");
 
   if (m_has_ghosts) {
-    // needs a reduce operation; use GlobalMax;
-    gmin = GlobalMin(m_grid->com, my_min);
-    gmax = GlobalMax(m_grid->com, my_max);
-    min = gmin;
-    max = gmax;
-  } else {
-    min = my_min;
-    max = my_max;
+    // needs a reduce operation; use GlobalMin and GlobalMax;
+    result.min = GlobalMin(m_grid->com, result.min);
+    result.max = GlobalMax(m_grid->com, result.max);
   }
+  return result;
 }
 
 /** Convert from `int` to PETSc's `NormType`.

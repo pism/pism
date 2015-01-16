@@ -36,6 +36,10 @@ class LocalInterpCtx;
 //! What "kind" of a vector to create: with or without ghosts.
 enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 
+struct Range {
+  double min, max;
+};
+
 //! \brief Abstract class for reading, writing, allocating, and accessing a
 //! DA-based PETSc Vec (2D and 3D fields) from within IceModel.
 /*!
@@ -181,7 +185,7 @@ public:
   int nlevels() const;
   std::vector<double> get_levels() const;
 
-  virtual void  range(double &min, double &max) const;
+  virtual Range range() const;
   double norm(int n) const;
   std::vector<double> norm_all(int n) const;
   virtual void  add(double alpha, const IceModelVec &x);
