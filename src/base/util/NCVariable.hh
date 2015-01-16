@@ -26,6 +26,9 @@
 #include <petscvec.h>
 
 #include "PISMUnits.hh"
+
+// We use PIO and IO_Type here. (I should move methods using this out
+// of NCSpatialVariable. -- CK)
 #include "PIO.hh"
 
 namespace pism {
@@ -174,7 +177,7 @@ private:
   NCVariable m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
-  PetscErrorCode report_range(Vec v, bool found_by_standard_name);
+  PetscErrorCode report_range(double min, double max, bool found_by_standard_name);
   PetscErrorCode check_range(const std::string &filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc) const;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -439,7 +439,13 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     if (do_report_range == true) {
       // We can report the success, and the range now:
       verbPrintf(2, m_com, "  FOUND ");
-      this->report_range(v, found_by_standard_name);
+      {
+        double min = 0.0, max = 0.0;
+        ierr = VecMin(v, NULL, &min); PISM_PETSC_CHK(ierr, "VecMin");
+        ierr = VecMax(v, NULL, &max); PISM_PETSC_CHK(ierr, "VecMax");
+
+        this->report_range(min, max, found_by_standard_name);
+      }
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL ||
@@ -469,14 +475,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 
 
 //! Report the range of a \b global Vec `v`.
-PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_name) {
-  PetscErrorCode ierr;
-  double min, max;
-
-  ierr = VecMin(v, NULL, &min);
-  PISM_PETSC_CHK(ierr, "VecMin");
-  ierr = VecMax(v, NULL, &max);
-  PISM_PETSC_CHK(ierr, "VecMax");
+PetscErrorCode NCSpatialVariable::report_range(double min, double max,
+                                               bool found_by_standard_name) {
 
   // UnitConverter constructor will make sure that units are compatible.
   UnitConverter c(this->get_units(), this->get_glaciological_units());
