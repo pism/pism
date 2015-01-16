@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -216,14 +216,6 @@
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
 %rename(_verbPrintf) verbPrintf;
 
-%include pism_Vars.i
-
-%include pism_IceModelVec.i
-
-%include pism_Timeseries.i
-
-%include pism_IceGrid.i
-
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
 // following works for now.
@@ -235,37 +227,39 @@
  $1 = SWIG_CheckState(res);
 }
 
-%include pism_PIO.i
 
 // Tell SWIG that the following variables are truly constant
 %immutable pism::PISM_Revision;
 %immutable pism::PISM_DefaultConfigFile;
 
-// Now the header files for the PISM source code we want to wrap.
-// By default, SWIG does not wrap stuff included from an include file,
-// (which is good!) so we need to list every file containing a class
-// we want to wrap, including base classes if we want access to base class
-// methods
-
-/* NCVariable and NCSpatialVariable don't have default constructors. */
-%feature("valuewrapper") pism::NCVariable;
-%feature("valuewrapper") pism::NCSpatialVariable;
-
+/* PISM header with no dependence on other PISM headers. */
+%include "enthalpyConverter.hh"
 %ignore pism::Unit::operator=;
 %feature("valuewrapper") pism::UnitSystem;
 %feature("valuewrapper") pism::Unit;
 
 %include "PISMUnits.hh"
- /* make sure PIO.i is included before NCVariable.hh */
-%include "NCVariable.hh"
+/* End of independent PISM classes. */
+
+%include pism_PIO.i
+
+/* make sure PIO.i is included before NCVariable.hh */
+%include pism_NCVariable.i
 %include "PISMConfig.hh"
 %include "pism_const.hh"
+
+%include pism_Vars.i
+
+%include pism_IceModelVec.i
+
+%include pism_Timeseries.i
+
+%include pism_IceGrid.i
 
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"
 %include "basal_resistance.hh"
 %include "rheology/flowlaws.hh"
-%include "enthalpyConverter.hh"
 
 %include "flowlaw_factory.hh"
 
