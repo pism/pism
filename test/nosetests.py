@@ -73,6 +73,18 @@ def random_vec_test():
     vec_scalar_ghosted = PISM.vec.randVectorS(grid, 1.0, 2)
     vec_vector_ghosted = PISM.vec.randVectorV(grid, 2.0, 2)
 
+def vec_metadata_test():
+    "Test accessing IceModelVec metadata"
+    grid = create_dummy_grid()
+
+    vec_scalar = PISM.vec.randVectorS(grid, 1.0)
+
+    m = vec_scalar.metadata()
+
+    m.set_units("kg")
+
+    print m.get_string("units")
+
 def vec_access_test():
     "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
     grid = create_dummy_grid()

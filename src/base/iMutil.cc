@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -203,15 +203,14 @@ void  IceModel::stampHistory(const std::string &str) {
   Extends the grid such that the new one has 2 (two) levels above the ice.
  */
 void IceModel::check_maximum_thickness() {
-  double H_min, H_max;
-
-  ice_thickness.range(H_min, H_max);
-  if (grid.Lz() >= H_max) {
+Range thk_range = ice_thickness.range();
+  if (grid.Lz() >= thk_range.max) {
     return;
   }
 
-  throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height of the computational box (%7.4f m).",
-                                H_max, grid.Lz());
+  throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height"
+                                " of the computational box (%7.4f m).",
+                                thk_range.max, grid.Lz());
 }
 
 

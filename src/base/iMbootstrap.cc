@@ -181,13 +181,12 @@ void IceModel::bootstrap_2d(const std::string &filename) {
                        config.get("bootstrapping_H_value_no_var"));
   // check the range of the ice thickness
   {
-    double thk_min = 0.0, thk_max = 0.0;
-    ice_thickness.range(thk_min, thk_max);
+    Range thk_range = ice_thickness.range();
 
-    if (thk_max >= grid.Lz() + 1e-6) {
+    if (thk_range.max >= grid.Lz() + 1e-6) {
       throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
-                                    thk_max, grid.Lz());
+                                    thk_range.max, grid.Lz());
     }
   }
 
@@ -216,13 +215,12 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   }
 
   // check if Lz is valid
-  double thk_min, thk_max;
-  ice_thickness.range(thk_min, thk_max);
+  Range thk_range = ice_thickness.range();
 
-  if (thk_max > grid.Lz()) {
+  if (thk_range.max > grid.Lz()) {
     throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_max, grid.Lz());
+                                  thk_range.max, grid.Lz());
   }
 }
 
