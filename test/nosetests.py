@@ -85,6 +85,22 @@ def vec_metadata_test():
 
     print m.get_string("units")
 
+def vars_ownership_test():
+    "Test passing IceModelVec ownership from Python to C++ (i.e. PISM)."
+    grid = create_dummy_grid()
+    variables = PISM.Vars()
+
+    def add_thk(context):
+        v = PISM.model.createIceThicknessVec(grid)
+        context.add(v)
+
+    print "Adding 'thk'..."
+    add_thk(variables)
+    print "Returned from add_thk()..."
+    variables.lock()
+    print "Getting 'thk' from variables..."
+    variables.get("thk")
+
 def vec_access_test():
     "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
     grid = create_dummy_grid()

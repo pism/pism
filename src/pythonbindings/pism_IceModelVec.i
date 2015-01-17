@@ -14,6 +14,15 @@ using pism::Vector2;
 using pism::StarStencil;
 %}
 
+%shared_ptr(pism::IceModelVec)
+%shared_ptr(pism::IceModelVec2)
+%shared_ptr(pism::IceModelVec2S)
+%shared_ptr(pism::IceModelVec2V)
+%shared_ptr(pism::IceModelVec2Int)
+%shared_ptr(pism::IceModelVec2Stag)
+%shared_ptr(pism::IceModelVec3D)
+%shared_ptr(pism::IceModelVec3)
+
 %Pism_pointer_reference_is_always_output(pism::IceModelVec2S)
 %Pism_pointer_reference_is_always_output(pism::IceModelVec2V)
 %Pism_pointer_reference_is_always_output(pism::IceModelVec3)

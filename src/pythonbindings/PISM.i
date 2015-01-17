@@ -248,9 +248,9 @@
 %include "PISMConfig.hh"
 %include "pism_const.hh"
 
-%include pism_Vars.i
-
 %include pism_IceModelVec.i
+
+%include pism_Vars.i
 
 %include pism_Timeseries.i
 
