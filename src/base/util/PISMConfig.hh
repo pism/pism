@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,11 @@
 #ifndef _PISMCONFIG_H_
 #define _PISMCONFIG_H_
 
-#include "NCVariable.hh"
-#include "PISMUnits.hh"
 #include <string>
 #include <set>
+
+#include "NCVariable.hh"
+#include "PISMUnits.hh"
 
 namespace pism {
 

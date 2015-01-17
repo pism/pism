@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,9 +24,10 @@
 #include "Timeseries.hh"
 #include "pism_options.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
+#include "PIO.hh"
 
 #include "error_handling.hh"
-#include "PISMConfig.hh"
 
 namespace pism {
 

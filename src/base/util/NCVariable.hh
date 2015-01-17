@@ -23,16 +23,18 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <mpi.h>
 
 #include "PISMUnits.hh"
 
 // We use PIO and IO_Type here. (I should move methods using this out
 // of NCSpatialVariable. -- CK)
-#include "PIO.hh"
+#include "IO_Flags.hh"
 
 namespace pism {
 
 class Time;
+class PIO;
 
 //! @brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.

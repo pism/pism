@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMConfig.hh"
-#include "pism_options.hh"
 #include <sstream>
 
+#include "PISMConfig.hh"
+#include "PIO.hh"
+#include "pism_options.hh"
 #include "error_handling.hh"
 
 namespace pism {
