@@ -83,7 +83,6 @@ using pism::StarStencil;
 
 %rename(__mult__) pism::Vector2::operator*;
 %rename(__add__) pism::Vector2::operator+;
-%ignore pism::Vector2::operator=;
 %ignore operator*(const double &a, const pism::Vector2 &v1);
 %extend pism::Vector2
 {

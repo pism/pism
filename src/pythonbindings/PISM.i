@@ -234,11 +234,15 @@
 
 /* PISM header with no dependence on other PISM headers. */
 %include "enthalpyConverter.hh"
+%ignore pism::Vector2::operator=;
+%include "Vector2.hh"
+
 %ignore pism::Unit::operator=;
 %feature("valuewrapper") pism::UnitSystem;
 %feature("valuewrapper") pism::Unit;
 
 %include "PISMUnits.hh"
+%include pism_DM.i
 /* End of independent PISM classes. */
 
 %include pism_PIO.i
