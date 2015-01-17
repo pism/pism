@@ -403,9 +403,9 @@ PetscErrorCode RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &res
 //! Compute the nonlinear conductivity at the center of cell edges.
 /*!
 Computes
-    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla(P+\rho_w g b)|^{\beta-2} \f]
-on the staggered grid.  We denote \f$R = P+\rho_w g b\f$ and
-\f$\Pi = |\nabla R|^2\f$ internally; the latter is computed on a staggered grid
+    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla R|^{\beta-2} \f]
+on the staggered grid, where \f$R = P+\rho_w g b\f$.  We denote
+\f$\Pi = |\nabla R|^2\f$ internally; this is computed on a staggered grid
 by a [\ref Mahaffy] -like scheme.  This requires \f$R\f$ to be defined on a box
 stencil of width 1.
 
