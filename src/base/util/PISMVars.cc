@@ -54,9 +54,8 @@ bool Vars::is_available(const std::string &name) const {
 
 //! \brief Add an IceModelVec v using the name `name`.
 void Vars::add(const IceModelVec &v, const std::string &name) const {
-  if (m_locked) {
-    throw RuntimeError("this pism::Vars instance is locked");
-  }
+  ensure_that_not_locked();
+
   if (m_variables.find(name) != m_variables.end()) {
     throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s' was added already.",
                                   name.c_str());
@@ -71,9 +70,7 @@ void Vars::add(const IceModelVec &v, const std::string &name) const {
   This code will only work for IceModelVecs with dof == 1.
 */
 void Vars::add(const IceModelVec &v) const {
-  if (m_locked) {
-    throw RuntimeError("this pism::Vars instance is locked");
-  }
+  ensure_that_not_locked();
 
   const NCSpatialVariable &m = v.metadata();
   std::string name = v.name();
@@ -99,9 +96,7 @@ void Vars::add(const IceModelVec &v) const {
 
 //! Removes a variable with the key `name` from the dictionary.
 void Vars::remove(const std::string &name) {
-  if (m_locked) {
-    throw RuntimeError("this pism::Vars instance is locked");
-  }
+  ensure_that_not_locked();
 
   const IceModelVec *v = m_variables[name];
   const NCSpatialVariable &m = v->metadata();
@@ -128,6 +123,20 @@ void Vars::lock() {
   m_locked = true;
 }
 
+void Vars::ensure_that_locked() const {
+  if (not m_locked) {
+    throw RuntimeError("pism::Vars is not fully initialized."
+                       " Make sure pism::Vars::lock() was called");
+  }
+}
+
+void Vars::ensure_that_not_locked() const {
+  if (m_locked) {
+    throw RuntimeError("this pism::Vars instance is locked");
+  }
+}
+
+
 //! \brief Returns a pointer to an IceModelVec containing variable `name` or
 //! NULL if that variable was not found.
 /*!
@@ -142,9 +151,8 @@ const IceModelVec* Vars::get(const std::string &name) const {
 }
 
 const IceModelVec* Vars::get_internal(const std::string &name) const {
-  if (not m_locked) {
-    throw RuntimeError("pism::Vars is not fully initialized yet");
-  }
+  ensure_that_locked();
+
   std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
     std::string short_name = j->second;
@@ -211,9 +219,7 @@ const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
  * get written or de-allocated twice).
  */
 std::set<std::string> Vars::keys() const {
-  if (not m_locked) {
-    throw RuntimeError("pism::Vars is not fully initialized yet");
-  }
+  ensure_that_locked();
 
   std::set<std::string> result;
   std::map<std::string,const IceModelVec*>::const_iterator i;
@@ -225,9 +231,7 @@ std::set<std::string> Vars::keys() const {
 }
 
 void Vars::add_shared(IceModelVec::Ptr variable) const {
-  if (m_locked) {
-    throw RuntimeError("this pism::Vars instance is locked");
-  }
+  ensure_that_not_locked();
 
   const NCSpatialVariable &m = variable->metadata();
   std::string name = variable->name();
@@ -253,9 +257,8 @@ void Vars::add_shared(IceModelVec::Ptr variable) const {
 
 
 void Vars::add_shared(IceModelVec::Ptr variable, const std::string &name) const {
-  if (m_locked) {
-    throw RuntimeError("this pism::Vars instance is locked");
-  }
+  ensure_that_not_locked();
+
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
     throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s' was added already.",
                                   name.c_str());
@@ -331,9 +334,7 @@ IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
 
 
 std::set<std::string> Vars::keys_shared() const {
-  if (not m_locked) {
-    throw RuntimeError("pism::Vars is not fully initialized yet");
-  }
+  ensure_that_locked();
 
   std::set<std::string> result;
   std::map<std::string,IceModelVec::Ptr>::const_iterator i;
@@ -345,9 +346,8 @@ std::set<std::string> Vars::keys_shared() const {
 }
 
 IceModelVec::Ptr Vars::get_internal_shared(const std::string &name) const {
-  if (not m_locked) {
-    throw RuntimeError("pism::Vars is not fully initialized yet");
-  }
+  ensure_that_locked();
+
   std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
     std::string short_name = j->second;

@@ -60,6 +60,8 @@ public:
   std::set<std::string> keys_shared() const;
 private:
   bool m_locked;
+  void ensure_that_locked() const;
+  void ensure_that_not_locked() const;
   const IceModelVec* get_internal(const std::string &name) const;
   mutable std::map<std::string, const IceModelVec*> m_variables;
   //! stores standard names of variables that
