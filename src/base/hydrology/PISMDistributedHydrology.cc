@@ -527,6 +527,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+  // FIXME issue #256
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
                       " 'distributed' hydrology summary:\n"

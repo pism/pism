@@ -734,8 +734,8 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
 
-For updating W = `bwat`, calls raw_update_W().  For updating Wtil = `tillwat`,
-calls raw_update_Wtil().
+To update W = `bwat` we call raw_update_W(), and to update Wtil = `tillwat` we
+call raw_update_Wtil().
  */
 PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
   PetscErrorCode ierr;
@@ -818,6 +818,7 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+  // FIXME issue #256
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
                       " 'routing' hydrology summary:\n"
