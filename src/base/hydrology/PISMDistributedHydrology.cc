@@ -487,6 +487,7 @@ void DistributedHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+  // FIXME issue #256
   if (report_mass_accounting) {
     verbPrintf(2, m_grid.com,
                " 'distributed' hydrology summary:\n"

@@ -374,9 +374,9 @@ void RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
 //! Compute the nonlinear conductivity at the center of cell edges.
 /*!
 Computes
-    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla(P+\rho_w g b)|^{\beta-2} \f]
-on the staggered grid.  We denote \f$R = P+\rho_w g b\f$ and
-\f$\Pi = |\nabla R|^2\f$ internally; the latter is computed on a staggered grid
+    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla R|^{\beta-2} \f]
+on the staggered grid, where \f$R = P+\rho_w g b\f$.  We denote
+\f$\Pi = |\nabla R|^2\f$ internally; this is computed on a staggered grid
 by a [\ref Mahaffy] -like scheme.  This requires \f$R\f$ to be defined on a box
 stencil of width 1.
 
@@ -692,8 +692,8 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
 
-For updating W = `bwat`, calls raw_update_W().  For updating Wtil = `tillwat`,
-calls raw_update_Wtil().
+To update W = `bwat` we call raw_update_W(), and to update Wtil = `tillwat` we
+call raw_update_Wtil().
  */
 void RoutingHydrology::update(double icet, double icedt) {
 
@@ -774,6 +774,7 @@ void RoutingHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+  // FIXME issue #256
   if (report_mass_accounting) {
     verbPrintf(2, m_grid.com,
                " 'routing' hydrology summary:\n"

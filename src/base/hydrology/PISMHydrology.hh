@@ -50,16 +50,18 @@ namespace pism {
   This interface is appropriate to subglacial hydrology models which track a
   two-dimensional water layer with a well-defined thickness and pressure at each
   map-plane location.  The methods subglacial_water_thickness() and
-  subglacial_water_pressure() return amount and pressure.  This subglacial water
-  is *transportable*, that is, it moves along a modeled hydraulic head gradient.
-  Background references for such models include [\ref FlowersClarke2002_theory,
-  \ref Hewittetal2012, \ref Schoofetal2012, \ref Hewitt2013].
+  subglacial_water_pressure() return amount and pressure of the *transportable*
+  water, that is, the subglacial water which moves along a modeled hydraulic
+  head gradient, in contrast to the water stored in the till.
 
-  These models always have a separate, but potentially-coupled, amount of water
-  which is held in local till storage.  It is important to note that the
+  The transportable water moves through a subglacial morphology which is not
+  determined in this base class.
+
+  The Hydrology models have separate, but potentially-coupled, water
+  which is held in local till storage.  Thus the
   transportable water (bwat) and till water (tillwat) thicknesses are different.
   Published models with till storage include [\ref BBssasliding, \ref SchoofTill,
-  \ref TrufferEchelmeyerHarrison2001, \ref Tulaczyketal2000b].
+  \ref TrufferEchelmeyerHarrison2001, \ref Tulaczyketal2000b, \ref vanderWeletal2013].
 
   The till water thickness is can be used, via the theory of
   [\ref Tulaczyketal2000], to compute an effective pressure for the water in the
@@ -147,16 +149,17 @@ protected:
 };
 
 
-//! The PISM minimal model has till in a "can". Water that overflows
-//! the can is not conserved. There is no model for lateral transport.
+//! The PISM minimal model has till, but water that exceeds the capacity of the till is not conserved. There is no model for lateral transport.
 /*!
   This is the minimum functional derived class.  It updates till water thickness.
+  It implements a version of the "undrained plastic bed" model of [\ref Tulaczyketal2000b],
+  but with non-conserved drainage.
 
   It has no transportable water and subglacial_water_thickness() returns zero.
 
   This model can give no meaningful report on conservation errors.
 
-  Here is a talk which illustrates the "till-can" metaphor:
+  This talk illustrates a "till-can" metaphor applicable to this model:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 */
 class NullTransportHydrology : public Hydrology {
@@ -184,13 +187,14 @@ public:
   subglacial water and which conserves the water mass.  It was promised
   as a PISM addition in in Bueler's talk at IGS 2012 Fairbanks:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+  Further documentation is in [\ref BuelervanPeltDRAFT].
 
   The water velocity is along the steepest descent route for the hydraulic
   potential.  This potential is (mostly) a function of ice sheet geometry,
   because the water pressure is set to the overburden pressure, a simplified but
   well-established model [\ref Shreve1972].  However, the water layer thickness
   is also a part of the hydraulic potential because it is actually the potential
-  of the top of the water layer.
+  of the \i top of the water layer.
 
   This (essential) model has been used for finding locations of subglacial lakes
   [\ref Siegertetal2009, \ref Livingstoneetal2013TCD].  Subglacial lakes occur
@@ -307,13 +311,14 @@ protected:
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
-  This implements the new Bueler & van Pelt model documented at the repo (currently
-  private):
-  https://github.com/bueler/hydrolakes
-  Unlike RoutingHydrology, the water pressure P is a state variable, and there
+  This class implements the model documented in [\ref BuelervanPeltDRAFT].
+
+  Unlike RoutingHydrology, the water pressure \f$P\f$ is a state variable, and there
   are modeled mechanisms for cavity geometry evolution, including creep closure
   and opening through sliding ("cavitation").  Because of cavitation, this model
-  needs access to a StressBalance object.
+  needs access to a StressBalance object.   Background references for this kind of
+  model includes especially [\ref Kamb1987, \ref Schoofetal2012], but see also
+  [\ref Hewit2011, \ref Hewittetal2012, \ref Hewitt2013].
 
   In addition to the actions within the null strip taken by RoutingHydrology,
   this model also sets the staggered grid values of the gradient of the hydraulic
