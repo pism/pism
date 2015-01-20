@@ -63,24 +63,23 @@ public:
 
   //! Set strength = (viscosity times thickness).
   /*! Determines nu by input strength and current min_thickness. */
-  virtual PetscErrorCode set_notional_strength(double my_nuH) {
+  virtual void set_notional_strength(double my_nuH) {
     if (my_nuH <= 0.0) {
-      throw RuntimeError("nuH must be positive");
+      throw RuntimeError::formatted("nuH must be positive, got %f", my_nuH);
     }
     constant_nu = my_nuH / min_thickness;
-    return 0;
   }
 
   //! Set minimum thickness to trigger use of extension.
   /*! Preserves strength (nuH) by also updating using current nu.  */
-  virtual PetscErrorCode set_min_thickness(double my_min_thickness) {
+  virtual void set_min_thickness(double my_min_thickness) {
     if (my_min_thickness <= 0.0) {
-      throw RuntimeError("min_thickness must be positive");
+      throw RuntimeError::formatted("min_thickness must be positive, got %f",
+                                    my_min_thickness);
     }
     double nuH = constant_nu * min_thickness;
     min_thickness = my_min_thickness;
     constant_nu = nuH / min_thickness;
-    return 0;
   }
 
   //! Returns strength = (viscosity times thickness).
