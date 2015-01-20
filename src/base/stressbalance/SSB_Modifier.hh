@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -42,22 +42,22 @@ public:
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
   virtual void get_diffusive_flux(IceModelVec2Stag* &result) {
-    result = &diffusive_flux;
+    result = &m_diffusive_flux;
   }
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   virtual void get_max_diffusivity(double &result) {
-    result = D_max;
+    result = m_D_max;
   }
 
   virtual void get_horizontal_3d_velocity(IceModelVec3* &u_result,
-                                                    IceModelVec3* &v_result) {
-    u_result = &u;
-    v_result = &v;
+                                          IceModelVec3* &v_result) {
+    u_result = &m_u;
+    v_result = &m_v;
   }
 
   virtual void get_volumetric_strain_heating(IceModelVec3* &result) {
-    result = &strain_heating;
+    result = &m_strain_heating;
   }
 
   virtual void stdout_report(std::string &result) {
@@ -65,14 +65,14 @@ public:
   }
 
   IceFlowLaw* get_flow_law() {
-    return flow_law;
+    return m_flow_law;
   }
 protected:
-  IceFlowLaw *flow_law;
-  EnthalpyConverter &EC;
-  double D_max;
-  IceModelVec2Stag diffusive_flux;
-  IceModelVec3 u, v, strain_heating;
+  IceFlowLaw *m_flow_law;
+  EnthalpyConverter &m_EC;
+  double m_D_max;
+  IceModelVec2Stag m_diffusive_flux;
+  IceModelVec3 m_u, m_v, m_strain_heating;
 };
 
 

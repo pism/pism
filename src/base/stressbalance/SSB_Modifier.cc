@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,30 +26,30 @@
 namespace pism {
 
 SSB_Modifier::SSB_Modifier(const IceGrid &g, EnthalpyConverter &e)
-  : Component(g), EC(e) {
+  : Component(g), m_EC(e) {
 
-  D_max = 0.0;
+  m_D_max = 0.0;
 
-  u.create(m_grid, "uvel", WITH_GHOSTS);
-  u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+  m_u.create(m_grid, "uvel", WITH_GHOSTS);
+  m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
               "m s-1", "land_ice_x_velocity");
-  u.set_glaciological_units("m year-1");
-  u.write_in_glaciological_units = true;
+  m_u.set_glaciological_units("m year-1");
+  m_u.write_in_glaciological_units = true;
 
-  v.create(m_grid, "vvel", WITH_GHOSTS);
-  v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+  m_v.create(m_grid, "vvel", WITH_GHOSTS);
+  m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
               "m s-1", "land_ice_y_velocity");
-  v.set_glaciological_units("m year-1");
-  v.write_in_glaciological_units = true;
+  m_v.set_glaciological_units("m year-1");
+  m_v.write_in_glaciological_units = true;
 
-  strain_heating.create(m_grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
-  strain_heating.set_attrs("internal",
+  m_strain_heating.create(m_grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
+  m_strain_heating.set_attrs("internal",
                            "rate of strain heating in ice (dissipation heating)",
                            "W m-3", "");
-  strain_heating.set_glaciological_units("mW m-3");
+  m_strain_heating.set_glaciological_units("mW m-3");
 
-  diffusive_flux.create(m_grid, "diffusive_flux", WITH_GHOSTS, 1);
-  diffusive_flux.set_attrs("internal", 
+  m_diffusive_flux.create(m_grid, "diffusive_flux", WITH_GHOSTS, 1);
+  m_diffusive_flux.set_attrs("internal", 
                            "diffusive (SIA) flux components on the staggered grid",
                            "", "");
   
@@ -66,19 +66,19 @@ void ConstantInColumn::init() {
 ConstantInColumn::ConstantInColumn(const IceGrid &g, EnthalpyConverter &e)
   : SSB_Modifier(g, e)
 {
-  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_grid.config, &EC);
+  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_grid.config, &m_EC);
 
   ice_factory.setType(m_config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();
-  flow_law = ice_factory.create();
+  m_flow_law = ice_factory.create();
 }
 
 ConstantInColumn::~ConstantInColumn()
 {
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
+  if (m_flow_law != NULL) {
+    delete m_flow_law;
+    m_flow_law = NULL;
   }
 }
 
@@ -100,24 +100,24 @@ void ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
 
   // horizontal velocity and its maximum:
   IceModelVec::AccessList list;
-  list.add(u);
-  list.add(v);
+  list.add(m_u);
+  list.add(m_v);
   list.add(*vel_input);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    u.setColumn(i,j, (*vel_input)(i,j).u);
-    v.setColumn(i,j, (*vel_input)(i,j).v);
+    m_u.setColumn(i,j, (*vel_input)(i,j).u);
+    m_v.setColumn(i,j, (*vel_input)(i,j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):
-  u.update_ghosts();
-  v.update_ghosts();
+  m_u.update_ghosts();
+  m_v.update_ghosts();
 
   // diffusive flux and maximum diffusivity
-  diffusive_flux.set(0.0);
-  D_max = 0.0;
+  m_diffusive_flux.set(0.0);
+  m_D_max = 0.0;
 }
 
 } // end of namespace pism

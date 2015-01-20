@@ -61,20 +61,20 @@ SIAFD::SIAFD(const IceGrid &g, EnthalpyConverter &e)
   second_to_kiloyear = m_grid.convert(1, "second", "1000 years");
 
   {
-    IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &EC);
+    IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
 
     ice_factory.setType(m_config.get_string("sia_flow_law"));
 
     ice_factory.setFromOptions();
-    flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create();
   }
 }
 
 SIAFD::~SIAFD() {
   delete bed_smoother;
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
+  if (m_flow_law != NULL) {
+    delete m_flow_law;
+    m_flow_law = NULL;
   }
 }
 
@@ -86,7 +86,7 @@ void SIAFD::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the SIA stress balance modifier...\n");
   verbPrintf(2, m_grid.com,
-             "  [using the %s flow law]\n", flow_law->name().c_str());
+             "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
   mask      = m_grid.variables().get_2d_mask("mask");
   thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
@@ -124,12 +124,12 @@ void SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   m_grid.profiling.end("SIA gradient");
 
   m_grid.profiling.begin("SIA flux");
-  compute_diffusive_flux(h_x, h_y, diffusive_flux, fast);
+  compute_diffusive_flux(h_x, h_y, m_diffusive_flux, fast);
   m_grid.profiling.end("SIA flux");
 
   if (!fast) {
     m_grid.profiling.begin("SIA 3D hor. vel.");
-    compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v);
+    compute_3d_horizontal_velocity(h_x, h_y, vel_input, m_u, m_v);
     m_grid.profiling.end("SIA 3D hor. vel.");
   }
 }
@@ -195,7 +195,7 @@ void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
 void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double n = flow_law->exponent(), // presumably 3.0
+  const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
@@ -531,7 +531,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
 
   std::vector<double> delta_ij(m_grid.Mz());
 
-  const double enhancement_factor = flow_law->enhancement_factor();
+  const double enhancement_factor = m_flow_law->enhancement_factor();
   double ice_grain_size = m_config.get("ice_grain_size");
 
   bool compute_grain_size_using_age = m_config.get_flag("compute_grain_size_using_age");
@@ -542,7 +542,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                        "age is needed for grain-size-based flow law");
   }
 
-  const bool use_age = (IceFlowLawUsesGrainSize(flow_law) &&
+  const bool use_age = (IceFlowLawUsesGrainSize(m_flow_law) &&
                         compute_grain_size_using_age &&
                         m_config.get_flag("do_age"));
 
@@ -627,7 +627,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
         double depth = thk - m_grid.z(k); // FIXME issue #15
         // pressure added by the ice (i.e. pressure difference between the
         // current level and the top of the column)
-        const double pressure = EC.getPressureFromDepth(depth);
+        const double pressure = m_EC.getPressureFromDepth(depth);
 
         double flow;
         if (use_age) {
@@ -636,7 +636,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
         // If the flow law does not use grain size, it will just ignore it,
         // no harm there
         double E = 0.5 * (E_ij[k] + E_offset[k]);
-        flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
+        flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
         delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
@@ -680,7 +680,7 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
     }
   } // i
 
-  D_max = GlobalMax(m_grid.com, my_D_max);
+  m_D_max = GlobalMax(m_grid.com, my_D_max);
 }
 
 //! \brief Compute diffusivity (diagnostically).
