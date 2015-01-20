@@ -40,41 +40,37 @@ static char help[] =
 using namespace pism;
 
 // thickness profile in the van der Veen solution
-static double H_exact(double V0, double H0, double C, double x)
-{
+static double H_exact(double V0, double H0, double C, double x) {
   const double Q0 = V0*H0;
   return pow(4 * C / Q0 * x + 1/pow(H0, 4), -0.25);
 }
 
 // velocity profile; corresponds to constant flux
-static double u_exact(double V0, double H0, double C, double x)
-{
+static double u_exact(double V0, double H0, double C, double x) {
   const double Q0 = V0*H0;
   return Q0 / H_exact(V0, H0, C, x);
 }
 
-class SSATestCaseCFBC: public SSATestCase
-{
+class SSATestCaseCFBC: public SSATestCase {
 public:
   SSATestCaseCFBC(MPI_Comm com, Config &c)
-    : SSATestCase(com, c)
-  {
+    : SSATestCase(com, c) {
     UnitSystem s = c.get_unit_system();
     V0 = s.convert(300.0, "m/year", "m/second");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
   };
 
-  virtual PetscErrorCode write_nuH(const std::string &filename);
+  virtual void write_nuH(const std::string &filename);
 
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx, int My);
+  virtual void initializeGrid(int Mx, int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
   double V0, //!< grounding line vertically-averaged velocity
@@ -82,7 +78,7 @@ protected:
     C;       //!< "typical constant ice parameter"
 };
 
-PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
+void SSATestCaseCFBC::write_nuH(const std::string &filename) {
 
   SSAFD *ssafd = dynamic_cast<SSAFD*>(m_ssa);
   if (ssafd == NULL) {
@@ -97,23 +93,18 @@ PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
   result->write(filename);
 
   delete result;
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::initializeGrid(int Mx, int My)
-{
+void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
 
   double halfWidth = 250.0e3;  // 500.0 km length
   double Lx = halfWidth, Ly = halfWidth;
   m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, Y_PERIODIC);
-  return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
-{
+void SSATestCaseCFBC::initializeSSAModel() {
 
   m_config.set_double("ice_softness", pow(1.9e8, -m_config.get("ssa_Glen_exponent")));
   m_config.set_flag("compute_surf_grad_inward_ssa", false);
@@ -121,14 +112,10 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
   m_config.set_string("ssa_flow_law", "isothermal_glen");
   m_config.set_string("output_variable_order", "zyx");
 
-
   m_enthalpyconverter = new EnthalpyConverter(m_config);
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
-{
+void SSATestCaseCFBC::initializeSSACoefficients() {
 
   m_tauc.set(0.0);    // irrelevant
   m_bed.set(-1000.0); // assures shelf is floating
@@ -186,14 +173,11 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   m_vel_bc.update_ghosts();
 
   m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::exactSolution(int i, int /*j*/,
-                                              double x, double /*y*/,
-                                              double *u, double *v)
-{
+void SSATestCaseCFBC::exactSolution(int i, int /*j*/,
+                                    double x, double /*y*/,
+                                    double *u, double *v) {
   if (i != (int)m_grid->Mx() - 1) {
     *u = u_exact(V0, H0, C, x + m_grid->Lx());
   } else {
@@ -201,12 +185,10 @@ PetscErrorCode SSATestCaseCFBC::exactSolution(int i, int /*j*/,
   }
 
   *v = 0;
-  return 0;
 }
 
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;
 
@@ -250,7 +232,7 @@ int main(int argc, char *argv[]) {
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("V");
-    ierr = testcase.write(output_file);
+    testcase.write(output_file);
     testcase.write_nuH(output_file);
   }
   catch (...) {

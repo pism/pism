@@ -47,12 +47,10 @@ static char help[] =
 
 using namespace pism;
 
-class SSATestCasePlug: public SSATestCase
-{
+class SSATestCasePlug: public SSATestCase {
 public:
   SSATestCasePlug(MPI_Comm com, Config &c, double n)
-    : SSATestCase(com, c)
-  {
+    : SSATestCase(com, c) {
     H0 = 2000.; //m
     L=50.e3; // 50km half-width
     dhdx = 0.001; // pure number, slope of surface & bed
@@ -63,13 +61,13 @@ public:
   }
 
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
 
@@ -85,18 +83,15 @@ protected:
 };
 
 
-PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
-{
+void SSATestCasePlug::initializeGrid(int Mx,int My) {
   double Lx=L, Ly = L;
   m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, NOT_PERIODIC);
-  return 0;
 }
 
 
-PetscErrorCode SSATestCasePlug::initializeSSAModel()
-{
+void SSATestCasePlug::initializeSSAModel() {
   // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
@@ -105,11 +100,9 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   // Use constant hardness
   m_config.set_string("ssa_flow_law", "isothermal_glen");
   m_config.set_double("ice_softness", pow(B0, -glen_n));
-  return 0;
 }
 
-PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
-{
+void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   m_config.set_flag("compute_surf_grad_inward_ssa", true);
@@ -157,14 +150,11 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   m_surface.update_ghosts();
 
   m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
-
-  return 0;
 }
 
-PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
+void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
-                                              double *u, double *v)
-{
+                                              double *u, double *v) {
   double earth_grav = m_config.get("standard_gravity"),
     ice_rho = m_config.get("ice_density");
   double f = ice_rho * earth_grav * H0* dhdx;
@@ -172,7 +162,6 @@ PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
 
   *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
   *v = 0;
-  return 0;
 }
 
 int main(int argc, char *argv[]) {

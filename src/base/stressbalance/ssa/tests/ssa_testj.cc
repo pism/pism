@@ -44,45 +44,39 @@ using namespace pism;
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(MPI_Comm com, Config &c):
-    SSATestCase(com, c)
-  { };
+  SSATestCaseJ(MPI_Comm com, Config &c)
+    : SSATestCase(com, c) {
+    // empty
+  }
 
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
-
 };
 
-PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
-{
+void SSATestCaseJ::initializeGrid(int Mx,int My) {
 
   double halfWidth = 300.0e3;  // 300.0 km half-width
   double Lx = halfWidth, Ly = halfWidth;
   m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, XY_PERIODIC);
-  return 0;
 }
 
-PetscErrorCode SSATestCaseJ::initializeSSAModel()
-{
+void SSATestCaseJ::initializeSSAModel() {
   m_config.set_flag("do_pseudo_plastic_till", false);
 
   m_enthalpyconverter = new EnthalpyConverter(m_config);
   m_config.set_string("ssa_flow_law", "isothermal_glen");
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
-{
+void SSATestCaseJ::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant for test J
   m_bed.set(0.0); // assures shelf is floating
   m_ice_mask.set(MASK_FLOATING);
@@ -136,17 +130,13 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   m_vel_bc.update_ghosts();
 
   m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
-                                           double x, double y,
-                                           double *u, double *v)
-{
+void SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
+                                 double x, double y,
+                                 double *u, double *v) {
   double junk1, junk2;
   exactJ(x, y, &junk1, &junk2, u, v);
-  return 0;
 }
 
 

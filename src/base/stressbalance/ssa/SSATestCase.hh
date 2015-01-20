@@ -55,40 +55,40 @@ public:
 
   virtual ~SSATestCase();
 
-  virtual PetscErrorCode init(int Mx, int My,SSAFactory ssafactory);
+  virtual void init(int Mx, int My,SSAFactory ssafactory);
 
-  virtual PetscErrorCode run();
+  virtual void run();
 
-  virtual PetscErrorCode report(const std::string &testname);
+  virtual void report(const std::string &testname);
 
-  virtual PetscErrorCode write(const std::string &filename);
+  virtual void write(const std::string &filename);
 
 protected:
 
-  virtual PetscErrorCode buildSSACoefficients();
+  virtual void buildSSACoefficients();
 
   //! Initialize the member variable grid as appropriate for the test case.
-  virtual PetscErrorCode initializeGrid(int Mx,int My) = 0;
+  virtual void initializeGrid(int Mx,int My) = 0;
 
   //! Allocate the member variables basal, ice, and enthalpyconverter as
   //! appropriate for the test case.
-  virtual PetscErrorCode initializeSSAModel() = 0;
+  virtual void initializeSSAModel() = 0;
 
   //! Set up the coefficient variables as appropriate for the test case.
-  virtual PetscErrorCode initializeSSACoefficients() = 0;
+  virtual void initializeSSACoefficients() = 0;
 
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
-  virtual PetscErrorCode exactSolution(int i, int j,
-                                       double x, double y, double *u, double *v);
+  virtual void exactSolution(int i, int j,
+                             double x, double y, double *u, double *v);
 
-  PetscErrorCode report_netcdf(const std::string &testname,
-                               double max_vector,
-                               double rel_vector,
-                               double max_u,
-                               double max_v,
-                               double avg_u,
-                               double avg_v);
+  void report_netcdf(const std::string &testname,
+                     double max_vector,
+                     double rel_vector,
+                     double max_u,
+                     double max_v,
+                     double avg_u,
+                     double avg_v);
   MPI_Comm m_com;
   Config &m_config;
   IceGrid::Ptr m_grid;

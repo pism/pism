@@ -28,7 +28,7 @@ namespace pism {
 
 //! Initialize the storage for the various coefficients used as input to the SSA
 //! (ice elevation, thickness, etc.)
-PetscErrorCode SSATestCase::buildSSACoefficients()
+void SSATestCase::buildSSACoefficients()
 {
 
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
@@ -119,8 +119,6 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   m_melange_back_pressure.set(0.0);
 
   m_grid->variables().lock();
-
-  return 0;
 }
 
 SSATestCase::SSATestCase(MPI_Comm com, Config &c)
@@ -136,17 +134,15 @@ SSATestCase::~SSATestCase()
 }
 
 //! Initialize the test case at the start of a run
-PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
+void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 {
-  PetscErrorCode ierr;
-
   // Set options from command line.
   m_config.scalar_from_option("ssa_eps",  "epsilon_ssa");
   m_config.scalar_from_option("ssa_maxi", "max_iterations_ssafd");
   m_config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence");
 
   // Subclass builds grid->
-  ierr = initializeGrid(Mx,My);
+  initializeGrid(Mx,My);
 
   // Subclass builds ice flow law, basal resistance, etc.
   initializeSSAModel();
@@ -160,24 +156,19 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 
   // Allow the subclass to setup the coefficients.
   initializeSSACoefficients();
-
-  return 0;
 }
 
 //! Solve the SSA
-PetscErrorCode SSATestCase::run()
-{
+void SSATestCase::run() {
   // Solve (fast==true means "no update"):
   verbPrintf(2,m_grid->com,"* Solving the SSA stress balance ...\n");
 
   bool fast = false;
   m_ssa->update(fast, m_melange_back_pressure);
-
-  return 0;
 }
 
 //! Report on the generated solution
-PetscErrorCode SSATestCase::report(const std::string &testname) {
+void SSATestCase::report(const std::string &testname) {
 
   std::string ssa_stdout;
   m_ssa->stdout_report(ssa_stdout);
@@ -259,17 +250,15 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
                 m_grid->convert(gmaxverr, "m/second", "m/year"),
                 m_grid->convert(gavuerr, "m/second", "m/year"),
                 m_grid->convert(gavverr, "m/second", "m/year"));
-
-  return 0;
 }
 
-PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
-                                          double max_vector,
-                                          double rel_vector,
-                                          double max_u,
-                                          double max_v,
-                                          double avg_u,
-                                          double avg_v) {
+void SSATestCase::report_netcdf(const std::string &testname,
+                                double max_vector,
+                                double rel_vector,
+                                double max_u,
+                                double max_v,
+                                double avg_u,
+                                double avg_v) {
   NCTimeseries err("N", "N", m_grid->config.get_unit_system());
   unsigned int start;
   NCVariable global_attributes("PISM_GLOBAL", m_grid->config.get_unit_system());
@@ -277,7 +266,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   options::String filename("-report_file", "NetCDF error report file");
 
   if (not filename.is_set()) {
-    return 0;
+    return;
   }
 
   err.set_units("1");
@@ -352,21 +341,16 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   nc.write_timeseries(err, (size_t)start, avg_v);
 
   nc.close();
-
-  return 0;
 }
 
-PetscErrorCode SSATestCase::exactSolution(int /*i*/, int /*j*/,
-                                          double /*x*/, double /*y*/,
-                                          double *u, double *v)
-{
+void SSATestCase::exactSolution(int /*i*/, int /*j*/,
+                                double /*x*/, double /*y*/,
+                                double *u, double *v) {
   *u=0; *v=0;
-  return 0;
 }
 
 //! Save the computation and data to a file.
-PetscErrorCode SSATestCase::write(const std::string &filename)
-{
+void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
   PIO pio(*m_grid, m_grid->config.get_string("output_format"));
@@ -409,7 +393,6 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   exact.write(pio);
 
   pio.close();
-  return 0;
 }
 
 } // end of namespace pism

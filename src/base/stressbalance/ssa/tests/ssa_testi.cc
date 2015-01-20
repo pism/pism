@@ -40,21 +40,21 @@ static char help[] =
 
 using namespace pism;
 
-class SSATestCaseI: public SSATestCase
-{
+class SSATestCaseI: public SSATestCase {
 public:
-  SSATestCaseI(MPI_Comm com, Config &c):
-                 SSATestCase(com,c)
-  { };
+  SSATestCaseI(MPI_Comm com, Config &c)
+    : SSATestCase(com,c) {
+    // empty
+  }
 
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
 };
@@ -67,31 +67,25 @@ const double H0_schoof = aspect_schoof * L_schoof;
 const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
                                      // given on p. 239 of Schoof; why so big?
 
-PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
-{
+void SSATestCaseI::initializeGrid(int Mx,int My) {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
   double Lx = std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
   m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
-                          0.0, 0.0, // center: (x0,y0)
-                          Mx, My, NOT_PERIODIC);
-  return 0;
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, NOT_PERIODIC);
 }
 
 
-PetscErrorCode SSATestCaseI::initializeSSAModel()
-{
+void SSATestCaseI::initializeSSAModel() {
   m_enthalpyconverter = new EnthalpyConverter(m_config);
 
   m_config.set_flag("do_pseudo_plastic_till", false);
 
   m_config.set_string("ssa_flow_law", "isothermal_glen");
   m_config.set_double("ice_softness", pow(B_schoof, -m_config.get("ssa_Glen_exponent")));
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseI::initializeSSACoefficients()
-{
+void SSATestCaseI::initializeSSACoefficients() {
 
   m_bc_mask.set(0);
   m_thickness.set(H0_schoof);
@@ -147,18 +141,14 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   m_vel_bc.update_ghosts();
 
   m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
-
-  return 0;
 }
 
 
-PetscErrorCode SSATestCaseI::exactSolution(int /*i*/, int /*j*/,
-                                           double x, double y,
-                                           double *u, double *v)
-{
+void SSATestCaseI::exactSolution(int /*i*/, int /*j*/,
+                                 double x, double y,
+                                 double *u, double *v) {
   double junk1, junk2;
   exactI(m_schoof, x,y, &junk1, &junk2,u,v);
-  return 0;
 }
 
 

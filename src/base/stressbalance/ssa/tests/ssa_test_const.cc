@@ -70,31 +70,28 @@ public:
   };
 
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
   double basal_q,
     L, H0, dhdx, nu0, tauc0;
 };
 
-PetscErrorCode SSATestCaseConst::initializeGrid(int Mx,int My)
-{
+void SSATestCaseConst::initializeGrid(int Mx,int My) {
   double Lx=L, Ly = L;
   m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
                           0.0, 0.0, // center: (x0,y0)
                           Mx, My, NOT_PERIODIC);
-  return 0;
 }
 
 
-PetscErrorCode SSATestCaseConst::initializeSSAModel()
-{
+void SSATestCaseConst::initializeSSAModel() {
   m_config.set_flag("do_pseudo_plastic_till", true);
   m_config.set_double("pseudo_plastic_q", basal_q);
 
@@ -103,12 +100,9 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
 
   // The following is irrelevant because we will force linear rheology later.
   m_enthalpyconverter = new EnthalpyConverter(m_config);
-
-  return 0;
 }
 
-PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
-{
+void SSATestCaseConst::initializeSSACoefficients() {
 
   // Force linear rheology
   m_ssa->strength_extension->set_notional_strength(nu0 * H0);
@@ -153,24 +147,20 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
   m_surface.update_ghosts();
 
   m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
-
-  return 0;
 }
 
 
-PetscErrorCode SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
- double /*x*/, double /*y*/, double *u, double *v)
-{
+void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
+                                     double /*x*/, double /*y*/,
+                                     double *u, double *v) {
   double earth_grav = m_config.get("standard_gravity"),
     tauc_threshold_velocity = m_config.get("pseudo_plastic_uthreshold",
-                                         "m/year", "m/second"),
+                                           "m/year", "m/second"),
     ice_rho = m_config.get("ice_density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
-  return 0;
 }
-
 
 int main(int argc, char *argv[]) {
 
