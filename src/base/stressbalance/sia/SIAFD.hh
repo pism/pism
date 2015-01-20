@@ -103,26 +103,27 @@ protected:
   virtual void compute_diffusivity_staggered(IceModelVec2Stag &result);
 
   // pointers to input fields:
-  const IceModelVec2S *bed;
-  const IceModelVec2S *thickness, *surface;
-  const IceModelVec2Int *mask;
-  const IceModelVec3 *age, *enthalpy;
+  const IceModelVec2S *m_bed, *m_thickness, *m_surface;
+  const IceModelVec2Int *m_mask;
+  const IceModelVec3 *m_age, *m_enthalpy;
 
-  // temporary storage:
-  IceModelVec2S work_2d[2];         // for eta, theta and the smoothed thickness
-  IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
-  IceModelVec3 delta[2];            // store delta on the staggered grid
-  IceModelVec3 work_3d[2];      // used to store I and strain_heating
-  // on the staggered grid
+  //! temporary storage for eta, theta and the smoothed thickness
+  IceModelVec2S m_work_2d[2];
+  //! temporary storage for the surface gradient
+  IceModelVec2Stag m_work_2d_stag[2];
+  //! temporary storage for delta on the staggered grid
+  IceModelVec3 m_delta[2];
+  //! temporary storage used to store I and strain_heating on the staggered grid
+  IceModelVec3 m_work_3d[2];
 
-  BedSmoother *bed_smoother;
-  int bed_state_counter;
+  BedSmoother *m_bed_smoother;
+  int m_bed_state_counter;
 
   // profiling
-  int event_sia;
+  int m_event_sia;
 
   // unit conversion
-  double second_to_kiloyear;
+  double m_second_to_kiloyear;
 };
 
 

@@ -52,7 +52,7 @@ void SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   result->create(m_grid, "schoofs_theta", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  model->bed_smoother->get_theta(*surface, result);
+  model->m_bed_smoother->get_theta(*surface, result);
 
   output = result;
 }
@@ -74,7 +74,7 @@ void SIAFD_topgsmooth::compute(IceModelVec* &output) {
   result->create(m_grid, "topgsmooth", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  result->copy_from(model->bed_smoother->get_smoothed_bed());
+  result->copy_from(model->m_bed_smoother->get_smoothed_bed());
 
   output = result;
 }
@@ -101,7 +101,7 @@ void SIAFD_thksmooth::compute(IceModelVec* &output) {
   result->create(m_grid, "thksmooth", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+  model->m_bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         result);
 
   output = result;
@@ -183,10 +183,10 @@ void SIAFD_h_x::compute(IceModelVec* &output) {
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->work_2d_stag[0],
-                                  model->work_2d_stag[1]);
+  model->compute_surface_gradient(model->m_work_2d_stag[0],
+                                  model->m_work_2d_stag[1]);
 
-  result->copy_from(model->work_2d_stag[0]);
+  result->copy_from(model->m_work_2d_stag[0]);
 
   output = result;
 }
@@ -214,10 +214,10 @@ void SIAFD_h_y::compute(IceModelVec* &output) {
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->work_2d_stag[0],
-                                  model->work_2d_stag[1]);
+  model->compute_surface_gradient(model->m_work_2d_stag[0],
+                                  model->m_work_2d_stag[1]);
 
-  result->copy_from(model->work_2d_stag[1]);
+  result->copy_from(model->m_work_2d_stag[1]);
 
   output = result;
 }
