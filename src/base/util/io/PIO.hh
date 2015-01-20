@@ -121,17 +121,17 @@ public:
 
   std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
 
-  void get_vec(const IceGrid *grid, const std::string &var_name, unsigned int z_count,
+  void get_vec(const IceGrid &grid, const std::string &var_name, unsigned int z_count,
                unsigned int t, double *output) const;
 
-  void put_vec(const IceGrid *grid, const std::string &var_name,
+  void put_vec(const IceGrid &grid, const std::string &var_name,
                unsigned int z_count, const double *input) const;
 
-  void regrid_vec(const IceGrid *grid, const std::string &var_name,
+  void regrid_vec(const IceGrid &grid, const std::string &var_name,
                   const std::vector<double> &zlevels_out,
                   unsigned int t_start, double *output) const;
 
-  void regrid_vec_fill_missing(const IceGrid *grid, const std::string &var_name,
+  void regrid_vec_fill_missing(const IceGrid &grid, const std::string &var_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
                                double default_value,
@@ -200,10 +200,6 @@ private:
 
   void use_mapped_io(std::string var_name, bool &result) const;
 
-  LocalInterpCtx* get_interp_context(const std::string &name,
-                                     const IceGrid &grid,
-                                     const std::vector<double> &zlevels) const;
-
   void compute_start_and_count(const std::string &name,
                                unsigned int t_start, unsigned int t_count,
                                unsigned int x_start, unsigned int x_count,
@@ -212,11 +208,6 @@ private:
                                std::vector<unsigned int> &start,
                                std::vector<unsigned int> &count,
                                std::vector<unsigned int> &imap) const;
-
-  int k_below(double z, const std::vector<double> &zlevels) const;
-
-  void regrid(const IceGrid *grid, const std::vector<double> &zlevels_out,
-              LocalInterpCtx *lic, double *output_array) const;
 
   void detect_mode(const std::string &filename);
 

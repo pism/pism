@@ -96,6 +96,133 @@ static NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   }
 }
 
+static int k_below(double z, const vector<double> &zlevels) {
+  double z_min = zlevels.front(), z_max = zlevels.back();
+  int mcurr = 0;
+
+  if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
+    throw RuntimeError::formatted("k_below(): z = %5.4f is outside the allowed range: [%f, %f]",
+                                  z, z_min, z_max);
+  }
+
+  while (zlevels[mcurr+1] < z) {
+    mcurr++;
+  }
+
+  return mcurr;
+}
+
+//! \brief Bi-(or tri-)linear interpolation.
+/*!
+ * This is the interpolation code itself.
+ *
+ * Note that its inputs are (essentially)
+ * - the definition of the input grid
+ * - the definition of the output grid
+ * - input array (lic->a)
+ * - output array (double *output_array)
+ *
+ * The `output_array` is expected to be big enough to contain
+ * `grid.xm()*`grid.ym()*length(zlevels_out)` numbers.
+ *
+ * We should be able to switch to using an external interpolation library
+ * fairly easily...
+ */
+static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
+                   LocalInterpCtx *lic, double *output_array) {
+  // We'll work with the raw storage here so that the array we are filling is
+  // indexed the same way as the buffer we are pulling from (input_array)
+
+  const int Y = 2, Z = 3; // indices, just for clarity
+
+  vector<double> &zlevels_in = lic->zlevels;
+  unsigned int nlevels = zlevels_out.size();
+  double *input_array = lic->a;
+
+  // array sizes for mapping from logical to "flat" indices
+  int
+    y_count = lic->count[Y],
+    z_count = lic->count[Z];
+
+  // NOTE: make sure that the traversal order is correct!
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const int i0 = i - grid.xs(), j0 = j - grid.ys();
+
+    for (unsigned int k = 0; k < nlevels; k++) {
+      // location (x,y,z) is in target computational domain
+      const double
+        z = zlevels_out[k];
+
+      // Indices of neighboring points.
+      const int
+        Im = lic->x_left[i0],
+        Ip = lic->x_right[i0],
+        Jm = lic->y_left[j0],
+        Jp = lic->y_right[j0];
+
+      double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
+
+      if (nlevels > 1) {
+        // get the index into the source grid, for just below the level z
+        const int kc = k_below(z, zlevels_in);
+
+        // We pretend that there are always 8 neighbors (4 in the map plane,
+        // 2 vertical levels). And compute the indices into the input_array for
+        // those neighbors.
+        const int mmm = (Im * y_count + Jm) * z_count + kc;
+        const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
+        const int mpm = (Im * y_count + Jp) * z_count + kc;
+        const int mpp = (Im * y_count + Jp) * z_count + kc + 1;
+        const int pmm = (Ip * y_count + Jm) * z_count + kc;
+        const int pmp = (Ip * y_count + Jm) * z_count + kc + 1;
+        const int ppm = (Ip * y_count + Jp) * z_count + kc;
+        const int ppp = (Ip * y_count + Jp) * z_count + kc + 1;
+
+        // We know how to index the neighbors, but we don't yet know where the
+        // point lies within this box.  This is represented by kk in [0,1].
+        const double zkc = zlevels_in[kc];
+        double dz;
+        if (kc == z_count - 1) {
+          dz = zlevels_in[kc] - zlevels_in[kc-1];
+        } else {
+          dz = zlevels_in[kc+1] - zlevels_in[kc];
+        }
+        const double kk = (z - zkc) / dz;
+
+        // linear interpolation in the z-direction
+        a_mm = input_array[mmm] * (1.0 - kk) + input_array[mmp] * kk;
+        a_mp = input_array[mpm] * (1.0 - kk) + input_array[mpp] * kk;
+        a_pm = input_array[pmm] * (1.0 - kk) + input_array[pmp] * kk;
+        a_pp = input_array[ppm] * (1.0 - kk) + input_array[ppp] * kk;
+      } else {
+        // we don't need to interpolate vertically for the 2-D case
+        a_mm = input_array[Im * y_count + Jm];
+        a_mp = input_array[Im * y_count + Jp];
+        a_pm = input_array[Ip * y_count + Jm];
+        a_pp = input_array[Ip * y_count + Jp];
+      }
+
+      // interpolation coefficient in the y direction
+      const double jj = lic->y_alpha[j0];
+
+      // interpolate in y direction
+      const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
+      const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
+
+      // interpolation coefficient in the x direction
+      const double ii = lic->x_alpha[i0];
+
+      int index = (i0 * grid.ym() + j0) * nlevels + k;
+
+      // index into the new array and interpolate in x direction
+      output_array[index] = a_m * (1.0 - ii) + a_p * ii;
+      // done with the point at (x,y,z)
+    }
+  }
+}
+
 //! \brief The code shared by different PIO constructors.
 void PIO::constructor(MPI_Comm c, const string &mode) {
   m_com  = c;
@@ -839,15 +966,15 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
 }
 
 //! \brief Read an array distributed according to the grid.
-void PIO::get_vec(const IceGrid *grid, const string &var_name,
+void PIO::get_vec(const IceGrid &grid, const string &var_name,
                   unsigned int z_count, unsigned int t_start, double *output) const {
   try {
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
                             t_start, t_count,
-                            grid->xs(), grid->xm(),
-                            grid->ys(), grid->ym(),
+                            grid.xs(), grid.xm(),
+                            grid.ys(), grid.ym(),
                             0, z_count,
                             start, count, imap);
 
@@ -905,11 +1032,11 @@ IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
 /*!
  * This method always writes to the last record in the file.
  */
-void PIO::put_vec(const IceGrid *grid, const string &var_name,
+void PIO::put_vec(const IceGrid &grid, const string &var_name,
                   unsigned int z_count, const double *input) const {
   try {
     unsigned int t_length;
-    m_nc->inq_dimlen(grid->config.get_string("time_dimension_name"), t_length);
+    m_nc->inq_dimlen(grid.config.get_string("time_dimension_name"), t_length);
 
     assert(t_length >= 1);
 
@@ -917,12 +1044,12 @@ void PIO::put_vec(const IceGrid *grid, const string &var_name,
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
                             t_length - 1, t_count,
-                            grid->xs(), grid->xm(),
-                            grid->ys(), grid->ym(),
+                            grid.xs(), grid.xm(),
+                            grid.ys(), grid.ym(),
                             0, z_count,
                             start, count, imap);
 
-    if (grid->config.get_string("output_variable_order") == "xyz") {
+    if (grid.config.get_string("output_variable_order") == "xyz") {
       // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
       // orders in the memory and in NetCDF files are the same.
       put_vara_double(var_name, start, count, input);
@@ -938,30 +1065,29 @@ void PIO::put_vec(const IceGrid *grid, const string &var_name,
   }
 }
 
-//! \brief Get the interpolation context (grid information) for an input file.
+//! @brief Get the interpolation context (grid information) for an input file.
 /*!
- * Sets lic to NULL if the variable was not found.
- *
  * @note The *caller* is in charge of destroying lic
  */
-LocalInterpCtx* PIO::get_interp_context(const string &name,
-                                        const IceGrid &grid,
-                                        const vector<double> &zlevels) const {
-  grid_info gi(*this, name, grid.periodicity());
+static LocalInterpCtx* get_interp_context(const PIO& file,
+                                          const string &variable_name,
+                                          const IceGrid &grid,
+                                          const vector<double> &zlevels) {
+  grid_info gi(file, variable_name, grid.periodicity());
 
   return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
 }
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
-void PIO::regrid_vec(const IceGrid *grid, const string &var_name,
+void PIO::regrid_vec(const IceGrid &grid, const string &var_name,
                      const vector<double> &zlevels_out,
                      unsigned int t_start, double *output) const {
   try {
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
 
-    shared_ptr<LocalInterpCtx> lic(get_interp_context(var_name, *grid, zlevels_out));
+    shared_ptr<LocalInterpCtx> lic(get_interp_context(*this, var_name, grid, zlevels_out));
     assert((bool)lic);
 
     const unsigned int t_count = 1;
@@ -998,7 +1124,7 @@ void PIO::regrid_vec(const IceGrid *grid, const string &var_name,
  * @param default_value default value to replace `_FillValue` with
  * @param[out] result resulting interpolated field
  */
-void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
+void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
                                   const vector<double> &zlevels_out,
                                   unsigned int t_start,
                                   double default_value,
@@ -1007,7 +1133,7 @@ void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
 
-    shared_ptr<LocalInterpCtx> lic(get_interp_context(var_name, *grid, zlevels_out));
+    shared_ptr<LocalInterpCtx> lic(get_interp_context(*this, var_name, grid, zlevels_out));
     assert((bool)lic);
 
     const unsigned int t_count = 1;
@@ -1051,133 +1177,7 @@ void PIO::regrid_vec_fill_missing(const IceGrid *grid, const string &var_name,
   }
 }
 
-int PIO::k_below(double z, const vector<double> &zlevels) const {
-  double z_min = zlevels.front(), z_max = zlevels.back();
-  int mcurr = 0;
 
-  if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
-    throw RuntimeError::formatted("PIO::k_below(): z = %5.4f is outside the allowed range: [%f, %f]",
-                                  z, z_min, z_max);
-  }
-
-  while (zlevels[mcurr+1] < z) {
-    mcurr++;
-  }
-
-  return mcurr;
-}
-
-
-//! \brief Bi-(or tri-)linear interpolation.
-/*!
- * This is the interpolation code itself.
- *
- * Note that its inputs are (essentially)
- * - the definition of the input grid
- * - the definition of the output grid
- * - input array (lic->a)
- * - output array (double *output_array)
- *
- * The `output_array` is expected to be big enough to contain
- * `grid.xm()*`grid.ym()*length(zlevels_out)` numbers.
- * 
- * We should be able to switch to using an external interpolation library
- * fairly easily...
- */
-void PIO::regrid(const IceGrid *grid, const vector<double> &zlevels_out,
-                 LocalInterpCtx *lic, double *output_array) const {
-  // We'll work with the raw storage here so that the array we are filling is
-  // indexed the same way as the buffer we are pulling from (input_array)
-
-  const int Y = 2, Z = 3; // indices, just for clarity
-
-  vector<double> &zlevels_in = lic->zlevels;
-  unsigned int nlevels = zlevels_out.size();
-  double *input_array = lic->a;
-
-  // array sizes for mapping from logical to "flat" indices
-  int
-    y_count = lic->count[Y],
-    z_count = lic->count[Z];
-
-  // NOTE: make sure that the traversal order is correct!
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    const int i0 = i - grid->xs(), j0 = j - grid->ys();
-
-    for (unsigned int k = 0; k < nlevels; k++) {
-      // location (x,y,z) is in target computational domain
-      const double
-        z = zlevels_out[k];
-
-      // Indices of neighboring points.
-      const int
-        Im = lic->x_left[i0],
-        Ip = lic->x_right[i0],
-        Jm = lic->y_left[j0],
-        Jp = lic->y_right[j0];
-
-      double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
-
-      if (nlevels > 1) {
-        // get the index into the source grid, for just below the level z
-        const int kc = k_below(z, zlevels_in);
-
-        // We pretend that there are always 8 neighbors (4 in the map plane,
-        // 2 vertical levels). And compute the indices into the input_array for
-        // those neighbors.
-        const int mmm = (Im * y_count + Jm) * z_count + kc;
-        const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
-        const int mpm = (Im * y_count + Jp) * z_count + kc;
-        const int mpp = (Im * y_count + Jp) * z_count + kc + 1;
-        const int pmm = (Ip * y_count + Jm) * z_count + kc;
-        const int pmp = (Ip * y_count + Jm) * z_count + kc + 1;
-        const int ppm = (Ip * y_count + Jp) * z_count + kc;
-        const int ppp = (Ip * y_count + Jp) * z_count + kc + 1;
-
-        // We know how to index the neighbors, but we don't yet know where the
-        // point lies within this box.  This is represented by kk in [0,1].
-        const double zkc = zlevels_in[kc];
-        double dz;
-        if (kc == z_count - 1) {
-          dz = zlevels_in[kc] - zlevels_in[kc-1];
-        } else {
-          dz = zlevels_in[kc+1] - zlevels_in[kc];
-        }
-        const double kk = (z - zkc) / dz;
-
-        // linear interpolation in the z-direction
-        a_mm = input_array[mmm] * (1.0 - kk) + input_array[mmp] * kk;
-        a_mp = input_array[mpm] * (1.0 - kk) + input_array[mpp] * kk;
-        a_pm = input_array[pmm] * (1.0 - kk) + input_array[pmp] * kk;
-        a_pp = input_array[ppm] * (1.0 - kk) + input_array[ppp] * kk;
-      } else {
-        // we don't need to interpolate vertically for the 2-D case
-        a_mm = input_array[Im * y_count + Jm];
-        a_mp = input_array[Im * y_count + Jp];
-        a_pm = input_array[Ip * y_count + Jm];
-        a_pp = input_array[Ip * y_count + Jp];
-      }
-
-      // interpolation coefficient in the y direction
-      const double jj = lic->y_alpha[j0];
-
-      // interpolate in y direction
-      const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
-      const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
-
-      // interpolation coefficient in the x direction
-      const double ii = lic->x_alpha[i0];
-
-      int index = (i0 * grid->ym() + j0) * nlevels + k;
-
-      // index into the new array and interpolate in x direction
-      output_array[index] = a_m * (1.0 - ii) + a_p * ii;
-      // done with the point at (x,y,z)
-    }
-  }
-}
 
 
 void PIO::compute_start_and_count(const string &short_name,

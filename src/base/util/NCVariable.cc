@@ -283,7 +283,7 @@ void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
   // make sure we have at least one level
   unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1);
 
-  nc.get_vec(m_grid, name_found, nlevels, time, output);
+  nc.get_vec(*m_grid, name_found, nlevels, time, output);
 
   bool input_has_units;
   Unit input_units(get_units().get_system(), "1");
@@ -339,9 +339,9 @@ void NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
     }
 
     convert_doubles(&tmp[0], tmp.size(), get_units(), get_glaciological_units());
-    nc.put_vec(m_grid, name_found, nlevels, &tmp[0]);
+    nc.put_vec(*m_grid, name_found, nlevels, &tmp[0]);
   } else {
-    nc.put_vec(m_grid, name_found, nlevels, input);
+    nc.put_vec(*m_grid, name_found, nlevels, input);
   }
 }
 
@@ -383,10 +383,10 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                  default_value, get_string("units").c_str(), get_name().c_str(),
                  nc.inq_filename().c_str());
 
-      nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
+      nc.regrid_vec_fill_missing(*m_grid, name_found, m_zlevels,
                                  t_start, default_value, output);
     } else {
-      nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, output);
+      nc.regrid_vec(*m_grid, name_found, m_zlevels, t_start, output);
     }
 
     // Now we need to get the units string from the file and convert
