@@ -160,8 +160,6 @@ const IceModelVec* Vars::get_internal(const std::string &name) const {
     std::map<std::string,const IceModelVec*>::const_iterator k = m_variables.find(short_name);
     if (k != m_variables.end()) {
       return k->second;
-    } else {
-      return NULL;
     }
   }
 
