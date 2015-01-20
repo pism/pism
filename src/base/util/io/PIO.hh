@@ -32,7 +32,6 @@ namespace pism {
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 class IceGrid;
-class LocalInterpCtx;
 class NCVariable;
 class NCTimeseries;
 class NCTimeBounds;

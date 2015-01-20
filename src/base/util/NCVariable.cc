@@ -25,7 +25,6 @@
 #include "PIO.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
-#include "LocalInterpCtx.hh"
 
 #include "PISMConfig.hh"
 #include "error_handling.hh"

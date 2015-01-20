@@ -26,7 +26,6 @@
 #include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
-#include "LocalInterpCtx.hh"
 #include "PISMConfig.hh"
 
 #include "error_handling.hh"

@@ -24,7 +24,6 @@
 #include "PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-#include "LocalInterpCtx.hh"
 #include "PISMConfig.hh"
 
 

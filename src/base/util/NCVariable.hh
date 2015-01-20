@@ -128,7 +128,6 @@ private:
   std::string m_short_name;
 };
 
-class LocalInterpCtx;
 class IceGrid;
 
 enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
