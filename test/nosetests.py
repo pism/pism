@@ -318,17 +318,6 @@ def modelvecs_test():
 
     vecs.add(mask, "mask")
 
-    # test setPISMVarsName
-    vecs.setPISMVarsName("mask", "pism_mask")
-
-    try:
-        vecs.setPISMVarsName("invalid", "new_name")
-        return False
-    except RuntimeError:
-        # should fail: cannot set the name of a variable that is not
-        # there
-        pass
-
     # test asPISMVars()
     vecs.asPISMVars()
 
