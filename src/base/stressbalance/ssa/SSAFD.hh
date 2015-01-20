@@ -73,6 +73,7 @@ protected:
 
   virtual void write_system_petsc(const std::string &namepart);
 
+  // Lots of PETSc function calls here, so PetscErrorCode is appropriate.
   virtual PetscErrorCode write_system_matlab(const std::string &namepart);
 
   virtual void update_nuH_viewers();
