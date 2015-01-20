@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014 David Maxwell
+# Copyright (C) 2011, 2012, 2014, 2015 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -88,7 +88,6 @@ if is_regional:
     vecs.usurfstore.regrid(input_file,critical=True)
   else:        
     vecs.add(vecs.surface, 'usurfstore')
-    vecs.setPISMVarsName('usurfstore','usurfstore')
     
   solver = PISM.SIAFD_Regional
 else:
