@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -248,30 +248,6 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 //! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
   PetscFreeVoid(a);
-}
-
-//! Print out the actual array information stored in the local interpolation context.
-/*!
-Every processor in the communicator `com` must call this for it to work, I think.
- */
-PetscErrorCode LocalInterpCtx::printArray() {
-  PetscErrorCode ierr;
-
-  ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printArray():  rank = %d, a_len = %d\n",
-                                 rank, a_len);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
-  for (unsigned int k = 0; k < a_len; k++) {
-    ierr = PetscSynchronizedPrintf(com," %5.4f,",a[k]);
-    PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
-  }
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(com);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
-#else
-  ierr = PetscSynchronizedFlush(com, NULL);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
-#endif
-  return 0;
 }
 
 void LocalInterpCtx::print_grid_info(const grid_info &g, const UnitSystem &s, int threshold) {

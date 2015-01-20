@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -55,7 +55,6 @@ public:
 public:
   LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
   ~LocalInterpCtx();
-  PetscErrorCode printArray();
 private:
   void print_grid_info(const grid_info &g, const UnitSystem &s, int threshold);
 };
