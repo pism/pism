@@ -1007,6 +1007,33 @@ grid_info::grid_info() {
   reset();
 }
 
+void grid_info::report(MPI_Comm com, const UnitSystem &s, int threshold) const {
+
+  verbPrintf(threshold, com,
+             "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+             this->x_len,
+             (this->x0 - this->Lx)/1000.0,
+             (this->x0 + this->Lx)/1000.0,
+             this->x0/1000.0,
+             this->Lx/1000.0);
+
+  verbPrintf(threshold, com,
+             "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+             this->y_len,
+             (this->y0 - this->Ly)/1000.0,
+             (this->y0 + this->Ly)/1000.0,
+             this->y0/1000.0,
+             this->Ly/1000.0);
+
+  verbPrintf(threshold, com,
+             "  z:  %5d points, [%10.3f, %10.3f] m\n",
+             this->z_len, this->z_min, this->z_max);
+
+  verbPrintf(threshold, com,
+             "  t:  %5d points, last time = %.3f years\n\n",
+             this->t_len, s.convert(this->time, "seconds", "years"));
+}
+
 grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p) {
   try {
     bool exists, found_by_standard_name;

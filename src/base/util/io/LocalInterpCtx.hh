@@ -42,6 +42,8 @@ namespace pism {
 */
 class LocalInterpCtx {
 public:
+  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
+  ~LocalInterpCtx();
   unsigned int start[4], count[4]; // Indices in netCDF file.
   std::vector<int> x_left, x_right, y_left, y_right; // neighbors
   std::vector<double> x_alpha, y_alpha;
@@ -51,12 +53,6 @@ public:
   bool report_range;
   MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)
   int rank;             //!< MPI rank, to allocate a_raw on proc 0 only
-
-public:
-  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
-  ~LocalInterpCtx();
-private:
-  void print_grid_info(const grid_info &g, const UnitSystem &s, int threshold);
 };
 
 } // end of namespace pism

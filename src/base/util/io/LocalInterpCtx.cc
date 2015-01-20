@@ -55,7 +55,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   rank = grid.rank();
   report_range = true;
 
-  print_grid_info(input, grid.config.get_unit_system(), 3);
+  verbPrintf(3, com, "\nRegridding file grid info:\n");
+  input.report(com, grid.config.get_unit_system(), 3);
 
   // Grid spacing (assume that the grid is equally-spaced) and the
   // extent of the domain. To compute the extent of the domain, assume
@@ -248,36 +249,6 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 //! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
   PetscFreeVoid(a);
-}
-
-void LocalInterpCtx::print_grid_info(const grid_info &g, const UnitSystem &s, int threshold) {
-
-  verbPrintf(threshold, com,
-             "\nRegridding file grid info:\n");
-
-  verbPrintf(threshold, com,
-             "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-             g.x_len,
-             (g.x0 - g.Lx)/1000.0,
-             (g.x0 + g.Lx)/1000.0,
-             g.x0/1000.0,
-             g.Lx/1000.0);
-
-  verbPrintf(threshold, com,
-             "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-             g.y_len,
-             (g.y0 - g.Ly)/1000.0,
-             (g.y0 + g.Ly)/1000.0,
-             g.y0/1000.0,
-             g.Ly/1000.0);
-
-  verbPrintf(threshold, com,
-             "  z:  %5d points, [%10.3f, %10.3f] m\n",
-             g.z_len, g.z_min, g.z_max);
-
-  verbPrintf(threshold, com,
-             "  t:  %5d points, last time = %.3f years\n\n",
-             g.t_len, s.convert(g.time, "seconds", "years"));
 }
 
 } // end of namespace pism
