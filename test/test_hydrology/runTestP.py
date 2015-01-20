@@ -188,7 +188,7 @@ def generate_pism_input(x, y, xx, yy):
                               "units"       : "Pa",
                               "valid_min"   : 0.0})
 
-  nc.define_2d_field("bcflag", time_dependent = False,
+  nc.define_2d_field("bc_mask", time_dependent = False,
                      attrs = {"long_name"   : "if =1, apply u_ssa_bc and v_ssa_bc as sliding velocity"})
   nc.define_2d_field("u_ssa_bc", time_dependent = False,
                      attrs = {"long_name"   : "x-component of prescribed sliding velocity",
@@ -207,7 +207,7 @@ def generate_pism_input(x, y, xx, yy):
                "thk"   : h,
                "bwat"  : W,
                "bwp"   : P,
-               "bcflag" : np.ones_like(xx),
+               "bc_mask" : np.ones_like(xx),
                "u_ssa_bc" : ussa,
                "v_ssa_bc" : vssa}
 

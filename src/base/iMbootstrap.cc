@@ -207,7 +207,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   }
 
   if (config.get_flag("ssa_dirichlet_bc")) {
-    // Do not use Dirichlet B.C. anywhere if bcflag is not present.
+    // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
     vBCMask.regrid(filename, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
     // makes sense is the zero Dirichlet B.C.

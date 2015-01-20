@@ -207,7 +207,7 @@ def final_corrections(filename):
                     mask[j,i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bcflag = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
+    bc_mask = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
     # mark ocean_icy cells next to grounded_icy ones too:
     row = np.array([ 0, -1, 1,  0])
@@ -217,10 +217,10 @@ def final_corrections(filename):
             nearest = mask[j + row, i + col]
 
             if mask[j,i] == ocean_icy and np.any(nearest == grounded_icy):
-                bcflag[j,i] = 1
+                bc_mask[j,i] = 1
 
     # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
-    bcflag[thk < 1.0] = 0
+    bc_mask[thk < 1.0] = 0
 
     # modifications for the prognostic run
     # this is to avoid grounding in the ice-shelf interior to make the results comparable to the diagnostic flow field
@@ -232,12 +232,12 @@ def final_corrections(filename):
 
     nc.variables[temp_name][:] = temperature
     nc.variables['topg'][:] = topg
-    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-    bcflag_var[:] = bcflag
+    bc_mask_var = nc.createVariable('bc_mask', 'i', ('y', 'x'))
+    bc_mask_var[:] = bc_mask
 
-    bad_bcflag_mask = np.logical_and(thk < 1.0, bcflag == 1)
-    bad_bcflag_var = nc.createVariable('bad_bcflag', 'i', ('y', 'x'))
-    bad_bcflag_var[:] = bad_bcflag_mask
+    bad_bc_mask_mask = np.logical_and(thk < 1.0, bc_mask == 1)
+    bad_bc_mask_var = nc.createVariable('bad_bc_mask', 'i', ('y', 'x'))
+    bad_bc_mask_var[:] = bad_bc_mask_mask
 
     mask_var = nc.createVariable('mask', 'i', ('y', 'x'))
     mask_var[:] = mask

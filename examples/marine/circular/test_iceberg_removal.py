@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2013, 2014 Ricarda Winkelmann, Torsten Albrecht,
+# Copyright (C) 2012, 2013, 2014, 2015 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
@@ -17,7 +17,7 @@ bed   = np.zeros_like(thk)                 # bedrock surface elevation
 accum = np.zeros_like(thk)                 # accumulation/ ablation
 Ts    = np.zeros_like(thk) + p.air_temperature
 
-bcflag = np.zeros_like(thk)
+bc_mask = np.zeros_like(thk)
 ubar   = np.zeros_like(thk)
 vbar   = np.zeros_like(thk)
 
@@ -63,13 +63,13 @@ for j in xrange(options.My):
         width = dx*3
 
         if radius <= p.r_gl - width and x[i] < 0:
-            bcflag[j,i] = 1.0
+            bc_mask[j,i] = 1.0
         elif radius <= p.r_gl and x[i] < 0:
-            bcflag[j,i] = 1.0
+            bc_mask[j,i] = 1.0
             ubar[j,i]   = p.vel_bc * (x[i] / radius)
             vbar[j,i]   = p.vel_bc * (y[j] / radius)
         else:
-            bcflag[j,i] = 0.0
+            bc_mask[j,i] = 0.0
 
 ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
 piktests_utils.prepare_output_file(ncfile, x, y)
@@ -78,7 +78,7 @@ variables = {"thk"                   : thk,
              "topg"                  : bed,
              "ice_surface_temp"      : Ts,
              "climatic_mass_balance" : accum,
-             "bcflag"                : bcflag,
+             "bc_mask"                : bc_mask,
              "u_ssa_bc"              : ubar,
              "v_ssa_bc"              : vbar}
 

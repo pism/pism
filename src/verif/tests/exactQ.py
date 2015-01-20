@@ -171,8 +171,8 @@ u_ssa_bc_var[:] = zerossabc.copy()
 v_ssa_bc_var = def_var(nc, "v_ssa_bc", "m s-1", fill_value)
 v_ssa_bc_var[:] = zerossabc.copy()
 
-bcflag_var = nc.createVariable("bcflag", "i", dimensions=("y", "x"))
-bcflag_var[:] = ((xx == 0.0) & (yy == 0.0))
+bc_mask_var = nc.createVariable("bc_mask", "i", dimensions=("y", "x"))
+bc_mask_var[:] = ((xx == 0.0) & (yy == 0.0))
 
 thk_exact_var = def_var(nc, "thk_exact", "m", fill_value)
 thk_exact_var[:] = thk_exact

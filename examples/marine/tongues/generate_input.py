@@ -38,8 +38,8 @@ while x0 + width < M - 1:
 # make tongues shorter
 thk[5:,:] = 0
 
-bcflag = np.zeros_like(thk)
-bcflag[thk > 0] = 1
+bc_mask = np.zeros_like(thk)
+bc_mask[thk > 0] = 1
 
 # make the bed deep everywhere except in icy areas, where it is barely
 # grounded
@@ -49,7 +49,7 @@ z[thk > 0] = -(910.0 / 1028.0) * 100.0 + 1
 # Velocity Dirichlet B.C.:
 ubar = np.zeros_like(thk)
 vbar = np.zeros_like(thk)
-vbar[bcflag == 1] = 100.0
+vbar[bc_mask == 1] = 100.0
 
 try:
     nc = NC(options.output, 'w')
@@ -75,6 +75,6 @@ nc.write("climatic_mass_balance", np.zeros_like(xx))
 nc.write("ice_surface_temp", np.zeros_like(xx) - 30.0) # irrelevant
 nc.write("u_ssa_bc", ubar)
 nc.write("v_ssa_bc", vbar)
-nc.write("bcflag", bcflag)
+nc.write("bc_mask", bc_mask)
 
 nc.close()

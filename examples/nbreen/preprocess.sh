@@ -41,10 +41,10 @@ ncap2 -O -s "v_ssa_bc=0.0*topg" $PISMDATA $PISMDATA
 ncatted -O -a units,v_ssa_bc,o,c,"m year-1" $PISMDATA
 ncatted -O -a long_name,v_ssa_bc,o,c,"y-component of prescribed sliding velocity" $PISMDATA
 ncatted -O -a standard_name,v_ssa_bc,d,c, $PISMDATA
-ncap2 -O -s "bcflag=0.0*topg+1.0" $PISMDATA $PISMDATA
-ncatted -O -a units,bcflag,d,c, $PISMDATA
-ncatted -O -a long_name,bcflag,o,c,"equals one where (u_ssa_bc,v_ssa_bc) should be applied as sliding seen by hydrology" $PISMDATA
-ncatted -O -a standard_name,bcflag,d,c, $PISMDATA
+ncap2 -O -s "bc_mask=0.0*topg+1.0" $PISMDATA $PISMDATA
+ncatted -O -a units,bc_mask,d,c, $PISMDATA
+ncatted -O -a long_name,bc_mask,o,c,"equals one where (u_ssa_bc,v_ssa_bc) should be applied as sliding seen by hydrology" $PISMDATA
+ncatted -O -a standard_name,bc_mask,d,c, $PISMDATA
 
 INTOBED=fakesummerevent.nc
 echo "calling fake-inputtobed.py to create PISM-readable -input_to_bed file $INTOBED ..."

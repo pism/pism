@@ -60,7 +60,7 @@ protected:
   IceModelVec2S m_iceberg_mask;
   Vec m_mask_p0;
 
-  const IceModelVec2Int *m_bcflag;
+  const IceModelVec2Int *m_bc_mask;
 };
 
 } // end of namespace pism

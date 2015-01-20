@@ -159,10 +159,10 @@ void IceRegionalModel::createVecs() {
                        "m s-1", "");
 
   if (config.get_flag("ssa_dirichlet_bc")) {
-    // remove the bcflag variable from the dictionary
-    grid.variables().remove("bcflag");
+    // remove the bc_mask variable from the dictionary
+    grid.variables().remove("bc_mask");
 
-    grid.variables().add(no_model_mask, "bcflag");
+    grid.variables().add(no_model_mask, "bc_mask");
   }
 }
 

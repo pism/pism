@@ -73,7 +73,7 @@ $ ./preprocess.py
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
 
-The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} contains ice thickness, bed elevations, surface temperature, net accumulation, as well as latitude and longitude values.  All of these are typical of ice sheet modelling data, both in diagnostic runs and as needed to initialize and provide boundary conditions for prognostic (evolutionary) runs; see below for the prognostic case with these data.  The \texttt{_combined} file also has variables \texttt{u_ssa_bc} and \texttt{v_ssa_bc} for the boundary values used in the (diagnostic and prognostic) computation of velocity.  They are used at all grounded locations and at ice shelf cells that are immediate neighbors of grounded ice.  The variable \texttt{bcflag} specifies these locations.  Finally the variables \texttt{u_ssa_bc,v_ssa_bc}, which contain observed values, are used after the run to compare to the computed interior velocities.
+The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} contains ice thickness, bed elevations, surface temperature, net accumulation, as well as latitude and longitude values.  All of these are typical of ice sheet modelling data, both in diagnostic runs and as needed to initialize and provide boundary conditions for prognostic (evolutionary) runs; see below for the prognostic case with these data.  The \texttt{_combined} file also has variables \texttt{u_ssa_bc} and \texttt{v_ssa_bc} for the boundary values used in the (diagnostic and prognostic) computation of velocity.  They are used at all grounded locations and at ice shelf cells that are immediate neighbors of grounded ice.  The variable \texttt{bc_mask} specifies these locations.  Finally the variables \texttt{u_ssa_bc,v_ssa_bc}, which contain observed values, are used after the run to compare to the computed interior velocities.
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  The diagnostic velocity computation bootstraps from \texttt{Ross_combined.nc} and does a zero-year run; in the $211\times 211$ grid case we demonstrate below, the key parts of the PISM command are
 
@@ -95,7 +95,7 @@ pismr -boot_file ../Ross_combined.nc -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing e
 
 \item Option \texttt{-pik} is equivalent to \texttt{-cfbc -kill_icebergs} in this non-evolving example.  Note that \texttt{-kill_icebergs} removes effectively-detached bits of ice, especially in McMurdo sound area, so that the SSA problem is well-posed for the grounded-ice-sheet-connected ice shelf.
 
-\item Option \intextoption{ssa_dirichlet_bc} forces the use of fields \texttt{u_ssa_bc,v_ssa_bc,bcflag} described above.  The field \texttt{bcflag} is $1$ at boundary condition locations, and $0$ elsewhere.  For the prognostic runs below, the ice thickness is also fixed at boundary condition locations, so as to prescribe ice flux as an ice shelf input.
+\item Option \intextoption{ssa_dirichlet_bc} forces the use of fields \texttt{u_ssa_bc,v_ssa_bc,bc_mask} described above.  The field \texttt{bc_mask} is $1$ at boundary condition locations, and $0$ elsewhere.  For the prognostic runs below, the ice thickness is also fixed at boundary condition locations, so as to prescribe ice flux as an ice shelf input.
 
 \item Options \texttt{-yield_stress constant -tauc 1e6} essentially just turn off the grounded-ice evolving yield stress mechanism, which is inactive anyway, and force a high resistance under grounded ice so it does not slide.  
 

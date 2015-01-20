@@ -38,7 +38,7 @@ IcebergRemover::~IcebergRemover() {
 }
 
 void IcebergRemover::init() {
-  m_bcflag = m_grid.variables().get_2d_mask("bcflag");
+  m_bc_mask = m_grid.variables().get_2d_mask("bc_mask");
 }
 
 /**
@@ -76,13 +76,13 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
 
     // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
     // don't want them removed.
-    if (m_bcflag) {
-      list.add(*m_bcflag);
+    if (m_bc_mask) {
+      list.add(*m_bc_mask);
 
       for (Points p(m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        if ((*m_bcflag)(i,j) > 0.5 && M.icy(i,j)) {
+        if ((*m_bc_mask)(i,j) > 0.5 && M.icy(i,j)) {
           m_iceberg_mask(i,j) = mask_grounded_ice;
         }
       }
@@ -115,15 +115,15 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     list.add(pism_mask);
     list.add(m_iceberg_mask);
 
-    if (m_bcflag != NULL) {
+    if (m_bc_mask != NULL) {
       // if SSA Dirichlet B.C. are in use, do not modify mask and ice
       // thickness at Dirichlet B.C. locations
-      list.add(*m_bcflag);
+      list.add(*m_bc_mask);
 
       for (Points p(m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        if (m_iceberg_mask(i,j) > 0.5 && (*m_bcflag)(i,j) < 0.5) {
+        if (m_iceberg_mask(i,j) > 0.5 && (*m_bc_mask)(i,j) < 0.5) {
           ice_thickness(i,j) = 0.0;
           pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }

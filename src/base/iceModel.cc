@@ -400,7 +400,7 @@ void IceModel::createVecs() {
 
   if (config.get_flag("ssa_dirichlet_bc") == true) {
     // bc_locations
-    vBCMask.create(grid, "bcflag", WITH_GHOSTS, WIDE_STENCIL);
+    vBCMask.create(grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     vBCMask.set_attrs("model_state", "Dirichlet boundary mask",
                       "", "");
     std::vector<double> bc_mask_values(2);
