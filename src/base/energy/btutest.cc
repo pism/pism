@@ -49,14 +49,14 @@ void BTU_Test::bootstrap() {
 
   // fill exact bedrock temperature from Test K at time ys
   if (m_Mbz > 1) {
-    std::vector<double> zlevels = temp.get_levels();
+    std::vector<double> zlevels = m_temp.get_levels();
 
-    IceModelVec::AccessList list(temp);
+    IceModelVec::AccessList list(m_temp);
     double *Tb; // columns of these values
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      temp.getInternalColumn(i,j,&Tb);
+      m_temp.getInternalColumn(i,j,&Tb);
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF; // Test K:  use Tb[k], ignore FF
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     ghf.set_name("bheatflx0");
     ghf.set_attrs("", "upward geothermal flux at ice/bedrock interface",
                   "W m-2", "");
-    btu.get_upward_geothermal_flux(ghf);
+    btu.upward_geothermal_flux(ghf);
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT

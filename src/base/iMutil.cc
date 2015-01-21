@@ -153,7 +153,7 @@ void IceModel::update_run_stats() {
   run_stats.set_double("grid_dz_min_meters", grid.dz_min());
   run_stats.set_double("grid_dz_max_meters", grid.dz_max());
   if (btu != NULL) {
-    run_stats.set_double("grid_dzb_meters", btu->get_vertical_spacing());
+    run_stats.set_double("grid_dzb_meters", btu->vertical_spacing());
   }
   run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 

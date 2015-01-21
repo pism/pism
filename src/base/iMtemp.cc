@@ -163,7 +163,7 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   G0.set_glaciological_units("mW m-2");
 
   assert(btu != NULL);
-  btu->get_upward_geothermal_flux(G0);
+  btu->upward_geothermal_flux(G0);
 
   IceModelVec2S &bwatcurr = vWork2d[1];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");

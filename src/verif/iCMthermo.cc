@@ -324,21 +324,19 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   double    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
   double    maxTberr = 0.0, avTberr = 0.0, avbcount = 0.0;
 
-  double    *Tex, *Tbex, *T, *Tb;
+  const double *Tb, *T;
   double    FF;
-  Tex = new double[grid.Mz()];
-
-  IceModelVec3Custom *bedrock_temp;
+  std::vector<double> Tex(grid.Mz());
 
   BTU_Verification *my_btu = dynamic_cast<BTU_Verification*>(btu);
   if (my_btu == NULL) {
     throw RuntimeError("my_btu == NULL");
   }
-  my_btu->get_temp(bedrock_temp);
+  const IceModelVec3Custom *bedrock_temp = my_btu->temperature();
 
   std::vector<double> zblevels = bedrock_temp->get_levels();
   unsigned int Mbz = (unsigned int)zblevels.size();
-  Tbex = new double[Mbz];
+  std::vector<double> Tbex(Mbz);
 
   switch (testname) {
     case 'K':
@@ -386,8 +384,6 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       avTerr += Terr;
     }
   }
-
-  delete [] Tex;  delete [] Tbex;
 
   gmaxTerr = GlobalMax(grid.com, maxTerr);
   gavTerr = GlobalSum(grid.com, avTerr);
@@ -686,8 +682,18 @@ void IceCompModel::initTestsKO() {
   fillTemperatureSolnTestsKO();
 }
 
-void BTU_Verification::get_temp(IceModelVec3Custom* &result) {
-  result = &temp;
+BTU_Verification::BTU_Verification(const IceGrid &g, int test, bool bii)
+  : BedThermalUnit(g) {
+  m_testname = test;
+  m_bedrock_is_ice = bii;
+}
+
+BTU_Verification::~BTU_Verification() {
+  // empty
+}
+
+const IceModelVec3Custom* BTU_Verification::temperature() {
+  return &m_temp;
 }
 
 void BTU_Verification::bootstrap() {
@@ -697,16 +703,16 @@ void BTU_Verification::bootstrap() {
   }
 
   std::vector<double> Tbcol(m_Mbz),
-    zlevels = temp.get_levels();
+    zlevels = m_temp.get_levels();
   double dum1, dum2, dum3, dum4;
   double FF;
 
   // evaluate exact solution in a column; all columns are the same
-  switch (testname) {
+  switch (m_testname) {
     case 'K':
       for (unsigned int k = 0; k < m_Mbz; k++) {
         if (exactK(m_grid.time->current(), zlevels[k], &Tbcol[k], &FF,
-                   (bedrock_is_ice==true))) {
+                   (m_bedrock_is_ice==true))) {
           throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                         zlevels[k]);
         }
@@ -724,10 +730,10 @@ void BTU_Verification::bootstrap() {
   }
 
   // copy column values into 3D arrays
-  IceModelVec::AccessList list(temp);
+  IceModelVec::AccessList list(m_temp);
 
   for (Points p(m_grid); p; p.next()) {
-    temp.setInternalColumn(p.i(), p.j(), &Tbcol[0]);
+    m_temp.setInternalColumn(p.i(), p.j(), &Tbcol[0]);
   }
 }
 

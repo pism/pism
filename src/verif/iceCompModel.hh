@@ -27,14 +27,14 @@ namespace pism {
 class BTU_Verification : public BedThermalUnit
 {
 public:
-  BTU_Verification(const IceGrid &g, int test, int bii)
-    : BedThermalUnit(g) { testname = test; bedrock_is_ice = bii; }
-  virtual ~BTU_Verification() {}
+  BTU_Verification(const IceGrid &g, int test, bool bii);
+  virtual ~BTU_Verification();
 
-  virtual void get_temp(IceModelVec3Custom* &result);
+  virtual const IceModelVec3Custom* temperature();
 protected:
   virtual void bootstrap();
-  int testname, bedrock_is_ice;
+  int m_testname;
+  bool m_bedrock_is_ice;
 };
 
 class IceCompModel : public IceModel {

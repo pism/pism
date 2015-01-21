@@ -29,14 +29,14 @@ namespace pism {
 
 BedThermalUnit::BedThermalUnit(const IceGrid &g)
     : Component_TS(g) {
-  bedtoptemp = NULL;
-  ghf        = NULL;
+  m_bedtoptemp = NULL;
+  m_ghf        = NULL;
 
   // build constant diffusivity for heat equation
-  bed_rho = m_config.get("bedrock_thermal_density");
-  bed_c   = m_config.get("bedrock_thermal_specific_heat_capacity");
-  bed_k   = m_config.get("bedrock_thermal_conductivity");
-  bed_D   = bed_k / (bed_rho * bed_c);
+  m_bed_rho = m_config.get("bedrock_thermal_density");
+  m_bed_c   = m_config.get("bedrock_thermal_specific_heat_capacity");
+  m_bed_k   = m_config.get("bedrock_thermal_conductivity");
+  m_bed_D   = m_bed_k / (m_bed_rho * m_bed_c);
 
   m_Mbz = (int)m_config.get("grid_Mbz");
   m_Lbz = (int)m_config.get("grid_Lbz");
@@ -112,14 +112,18 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
         z[k] = -m_Lbz + k * dz;
       }
       z.back() = 0;
-      temp.create(m_grid, "litho_temp", "zb", z, attrs);
+      m_temp.create(m_grid, "litho_temp", "zb", z, attrs);
 
-      temp.set_attrs("model_state",
+      m_temp.set_attrs("model_state",
                      "lithosphere (bedrock) temperature, in BedThermalUnit",
                      "K", "");
-      temp.metadata().set_double("valid_min", 0.0);
+      m_temp.metadata().set_double("valid_min", 0.0);
     }
   }
+}
+
+BedThermalUnit::~BedThermalUnit() {
+  // empty
 }
 
 
@@ -131,7 +135,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
   bootstrapping_needed = false;
 
   // store the current "revision number" of the temperature field
-  int temp_revision = temp.get_state_counter();
+  int temp_revision = m_temp.get_state_counter();
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -139,11 +143,11 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
              "* Initializing the bedrock thermal unit... setting constants...\n");
 
   // Get pointers to fields owned by IceModel.
-  bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp");
-  ghf = m_grid.variables().get_2d_scalar("bheatflx");
+  m_bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp");
+  m_ghf = m_grid.variables().get_2d_scalar("bheatflx");
 
   // If we're using a minimal model, then we're done:
-  if (!temp.was_created()) {
+  if (!m_temp.was_created()) {
     verbPrintf(2,m_grid.com,
                "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
     return;
@@ -157,17 +161,17 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
 
     if (exists) {
       const unsigned int last_record = nc.inq_nrecords("litho_temp", "") - 1;
-      temp.read(m_input_file, last_record);
+      m_temp.read(m_input_file, last_record);
     }
 
     nc.close();
   }
 
-  if (temp.was_created() == true) {
-    regrid("BedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS);
+  if (m_temp.was_created() == true) {
+    regrid("BedThermalUnit", &m_temp, REGRID_WITHOUT_REGRID_VARS);
   }
 
-  if (temp.get_state_counter() == temp_revision) {
+  if (m_temp.get_state_counter() == temp_revision) {
     bootstrapping_needed = true;
   }
 }
@@ -177,8 +181,8 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
  * Special case: returns 0 if the bedrock thermal layer has thickness
  * zero.
  */
-double BedThermalUnit::get_vertical_spacing() {
-  if (temp.was_created() == true) {
+double BedThermalUnit::vertical_spacing() {
+  if (m_temp.was_created() == true) {
     return m_Lbz / (m_Mbz - 1.0);
   } else {
     return 0.0;
@@ -190,24 +194,24 @@ unsigned int BedThermalUnit::Mbz() {
 }
 
 void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
-  if (temp.was_created()) {
-    result.insert(temp.metadata().get_string("short_name"));
+  if (m_temp.was_created()) {
+    result.insert(m_temp.metadata().get_string("short_name"));
   }
 }
 
 void BedThermalUnit::define_variables(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
-  if (temp.was_created()) {
-    if (set_contains(vars, temp.metadata().get_string("short_name"))) {
-      temp.define(nc, nctype);
+  if (m_temp.was_created()) {
+    if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {
+      m_temp.define(nc, nctype);
     }
   }
 }
 
 void BedThermalUnit::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  if (temp.was_created()) {
-    if (set_contains(vars, temp.metadata().get_string("short_name"))) {
-      temp.write(nc); 
+  if (m_temp.was_created()) {
+    if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {
+      m_temp.write(nc); 
     }
   }
 }
@@ -230,9 +234,9 @@ The above describes the general case where Mbz > 1.
  */
 void BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
 
-  if (temp.was_created()) {
-    double dzb = this->get_vertical_spacing();
-    my_dt = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
+  if (m_temp.was_created()) {
+    double dzb = this->vertical_spacing();
+    my_dt = dzb * dzb / (2.0 * m_bed_D);  // max dt from stability; in seconds
     restrict = true;
   } else {
     my_dt = 0;
@@ -255,7 +259,7 @@ FIXME:  now a trapezoid rule could be used
 */
 void BedThermalUnit::update(double my_t, double my_dt) {
 
-  if (temp.was_created() == false) {
+  if (m_temp.was_created() == false) {
     return;  // in this case we are up to date
   }
 
@@ -302,36 +306,36 @@ void BedThermalUnit::update(double my_t, double my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  assert(bedtoptemp != NULL);
-  assert(ghf != NULL);
+  assert(m_bedtoptemp != NULL);
+  assert(m_ghf != NULL);
 
-  double dzb = this->get_vertical_spacing();
+  double dzb = this->vertical_spacing();
   const int  k0  = m_Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
 
-  const double bed_R  = bed_D * my_dt / (dzb * dzb);
+  const double bed_R  = m_bed_D * my_dt / (dzb * dzb);
 
   double *Tbold;
   std::vector<double> Tbnew(m_Mbz);
 
   IceModelVec::AccessList list;
-  list.add(temp);
-  list.add(*ghf);
-  list.add(*bedtoptemp);
+  list.add(m_temp);
+  list.add(*m_ghf);
+  list.add(*m_bedtoptemp);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    temp.getInternalColumn(i,j,&Tbold); // Tbold actually points into temp memory
-    Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
+    m_temp.getInternalColumn(i,j,&Tbold); // Tbold actually points into temp memory
+    Tbold[k0] = (*m_bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
-    const double Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / bed_k;
+    const double Tbold_negone = Tbold[1] + 2 * (*m_ghf)(i,j) * dzb / m_bed_k;
     Tbnew[0] = Tbold[0] + bed_R * (Tbold_negone - 2 * Tbold[0] + Tbold[1]);
     for (int k = 1; k < k0; k++) { // working upward from base
       Tbnew[k] = Tbold[k] + bed_R * (Tbold[k-1] - 2 * Tbold[k] + Tbold[k+1]);
     }
-    Tbnew[k0] = (*bedtoptemp)(i,j);
+    Tbnew[k0] = (*m_bedtoptemp)(i,j);
 
-    temp.setInternalColumn(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
+    m_temp.setInternalColumn(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
 }
 
@@ -347,30 +351,30 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-void BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
+void BedThermalUnit::upward_geothermal_flux(IceModelVec2S &result) {
 
-  if (!temp.was_created()) {
-    result.copy_from(*ghf);
+  if (!m_temp.was_created()) {
+    result.copy_from(*m_ghf);
     return;
   }
 
-  double dzb = this->get_vertical_spacing();
+  double dzb = this->vertical_spacing();
   const int  k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
   double *Tb;
 
   IceModelVec::AccessList list;
-  list.add(temp);
+  list.add(m_temp);
   list.add(result);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    temp.getInternalColumn(i,j,&Tb);
+    m_temp.getInternalColumn(i,j,&Tb);
     if (m_Mbz >= 3) {
-      result(i,j) = - bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
+      result(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     } else {
-      result(i,j) = - bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
+      result(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
   }
 }
@@ -386,24 +390,24 @@ void BedThermalUnit::bootstrap() {
              "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
 
   double* Tb;
-  double dzb = this->get_vertical_spacing();
+  double dzb = this->vertical_spacing();
   const int k0 = m_Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
   IceModelVec::AccessList list;
-  list.add(*bedtoptemp);
-  list.add(*ghf);
-  list.add(temp);
+  list.add(*m_bedtoptemp);
+  list.add(*m_ghf);
+  list.add(m_temp);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    temp.getInternalColumn(i,j,&Tb); // Tb points into temp memory
-    Tb[k0] = (*bedtoptemp)(i,j);
+    m_temp.getInternalColumn(i,j,&Tb); // Tb points into temp memory
+    Tb[k0] = (*m_bedtoptemp)(i,j);
     for (int k = k0-1; k >= 0; k--) {
-      Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
+      Tb[k] = Tb[k+1] + dzb * (*m_ghf)(i,j) / m_bed_k;
     }
   }
 
-  temp.inc_state_counter();     // mark as modified
+  m_temp.inc_state_counter();     // mark as modified
 }
 
 

@@ -230,7 +230,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   basal_heat_flux.set_attrs("internal", "upward heat flux at z=0",
                             "W m-2", "");
   assert(btu != NULL);
-  btu->get_upward_geothermal_flux(basal_heat_flux);
+  btu->upward_geothermal_flux(basal_heat_flux);
 
   IceModelVec2S &till_water_thickness = vWork2d[1];
   till_water_thickness.set_attrs("internal", "current amount of basal water in the till",
