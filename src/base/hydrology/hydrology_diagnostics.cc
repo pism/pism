@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -69,27 +69,29 @@ PISMHydrology_bwprel::PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVar
 PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   double fill = grid.config.get("fill_value");
-  IceModelVec2S *Po     = new IceModelVec2S,
-                *result = new IceModelVec2S;
+
+  IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "bwprel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
-  ierr = Po->create(grid, "Po_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
+
+  IceModelVec2S Po;             // de-allocated at the end of scope
+  ierr = Po.create(grid, "Po_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
-  ierr = model->overburden_pressure(*Po); CHKERRQ(ierr);
+  ierr = model->overburden_pressure(Po); CHKERRQ(ierr);
 
   ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = Po->begin_access(); CHKERRQ(ierr);
+  ierr = Po.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((*Po)(i,j) > 0.0)
-        (*result)(i,j) /= (*Po)(i,j);
+      if (Po(i,j) > 0.0)
+        (*result)(i,j) /= Po(i,j);
       else
         (*result)(i,j) = fill;
     }
   }
   ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = Po->end_access(); CHKERRQ(ierr);
+  ierr = Po.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -106,15 +108,16 @@ PISMHydrology_effbwp::PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVar
 
 PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  IceModelVec2S *P      = new IceModelVec2S,
-                *result = new IceModelVec2S;
+  IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "effbwp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
-  ierr = P->create(grid, "P_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
-  ierr = model->subglacial_water_pressure(*P); CHKERRQ(ierr);
+  IceModelVec2S P;              // de-allocated at the end of scope
+  ierr = P.create(grid, "P_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
+
+  ierr = model->subglacial_water_pressure(P); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
-  ierr = result->add(-1.0,*P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
+  ierr = result->add(-1.0, P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
 
   output = result;
   return 0;
