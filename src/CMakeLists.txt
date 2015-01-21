@@ -31,6 +31,7 @@ set(PISMUTIL_SRC
   base/util/error_handling.cc
   base/util/options.cc
   base/util/Context.cc
+  base/util/PISMDiagnostic.cc
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/ColumnInterpolation.cc

@@ -53,85 +53,30 @@ class Vars;
  * Diagnostic creates a common interface for all these compute_bar
  * functions.
  */
-class Diagnostic
-{
+class Diagnostic {
 public:
-  Diagnostic(const IceGrid &g)
-    : m_grid(g) {
-    m_output_datatype = PISM_FLOAT;
-    m_dof = 1;
-  }
-  virtual ~Diagnostic() {}
+  Diagnostic(const IceGrid &g);
+  virtual ~Diagnostic();
 
-  //! \brief Update a cumulative quantity needed to compute a rate of change.
-  //! So far we there is only one such quantity: the rate of change of the ice
-  //! thickness.
-  virtual void update_cumulative()
-  {
-    // the default implementation is empty
-  }
+  virtual void update_cumulative();
 
   //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec. NB: The caller needs to de-allocate it.
   virtual void compute(IceModelVec* &result) = 0;
 
-  //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
-  virtual int get_nvars() {
-    return m_dof;
-  }
+  virtual int get_nvars();
 
-  //! Reset vertical levels corresponding to the z dimension.
-  /** This is called after the automatic grid extension.
-   */
-  virtual void set_zlevels(std::vector<double> &zlevels)
-  {
-    for (int j = 0; j < m_dof; ++j) {
-      if (m_vars[j].get_z().get_name() == "z") {
-        m_vars[j].set_levels(zlevels);
-      }
-    }
-  }
+  virtual void set_zlevels(std::vector<double> &zlevels);
 
-  //! Get a metadata object corresponding to variable number N.
-  virtual NCSpatialVariable get_metadata(int N = 0)
-  {
-    if (N >= m_dof) {
-      return NCSpatialVariable(m_grid.config.get_unit_system(), "missing", m_grid);
-    }
+  virtual NCSpatialVariable get_metadata(int N = 0);
 
-    return m_vars[N];
-  }
+  virtual void define(const PIO &nc);
 
-  //! Define NetCDF variables corresponding to a diagnostic quantity.
-  virtual void define(const PIO &nc)
-  {
-    for (int j = 0; j < m_dof; ++j) {
-      m_vars[j].define(nc, m_output_datatype, true);
-    }
-  }
-
-  //! \brief A method for setting common variable attributes.
-  void set_attrs(std::string my_long_name,
-                 std::string my_standard_name,
-                 std::string my_units,
-                 std::string my_glaciological_units,
-                 int N = 0) {
-    if (N >= m_dof) {
-      throw RuntimeError::formatted("N (%d) >= m_dof (%d)", N, m_dof);
-    }
-
-    m_vars[N].set_string("pism_intent", "diagnostic");
-
-    m_vars[N].set_string("long_name", my_long_name);
-
-    m_vars[N].set_string("standard_name", my_standard_name);
-
-    m_vars[N].set_units(my_units);
-
-    if (not my_glaciological_units.empty()) {
-      m_vars[N].set_glaciological_units(my_glaciological_units);
-    }
-  }
+  void set_attrs(const std::string &my_long_name,
+                 const std::string &my_standard_name,
+                 const std::string &my_units,
+                 const std::string &my_glaciological_units,
+                 int N = 0);
 protected:
   const IceGrid &m_grid;                //!< the grid
   int m_dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
@@ -141,8 +86,7 @@ protected:
 
 //! A template derived from Diagnostic, adding a "Model".
 template <class Model>
-class Diag : public Diagnostic
-{
+class Diag : public Diagnostic {
 public:
   Diag(Model *m)
     : Diagnostic(m->get_grid()), model(m) {}
@@ -151,8 +95,7 @@ protected:
 };
 
 //! \brief PISM's scalar time-series diagnostics.
-class TSDiagnostic
-{
+class TSDiagnostic {
 public:
   TSDiagnostic(const IceGrid &g)
     : m_grid(g), m_ts(NULL) {
@@ -176,13 +119,13 @@ public:
     }
   }
 
-  virtual void init(std::string filename) {
+  virtual void init(const std::string &filename) {
     if (m_ts) {
       m_ts->init(filename);
     }
   }
 
-  virtual std::string get_string(std::string name) {
+  virtual std::string get_string(const std::string &name) {
     return m_ts->get_metadata().get_string(name);
   }
 
@@ -192,8 +135,7 @@ protected:
 };
 
 template <class Model>
-class TSDiag : public TSDiagnostic
-{
+class TSDiag : public TSDiagnostic {
 public:
   TSDiag(Model *m)
     : TSDiagnostic(m->get_grid()), model(m) {
