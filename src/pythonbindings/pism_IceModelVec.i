@@ -156,6 +156,6 @@ using pism::StarStencil;
     }
 };
 
-%ignore pism::planeStar::operator[];
+%ignore pism::StarStencil::operator[];
 %include "iceModelVec.hh"
 %include "Vector2.hh"

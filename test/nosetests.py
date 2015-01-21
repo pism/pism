@@ -275,6 +275,21 @@ def options_test():
     M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default="one")
     M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default=None)
 
+def pism_vars_test():
+    """Test adding fields to and getting them from pism::Vars."""
+    grid = create_dummy_grid()
+
+    v = grid.variables()
+
+    v.add(PISM.model.createIceThicknessVec(grid))
+    v.lock()
+
+    # test getting by short name
+    print v.get("thk").metadata().get_string("units")
+
+    # test getting by standard name
+    print v.get("land_ice_thickness").metadata().get_string("units")
+
 def modelvecs_test():
     "Test the ModelVecs class"
 
@@ -372,16 +387,13 @@ def sia_test():
     modeldata = PISM.model.ModelData(grid)
     modeldata.setPhysics(enthalpyconverter)
 
-    vecs = modeldata.vecs;
+    vecs = grid.variables()
 
-    fields = {"thickness": thk,
-              "surface": surface,
-              "ice_mask": mask,
-              "bed": bed,
-              "enthalpy": enthalpy}
+    fields = [thk, surface, mask, bed, enthalpy]
 
-    for key in fields.keys():
-        vecs.add(fields[key], key)
+    for field in fields:
+        vecs.add(field)
+    vecs.lock()
 
     vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata)
 
