@@ -97,12 +97,10 @@ void IceModel::update_viewers() {
     } else {
       // if not found, try to compute:
       Diagnostic *diag = diagnostics[*i];
-      IceModelVec *v = NULL;
 
-      if (diag) {
-        diag->compute(v);
-        this->view_field(v);
-        delete v;
+      if (diag != NULL) {
+        IceModelVec::Ptr v = diag->compute();
+        this->view_field(v.get());
       }
     }
   }

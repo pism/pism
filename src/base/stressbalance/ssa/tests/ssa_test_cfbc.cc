@@ -85,14 +85,7 @@ void SSATestCaseCFBC::write_nuH(const std::string &filename) {
     throw RuntimeError("ssa_test_cfbc error: have to use the SSAFD solver.");
   }
 
-  SSAFD_nuH nuH(ssafd);
-
-  IceModelVec* result;
-  nuH.compute(result);
-
-  result->write(filename);
-
-  delete result;
+  SSAFD_nuH(ssafd).compute()->write(filename);
 }
 
 void SSATestCaseCFBC::initializeGrid(int Mx, int My) {

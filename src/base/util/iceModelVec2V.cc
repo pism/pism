@@ -31,9 +31,17 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   begin_end_access_use_dof = false;
 }
 
-void  IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name,
-                            IceModelVecKind ghostedp,
-                            unsigned int stencil_width) {
+IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
+  IceModelVec2V::Ptr result = std::dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
+  if (not (bool)result) {
+    throw RuntimeError("dynamic cast failure");
+  }
+  return result;
+}
+
+void IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name,
+                           IceModelVecKind ghostedp,
+                           unsigned int stencil_width) {
 
   IceModelVec2::create(my_grid, short_name, ghostedp,
                        stencil_width, m_dof);
@@ -66,8 +74,7 @@ void IceModelVec2V::set_name(const std::string &new_name, int component) {
 
 //! Sets the variable's various names without changing any other metadata
 void IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
-                                     const std::string &standard_name, int component)
-{
+                                     const std::string &standard_name, int component) {
   (void) component;
 
   if (!short_name.empty()) {
@@ -94,8 +101,7 @@ void IceModelVec2V::rename(const std::string &short_name, const std::string &lon
 //! Sets the variable's various names without changing any other metadata
 void IceModelVec2V::rename(const std::string & short_name,
                                      const std::vector<std::string> &long_names, 
-                                     const std::string & standard_name)
-{
+                                     const std::string & standard_name) {
   if (!short_name.empty()) {
     std::string tmp = short_name;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
   SSB_beta(ShallowStressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).
@@ -36,7 +36,7 @@ class SSB_taud : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taud(ShallowStressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the magnitude of the gravitational driving stress
@@ -45,7 +45,7 @@ class SSB_taud_mag : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taud_mag(ShallowStressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! @brief Computes the basal shear stress @f$ \tau_b @f$.
@@ -53,7 +53,7 @@ class SSB_taub : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taub(ShallowStressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the magnitude of the basal shear stress
@@ -62,7 +62,7 @@ class SSB_taub_mag : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taub_mag(ShallowStressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 } // end of namespace pism

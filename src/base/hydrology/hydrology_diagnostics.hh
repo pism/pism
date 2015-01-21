@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ class Hydrology_bwat : public Diag<Hydrology>
 {
 public:
   Hydrology_bwat(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -54,7 +54,7 @@ class Hydrology_bwp : public Diag<Hydrology>
 {
 public:
   Hydrology_bwp(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -63,7 +63,7 @@ class Hydrology_bwprel : public Diag<Hydrology>
 {
 public:
   Hydrology_bwprel(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -72,7 +72,7 @@ class Hydrology_effbwp : public Diag<Hydrology>
 {
 public:
   Hydrology_effbwp(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -81,7 +81,7 @@ class Hydrology_hydrobmelt : public Diag<Hydrology>
 {
 public:
   Hydrology_hydrobmelt(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -90,7 +90,7 @@ class Hydrology_hydroinput : public Diag<Hydrology>
 {
 public:
   Hydrology_hydroinput(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -99,7 +99,7 @@ class Hydrology_wallmelt : public Diag<Hydrology>
 {
 public:
   Hydrology_wallmelt(Hydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 
@@ -109,7 +109,7 @@ class RoutingHydrology_bwatvel : public Diag<RoutingHydrology>
 {
 public:
   RoutingHydrology_bwatvel(RoutingHydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
@@ -118,7 +118,7 @@ class DistributedHydrology_hydrovelbase_mag : public Diag<DistributedHydrology>
 {
 public:
   DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 } // end of namespace pism

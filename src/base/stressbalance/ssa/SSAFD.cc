@@ -1761,17 +1761,17 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m)
             "Pa s m", "kPa s m", 1);
 }
 
-void SSAFD_nuH::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSAFD_nuH::compute() {
 
-  IceModelVec2Stag *result = new IceModelVec2Stag;
+  IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "nuH", WITH_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
   model->nuH.copy_to(*result);
 
-  output = result;
+  return result;
 }
 
 void SSAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,

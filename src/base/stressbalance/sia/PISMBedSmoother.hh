@@ -82,9 +82,12 @@ public:
   // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
   virtual void get_smoothing_domain(int &Nx_out, int &Ny_out);
 
-  virtual void get_smoothed_thk(const IceModelVec2S &usurf, const IceModelVec2S &thk,
-                                const IceModelVec2Int &mask, IceModelVec2S *thksmooth);
-  virtual void get_theta(const IceModelVec2S &usurf, IceModelVec2S *theta);
+  virtual void get_smoothed_thk(const IceModelVec2S &usurf,
+                                const IceModelVec2S &thk,
+                                const IceModelVec2Int &mask,
+                                IceModelVec2S &thksmooth);
+  virtual void get_theta(const IceModelVec2S &usurf,
+                         IceModelVec2S &result);
 
   const IceModelVec2S& get_smoothed_bed();
 protected:

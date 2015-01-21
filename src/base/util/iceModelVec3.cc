@@ -53,6 +53,15 @@ IceModelVec3::~IceModelVec3() {
   // empty
 }
 
+
+IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
+  IceModelVec3::Ptr result = std::dynamic_pointer_cast<IceModelVec3,IceModelVec>(input);
+  if (not (bool)result) {
+    throw RuntimeError("dynamic cast failure");
+  }
+  return result;
+}
+
 //! Allocate a DA and a Vec from information in IceGrid.
 void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
                              IceModelVecKind ghostedp, const std::vector<double> &levels,

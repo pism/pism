@@ -130,7 +130,7 @@ class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
   SSAFD_nuH(SSAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 } // end of namespace pism

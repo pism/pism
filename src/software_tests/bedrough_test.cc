@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     int Nx,Ny;
     smoother.get_smoothing_domain(Nx,Ny);
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    smoother.get_theta(usurf, &theta);
+    smoother.get_theta(usurf, theta);
 
     const IceModelVec2S &topg_smoothed = smoother.get_smoothed_bed();
     if (show) {

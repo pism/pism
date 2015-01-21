@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ class SIAFD_schoofs_theta : public Diag<SIAFD>
 {
 public:
   SIAFD_schoofs_theta(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the smoothed bed elevation from Schoof's (2003) theory of the
@@ -45,7 +45,7 @@ class SIAFD_topgsmooth : public Diag<SIAFD>
 {
 public:
   SIAFD_topgsmooth(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the thickness relative to the smoothed bed elevation in
@@ -57,7 +57,7 @@ class SIAFD_thksmooth : public Diag<SIAFD>
 {
 public:
   SIAFD_thksmooth(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Compute diffusivity of the SIA flow.
@@ -65,7 +65,7 @@ class SIAFD_diffusivity : public Diag<SIAFD>
 {
 public:
   SIAFD_diffusivity(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Compute diffusivity of the SIA flow (on the staggered grid).
@@ -73,7 +73,7 @@ class SIAFD_diffusivity_staggered : public Diag<SIAFD>
 {
 public:
   SIAFD_diffusivity_staggered(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the x-component of the ice surface gradient on the staggered
@@ -82,7 +82,7 @@ class SIAFD_h_x : public Diag<SIAFD>
 {
 public:
   SIAFD_h_x(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the y-component of the ice surface gradient on the staggered
@@ -91,7 +91,7 @@ class SIAFD_h_y : public Diag<SIAFD>
 {
 public:
   SIAFD_h_y(SIAFD *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 } // end of namespace pism

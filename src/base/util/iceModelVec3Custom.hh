@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,6 +38,14 @@ class IceModelVec3Custom : public IceModelVec3D {
 public:
   IceModelVec3Custom();
   virtual ~IceModelVec3Custom();
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec3Custom> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec3Custom> ConstPtr;
+#else
+  typedef std::shared_ptr<IceModelVec3Custom> Ptr;
+  typedef std::shared_ptr<const IceModelVec3Custom> ConstPtr;
+#endif
 
   virtual PetscErrorCode create(const IceGrid &mygrid,
                                 const std::string &short_name,

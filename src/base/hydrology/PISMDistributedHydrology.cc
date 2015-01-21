@@ -511,14 +511,15 @@ DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(Dis
 }
 
 
-void DistributedHydrology_hydrovelbase_mag::compute(IceModelVec* &output) {
-  IceModelVec2S *result = new IceModelVec2S;
+IceModelVec::Ptr DistributedHydrology_hydrovelbase_mag::compute() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   // the value reported diagnostically is merely the last value filled
   (model->velbase_mag).copy_to(*result);
-  output = result;
+
+  return result;
 }
 
 

@@ -367,11 +367,11 @@ SSB_taud::SSB_taud(ShallowStressBalance *m)
  * implementation intentionally does not use the eta-transformation or special
  * cases at ice margins.
  */
-void SSB_taud::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSB_taud::compute() {
 
-  IceModelVec2V *result = new IceModelVec2V;
+  IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
@@ -398,7 +398,7 @@ void SSB_taud::compute(IceModelVec* &output) {
     }
   }
 
-  output = result;
+  return result;
 }
 
 SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
@@ -413,30 +413,19 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
                      "this field is purely diagnostic (not used by the model)");
 }
 
-void SSB_taud_mag::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSB_taud_mag::compute() {
 
   // Allocate memory:
-  IceModelVec2S *result = new IceModelVec2S;
+  IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec* tmp;
-  SSB_taud diag(model);
-
-  diag.compute(tmp);
-
-  IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
-  if (taud == NULL) {
-    delete tmp;
-    throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
-  }
+  IceModelVec2V::Ptr taud = IceModelVec2V::ToVector(SSB_taud(model).compute());
 
   result->set_to_magnitude(*taud);
 
-  delete tmp;
-
-  output = result;
+  return result;
 }
 
 SSB_taub::SSB_taub(ShallowStressBalance *m)
@@ -459,9 +448,9 @@ SSB_taub::SSB_taub(ShallowStressBalance *m)
 }
 
 
-void SSB_taub::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSB_taub::compute() {
 
-  IceModelVec2V *result = new IceModelVec2V;
+  IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
@@ -470,7 +459,7 @@ void SSB_taub::compute(IceModelVec* &output) {
   model->get_2D_advective_velocity(velocity);
 
   IceModelVec2V &vel = *velocity;
-  const IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
+  const IceModelVec2S   *tauc = m_grid.variables().get_2d_scalar("tauc");
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
@@ -495,7 +484,7 @@ void SSB_taub::compute(IceModelVec* &output) {
     }
   }
 
-  output = result;
+  return result;
 }
 
 SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
@@ -510,30 +499,19 @@ SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
                      "this field is purely diagnostic (not used by the model)");
 }
 
-void SSB_taub_mag::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSB_taub_mag::compute() {
 
   // Allocate memory:
-  IceModelVec2S *result = new IceModelVec2S;
+  IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "taub_mag", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec* tmp;
-  SSB_taub diag(model);
-
-  diag.compute(tmp);
-
-  IceModelVec2V *taub = dynamic_cast<IceModelVec2V*>(tmp);
-  if (taub == NULL) {
-    delete tmp;
-    throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
-  }
+  IceModelVec2V::Ptr taub = IceModelVec2V::ToVector(SSB_taub(model).compute());
 
   result->set_to_magnitude(*taub);
 
-  delete tmp;
-
-  output = result;
+  return result;
 }
 
 /**
@@ -578,12 +556,12 @@ SSB_beta::SSB_beta(ShallowStressBalance *m)
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }
 
-void SSB_beta::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSB_beta::compute() {
 
   // Allocate memory:
-  IceModelVec2S *result = new IceModelVec2S;
+  IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "beta", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
   const IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
@@ -604,7 +582,7 @@ void SSB_beta::compute(IceModelVec* &output) {
     (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
   }
 
-  output = result;
+  return result;
 }
 
 } // end of namespace pism

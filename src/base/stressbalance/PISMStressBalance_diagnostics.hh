@@ -29,7 +29,7 @@ class PSB_velbar : public Diag<StressBalance>
 {
 public:
   PSB_velbar(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes velbar_mag, the magnitude of vertically-integrated horizontal
@@ -38,7 +38,7 @@ class PSB_velbar_mag : public Diag<StressBalance>
 {
 public:
   PSB_velbar_mag(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes uflux and vflux, components of vertically-integrated horizontal
@@ -47,7 +47,7 @@ class PSB_flux : public Diag<StressBalance>
 {
 public:
   PSB_flux(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
@@ -56,7 +56,7 @@ class PSB_flux_mag : public Diag<StressBalance>
 {
 public:
   PSB_flux_mag(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes velbase_mag, the magnitude of horizontal velocity of ice at base
@@ -65,7 +65,7 @@ class PSB_velbase_mag : public Diag<StressBalance>
 {
 public:
   PSB_velbase_mag(StressBalance *m);
-  void  compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes velsurf_mag, the magnitude of horizontal ice velocity at the
@@ -74,7 +74,7 @@ class PSB_velsurf_mag : public Diag<StressBalance>
 {
 public:
   PSB_velsurf_mag(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes velsurf, the horizontal velocity of ice at ice surface.
@@ -82,7 +82,7 @@ class PSB_velsurf : public Diag<StressBalance>
 {
 public:
   PSB_velsurf(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! Computes vertical ice velocity (relative to the geoid).
@@ -101,7 +101,7 @@ class PSB_wvel : public Diag<StressBalance>
 {
 public:
   PSB_wvel(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! Computes wvelsurf, the vertical velocity of ice at ice surface.
@@ -109,7 +109,7 @@ class PSB_wvelsurf : public Diag<StressBalance>
 {
 public:
   PSB_wvelsurf(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! Computes wvelbase, the vertical velocity of ice at the base of ice.
@@ -117,7 +117,7 @@ class PSB_wvelbase : public Diag<StressBalance>
 {
 public:
   PSB_wvelbase(StressBalance *m);
-  void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes horizontal ice velocity at the base of ice.
@@ -125,7 +125,7 @@ class PSB_velbase : public Diag<StressBalance>
 {
 public:
   PSB_velbase(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes basal frictional heating.
@@ -133,7 +133,7 @@ class PSB_bfrict : public Diag<StressBalance>
 {
 public:
   PSB_bfrict(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the x-component of the horizontal ice velocity.
@@ -141,7 +141,7 @@ class PSB_uvel : public Diag<StressBalance>
 {
 public:
   PSB_uvel(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes the y-component of the horizontal ice velocity.
@@ -149,7 +149,7 @@ class PSB_vvel : public Diag<StressBalance>
 {
 public:
   PSB_vvel(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Computes vertical velocity of ice, relative to the bed directly
@@ -158,7 +158,7 @@ class PSB_wvel_rel : public Diag<StressBalance>
 {
 public:
   PSB_wvel_rel(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the volumetric strain heating (3D).
@@ -166,7 +166,7 @@ class PSB_strainheat : public Diag<StressBalance>
 {
 public:
   PSB_strainheat(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the vertically-integrated (2D) principal strain rates.
@@ -174,7 +174,7 @@ class PSB_strain_rates : public Diag<StressBalance>
 {
 public:
   PSB_strain_rates(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the vertically-integrated (2D) deviatoric stresses.
@@ -182,7 +182,7 @@ class PSB_deviatoric_stresses : public Diag<StressBalance>
 {
 public:
   PSB_deviatoric_stresses(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the pressure within the ice (3D).
@@ -190,7 +190,7 @@ class PSB_pressure : public Diag<StressBalance>
 {
 public:
   PSB_pressure(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the xz component of the shear stress within the ice (3D), according to the SIA formula.
@@ -198,7 +198,7 @@ class PSB_tauxz : public Diag<StressBalance>
 {
 public:
   PSB_tauxz(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the yz component of the shear stress within the ice (3D), according to the SIA formula.
@@ -206,7 +206,7 @@ class PSB_tauyz : public Diag<StressBalance>
 {
 public:
   PSB_tauyz(StressBalance *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 

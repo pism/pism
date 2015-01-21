@@ -46,6 +46,14 @@ IceModelVec2V::~IceModelVec2V() {
   // empty
 }
 
+IceModelVec2S::Ptr IceModelVec2S::To2DScalar(IceModelVec::Ptr input) {
+  IceModelVec2S::Ptr result = std::dynamic_pointer_cast<IceModelVec2S,IceModelVec>(input);
+  if (not (bool)result) {
+    throw RuntimeError("dynamic cast failure");
+  }
+  return result;
+}
+
 IceModelVec2S::IceModelVec2S() {
   begin_end_access_use_dof = false;
 }
@@ -648,6 +656,16 @@ void IceModelVec2S::copy_to(IceModelVec &destination) const {
 }
 
 // IceModelVec2Stag
+
+IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
+  IceModelVec2Stag::Ptr result = std::dynamic_pointer_cast<IceModelVec2Stag,IceModelVec>(input);
+  if (not (bool)result) {
+    throw RuntimeError("dynamic cast failure");
+  }
+  return result;
+}
+
+
 void IceModelVec2Stag::create(const IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
 

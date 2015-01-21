@@ -805,9 +805,9 @@ RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m)
 }
 
 
-void RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
+IceModelVec::Ptr RoutingHydrology_bwatvel::compute() {
 
-  IceModelVec2Stag *result = new IceModelVec2Stag;
+  IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
@@ -815,7 +815,7 @@ void RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
 
   model->velocity_staggered(*result);
 
-  output = result;
+  return result;
 }
 
 } // end of namespace pism

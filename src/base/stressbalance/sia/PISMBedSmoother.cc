@@ -297,9 +297,8 @@ Call preprocess_bed() first.
 void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
                                    const IceModelVec2S &thk,
                                    const IceModelVec2Int &mask,
-                                   IceModelVec2S *thksmooth) {
+                                   IceModelVec2S &result) {
   MaskQuery M(mask);
-  IceModelVec2S &result = *thksmooth;
 
   IceModelVec::AccessList list;
   list.add(mask);
@@ -363,14 +362,12 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S *theta) {
+void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
 
   if ((Nx < 0) || (Ny < 0)) {
-    theta->set(1.0);
+    result.set(1.0);
     return;
   }
-
-  IceModelVec2S &result = *theta;
 
   IceModelVec::AccessList list;
   list.add(C2);

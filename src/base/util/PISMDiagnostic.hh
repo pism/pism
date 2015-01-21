@@ -25,10 +25,10 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 #include "error_handling.hh"
+#include "iceModelVec.hh"
 
 namespace pism {
 
-class IceModelVec;
 class Vars;
 
 //! \brief Class representing diagnostic computations in PISM.
@@ -62,7 +62,7 @@ public:
 
   //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec. NB: The caller needs to de-allocate it.
-  virtual void compute(IceModelVec* &result) = 0;
+  virtual IceModelVec::Ptr compute() = 0;
 
   virtual int get_nvars();
 

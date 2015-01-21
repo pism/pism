@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@ class SSA_taud_mag : public Diag<SSA>
 {
 public:
   SSA_taud_mag(SSA *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 //! @brief Computes the driving shear stress at the base of ice
@@ -42,7 +42,7 @@ class SSA_taud : public Diag<SSA>
 {
 public:
   SSA_taud(SSA *m);
-  virtual void compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 
 

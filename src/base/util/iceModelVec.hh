@@ -317,6 +317,15 @@ class IceModelVec2S;
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec2> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec2> ConstPtr;
+#else
+  typedef std::shared_ptr<IceModelVec2> Ptr;
+  typedef std::shared_ptr<const IceModelVec2> ConstPtr;
+#endif
+
   virtual void view(int viewer_size) const;
   virtual void view(Viewer::Ptr v1, Viewer::Ptr v2) const;
   // component-wise access:
@@ -350,6 +359,8 @@ public:
   typedef std::shared_ptr<IceModelVec2S> Ptr;
   typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
 #endif
+
+  static Ptr To2DScalar(IceModelVec::Ptr input);
 
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
@@ -421,6 +432,8 @@ public:
   typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
 #endif
 
+  static Ptr ToVector(IceModelVec::Ptr input);
+
   using IceModelVec2::create;
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
                       IceModelVecKind ghostedp, unsigned int stencil_width = 1);
@@ -448,6 +461,17 @@ public:
 class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag();
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec2Stag> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec2Stag> ConstPtr;
+#else
+  typedef std::shared_ptr<IceModelVec2Stag> Ptr;
+  typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
+#endif
+
+  static Ptr ToStaggered(IceModelVec::Ptr input);
+
   using IceModelVec2::create;
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
                       IceModelVecKind ghostedp, unsigned int stencil_width = 1);
@@ -499,6 +523,8 @@ public:
   typedef std::shared_ptr<IceModelVec3> Ptr;
   typedef std::shared_ptr<const IceModelVec3> ConstPtr;
 #endif
+
+  static Ptr To3DScalar(IceModelVec::Ptr input);
 
   virtual void create(const IceGrid &mygrid, const std::string &my_short_name,
                       IceModelVecKind ghostedp,

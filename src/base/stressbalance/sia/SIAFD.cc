@@ -549,10 +549,10 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
   // have stencil width WIDE_GHOSTS for this too work
-  m_bed_smoother->get_theta(*m_surface, &theta);
+  m_bed_smoother->get_theta(*m_surface, theta);
 
   m_bed_smoother->get_smoothed_thk(*m_surface, *m_thickness, *m_mask,
-                                 &thk_smooth);
+                                   thk_smooth);
 
   IceModelVec::AccessList list;
   list.add(theta);
@@ -716,7 +716,7 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   IceModelVec2S &thk_smooth = m_work_2d[0];
 
   m_bed_smoother->get_smoothed_thk(*m_surface, *m_thickness, *m_mask,
-                                 &thk_smooth);
+                                   thk_smooth);
 
   IceModelVec::AccessList list;
   list.add(thk_smooth);
@@ -778,7 +778,7 @@ void SIAFD::compute_I() {
   IceModelVec3* I = m_work_3d;
 
   m_bed_smoother->get_smoothed_thk(*m_surface, *m_thickness, *m_mask,
-                                 &thk_smooth);
+                                   thk_smooth);
 
   IceModelVec::AccessList list;
   list.add(m_delta[0]);

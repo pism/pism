@@ -383,16 +383,16 @@ SSA_taud::SSA_taud(SSA *m)
   }
 }
 
-void SSA_taud::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSA_taud::compute() {
 
-  IceModelVec2V *result = new IceModelVec2V;
+  IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
   model->compute_driving_stress(*result);
 
-  output = result;
+  return result;
 }
 
 SSA_taud_mag::SSA_taud_mag(SSA *m)
@@ -407,30 +407,19 @@ SSA_taud_mag::SSA_taud_mag(SSA *m)
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
-void SSA_taud_mag::compute(IceModelVec* &output) {
+IceModelVec::Ptr SSA_taud_mag::compute() {
 
   // Allocate memory:
-  IceModelVec2S *result = new IceModelVec2S;
+  IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec* tmp;
-  SSA_taud diag(model);
-
-  diag.compute(tmp);
-
-  IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
-  if (taud == NULL) {
-    delete tmp;
-    throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
-  }
+  IceModelVec2V::Ptr taud = IceModelVec2V::ToVector(SSA_taud(model).compute());
 
   result->set_to_magnitude(*taud);
 
-  delete tmp;
-
-  output = result;
+  return result;
 }
 
 
