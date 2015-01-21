@@ -533,11 +533,9 @@ void IceModel::massContExplicitStep() {
 
   IceModelVec2S &H_residual = vWork2d[1];
 
-  IceModelVec2Stag *Qdiff;
-  stress_balance->get_diffusive_flux(Qdiff);
+  const IceModelVec2Stag *Qdiff = stress_balance->diffusive_flux();
 
-  IceModelVec2V *vel_advective;
-  stress_balance->get_2D_advective_velocity(vel_advective);
+  const IceModelVec2V *vel_advective = stress_balance->advective_velocity();
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 

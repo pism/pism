@@ -151,11 +151,11 @@ public:
 
   virtual void init();
 
-  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
   virtual void set_initial_guess(IceModelVec2V &guess);
 
-  virtual void stdout_report(std::string &result);
+  virtual std::string stdout_report();
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);

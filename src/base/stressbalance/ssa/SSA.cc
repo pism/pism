@@ -65,20 +65,20 @@ SSA::SSA(const IceGrid &g, EnthalpyConverter &e)
   m_da = m_velocity_global.get_dm();
 
   {
-    IceFlowLawFactory ice_factory(m_grid.com, "ssa_", m_config, &EC);
+    IceFlowLawFactory ice_factory(m_grid.com, "ssa_", m_config, &m_EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
     ice_factory.setType(m_config.get_string("ssa_flow_law"));
 
     ice_factory.setFromOptions();
-    flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create();
   }
 }
 
 SSA::~SSA() { 
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
+  if (m_flow_law != NULL) {
+    delete m_flow_law;
+    m_flow_law = NULL;
   }
   if (strength_extension != NULL) {
     delete strength_extension;
@@ -94,7 +94,7 @@ void SSA::init() {
 
   verbPrintf(2,m_grid.com,"* Initializing the SSA stress balance...\n");
   verbPrintf(2, m_grid.com,
-             "  [using the %s flow law]\n", flow_law->name().c_str());
+             "  [using the %s flow law]\n", m_flow_law->name().c_str());
   
   if (m_config.get_flag("sub_groundingline")) {
     m_gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
@@ -149,13 +149,13 @@ void SSA::init() {
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
+void SSA::update(bool fast, const IceModelVec2S &melange_back_pressure) {
   (void) melange_back_pressure;
 
   if (not fast) {
     solve();
     compute_basal_frictional_heating(m_velocity, *m_tauc, *m_mask,
-                                     basal_frictional_heating);
+                                     m_basal_frictional_heating);
   }
 }
 
@@ -175,7 +175,7 @@ give a lower driving stress. The transformation is not used in floating ice.
 void SSA::compute_driving_stress(IceModelVec2V &result) {
   const IceModelVec2S &thk = *m_thickness; // to improve readability (below)
 
-  const double n = flow_law->exponent(), // frequently n = 3
+  const double n = m_flow_law->exponent(), // frequently n = 3
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
@@ -198,7 +198,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
+    const double pressure = m_EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
     if (pressure <= 0.0) {
       result(i,j).u = 0.0;
       result(i,j).v = 0.0;
@@ -316,8 +316,8 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   }
 }
 
-void SSA::stdout_report(std::string &result) {
-  result = m_stdout_ssa;
+std::string SSA::stdout_report() {
+  return m_stdout_ssa;
 }
 
 

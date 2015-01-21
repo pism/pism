@@ -37,7 +37,7 @@ public:
 
   virtual void init();
 
-  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);

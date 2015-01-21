@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2014 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2015 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,11 +31,11 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
                              double dx,  double dy, double dt,
                              const Config &config,
-                             IceModelVec3 &Enth3,
-                             IceModelVec3 *u3,
-                             IceModelVec3 *v3,
-                             IceModelVec3 *w3,
-                             IceModelVec3 *strain_heating3,
+                             const IceModelVec3 &Enth3,
+                             const IceModelVec3 *u3,
+                             const IceModelVec3 *v3,
+                             const IceModelVec3 *w3,
+                             const IceModelVec3 *strain_heating3,
                              const EnthalpyConverter &EC)
   : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3), m_EC(EC) {
 

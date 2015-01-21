@@ -34,7 +34,7 @@ public:
   ageSystemCtx(const std::vector<double>& storage_grid,
                const std::string &my_prefix,
                double dx, double dy, double dt,
-               IceModelVec3 *age, IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3);
+               IceModelVec3 *age, const IceModelVec3 *u3, const IceModelVec3 *v3, const IceModelVec3 *w3);
 
   void initThisColumn(int i, int j, double thickness);
 
@@ -50,7 +50,9 @@ ageSystemCtx::ageSystemCtx(const std::vector<double>& storage_grid,
                            const std::string &my_prefix,
                            double dx, double dy, double dt,
                            IceModelVec3 *age,
-                           IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3)
+                           const IceModelVec3 *u3,
+                           const IceModelVec3 *v3,
+                           const IceModelVec3 *w3)
   : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3) {
 
   assert(age != NULL);
@@ -248,8 +250,10 @@ void IceModel::ageStep() {
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to file");
 
-  IceModelVec3 *u3, *v3, *w3;
-  stress_balance->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = stress_balance->velocity_u(),
+    *v3 = stress_balance->velocity_v(),
+    *w3 = stress_balance->velocity_w();
 
   ageSystemCtx system(grid.z(), "age",
                       grid.dx(), grid.dy(), dt_TempAge,

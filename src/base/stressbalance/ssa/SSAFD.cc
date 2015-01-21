@@ -66,7 +66,7 @@ SSAFD::SSAFD(const IceGrid &g, EnthalpyConverter &e)
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "");
 
-  const double power = 1.0 / flow_law->exponent();
+  const double power = 1.0 / m_flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
@@ -243,7 +243,7 @@ void SSAFD::init() {
   }
 }
 
-void SSAFD::update(bool fast, IceModelVec2S& melange_back_pressure) {
+void SSAFD::update(bool fast, const IceModelVec2S& melange_back_pressure) {
   m_melange_back_pressure = &melange_back_pressure;
 
   SSA::update(fast, melange_back_pressure);
@@ -1222,8 +1222,8 @@ void SSAFD::compute_hardav_staggered() {
         E[k] = 0.5 * (E_ij[k] + E_offset[k]);
       }
 
-      hardness(i,j,o) = flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
-                                                    &(m_grid.z()[0]), &E[0]);
+      hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
+                                                      &(m_grid.z()[0]), &E[0]);
     } // o
   }     // loop over points
 
@@ -1272,7 +1272,7 @@ void SSAFD::fracture_induced_softening() {
 
   const double
     epsilon = m_config.get("fracture_density_softening_lower_limit"),
-    n_glen  = flow_law->exponent();
+    n_glen  = m_flow_law->exponent();
 
   IceModelVec::AccessList list;
   list.add(hardness);
@@ -1353,8 +1353,8 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   list.add(hardness);
   list.add(*m_thickness);
 
-  double ssa_enhancement_factor = flow_law->enhancement_factor(),
-    n_glen = flow_law->exponent(),
+  double ssa_enhancement_factor = m_flow_law->enhancement_factor(),
+    n_glen = m_flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
   const double dx = m_grid.dx(), dy = m_grid.dy();
@@ -1386,9 +1386,9 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
       }
 
       double nu;
-      flow_law->effective_viscosity(hardness(i,j,o),
-                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                    &nu, NULL);
+      m_flow_law->effective_viscosity(hardness(i,j,o),
+                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                      &nu, NULL);
 
       result(i,j,o) = nu * H;
 
@@ -1427,8 +1427,8 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
 void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
                                                  double nuH_regularization) {
   IceModelVec2V &uv = m_velocity; // shortcut
-  double ssa_enhancement_factor = flow_law->enhancement_factor(),
-    n_glen = flow_law->exponent(),
+  double ssa_enhancement_factor = m_flow_law->enhancement_factor(),
+    n_glen = m_flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
   const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
@@ -1510,9 +1510,9 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
           v_y = 0.0;
         }
 
-        flow_law->effective_viscosity(hardness(i,j,0),
-                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                      &nu, NULL);
+        m_flow_law->effective_viscosity(hardness(i,j,0),
+                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        &nu, NULL);
         result(i,j,0) = nu * H;
       } else {
         result(i,j,0) = strength_extension->get_notional_strength();
@@ -1544,9 +1544,9 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
           v_x = 0.0;
         }
 
-        flow_law->effective_viscosity(hardness(i,j,1),
-                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                      &nu, NULL);
+        m_flow_law->effective_viscosity(hardness(i,j,1),
+                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        &nu, NULL);
         result(i,j,1) = nu * H;
       } else {
         result(i,j,1) = strength_extension->get_notional_strength();

@@ -29,44 +29,30 @@ class IceFlowLaw;
 class EnthalpyConverter;
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
-class SSB_Modifier : public Component
-{
+class SSB_Modifier : public Component {
 public:
   SSB_Modifier(const IceGrid &g, EnthalpyConverter &e);
   virtual ~SSB_Modifier();
 
-  virtual void init() {
-  }
+  virtual void init();
 
-  virtual void update(IceModelVec2V *vel_input, bool fast) = 0;
+  virtual void update(const IceModelVec2V &vel_input, bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual void get_diffusive_flux(IceModelVec2Stag* &result) {
-    result = &m_diffusive_flux;
-  }
+  virtual const IceModelVec2Stag* diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual void get_max_diffusivity(double &result) {
-    result = m_D_max;
-  }
+  virtual double max_diffusivity();
 
-  virtual void get_horizontal_3d_velocity(IceModelVec3* &u_result,
-                                          IceModelVec3* &v_result) {
-    u_result = &m_u;
-    v_result = &m_v;
-  }
+  const IceModelVec3* velocity_u();
 
-  virtual void get_volumetric_strain_heating(IceModelVec3* &result) {
-    result = &m_strain_heating;
-  }
+  const IceModelVec3* velocity_v();
 
-  virtual void stdout_report(std::string &result) {
-    result = "";
-  }
+  const IceModelVec3* volumetric_strain_heating();
 
-  IceFlowLaw* get_flow_law() {
-    return m_flow_law;
-  }
+  virtual std::string stdout_report();
+
+  IceFlowLaw* flow_law();
 protected:
   IceFlowLaw *m_flow_law;
   EnthalpyConverter &m_EC;
@@ -77,30 +63,24 @@ protected:
 
 
 //! The trivial Shallow Stress Balance modifier.
-class ConstantInColumn : public SSB_Modifier
-{
+class ConstantInColumn : public SSB_Modifier {
 public:
   ConstantInColumn(const IceGrid &g, EnthalpyConverter &e);
   virtual ~ConstantInColumn();
 
   virtual void init();
 
-  virtual void update(IceModelVec2V *vel_input, bool fast);
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
-  }
+  virtual void update(const IceModelVec2V &vel_input, bool fast);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/) {
-    // empty
-  }
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                IO_Type nctype);
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual void write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-    // empty
-  }
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
 };
 

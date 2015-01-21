@@ -60,7 +60,7 @@ public:
 
   virtual void init();
 
-  virtual void update(IceModelVec2V *vel_input, bool fast);
+  virtual void update(const IceModelVec2V &vel_input, bool fast);
 
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -72,7 +72,7 @@ public:
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/) {
+                                IO_Type /*nctype*/) {
   }
 
   //! Writes requested couplings fields to file and/or asks an attached
@@ -89,11 +89,11 @@ protected:
   virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual void compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                                IceModelVec2Stag &result, bool fast);
+                                      IceModelVec2Stag &result, bool fast);
 
-  virtual void compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                                        IceModelVec2V *vel_input,
-                                                        IceModelVec3 &u_out, IceModelVec3 &v_out);
+  virtual void compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
+                                              const IceModelVec2V &vel_input,
+                                              IceModelVec3 &u_out, IceModelVec3 &v_out);
 
   virtual void compute_I();
 

@@ -47,8 +47,10 @@ The maximum vertical velocity is computed but it does not affect
 void IceModel::max_timestep_cfl_3d(double &dt_result) {
   double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
 
-  IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL;
-  stress_balance->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = stress_balance->velocity_u(),
+    *v3 = stress_balance->velocity_v(),
+    *w3 = stress_balance->velocity_w();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -58,7 +60,7 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
   list.add(vMask);
 
   MaskQuery mask(vMask);
-  double *u = NULL, *v = NULL, *w = NULL;
+  const double *u = NULL, *v = NULL, *w = NULL;
 
   // update global max of abs of velocities for CFL; only velocities under surface
   double maxu = 0.0, maxv = 0.0, maxw = 0.0;
@@ -109,9 +111,7 @@ void IceModel::max_timestep_cfl_2d(double &dt_result) {
 
   MaskQuery mask(vMask);
 
-  IceModelVec2V *vel_advective;
-  stress_balance->get_2D_advective_velocity(vel_advective);
-  IceModelVec2V &vel = *vel_advective; // a shortcut
+  const IceModelVec2V &vel = *stress_balance->advective_velocity();
 
   IceModelVec::AccessList list;
   list.add(vel);
@@ -142,8 +142,7 @@ dx^2/maxD (if dx=dy).
 Reference: [\ref MortonMayers] pp 62--63.
  */
 void IceModel::max_timestep_diffusivity(double &dt_result) {
-  double D_max = 0.0;
-  stress_balance->get_max_diffusivity(D_max);
+  double D_max = stress_balance->max_diffusivity();
 
   if (D_max > 0.0) {
     const double
@@ -401,9 +400,9 @@ void IceModel::countCFLViolations(double* CFLviol) {
     CFL_x = grid.dx() / dt_TempAge,
     CFL_y = grid.dy() / dt_TempAge;
 
-  double *u, *v;
-  IceModelVec3 *u3, *v3, *dummy;
-  stress_balance->get_3d_velocity(u3, v3, dummy);
+  const IceModelVec3
+    *u3 = stress_balance->velocity_u(),
+    *v3 = stress_balance->velocity_v();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -415,6 +414,7 @@ void IceModel::countCFLViolations(double* CFLviol) {
 
     const int  fks = grid.kBelowHeight(ice_thickness(i,j));
 
+    const double *u, *v;
     u3->getInternalColumn(i,j,&u);
     v3->getInternalColumn(i,j,&v);
 

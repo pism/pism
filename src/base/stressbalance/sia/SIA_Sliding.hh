@@ -38,7 +38,7 @@ public:
 
   virtual void init();
 
-  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
   }

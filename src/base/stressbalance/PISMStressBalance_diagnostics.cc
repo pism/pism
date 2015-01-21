@@ -163,8 +163,6 @@ PSB_flux::PSB_flux(StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_flux::compute() {
-  IceModelVec3 *u3, *v3, *w3;
-  double *u_ij, *v_ij;
   double icefree_thickness = m_grid.config.get("mask_icefree_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
@@ -175,7 +173,9 @@ IceModelVec::Ptr PSB_flux::compute() {
   // get the thickness
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u(),
+    *v3 = model->velocity_v();
 
   IceModelVec::AccessList list;
   list.add(*u3);
@@ -198,6 +198,7 @@ IceModelVec::Ptr PSB_flux::compute() {
     }
 
     // an ice-filled cell:
+    const double *u_ij = NULL, *v_ij = NULL;
     u3->getInternalColumn(i, j, &u_ij);
     v3->getInternalColumn(i, j, &v_ij);
 
@@ -278,7 +279,6 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
 
 IceModelVec::Ptr PSB_velbase_mag::compute() {
   // FIXME: compute this using PSB_velbase.
-  IceModelVec3 *u3, *v3, *w3;
 
   IceModelVec2S tmp;
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
@@ -287,7 +287,9 @@ IceModelVec::Ptr PSB_velbase_mag::compute() {
   result->create(m_grid, "velbase_mag", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u(),
+    *v3 = model->velocity_v();
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -316,7 +318,6 @@ PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
 IceModelVec::Ptr PSB_velsurf_mag::compute() {
 
   // FIXME: Compute this using PSB_velsurf.
-  IceModelVec3 *u3, *v3, *w3;
 
   IceModelVec2S tmp;
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
@@ -325,7 +326,9 @@ IceModelVec::Ptr PSB_velsurf_mag::compute() {
   result->create(m_grid, "velsurf_mag", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u(),
+    *v3 = model->velocity_v();
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -365,7 +368,6 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_velsurf::compute() {
-  IceModelVec3 *u3, *v3, *w3;
   double fill_value = m_grid.config.get("fill_value", "m/year", "m/s");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
@@ -376,7 +378,9 @@ IceModelVec::Ptr PSB_velsurf::compute() {
   IceModelVec2S tmp;
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
 
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u(),
+    *v3 = model->velocity_v();
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -420,21 +424,21 @@ PSB_wvel::PSB_wvel(StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_wvel::compute() {
-  IceModelVec3 *u3, *v3, *w3;
-  double *u, *v, *w, *res;
-
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "wvel", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  IceModelVec3::Ptr result3(new IceModelVec3);
+  result3->create(m_grid, "wvel", WITHOUT_GHOSTS);
+  result3->metadata() = m_vars[0];
 
   const IceModelVec2S *bed, *uplift;
-  bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  uplift    = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
+  bed    = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  uplift = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
   const IceModelVec2S   *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2Int *mask      = m_grid.variables().get_2d_mask("mask");
 
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u(),
+    *v3 = model->velocity_v(),
+    *w3 = model->velocity_w();
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -444,7 +448,7 @@ IceModelVec::Ptr PSB_wvel::compute() {
   list.add(*v3);
   list.add(*w3);
   list.add(*uplift);
-  list.add(*result);
+  list.add(*result3);
 
   MaskQuery M(*mask);
 
@@ -455,17 +459,19 @@ IceModelVec::Ptr PSB_wvel::compute() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+    const double *u, *v, *w;
+    double *result;
     u3->getInternalColumn(i, j, &u);
     v3->getInternalColumn(i, j, &v);
     w3->getInternalColumn(i, j, &w);
-    result->getInternalColumn(i, j, &res);
+    result3->getInternalColumn(i, j, &result);
 
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
     // in the ice:
     if (M.grounded(i,j)) {
       for (int k = 0; k <= ks ; k++) {
-        res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+        result[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
       }
 
     } else {                  // floating
@@ -474,19 +480,19 @@ IceModelVec::Ptr PSB_wvel::compute() {
         w_sl = w3->getValZ(i, j, z_sl);
 
       for (int k = 0; k <= ks ; k++) {
-        res[k] = w[k] - w_sl;
+        result[k] = w[k] - w_sl;
       }
 
     }
 
     // above the ice:
     for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
-      res[k] = 0.0;
+      result[k] = 0.0;
     }
 
   }
 
-  return result;
+  return result3;
 }
 
 PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
@@ -601,18 +607,19 @@ PSB_velbase::PSB_velbase(StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_velbase::compute() {
-  IceModelVec3 *u3, *v3, *w3;
   double fill_value = m_grid.config.get("fill_value", "m/year", "m/s");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "base", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
   IceModelVec2S tmp;            // will be de-allocated automatically
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
 
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u(),
+    *v3 = model->velocity_v();
 
   u3->getHorSlice(tmp, 0.0);
   result->set_component(0, tmp);
@@ -657,10 +664,7 @@ IceModelVec::Ptr PSB_bfrict::compute() {
   result->create(m_grid, "bfrict", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec2S *bfrict;
-  model->get_basal_frictional_heating(bfrict);
-
-  bfrict->copy_to(*result);
+  result->copy_from(*model->basal_frictional_heating());
 
   return result;
 }
@@ -684,21 +688,22 @@ IceModelVec::Ptr PSB_uvel::compute() {
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec3 *u3, *v3, *w3;
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = model->velocity_u();
 
   IceModelVec::AccessList list;
   list.add(*u3);
   list.add(*result);
   list.add(*thickness);
 
-  double *u_ij, *u_out_ij;
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
+    const double *u_ij;
     u3->getInternalColumn(i,j,&u_ij);
+    double *u_out_ij;
     result->getInternalColumn(i,j,&u_out_ij);
 
     // in the ice:
@@ -732,20 +737,21 @@ IceModelVec::Ptr PSB_vvel::compute() {
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec3 *u3, *v3, *w3;
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *v3 = model->velocity_v();
 
   IceModelVec::AccessList list;
   list.add(*v3);
   list.add(*result);
   list.add(*thickness);
 
-  double *v_ij, *v_out_ij;
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
+    const double *v_ij;
+    double *v_out_ij;
     v3->getInternalColumn(i,j,&v_ij);
     result->getInternalColumn(i,j,&v_out_ij);
 
@@ -780,21 +786,22 @@ IceModelVec::Ptr PSB_wvel_rel::compute() {
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec3 *u3, *v3, *w3;
-  model->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *w3 = model->velocity_w();
 
   IceModelVec::AccessList list;
   list.add(*w3);
   list.add(*result);
   list.add(*thickness);
 
-  double *w_ij, *w_out_ij;
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
+    const double *w_ij;
     w3->getInternalColumn(i,j,&w_ij);
+    double *w_out_ij;
     result->getInternalColumn(i,j,&w_out_ij);
 
     // in the ice:
@@ -828,10 +835,7 @@ IceModelVec::Ptr PSB_strainheat::compute() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec3 *tmp;
-  model->get_volumetric_strain_heating(tmp);
-
-  tmp->copy_to(*result);
+  result->copy_from(*model->volumetric_strain_heating());
 
   return result;
 }

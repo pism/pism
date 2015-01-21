@@ -660,10 +660,7 @@ void IceModel::step(bool do_mass_continuity,
                                   o_file.c_str());
   }
 
-  std::string sb_stdout;
-  stress_balance->stdout_report(sb_stdout);
-
-  stdout_flags += sb_stdout;
+  stdout_flags += stress_balance->stdout_report();
 
   stdout_flags += (updateAtDepth ? "v" : "V");
 

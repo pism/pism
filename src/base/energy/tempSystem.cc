@@ -30,11 +30,11 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
                              double dx, double dy, double dt,
                              const Config &config,
-                             IceModelVec3 *T3,
-                             IceModelVec3 *u3,
-                             IceModelVec3 *v3,
-                             IceModelVec3 *w3,
-                             IceModelVec3 *strain_heating3)
+                             const IceModelVec3 *T3,
+                             const IceModelVec3 *u3,
+                             const IceModelVec3 *v3,
+                             const IceModelVec3 *w3,
+                             const IceModelVec3 *strain_heating3)
   : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3) {
 
   // set flags to indicate nothing yet set

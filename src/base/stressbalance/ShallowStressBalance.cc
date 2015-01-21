@@ -33,7 +33,7 @@ namespace pism {
 using mask::ice_free;
 
 ShallowStressBalance::ShallowStressBalance(const IceGrid &g, EnthalpyConverter &e)
-  : Component(g), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
+  : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
   m_vel_bc = NULL;
   bc_locations = NULL;
@@ -57,12 +57,12 @@ ShallowStressBalance::ShallowStressBalance(const IceGrid &g, EnthalpyConverter &
   m_velocity.set_glaciological_units("m year-1");
   m_velocity.write_in_glaciological_units = true;
 
-  basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
-  basal_frictional_heating.set_attrs("diagnostic",
-                                     "basal frictional heating",
-                                     "W m-2", "");
-  basal_frictional_heating.set_glaciological_units("mW m-2");
-  basal_frictional_heating.write_in_glaciological_units = true;
+  m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
+  m_basal_frictional_heating.set_attrs("diagnostic",
+                                       "basal frictional heating",
+                                       "W m-2", "");
+  m_basal_frictional_heating.set_glaciological_units("mW m-2");
+  m_basal_frictional_heating.write_in_glaciological_units = true;
 }
 
 ShallowStressBalance::~ShallowStressBalance() {
@@ -83,15 +83,15 @@ ZeroSliding::ZeroSliding(const IceGrid &g, EnthalpyConverter &e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &EC);
+  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
   ice_factory.setType(m_config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();
-  flow_law = ice_factory.create();
+  m_flow_law = ice_factory.create();
 }
 
 ZeroSliding::~ZeroSliding() {
-  delete flow_law;
+  delete m_flow_law;
 }
 
 void ZeroSliding::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
@@ -108,12 +108,12 @@ void ZeroSliding::write_variables(const std::set<std::string> &/*vars*/, const P
 
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
+void ZeroSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
   (void) melange_back_pressure;
 
   if (not fast) {
     m_velocity.set(0.0);
-    basal_frictional_heating.set(0.0);
+    m_basal_frictional_heating.set(0.0);
   }
 }
 
@@ -330,15 +330,14 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
     }
 
     double nu;
-    flow_law->effective_viscosity(hardness,
-                                  secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                  &nu, NULL);
+    m_flow_law->effective_viscosity(hardness,
+                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                    &nu, NULL);
 
     //get deviatoric stresses
     result(i,j,0) = nu*u_x;
     result(i,j,1) = nu*v_y;
     result(i,j,2) = 0.5*nu*(u_y+v_x);
-
   }
 }
 
@@ -455,29 +454,26 @@ IceModelVec::Ptr SSB_taub::compute() {
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec2V *velocity;
-  model->get_2D_advective_velocity(velocity);
-
-  IceModelVec2V &vel = *velocity;
+  const IceModelVec2V &velocity = *model->advective_velocity();
   const IceModelVec2S   *tauc = m_grid.variables().get_2d_scalar("tauc");
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
-  const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
+  const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*tauc);
-  list.add(vel);
+  list.add(velocity);
   list.add(*mask);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.grounded_ice(i,j)) {
-      double beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-      (*result)(i,j).u = - beta * vel(i,j).u;
-      (*result)(i,j).v = - beta * vel(i,j).v;
+      double beta = basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
+      (*result)(i,j).u = - beta * velocity(i,j).u;
+      (*result)(i,j).v = - beta * velocity(i,j).v;
     } else {
       (*result)(i,j).u = 0.0;
       (*result)(i,j).v = 0.0;
@@ -529,10 +525,10 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-void PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
+void PrescribedSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
   (void) melange_back_pressure;
   if (not fast) {
-    basal_frictional_heating.set(0.0);
+    m_basal_frictional_heating.set(0.0);
   }
 }
 
@@ -566,20 +562,18 @@ IceModelVec::Ptr SSB_beta::compute() {
 
   const IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
 
-  const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
+  const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  IceModelVec2V *velocity;
-  model->get_2D_advective_velocity(velocity);
-  IceModelVec2V &vel = *velocity;
+  const IceModelVec2V &velocity = *model->advective_velocity();
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*tauc);
-  list.add(*velocity);
+  list.add(velocity);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+    (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
   }
 
   return result;

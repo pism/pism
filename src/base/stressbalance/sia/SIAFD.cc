@@ -107,7 +107,7 @@ void SIAFD::init() {
 
 //! \brief Do the update; if fast == true, skip the update of 3D velocities and
 //! strain heating.
-void SIAFD::update(IceModelVec2V *vel_input, bool fast) {
+void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   IceModelVec2Stag &h_x = m_work_2d_stag[0], &h_y = m_work_2d_stag[1];
 
   // Check if the smoothed bed computed by BedSmoother is out of date and
@@ -841,9 +841,9 @@ void SIAFD::compute_I() {
  * \param[out] u_out the X-component of the resulting horizontal velocity field
  * \param[out] v_out the Y-component of the resulting horizontal velocity field
  */
-void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                                     IceModelVec2V *vel_input,
-                                                     IceModelVec3 &u_out, IceModelVec3 &v_out) {
+void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
+                                           const IceModelVec2V &vel_input,
+                                           IceModelVec3 &u_out, IceModelVec3 &v_out) {
 
   compute_I();
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
@@ -857,7 +857,7 @@ void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2St
 
   list.add(h_x);
   list.add(h_y);
-  list.add(*vel_input);
+  list.add(vel_input);
 
   list.add(I[0]);
   list.add(I[1]);
@@ -874,14 +874,21 @@ void SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2St
     v_out.getInternalColumn(i, j, &v_ij);
 
     // Fetch values from 2D fields *outside* of the k-loop:
-    double h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0),
-      h_x_n = h_x(i, j, 1), h_x_s = h_x(i, j - 1, 1);
+    double
+      h_x_w = h_x(i - 1, j, 0),
+      h_x_e = h_x(i, j, 0),
+      h_x_n = h_x(i, j, 1),
+      h_x_s = h_x(i, j - 1, 1);
 
-    double h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0),
-      h_y_n = h_y(i, j, 1), h_y_s = h_y(i, j - 1, 1);
+    double
+      h_y_w = h_y(i - 1, j, 0),
+      h_y_e = h_y(i, j, 0),
+      h_y_n = h_y(i, j, 1),
+      h_y_s = h_y(i, j - 1, 1);
 
-    double vel_input_u = (*vel_input)(i, j).u,
-      vel_input_v = (*vel_input)(i, j).v;
+    double
+      vel_input_u = vel_input(i, j).u,
+      vel_input_v = vel_input(i, j).v;
 
     for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
       u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +

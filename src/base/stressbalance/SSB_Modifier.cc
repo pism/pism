@@ -59,6 +59,39 @@ SSB_Modifier::~SSB_Modifier() {
   // empty
 }
 
+void SSB_Modifier::init() {
+}
+
+const IceModelVec2Stag* SSB_Modifier::diffusive_flux() {
+  return &m_diffusive_flux;
+}
+
+//! \brief Get the max diffusivity (for the adaptive time-stepping).
+double SSB_Modifier::max_diffusivity() {
+  return m_D_max;
+}
+
+const IceModelVec3* SSB_Modifier::velocity_u() {
+  return &m_u;
+}
+
+const IceModelVec3* SSB_Modifier::velocity_v() {
+  return &m_v;
+}
+
+const IceModelVec3* SSB_Modifier::volumetric_strain_heating() {
+  return &m_strain_heating;
+}
+
+std::string SSB_Modifier::stdout_report() {
+  return "";
+}
+
+IceFlowLaw* SSB_Modifier::flow_law() {
+  return m_flow_law;
+}
+
+
 void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
@@ -92,7 +125,7 @@ ConstantInColumn::~ConstantInColumn()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-void ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
+void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
 
   if (fast) {
     return;
@@ -102,13 +135,13 @@ void ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   IceModelVec::AccessList list;
   list.add(m_u);
   list.add(m_v);
-  list.add(*vel_input);
+  list.add(vel_input);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_u.setColumn(i,j, (*vel_input)(i,j).u);
-    m_v.setColumn(i,j, (*vel_input)(i,j).v);
+    m_u.setColumn(i,j, vel_input(i,j).u);
+    m_v.setColumn(i,j, vel_input(i,j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):
@@ -119,5 +152,26 @@ void ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   m_diffusive_flux.set(0.0);
   m_D_max = 0.0;
 }
+
+void ConstantInColumn::add_vars_to_output(const std::string &keyword,
+                                          std::set<std::string> &result) {
+  (void)keyword;
+  (void)result;
+}
+
+void ConstantInColumn::define_variables(const std::set<std::string> &vars,
+                                        const PIO &nc,
+                                        IO_Type nctype) {
+  (void)vars;
+  (void)nc;
+  (void)nctype;
+}
+
+void ConstantInColumn::write_variables(const std::set<std::string> &vars,
+                                       const PIO &nc) {
+  (void)vars;
+  (void)nc;
+}
+
 
 } // end of namespace pism

@@ -345,7 +345,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 
         double d_nuH = 0;
         if (coefficients->H >= strength_extension->get_min_thickness()) {
-          flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
+          m_flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
           d_nuH  *= (2*coefficients->H);
         }
 
@@ -504,7 +504,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
         // Determine "d_nuH / dB" at the quadrature point
         double d_nuH_dB = 0;
         if (coefficients->H >= strength_extension->get_min_thickness()) {
-          flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
+          m_flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
           d_nuH_dB *= (2*coefficients->H);
         }
 

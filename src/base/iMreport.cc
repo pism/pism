@@ -172,7 +172,7 @@ void IceModel::summary(bool tempAndAge) {
   }
 
   // get maximum diffusivity
-  stress_balance->get_max_diffusivity(max_diffusivity);
+  max_diffusivity = stress_balance->max_diffusivity();
 
   // main report: 'S' line
   summaryPrintLine(false, tempAndAge, dt,

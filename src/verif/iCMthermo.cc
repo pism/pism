@@ -43,8 +43,9 @@ const double IceCompModel::ApforG = 200; // m
 void IceCompModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
 
   if ((testname == 'F') || (testname == 'G')) {
-    IceModelVec3 *strain_heating3;
-    stress_balance->get_volumetric_strain_heating(strain_heating3);
+    // FIXME: This code messes with the strain heating field owned by
+    // stress_balance. This is BAD.
+    IceModelVec3 *strain_heating3 = const_cast<IceModelVec3*>(stress_balance->volumetric_strain_heating());
 
     strain_heating3->add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
     IceModel::temperatureStep(vertSacrCount, bulgeCount);
@@ -163,9 +164,13 @@ void IceCompModel::fillSolnTestFG() {
   double     H, accum;
   double     Ts;
 
-  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
-  stress_balance->get_3d_velocity(u3, v3, w3);
-  stress_balance->get_volumetric_strain_heating(strain_heating3);
+  // FIXME: This code messes with the fields owned by stress_balance.
+  // This is BAD.
+  IceModelVec3
+    *strain_heating3 = const_cast<IceModelVec3*>(stress_balance->volumetric_strain_heating()),
+    *u3 = const_cast<IceModelVec3*>(stress_balance->velocity_u()),
+    *v3 = const_cast<IceModelVec3*>(stress_balance->velocity_v()),
+    *w3 = const_cast<IceModelVec3*>(stress_balance->velocity_w());
 
   std::vector<double> Uradial(grid.Mz());
 
@@ -242,18 +247,16 @@ void IceCompModel::fillSolnTestFG() {
 }
 
 void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
-                                                      double &gavTerr) {
-  double    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
+                                            double &gavTerr) {
+  double maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
 
-  double   junk0, junk1;
+  double junk0, junk1;
 
   std::vector<double> Tex(grid.Mz());
   std::vector<double> dummy1(grid.Mz());
   std::vector<double> dummy2(grid.Mz());
   std::vector<double> dummy3(grid.Mz());
   std::vector<double> dummy4(grid.Mz());
-
-  double *T;
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -263,9 +266,11 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
     const int i = p.i(), j = p.j();
 
     double r = radius(grid, i, j);
+    double *T;
     T3.getInternalColumn(i, j, &T);
-    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-      // and not at central singularity
+    if ((r >= 1.0) and (r <= LforFG - 1.0)) {
+      // only evaluate error if inside sheet and not at central
+      // singularity
       switch (testname) {
       case 'F':
         bothexact(0.0, r, &(grid.z()[0]), grid.Mz(), 0.0,
@@ -290,9 +295,8 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
   gmaxTerr = GlobalMax(grid.com, maxTerr);
   gavTerr = GlobalSum(grid.com, avTerr);
-  double  gavcount;
-  gavcount = GlobalSum(grid.com, avcount);
-  gavTerr = gavTerr/std::max(gavcount, 1.0);  // avoid div by zero
+  double gavcount = GlobalSum(grid.com, avcount);
+  gavTerr = gavTerr / std::max(gavcount, 1.0);  // avoid div by zero
 }
 
 
@@ -456,9 +460,8 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  double *strain_heating;
-  IceModelVec3 *strain_heating3;
-  stress_balance->get_volumetric_strain_heating(strain_heating3);
+  const double *strain_heating;
+  const IceModelVec3 *strain_heating3 = stress_balance->volumetric_strain_heating();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -509,8 +512,10 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
                                                           double &gmaxWerr, double &gavWerr) {
   double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
-  IceModelVec3 *u3, *v3, *w3;
-  stress_balance->get_3d_velocity(u3, v3, w3);
+  const IceModelVec3
+    *u3 = stress_balance->velocity_u(),
+    *v3 = stress_balance->velocity_v(),
+    *w3 = stress_balance->velocity_w();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);

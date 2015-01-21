@@ -338,8 +338,9 @@ void SSAFEM::cacheQuadPtValues() {
       // Now, for each column over a quadrature point, find the averaged_hardness.
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
-        coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, m_grid.kBelowHeight(coefficients[q].H),
-                                                        &(m_grid.z()[0]), Enth_q[q]);
+        coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
+                                                          m_grid.kBelowHeight(coefficients[q].H),
+                                                          &(m_grid.z()[0]), Enth_q[q]);
       }
 
     } // j-loop
@@ -379,8 +380,8 @@ void SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
       *dnuH = 0;
     }
   } else {
-    flow_law->effective_viscosity(coefficients.B, secondInvariantDu_2D(Du),
-                                  nuH, dnuH);
+    m_flow_law->effective_viscosity(coefficients.B, secondInvariantDu_2D(Du),
+                                    nuH, dnuH);
 
     *nuH  = m_epsilon_ssa + *nuH * coefficients.H;
 

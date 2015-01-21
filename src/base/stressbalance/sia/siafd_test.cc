@@ -43,12 +43,12 @@ static char help[] =
 
 using namespace pism;
 
-PetscErrorCode compute_strain_heating_errors(const Config &config,
-                                  IceModelVec3 &strain_heating,
-                                  IceModelVec2S &thickness,
-                                  IceGrid &grid,
-                                  double &gmax_strain_heating_err,
-                                  double &gav_strain_heating_err) {
+void compute_strain_heating_errors(const Config &config,
+                                   const IceModelVec3 &strain_heating,
+                                   const IceModelVec2S &thickness,
+                                   const IceGrid &grid,
+                                   double &gmax_strain_heating_err,
+                                   double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
   const int Mz = grid.Mz();
 
@@ -58,14 +58,11 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  double   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
   double   junk0, junk1;
 
-  strain_heating_exact = new double[Mz];
-  dummy1 = new double[Mz];  dummy2 = new double[Mz];
-  dummy3 = new double[Mz];  dummy4 = new double[Mz];
+  std::vector<double> strain_heating_exact(Mz), dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz);
 
-  double *strain_heating_ij;
+  const double *strain_heating_ij;
 
   IceModelVec::AccessList list;
   list.add(thickness);
@@ -74,44 +71,45 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x(i), yy = grid.y(j),
-      r = sqrt(PetscSqr(xx) + PetscSqr(yy));
-    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-      // and not at central singularity
-      bothexact(0.0,r,&(grid.z()[0]),Mz,0.0,
-                &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
+    double
+      xx = grid.x(i),
+      yy = grid.y(j),
+      r  = sqrt(PetscSqr(xx) + PetscSqr(yy));
+
+    if ((r >= 1.0) && (r <= LforFG - 1.0)) {
+      // only evaluate error if inside sheet and not at central
+      // singularity
+      bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
+                &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0],
+                &strain_heating_exact[0], &dummy4[0]);
 
       for (int k = 0; k < Mz; k++) {
         strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
       }
-      const int ks = grid.kBelowHeight(thickness(i,j));
-      strain_heating.getInternalColumn(i,j,&strain_heating_ij);
+      const int ks = grid.kBelowHeight(thickness(i, j));
+      strain_heating.getInternalColumn(i, j, &strain_heating_ij);
       for (int k = 0; k < ks; k++) {  // only eval error if below num surface
         const double _strain_heating_error = fabs(strain_heating_ij[k] - strain_heating_exact[k]);
-        max_strain_heating_error = std::max(max_strain_heating_error,_strain_heating_error);
+        max_strain_heating_error = std::max(max_strain_heating_error, _strain_heating_error);
         avcount += 1.0;
         av_strain_heating_error += _strain_heating_error;
       }
     }
   }
 
-  delete [] strain_heating_exact;
-  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
   gmax_strain_heating_err = GlobalMax(grid.com, max_strain_heating_error);
   gav_strain_heating_err = GlobalSum(grid.com, av_strain_heating_error);
-  double  gavcount;
-  gavcount = GlobalSum(grid.com, avcount);
+  double gavcount = GlobalSum(grid.com, avcount);
   gav_strain_heating_err = gav_strain_heating_err/std::max(gavcount,1.0);  // avoid div by zero
-  return 0;
 }
 
 
-PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
-                                            IceModelVec2S &ice_thickness,
-                                            IceModelVec3 &u3,
-                                            IceModelVec3 &v3,
-                                            IceModelVec3 &w3,
+PetscErrorCode computeSurfaceVelocityErrors(const IceGrid &grid,
+                                            const IceModelVec2S &ice_thickness,
+                                            const IceModelVec3 &u3,
+                                            const IceModelVec3 &v3,
+                                            const IceModelVec3 &w3,
                                             double &gmaxUerr,
                                             double &gavUerr,
                                             double &gmaxWerr,
@@ -256,16 +254,17 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   return 0;
 }
 
-PetscErrorCode reportErrors(const Config &config,
-                            IceGrid &grid,
-                            IceModelVec2S *thickness,
-                            IceModelVec3 *u_sia, IceModelVec3 *v_sia,
-                            IceModelVec3 *w_sia,
-                            IceModelVec3 *strain_heating) {
+void reportErrors(const Config &config,
+                  const IceGrid &grid,
+                  const IceModelVec2S &thickness,
+                  const IceModelVec3 &u_sia,
+                  const IceModelVec3 &v_sia,
+                  const IceModelVec3 &w_sia,
+                  const IceModelVec3 &strain_heating) {
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   double max_strain_heating_error, av_strain_heating_error;
-  compute_strain_heating_errors(config, *strain_heating, *thickness,
+  compute_strain_heating_errors(config, strain_heating, thickness,
                                 grid,
                                 max_strain_heating_error, av_strain_heating_error);
 
@@ -276,10 +275,10 @@ PetscErrorCode reportErrors(const Config &config,
 
   // surface velocity errors if exact values are available; reported in m/year
   double maxUerr, avUerr, maxWerr, avWerr;
-  computeSurfaceVelocityErrors(grid, *thickness,
-                               *u_sia,
-                               *v_sia,
-                               *w_sia,
+  computeSurfaceVelocityErrors(grid, thickness,
+                               u_sia,
+                               v_sia,
+                               w_sia,
                                maxUerr, avUerr,
                                maxWerr, avWerr);
 
@@ -290,8 +289,6 @@ PetscErrorCode reportErrors(const Config &config,
              grid.convert(avUerr,  "m/s", "m/year"),
              grid.convert(maxWerr, "m/s", "m/year"),
              grid.convert(avWerr,  "m/s", "m/year"));
-
-  return 0;
 }
 
 
@@ -428,13 +425,15 @@ int main(int argc, char *argv[]) {
     stress_balance.update(fast, 0.0, melange_back_pressure);
 
     // Report errors relative to the exact solution:
-    IceModelVec3 *u_sia, *v_sia, *w_sia, *sigma;
-    stress_balance.get_3d_velocity(u_sia, v_sia, w_sia);
+    const IceModelVec3
+      *u3 = stress_balance.velocity_u(),
+      *v3 = stress_balance.velocity_v(),
+      *w3 = stress_balance.velocity_w();
 
-    stress_balance.get_volumetric_strain_heating(sigma);
+    const IceModelVec3 *sigma = stress_balance.volumetric_strain_heating();
 
     reportErrors(config, grid,
-                 &ice_thickness, u_sia, v_sia, w_sia, sigma);
+                 ice_thickness, *u3, *v3, *w3, *sigma);
 
     // Write results to an output file:
     PIO pio(grid, "netcdf3");
@@ -451,9 +450,9 @@ int main(int argc, char *argv[]) {
     vMask.write(output_file);
     bed_topography.write(output_file);
     
-    u_sia->write(output_file);
-    v_sia->write(output_file);
-    w_sia->write(output_file);
+    u3->write(output_file);
+    v3->write(output_file);
+    w3->write(output_file);
     sigma->write(output_file);
   }
   catch (...) {

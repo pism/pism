@@ -46,20 +46,20 @@ SIA_Sliding::SIA_Sliding(const IceGrid &g, EnthalpyConverter &e)
   m_work_2d.create(m_grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);
 
   {
-    IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &EC);
+    IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
 
     ice_factory.setType(m_config.get_string("sia_flow_law"));
 
     ice_factory.setFromOptions();
-    flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create();
   }
 }
 
 SIA_Sliding::~SIA_Sliding()
 {
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
+  if (m_flow_law != NULL) {
+    delete m_flow_law;
+    m_flow_law = NULL;
   }
 }
 
@@ -94,7 +94,7 @@ void SIA_Sliding::init() {
 
   The strain heating contribution is ignored by this code.
  */
-void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
+void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
   IceModelVec2Stag &h_x = m_work_2d_stag[0], &h_y = m_work_2d_stag[1];
 
   (void) fast;
@@ -118,7 +118,7 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   list.add(*m_enthalpy);
 
   list.add(m_velocity);
-  list.add(basal_frictional_heating);
+  list.add(m_basal_frictional_heating);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -126,7 +126,7 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
     if (m.ocean(i,j)) {
       m_velocity(i,j).u = 0.0;
       m_velocity(i,j).v = 0.0;
-      basal_frictional_heating(i,j) = 0.0;
+      m_basal_frictional_heating(i,j) = 0.0;
     } else {
       // basal velocity from SIA-type sliding law: not recommended!
       const double
@@ -141,7 +141,7 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
       // change r1200: new meaning of H
       const double H = (*m_surface)(i,j) - (*m_bed)(i,j);
 
-      double T = EC.getAbsTemp(m_enthalpy->getValZ(i,j,0.0), EC.getPressureFromDepth(H));
+      double T = m_EC.getAbsTemp(m_enthalpy->getValZ(i,j,0.0), m_EC.getPressureFromDepth(H));
 
       double basalC = basalVelocitySIA(myx, myy, H, T,
                                        alpha, mu_sliding,
@@ -152,7 +152,7 @@ void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
       // in ice streams this result will be *overwritten* by
       //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
       const double P = ice_rho * m_standard_gravity * H;
-      basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
+      m_basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
     }
   }
 
@@ -217,13 +217,13 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
 
   if ((m_eisII_experiment == "G") || (m_eisII_experiment == "H")) {
     const double  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
-    double pressure = EC.getPressureFromDepth(H);
-    double E = EC.getEnthPermissive(T, 0.0, pressure);
+    double pressure = m_EC.getPressureFromDepth(H);
+    double E = m_EC.getEnthPermissive(T, 0.0, pressure);
 
     if (m_eisII_experiment == "G") {
       return Bfactor * ice_rho * m_standard_gravity * H;
     } else if (m_eisII_experiment == "H") {
-      if (EC.isTemperate(E, pressure)) {
+      if (m_EC.isTemperate(E, pressure)) {
         return Bfactor * ice_rho * m_standard_gravity * H; // ditto case G
       } else {
         return 0.0;
@@ -265,7 +265,7 @@ void SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2St
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
 void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double n = flow_law->exponent(), // presumably 3.0
+  const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);

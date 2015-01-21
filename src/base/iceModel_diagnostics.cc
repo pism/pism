@@ -309,9 +309,9 @@ IceModelVec::Ptr IceModel_hardav::compute() {
   const double fillval = m_grid.config.get("fill_value");
   double *Eij; // columns of enthalpy values
 
-  const IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
+  const IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->flow_law();
   if (flow_law == NULL) {
-    flow_law = model->stress_balance->get_ssb_modifier()->get_flow_law();
+    flow_law = model->stress_balance->get_ssb_modifier()->flow_law();
     if (flow_law == NULL) {
       throw RuntimeError("Can't compute vertically-averaged hardness: no flow law is used.");
     }
@@ -1274,9 +1274,7 @@ IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m)
 }
 
 void IceModel_max_diffusivity::update(double a, double b) {
-  double value;
-
-  model->stress_balance->get_max_diffusivity(value);
+  double value = model->stress_balance->max_diffusivity();
 
   m_ts->append(value, a, b);
 }

@@ -58,8 +58,8 @@ public:
 
   //! Defines requested fields to file and/or asks an attached
   //! model to do so.
-  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                IO_Type /*nctype*/);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                IO_Type nctype);
 
   //! Writes requested fields to a file.
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
@@ -71,31 +71,33 @@ public:
   virtual void set_boundary_conditions(IceModelVec2Int &locations,
                                        IceModelVec2V &velocities);
 
-  virtual void set_basal_melt_rate(IceModelVec2S *bmr);
+  virtual void set_basal_melt_rate(const IceModelVec2S &bmr);
 
   //! \brief Update all the fields if fast == false, only update diffusive flux
   //! and max. diffusivity otherwise.
   virtual void update(bool fast, double sea_level,
-                      IceModelVec2S &melange_back_pressure);
+                      const IceModelVec2S &melange_back_pressure);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual void get_2D_advective_velocity(IceModelVec2V* &result);
+  virtual const IceModelVec2V* advective_velocity();
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual void get_diffusive_flux(IceModelVec2Stag* &result);
+  virtual const IceModelVec2Stag* diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual void get_max_diffusivity(double &D);
+  virtual double max_diffusivity();
 
   // for the energy/age time step:
 
   //! \brief Get the 3D velocity (for the energy/age time-stepping).
-  virtual void get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
+  virtual const IceModelVec3* velocity_u();
+  virtual const IceModelVec3* velocity_v();
+  virtual const IceModelVec3* velocity_w();
 
   //! \brief Get the basal frictional heating (for the energy time-stepping).
-  virtual void get_basal_frictional_heating(IceModelVec2S* &result);
+  virtual const IceModelVec2S* basal_frictional_heating();
 
-  virtual void get_volumetric_strain_heating(IceModelVec3* &result);
+  virtual const IceModelVec3* volumetric_strain_heating();
 
   // for the calving, etc.:
 
@@ -110,7 +112,7 @@ public:
                                    IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
-  virtual void stdout_report(std::string &result);
+  virtual std::string stdout_report();
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -125,12 +127,14 @@ public:
     return m_modifier;
   }
 protected:
-  virtual void compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
-                                         IceModelVec2S *bmr, IceModelVec3 &result);
+  virtual void compute_vertical_velocity(const IceModelVec3 &u,
+                                         const IceModelVec3 &v,
+                                         const IceModelVec2S *bmr,
+                                         IceModelVec3 &result);
   virtual void compute_volumetric_strain_heating();
 
   IceModelVec3 m_w, m_strain_heating;
-  IceModelVec2S *m_basal_melt_rate;
+  const IceModelVec2S *m_basal_melt_rate;
 
   ShallowStressBalance *m_stress_balance;
   SSB_Modifier *m_modifier;

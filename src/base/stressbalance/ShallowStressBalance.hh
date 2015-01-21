@@ -45,7 +45,7 @@ public:
   }
 
   virtual void set_boundary_conditions(IceModelVec2Int &locations,
-                                                 IceModelVec2V &velocities) {
+                                       IceModelVec2V &velocities) {
     m_vel_bc = &velocities;
     bc_locations = &locations;
   }
@@ -56,20 +56,20 @@ public:
     sea_level = new_sea_level;
   }
 
-  virtual void update(bool fast, IceModelVec2S &melange_back_pressure) = 0;
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure) = 0;
 
   // interface to the data provided by the stress balance object:
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &/*ts_dict*/);
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual void get_2D_advective_velocity(IceModelVec2V* &result) {
-    result = &m_velocity;
+  virtual const IceModelVec2V* advective_velocity() {
+    return &m_velocity;
   }
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  virtual void get_basal_frictional_heating(IceModelVec2S* &result) {
-    result = &basal_frictional_heating;
+  virtual const IceModelVec2S* basal_frictional_heating() {
+    return &m_basal_frictional_heating;
   }
 
   virtual void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
@@ -87,31 +87,31 @@ public:
   // helpers:
 
   //! \brief Produce a report string for the standard output.
-  virtual void stdout_report(std::string &result) {
-    result = "";
+  virtual std::string stdout_report() {
+    return "";
   }
 
-  const IceFlowLaw* get_flow_law() {
-    return flow_law;
+  const IceFlowLaw* flow_law() {
+    return m_flow_law;
   }
 
-  EnthalpyConverter& get_enthalpy_converter() {
-    return EC;
+  EnthalpyConverter& enthalpy_converter() {
+    return m_EC;
   }
 
-  const IceBasalResistancePlasticLaw* get_sliding_law() {
+  const IceBasalResistancePlasticLaw* sliding_law() {
     return basal_sliding_law;
   }
 protected:
   double sea_level;
   IceBasalResistancePlasticLaw *basal_sliding_law;
-  IceFlowLaw *flow_law;
-  EnthalpyConverter &EC;
+  IceFlowLaw *m_flow_law;
+  EnthalpyConverter &m_EC;
 
   IceModelVec2V m_velocity;
   const IceModelVec2V *m_vel_bc;
   const IceModelVec2Int *bc_locations;
-  IceModelVec2S basal_frictional_heating;
+  IceModelVec2S m_basal_frictional_heating;
 };
 
 //! Returns zero velocity field, zero friction heating, and zero for D^2.
@@ -126,7 +126,7 @@ public:
   ZeroSliding(const IceGrid &g, EnthalpyConverter &e);
   virtual ~ZeroSliding();
   
-  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/);
 
@@ -144,7 +144,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(const IceGrid &g, EnthalpyConverter &e);
   virtual ~PrescribedSliding();
-  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
   virtual void init();
 };
 

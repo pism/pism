@@ -182,13 +182,14 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   list.add(G0);
   list.add(bwatcurr);
 
-  IceModelVec2S *Rb;            // basal frictional heating
   assert(stress_balance != NULL);
-  stress_balance->get_basal_frictional_heating(Rb);
-
-  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
-  stress_balance->get_3d_velocity(u3, v3, w3);
-  stress_balance->get_volumetric_strain_heating(strain_heating3);
+  // basal frictional heating
+  const IceModelVec2S *Rb = stress_balance->basal_frictional_heating();
+  const IceModelVec3 *strain_heating3 = stress_balance->volumetric_strain_heating();
+  const IceModelVec3
+    *u3 = stress_balance->velocity_u(),
+    *v3 = stress_balance->velocity_v(),
+    *w3 = stress_balance->velocity_w();
 
   tempSystemCtx system(grid.z(), "temperature",
                        grid.dx(), grid.dy(), dt_TempAge,

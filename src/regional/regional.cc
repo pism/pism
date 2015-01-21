@@ -136,7 +136,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
+    double pressure = m_EC.getPressureFromDepth((*thkstore)(i,j));
     if (pressure <= 0) {
       pressure = 0;
     }

@@ -170,8 +170,7 @@ void SSATestCase::run() {
 //! Report on the generated solution
 void SSATestCase::report(const std::string &testname) {
 
-  std::string ssa_stdout;
-  m_ssa->stdout_report(ssa_stdout);
+  std::string ssa_stdout = m_ssa->stdout_report();
   verbPrintf(3,m_grid->com,ssa_stdout.c_str());
 
   double maxvecerr = 0.0, avvecerr = 0.0,
@@ -188,8 +187,7 @@ void SSATestCase::report(const std::string &testname) {
              "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
-  IceModelVec2V *vel_ssa;
-  m_ssa->get_2D_advective_velocity(vel_ssa);
+  const IceModelVec2V *vel_ssa = m_ssa->advective_velocity();
 
   IceModelVec::AccessList list;
   list.add(*vel_ssa);
@@ -368,8 +366,7 @@ void SSATestCase::write(const std::string &filename) {
   m_enthalpy.write(pio);
   m_vel_bc.write(pio);
 
-  IceModelVec2V *vel_ssa;
-  m_ssa->get_2D_advective_velocity(vel_ssa);
+  const IceModelVec2V *vel_ssa = m_ssa->advective_velocity();
   vel_ssa->write(pio);
 
   IceModelVec2V exact;

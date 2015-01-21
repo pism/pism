@@ -290,7 +290,7 @@ void IceCompModel::allocate_stressbalance() {
     // IceFlowLaw for verification (we need to have the right flow law for
     // errors to make sense)
 
-    IceFlowLaw *ice = stress_balance->get_ssb_modifier()->get_flow_law();
+    IceFlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
     if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == false) {
       verbPrintf(1, grid.com,
@@ -617,8 +617,10 @@ void IceCompModel::fillSolnTestABCDH() {
 void IceCompModel::fillSolnTestE() {
   double     H, accum, dummy;
   Vector2     bvel;
-  IceModelVec2V *vel_adv;
-  stress_balance->get_2D_advective_velocity(vel_adv);
+
+  // FIXME: This code messes with a field owned by the stress balance
+  // object. This is BAD.
+  IceModelVec2V *vel_adv = const_cast<IceModelVec2V*>(stress_balance->advective_velocity());
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -744,7 +746,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
           H0 = 600.0,
           v0 = grid.convert(300.0, "m/year", "m/second"),
           Q0 = H0 * v0,
-          B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0),
+          B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
           C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
         Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
@@ -801,8 +803,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
     throw RuntimeError("basal velocity errors only computable for test E");
   }
 
-  IceModelVec2V *vel_adv;
-  stress_balance->get_2D_advective_velocity(vel_adv);
+  const IceModelVec2V *vel_adv = stress_balance->advective_velocity();
 
   IceModelVec::AccessList list;
   list.add(*vel_adv);
@@ -948,10 +949,10 @@ void IceCompModel::reportErrors() {
     return;
   }
 
-  IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->get_flow_law();
-  if (testname != 'V' &&
-      IceFlowLawIsPatersonBuddCold(flow_law, config, EC) == false &&
-      ((testname == 'F') || (testname == 'G'))) {
+  IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
+  if ((testname == 'F' or testname == 'G') and
+      testname != 'V' and
+      not IceFlowLawIsPatersonBuddCold(flow_law, config, EC)) {
     verbPrintf(1, grid.com,
                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                "   for reported errors in test %c to be meaningful!\n",

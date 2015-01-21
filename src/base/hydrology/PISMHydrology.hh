@@ -298,11 +298,10 @@ protected:
   friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual void advective_fluxes(IceModelVec2Stag &result);
 
-  virtual void adaptive_for_W_evolution(
-                                                  double t_current, double t_end, double maxKW,
-                                                  double &dt_result,
-                                                  double &maxV_result, double &maxD_result,
-                                                  double &dtCFL_result, double &dtDIFFW_result);
+  virtual void adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
+                                        double &dt_result,
+                                        double &maxV_result, double &maxD_result,
+                                        double &dtCFL_result, double &dtDIFFW_result);
 
   void raw_update_W(double hdt);
   void raw_update_Wtil(double hdt);

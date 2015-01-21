@@ -391,7 +391,7 @@ void IceModel::model_state_setup() {
     stress_balance->init();
 
     if (config.get_flag("include_bmr_in_continuity")) {
-      stress_balance->set_basal_melt_rate(&basal_melt_rate);
+      stress_balance->set_basal_melt_rate(basal_melt_rate);
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -284,7 +284,9 @@ std::string TridiagonalSystem::prefix() const {
 columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
                                  const std::string &prefix,
                                  double dx, double dy, double dt,
-                                 IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3)
+                                 const IceModelVec3 *u3,
+                                 const IceModelVec3 *v3,
+                                 const IceModelVec3 *w3)
   : m_dx(dx), m_dy(dy), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
   assert(dx > 0.0);
   assert(dy > 0.0);
@@ -325,9 +327,9 @@ void columnSystemCtx::fine_to_coarse(const std::vector<double> &fine, int i, int
   m_interp->fine_to_coarse(&fine[0], array);
 }
 
-void columnSystemCtx::coarse_to_fine(IceModelVec3 *coarse, int i, int j, int ks,
+void columnSystemCtx::coarse_to_fine(const IceModelVec3 *coarse, int i, int j, int ks,
                                      double* fine) const {
-  double *array = NULL;
+  const double *array = NULL;
   coarse->getInternalColumn(i, j, &array);
   m_interp->coarse_to_fine(array, ks, fine);
 }

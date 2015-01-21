@@ -204,11 +204,13 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   DrainageCalculator dc(config);
 
-  IceModelVec2S *Rb = NULL;
-  IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL, *strain_heating3 = NULL;
-  stress_balance->get_basal_frictional_heating(Rb);
-  stress_balance->get_3d_velocity(u3, v3, w3);
-  stress_balance->get_volumetric_strain_heating(strain_heating3);
+  const IceModelVec2S *Rb = stress_balance->basal_frictional_heating();
+  const IceModelVec3
+    *u3 = stress_balance->velocity_u(),
+    *v3 = stress_balance->velocity_v(),
+    *w3 = stress_balance->velocity_w();
+
+  const IceModelVec3 *strain_heating3 = stress_balance->volumetric_strain_heating();
 
   enthSystemCtx system(grid.z(), "enth", grid.dx(), grid.dy(), dt_TempAge,
                        config, Enth3, u3, v3, w3, strain_heating3, *EC);
