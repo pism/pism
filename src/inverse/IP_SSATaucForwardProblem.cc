@@ -170,10 +170,9 @@ PetscErrorCode IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta, Termi
 of the residual is returned in \a RHS.*/
 PetscErrorCode IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
 
-  Vector2 **u_a, **rhs_a;
-
-  u.get_array(u_a);
-  RHS.get_array(rhs_a);
+  Vector2
+    **u_a   = u.get_array(),
+    **rhs_a = RHS.get_array();
 
   DMDALocalInfo *info = NULL;
   this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
@@ -190,7 +189,7 @@ the method is identical to the assemble_residual returning values as a StateVec 
 PetscErrorCode IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
   Vector2 **u_a, **rhs_a;
 
-  u.get_array(u_a);
+  u_a = u.get_array();
   DMDAVecGetArray(*m_da, RHS, &rhs_a);
 
   DMDALocalInfo *info = NULL;
@@ -213,7 +212,7 @@ to this method.
 PetscErrorCode IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
   Vector2 **u_a;
-  u.get_array(u_a);
+  u_a = u.get_array();
 
   DMDALocalInfo *info = NULL;
   this->compute_local_jacobian(info,
@@ -231,7 +230,7 @@ PetscErrorCode IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
                                                                IceModelVec2V &du) {
   Vector2 **du_a;
-  du.get_array(du_a);
+  du_a = du.get_array();
   this->apply_jacobian_design(u, dzeta, du_a);
   du.end_access();
   return 0;
@@ -393,7 +392,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 */
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta) {
   double **dzeta_a;
-  dzeta.get_array(dzeta_a);
+  dzeta_a = dzeta.get_array();
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
   dzeta.end_access();
   return 0;
@@ -624,8 +623,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   double           m_dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
-  Vector2 **du_a;
-  m_du_global.get_array(du_a);
+  Vector2 **du_a = m_du_global.get_array();
   DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
 

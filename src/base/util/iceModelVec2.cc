@@ -70,9 +70,9 @@ void  IceModelVec2S::create(const IceGrid &my_grid, const std::string &my_name, 
 }
 
 
-void IceModelVec2S::get_array(double** &a) {
+double** IceModelVec2S::get_array() {
   begin_access();
-  a = static_cast<double**>(array);
+  return static_cast<double**>(array);
 }
 
 /*! Allocate a copy on processor zero and the scatter needed to move data.

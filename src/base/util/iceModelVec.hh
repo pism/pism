@@ -370,7 +370,7 @@ public:
   void put_on_proc0(Vec onp0) const;
   void get_from_proc0(Vec onp0);
   virtual void  copy_to(IceModelVec &destination) const;
-  void  get_array(double** &a);
+  double** get_array();
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
   virtual void set_to_magnitude(const IceModelVec2V &input);
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
@@ -442,7 +442,7 @@ public:
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
 
   // I/O:
-  virtual void get_array(Vector2 ** &a);
+  Vector2** get_array();
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
   inline StarStencil<Vector2> star(int i, int j) const;

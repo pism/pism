@@ -54,9 +54,9 @@ void IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name
   m_name = "vel" + short_name;
 }
 
-void IceModelVec2V::get_array(Vector2** &a) {
+Vector2** IceModelVec2V::get_array() {
   begin_access();
-  a = static_cast<Vector2**>(array);
+  return static_cast<Vector2**>(array);
 }
 
 void IceModelVec2V::set_name(const std::string &new_name, int component) {

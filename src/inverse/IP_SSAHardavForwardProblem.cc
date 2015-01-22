@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+
 #include "IP_SSAHardavForwardProblem.hh"
-#include <assert.h>
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
@@ -52,8 +53,10 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencilWidth);
   m_hardav.create(m_grid, "hardav", WITH_GHOSTS, stencilWidth);
 
-  m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencilWidth);
-  m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencilWidth);
+  m_du_global.create(m_grid, "linearization work vector (sans ghosts)",
+                     WITHOUT_GHOSTS, stencilWidth);
+  m_du_local.create(m_grid, "linearization work vector (with ghosts)",
+                    WITH_GHOSTS, stencilWidth);
 
 #if PETSC_VERSION_LT(3,5,0)
   DMCreateMatrix(*m_da, "baij", &m_J_state);
@@ -140,10 +143,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::linearize_at(IceModelVec2S &zeta, Ter
 of the residual is returned in \a RHS.*/
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
 
-  Vector2 **u_a, **rhs_a;
-
-  u.get_array(u_a);
-  RHS.get_array(rhs_a);
+  Vector2
+    **u_a   = u.get_array(),
+    **rhs_a = RHS.get_array();
 
   DMDALocalInfo *info = NULL;
   this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
@@ -158,9 +160,10 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, I
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
-  Vector2 **u_a, **rhs_a;
 
-  u.get_array(u_a);
+  Vector2 **u_a = u.get_array();
+
+  Vector2 **rhs_a;
   DMDAVecGetArray(*m_da, RHS, &rhs_a);
 
   DMDALocalInfo *info = NULL;
@@ -182,8 +185,7 @@ to this method.
 */
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
-  Vector2 **u_a;
-  u.get_array(u_a);
+  Vector2 **u_a = u.get_array();
 
   DMDALocalInfo *info = NULL;
   this->compute_local_jacobian(info, const_cast<const Vector2 **>(u_a), Jac);
@@ -197,9 +199,10 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V
 /*! The return value uses a DesignVector (IceModelVec2V), which can be ghostless. Ghosts (if present) are updated.
 \overload
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du) {
-  Vector2 **du_a;
-  du.get_array(du_a);
+PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+                                                                 IceModelVec2S &dzeta,
+                                                                 IceModelVec2V &du) {
+  Vector2 **du_a = du.get_array();
   this->apply_jacobian_design(u, dzeta, du_a);
   du.end_access();
   return 0;
@@ -209,7 +212,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 /*! The return value is a Vec for the benefit of TAO. It is assumed to be ghostless; no communication is done.
 \overload
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du) {
+PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+                                                                 IceModelVec2S &dzeta,
+                                                                 Vec du) {
   Vector2 **du_a;
   DMDAVecGetArray(*m_da, du, &du_a);
   this->apply_jacobian_design(u, dzeta, du_a);
@@ -376,8 +381,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                            IceModelVec2V &du,
                                                                            IceModelVec2S &dzeta) {
-  double **dzeta_a;
-  dzeta.get_array(dzeta_a);
+  double **dzeta_a = dzeta.get_array();
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
   dzeta.end_access();
   return 0;
@@ -624,8 +628,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   double        m_dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
-  Vector2 **du_a;
-  m_du_global.get_array(du_a);
+  Vector2 **du_a = m_du_global.get_array();
   DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
   if (dirichletBC) {

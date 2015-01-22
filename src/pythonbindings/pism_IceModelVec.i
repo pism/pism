@@ -23,6 +23,9 @@ using pism::StarStencil;
 %shared_ptr(pism::IceModelVec3D)
 %shared_ptr(pism::IceModelVec3)
 
+%ignore pism::IceModelVec2S::get_array;
+%ignore pism::IceModelVec2V::get_array;
+
 %Pism_pointer_reference_is_always_output(pism::IceModelVec2S)
 %Pism_pointer_reference_is_always_output(pism::IceModelVec2V)
 %Pism_pointer_reference_is_always_output(pism::IceModelVec3)

@@ -91,9 +91,9 @@ void IceModelVec2T::destroy() {
   }
 }
 
-void IceModelVec2T::get_array3(double*** &a3) {
+double*** IceModelVec2T::get_array3() {
   begin_access();
-  a3 = (double***) array3;
+  return reinterpret_cast<double***>(array3);
 }
 
 void IceModelVec2T::begin_access() const {
@@ -371,7 +371,6 @@ void IceModelVec2T::update(unsigned int start) {
 
 //! Discard the first N records, shifting the rest of them towards the "beginning".
 void IceModelVec2T::discard(int number) {
-  double **a2, ***a3;
 
   if (number == 0) {
     return;
@@ -379,8 +378,7 @@ void IceModelVec2T::discard(int number) {
 
   N -= number;
 
-  get_array(a2);
-  get_array3(a3);
+  double ***a3 = get_array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -389,16 +387,13 @@ void IceModelVec2T::discard(int number) {
     }
   }
   end_access();
-  end_access();
-  
 }
 
 //! Sets the record number n to the contents of the (internal) Vec v.
 void IceModelVec2T::set_record(int n) {
-  double **a2, ***a3;
 
-  get_array(a2);
-  get_array3(a3);
+  double  **a2 = get_array();
+  double ***a3 = get_array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a3[i][j][n] = a2[i][j];
@@ -409,10 +404,9 @@ void IceModelVec2T::set_record(int n) {
 
 //! Sets the (internal) Vec v to the contents of the nth record.
 void IceModelVec2T::get_record(int n) {
-  double **a2, ***a3;
 
-  get_array(a2);
-  get_array3(a3);
+  double  **a2 = get_array();
+  double ***a3 = get_array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a2[i][j] = a3[i][j][n];
@@ -473,7 +467,7 @@ void IceModelVec2T::interp(double my_t) {
  *
  */
 void IceModelVec2T::average(double my_t, double my_dt) {
-  double **a2;
+
   double dt_years = m_grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
   // if only one record, nothing to do
@@ -495,7 +489,7 @@ void IceModelVec2T::average(double my_t, double my_dt) {
 
   init_interpolation(ts);
 
-  get_array(a2);         // calls begin_access()
+  double **a2 = get_array();         // calls begin_access()
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     average(i, j, a2[i][j]); // NB! order

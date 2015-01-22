@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -111,7 +111,7 @@ public:
   virtual void update(double my_t, double my_dt);
   virtual void set_record(int n);
   virtual void get_record(int n);
-  virtual double         max_timestep(double my_t);
+  virtual double max_timestep(double my_t);
 
   virtual void interp(double my_t);
 
@@ -143,7 +143,7 @@ protected:
   double m_reference_time;      // in seconds
 
   virtual void destroy();
-  virtual void get_array3(double*** &a3);
+  double*** get_array3();
   virtual void update(unsigned int start);
   virtual void discard(int N);
 };
