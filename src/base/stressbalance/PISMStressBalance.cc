@@ -206,15 +206,15 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result.getInternalColumn(i,j,&w_ij);
+    w_ij = result.getInternalColumn(i,j);
 
-    u.getInternalColumn(i-1,j,&u_w);
-    u.getInternalColumn(i,j,  &u_ij);
-    u.getInternalColumn(i+1,j,&u_e);
+    u_w = u.getInternalColumn(i-1,j);
+    u_ij = u.getInternalColumn(i,j);
+    u_e = u.getInternalColumn(i+1,j);
 
-    v.getInternalColumn(i,j-1,&v_s);
-    v.getInternalColumn(i,j,  &v_ij);
-    v.getInternalColumn(i,j+1,&v_n);
+    v_s = v.getInternalColumn(i,j-1);
+    v_ij = v.getInternalColumn(i,j);
+    v_n = v.getInternalColumn(i,j+1);
 
     double west = 1, east = 1, south = 1, north = 1,
       D_x = 0,                // 1/(dx), 1/(2dx), or 0
@@ -439,21 +439,20 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
     }
 
+    u_ij = u->getInternalColumn(i,     j);
+    u_w  = u->getInternalColumn(i - 1, j);
+    u_e  = u->getInternalColumn(i + 1, j);
+    u_s  = u->getInternalColumn(i,     j - 1);
+    u_n  = u->getInternalColumn(i,     j + 1);
 
-    u->getInternalColumn(i,     j,     &u_ij);
-    u->getInternalColumn(i - 1, j,     &u_w);
-    u->getInternalColumn(i + 1, j,     &u_e);
-    u->getInternalColumn(i,     j - 1, &u_s);
-    u->getInternalColumn(i,     j + 1, &u_n);
+    v_ij = v->getInternalColumn(i,     j);
+    v_w  = v->getInternalColumn(i - 1, j);
+    v_e  = v->getInternalColumn(i + 1, j);
+    v_s  = v->getInternalColumn(i,     j - 1);
+    v_n  = v->getInternalColumn(i,     j + 1);
 
-    v->getInternalColumn(i,     j,     &v_ij);
-    v->getInternalColumn(i - 1, j,     &v_w);
-    v->getInternalColumn(i + 1, j,     &v_e);
-    v->getInternalColumn(i,     j - 1, &v_s);
-    v->getInternalColumn(i,     j + 1, &v_n);
-
-    enthalpy->getInternalColumn(i, j, &E_ij);
-    m_strain_heating.getInternalColumn(i, j, &Sigma);
+    E_ij = enthalpy->getInternalColumn(i, j);
+    Sigma = m_strain_heating.getInternalColumn(i, j);
 
     for (int k = 0; k <= ks; ++k) {
       double dz,

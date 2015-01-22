@@ -314,7 +314,6 @@ void BedThermalUnit::update(double my_t, double my_dt) {
 
   const double bed_R  = m_bed_D * my_dt / (dzb * dzb);
 
-  double *Tbold;
   std::vector<double> Tbnew(m_Mbz);
 
   IceModelVec::AccessList list;
@@ -325,7 +324,7 @@ void BedThermalUnit::update(double my_t, double my_dt) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_temp.getInternalColumn(i,j,&Tbold); // Tbold actually points into temp memory
+    double *Tbold = m_temp.getInternalColumn(i,j); // Tbold actually points into temp memory
     Tbold[k0] = (*m_bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
     const double Tbold_negone = Tbold[1] + 2 * (*m_ghf)(i,j) * dzb / m_bed_k;
@@ -361,8 +360,6 @@ void BedThermalUnit::upward_geothermal_flux(IceModelVec2S &result) {
   double dzb = this->vertical_spacing();
   const int  k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
-  double *Tb;
-
   IceModelVec::AccessList list;
   list.add(m_temp);
   list.add(result);
@@ -370,7 +367,7 @@ void BedThermalUnit::upward_geothermal_flux(IceModelVec2S &result) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_temp.getInternalColumn(i,j,&Tb);
+    double *Tb = m_temp.getInternalColumn(i,j);
     if (m_Mbz >= 3) {
       result(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     } else {
@@ -389,7 +386,6 @@ void BedThermalUnit::bootstrap() {
              "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
              "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
 
-  double* Tb;
   double dzb = this->vertical_spacing();
   const int k0 = m_Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
@@ -400,7 +396,7 @@ void BedThermalUnit::bootstrap() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_temp.getInternalColumn(i,j,&Tb); // Tb points into temp memory
+    double *Tb = m_temp.getInternalColumn(i,j); // Tb points into temp memory
     Tb[k0] = (*m_bedtoptemp)(i,j);
     for (int k = k0-1; k >= 0; k--) {
       Tb[k] = Tb[k+1] + dzb * (*m_ghf)(i,j) / m_bed_k;

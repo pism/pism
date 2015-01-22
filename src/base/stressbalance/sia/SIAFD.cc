@@ -609,12 +609,12 @@ void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
       }
 
       if (use_age) {
-        m_age->getInternalColumn(i, j, &age_ij);
-        m_age->getInternalColumn(i+oi, j+oj, &age_offset);
+        age_ij = m_age->getInternalColumn(i, j);
+        age_offset = m_age->getInternalColumn(i+oi, j+oj);
       }
 
-      m_enthalpy->getInternalColumn(i, j, &E_ij);
-      m_enthalpy->getInternalColumn(i+oi, j+oj, &E_offset);
+      E_ij = m_enthalpy->getInternalColumn(i, j);
+      E_offset = m_enthalpy->getInternalColumn(i+oi, j+oj);
 
       const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
       const int      ks = m_grid.kBelowHeight(thk);
@@ -729,7 +729,7 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
     for (int o = 0; o < 2; ++o) {
       const int oi = 1 - o, oj = o;
 
-      m_delta[o].getInternalColumn(i,j,&delta_ij);
+      delta_ij = m_delta[o].getInternalColumn(i,j);
 
       const double
         thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
@@ -801,8 +801,8 @@ void SIAFD::compute_I() {
       const double
         thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-      m_delta[o].getInternalColumn(i,j,&delta_ij);
-      I[o].getInternalColumn(i,j,&I_ij);
+      delta_ij = m_delta[o].getInternalColumn(i,j);
+      I_ij = I[o].getInternalColumn(i,j);
 
       const unsigned int ks = m_grid.kBelowHeight(thk);
 
@@ -849,7 +849,7 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
   IceModelVec3 *I = m_work_3d;
 
-  double *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
+  double *u_ij, *v_ij, *I_e, *I_w, *I_n, *I_s;
 
   IceModelVec::AccessList list;
   list.add(u_out);
@@ -865,13 +865,13 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    I[0].getInternalColumn(i, j, &IEAST);
-    I[0].getInternalColumn(i - 1, j, &IWEST);
-    I[1].getInternalColumn(i, j, &INORTH);
-    I[1].getInternalColumn(i, j - 1, &ISOUTH);
+    I_e = I[0].getInternalColumn(i, j);
+    I_w = I[0].getInternalColumn(i - 1, j);
+    I_n = I[1].getInternalColumn(i, j);
+    I_s = I[1].getInternalColumn(i, j - 1);
 
-    u_out.getInternalColumn(i, j, &u_ij);
-    v_out.getInternalColumn(i, j, &v_ij);
+    u_ij = u_out.getInternalColumn(i, j);
+    v_ij = v_out.getInternalColumn(i, j);
 
     // Fetch values from 2D fields *outside* of the k-loop:
     double
@@ -891,10 +891,10 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
       vel_input_v = vel_input(i, j).v;
 
     for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
-      u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
-                          INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
-      v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
-                          INORTH[k] * h_y_n + ISOUTH[k] * h_y_s);
+      u_ij[k] = - 0.25 * (I_e[k] * h_x_e + I_w[k] * h_x_w +
+                          I_n[k] * h_x_n + I_s[k] * h_x_s);
+      v_ij[k] = - 0.25 * (I_e[k] * h_y_e + I_w[k] * h_y_w +
+                          I_n[k] * h_y_n + I_s[k] * h_y_s);
 
       // Add the "SSA" velocity:
       u_ij[k] += vel_input_u;

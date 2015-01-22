@@ -70,32 +70,6 @@
 // Why did I include this?
 %include "cstring.i"
 
-// Lots of Pism objects are returned by passing a reference to a pointer. Use 
-//
-// %Pism_pointer_reference_typemaps(MyType)
-// 
-// to declare typemaps so that an argument MyType *&OUTPUT should be treated
-// as  an output (so no input variable shows up on the Python side, and
-// the output shows up as an output variable).  To apply the typemap
-// to all arguments of this type, use 
-// %apply MyType *& OUTPUT { MyType *&}
-// or use %Pism_pointer_reference_is_always_ouput(MyType) in the first place
-
-%define %Pism_pointer_reference_typemaps(TYPE)
-%typemap(in, numinputs=0,noblock=1) TYPE *& OUTPUT (TYPE *temp) {
-    $1 = &temp;
-}
-%typemap(argout,noblock=1) TYPE *& OUTPUT
-{
-    %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
-};
-%enddef
-
-%define %Pism_pointer_reference_is_always_output(TYPE)
-%Pism_pointer_reference_typemaps(TYPE);
-%apply TYPE *& OUTPUT { TYPE *&}
-%enddef
-
 /* Type maps for treating pointer-to-pointer arguments as output. */
 %define %Pism_pointer_pointer_typemaps(TYPE)
 %typemap(in, numinputs=0,noblock=1) TYPE ** OUTPUT (TYPE *temp) {

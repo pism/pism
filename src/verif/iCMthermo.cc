@@ -267,7 +267,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
     double r = radius(grid, i, j);
     double *T;
-    T3.getInternalColumn(i, j, &T);
+    T = T3.getInternalColumn(i, j);
     if ((r >= 1.0) and (r <= LforFG - 1.0)) {
       // only evaluate error if inside sheet and not at central
       // singularity
@@ -355,14 +355,14 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    bedrock_temp->getInternalColumn(i, j, &Tb);
+    Tb = bedrock_temp->getInternalColumn(i, j);
     for (unsigned int kb = 0; kb < Mbz; kb++) {
       const double Tberr = fabs(Tb[kb] - Tbex[kb]);
       maxTberr = std::max(maxTberr, Tberr);
       avbcount += 1.0;
       avTberr += Tberr;
     }
-    T3.getInternalColumn(i, j, &T);
+    T = T3.getInternalColumn(i, j);
     for (unsigned int k = 0; k < grid.Mz(); k++) {
       const double Terr = fabs(T[k] - Tex[k]);
       maxTerr = std::max(maxTerr, Terr);
@@ -490,7 +490,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
         strain_heating_exact[k] *= ice_rho * ice_c;
       }
       const unsigned int ks = grid.kBelowHeight(ice_thickness(i, j));
-      strain_heating3->getInternalColumn(i, j, &strain_heating);
+      strain_heating = strain_heating3->getInternalColumn(i, j);
       for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
         const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
         max_strain_heating_err = std::max(max_strain_heating_err, strain_heating_err);

@@ -26,10 +26,6 @@ using pism::StarStencil;
 %ignore pism::IceModelVec2S::get_array;
 %ignore pism::IceModelVec2V::get_array;
 
-%Pism_pointer_reference_is_always_output(pism::IceModelVec2S)
-%Pism_pointer_reference_is_always_output(pism::IceModelVec2V)
-%Pism_pointer_reference_is_always_output(pism::IceModelVec3)
-
 %rename(_regrid) pism::IceModelVec::regrid;
 %extend pism::IceModelVec
 {
@@ -130,8 +126,7 @@ using pism::StarStencil;
     }
 };
 
-%ignore pism::IceModelVec3D::getInternalColumn(int,int,double const **) const;
-
+%ignore pism::IceModelVec3D::getInternalColumn(int,int) const;
 %ignore pism::IceModelVec3D::operator();
 %extend pism::IceModelVec3D
 {

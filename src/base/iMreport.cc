@@ -115,7 +115,7 @@ void IceModel::ageStats(double ivol, double &gorigfrac) {
 
     if (mask.icy(i, j)) {
       // accumulate volume of ice which is original
-      age3.getInternalColumn(i,j,&tau);
+      tau = age3.getInternalColumn(i,j);
       const int  ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k=1; k<=ks; k++) {
         // ice in segment is original if it is as old as one year less than current time
@@ -390,7 +390,7 @@ void IceModel::compute_ice_volume_temperate(double &result) {
     // are considered "ice-free"
     if (ice_thickness(i,j) > 0) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      Enth3.getInternalColumn(i,j,&Enth);
+      Enth = Enth3.getInternalColumn(i,j);
       for (int k=0; k<ks; ++k) {
         if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
           volume += (grid.z(k+1) - grid.z(k)) * cell_area(i,j);
@@ -422,7 +422,7 @@ void IceModel::compute_ice_volume_cold(double &result) {
     // are considered "ice-free"
     if (ice_thickness(i,j) > 0) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      Enth3.getInternalColumn(i,j,&Enth);
+      Enth = Enth3.getInternalColumn(i,j);
       for (int k=0; k<ks; ++k) {
         if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
           volume += (grid.z(k+1) - grid.z(k)) * cell_area(i,j);
@@ -573,7 +573,7 @@ void IceModel::compute_ice_enthalpy(double &result) {
     // are considered "ice-free"
     if (ice_thickness(i,j) > 0) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      Enth3.getInternalColumn(i,j,&Enth);
+      Enth = Enth3.getInternalColumn(i,j);
       for (int k=0; k<ks; ++k) {
         enthalpysum += Enth[k] * (grid.z(k+1) - grid.z(k));
       }

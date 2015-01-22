@@ -197,20 +197,18 @@ void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
   }
 }
 
-void  IceModelVec3D::getInternalColumn(int i, int j, double **valsPTR) {
+double* IceModelVec3D::getInternalColumn(int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  double ***arr = (double***) array;
-  *valsPTR = arr[i][j];
+  return ((double***) array)[i][j];
 }
 
-void  IceModelVec3D::getInternalColumn(int i, int j, const double **valsPTR) const {
+const double* IceModelVec3D::getInternalColumn(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  double ***arr = (double***) array;
-  *valsPTR = arr[i][j];
+  return ((double***) array)[i][j];
 }
 
 void  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {

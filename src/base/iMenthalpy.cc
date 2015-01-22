@@ -58,8 +58,8 @@ void IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &re
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    temperature.getInternalColumn(i,j,&Tij);
-    result.getInternalColumn(i,j,&Enthij);
+    Tij = temperature.getInternalColumn(i,j);
+    Enthij = result.getInternalColumn(i,j);
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       Enthij[k] = EC->getEnthPermissive(Tij[k], 0.0, EC->getPressureFromDepth(depth));
@@ -91,9 +91,9 @@ void IceModel::compute_enthalpy(IceModelVec3 &temperature,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    temperature.getInternalColumn(i,j,&Tij);
-    liquid_water_fraction.getInternalColumn(i,j,&Liqfracij);
-    result.getInternalColumn(i,j,&Enthij);
+    Tij = temperature.getInternalColumn(i,j);
+    Liqfracij = liquid_water_fraction.getInternalColumn(i,j);
+    Enthij = result.getInternalColumn(i,j);
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       Enthij[k] = EC->getEnthPermissive(Tij[k], Liqfracij[k],
@@ -129,8 +129,8 @@ void IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result.getInternalColumn(i,j,&omegaij);
-    enthalpy.getInternalColumn(i,j,&Enthij);
+    omegaij = result.getInternalColumn(i,j);
+    Enthij = enthalpy.getInternalColumn(i,j);
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       omegaij[k] = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth));
@@ -163,8 +163,8 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result.getInternalColumn(i,j,&CTSij);
-    Enth3.getInternalColumn(i,j,&Enthij);
+    CTSij  = result.getInternalColumn(i,j);
+    Enthij = Enth3.getInternalColumn(i,j);
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));

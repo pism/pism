@@ -315,10 +315,10 @@ void SSAFEM::cacheQuadPtValues() {
 
       // Obtain the values of enthalpy at each vertical level at each of the vertices
       // of the current element.
-      m_enthalpy->getInternalColumn(i, j, &Enth_e[0]);
-      m_enthalpy->getInternalColumn(i+1, j, &Enth_e[1]);
-      m_enthalpy->getInternalColumn(i+1, j+1, &Enth_e[2]);
-      m_enthalpy->getInternalColumn(i, j+1, &Enth_e[3]);
+      Enth_e[0] = m_enthalpy->getInternalColumn(i, j);
+      Enth_e[1] = m_enthalpy->getInternalColumn(i+1, j);
+      Enth_e[2] = m_enthalpy->getInternalColumn(i+1, j+1);
+      Enth_e[3] = m_enthalpy->getInternalColumn(i, j+1);
 
       // We now want to interpolate to the quadrature points at each of the
       // vertical levels.  It would be nice to use quadrature::computeTestFunctionValues,

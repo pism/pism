@@ -52,14 +52,14 @@ void BTU_Test::bootstrap() {
     std::vector<double> zlevels = m_temp.get_levels();
 
     IceModelVec::AccessList list(m_temp);
-    double *Tb; // columns of these values
+
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      m_temp.getInternalColumn(i,j,&Tb);
+      double *Tb = m_temp.getInternalColumn(i, j);
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
-        double FF; // Test K:  use Tb[k], ignore FF
+        double FF = 0.0; // Test K:  use Tb[k], ignore FF
         exactK(m_grid.time->start(), z, &Tb[k], &FF, 0);
       }
     }

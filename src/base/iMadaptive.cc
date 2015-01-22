@@ -69,9 +69,9 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
 
     if (mask.icy(i, j)) {
       const int ks = grid.kBelowHeight(ice_thickness(i, j));
-      u3->getInternalColumn(i, j, &u);
-      v3->getInternalColumn(i, j, &v);
-      w3->getInternalColumn(i, j, &w);
+      u = u3->getInternalColumn(i, j);
+      v = v3->getInternalColumn(i, j);
+      w = w3->getInternalColumn(i, j);
       for (int k = 0; k <= ks; ++k) {
         const double
           absu = fabs(u[k]),
@@ -415,8 +415,8 @@ void IceModel::countCFLViolations(double* CFLviol) {
     const int  fks = grid.kBelowHeight(ice_thickness(i,j));
 
     const double *u, *v;
-    u3->getInternalColumn(i,j,&u);
-    v3->getInternalColumn(i,j,&v);
+    u = u3->getInternalColumn(i,j);
+    v = v3->getInternalColumn(i,j);
 
     // check horizontal CFL conditions at each point
     for (int k=0; k<=fks; k++) {
