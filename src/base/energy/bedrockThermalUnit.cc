@@ -32,6 +32,13 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
   m_bedtoptemp = NULL;
   m_ghf        = NULL;
 
+  m_upward_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
+  // PROPOSED standard_name = lithosphere_upward_heat_flux
+  m_upward_flux.set_attrs("diagnostic", "upward geothermal flux at bedrock surface",
+                          "W m-2", "");
+  m_upward_flux.set_glaciological_units("mW m-2");
+  m_upward_flux.write_in_glaciological_units = true;
+
   // build constant diffusivity for heat equation
   m_bed_rho = m_config.get("bedrock_thermal_density");
   m_bed_c   = m_config.get("bedrock_thermal_specific_heat_capacity");
@@ -350,30 +357,39 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-void BedThermalUnit::upward_geothermal_flux(IceModelVec2S &result) {
+const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
 
-  if (!m_temp.was_created()) {
-    result.copy_from(*m_ghf);
-    return;
+  if (not m_temp.was_created()) {
+    return *m_ghf;
   }
 
   double dzb = this->vertical_spacing();
-  const int  k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
+  const int k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
   IceModelVec::AccessList list;
   list.add(m_temp);
-  list.add(result);
+  list.add(m_upward_flux);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  if (m_Mbz >= 3) {
 
-    double *Tb = m_temp.getInternalColumn(i,j);
-    if (m_Mbz >= 3) {
-      result(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
-    } else {
-      result(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double *Tb = m_temp.getInternalColumn(i,j);
+      m_upward_flux(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     }
+
+  } else {
+
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double *Tb = m_temp.getInternalColumn(i,j);
+      m_upward_flux(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
+    }
+
   }
+  return m_upward_flux;
 }
 
 void BedThermalUnit::bootstrap() {

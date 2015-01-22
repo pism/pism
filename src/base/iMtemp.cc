@@ -158,14 +158,10 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   assert(ocean != NULL);
   ocean->shelf_base_temperature(shelfbtemp);
 
-  IceModelVec2S &G0 = vWork2d[0];
-  G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", "");
-  G0.set_glaciological_units("mW m-2");
-
   assert(btu != NULL);
-  btu->upward_geothermal_flux(G0);
+  const IceModelVec2S &G0 = btu->upward_geothermal_flux();
 
-  IceModelVec2S &bwatcurr = vWork2d[1];
+  IceModelVec2S &bwatcurr = vWork2d[0];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");
   bwatcurr.set_glaciological_units("m");
 

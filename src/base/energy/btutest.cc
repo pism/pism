@@ -220,10 +220,7 @@ int main(int argc, char *argv[]) {
     verbPrintf(2, com, "\n  done ...\n");
 
     // compute final output heat flux G_0 at z=0; reuse ghf for this purpose
-    ghf.set_name("bheatflx0");
-    ghf.set_attrs("", "upward geothermal flux at ice/bedrock interface",
-                  "W m-2", "");
-    btu.upward_geothermal_flux(ghf);
+    ghf.copy_from(btu.upward_geothermal_flux());
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT

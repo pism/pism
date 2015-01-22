@@ -99,7 +99,7 @@ public:
 
   virtual void update(double my_t, double my_dt);
 
-  virtual void upward_geothermal_flux(IceModelVec2S &result);
+  virtual const IceModelVec2S& upward_geothermal_flux();
 
   virtual void bootstrap();
 
@@ -109,6 +109,7 @@ public:
 protected:
 
   IceModelVec3Custom m_temp;
+  IceModelVec2S m_upward_flux;
   //!< storage for bedrock thermal layer temperature; part of state;
   //!< units K; equally-spaced layers; This IceModelVec is only
   //!< created if Mbz > 1.
