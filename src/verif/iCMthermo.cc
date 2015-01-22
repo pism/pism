@@ -424,7 +424,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
       throw RuntimeError("temperature errors only computable for tests F and G");
     }
 
-    const double Tbase = T3.getValZ(i, j, 0.0);
+    const double Tbase = T3.getInternalColumn(i,j)[0];
     if (i == (grid.Mx() - 1)/2 && j == (grid.My() - 1)/2) {
       domeT = Tbase;
       domeTexact = Texact;
@@ -510,7 +510,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
 
 
 void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,
-                                                          double &gmaxWerr, double &gavWerr) {
+                                                double &gmaxWerr, double &gavWerr) {
   double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
   const IceModelVec3

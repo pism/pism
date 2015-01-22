@@ -140,8 +140,9 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
 
       // change r1200: new meaning of H
       const double H = (*m_surface)(i,j) - (*m_bed)(i,j);
+      const double base_enthalpy = m_enthalpy->getInternalColumn(i,j)[0];
 
-      double T = m_EC.getAbsTemp(m_enthalpy->getValZ(i,j,0.0), m_EC.getPressureFromDepth(H));
+      double T = m_EC.getAbsTemp(base_enthalpy, m_EC.getPressureFromDepth(H));
 
       double basalC = basalVelocitySIA(myx, myy, H, T,
                                        alpha, mu_sliding,
