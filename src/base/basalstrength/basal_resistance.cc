@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,19 +27,23 @@ namespace pism {
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
   : m_unit_system(config.get_unit_system()) {
-  plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
+  m_plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
+}
+
+IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
+  // empty
 }
 
 void IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
   verbPrintf(verbthresh, com, 
              "Using purely plastic till with eps = %10.5e m/year.\n",
-             m_unit_system.convert(plastic_regularize, "m/s", "m/year"));
+             m_unit_system.convert(m_plastic_regularize, "m/s", "m/year"));
 }
 
 
 //! Compute the drag coefficient for the basal shear stress.
 double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) const {
-  const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
   return tauc / sqrt(magreg2);
 }
@@ -53,7 +57,7 @@ double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) con
  */
 void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, double vy,
                                                         double *beta, double *dbeta) const {
-  const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
   *beta = tauc / sqrt(magreg2);
 
@@ -66,24 +70,28 @@ void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, 
 
 IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Config &config)
   : IceBasalResistancePlasticLaw(config) {
-  pseudo_q = config.get("pseudo_plastic_q");
-  pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
-  sliding_scale_factor_reduces_tauc = config.get("sliding_scale_factor_reduces_tauc");
+  m_pseudo_q = config.get("pseudo_plastic_q");
+  m_pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  m_sliding_scale_factor_reduces_tauc = config.get("sliding_scale_factor_reduces_tauc");
+}
+
+IceBasalResistancePseudoPlasticLaw::~IceBasalResistancePseudoPlasticLaw() {
+  // empty
 }
 
 void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
 
-  if (pseudo_q == 1.0) {
+  if (m_pseudo_q == 1.0) {
     verbPrintf(verbthresh, com, 
                "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-               m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year"));
+               m_unit_system.convert(m_pseudo_u_threshold, "m/s", "m/year"));
   } else {
     verbPrintf(verbthresh, com, 
                "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
                " and u_threshold = %.2f m/year.\n", 
-               m_unit_system.convert(plastic_regularize, "m/s", "m/year"),
-               pseudo_q,
-               m_unit_system.convert(pseudo_u_threshold, "m/s", "m/year"));
+               m_unit_system.convert(m_plastic_regularize, "m/s", "m/year"),
+               m_pseudo_q,
+               m_unit_system.convert(m_pseudo_u_threshold, "m/s", "m/year"));
   }
 }
 
@@ -141,13 +149,13 @@ void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com
   mathematical operation as  @f$ A^q = A^0 = 1 @f$ .)
 */
 double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double vy) const {
-  const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  if (sliding_scale_factor_reduces_tauc > 0.0) {
-    double Aq = pow(sliding_scale_factor_reduces_tauc, pseudo_q);
-    return (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  if (m_sliding_scale_factor_reduces_tauc > 0.0) {
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
+    return (tauc / Aq) * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
   } else {
-    return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+    return tauc * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
   }
 }
 
@@ -163,17 +171,17 @@ double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double v
 void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, double vx, double vy,
                                                               double *beta, double *dbeta) const
 {
-  const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  if (sliding_scale_factor_reduces_tauc > 0.0) {
-    double Aq = pow(sliding_scale_factor_reduces_tauc, pseudo_q);
-    *beta = (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  if (m_sliding_scale_factor_reduces_tauc > 0.0) {
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
+    *beta = (tauc / Aq) * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
   } else {
-    *beta =  tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+    *beta =  tauc * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
   }
 
   if (dbeta) {
-    *dbeta = (pseudo_q - 1) * (*beta) / magreg2;
+    *dbeta = (m_pseudo_q - 1) * (*beta) / magreg2;
   }
 
 }
