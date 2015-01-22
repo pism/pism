@@ -22,14 +22,22 @@
 #include <cstdlib>
 #include <petscdmda.h>
 
+#include <cassert>
+
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::dynamic_pointer_cast;
+#else
+#include <memory>
+using std::dynamic_pointer_cast;
+#endif
+
 #include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
 #include "error_handling.hh"
-
-#include <cassert>
 
 namespace pism {
 
@@ -55,7 +63,7 @@ IceModelVec3::~IceModelVec3() {
 
 
 IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
-  IceModelVec3::Ptr result = std::dynamic_pointer_cast<IceModelVec3,IceModelVec>(input);
+  IceModelVec3::Ptr result = dynamic_pointer_cast<IceModelVec3,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError("dynamic cast failure");
   }

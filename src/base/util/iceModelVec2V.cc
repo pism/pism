@@ -24,6 +24,14 @@
 #include "iceModelVec_helpers.hh"
 #include "PISMConfig.hh"
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::dynamic_pointer_cast;
+#else
+#include <memory>
+using std::dynamic_pointer_cast;
+#endif
+
 namespace pism {
 
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
@@ -32,7 +40,7 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
 }
 
 IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
-  IceModelVec2V::Ptr result = std::dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
+  IceModelVec2V::Ptr result = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError("dynamic cast failure");
   }

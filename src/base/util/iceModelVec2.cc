@@ -31,6 +31,14 @@
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::dynamic_pointer_cast;
+#else
+#include <memory>
+using std::dynamic_pointer_cast;
+#endif
+
 namespace pism {
 
 // this file contains methods for derived classes IceModelVec2S and IceModelVec2Int
@@ -47,7 +55,7 @@ IceModelVec2V::~IceModelVec2V() {
 }
 
 IceModelVec2S::Ptr IceModelVec2S::To2DScalar(IceModelVec::Ptr input) {
-  IceModelVec2S::Ptr result = std::dynamic_pointer_cast<IceModelVec2S,IceModelVec>(input);
+  IceModelVec2S::Ptr result = dynamic_pointer_cast<IceModelVec2S,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError("dynamic cast failure");
   }
@@ -658,7 +666,7 @@ void IceModelVec2S::copy_to(IceModelVec &destination) const {
 // IceModelVec2Stag
 
 IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
-  IceModelVec2Stag::Ptr result = std::dynamic_pointer_cast<IceModelVec2Stag,IceModelVec>(input);
+  IceModelVec2Stag::Ptr result = dynamic_pointer_cast<IceModelVec2Stag,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError("dynamic cast failure");
   }
