@@ -543,7 +543,7 @@ double IceModelVec2S::diff_y_p(int i, int j) const {
 //! Sums up all the values in an IceModelVec2S object. Ignores ghosts.
 /*! Avoids copying to a "global" vector.
  */
-void IceModelVec2S::sum(double &result) {
+double IceModelVec2S::sum() const {
   double my_result = 0;
 
   IceModelVec::AccessList list(*this);
@@ -554,12 +554,12 @@ void IceModelVec2S::sum(double &result) {
   }
 
   // find the global sum:
-  result = GlobalSum(m_grid->com, my_result);
+  return GlobalSum(m_grid->com, my_result);
 }
 
 
 //! Finds maximum over all the values in an IceModelVec2S object.  Ignores ghosts.
-void IceModelVec2S::max(double &result) const {
+double IceModelVec2S::max() const {
   IceModelVec::AccessList list(*this);
 
   double my_result = (*this)(m_grid->xs(),m_grid->ys());
@@ -567,12 +567,12 @@ void IceModelVec2S::max(double &result) const {
     my_result = std::max(my_result,(*this)(p.i(), p.j()));
   }
 
-  result = GlobalMax(m_grid->com, my_result);
+  return GlobalMax(m_grid->com, my_result);
 }
 
 
 //! Finds maximum over all the absolute values in an IceModelVec2S object.  Ignores ghosts.
-void IceModelVec2S::absmax(double &result) const {
+double IceModelVec2S::absmax() const {
 
   IceModelVec::AccessList list(*this);
   double my_result = 0.0;
@@ -580,12 +580,12 @@ void IceModelVec2S::absmax(double &result) const {
     my_result = std::max(my_result,fabs((*this)(p.i(), p.j())));
   }
 
-  result = GlobalMax(m_grid->com, my_result);
+  return GlobalMax(m_grid->com, my_result);
 }
 
 
 //! Finds minimum over all the values in an IceModelVec2S object.  Ignores ghosts.
-void IceModelVec2S::min(double &result) const {
+double IceModelVec2S::min() const {
   IceModelVec::AccessList list(*this);
 
   double my_result = (*this)(m_grid->xs(),m_grid->ys());
@@ -593,7 +593,7 @@ void IceModelVec2S::min(double &result) const {
     my_result = std::min(my_result,(*this)(p.i(), p.j()));
   }
 
-  result = GlobalMin(m_grid->com, my_result);
+  return GlobalMin(m_grid->com, my_result);
 }
 
 
@@ -719,19 +719,21 @@ void IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) const {
 /*!
 Assumes z is allocated.
  */
-void IceModelVec2Stag::absmaxcomponents(double* z) const {
-  double my_z[2] = {0.0, 0.0};
+std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
+  std::vector<double> z(2, 0.0);
 
   IceModelVec::AccessList list(*this);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    my_z[0] = std::max(my_z[0],fabs((*this)(i,j,0)));
-    my_z[1] = std::max(my_z[1],fabs((*this)(i,j,1)));
+    z[0] = std::max(z[0],fabs((*this)(i,j,0)));
+    z[1] = std::max(z[1],fabs((*this)(i,j,1)));
   }
 
-  z[0] = GlobalMax(m_grid->com, my_z[0]);
-  z[1] = GlobalMax(m_grid->com, my_z[1]);
+  z[0] = GlobalMax(m_grid->com, z[0]);
+  z[1] = GlobalMax(m_grid->com, z[1]);
+
+  return z;
 }
 
 } // end of namespace pism

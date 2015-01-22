@@ -376,10 +376,10 @@ public:
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
   virtual void add(double alpha, const IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
-  virtual void sum(double &result);
-  virtual void min(double &result) const;
-  virtual void max(double &result) const;
-  virtual void absmax(double &result) const;
+  virtual double sum() const;
+  virtual double min() const;
+  virtual double max() const;
+  virtual double absmax() const;
   virtual double diff_x(int i, int j) const;
   virtual double diff_y(int i, int j) const;
   virtual double diff_x_stagE(int i, int j) const;
@@ -477,7 +477,7 @@ public:
                       IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
-  virtual void absmaxcomponents(double* z) const;
+  virtual std::vector<double> absmaxcomponents() const;
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in
