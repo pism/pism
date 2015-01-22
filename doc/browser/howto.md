@@ -302,12 +302,12 @@ class PA_foo_bar : public PISMDiag<PA_foo>
 {
 public:
   PA_foo_bar(PA_foo *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual IceModelVec::Ptr compute();
 };
 ~~~
-to a header (.hh) file and implement it in a .cc file.
+to a header (`.hh`) file and implement it in a `.cc` file.
 
-See IceModel_diagnostics.cc for examples. Generally speaking, in every class
+See `IceModel_diagnostics.cc` for examples. Generally speaking, in every class
 implementing a "diagnostic" quantity
 - the constructor sets metadata
 - you have access to a data member "var" of an atmosphere model as
@@ -327,38 +327,36 @@ the definition of IceModel for one example).
 - to use a field managed by IceModel, use "variables":
 
 ~~~
-IceModelVec2S *surface = variables.get_2d_scalar("surface_altitude");
+const IceModelVec2S *surface = variables.get_2d_scalar("surface_altitude");
 ~~~
 
 - the **caller** of the PISMDiagnostic::compute() method has to
   de-allocate the field allocated by PISMDiagnostic::compute()
 
 Note that in almost every (current) implementation of
-PISMDiagnostic::compute() you see
+`PISMDiagnostic::compute()` you see
 
 ~~~
-PetscErrorCode ...::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+IceModelVec::Ptr ...::compute() {
   const PetscScalar fillval = -0.01;
 
   <...>
 
   // 1
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "hardav", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(grid, "hardav", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
 
   <...>
 
   // 2
-  output = result;
-  return 0;
+  return result;
 }
 ~~~
 
-The block marked "1" allocates a 2D field and copies metadata stored in
-vars[0], while the block marked "2" casts a pointer to a 2D field to a pointer
-to a "generic" field.
+The block marked "1" allocates a 2D field and copies metadata stored
+in `m_vars[0]`, while the block marked "2" returns a pointer to a 2D
+field, which gets cast to a pointer to a "generic" field.
 
 This allows us to have the same interface for both 2D and 3D diagnostics.
 
