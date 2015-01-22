@@ -946,7 +946,7 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
  * @return 0 on success
  */
 void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
-                                   double default_value) {
+                         double default_value) {
   this->regrid_impl(nc, flag, default_value);
   inc_state_counter();          // mark as modified
 }

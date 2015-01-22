@@ -29,8 +29,7 @@ class StressBalance;
 class EigenCalving : public Component
 {
 public:
-  EigenCalving(const IceGrid &g,
-               StressBalance *stress_balance);
+  EigenCalving(const IceGrid &g, StressBalance *stress_balance);
   virtual ~EigenCalving();
 
   virtual void init();
@@ -56,8 +55,7 @@ protected:
   bool m_restrict_timestep;
 
   void update_strain_rates();
-  void remove_narrow_tongues(IceModelVec2Int &pism_mask,
-                             IceModelVec2S &ice_thickness);
+  void remove_narrow_tongues(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 };
 
 

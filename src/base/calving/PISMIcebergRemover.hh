@@ -54,7 +54,7 @@ protected:
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
+                                IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
   
   IceModelVec2S m_iceberg_mask;

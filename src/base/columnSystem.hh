@@ -86,6 +86,8 @@ public:
   double ddratio(unsigned int system_size) const;
   void reset();
 
+  // uses an output argument to allow re-using storage and avoid
+  // copying
   void solve(unsigned int system_size, std::vector<double> &result);
 
   void save_system_with_solution(const std::string &filename,
