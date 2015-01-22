@@ -26,7 +26,7 @@
 namespace pism {
 
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, EnthalpyConverter &e,
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, const EnthalpyConverter &e,
                                                        IPDesignVariableParameterization &tp)
   : SSAFEM(g, e),
     m_zeta(NULL),

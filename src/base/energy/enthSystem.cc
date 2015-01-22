@@ -32,12 +32,15 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
                              double dx,  double dy, double dt,
                              const Config &config,
                              const IceModelVec3 &Enth3,
-                             const IceModelVec3 *u3,
-                             const IceModelVec3 *v3,
-                             const IceModelVec3 *w3,
-                             const IceModelVec3 *strain_heating3,
+                             const IceModelVec3 &u3,
+                             const IceModelVec3 &v3,
+                             const IceModelVec3 &w3,
+                             const IceModelVec3 &strain_heating3,
                              const EnthalpyConverter &EC)
-  : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3), m_EC(EC) {
+: columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
+  m_Enth3(Enth3),
+  m_strain_heating3(strain_heating3),
+  m_EC(EC) {
 
   // set some values so we can check if init was called
   m_R_cold   = -1.0;
@@ -65,10 +68,6 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_E_e.resize(Mz);
   m_E_s.resize(Mz);
   m_E_w.resize(Mz);
-
-  // point to IceModelVec3
-  m_Enth3 = &Enth3;
-  m_strain_heating3 = strain_heating3;
 
   m_nu = m_dt / m_dz;
 

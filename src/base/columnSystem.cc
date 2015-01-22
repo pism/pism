@@ -284,9 +284,9 @@ std::string TridiagonalSystem::prefix() const {
 columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
                                  const std::string &prefix,
                                  double dx, double dy, double dt,
-                                 const IceModelVec3 *u3,
-                                 const IceModelVec3 *v3,
-                                 const IceModelVec3 *w3)
+                                 const IceModelVec3 &u3,
+                                 const IceModelVec3 &v3,
+                                 const IceModelVec3 &w3)
   : m_dx(dx), m_dy(dy), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
   assert(dx > 0.0);
   assert(dy > 0.0);
@@ -326,9 +326,9 @@ void columnSystemCtx::fine_to_coarse(const std::vector<double> &fine, int i, int
   m_interp->fine_to_coarse(&fine[0], array);
 }
 
-void columnSystemCtx::coarse_to_fine(const IceModelVec3 *coarse, int i, int j, int ks,
+void columnSystemCtx::coarse_to_fine(const IceModelVec3 &coarse, int i, int j, int ks,
                                      double* fine) const {
-  const double *array = coarse->getInternalColumn(i, j);
+  const double *array = coarse.getInternalColumn(i, j);
   m_interp->coarse_to_fine(array, ks, fine);
 }
 

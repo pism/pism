@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -105,7 +105,7 @@ public:
   typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  IP_SSAHardavForwardProblem(const IceGrid &g, EnthalpyConverter &e,
+  IP_SSAHardavForwardProblem(const IceGrid &g, const EnthalpyConverter &e,
                              IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSAHardavForwardProblem();

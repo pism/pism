@@ -106,12 +106,12 @@ int main(int argc, char *argv[]) {
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
-    topg.min(topg_min);
-    topg.max(topg_max);
-    topg_smoothed.min(topgs_min);
-    topg_smoothed.max(topgs_max);
-    theta.min(theta_min);
-    theta.max(theta_max);
+    topg_min = topg.min();
+    topg_max = topg.max();
+    topgs_min = topg_smoothed.min();
+    topgs_max = topg_smoothed.max();
+    theta_min = theta.min();
+    theta_max = theta.max();
     PetscPrintf(grid.com,
                 "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
                 topg_min, topg_max);

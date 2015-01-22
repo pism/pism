@@ -53,7 +53,7 @@ inline const double& IceModelVec2S::operator()(int i, int j) const {
   return static_cast<double**>(array)[i][j];
 }
 
-inline StarStencil<double> IceModelVec2S::star(int i, int j) {
+inline StarStencil<double> IceModelVec2S::star(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
   check_array_indices(i+1, j, 0);

@@ -42,10 +42,10 @@ public:
                 double dx,  double dy, double dt,
                 const Config &config,
                 const IceModelVec3 &Enth3,
-                const IceModelVec3 *u3,
-                const IceModelVec3 *v3,
-                const IceModelVec3 *w3,
-                const IceModelVec3 *strain_heating3,
+                const IceModelVec3 &u3,
+                const IceModelVec3 &v3,
+                const IceModelVec3 &w3,
+                const IceModelVec3 &strain_heating3,
                 const EnthalpyConverter &EC);
   ~enthSystemCtx();
 
@@ -98,7 +98,7 @@ protected:
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
   bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
 
-  const IceModelVec3 *m_Enth3, *m_strain_heating3;
+  const IceModelVec3 &m_Enth3, &m_strain_heating3;
   const EnthalpyConverter &m_EC;  // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();

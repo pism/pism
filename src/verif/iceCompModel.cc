@@ -620,11 +620,11 @@ void IceCompModel::fillSolnTestE() {
 
   // FIXME: This code messes with a field owned by the stress balance
   // object. This is BAD.
-  IceModelVec2V *vel_adv = const_cast<IceModelVec2V*>(stress_balance->advective_velocity());
+  IceModelVec2V &vel_adv = const_cast<IceModelVec2V&>(stress_balance->advective_velocity());
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(*vel_adv);
+  list.add(vel_adv);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -632,7 +632,7 @@ void IceCompModel::fillSolnTestE() {
     double xx = grid.x(i), yy = grid.y(j);
     exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
     ice_thickness(i,j) = H;
-    (*vel_adv)(i,j)    = bvel;
+    vel_adv(i,j)    = bvel;
   }
 
   ice_thickness.update_ghosts(); 
@@ -803,10 +803,10 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
     throw RuntimeError("basal velocity errors only computable for test E");
   }
 
-  const IceModelVec2V *vel_adv = stress_balance->advective_velocity();
+  const IceModelVec2V &vel_adv = stress_balance->advective_velocity();
 
   IceModelVec::AccessList list;
-  list.add(*vel_adv);
+  list.add(vel_adv);
   list.add(ice_thickness);
 
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
@@ -817,8 +817,8 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
       double xx = grid.x(i), yy = grid.y(j);
       exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
       // compute maximum errors
-      const double uberr = fabs((*vel_adv)(i,j).u - ubexact);
-      const double vberr = fabs((*vel_adv)(i,j).v - vbexact);
+      const double uberr = fabs(vel_adv(i,j).u - ubexact);
+      const double vberr = fabs(vel_adv(i,j).v - vbexact);
       maxuberr = std::max(maxuberr,uberr);
       maxvberr = std::max(maxvberr,vberr);
       const double vecerr = sqrt(uberr*uberr + vberr*vberr);

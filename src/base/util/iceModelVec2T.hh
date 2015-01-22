@@ -118,7 +118,7 @@ public:
   virtual void interp(int i, int j, std::vector<double> &results);
 
   virtual void average(double my_t, double my_dt);
-  virtual void average(int i, int j, double &result);
+  virtual double average(int i, int j);
 
   virtual void begin_access() const;
   virtual void end_access() const;

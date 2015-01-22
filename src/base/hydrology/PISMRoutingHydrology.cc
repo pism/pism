@@ -604,8 +604,9 @@ void RoutingHydrology::adaptive_for_W_evolution(double t_current, double t_end, 
     dtmax = m_config.get("hydrology_maximum_time_step_years",
                        "years", "seconds"),
     rg    = m_config.get("standard_gravity") * m_config.get("fresh_water_density");
-  double tmp[2];
-  V.absmaxcomponents(tmp); // V could be zero if P is constant and bed is flat
+
+  // V could be zero if P is constant and bed is flat
+  std::vector<double> tmp = V.absmaxcomponents();
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
   dtCFL_result = 0.5 / (tmp[0]/m_grid.dx() + tmp[1]/m_grid.dy()); // FIXME: is regularization needed?

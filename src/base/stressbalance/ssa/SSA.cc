@@ -30,7 +30,7 @@
 
 namespace pism {
 
-SSA::SSA(const IceGrid &g, EnthalpyConverter &e)
+SSA::SSA(const IceGrid &g, const EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
 {
   m_mask = NULL;
@@ -322,7 +322,7 @@ std::string SSA::stdout_report() {
 
 
 //! \brief Set the initial guess of the SSA velocity.
-void SSA::set_initial_guess(IceModelVec2V &guess) {
+void SSA::set_initial_guess(const IceModelVec2V &guess) {
   m_velocity.copy_from(guess);
 }
 

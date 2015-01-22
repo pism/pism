@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,13 +34,13 @@ namespace pism {
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
 typedef IceFlowLaw*(*IceFlowLawCreator)(MPI_Comm, const std::string &,
-                                        const Config &, EnthalpyConverter*);
+                                        const Config &, const EnthalpyConverter*);
 
 class IceFlowLawFactory {
 public:
   IceFlowLawFactory(MPI_Comm, const std::string &prefix,
                     const Config &conf,
-                    EnthalpyConverter *my_EC);
+                    const EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
   void setType(const std::string &name);
   void setFromOptions();
@@ -54,7 +54,7 @@ private:
   std::string type_name, prefix;
   std::map<std::string, IceFlowLawCreator> flow_laws;
   const Config &config;
-  EnthalpyConverter *EC;
+  const EnthalpyConverter *EC;
 };
 
 

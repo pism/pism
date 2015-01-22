@@ -68,8 +68,8 @@ public:
   /*!
    * Does not affect the SIA computation.
    */
-  virtual void set_boundary_conditions(IceModelVec2Int &locations,
-                                       IceModelVec2V &velocities);
+  virtual void set_boundary_conditions(const IceModelVec2Int &locations,
+                                       const IceModelVec2V &velocities);
 
   virtual void set_basal_melt_rate(const IceModelVec2S &bmr);
 
@@ -79,10 +79,10 @@ public:
                       const IceModelVec2S &melange_back_pressure);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual const IceModelVec2V* advective_velocity();
+  virtual const IceModelVec2V& advective_velocity();
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual const IceModelVec2Stag* diffusive_flux();
+  virtual const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   virtual double max_diffusivity();
@@ -90,14 +90,14 @@ public:
   // for the energy/age time step:
 
   //! \brief Get the 3D velocity (for the energy/age time-stepping).
-  virtual const IceModelVec3* velocity_u();
-  virtual const IceModelVec3* velocity_v();
-  virtual const IceModelVec3* velocity_w();
+  virtual const IceModelVec3& velocity_u();
+  virtual const IceModelVec3& velocity_v();
+  virtual const IceModelVec3& velocity_w();
 
   //! \brief Get the basal frictional heating (for the energy time-stepping).
-  virtual const IceModelVec2S* basal_frictional_heating();
+  virtual const IceModelVec2S& basal_frictional_heating();
 
-  virtual const IceModelVec3* volumetric_strain_heating();
+  virtual const IceModelVec3& volumetric_strain_heating();
 
   // for the calving, etc.:
 

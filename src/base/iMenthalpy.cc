@@ -202,13 +202,13 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   DrainageCalculator dc(config);
 
-  const IceModelVec2S *Rb = stress_balance->basal_frictional_heating();
+  const IceModelVec2S &Rb = stress_balance->basal_frictional_heating();
   const IceModelVec3
-    *u3 = stress_balance->velocity_u(),
-    *v3 = stress_balance->velocity_v(),
-    *w3 = stress_balance->velocity_w();
+    &u3 = stress_balance->velocity_u(),
+    &v3 = stress_balance->velocity_v(),
+    &w3 = stress_balance->velocity_w();
 
-  const IceModelVec3 *strain_heating3 = stress_balance->volumetric_strain_heating();
+  const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
 
   enthSystemCtx system(grid.z(), "enth", grid.dx(), grid.dy(), dt_TempAge,
                        config, Enth3, u3, v3, w3, strain_heating3, *EC);
@@ -244,16 +244,16 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(liqfrac_surface);
   list.add(ice_thickness);
   list.add(basal_melt_rate);
-  list.add(*Rb);
+  list.add(Rb);
   list.add(basal_heat_flux);
   list.add(till_water_thickness);
   list.add(vMask);
 
   // these are accessed a column at a time
-  list.add(*u3);
-  list.add(*v3);
-  list.add(*w3);
-  list.add(*strain_heating3);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
+  list.add(strain_heating3);
   list.add(Enth3);
   list.add(vWork3d);
 
@@ -314,7 +314,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         system.setDirichletBasal(Enth0);
       } else if (base_is_cold) {
         // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-        system.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j));
+        system.setBasalHeatFlux(basal_heat_flux(i, j) + Rb(i, j));
       } else {
         // warm, grounded base case
         system.setBasalHeatFlux(0.0);
@@ -443,7 +443,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           //
           // after we compute it we make sure there is no refreeze if
           // there is no available basal water
-          basal_melt_rate(i, j) = ((*Rb)(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * L);
+          basal_melt_rate(i, j) = (Rb(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * L);
 
           if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0) {
             basal_melt_rate(i, j) = 0.0;

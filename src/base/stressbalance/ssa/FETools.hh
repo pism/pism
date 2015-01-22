@@ -270,7 +270,7 @@ public:
   void markRowInvalid(int k);
   void markColInvalid(int k);
 
-  void localToGlobal(int k, int *i, int *j);
+  void localToGlobal(int k, int *i, int *j) const;
 
   void addLocalJacobianBlock(const double *K, Mat J);
 
@@ -488,8 +488,8 @@ class DirichletData_Scalar : public DirichletData {
 public:
   DirichletData_Scalar();
   void init(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
-  void update(FEDOFMap &dofmap, double* x_e);
-  void update_homogeneous(FEDOFMap &dofmap, double* x_e);
+  void update(const FEDOFMap &dofmap, double* x_e);
+  void update_homogeneous(const FEDOFMap &dofmap, double* x_e);
   void fix_residual(const double **x, double **r);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
@@ -502,8 +502,8 @@ class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector();
   void init(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
-  void update(FEDOFMap &dofmap, Vector2* x_e);
-  void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
+  void update(const FEDOFMap &dofmap, Vector2* x_e);
+  void update_homogeneous(const FEDOFMap &dofmap, Vector2* x_e);
   void fix_residual(const Vector2 **x, Vector2 **r);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);

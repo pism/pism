@@ -426,14 +426,14 @@ int main(int argc, char *argv[]) {
 
     // Report errors relative to the exact solution:
     const IceModelVec3
-      *u3 = stress_balance.velocity_u(),
-      *v3 = stress_balance.velocity_v(),
-      *w3 = stress_balance.velocity_w();
+      &u3 = stress_balance.velocity_u(),
+      &v3 = stress_balance.velocity_v(),
+      &w3 = stress_balance.velocity_w();
 
-    const IceModelVec3 *sigma = stress_balance.volumetric_strain_heating();
+    const IceModelVec3 &sigma = stress_balance.volumetric_strain_heating();
 
     reportErrors(config, grid,
-                 ice_thickness, *u3, *v3, *w3, *sigma);
+                 ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
     PIO pio(grid, "netcdf3");
@@ -450,10 +450,10 @@ int main(int argc, char *argv[]) {
     vMask.write(output_file);
     bed_topography.write(output_file);
     
-    u3->write(output_file);
-    v3->write(output_file);
-    w3->write(output_file);
-    sigma->write(output_file);
+    u3.write(output_file);
+    v3.write(output_file);
+    w3.write(output_file);
+    sigma.write(output_file);
   }
   catch (...) {
     handle_fatal_errors(com);

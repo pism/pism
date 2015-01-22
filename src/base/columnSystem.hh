@@ -140,7 +140,7 @@ class columnSystemCtx {
 public:
   columnSystemCtx(const std::vector<double>& storage_grid, const std::string &prefix,
                   double dx, double dy, double dt,
-                  const IceModelVec3 *u3, const IceModelVec3 *v3, const IceModelVec3 *w3);
+                  const IceModelVec3 &u3, const IceModelVec3 &v3, const IceModelVec3 &w3);
   ~columnSystemCtx();
 
   void viewColumnInfoMFile(const std::vector<double> &x);
@@ -172,7 +172,7 @@ protected:
   std::vector<double> m_z;
 
   //! pointers to 3D velocity components
-  const IceModelVec3 *m_u3, *m_v3, *m_w3;
+  const IceModelVec3 &m_u3, &m_v3, &m_w3;
 
   void init_column(int i, int j, double ice_thickness);
 
@@ -180,7 +180,7 @@ protected:
 
   void init_fine_grid(const std::vector<double>& storage_grid);
 
-  void coarse_to_fine(const IceModelVec3 *coarse, int i, int j, int ks, double* fine) const;
+  void coarse_to_fine(const IceModelVec3 &coarse, int i, int j, int ks, double* fine) const;
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
 #endif
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(const IceGrid &, EnthalpyConverter &);
+SSA * SSAFEMFactory(const IceGrid &, const EnthalpyConverter &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -88,7 +88,7 @@ class SSAFEM : public SSA
                                             Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
 #endif
 public:
-  SSAFEM(const IceGrid &g, EnthalpyConverter &e);
+  SSAFEM(const IceGrid &g, const EnthalpyConverter &e);
 
   virtual ~SSAFEM();
 
@@ -102,8 +102,8 @@ private:
 protected:
 
   virtual void PointwiseNuHAndBeta(const SSACoefficients &,
-                                             const Vector2 &, const double[],
-                                             double *,double *,double *,double *);
+                                   const Vector2 &, const double[],
+                                   double *, double *, double *, double *);
 
   virtual void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
 

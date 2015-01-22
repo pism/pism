@@ -36,7 +36,7 @@ class IceBasalResistancePlasticLaw;
 class ShallowStressBalance : public Component
 {
 public:
-  ShallowStressBalance(const IceGrid &g, EnthalpyConverter &e);
+  ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -44,8 +44,8 @@ public:
   virtual void init() {
   }
 
-  virtual void set_boundary_conditions(IceModelVec2Int &locations,
-                                       IceModelVec2V &velocities) {
+  virtual void set_boundary_conditions(const IceModelVec2Int &locations,
+                                       const IceModelVec2V &velocities) {
     m_vel_bc = &velocities;
     bc_locations = &locations;
   }
@@ -63,13 +63,13 @@ public:
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual const IceModelVec2V* advective_velocity() {
-    return &m_velocity;
+  virtual const IceModelVec2V& advective_velocity() {
+    return m_velocity;
   }
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  virtual const IceModelVec2S* basal_frictional_heating() {
-    return &m_basal_frictional_heating;
+  virtual const IceModelVec2S& basal_frictional_heating() {
+    return m_basal_frictional_heating;
   }
 
   virtual void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
@@ -95,7 +95,7 @@ public:
     return m_flow_law;
   }
 
-  EnthalpyConverter& enthalpy_converter() {
+  const EnthalpyConverter& enthalpy_converter() {
     return m_EC;
   }
 
@@ -106,7 +106,7 @@ protected:
   double sea_level;
   IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *m_flow_law;
-  EnthalpyConverter &m_EC;
+  const EnthalpyConverter &m_EC;
 
   IceModelVec2V m_velocity;
   const IceModelVec2V *m_vel_bc;
@@ -123,7 +123,7 @@ protected:
 class ZeroSliding : public ShallowStressBalance
 {
 public:
-  ZeroSliding(const IceGrid &g, EnthalpyConverter &e);
+  ZeroSliding(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~ZeroSliding();
   
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
@@ -142,7 +142,7 @@ public:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(const IceGrid &g, EnthalpyConverter &e);
+  PrescribedSliding(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
   virtual void init();

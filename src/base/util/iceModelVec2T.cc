@@ -492,7 +492,7 @@ void IceModelVec2T::average(double my_t, double my_dt) {
   double **a2 = get_array();         // calls begin_access()
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    average(i, j, a2[i][j]); // NB! order
+    a2[i][j] = average(i, j); // NB! i,j order
   }
   end_access();
 }
@@ -584,8 +584,9 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
 /*!
   Can (and should) be optimized. Later, though.
  */
-void IceModelVec2T::average(int i, int j, double &result) {
+double IceModelVec2T::average(int i, int j) {
   unsigned int M = m_interp_indices.size();
+  double result = 0.0;
 
   if (N == 1) {
     double ***a3 = (double***) array3;
@@ -603,6 +604,7 @@ void IceModelVec2T::average(int i, int j, double &result) {
     }
     result /= (double)M;
   }
+  return result;
 }
 
 

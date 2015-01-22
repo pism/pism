@@ -46,11 +46,11 @@ void IceCompModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bu
   if ((testname == 'F') || (testname == 'G')) {
     // FIXME: This code messes with the strain heating field owned by
     // stress_balance. This is BAD.
-    IceModelVec3 *strain_heating3 = const_cast<IceModelVec3*>(stress_balance->volumetric_strain_heating());
+    IceModelVec3 &strain_heating3 = const_cast<IceModelVec3&>(stress_balance->volumetric_strain_heating());
 
-    strain_heating3->add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
+    strain_heating3.add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
     IceModel::temperatureStep(vertSacrCount, bulgeCount);
-    strain_heating3->add(-1.0, strain_heating3_comp); // strain_heating = strain_heating - strain_heating_c
+    strain_heating3.add(-1.0, strain_heating3_comp); // strain_heating = strain_heating - strain_heating_c
   } else {
     IceModel::temperatureStep(vertSacrCount, bulgeCount);
   }
@@ -168,10 +168,10 @@ void IceCompModel::fillSolnTestFG() {
   // FIXME: This code messes with the fields owned by stress_balance.
   // This is BAD.
   IceModelVec3
-    *strain_heating3 = const_cast<IceModelVec3*>(stress_balance->volumetric_strain_heating()),
-    *u3 = const_cast<IceModelVec3*>(stress_balance->velocity_u()),
-    *v3 = const_cast<IceModelVec3*>(stress_balance->velocity_v()),
-    *w3 = const_cast<IceModelVec3*>(stress_balance->velocity_w());
+    &strain_heating3 = const_cast<IceModelVec3&>(stress_balance->volumetric_strain_heating()),
+    &u3 = const_cast<IceModelVec3&>(stress_balance->velocity_u()),
+    &v3 = const_cast<IceModelVec3&>(stress_balance->velocity_v()),
+    &w3 = const_cast<IceModelVec3&>(stress_balance->velocity_w());
 
   std::vector<double> Uradial(grid.Mz());
 
@@ -189,10 +189,10 @@ void IceCompModel::fillSolnTestFG() {
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(T3);
-  list.add(*u3);
-  list.add(*v3);
-  list.add(*w3);
-  list.add(*strain_heating3);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
+  list.add(strain_heating3);
   list.add(strain_heating3_comp);
 
   for (Points p(grid); p; p.next()) {
@@ -204,10 +204,10 @@ void IceCompModel::fillSolnTestFG() {
       ice_thickness(i, j) = 0.0;
       Ts = Tmin + ST * r;
       T3.setColumn(i, j, Ts);
-      u3->setColumn(i, j, 0.0);
-      v3->setColumn(i, j, 0.0);
-      w3->setColumn(i, j, 0.0);
-      strain_heating3->setColumn(i, j, 0.0);
+      u3.setColumn(i, j, 0.0);
+      v3.setColumn(i, j, 0.0);
+      w3.setColumn(i, j, 0.0);
+      strain_heating3.setColumn(i, j, 0.0);
       strain_heating3_comp.setColumn(i, j, 0.0);
     } else {  // inside the sheet
       r = std::max(r, 1.0); // avoid singularity at origin
@@ -229,10 +229,10 @@ void IceCompModel::fillSolnTestFG() {
         strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c; // scale strain_heating_C to J/(s m^3)
       }
       T3.setInternalColumn(i, j, &T[0]);
-      u3->setInternalColumn(i, j, &u[0]);
-      v3->setInternalColumn(i, j, &v[0]);
-      w3->setInternalColumn(i, j, &w[0]);
-      strain_heating3->setInternalColumn(i, j, &strain_heating[0]);
+      u3.setInternalColumn(i, j, &u[0]);
+      v3.setInternalColumn(i, j, &v[0]);
+      w3.setInternalColumn(i, j, &w[0]);
+      strain_heating3.setInternalColumn(i, j, &strain_heating[0]);
       strain_heating3_comp.setInternalColumn(i, j, &strain_heating_C[0]);
     }
   }
@@ -242,9 +242,9 @@ void IceCompModel::fillSolnTestFG() {
 
   T3.update_ghosts();
 
-  u3->update_ghosts();
+  u3.update_ghosts();
 
-  v3->update_ghosts();
+  v3.update_ghosts();
 }
 
 void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
@@ -462,11 +462,11 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_c     = config.get("ice_specific_heat_capacity");
 
   const double *strain_heating;
-  const IceModelVec3 *strain_heating3 = stress_balance->volumetric_strain_heating();
+  const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(*strain_heating3);
+  list.add(strain_heating3);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -491,7 +491,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
         strain_heating_exact[k] *= ice_rho * ice_c;
       }
       const unsigned int ks = grid.kBelowHeight(ice_thickness(i, j));
-      strain_heating = strain_heating3->getInternalColumn(i, j);
+      strain_heating = strain_heating3.getInternalColumn(i, j);
       for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
         const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
         max_strain_heating_err = std::max(max_strain_heating_err, strain_heating_err);
@@ -514,15 +514,15 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
   const IceModelVec3
-    *u3 = stress_balance->velocity_u(),
-    *v3 = stress_balance->velocity_v(),
-    *w3 = stress_balance->velocity_w();
+    &u3 = stress_balance->velocity_u(),
+    &v3 = stress_balance->velocity_v(),
+    &w3 = stress_balance->velocity_w();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(*u3);
-  list.add(*v3);
-  list.add(*w3);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -548,11 +548,11 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
       const double vex = (yy/r) * radialUex;
       // note that because getValZ does linear interpolation and H[i][j] is not exactly at
       // a grid point, this causes nonzero errors even with option -eo
-      const double Uerr = sqrt(PetscSqr(u3->getValZ(i, j, ice_thickness(i, j)) - uex)
-                               + PetscSqr(v3->getValZ(i, j, ice_thickness(i, j)) - vex));
+      const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, ice_thickness(i, j)) - uex)
+                               + PetscSqr(v3.getValZ(i, j, ice_thickness(i, j)) - vex));
       maxUerr = std::max(maxUerr, Uerr);
       avUerr += Uerr;
-      const double Werr = fabs(w3->getValZ(i, j, ice_thickness(i, j)) - wex);
+      const double Werr = fabs(w3.getValZ(i, j, ice_thickness(i, j)) - wex);
       maxWerr = std::max(maxWerr, Werr);
       avWerr += Werr;
     }

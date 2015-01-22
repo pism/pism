@@ -32,7 +32,7 @@ namespace pism {
 
 using mask::ice_free;
 
-ShallowStressBalance::ShallowStressBalance(const IceGrid &g, EnthalpyConverter &e)
+ShallowStressBalance::ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e)
   : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
   m_vel_bc = NULL;
@@ -79,7 +79,7 @@ void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &d
 }
 
 
-ZeroSliding::ZeroSliding(const IceGrid &g, EnthalpyConverter &e)
+ZeroSliding::ZeroSliding(const IceGrid &g, const EnthalpyConverter &e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
@@ -454,7 +454,7 @@ IceModelVec::Ptr SSB_taub::compute() {
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2V &velocity = *model->advective_velocity();
+  const IceModelVec2V &velocity = model->advective_velocity();
   const IceModelVec2S   *tauc = m_grid.variables().get_2d_scalar("tauc");
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
@@ -516,7 +516,7 @@ IceModelVec::Ptr SSB_taub_mag::compute() {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(const IceGrid &g, EnthalpyConverter &e)
+PrescribedSliding::PrescribedSliding(const IceGrid &g, const EnthalpyConverter &e)
   : ZeroSliding(g, e) {
   // empty
 }
@@ -564,7 +564,7 @@ IceModelVec::Ptr SSB_beta::compute() {
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  const IceModelVec2V &velocity = *model->advective_velocity();
+  const IceModelVec2V &velocity = model->advective_velocity();
 
   IceModelVec::AccessList list;
   list.add(*result);

@@ -27,7 +27,7 @@
 
 namespace pism {
 
-SIAFD::SIAFD(const IceGrid &g, EnthalpyConverter &e)
+SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
   : SSB_Modifier(g, e) {
 
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
@@ -520,8 +520,8 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
  * \param[out] result diffusive ice flux
  * \param[in]  fast the boolean flag specitying if we're doing a "fast" update.
  */
-void SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                             IceModelVec2Stag &result, bool fast) {
+void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
+                                   IceModelVec2Stag &result, bool fast) {
   IceModelVec2S &thk_smooth = m_work_2d[0],
     &theta = m_work_2d[1];
 

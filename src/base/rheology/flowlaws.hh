@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,9 +64,9 @@ static inline double secondInvariantDu_2D(const double Du[]) {
 */
 class IceFlowLaw {
 public:
-  IceFlowLaw(MPI_Comm c, const std::string &pre,
+  IceFlowLaw(MPI_Comm c, const std::string &prefix,
              const Config &config,
-             EnthalpyConverter *EC);
+             const EnthalpyConverter *EC);
   virtual ~IceFlowLaw() {}
   virtual void setFromOptions();
 
@@ -114,8 +114,9 @@ public:
                                    const double *zlevels,
                                    const double *enthalpy) const;
 
-  virtual void averaged_hardness_vec(IceModelVec2S &thickness,
-                                     IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
+  virtual void averaged_hardness_vec(const IceModelVec2S &thickness,
+                                     const IceModelVec3& enthalpy,
+                                     IceModelVec2S &hardav) const;
 
   virtual std::string name() const = 0;
   virtual double exponent() const {
@@ -134,7 +135,7 @@ protected:
   double rho,          //!< ice density
     beta_CC_grad, //!< Clausius-Clapeyron gradient
     melting_point_temp;  //!< for water, 273.15 K
-  EnthalpyConverter *EC;
+  const EnthalpyConverter *EC;
 
   double softness_parameter_paterson_budd(double T_pa) const;
 
@@ -154,7 +155,7 @@ protected:
 
 // Helper functions:
 bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const Config &,
-                                  EnthalpyConverter*);
+                                  const EnthalpyConverter*);
 bool IceFlowLawUsesGrainSize(IceFlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
@@ -164,9 +165,9 @@ bool IceFlowLawUsesGrainSize(IceFlowLaw *);
 */
 class GPBLDIce : public IceFlowLaw {
 public:
-  GPBLDIce(MPI_Comm c, const std::string &pre,
+  GPBLDIce(MPI_Comm c, const std::string &prefix,
            const Config &config,
-           EnthalpyConverter *EC);
+           const EnthalpyConverter *EC);
   virtual ~GPBLDIce() {}
 
   virtual double softness_parameter(double enthalpy,
@@ -181,10 +182,10 @@ protected:
 //! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceFlowLaw {
 public:
-  ThermoGlenIce(MPI_Comm c, const std::string &pre,
+  ThermoGlenIce(MPI_Comm c, const std::string &prefix,
                 const Config &config,
-                EnthalpyConverter *my_EC)
-    : IceFlowLaw(c, pre, config, my_EC) {
+                const EnthalpyConverter *my_EC)
+    : IceFlowLaw(c, prefix, config, my_EC) {
   }
   virtual ~ThermoGlenIce() {}
 
@@ -214,9 +215,9 @@ protected:
 //! Isothermal Glen ice allowing extra customization.
 class IsothermalGlenIce : public ThermoGlenIce {
 public:
-  IsothermalGlenIce(MPI_Comm c, const std::string &pre,
+  IsothermalGlenIce(MPI_Comm c, const std::string &prefix,
                     const Config &config,
-                    EnthalpyConverter *my_EC);
+                    const EnthalpyConverter *my_EC);
   virtual ~IsothermalGlenIce() {}
 
   virtual double averaged_hardness(double, int,
@@ -252,9 +253,9 @@ protected:
 //! The Hooke flow law.
 class HookeIce : public ThermoGlenIce {
 public:
-  HookeIce(MPI_Comm c, const std::string &pre,
+  HookeIce(MPI_Comm c, const std::string &prefix,
            const Config &config,
-           EnthalpyConverter *EC);
+           const EnthalpyConverter *EC);
   virtual ~HookeIce() {}
   virtual std::string name() const {
     return "Hooke";
@@ -269,10 +270,10 @@ protected:
 //! Cold case of Paterson-Budd
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
-  ThermoGlenArrIce(MPI_Comm c, const std::string &pre,
+  ThermoGlenArrIce(MPI_Comm c, const std::string &prefix,
                    const Config &config,
-                   EnthalpyConverter *my_EC)
-    : ThermoGlenIce(c, pre, config, my_EC) {}
+                   const EnthalpyConverter *my_EC)
+    : ThermoGlenIce(c, prefix, config, my_EC) {}
   virtual ~ThermoGlenArrIce() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
@@ -308,9 +309,9 @@ protected:
 //! Warm case of Paterson-Budd
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
-  ThermoGlenArrIceWarm(MPI_Comm c, const std::string &pre,
-                       const Config &config, EnthalpyConverter *my_EC)
-    : ThermoGlenArrIce(c, pre, config, my_EC) {}
+  ThermoGlenArrIceWarm(MPI_Comm c, const std::string &prefix,
+                       const Config &config, const EnthalpyConverter *my_EC)
+    : ThermoGlenArrIce(c, prefix, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
   virtual std::string name() const {
@@ -343,9 +344,9 @@ struct GKparts {
 */
 class GoldsbyKohlstedtIce : public IceFlowLaw {
 public:
-  GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
+  GoldsbyKohlstedtIce(MPI_Comm c, const std::string &prefix,
                       const Config &config,
-                      EnthalpyConverter *my_EC);
+                      const EnthalpyConverter *my_EC);
 
   virtual double flow(double stress, double E,
                       double pressure, double grainsize) const;
@@ -390,8 +391,8 @@ protected:
 */
 class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
-  GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &pre,
-                              const Config &config, EnthalpyConverter *my_EC);
+  GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &prefix,
+                              const Config &config, const EnthalpyConverter *my_EC);
   virtual std::string name() const {
     return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
   }

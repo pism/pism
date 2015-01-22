@@ -330,7 +330,7 @@ public:
   virtual void view(Viewer::Ptr v1, Viewer::Ptr v2) const;
   // component-wise access:
   virtual void get_component(unsigned int n, IceModelVec2S &result) const;
-  virtual void set_component(unsigned int n, IceModelVec2S &source);
+  virtual void set_component(unsigned int n, const IceModelVec2S &source);
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
   virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
@@ -395,7 +395,7 @@ public:
   */
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
-  inline StarStencil<double> star(int i, int j);
+  inline StarStencil<double> star(int i, int j) const;
 };
 
 

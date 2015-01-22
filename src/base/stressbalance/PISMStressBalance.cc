@@ -61,8 +61,8 @@ void StressBalance::init() {
   m_modifier->init();
 }
 
-void StressBalance::set_boundary_conditions(IceModelVec2Int &locations,
-                                                      IceModelVec2V &velocities) {
+void StressBalance::set_boundary_conditions(const IceModelVec2Int &locations,
+                                            const IceModelVec2V &velocities) {
   m_stress_balance->set_boundary_conditions(locations, velocities);
 }
 
@@ -85,21 +85,21 @@ void StressBalance::update(bool fast, double sea_level,
     m_grid.profiling.end("SSB");
 
     m_grid.profiling.begin("SB modifier");
-    const IceModelVec2V *velocity_2d = m_stress_balance->advective_velocity();
-    m_modifier->update(*velocity_2d, fast);
+    const IceModelVec2V &velocity_2d = m_stress_balance->advective_velocity();
+    m_modifier->update(velocity_2d, fast);
     m_grid.profiling.end("SB modifier");
 
     if (fast == false) {
 
-      const IceModelVec3 *u = m_modifier->velocity_u();
-      const IceModelVec3 *v = m_modifier->velocity_v();
+      const IceModelVec3 &u = m_modifier->velocity_u();
+      const IceModelVec3 &v = m_modifier->velocity_v();
 
       m_grid.profiling.begin("SB strain heat");
       this->compute_volumetric_strain_heating();
       m_grid.profiling.end("SB strain heat");
 
       m_grid.profiling.begin("SB vert. vel.");
-      this->compute_vertical_velocity(*u, *v, m_basal_melt_rate, m_w);
+      this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
       m_grid.profiling.end("SB vert. vel.");
     }
   }
@@ -109,11 +109,11 @@ void StressBalance::update(bool fast, double sea_level,
   }
 }
 
-const IceModelVec2V* StressBalance::advective_velocity() {
+const IceModelVec2V& StressBalance::advective_velocity() {
   return m_stress_balance->advective_velocity();
 }
 
-const IceModelVec2Stag* StressBalance::diffusive_flux() {
+const IceModelVec2Stag& StressBalance::diffusive_flux() {
   return m_modifier->diffusive_flux();
 }
 
@@ -121,24 +121,24 @@ double StressBalance::max_diffusivity() {
   return m_modifier->max_diffusivity();
 }
 
-const IceModelVec3* StressBalance::velocity_u() {
+const IceModelVec3& StressBalance::velocity_u() {
   return m_modifier->velocity_u();
 }
 
-const IceModelVec3* StressBalance::velocity_v() {
+const IceModelVec3& StressBalance::velocity_v() {
   return m_modifier->velocity_v();
 }
 
-const IceModelVec3* StressBalance::velocity_w() {
-  return &m_w;
+const IceModelVec3& StressBalance::velocity_w() {
+  return m_w;
 }
 
-const IceModelVec2S* StressBalance::basal_frictional_heating() {
+const IceModelVec2S& StressBalance::basal_frictional_heating() {
   return m_stress_balance->basal_frictional_heating();
 }
 
-const IceModelVec3* StressBalance::volumetric_strain_heating() {
-  return &m_strain_heating;
+const IceModelVec3& StressBalance::volumetric_strain_heating() {
+  return m_strain_heating;
 }
 
 void StressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
@@ -366,11 +366,11 @@ void StressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
 
   const IceFlowLaw *flow_law = m_stress_balance->flow_law();
-  EnthalpyConverter &EC = m_stress_balance->enthalpy_converter();
+  const EnthalpyConverter &EC = m_stress_balance->enthalpy_converter();
 
   const IceModelVec3
-    *u = m_modifier->velocity_u(),
-    *v = m_modifier->velocity_v();
+    &u = m_modifier->velocity_u(),
+    &v = m_modifier->velocity_v();
 
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
@@ -389,8 +389,8 @@ void StressBalance::compute_volumetric_strain_heating() {
   list.add(*enthalpy);
   list.add(m_strain_heating);
   list.add(*thickness);
-  list.add(*u);
-  list.add(*v);
+  list.add(u);
+  list.add(v);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -439,17 +439,17 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
     }
 
-    u_ij = u->getInternalColumn(i,     j);
-    u_w  = u->getInternalColumn(i - 1, j);
-    u_e  = u->getInternalColumn(i + 1, j);
-    u_s  = u->getInternalColumn(i,     j - 1);
-    u_n  = u->getInternalColumn(i,     j + 1);
+    u_ij = u.getInternalColumn(i,     j);
+    u_w  = u.getInternalColumn(i - 1, j);
+    u_e  = u.getInternalColumn(i + 1, j);
+    u_s  = u.getInternalColumn(i,     j - 1);
+    u_n  = u.getInternalColumn(i,     j + 1);
 
-    v_ij = v->getInternalColumn(i,     j);
-    v_w  = v->getInternalColumn(i - 1, j);
-    v_e  = v->getInternalColumn(i + 1, j);
-    v_s  = v->getInternalColumn(i,     j - 1);
-    v_n  = v->getInternalColumn(i,     j + 1);
+    v_ij = v.getInternalColumn(i,     j);
+    v_w  = v.getInternalColumn(i - 1, j);
+    v_e  = v.getInternalColumn(i + 1, j);
+    v_s  = v.getInternalColumn(i,     j - 1);
+    v_n  = v.getInternalColumn(i,     j + 1);
 
     E_ij = enthalpy->getInternalColumn(i, j);
     Sigma = m_strain_heating.getInternalColumn(i, j);

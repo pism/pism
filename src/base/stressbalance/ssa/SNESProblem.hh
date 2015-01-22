@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ public:
 
   virtual PetscErrorCode solve();
 
-  virtual const std::string &name();
+  virtual const std::string& name();
 
   virtual Vec solution()
   {
@@ -170,7 +170,7 @@ PetscErrorCode SNESProblem<DOF,U>::finalize() {
 }
 
 template<int DOF, class U>
-const std::string &SNESProblem<DOF,U>::name()
+const std::string& SNESProblem<DOF,U>::name()
 {
   return "UnnamedProblem";
 }

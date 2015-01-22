@@ -180,17 +180,17 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   assert(stress_balance != NULL);
   // basal frictional heating
-  const IceModelVec2S *Rb = stress_balance->basal_frictional_heating();
-  const IceModelVec3 *strain_heating3 = stress_balance->volumetric_strain_heating();
+  const IceModelVec2S &Rb = stress_balance->basal_frictional_heating();
+  const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
   const IceModelVec3
-    *u3 = stress_balance->velocity_u(),
-    *v3 = stress_balance->velocity_v(),
-    *w3 = stress_balance->velocity_w();
+    &u3 = stress_balance->velocity_u(),
+    &v3 = stress_balance->velocity_v(),
+    &w3 = stress_balance->velocity_w();
 
   tempSystemCtx system(grid.z(), "temperature",
                        grid.dx(), grid.dy(), dt_TempAge,
                        config,
-                       &T3, u3, v3, w3, strain_heating3);
+                       T3, u3, v3, w3, strain_heating3);
 
   double dz = system.dz();
   const std::vector<double>& z_fine = system.z();
@@ -198,12 +198,12 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   std::vector<double> x(Mz_fine);// space for solution of system
   std::vector<double> Tnew(Mz_fine);
 
-  list.add(*Rb);
+  list.add(Rb);
 
-  list.add(*u3);
-  list.add(*v3);
-  list.add(*w3);
-  list.add(*strain_heating3);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
+  list.add(strain_heating3);
   list.add(T3);
   list.add(vWork3d);
 
@@ -236,7 +236,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
       // set boundary values for tridiagonal system
       system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j));
-      system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j));
+      system.setBasalBoundaryValuesThisColumn(G0(i,j), shelfbtemp(i,j), Rb(i,j));
 
       // solve the system for this column; melting not addressed yet
       system.solveThisColumn(x);

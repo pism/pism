@@ -154,7 +154,7 @@ void FEDOFMap::extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local)
 }
 
 //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
-void FEDOFMap::localToGlobal(int k, int *i, int *j) {
+void FEDOFMap::localToGlobal(int k, int *i, int *j) const {
   *i = m_i + kIOffset[k];
   *j = m_j + kJOffset[k];
 }
@@ -584,7 +584,7 @@ void DirichletData_Scalar::init(const IceModelVec2Int *indices,
   init_impl(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::update(FEDOFMap &dofmap, double* x_local) {
+void DirichletData_Scalar::update(const FEDOFMap &dofmap, double* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
@@ -597,7 +597,7 @@ void DirichletData_Scalar::update(FEDOFMap &dofmap, double* x_local) {
   }
 }
 
-void DirichletData_Scalar::update_homogeneous(FEDOFMap &dofmap, double* x_local) {
+void DirichletData_Scalar::update_homogeneous(const FEDOFMap &dofmap, double* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -677,7 +677,7 @@ void DirichletData_Vector::init(const IceModelVec2Int *indices,
   init_impl(indices, m_values, weight);
 }
 
-void DirichletData_Vector::update(FEDOFMap &dofmap, Vector2* x_local) {
+void DirichletData_Vector::update(const FEDOFMap &dofmap, Vector2* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
@@ -691,7 +691,7 @@ void DirichletData_Vector::update(FEDOFMap &dofmap, Vector2* x_local) {
   }
 }
 
-void DirichletData_Vector::update_homogeneous(FEDOFMap &dofmap, Vector2* x_local) {
+void DirichletData_Vector::update_homogeneous(const FEDOFMap &dofmap, Vector2* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node

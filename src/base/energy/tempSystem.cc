@@ -30,12 +30,14 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
                              double dx, double dy, double dt,
                              const Config &config,
-                             const IceModelVec3 *T3,
-                             const IceModelVec3 *u3,
-                             const IceModelVec3 *v3,
-                             const IceModelVec3 *w3,
-                             const IceModelVec3 *strain_heating3)
-  : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3) {
+                             const IceModelVec3 &T3,
+                             const IceModelVec3 &u3,
+                             const IceModelVec3 &v3,
+                             const IceModelVec3 &w3,
+                             const IceModelVec3 &strain_heating3)
+  : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
+    m_T3(T3),
+    m_strain_heating3(strain_heating3) {
 
   // set flags to indicate nothing yet set
   m_surfBCsValid      = false;
@@ -60,9 +62,6 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
   m_rho_c_I = m_ice_density * m_ice_c;
   m_iceK    = m_ice_k / m_rho_c_I;
   m_iceR    = m_iceK * m_dt / (m_dz*m_dz);
-
-  m_T3 = T3;
-  m_strain_heating3 = strain_heating3;
 }
 
 void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mask,

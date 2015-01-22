@@ -49,15 +49,15 @@ double IceModel::max_timestep_cfl_3d() {
                                    "years", "seconds");
 
   const IceModelVec3
-    *u3 = stress_balance->velocity_u(),
-    *v3 = stress_balance->velocity_v(),
-    *w3 = stress_balance->velocity_w();
+    &u3 = stress_balance->velocity_u(),
+    &v3 = stress_balance->velocity_v(),
+    &w3 = stress_balance->velocity_w();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(*u3);
-  list.add(*v3);
-  list.add(*w3);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
   list.add(vMask);
 
   MaskQuery mask(vMask);
@@ -70,9 +70,9 @@ double IceModel::max_timestep_cfl_3d() {
     if (mask.icy(i, j)) {
       const int ks = grid.kBelowHeight(ice_thickness(i, j));
       const double
-        *u = u3->getInternalColumn(i, j),
-        *v = v3->getInternalColumn(i, j),
-        *w = w3->getInternalColumn(i, j);
+        *u = u3.getInternalColumn(i, j),
+        *v = v3.getInternalColumn(i, j),
+        *w = w3.getInternalColumn(i, j);
 
       for (int k = 0; k <= ks; ++k) {
         const double
@@ -112,7 +112,7 @@ double IceModel::max_timestep_cfl_2d() {
 
   MaskQuery mask(vMask);
 
-  const IceModelVec2V &vel = *stress_balance->advective_velocity();
+  const IceModelVec2V &vel = stress_balance->advective_velocity();
 
   IceModelVec::AccessList list;
   list.add(vel);
@@ -399,13 +399,13 @@ unsigned int IceModel::countCFLViolations() {
     CFL_y = grid.dy() / dt_TempAge;
 
   const IceModelVec3
-    *u3 = stress_balance->velocity_u(),
-    *v3 = stress_balance->velocity_v();
+    &u3 = stress_balance->velocity_u(),
+    &v3 = stress_balance->velocity_v();
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(*u3);
-  list.add(*v3);
+  list.add(u3);
+  list.add(v3);
 
   unsigned int CFL_violation_count = 0;
   for (Points p(grid); p; p.next()) {
@@ -414,8 +414,8 @@ unsigned int IceModel::countCFLViolations() {
     const int fks = grid.kBelowHeight(ice_thickness(i,j));
 
     const double
-      *u = u3->getInternalColumn(i, j),
-      *v = v3->getInternalColumn(i, j);
+      *u = u3.getInternalColumn(i, j),
+      *v = v3.getInternalColumn(i, j);
 
     // check horizontal CFL conditions at each point
     for (int k = 0; k <= fks; k++) {

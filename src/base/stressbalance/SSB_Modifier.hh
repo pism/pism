@@ -31,7 +31,7 @@ class EnthalpyConverter;
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(const IceGrid &g, EnthalpyConverter &e);
+  SSB_Modifier(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSB_Modifier();
 
   virtual void init();
@@ -39,23 +39,23 @@ public:
   virtual void update(const IceModelVec2V &vel_input, bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual const IceModelVec2Stag* diffusive_flux();
+  virtual const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   virtual double max_diffusivity();
 
-  const IceModelVec3* velocity_u();
+  const IceModelVec3& velocity_u();
 
-  const IceModelVec3* velocity_v();
+  const IceModelVec3& velocity_v();
 
-  const IceModelVec3* volumetric_strain_heating();
+  const IceModelVec3& volumetric_strain_heating();
 
   virtual std::string stdout_report();
 
   IceFlowLaw* flow_law();
 protected:
   IceFlowLaw *m_flow_law;
-  EnthalpyConverter &m_EC;
+  const EnthalpyConverter &m_EC;
   double m_D_max;
   IceModelVec2Stag m_diffusive_flux;
   IceModelVec3 m_u, m_v, m_strain_heating;
@@ -65,7 +65,7 @@ protected:
 //! The trivial Shallow Stress Balance modifier.
 class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(const IceGrid &g, EnthalpyConverter &e);
+  ConstantInColumn(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~ConstantInColumn();
 
   virtual void init();

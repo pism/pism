@@ -34,7 +34,7 @@ namespace pism {
 class SIAFD_Regional : public SIAFD
 {
 public:
-  SIAFD_Regional(const IceGrid &g, EnthalpyConverter &e)
+  SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e)
     : SIAFD(g, e) {}
   virtual ~SIAFD_Regional() {}
   virtual void init();
@@ -49,7 +49,7 @@ protected:
 class SSAFD_Regional : public SSAFD
 {
 public:
-  SSAFD_Regional(const IceGrid &g, EnthalpyConverter &e);
+  SSAFD_Regional(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSAFD_Regional();
   virtual void init();
   virtual void compute_driving_stress(IceModelVec2V &taud);

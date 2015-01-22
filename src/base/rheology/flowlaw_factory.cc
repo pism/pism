@@ -30,7 +30,7 @@ namespace pism {
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
                                      const std::string &pre,
                                      const Config &conf,
-                                     EnthalpyConverter *my_EC)
+                                     const EnthalpyConverter *my_EC)
   : com(c), config(conf), EC(my_EC) {
 
   prefix = pre;
@@ -57,37 +57,37 @@ void IceFlowLawFactory::removeType(const std::string &name) {
 
 
 IceFlowLaw* create_isothermal_glen(MPI_Comm com,const std::string &pre,
-                                             const Config &config, EnthalpyConverter *EC) {
+                                             const Config &config, const EnthalpyConverter *EC) {
   return new (IsothermalGlenIce)(com, pre, config, EC);
 }
 
 IceFlowLaw* create_pb(MPI_Comm com,const std::string &pre,
-                                const Config &config, EnthalpyConverter *EC) {
+                                const Config &config, const EnthalpyConverter *EC) {
   return new (ThermoGlenIce)(com, pre, config, EC);
 }
 
 IceFlowLaw* create_gpbld(MPI_Comm com,const std::string &pre,
-                                   const Config &config, EnthalpyConverter *EC) {
+                                   const Config &config, const EnthalpyConverter *EC) {
   return new (GPBLDIce)(com, pre, config, EC);
 }
 
 IceFlowLaw* create_hooke(MPI_Comm com,const std::string &pre,
-                                   const Config &config, EnthalpyConverter *EC) {
+                                   const Config &config, const EnthalpyConverter *EC) {
   return new (HookeIce)(com, pre, config, EC);
 }
 
 IceFlowLaw* create_arr(MPI_Comm com,const std::string &pre,
-                                 const Config &config, EnthalpyConverter *EC) {
+                                 const Config &config, const EnthalpyConverter *EC) {
   return new (ThermoGlenArrIce)(com, pre, config, EC);
 }
 
 IceFlowLaw* create_arrwarm(MPI_Comm com,const std::string &pre,
-                                     const Config &config, EnthalpyConverter *EC) {
+                                     const Config &config, const EnthalpyConverter *EC) {
   return new (ThermoGlenArrIceWarm)(com, pre, config, EC);
 }
 
 IceFlowLaw* create_goldsby_kohlstedt(MPI_Comm com,const std::string &pre,
-                                               const Config &config, EnthalpyConverter *EC) {
+                                               const Config &config, const EnthalpyConverter *EC) {
   return new (GoldsbyKohlstedtIce)(com, pre, config, EC);
 }
 

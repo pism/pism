@@ -26,7 +26,7 @@
 
 namespace pism {
 
-SIA_Sliding::SIA_Sliding(const IceGrid &g, EnthalpyConverter &e)
+SIA_Sliding::SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
 {
   m_verification_mode = false;

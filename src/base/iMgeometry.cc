@@ -533,9 +533,9 @@ void IceModel::massContExplicitStep() {
 
   IceModelVec2S &H_residual = vWork2d[1];
 
-  const IceModelVec2Stag *Qdiff = stress_balance->diffusive_flux();
+  const IceModelVec2Stag &Qdiff = stress_balance->diffusive_flux();
 
-  const IceModelVec2V *vel_advective = stress_balance->advective_velocity();
+  const IceModelVec2V &vel_advective = stress_balance->advective_velocity();
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
@@ -545,8 +545,8 @@ void IceModel::massContExplicitStep() {
   list.add(ice_surface_elevation);
   list.add(bed_topography);
   list.add(basal_melt_rate);
-  list.add(*Qdiff);
-  list.add(*vel_advective);
+  list.add(Qdiff);
+  list.add(vel_advective);
   list.add(climatic_mass_balance);
   list.add(vMask);
   list.add(vHnew);
@@ -622,7 +622,7 @@ void IceModel::massContExplicitStep() {
 
     StarStencil<double> Q, v;
     cell_interface_fluxes(dirichlet_bc, i, j,
-                          vel_advective->star(i, j), Qdiff->star(i, j),
+                          vel_advective.star(i, j), Qdiff.star(i, j),
                           v, Q);
 
     // Compute divergence terms:

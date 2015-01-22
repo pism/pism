@@ -281,10 +281,8 @@ Calls a StressBalance method to get the vector basal velocity of the ice,
 and then computes the magnitude of that.
  */
 void DistributedHydrology::update_velbase_mag(IceModelVec2S &result) {
-  // ice sliding velocity
-  const IceModelVec2V* Ubase = stressbalance->advective_velocity();
   // velbase_mag = |v_b|
-  result.set_to_magnitude(*Ubase);
+  result.set_to_magnitude(stressbalance->advective_velocity());
 }
 
 

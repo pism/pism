@@ -54,7 +54,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
-  SIAFD(const IceGrid &g, EnthalpyConverter &e);
+  SIAFD(const IceGrid &g, const EnthalpyConverter &e);
 
   virtual ~SIAFD();
 
@@ -88,10 +88,11 @@ protected:
   virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual void compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
+  virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
                                       IceModelVec2Stag &result, bool fast);
 
-  virtual void compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
+  virtual void compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x,
+                                              const IceModelVec2Stag &h_y,
                                               const IceModelVec2V &vel_input,
                                               IceModelVec3 &u_out, IceModelVec3 &v_out);
 

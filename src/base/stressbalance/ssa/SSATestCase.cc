@@ -187,10 +187,10 @@ void SSATestCase::report(const std::string &testname) {
              "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
-  const IceModelVec2V *vel_ssa = m_ssa->advective_velocity();
+  const IceModelVec2V &vel_ssa = m_ssa->advective_velocity();
 
   IceModelVec::AccessList list;
-  list.add(*vel_ssa);
+  list.add(vel_ssa);
 
   double exactvelmax = 0, gexactvelmax = 0;
   for (Points p(*m_grid); p; p.next()) {
@@ -205,8 +205,8 @@ void SSATestCase::report(const std::string &testname) {
     exactvelmax = std::max(exactnormsq,exactvelmax);
 
     // compute maximum errors
-    const double uerr = fabs((*vel_ssa)(i,j).u - uexact);
-    const double verr = fabs((*vel_ssa)(i,j).v - vexact);
+    const double uerr = fabs(vel_ssa(i,j).u - uexact);
+    const double verr = fabs(vel_ssa(i,j).v - vexact);
     avuerr = avuerr + uerr;
     avverr = avverr + verr;
     maxuerr = std::max(maxuerr,uerr);
@@ -366,8 +366,8 @@ void SSATestCase::write(const std::string &filename) {
   m_enthalpy.write(pio);
   m_vel_bc.write(pio);
 
-  const IceModelVec2V *vel_ssa = m_ssa->advective_velocity();
-  vel_ssa->write(pio);
+  const IceModelVec2V &vel_ssa = m_ssa->advective_velocity();
+  vel_ssa.write(pio);
 
   IceModelVec2V exact;
   exact.create(*m_grid, "_exact", WITHOUT_GHOSTS);

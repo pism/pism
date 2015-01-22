@@ -55,7 +55,7 @@ public:
 
   virtual ~SSATestCase();
 
-  virtual void init(int Mx, int My,SSAFactory ssafactory);
+  virtual void init(int Mx, int My, SSAFactory ssafactory);
 
   virtual void run();
 

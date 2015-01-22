@@ -32,7 +32,7 @@ class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(const IceGrid &g, EnthalpyConverter &e);
+  SSAFD(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSAFD();
 
   virtual void init();
@@ -59,13 +59,13 @@ protected:
   virtual void compute_hardav_staggered();
 
   virtual void compute_nuH_staggered(IceModelVec2Stag &result,
-                                               double epsilon);
+                                     double epsilon);
 
   virtual void compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
-                                                    double nuH_regularization);
+                                          double nuH_regularization);
 
   virtual void compute_nuH_norm(double &norm,
-                                          double &norm_change);
+                                double &norm_change);
 
   virtual void assemble_matrix(bool include_basal_shear, Mat A);
 
@@ -79,7 +79,7 @@ protected:
   virtual void update_nuH_viewers();
 
   virtual void set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                   double value);
+                                         double value);
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
@@ -122,7 +122,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(const IceGrid &, EnthalpyConverter &);
+SSA * SSAFDFactory(const IceGrid &, const EnthalpyConverter &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.

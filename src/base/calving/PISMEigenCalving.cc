@@ -386,8 +386,8 @@ void EigenCalving::write_variables(const std::set<std::string> &/*vars*/, const 
  * @return 0 on success
  */
 void EigenCalving::update_strain_rates() {
-  const IceModelVec2V *ssa_velocity = m_stress_balance->advective_velocity();
-  m_stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, *m_mask, m_strain_rates);
+  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
+  m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, *m_mask, m_strain_rates);
 }
 
 /** Remove tips of one-cell-wide ice tongues ("noses").  Changes ice thickness.

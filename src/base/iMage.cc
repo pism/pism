@@ -34,13 +34,16 @@ public:
   ageSystemCtx(const std::vector<double>& storage_grid,
                const std::string &my_prefix,
                double dx, double dy, double dt,
-               IceModelVec3 *age, const IceModelVec3 *u3, const IceModelVec3 *v3, const IceModelVec3 *w3);
+               const IceModelVec3 &age,
+               const IceModelVec3 &u3,
+               const IceModelVec3 &v3,
+               const IceModelVec3 &w3);
 
   void initThisColumn(int i, int j, double thickness);
 
   PetscErrorCode solveThisColumn(std::vector<double> &x);
 protected:
-  IceModelVec3 *m_age3;
+  const IceModelVec3 &m_age3;
   double m_nu;
   std::vector<double> m_A, m_A_n, m_A_e, m_A_s, m_A_w;
 };
@@ -49,14 +52,12 @@ protected:
 ageSystemCtx::ageSystemCtx(const std::vector<double>& storage_grid,
                            const std::string &my_prefix,
                            double dx, double dy, double dt,
-                           IceModelVec3 *age,
-                           const IceModelVec3 *u3,
-                           const IceModelVec3 *v3,
-                           const IceModelVec3 *w3)
-  : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3) {
-
-  assert(age != NULL);
-  m_age3 = age;
+                           const IceModelVec3 &age,
+                           const IceModelVec3 &u3,
+                           const IceModelVec3 &v3,
+                           const IceModelVec3 &w3)
+  : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3),
+    m_age3(age) {
 
   size_t Mz = m_z.size();
   m_A.resize(Mz);
@@ -251,13 +252,13 @@ void IceModel::ageStep() {
                                      "save column system information to file");
 
   const IceModelVec3
-    *u3 = stress_balance->velocity_u(),
-    *v3 = stress_balance->velocity_v(),
-    *w3 = stress_balance->velocity_w();
+    &u3 = stress_balance->velocity_u(),
+    &v3 = stress_balance->velocity_v(),
+    &w3 = stress_balance->velocity_w();
 
   ageSystemCtx system(grid.z(), "age",
                       grid.dx(), grid.dy(), dt_TempAge,
-                      &age3, u3, v3, w3); // linear system to solve in each column
+                      age3, u3, v3, w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
   std::vector<double> x(Mz_fine);   // space for solution
@@ -265,9 +266,9 @@ void IceModel::ageStep() {
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(age3);
-  list.add(*u3);
-  list.add(*v3);
-  list.add(*w3);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
   list.add(vWork3d);
 
   for (Points p(grid); p; p.next()) {

@@ -40,12 +40,12 @@ void IceModel::calculateFractureDensity() {
     &vFAnew = vWork2d[1];
 
   // get SSA velocities and related strain rates and stresses
-  const IceModelVec2V *ssa_velocity = stress_balance->advective_velocity();
-  stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates);
-  stress_balance->compute_2D_stresses(*ssa_velocity, vMask, deviatoric_stresses);
+  const IceModelVec2V &ssa_velocity = stress_balance->advective_velocity();
+  stress_balance->compute_2D_principal_strain_rates(ssa_velocity, vMask, strain_rates);
+  stress_balance->compute_2D_stresses(ssa_velocity, vMask, deviatoric_stresses);
 
   IceModelVec::AccessList list;
-  list.add(*ssa_velocity);
+  list.add(ssa_velocity);
   list.add(strain_rates);
   list.add(deviatoric_stresses);
 
@@ -140,8 +140,8 @@ void IceModel::calculateFractureDensity() {
     tempFD=0;
     //SSA: v . grad memField
 
-    double uvel=(*ssa_velocity)(i,j).u;
-    double vvel=(*ssa_velocity)(i,j).v;
+    double uvel=ssa_velocity(i,j).u;
+    double vvel=ssa_velocity(i,j).v;
 
     if (fd2d_scheme) {
 

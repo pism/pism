@@ -25,7 +25,7 @@
 
 namespace pism {
 
-SSB_Modifier::SSB_Modifier(const IceGrid &g, EnthalpyConverter &e)
+SSB_Modifier::SSB_Modifier(const IceGrid &g, const EnthalpyConverter &e)
   : Component(g), m_EC(e) {
 
   m_D_max = 0.0;
@@ -62,8 +62,8 @@ SSB_Modifier::~SSB_Modifier() {
 void SSB_Modifier::init() {
 }
 
-const IceModelVec2Stag* SSB_Modifier::diffusive_flux() {
-  return &m_diffusive_flux;
+const IceModelVec2Stag& SSB_Modifier::diffusive_flux() {
+  return m_diffusive_flux;
 }
 
 //! \brief Get the max diffusivity (for the adaptive time-stepping).
@@ -71,16 +71,16 @@ double SSB_Modifier::max_diffusivity() {
   return m_D_max;
 }
 
-const IceModelVec3* SSB_Modifier::velocity_u() {
-  return &m_u;
+const IceModelVec3& SSB_Modifier::velocity_u() {
+  return m_u;
 }
 
-const IceModelVec3* SSB_Modifier::velocity_v() {
-  return &m_v;
+const IceModelVec3& SSB_Modifier::velocity_v() {
+  return m_v;
 }
 
-const IceModelVec3* SSB_Modifier::volumetric_strain_heating() {
-  return &m_strain_heating;
+const IceModelVec3& SSB_Modifier::volumetric_strain_heating() {
+  return m_strain_heating;
 }
 
 std::string SSB_Modifier::stdout_report() {
@@ -96,7 +96,7 @@ void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
 
-ConstantInColumn::ConstantInColumn(const IceGrid &g, EnthalpyConverter &e)
+ConstantInColumn::ConstantInColumn(const IceGrid &g, const EnthalpyConverter &e)
   : SSB_Modifier(g, e)
 {
   IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_grid.config, &m_EC);

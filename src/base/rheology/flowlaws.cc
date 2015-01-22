@@ -42,7 +42,7 @@ bool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
 
 // Rather than make this part of the base class, we just check at some reference values.
 bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
-                                       EnthalpyConverter *EC) {
+                                  const EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
   ThermoGlenArrIce cpb(PETSC_COMM_SELF, "sia_", config, EC); // This is unmodified cold Paterson-Budd
@@ -57,7 +57,7 @@ bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
 }
 
 IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
-                       EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
+                       const EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
 
   prefix = pre;
 
@@ -109,15 +109,15 @@ double IceFlowLaw::hardness_parameter(double E, double p) const {
   return pow(softness_parameter(E, p), hardness_power);
 }
 
-void IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
-                                       IceModelVec3  &enthalpy,
-                                       IceModelVec2S &hardav) const {
+void IceFlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
+                                       const IceModelVec3  &enthalpy,
+                                       IceModelVec2S &result) const {
 
   const IceGrid *grid = thickness.get_grid();
 
   IceModelVec::AccessList list;
   list.add(thickness);
-  list.add(hardav);
+  list.add(result);
   list.add(enthalpy);
 
   for (Points p(*grid); p; p.next()) {
@@ -125,12 +125,12 @@ void IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
 
     // Evaluate column integrals in flow law at every quadrature point's column
     double H = thickness(i,j);
-    double *enthColumn = enthalpy.getInternalColumn(i, j);
-    hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
+    const double *enthColumn = enthalpy.getInternalColumn(i, j);
+    result(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
                                           &(grid->z()[0]), enthColumn);
   }
 
-  hardav.update_ghosts();
+  result.update_ghosts();
 }
 
 
@@ -138,8 +138,8 @@ void IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
 //! B(E, p)\f$. See comment for hardness_parameter().
 /*! Note E[0], ..., E[kbelowH] must be valid.  */
 double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
-                                                 const double *zlevels,
-                                                 const double *enthalpy) const {
+                                     const double *zlevels,
+                                     const double *enthalpy) const {
   double B = 0;
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
@@ -189,7 +189,7 @@ This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter and \ref LliboutryDuval1985.
  */
 GPBLDIce::GPBLDIce(MPI_Comm c, const std::string &pre,
-                   const Config &config, EnthalpyConverter *my_EC)
+                   const Config &config, const EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
   T_0              = config.get("water_melting_point_temperature");    // K
   water_frac_coeff = config.get("gpbld_water_frac_coeff");
@@ -246,7 +246,7 @@ double ThermoGlenIce::flow_from_temp(double stress, double temp,
 // IsothermalGlenIce
 
 IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const std::string &pre,
-                                     const Config &config, EnthalpyConverter *my_EC)
+                                     const Config &config, const EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   softness_A = config.get("ice_softness");
   hardness_B = pow(softness_A, hardness_power);
@@ -255,7 +255,7 @@ IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const std::string &pre,
 // HookeIce
 
 HookeIce::HookeIce(MPI_Comm c, const std::string &pre,
-                   const Config &config, EnthalpyConverter *my_EC)
+                   const Config &config, const EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   Q_Hooke  = config.get("Hooke_Q");
   A_Hooke  = config.get("Hooke_A");
@@ -272,7 +272,7 @@ double HookeIce::softness_parameter_from_temp(double T_pa) const {
 // Goldsby-Kohlstedt (forward) ice flow law
 
 GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
-                     const Config &config, EnthalpyConverter *my_EC)
+                     const Config &config, const EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
 
   V_act_vol    = -13.e-6;  // m^3/mol
@@ -449,7 +449,7 @@ GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressu
 
 GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &pre,
                                                          const Config &config,
-                                                         EnthalpyConverter *my_EC)
+                                                         const EnthalpyConverter *my_EC)
   : GoldsbyKohlstedtIce(c, pre, config, my_EC) {
   d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
 }
