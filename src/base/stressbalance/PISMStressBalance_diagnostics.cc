@@ -199,8 +199,8 @@ IceModelVec::Ptr PSB_flux::compute() {
 
     // an ice-filled cell:
     const double *u_ij = NULL, *v_ij = NULL;
-    u_ij = u3.getInternalColumn(i, j);
-    v_ij = v3.getInternalColumn(i, j);
+    u_ij = u3.get_column(i, j);
+    v_ij = v3.get_column(i, j);
 
     if (thk <= m_grid.z(1)) {
       (*result)(i,j).u = u_ij[0];
@@ -461,10 +461,10 @@ IceModelVec::Ptr PSB_wvel::compute() {
 
     const double *u, *v, *w;
     double *result;
-    u = u3.getInternalColumn(i, j);
-    v = v3.getInternalColumn(i, j);
-    w = w3.getInternalColumn(i, j);
-    result = result3->getInternalColumn(i, j);
+    u = u3.get_column(i, j);
+    v = v3.get_column(i, j);
+    w = w3.get_column(i, j);
+    result = result3->get_column(i, j);
 
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
@@ -702,9 +702,9 @@ IceModelVec::Ptr PSB_uvel::compute() {
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
     const double *u_ij;
-    u_ij = u3.getInternalColumn(i,j);
+    u_ij = u3.get_column(i,j);
     double *u_out_ij;
-    u_out_ij = result->getInternalColumn(i,j);
+    u_out_ij = result->get_column(i,j);
 
     // in the ice:
     for (int k = 0; k <= ks ; k++) {
@@ -752,8 +752,8 @@ IceModelVec::Ptr PSB_vvel::compute() {
 
     const double *v_ij;
     double *v_out_ij;
-    v_ij = v3.getInternalColumn(i,j);
-    v_out_ij = result->getInternalColumn(i,j);
+    v_ij = v3.get_column(i,j);
+    v_out_ij = result->get_column(i,j);
 
     // in the ice:
     for (int k = 0; k <= ks ; k++) {
@@ -800,9 +800,9 @@ IceModelVec::Ptr PSB_wvel_rel::compute() {
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
     const double *w_ij;
-    w_ij = w3.getInternalColumn(i,j);
+    w_ij = w3.get_column(i,j);
     double *w_out_ij;
-    w_out_ij = result->getInternalColumn(i,j);
+    w_out_ij = result->get_column(i,j);
 
     // in the ice:
     for (int k = 0; k <= ks ; k++) {
@@ -942,7 +942,7 @@ IceModelVec::Ptr PSB_pressure::compute() {
     const int i = p.i(), j = p.j();
 
     unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
-    P_out_ij = result->getInternalColumn(i,j);
+    P_out_ij = result->get_column(i,j);
     const double H = (*thickness)(i,j);
     // within the ice:
     for (unsigned int k = 0; k <= ks; ++k) {
@@ -998,7 +998,7 @@ IceModelVec::Ptr PSB_tauxz::compute() {
     const int i = p.i(), j = p.j();
 
     unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
-    tauxz_out_ij = result->getInternalColumn(i, j);
+    tauxz_out_ij = result->get_column(i, j);
     const double
       H    = (*thickness)(i,j),
       dhdx = surface->diff_x_p(i,j);
@@ -1055,7 +1055,7 @@ IceModelVec::Ptr PSB_tauyz::compute() {
     const int i = p.i(), j = p.j();
 
     unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
-    tauyz_out_ij = result->getInternalColumn(i, j);
+    tauyz_out_ij = result->get_column(i, j);
     const double
       H    = (*thickness)(i,j),
       dhdy = surface->diff_y_p(i,j);

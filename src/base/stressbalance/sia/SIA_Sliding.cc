@@ -140,7 +140,7 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
 
       // change r1200: new meaning of H
       const double H = (*m_surface)(i,j) - (*m_bed)(i,j);
-      const double base_enthalpy = m_enthalpy->getInternalColumn(i,j)[0];
+      const double base_enthalpy = m_enthalpy->get_column(i,j)[0];
 
       double T = m_EC.getAbsTemp(base_enthalpy, m_EC.getPressureFromDepth(H));
 
@@ -163,8 +163,9 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
 //! \brief Compute the coefficient of surface gradient, for basal sliding
 //! velocity as a function of driving stress in SIA regions.
 /*!
-  THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY-COUPLED
-  MODEL.  THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.
+  **This kind of SIA sliding law is a bad idea in a
+  thermomechanically-coupled model. That's why \f$\mu\f$ is set to
+  zero by default.**
 
   We allow the SIA sliding law of the form
   \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h. \f]

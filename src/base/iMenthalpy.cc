@@ -57,8 +57,8 @@ void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVe
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *Tij = temperature.getInternalColumn(i,j);
-    double *Enthij = result.getInternalColumn(i,j);
+    const double *Tij = temperature.get_column(i,j);
+    double *Enthij = result.get_column(i,j);
 
     for (unsigned int k = 0; k < grid.Mz(); ++k) {
       const double depth = ice_thickness(i, j) - grid.z(k); // FIXME issue #15
@@ -90,9 +90,9 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *Tij = temperature.getInternalColumn(i,j);
-    const double *Liqfracij = liquid_water_fraction.getInternalColumn(i,j);
-    double *Enthij = result.getInternalColumn(i,j);
+    const double *Tij = temperature.get_column(i,j);
+    const double *Liqfracij = liquid_water_fraction.get_column(i,j);
+    double *Enthij = result.get_column(i,j);
 
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
@@ -126,8 +126,8 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *Enthij = enthalpy.getInternalColumn(i,j);
-    double *omegaij = result.getInternalColumn(i,j);
+    const double *Enthij = enthalpy.get_column(i,j);
+    double *omegaij = result.get_column(i,j);
 
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
@@ -161,8 +161,8 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    CTSij  = result.getInternalColumn(i,j);
-    Enthij = Enth3.getInternalColumn(i,j);
+    CTSij  = result.get_column(i,j);
+    Enthij = Enth3.get_column(i,j);
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
@@ -282,7 +282,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
     // deal completely with columns with no ice; enthalpy and basal_melt_rate need setting
     if (ice_free_column) {
-      vWork3d.setColumn(i, j, Enth_ks);
+      vWork3d.set_column(i, j, Enth_ks);
       // The floating basal melt rate will be set later; cover this
       // case and set to zero for now. Also, there is no basal melt
       // rate on ice free land and ice free ocean

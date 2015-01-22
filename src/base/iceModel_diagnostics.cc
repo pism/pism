@@ -331,7 +331,7 @@ IceModelVec::Ptr IceModel_hardav::compute() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Eij = model->Enth3.getInternalColumn(i,j);
+    Eij = model->Enth3.get_column(i,j);
     const double H = model->ice_thickness(i,j);
     if (mask.icy(i, j)) {
       (*result)(i,j) = flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
@@ -470,8 +470,8 @@ IceModelVec::Ptr IceModel_temp::compute() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Tij = result->getInternalColumn(i,j);
-    Enthij = enthalpy->getInternalColumn(i,j);
+    Tij = result->get_column(i,j);
+    Enthij = enthalpy->get_column(i,j);
     for (unsigned int k=0; k <m_grid.Mz(); ++k) {
       const double depth = (*thickness)(i,j) - m_grid.z(k);
       Tij[k] = model->EC->getAbsTemp(Enthij[k],
@@ -519,8 +519,8 @@ IceModelVec::Ptr IceModel_temp_pa::compute() {
   for (Points pt(m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    Tij = result->getInternalColumn(i,j);
-    Enthij = enthalpy->getInternalColumn(i,j);
+    Tij = result->get_column(i,j);
+    Enthij = enthalpy->get_column(i,j);
     for (unsigned int k=0; k < m_grid.Mz(); ++k) {
       const double depth = (*thickness)(i,j) - m_grid.z(k),
         p = model->EC->getPressureFromDepth(depth);
@@ -573,7 +573,7 @@ IceModelVec::Ptr IceModel_temppabase::compute() {
   for (Points pt(m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    Enthij = enthalpy->getInternalColumn(i,j);
+    Enthij = enthalpy->get_column(i,j);
 
     const double depth = (*thickness)(i,j),
       p = model->EC->getPressureFromDepth(depth);
@@ -809,7 +809,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute() {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      Enth = model->Enth3.getInternalColumn(i,j);
+      Enth = model->Enth3.get_column(i,j);
       double temperate_ice_thickness = 0.0;
       double ice_thickness = model->ice_thickness(i,j);
       const unsigned int ks = m_grid.kBelowHeight(ice_thickness);
@@ -882,7 +882,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
       continue;
     }
 
-    Enth = model->Enth3.getInternalColumn(i,j);
+    Enth = model->Enth3.get_column(i,j);
     double pressure;
     unsigned int ks = m_grid.kBelowHeight(thk),
       k = 0;
@@ -1831,9 +1831,8 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute() {
     const int i = p.i(), j = p.j();
 
     double x0 = m_grid.x(i), y0 = m_grid.y(j);
-    double *values;
 
-    values = result->getInternalColumn(i,j);
+    double *values = result->get_column(i,j);
 
     for (int k = 0; k < 4; ++k) {
       double

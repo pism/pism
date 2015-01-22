@@ -125,7 +125,7 @@ void IceFlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
 
     // Evaluate column integrals in flow law at every quadrature point's column
     double H = thickness(i,j);
-    const double *enthColumn = enthalpy.getInternalColumn(i, j);
+    const double *enthColumn = enthalpy.get_column(i, j);
     result(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
                                           &(grid->z()[0]), enthColumn);
   }

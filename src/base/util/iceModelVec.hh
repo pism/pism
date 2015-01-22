@@ -493,10 +493,10 @@ public:
   IceModelVec3D();
   virtual ~IceModelVec3D();
 
-  void setColumn(int i, int j, double c);
-  void setInternalColumn(int i, int j, double *valsIN);
-  double* getInternalColumn(int i, int j);
-  const double* getInternalColumn(int i, int j) const;
+  void set_column(int i, int j, double c);
+  void set_column(int i, int j, double *valsIN);
+  double* get_column(int i, int j);
+  const double* get_column(int i, int j) const;
 
   virtual double getValZ(int i, int j, double z) const;
   virtual bool isLegalLevel(double z) const;

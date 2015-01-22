@@ -322,13 +322,13 @@ const std::vector<double>& columnSystemCtx::z() const {
 
 void columnSystemCtx::fine_to_coarse(const std::vector<double> &fine, int i, int j,
                                      IceModelVec3& coarse) const {
-  double *array = coarse.getInternalColumn(i, j);
+  double *array = coarse.get_column(i, j);
   m_interp->fine_to_coarse(&fine[0], array);
 }
 
 void columnSystemCtx::coarse_to_fine(const IceModelVec3 &coarse, int i, int j, int ks,
                                      double* fine) const {
-  const double *array = coarse.getInternalColumn(i, j);
+  const double *array = coarse.get_column(i, j);
   m_interp->coarse_to_fine(array, ks, fine);
 }
 

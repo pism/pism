@@ -1198,7 +1198,7 @@ void SSAFD::compute_hardav_staggered() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    E_ij = m_enthalpy->getInternalColumn(i,j);
+    E_ij = m_enthalpy->get_column(i,j);
     for (int o=0; o<2; o++) {
       const int oi = 1-o, oj=o;
       double H;
@@ -1216,7 +1216,7 @@ void SSAFD::compute_hardav_staggered() {
         continue;
       }
 
-      E_offset = m_enthalpy->getInternalColumn(i+oi,j+oj);
+      E_offset = m_enthalpy->get_column(i+oi,j+oj);
       // build a column of enthalpy values a the current location:
       for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
         E[k] = 0.5 * (E_ij[k] + E_offset[k]);

@@ -103,7 +103,7 @@ void IceCompModel::initTestFG() {
 
       }
     }
-    T3.setInternalColumn(i, j, &T[0]);
+    T3.set_column(i, j, &T[0]);
   }
 
   ice_thickness.update_ghosts();
@@ -138,7 +138,7 @@ void IceCompModel::getCompSourcesTestFG() {
 
     double r = radius(grid, i, j);
     if (r > LforFG - 1.0) {  // outside of sheet
-      strain_heating3_comp.setColumn(i, j, 0.0);
+      strain_heating3_comp.set_column(i, j, 0.0);
     } else {
       r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
@@ -154,7 +154,7 @@ void IceCompModel::getCompSourcesTestFG() {
         // scale strain_heating to J/(s m^3)
         strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
       }
-      strain_heating3_comp.setInternalColumn(i, j, &strain_heating_C[0]);
+      strain_heating3_comp.set_column(i, j, &strain_heating_C[0]);
     }
   }
 }
@@ -203,12 +203,12 @@ void IceCompModel::fillSolnTestFG() {
 
       ice_thickness(i, j) = 0.0;
       Ts = Tmin + ST * r;
-      T3.setColumn(i, j, Ts);
-      u3.setColumn(i, j, 0.0);
-      v3.setColumn(i, j, 0.0);
-      w3.setColumn(i, j, 0.0);
-      strain_heating3.setColumn(i, j, 0.0);
-      strain_heating3_comp.setColumn(i, j, 0.0);
+      T3.set_column(i, j, Ts);
+      u3.set_column(i, j, 0.0);
+      v3.set_column(i, j, 0.0);
+      w3.set_column(i, j, 0.0);
+      strain_heating3.set_column(i, j, 0.0);
+      strain_heating3_comp.set_column(i, j, 0.0);
     } else {  // inside the sheet
       r = std::max(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
@@ -228,12 +228,12 @@ void IceCompModel::fillSolnTestFG() {
         strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
         strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c; // scale strain_heating_C to J/(s m^3)
       }
-      T3.setInternalColumn(i, j, &T[0]);
-      u3.setInternalColumn(i, j, &u[0]);
-      v3.setInternalColumn(i, j, &v[0]);
-      w3.setInternalColumn(i, j, &w[0]);
-      strain_heating3.setInternalColumn(i, j, &strain_heating[0]);
-      strain_heating3_comp.setInternalColumn(i, j, &strain_heating_C[0]);
+      T3.set_column(i, j, &T[0]);
+      u3.set_column(i, j, &u[0]);
+      v3.set_column(i, j, &v[0]);
+      w3.set_column(i, j, &w[0]);
+      strain_heating3.set_column(i, j, &strain_heating[0]);
+      strain_heating3_comp.set_column(i, j, &strain_heating_C[0]);
     }
   }
 
@@ -268,7 +268,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
     double r = radius(grid, i, j);
     double *T;
-    T = T3.getInternalColumn(i, j);
+    T = T3.get_column(i, j);
     if ((r >= 1.0) and (r <= LforFG - 1.0)) {
       // only evaluate error if inside sheet and not at central
       // singularity
@@ -356,14 +356,14 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Tb = bedrock_temp->getInternalColumn(i, j);
+    Tb = bedrock_temp->get_column(i, j);
     for (unsigned int kb = 0; kb < Mbz; kb++) {
       const double Tberr = fabs(Tb[kb] - Tbex[kb]);
       maxTberr = std::max(maxTberr, Tberr);
       avbcount += 1.0;
       avTberr += Tberr;
     }
-    T = T3.getInternalColumn(i, j);
+    T = T3.get_column(i, j);
     for (unsigned int k = 0; k < grid.Mz(); k++) {
       const double Terr = fabs(T[k] - Tex[k]);
       maxTerr = std::max(maxTerr, Terr);
@@ -424,7 +424,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
       throw RuntimeError("temperature errors only computable for tests F and G");
     }
 
-    const double Tbase = T3.getInternalColumn(i,j)[0];
+    const double Tbase = T3.get_column(i,j)[0];
     if (i == (grid.Mx() - 1)/2 && j == (grid.My() - 1)/2) {
       domeT = Tbase;
       domeTexact = Texact;
@@ -491,7 +491,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
         strain_heating_exact[k] *= ice_rho * ice_c;
       }
       const unsigned int ks = grid.kBelowHeight(ice_thickness(i, j));
-      strain_heating = strain_heating3.getInternalColumn(i, j);
+      strain_heating = strain_heating3.get_column(i, j);
       for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
         const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
         max_strain_heating_err = std::max(max_strain_heating_err, strain_heating_err);
@@ -622,7 +622,7 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    T3.setInternalColumn(i, j, &Tcol[0]);
+    T3.set_column(i, j, &Tcol[0]);
   }
 
   // communicate T
@@ -716,7 +716,7 @@ void BTU_Verification::bootstrap() {
   IceModelVec::AccessList list(m_temp);
 
   for (Points p(m_grid); p; p.next()) {
-    m_temp.setInternalColumn(p.i(), p.j(), &Tbcol[0]);
+    m_temp.set_column(p.i(), p.j(), &Tbcol[0]);
   }
 }
 

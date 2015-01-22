@@ -56,7 +56,7 @@ void BTU_Test::bootstrap() {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.getInternalColumn(i, j);
+      double *Tb = m_temp.get_column(i, j);
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF = 0.0; // Test K:  use Tb[k], ignore FF

@@ -140,8 +140,8 @@ void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_u.setColumn(i,j, vel_input(i,j).u);
-    m_v.setColumn(i,j, vel_input(i,j).v);
+    m_u.set_column(i,j, vel_input(i,j).u);
+    m_v.set_column(i,j, vel_input(i,j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):

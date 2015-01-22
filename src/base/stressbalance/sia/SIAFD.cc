@@ -603,18 +603,18 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
       if (thk == 0.0) {
         result(i,j,o) = 0.0;
         if (full_update) {
-          m_delta[o].setColumn(i, j, 0.0);
+          m_delta[o].set_column(i, j, 0.0);
         }
         continue;
       }
 
       if (use_age) {
-        age_ij = m_age->getInternalColumn(i, j);
-        age_offset = m_age->getInternalColumn(i+oi, j+oj);
+        age_ij = m_age->get_column(i, j);
+        age_offset = m_age->get_column(i+oi, j+oj);
       }
 
-      E_ij = m_enthalpy->getInternalColumn(i, j);
-      E_offset = m_enthalpy->getInternalColumn(i+oi, j+oj);
+      E_ij = m_enthalpy->get_column(i, j);
+      E_offset = m_enthalpy->get_column(i+oi, j+oj);
 
       const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
       const int      ks = m_grid.kBelowHeight(thk);
@@ -675,7 +675,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
         for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
           delta_ij[k] = 0.0;
         }
-        m_delta[o].setInternalColumn(i,j,&delta_ij[0]);
+        m_delta[o].set_column(i,j,&delta_ij[0]);
       }
     }
   } // i
@@ -729,7 +729,7 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
     for (int o = 0; o < 2; ++o) {
       const int oi = 1 - o, oj = o;
 
-      delta_ij = m_delta[o].getInternalColumn(i,j);
+      delta_ij = m_delta[o].get_column(i,j);
 
       const double
         thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
@@ -801,8 +801,8 @@ void SIAFD::compute_I() {
       const double
         thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-      delta_ij = m_delta[o].getInternalColumn(i,j);
-      I_ij = I[o].getInternalColumn(i,j);
+      delta_ij = m_delta[o].get_column(i,j);
+      I_ij = I[o].get_column(i,j);
 
       const unsigned int ks = m_grid.kBelowHeight(thk);
 
@@ -865,13 +865,13 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    I_e = I[0].getInternalColumn(i, j);
-    I_w = I[0].getInternalColumn(i - 1, j);
-    I_n = I[1].getInternalColumn(i, j);
-    I_s = I[1].getInternalColumn(i, j - 1);
+    I_e = I[0].get_column(i, j);
+    I_w = I[0].get_column(i - 1, j);
+    I_n = I[1].get_column(i, j);
+    I_s = I[1].get_column(i, j - 1);
 
-    u_ij = u_out.getInternalColumn(i, j);
-    v_ij = v_out.getInternalColumn(i, j);
+    u_ij = u_out.get_column(i, j);
+    v_ij = v_out.get_column(i, j);
 
     // Fetch values from 2D fields *outside* of the k-loop:
     double

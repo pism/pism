@@ -278,7 +278,7 @@ void IceModel::ageStep() {
 
     if (system.ks() == 0) {
       // if no ice, set the entire column to zero age
-      vWork3d.setColumn(i,j,0.0);
+      vWork3d.set_column(i, j, 0.0);
     } else {
       // general case: solve advection PDE
 

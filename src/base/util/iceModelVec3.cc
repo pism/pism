@@ -109,7 +109,7 @@ bool IceModelVec3D::isLegalLevel(double z) const {
 }
 
 //! Set all values of scalar quantity to given a single value in a particular column.
-void IceModelVec3D::setColumn(int i, int j, double c) {
+void IceModelVec3D::set_column(int i, int j, double c) {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   assert(array != NULL);
@@ -205,21 +205,21 @@ void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
   }
 }
 
-double* IceModelVec3D::getInternalColumn(int i, int j) {
+double* IceModelVec3D::get_column(int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) array)[i][j];
 }
 
-const double* IceModelVec3D::getInternalColumn(int i, int j) const {
+const double* IceModelVec3D::get_column(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) array)[i][j];
 }
 
-void  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
+void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif

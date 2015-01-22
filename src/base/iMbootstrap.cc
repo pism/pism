@@ -341,7 +341,7 @@ void IceModel::putTempAtDepth() {
       gg = geothermal_flux(i,j);
     const unsigned int ks = grid.kBelowHeight(HH);
 
-    double *T = result->getInternalColumn(i, j);
+    double *T = result->get_column(i, j);
 
     // within ice
     if (usesmb == true) { // method 1:  includes surface mass balance in estimate

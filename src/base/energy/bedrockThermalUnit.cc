@@ -331,7 +331,7 @@ void BedThermalUnit::update(double my_t, double my_dt) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double *Tbold = m_temp.getInternalColumn(i,j); // Tbold actually points into temp memory
+    double *Tbold = m_temp.get_column(i,j); // Tbold actually points into temp memory
     Tbold[k0] = (*m_bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
     const double Tbold_negone = Tbold[1] + 2 * (*m_ghf)(i,j) * dzb / m_bed_k;
@@ -341,7 +341,7 @@ void BedThermalUnit::update(double my_t, double my_dt) {
     }
     Tbnew[k0] = (*m_bedtoptemp)(i,j);
 
-    m_temp.setInternalColumn(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
+    m_temp.set_column(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
 }
 
@@ -375,7 +375,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.getInternalColumn(i,j);
+      double *Tb = m_temp.get_column(i,j);
       m_upward_flux(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     }
 
@@ -384,7 +384,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.getInternalColumn(i,j);
+      double *Tb = m_temp.get_column(i,j);
       m_upward_flux(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
 
@@ -412,7 +412,7 @@ void BedThermalUnit::bootstrap() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double *Tb = m_temp.getInternalColumn(i,j); // Tb points into temp memory
+    double *Tb = m_temp.get_column(i,j); // Tb points into temp memory
     Tb[k0] = (*m_bedtoptemp)(i,j);
     for (int k = k0-1; k >= 0; k--) {
       Tb[k] = Tb[k+1] + dzb * (*m_ghf)(i,j) / m_bed_k;

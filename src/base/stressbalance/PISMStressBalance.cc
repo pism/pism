@@ -206,15 +206,15 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    w_ij = result.getInternalColumn(i,j);
+    w_ij = result.get_column(i,j);
 
-    u_w = u.getInternalColumn(i-1,j);
-    u_ij = u.getInternalColumn(i,j);
-    u_e = u.getInternalColumn(i+1,j);
+    u_w = u.get_column(i-1,j);
+    u_ij = u.get_column(i,j);
+    u_e = u.get_column(i+1,j);
 
-    v_s = v.getInternalColumn(i,j-1);
-    v_ij = v.getInternalColumn(i,j);
-    v_n = v.getInternalColumn(i,j+1);
+    v_s = v.get_column(i,j-1);
+    v_ij = v.get_column(i,j);
+    v_n = v.get_column(i,j+1);
 
     double west = 1, east = 1, south = 1, north = 1,
       D_x = 0,                // 1/(dx), 1/(2dx), or 0
@@ -439,20 +439,20 @@ void StressBalance::compute_volumetric_strain_heating() {
       }
     }
 
-    u_ij = u.getInternalColumn(i,     j);
-    u_w  = u.getInternalColumn(i - 1, j);
-    u_e  = u.getInternalColumn(i + 1, j);
-    u_s  = u.getInternalColumn(i,     j - 1);
-    u_n  = u.getInternalColumn(i,     j + 1);
+    u_ij = u.get_column(i,     j);
+    u_w  = u.get_column(i - 1, j);
+    u_e  = u.get_column(i + 1, j);
+    u_s  = u.get_column(i,     j - 1);
+    u_n  = u.get_column(i,     j + 1);
 
-    v_ij = v.getInternalColumn(i,     j);
-    v_w  = v.getInternalColumn(i - 1, j);
-    v_e  = v.getInternalColumn(i + 1, j);
-    v_s  = v.getInternalColumn(i,     j - 1);
-    v_n  = v.getInternalColumn(i,     j + 1);
+    v_ij = v.get_column(i,     j);
+    v_w  = v.get_column(i - 1, j);
+    v_e  = v.get_column(i + 1, j);
+    v_s  = v.get_column(i,     j - 1);
+    v_n  = v.get_column(i,     j + 1);
 
-    E_ij = enthalpy->getInternalColumn(i, j);
-    Sigma = m_strain_heating.getInternalColumn(i, j);
+    E_ij = enthalpy->get_column(i, j);
+    Sigma = m_strain_heating.get_column(i, j);
 
     for (int k = 0; k <= ks; ++k) {
       double dz,

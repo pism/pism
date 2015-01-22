@@ -386,8 +386,8 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       continue;
     }
 
-    double *new_enthalpy = vWork3d.getInternalColumn(i, j);
-    double *old_enthalpy = Enth3.getInternalColumn(i, j);
+    double *new_enthalpy = vWork3d.get_column(i, j);
+    double *old_enthalpy = Enth3.get_column(i, j);
 
     for (unsigned int k = 0; k < grid.Mz(); ++k) {
       new_enthalpy[k] = old_enthalpy[k];

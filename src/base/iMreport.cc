@@ -112,7 +112,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
 
     if (mask.icy(i, j)) {
       // accumulate volume of ice which is original
-      double *age = age3.getInternalColumn(i, j);
+      double *age = age3.get_column(i, j);
       const int  ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k = 1; k <= ks; k++) {
         // ice in segment is original if it is as old as one year less than current time
@@ -383,7 +383,7 @@ double  IceModel::compute_ice_volume_temperate() {
     // considered "ice-free"
     if (ice_thickness(i,j) > 0) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      const double *Enth = Enth3.getInternalColumn(i,j);
+      const double *Enth = Enth3.get_column(i,j);
       const double A = cell_area(i, j);
 
       for (int k = 0; k < ks; ++k) {
@@ -417,7 +417,7 @@ double IceModel::compute_ice_volume_cold() {
     // are considered "ice-free"
     if (ice_thickness(i,j) > 0) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      const double *Enth = Enth3.getInternalColumn(i,j);
+      const double *Enth = Enth3.get_column(i,j);
       const double A = cell_area(i, j);
 
       for (int k=0; k<ks; ++k) {
@@ -569,7 +569,7 @@ double IceModel::compute_ice_enthalpy() {
     // are considered "ice-free"
     if (ice_thickness(i,j) > 0) {
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      const double *Enth = Enth3.getInternalColumn(i,j);
+      const double *Enth = Enth3.get_column(i,j);
 
       for (int k=0; k<ks; ++k) {
         enthalpy_sum += Enth[k] * (grid.z(k+1) - grid.z(k));
