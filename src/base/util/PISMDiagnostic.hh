@@ -31,23 +31,23 @@ namespace pism {
 
 class Vars;
 
-//! \brief Class representing diagnostic computations in PISM.
+//! @brief Class representing diagnostic computations in PISM.
 /*!
  * The main goal of this abstraction is to allow accessing metadata
- * corresponding to a diagnostic quantity \e before it is computed.
+ * corresponding to a diagnostic quantity *before* it is computed.
  *
- * Another goal is to create an interface for computing diagnostics \e without
+ * Another goal is to create an interface for computing diagnostics *without*
  * knowing which PISM module is responsible for the computation.
  *
  * Technical note: to compute some diagnostic quantities we need access to
  * protected members of classes. C++ forbids obtaining pointers to non-static
  * methods of a class, but it is possible to define a (friend) function
  *
- * \code
- * PetscErrorCode compute_bar(Foo* model, ..., IceModelVec* &result);
- * \endcode
+ * @code
+ * IceModelVec::Ptr compute_bar(Foo* model, ...);
+ * @endcode
  *
- * which is the same as creating a method Foo::compute_bar(), but you \e can
+ * which is the same as creating a method `Foo::compute_bar()`, but you *can*
  * get a pointer to it.
  *
  * Diagnostic creates a common interface for all these compute_bar
@@ -60,7 +60,7 @@ public:
 
   virtual void update_cumulative();
 
-  //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
+  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec. NB: The caller needs to de-allocate it.
   virtual IceModelVec::Ptr compute() = 0;
 
@@ -94,7 +94,7 @@ protected:
   Model *model;
 };
 
-//! \brief PISM's scalar time-series diagnostics.
+//! @brief PISM's scalar time-series diagnostics.
 class TSDiagnostic {
 public:
   TSDiagnostic(const IceGrid &g)
