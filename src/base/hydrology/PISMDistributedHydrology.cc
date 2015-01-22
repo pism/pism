@@ -482,7 +482,15 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
       else if (W(i,j) <= 0.0) {
         // see P(W) formula *in steady state*; note P(W) is continuous (in steady
         // state); these facts imply:
-        if (velbase_mag(i,j) > 0.0)
+        if (velbase_mag(i,j) > 0.0)  // FIXME:  It would be reasonable to have a threshhold here
+                                     // but that adds another parameter.  As this stands,
+                                     // we always get Pnew(i,j)=0 because there is some
+                                     // sliding everywhere when using a pseudo-plastic power
+                                     // law wherein tauc is finite.  Furthermore, with this setting
+                                     // we are probably causing water to be sucked out of
+                                     // W>0 areas into frozen (W=0) areas with refreeze (m<0)
+                                     // and thus this may be why we are getting large
+                                     // "negativegain" values.
           Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
         else
           Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
