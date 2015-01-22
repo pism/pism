@@ -42,12 +42,11 @@ namespace pism {
 static int verbosityLevel;
 
 //! \brief Set the PISM verbosity level.
-PetscErrorCode setVerbosityLevel(int level) {
+void setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
     throw RuntimeError::formatted("verbosity level %s is invalid", level);
   }
   verbosityLevel = level;
-  return 0;  
 }
 
 //! \brief Get the verbosity level.
@@ -236,15 +235,16 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
   return result;
 }
 
-PetscErrorCode GetTime(PetscLogDouble *result) {
+PetscLogDouble GetTime() {
+  PetscLogDouble result;
 #if PETSC_VERSION_LT(3,4,0)
-  PetscErrorCode ierr = PetscGetTime(result);
+  PetscErrorCode ierr = PetscGetTime(&result);
   PISM_PETSC_CHK(ierr, "PetscGetTime");
 #else
-  PetscErrorCode ierr = PetscTime(result);
+  PetscErrorCode ierr = PetscTime(&result);
   PISM_PETSC_CHK(ierr, "PetscTime");
 #endif
-  return 0;
+  return result;
 }
 
 // PETSc profiling events

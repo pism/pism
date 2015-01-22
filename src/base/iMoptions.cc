@@ -32,6 +32,7 @@
 #include "PISMSurface.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 #include "error_handling.hh"
 
@@ -87,24 +88,22 @@ void IceModel::setFromOptions() {
 }
 
 //! Set the output file size using a command-line option.
-void IceModel::output_size_from_option(const std::string &option,
-                                       const std::string &description,
-                                       const std::string &default_value,
-                                       std::set<std::string> &result) {
+std::set<std::string> IceModel::output_size_from_option(const std::string &option,
+                                                        const std::string &description,
+                                                        const std::string &default_value) {
 
   options::Keyword o_size(option, description, "none,small,medium,big",
                           default_value);
 
-  set_output_size(o_size, result);
+  return set_output_size(o_size);
 }
 
 //! Assembles a list of variables corresponding to an output file size.
-void IceModel::set_output_size(const std::string &keyword,
-                                         std::set<std::string> &result) {
-  result.clear();
+std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
+  std::set<std::string> result;
 
   if (keyword == "none") {
-    return;
+    return result;
   }
 
   // Add all the model-state variables:
@@ -116,8 +115,8 @@ void IceModel::set_output_size(const std::string &keyword,
 
     std::string intent = m.get_string("pism_intent");
 
-    if (intent == "model_state" ||
-        intent == "mapping"     ||
+    if (intent == "model_state" or
+        intent == "mapping"     or
         intent == "climate_steady") {
       result.insert(*i);
     }
@@ -147,7 +146,7 @@ void IceModel::set_output_size(const std::string &keyword,
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
-      if (!tmp.empty()) {                // this ignores multiple spaces separating variable names
+      if (not tmp.empty()) {                // this ignores multiple spaces separating variable names
        result.insert(tmp);
       }
     }
@@ -158,12 +157,12 @@ void IceModel::set_output_size(const std::string &keyword,
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
-      if (!tmp.empty()) {                // this ignores multiple spaces separating variable names
+      if (not tmp.empty()) { // this ignores multiple spaces separating variable names
        result.insert(tmp);
       }
     }
 
-    if (!config.get_flag("do_age")) {
+    if (not config.get_flag("do_age")) {
       result.erase("age");
     }
   }
@@ -205,6 +204,7 @@ void IceModel::set_output_size(const std::string &keyword,
   if (surface != NULL) {
     surface->add_vars_to_output(keyword, result);
   }
+  return result;
 }
 
 

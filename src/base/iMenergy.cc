@@ -47,13 +47,11 @@ namespace pism {
 */
 void IceModel::energyStep() {
 
-  double  myCFLviolcount = 0.0,   // these are counts but they are type "double"
-    myVertSacrCount = 0.0,  //   because that type works with GlobalSum()
-    myBulgeCount = 0.0;
-  double gVertSacrCount, gBulgeCount;
-
-  // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
-  countCFLViolations(&myCFLviolcount);
+  unsigned int
+    myVertSacrCount = 0,
+    myBulgeCount    = 0,
+    gVertSacrCount  = 0,
+    gBulgeCount     = 0;
 
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
@@ -83,7 +81,7 @@ void IceModel::energyStep() {
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
     grid.profiling.begin("enth step");
-    enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
+    enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
     grid.profiling.end("enth step");
 
     vWork3d.update_ghosts(Enth3);
@@ -96,7 +94,8 @@ void IceModel::energyStep() {
     }
   }
 
-  CFLviolcount = GlobalSum(grid.com, myCFLviolcount);
+  // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
+  CFLviolcount = countCFLViolations();
 
   gVertSacrCount = GlobalSum(grid.com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
@@ -219,7 +218,8 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
 //! \brief Is one of my neighbors below a critical thickness to apply advection
 //! in enthalpy or temperature equation?
-bool IceModel::checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold) {
+bool IceModel::checkThinNeigh(const IceModelVec2S &thickness,
+                              int i, int j, double threshold) {
   const double
     N  = thickness(i, j + 1),
     E  = thickness(i + 1, j),

@@ -119,10 +119,10 @@ void IceModel::Href_cleanup() {
  *
  * @return 0 on success
  */
-void IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
-                                                     IceModelVec2S &thickness_old,
-                                                     IceModelVec2S &Href,
-                                                     IceModelVec2S &Href_old) {
+void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
+                                           const IceModelVec2S &thickness_old,
+                                           const IceModelVec2S &Href,
+                                           const IceModelVec2S &Href_old) {
 
   MaskQuery mask(vMask);
 

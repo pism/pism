@@ -285,8 +285,8 @@ protected:
   // temporary during the update
   bool report_mass_accounting;
   virtual void boundary_mass_changes(IceModelVec2S &newthk,
-                                               double &icefreelost, double &oceanlost,
-                                               double &negativegain, double &nullstriplost);
+                                     double &icefreelost, double &oceanlost,
+                                     double &negativegain, double &nullstriplost);
 
   virtual void check_water_thickness_nonnegative(IceModelVec2S &thk);
 

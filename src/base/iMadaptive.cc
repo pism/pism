@@ -44,8 +44,9 @@ Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
-void IceModel::max_timestep_cfl_3d(double &dt_result) {
-  double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
+double IceModel::max_timestep_cfl_3d() {
+  double max_timestep = config.get("maximum_time_step_years",
+                                   "years", "seconds");
 
   const IceModelVec3
     *u3 = stress_balance->velocity_u(),
@@ -60,39 +61,39 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
   list.add(vMask);
 
   MaskQuery mask(vMask);
-  const double *u = NULL, *v = NULL, *w = NULL;
 
   // update global max of abs of velocities for CFL; only velocities under surface
-  double maxu = 0.0, maxv = 0.0, maxw = 0.0;
+  double max_u = 0.0, max_v = 0.0, max_w = 0.0;
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
       const int ks = grid.kBelowHeight(ice_thickness(i, j));
-      u = u3->getInternalColumn(i, j);
-      v = v3->getInternalColumn(i, j);
-      w = w3->getInternalColumn(i, j);
+      const double
+        *u = u3->getInternalColumn(i, j),
+        *v = v3->getInternalColumn(i, j),
+        *w = w3->getInternalColumn(i, j);
+
       for (int k = 0; k <= ks; ++k) {
         const double
           absu = fabs(u[k]),
           absv = fabs(v[k]);
-        maxu = std::max(maxu, absu);
-        maxv = std::max(maxv, absv);
-        maxw = std::max(maxw, fabs(w[k]));
+        max_u = std::max(max_u, absu);
+        max_v = std::max(max_v, absv);
+        max_w = std::max(max_w, fabs(w[k]));
         const double denom = fabs(absu / grid.dx()) + fabs(absv / grid.dy());
         if (denom > 0.0) {
-          maxtimestep = std::min(maxtimestep, 1.0 / denom);
+          max_timestep = std::min(max_timestep, 1.0 / denom);
         }
       }
     }
   }
 
+  gmaxu = GlobalMax(grid.com, max_u);
+  gmaxv = GlobalMax(grid.com, max_v);
+  gmaxw = GlobalMax(grid.com, max_w);
 
-  gmaxu = GlobalMax(grid.com, maxu);
-  gmaxv = GlobalMax(grid.com, maxv);
-  gmaxw = GlobalMax(grid.com, maxw);
-
-  dt_result = GlobalMin(grid.com, maxtimestep);
+  return GlobalMin(grid.com, max_timestep);
 }
 
 
@@ -106,8 +107,8 @@ void IceModel::max_timestep_cfl_3d(double &dt_result) {
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-void IceModel::max_timestep_cfl_2d(double &dt_result) {
-  double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
+double IceModel::max_timestep_cfl_2d() {
+  double max_timestep = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -120,14 +121,14 @@ void IceModel::max_timestep_cfl_2d(double &dt_result) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      const double denom = fabs(vel(i,j).u)/grid.dx() + fabs(vel(i,j).v)/grid.dy();
+      const double denom = fabs(vel(i, j).u) / grid.dx() + fabs(vel(i, j).v) / grid.dy();
       if (denom > 0.0) {
-        maxtimestep = std::min(maxtimestep, 1.0/denom);
+        max_timestep = std::min(max_timestep, 1.0 / denom);
       }
     }
   }
 
-  dt_result = GlobalMin(grid.com, maxtimestep);
+  return GlobalMin(grid.com, max_timestep);
 }
 
 
@@ -141,7 +142,7 @@ dx^2/maxD (if dx=dy).
 
 Reference: [\ref MortonMayers] pp 62--63.
  */
-void IceModel::max_timestep_diffusivity(double &dt_result) {
+double IceModel::max_timestep_diffusivity() {
   double D_max = stress_balance->max_diffusivity();
 
   if (D_max > 0.0) {
@@ -149,9 +150,9 @@ void IceModel::max_timestep_diffusivity(double &dt_result) {
       adaptive_timestepping_ratio = config.get("adaptive_timestepping_ratio"),
       grid_factor                 = 1.0 / (grid.dx()*grid.dx()) + 1.0 / (grid.dy()*grid.dy());
 
-    dt_result = adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
+    return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
   } else {
-    dt_result = config.get("maximum_time_step_years", "years", "seconds");
+    return config.get("maximum_time_step_years", "years", "seconds");
   }
 }
 
@@ -286,20 +287,17 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
     if (config.get_flag("do_energy") == true) {
       if (updateAtDepth == true) {
-        // this call sets CFLmaxdt
-        max_timestep_cfl_3d(CFLmaxdt);
+        CFLmaxdt = max_timestep_cfl_3d();
       }
       dt_restrictions["3D CFL"] = CFLmaxdt;
     }
 
     if (config.get_flag("do_mass_conserve")) {
-      // this call sets CFLmaxdt2D
-      max_timestep_cfl_2d(CFLmaxdt2D);
+      CFLmaxdt2D = max_timestep_cfl_2d();
 
       dt_restrictions["2D CFL"] = CFLmaxdt2D;
 
-      double max_dt_diffusivity = 0.0;
-      max_timestep_diffusivity(max_dt_diffusivity);
+      double max_dt_diffusivity = max_timestep_diffusivity();
       dt_restrictions["diffusivity"] = max_dt_diffusivity;
     }
   }
@@ -394,7 +392,7 @@ violations on that same fine grid. (FIXME: should we actually use the fine grid?
 Communication is needed to determine total CFL violation count over entire grid.
 It is handled by temperatureAgeStep(), not here.
 */
-void IceModel::countCFLViolations(double* CFLviol) {
+unsigned int IceModel::countCFLViolations() {
 
   const double
     CFL_x = grid.dx() / dt_TempAge,
@@ -409,25 +407,28 @@ void IceModel::countCFLViolations(double* CFLviol) {
   list.add(*u3);
   list.add(*v3);
 
+  unsigned int CFL_violation_count = 0;
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const int  fks = grid.kBelowHeight(ice_thickness(i,j));
+    const int fks = grid.kBelowHeight(ice_thickness(i,j));
 
-    const double *u, *v;
-    u = u3->getInternalColumn(i,j);
-    v = v3->getInternalColumn(i,j);
+    const double
+      *u = u3->getInternalColumn(i, j),
+      *v = v3->getInternalColumn(i, j);
 
     // check horizontal CFL conditions at each point
-    for (int k=0; k<=fks; k++) {
+    for (int k = 0; k <= fks; k++) {
       if (fabs(u[k]) > CFL_x) {
-        *CFLviol += 1.0;
+        CFL_violation_count += 1;
       }
       if (fabs(v[k]) > CFL_y) {
-        *CFLviol += 1.0;
+        CFL_violation_count += 1;
       }
     }
   }
+
+  return (unsigned int)GlobalMax(grid.com, CFL_violation_count);
 }
 
 } // end of namespace pism

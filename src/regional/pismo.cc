@@ -81,9 +81,9 @@ protected:
                                      StarStencil<double> input_flux,
                                      StarStencil<double> &output_velocity,
                                      StarStencil<double> &output_flux);
-  virtual void enthalpyAndDrainageStep(double* vertSacrCount,
-                                                 double* liquifiedVol,
-                                                 double* bulgeCount);
+  virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
+                                       double *liquifiedVol,
+                                       unsigned int *bulgeCount);
 private:
   IceModelVec2Int no_model_mask;
   IceModelVec2S   usurfstore, thkstore;
@@ -366,9 +366,9 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   //
 }
 
-void IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, double* liquifiedVol,
-                                                         double* bulgeCount) {
-  double *new_enthalpy, *old_enthalpy;
+void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
+                                               double *liquifiedVol,
+                                               unsigned int *bulgeCount) {
 
   IceModel::enthalpyAndDrainageStep(vertSacrCount, liquifiedVol, bulgeCount);
 
@@ -386,8 +386,8 @@ void IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, double* li
       continue;
     }
 
-    new_enthalpy = vWork3d.getInternalColumn(i, j);
-    old_enthalpy = Enth3.getInternalColumn(i, j);
+    double *new_enthalpy = vWork3d.getInternalColumn(i, j);
+    double *old_enthalpy = Enth3.getInternalColumn(i, j);
 
     for (unsigned int k = 0; k < grid.Mz(); ++k) {
       new_enthalpy[k] = old_enthalpy[k];

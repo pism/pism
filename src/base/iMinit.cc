@@ -837,8 +837,8 @@ void IceModel::misc_setup() {
 
   verbPrintf(3, grid.com, "Finishing initialization...\n");
 
-  output_size_from_option("-o_size", "Sets the 'size' of an output file.",
-                          "medium", output_vars);
+  output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
+                                        "medium");
 
   // Quietly re-initialize couplers (they might have done one
   // time-step during initialization)

@@ -25,8 +25,10 @@ static char help[] =
 #include <cctype>               // toupper
 #include <string>
 #include <algorithm>            // std::transform()
-#include <petscdmda.h>
+#include <petscsys.h>
+
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 #include "verif/iceCompModel.hh"
 
 #include "POConstant.hh"

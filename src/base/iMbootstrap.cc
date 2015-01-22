@@ -17,7 +17,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>                // for erf() in method 1 in putTempAtDepth()
+#include <cassert>
+
 #include "iceModel.hh"
+#include "PISMConfig.hh"
 #include "PIO.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
@@ -25,8 +29,6 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
-#include <cmath>                // for erf() in method 1 in putTempAtDepth()
-#include <cassert>
 #include "error_handling.hh"
 
 namespace pism {

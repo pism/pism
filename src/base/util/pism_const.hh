@@ -19,7 +19,7 @@
 #ifndef __pism_const_hh
 #define __pism_const_hh
 
-#include <petsc.h>
+#include <petsclog.h>
 #include <string>
 #include <vector>
 #include <set>
@@ -42,8 +42,8 @@ const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 bool is_increasing(const std::vector<double> &a);
 
-PetscErrorCode setVerbosityLevel(int level);
-int       getVerbosityLevel();
+void setVerbosityLevel(int level);
+int getVerbosityLevel();
 void verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 
 std::string pism_timestamp();
@@ -51,7 +51,7 @@ std::string pism_username_prefix(MPI_Comm com);
 std::string pism_args_string();
 std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix);
 
-PetscErrorCode GetTime(PetscLogDouble *result);
+PetscLogDouble GetTime();
 
 bool ends_with(std::string str, std::string suffix);
 std::string join(const std::vector<std::string> &strings, const std::string &separator);

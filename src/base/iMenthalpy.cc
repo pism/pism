@@ -47,21 +47,21 @@ done this way for regularity (i.e. dEnth/dz computations).
 
 Because Enth3 gets set, does ghost communication to finish.
  */
-void IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result) {
+void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVec3 &result) {
 
   IceModelVec::AccessList list;
   list.add(temperature);
   list.add(result);
   list.add(ice_thickness);
 
-  double *Tij, *Enthij; // columns of these values
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Tij = temperature.getInternalColumn(i,j);
-    Enthij = result.getInternalColumn(i,j);
-    for (unsigned int k=0; k<grid.Mz(); ++k) {
-      const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
+    const double *Tij = temperature.getInternalColumn(i,j);
+    double *Enthij = result.getInternalColumn(i,j);
+
+    for (unsigned int k = 0; k < grid.Mz(); ++k) {
+      const double depth = ice_thickness(i, j) - grid.z(k); // FIXME issue #15
       Enthij[k] = EC->getEnthPermissive(Tij[k], 0.0, EC->getPressureFromDepth(depth));
     }
   }
@@ -77,9 +77,9 @@ void IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &re
 /*!
 Because Enth3 gets set, does ghost communication to finish.
  */
-void IceModel::compute_enthalpy(IceModelVec3 &temperature,
-                                          IceModelVec3 &liquid_water_fraction,
-                                          IceModelVec3 &result) {
+void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
+                                const IceModelVec3 &liquid_water_fraction,
+                                IceModelVec3 &result) {
 
   IceModelVec::AccessList list;
   list.add(temperature);
@@ -87,20 +87,19 @@ void IceModel::compute_enthalpy(IceModelVec3 &temperature,
   list.add(result);
   list.add(ice_thickness);
 
-  double *Tij, *Liqfracij, *Enthij; // columns of these values
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Tij = temperature.getInternalColumn(i,j);
-    Liqfracij = liquid_water_fraction.getInternalColumn(i,j);
-    Enthij = result.getInternalColumn(i,j);
+    const double *Tij = temperature.getInternalColumn(i,j);
+    const double *Liqfracij = liquid_water_fraction.getInternalColumn(i,j);
+    double *Enthij = result.getInternalColumn(i,j);
+
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       Enthij[k] = EC->getEnthPermissive(Tij[k], Liqfracij[k],
                                         EC->getPressureFromDepth(depth));
     }
   }
-
 
   result.update_ghosts();
 
@@ -111,15 +110,13 @@ void IceModel::compute_enthalpy(IceModelVec3 &temperature,
 /*!
 Does not communicate ghosts for IceModelVec3 result
  */
-void IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
-                                                       IceModelVec3 &result) {
+void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+                                             IceModelVec3 &result) {
 
   result.set_name("liqfrac");
   result.set_attrs("diagnostic",
                    "liquid water fraction in ice (between 0 and 1)",
                    "1", "");
-
-  double *omegaij, *Enthij; // columns of these values
 
   IceModelVec::AccessList list;
   list.add(result);
@@ -129,8 +126,9 @@ void IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    omegaij = result.getInternalColumn(i,j);
-    Enthij = enthalpy.getInternalColumn(i,j);
+    const double *Enthij = enthalpy.getInternalColumn(i,j);
+    double *omegaij = result.getInternalColumn(i,j);
+
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
       omegaij[k] = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth));
@@ -186,9 +184,9 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
-void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
+void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                        double* liquifiedVol,
-                                       double* bulgeCount) {
+                                       unsigned int *bulgeCount) {
 
   assert(config.get_flag("do_cold_ice_methods") == false);
 
@@ -230,7 +228,7 @@ void IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   assert(btu != NULL);
   const IceModelVec2S &basal_heat_flux = btu->upward_geothermal_flux();
-  
+
   IceModelVec2S &till_water_thickness = vWork2d[0];
   till_water_thickness.set_attrs("internal", "current amount of basal water in the till",
                                  "m", "");

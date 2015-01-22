@@ -623,8 +623,8 @@ void IceModel::init_snapshots() {
 
   bool split = options::Bool("-save_split", "Specifies whether to save snapshots to separate files");
 
-  output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
-                          "small", snapshot_vars);
+  snapshot_vars = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
+                                          "small");
 
 
   if (save_file.is_set() ^ save_times.is_set()) {
@@ -740,9 +740,7 @@ void IceModel::write_snapshot() {
     // find out how much time passed since the beginning of the run
     double wall_clock_hours;
     if (grid.rank() == 0) {
-      PetscLogDouble current_time;
-      GetTime(&current_time);
-      wall_clock_hours = (current_time - start_time) / 3600.0;
+      wall_clock_hours = (GetTime() - start_time) / 3600.0;
     }
 
     MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
@@ -769,8 +767,8 @@ void IceModel::init_backups() {
   backup_interval = options::Real("-backup_interval",
                                   "Automatic backup interval, hours", backup_interval);
 
-  output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
-                          "small", backup_vars);
+  backup_vars = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
+                                        "small");
 
   last_backup_time = 0.0;
 }
@@ -780,9 +778,7 @@ void IceModel::write_backup() {
   double wall_clock_hours;
 
   if (grid.rank() == 0) {
-    PetscLogDouble current_time;
-    GetTime(&current_time);
-    wall_clock_hours = (current_time - start_time) / 3600.0;
+    wall_clock_hours = (GetTime() - start_time) / 3600.0;
   }
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);

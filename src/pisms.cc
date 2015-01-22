@@ -20,14 +20,13 @@ static char help[] =
   "Ice sheet driver for EISMINT II, and other constant climate, simplified geometry\n"
   "intercomparison simulations.\n";
 
-#include <cstring>
-#include <petsc.h>
+#include <petscsys.h>
+
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 #include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "pism_options.hh"
-
-#include "POConstant.hh"
 
 #include "PetscInitializer.hh"
 #include "error_handling.hh"

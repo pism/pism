@@ -132,7 +132,7 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
-void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
+void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount) {
   PetscErrorCode  ierr;
 
   bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
@@ -281,7 +281,9 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
         myLowTempCount++;
       }
       if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
-        Tnew[k] = ice_surface_temp(i,j) - bulgeMax;  bulgeCount++;   }
+        Tnew[k] = ice_surface_temp(i,j) - bulgeMax;
+        *bulgeCount += 1;
+      }
     }
 
     // insert solution for ice base segment
@@ -313,7 +315,9 @@ void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
         myLowTempCount++;
       }
       if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
-        Tnew[0] = ice_surface_temp(i,j) - bulgeMax;   bulgeCount++;   }
+        Tnew[0] = ice_surface_temp(i,j) - bulgeMax;
+        *bulgeCount += 1;
+      }
     }
 
     // set to air temp above ice

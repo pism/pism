@@ -20,14 +20,13 @@ static char help[] =
   "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
   "The basic PISM executable for evolution runs.\n";
 
-#include <petsc.h>
+#include <petscsys.h>
+
 #include "IceGrid.hh"
 #include "iceModel.hh"
+#include "PISMConfig.hh"
 
 #include "pism_options.hh"
-#include "PAFactory.hh"
-#include "POFactory.hh"
-#include "PSFactory.hh"
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 

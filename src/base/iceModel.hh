@@ -33,22 +33,18 @@
   file containing a complete model state, versus bootstrapping).
 */
 
-#include <signal.h>
-#include <gsl/gsl_rng.h>
-#include <petscsnes.h>
-#include <petsctime.h>          // PetscGetTime()
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
-#include "flowlaws.hh"
-
-
-#include "pism_const.hh"
+// IceModel owns a bunch of fields, so we have to include this.
 #include "iceModelVec.hh"
-#include "PISMConfig.hh"
-#include "PISMVars.hh"
 
 namespace pism {
 
 // forward declarations
+class Config;
 class IceGrid;
 class EnthalpyConverter;
 class Hydrology;
@@ -177,12 +173,10 @@ public:
 
   // see iMoptions.cc
   virtual void setFromOptions();
-  virtual void output_size_from_option(const std::string &option,
-                                                 const std::string &description,
-                                                 const std::string &default_value,
-                                                 std::set<std::string> &result);
-  virtual void set_output_size(const std::string &keyword,
-                                         std::set<std::string> &result);
+  virtual std::set<std::string> output_size_from_option(const std::string &option,
+                                                        const std::string &description,
+                                                        const std::string &default_value);
+  virtual std::set<std::string> set_output_size(const std::string &keyword);
   virtual std::string get_output_size(const std::string &option);
 
   // see iMutil.cc
@@ -195,10 +189,10 @@ public:
   virtual void writeFiles(const std::string &default_filename);
   virtual void write_model_state(const PIO &nc);
   virtual void write_metadata(const PIO &nc,
-                                        bool write_mapping,
-                                        bool write_run_stats);
+                              bool write_mapping,
+                              bool write_run_stats);
   virtual void write_variables(const PIO &nc, const std::set<std::string> &vars,
-                                         IO_Type nctype);
+                               IO_Type nctype);
 protected:
 
   IceGrid &grid;
@@ -284,7 +278,6 @@ protected:
     t_TempAge,  //!< time of last update for enthalpy/temperature
     dt_TempAge,  //!< enthalpy/temperature and age time-steps
     maxdt_temporary, dt_force,
-    CFLviolcount,    //!< really is just a count, but GlobalSum requires this type
     dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
     gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
@@ -297,7 +290,8 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  unsigned int skipCountDown;
+  unsigned int skipCountDown,
+    CFLviolcount;
 
   // flags
   std::string m_adaptive_timestep_reason;
@@ -311,11 +305,11 @@ protected:
   virtual void createVecs();
 
   // see iMadaptive.cc
-  virtual void max_timestep_cfl_3d(double &dt_result);
-  virtual void max_timestep_cfl_2d(double &dt_result);
-  virtual void max_timestep_diffusivity(double &dt_result);
+  virtual double max_timestep_cfl_3d();
+  virtual double max_timestep_cfl_2d();
+  virtual double max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
-  virtual void countCFLViolations(double* CFLviol);
+  virtual unsigned int countCFLViolations();
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
@@ -324,20 +318,24 @@ protected:
   // see iMenergy.cc
   virtual void energyStep();
   virtual void get_bed_top_temp(IceModelVec2S &result);
-  virtual bool checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold);
+  virtual bool checkThinNeigh(const IceModelVec2S &thickness,
+                              int i, int j, double threshold);
 
   virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual void compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
-  virtual void compute_enthalpy(IceModelVec3 &temperature, IceModelVec3 &liquid_water_fraction,
-                                          IceModelVec3 &result);
-  virtual void compute_liquid_water_fraction(IceModelVec3 &enthalpy, IceModelVec3 &result);
+  virtual void compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVec3 &result);
+  virtual void compute_enthalpy(const IceModelVec3 &temperature,
+                                const IceModelVec3 &liquid_water_fraction,
+                                IceModelVec3 &result);
+  virtual void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+                                             IceModelVec3 &result);
 
   virtual void setCTSFromEnthalpy(IceModelVec3 &result);
 
-  virtual void enthalpyAndDrainageStep(double* vertSacrCount,
-                                                 double* liquifiedVol, double* bulgeCount);
+  virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
+                                       double* liquifiedVol,
+                                       unsigned int *bulgeCount);
 
   // see iMgeometry.cc
   virtual void updateSurfaceElevationAndMask();
@@ -360,16 +358,18 @@ protected:
   virtual void update_floatation_mask();
   virtual void do_calving();
   virtual void Href_cleanup();
-  virtual void update_cumulative_discharge(IceModelVec2S &thickness,
-                                                     IceModelVec2S &thickness_old,
-                                                     IceModelVec2S &Href,
-                                                     IceModelVec2S &Href_old);
+  virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
+                                           const IceModelVec2S &thickness_old,
+                                           const IceModelVec2S &Href,
+                                           const IceModelVec2S &Href_old);
 
 
   // see iMIO.cc
   virtual void dumpToFile(const std::string &filename);
   virtual void regrid(int dimensions);
-  virtual void regrid_variables(const std::string &filename, const std::set<std::string> &regrid_vars, unsigned int ndims);
+  virtual void regrid_variables(const std::string &filename,
+                                const std::set<std::string> &regrid_vars,
+                                unsigned int ndims);
   virtual void init_enthalpy(const std::string &filename, bool regrid, int last_record);
 
   // see iMfractures.cc
@@ -385,8 +385,8 @@ protected:
   virtual void residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
-  virtual void energyStats(double iarea,double &gmeltfrac);
-  virtual void ageStats(double ivol, double &gorigfrac);
+  virtual double compute_temperate_base_fraction(double ice_area);
+  virtual double compute_original_ice_fraction(double ice_volume);
   virtual void summary(bool tempAndAge);
   virtual void summaryPrintLine(bool printPrototype, bool tempAndAge,
                                 double delta_t,
@@ -395,25 +395,25 @@ protected:
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  virtual void compute_ice_volume(double &result);
-  virtual void compute_sealevel_volume(double &result);
-  virtual void compute_ice_volume_temperate(double &result);
-  virtual void compute_ice_volume_cold(double &result);
-  virtual void compute_ice_area(double &result);
-  virtual void compute_ice_area_temperate(double &result);
-  virtual void compute_ice_area_cold(double &result);
-  virtual void compute_ice_area_grounded(double &result);
-  virtual void compute_ice_area_floating(double &result);
-  virtual void compute_ice_enthalpy(double &result);
+  virtual double compute_ice_volume();
+  virtual double compute_sealevel_volume();
+  virtual double compute_ice_volume_temperate();
+  virtual double compute_ice_volume_cold();
+  virtual double compute_ice_area();
+  virtual double compute_ice_area_temperate();
+  virtual double compute_ice_area_cold();
+  virtual double compute_ice_area_grounded();
+  virtual double compute_ice_area_floating();
+  virtual double compute_ice_enthalpy();
 
   // see iMtemp.cc
-  virtual void excessToFromBasalMeltLayer(const double rho, const double c, const double L,
-                                                    const double z, const double dz,
-                                                    double *Texcess, double *bwat);
-  virtual void temperatureStep(double* vertSacrCount, double* bulgeCount);
+  virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
+                                          double z, double dz,
+                                          double *Texcess, double *bwat);
+  virtual void temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount);
 
   // see iMutil.cc
-  virtual int            endOfTimeStepHook();
+  virtual int endOfTimeStepHook();
   virtual void stampHistoryCommand();
   virtual void stampHistoryEnd();
   virtual void stampHistory(const std::string &);
@@ -496,7 +496,7 @@ protected:
   std::map<std::string,Viewer::Ptr> viewers;
 
 private:
-  PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
+  double start_time;    // this is used in the wall-clock-time backup code
 };
 
 } // end of namespace pism

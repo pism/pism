@@ -89,7 +89,7 @@ protected:
   void fillSolnTestL();  // only used with exactOnly == true
 
   // related to tests F G; see iCMthermo.cc
-  virtual void temperatureStep(double* vertSacrCount, double* bulgeCount);
+  virtual void temperatureStep(unsigned int* vertSacrCount, unsigned int* bulgeCount);
   void initTestFG();
   void getCompSourcesTestFG();
   void fillSolnTestFG();  // only used with exactOnly == true

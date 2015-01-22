@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include <petscdmda.h>
+
 #include "tests/exactTestsFG.h"
 #include "tests/exactTestK.h"
 #include "tests/exactTestO.h"
@@ -28,6 +28,7 @@
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "PISMBedDef.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -40,7 +41,7 @@ const double IceCompModel::ApforG = 200; // m
 
 
 /*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
-void IceCompModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
+void IceCompModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount) {
 
   if ((testname == 'F') || (testname == 'G')) {
     // FIXME: This code messes with the strain heating field owned by

@@ -41,11 +41,14 @@ static char help[] =
 #include <cstdio>
 #include <petscvec.h>
 #include <petscdmda.h>
+#include <petscdraw.h>
+
 #include "pism_const.hh"
 #include "PISMConfig.hh"
 #include "deformation.hh"
 #include "pism_options.hh"
 
+#include "Viewer.hh"
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 
@@ -148,13 +151,14 @@ int main(int argc, char *argv[]) {
       ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
 
       // create a bed viewer
-      PetscViewer viewer;
+      PetscViewer petsc_viewer;
       PetscDraw   draw;
       const int  windowx = 500,
                       windowy = (int) (((float) windowx) * Ly / Lx);
       ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, NULL, "bed elev (m)",
-                                 PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);
+                                 PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &petsc_viewer);
       PISM_PETSC_CHK(ierr, "PetscViewerDrawOpen");
+      Viewer viewer(petsc_viewer);
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
       // there is a no-titles bug
       ierr = PetscViewerDrawGetDraw(viewer,0,&draw);
@@ -274,8 +278,6 @@ int main(int argc, char *argv[]) {
       PISM_PETSC_CHK(ierr, "VecDestroy");
       ierr = VecDestroy(&uplift);
       PISM_PETSC_CHK(ierr, "VecDestroy");
-      ierr = PetscViewerDestroy(&viewer);
-      PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
       ierr = DMDestroy(&da2); CHKERRQ(ierr);
     }
   }

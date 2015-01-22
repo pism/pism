@@ -903,7 +903,6 @@ Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
 void IceModel::init() {
-  PetscErrorCode ierr;
 
   grid.profiling.begin("initialization");
 
@@ -954,16 +953,7 @@ void IceModel::init() {
 
   // Get the start time in seconds and ensure that it is consistent
   // across all processors.
-  {
-    MPI_Datatype mpi_type;
-    double my_start_time;
-    ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type);
-    PISM_PETSC_CHK(ierr, "PetscDataTypeToMPIDataType");
-
-    GetTime(&my_start_time);
-    MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);
-
-  }
+  start_time = GlobalMax(grid.com, GetTime());
 
   grid.profiling.end("initialization");
 }

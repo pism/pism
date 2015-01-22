@@ -992,9 +992,8 @@ IceModel_ivol::IceModel_ivol(IceModel *m)
 }
 
 void IceModel_ivol::update(double a, double b) {
-  double value;
 
-  model->compute_ice_volume(value);
+  double value = model->compute_ice_volume();
 
   m_ts->append(value, a, b);
 }
@@ -1013,9 +1012,8 @@ IceModel_slvol::IceModel_slvol(IceModel *m)
 }
 
 void IceModel_slvol::update(double a, double b) {
-  double value;
 
-  model->compute_sealevel_volume(value);
+  double value = model->compute_sealevel_volume();
 
   m_ts->append(value, a, b);
 }
@@ -1034,9 +1032,8 @@ IceModel_divoldt::IceModel_divoldt(IceModel *m)
 }
 
 void IceModel_divoldt::update(double a, double b) {
-  double value;
 
-  model->compute_ice_volume(value);
+  double value = model->compute_ice_volume();
 
   // note that "value" below *should* be the ice volume
   m_ts->append(value, a, b);
@@ -1056,9 +1053,8 @@ IceModel_iarea::IceModel_iarea(IceModel *m)
 }
 
 void IceModel_iarea::update(double a, double b) {
-  double value;
 
-  model->compute_ice_area(value);
+  double value = model->compute_ice_area();
 
   m_ts->append(value, a, b);
 }
@@ -1076,9 +1072,8 @@ IceModel_imass::IceModel_imass(IceModel *m)
 }
 
 void IceModel_imass::update(double a, double b) {
-  double value;
 
-  model->compute_ice_volume(value);
+  double value = model->compute_ice_volume();
 
   m_ts->append(value * m_grid.config.get("ice_density"), a, b);
 }
@@ -1098,9 +1093,8 @@ IceModel_dimassdt::IceModel_dimassdt(IceModel *m)
 }
 
 void IceModel_dimassdt::update(double a, double b) {
-  double value;
 
-  model->compute_ice_volume(value);
+  double value = model->compute_ice_volume();
 
   m_ts->append(value * m_grid.config.get("ice_density"), a, b);
 }
@@ -1119,9 +1113,8 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m)
 }
 
 void IceModel_ivoltemp::update(double a, double b) {
-  double value;
 
-  model->compute_ice_volume_temperate(value);
+  double value = model->compute_ice_volume_temperate();
 
   m_ts->append(value, a, b);
 }
@@ -1140,9 +1133,8 @@ IceModel_ivolcold::IceModel_ivolcold(IceModel *m)
 }
 
 void IceModel_ivolcold::update(double a, double b) {
-  double value;
 
-  model->compute_ice_volume_cold(value);
+  double value = model->compute_ice_volume_cold();
 
   m_ts->append(value, a, b);
 }
@@ -1160,9 +1152,8 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m)
 }
 
 void IceModel_iareatemp::update(double a, double b) {
-  double value;
 
-  model->compute_ice_area_temperate(value);
+  double value = model->compute_ice_area_temperate();
 
   m_ts->append(value, a, b);
 }
@@ -1180,9 +1171,8 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m)
 }
 
 void IceModel_iareacold::update(double a, double b) {
-  double value;
 
-  model->compute_ice_area_cold(value);
+  double value = model->compute_ice_area_cold();
 
   m_ts->append(value, a, b);
 }
@@ -1200,9 +1190,8 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m)
 }
 
 void IceModel_ienthalpy::update(double a, double b) {
-  double value;
 
-  model->compute_ice_enthalpy(value);
+  double value = model->compute_ice_enthalpy();
 
   m_ts->append(value, a, b);
 }
@@ -1219,9 +1208,8 @@ IceModel_iareag::IceModel_iareag(IceModel *m)
 }
 
 void IceModel_iareag::update(double a, double b) {
-  double value;
 
-  model->compute_ice_area_grounded(value);
+  double value = model->compute_ice_area_grounded();
 
   m_ts->append(value, a, b);
 }
@@ -1238,9 +1226,8 @@ IceModel_iareaf::IceModel_iareaf(IceModel *m)
 }
 
 void IceModel_iareaf::update(double a, double b) {
-  double value;
 
-  model->compute_ice_area_floating(value);
+  double value = model->compute_ice_area_floating();
 
   m_ts->append(value, a, b);
 }
@@ -1292,9 +1279,8 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m)
 }
 
 void IceModel_surface_flux::update(double a, double b) {
-  double value;
 
-  value = model->surface_ice_flux_cumulative;
+  double value = model->surface_ice_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1311,9 +1297,8 @@ IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
 }
 
 void IceModel_surface_flux_cumulative::update(double a, double b) {
-  double value;
 
-  value = model->surface_ice_flux_cumulative;
+  double value = model->surface_ice_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1331,9 +1316,8 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
 }
 
 void IceModel_grounded_basal_flux::update(double a, double b) {
-  double value;
 
-  value = model->grounded_basal_ice_flux_cumulative;
+  double value = model->grounded_basal_ice_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1350,9 +1334,8 @@ IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative
 }
 
 void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
-  double value;
 
-  value = model->grounded_basal_ice_flux_cumulative;
+  double value = model->grounded_basal_ice_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1370,9 +1353,8 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
 }
 
 void IceModel_sub_shelf_flux::update(double a, double b) {
-  double value;
 
-  value = model->sub_shelf_ice_flux_cumulative;
+  double value = model->sub_shelf_ice_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1389,9 +1371,8 @@ IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel 
 }
 
 void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
-  double value;
 
-  value = model->sub_shelf_ice_flux_cumulative;
+  double value = model->sub_shelf_ice_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1409,9 +1390,8 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
 }
 
 void IceModel_nonneg_flux::update(double a, double b) {
-  double value;
 
-  value = model->nonneg_rule_flux_cumulative;
+  double value = model->nonneg_rule_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1428,9 +1408,8 @@ IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
 }
 
 void IceModel_nonneg_flux_cumulative::update(double a, double b) {
-  double value;
 
-  value = model->nonneg_rule_flux_cumulative;
+  double value = model->nonneg_rule_flux_cumulative;
 
   m_ts->append(value, a, b);
 }
@@ -1546,7 +1525,7 @@ IceModel_ivolg::IceModel_ivolg(IceModel *m)
 }
 
 void IceModel_ivolg::update(double a, double b) {
-  double volume=0.0, value;
+  double volume = 0.0;
 
   MaskQuery mask(model->vMask);
 
@@ -1563,7 +1542,7 @@ void IceModel_ivolg::update(double a, double b) {
     }
   }
 
-  value = GlobalSum(m_grid.com, volume);
+  double value = GlobalSum(m_grid.com, volume);
 
   m_ts->append(value, a, b);
 }
@@ -1580,7 +1559,7 @@ IceModel_ivolf::IceModel_ivolf(IceModel *m)
 }
 
 void IceModel_ivolf::update(double a, double b) {
-  double volume=0.0, value;
+  double volume = 0.0;
 
   MaskQuery mask(model->vMask);
 
@@ -1597,7 +1576,7 @@ void IceModel_ivolf::update(double a, double b) {
     }
   }
 
-  value = GlobalSum(m_grid.com, volume);
+  double value = GlobalSum(m_grid.com, volume);
 
   m_ts->append(value, a, b);
 }

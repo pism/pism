@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "iceModel.hh"
-#include "IceGrid.hh"
-
 #if (PISM_USE_PROJ4==1)
 #include <proj_api.h>
 #endif
+
+#include "iceModel.hh"
+#include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 #include "error_handling.hh"
 

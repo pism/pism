@@ -118,16 +118,11 @@ void  IceModel::stampHistoryCommand() {
 void IceModel::update_run_stats() {
   PetscErrorCode ierr;
 
-  MPI_Datatype mpi_type;
-  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type);
-  PISM_PETSC_CHK(ierr, "PetscDataTypeToMPIDataType");
-
   // timing stats
-  PetscLogDouble current_time, my_current_time;
   double wall_clock_hours, proc_hours, mypph;
-  GetTime(&my_current_time);
-  MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
+  double current_time = GlobalMax(grid.com, GetTime());
+  
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
   proc_hours = grid.size() * wall_clock_hours;
@@ -139,11 +134,11 @@ void IceModel::update_run_stats() {
 
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
-  PetscLogDouble flops, my_flops;
-  ierr = PetscGetFlops(&my_flops);
-  PISM_PETSC_CHK(ierr, "PetscGetFlops");
-  MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
+  PetscLogDouble my_flops = 0.0;
+  ierr = PetscGetFlops(&my_flops); PISM_PETSC_CHK(ierr, "PetscGetFlops");
 
+  double flops = GlobalSum(grid.com, my_flops);
+  
   run_stats.set_double("wall_clock_hours", wall_clock_hours);
   run_stats.set_double("processor_hours", proc_hours);
   run_stats.set_double("model_years_per_processor_hour", mypph);
