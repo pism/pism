@@ -139,12 +139,12 @@ class TSDiag : public TSDiagnostic {
 public:
   TSDiag(Model *m)
     : TSDiagnostic(m->get_grid()), model(m) {
-    time_units = m_grid.time->CF_units_string();
-    time_dimension_name = m_grid.config.get_string("time_dimension_name");
+    m_time_units = m_grid.time->CF_units_string();
+    m_time_dimension_name = m_grid.config.get_string("time_dimension_name");
   }
 protected:
   Model *model;
-  std::string time_units, time_dimension_name;
+  std::string m_time_units, m_time_dimension_name;
 };
 
 } // end of namespace pism
