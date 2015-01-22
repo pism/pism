@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,6 +44,10 @@ Viewer::Viewer(MPI_Comm com,  const std::string &title, unsigned int target_size
   PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
   ierr = PetscDrawSetTitle(draw, title.c_str());
   PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
+}
+
+Viewer::Viewer(PetscViewer v) {
+  m_viewer = v;
 }
 
 Viewer::~Viewer() {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,6 +39,7 @@ public:
   typedef std::shared_ptr<Viewer> Ptr;
 #endif
   Viewer(MPI_Comm com, const std::string &name, unsigned int target_size, double Lx, double Ly);
+  Viewer(PetscViewer v);
   ~Viewer();
   operator PetscViewer() const;
 private:
