@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,10 +21,10 @@
 
 #include "PISMYieldStress.hh"
 #include "iceModelVec.hh"
-#include "IceGrid.hh"
-#include "error_handling.hh"
 
 namespace pism {
+
+class IceGrid;
 
 class ConstantYieldStress : public YieldStress
 {
@@ -37,13 +37,13 @@ public:
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
+                                IO_Type nctype);
 
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void update(double my_t, double my_dt);
 
-  virtual void basal_material_yield_stress(IceModelVec2S &result);
+  virtual const IceModelVec2S& basal_material_yield_stress();
 protected:
   IceModelVec2S m_tauc;
 };

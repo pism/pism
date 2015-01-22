@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "PISMConstantYieldStress.hh"
 #include "pism_options.hh"
 #include "PISMConfig.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 
@@ -93,8 +94,8 @@ void ConstantYieldStress::update(double my_t, double my_dt) {
 }
 
 
-void ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  m_tauc.copy_to(result);
+const IceModelVec2S& ConstantYieldStress::basal_material_yield_stress() {
+  return m_tauc;
 }
 
 } // end of namespace pism

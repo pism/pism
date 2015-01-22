@@ -171,23 +171,28 @@ void RegionalDefaultYieldStress::init() {
 }
 
 
-void RegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
   
   // do whatever you normally do
-  MohrCoulombYieldStress::basal_material_yield_stress(result);
+  const IceModelVec2S &result = MohrCoulombYieldStress::basal_material_yield_stress();
 
-  // now set result=tauc to a big value in no_model_strip
+  // This is almost certainly redundant, but I don't want to count on
+  // the fact that the base class puts results in m_tauc.
+  m_tauc.copy_from(result);
+
+  // now set tauc to a big value in no_model_strip
   IceModelVec::AccessList list;
   list.add(*no_model_mask);
-  list.add(result);
+  list.add(m_tauc);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*no_model_mask)(i,j) > 0.5) {
-      result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
+      m_tauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
     }
   }
+  return m_tauc;
 }
 
 

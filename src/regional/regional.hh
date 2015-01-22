@@ -65,7 +65,7 @@ public:
     : MohrCoulombYieldStress(g, hydro) {}
   virtual ~RegionalDefaultYieldStress() {}
   virtual void init();
-  virtual void basal_material_yield_stress(IceModelVec2S &result);
+  virtual const IceModelVec2S& basal_material_yield_stress();
 protected:
   const IceModelVec2Int *no_model_mask;
 };

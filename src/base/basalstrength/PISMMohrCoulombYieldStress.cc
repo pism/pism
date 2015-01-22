@@ -412,8 +412,8 @@ void MohrCoulombYieldStress::update(double my_t, double my_dt) {
 }
 
 
-void MohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  m_tauc.copy_to(result);
+const IceModelVec2S& MohrCoulombYieldStress::basal_material_yield_stress() {
+  return m_tauc;
 }
 
 

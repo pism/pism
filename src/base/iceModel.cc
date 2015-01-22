@@ -622,7 +622,7 @@ void IceModel::step(bool do_mass_continuity,
     grid.profiling.begin("basal yield stress");
     basal_yield_stress_model->update(grid.time->current(), dt);
     grid.profiling.end("basal yield stress");
-    basal_yield_stress_model->basal_material_yield_stress(basal_yield_stress);
+    basal_yield_stress_model->basal_material_yield_stress().copy_to(basal_yield_stress);
     stdout_flags += "y";
   } else {
     stdout_flags += "$";

@@ -45,7 +45,7 @@ public:
 
   virtual void update(double my_t, double my_dt);
 
-  virtual void basal_material_yield_stress(IceModelVec2S &result);
+  virtual const IceModelVec2S& basal_material_yield_stress();
 
 protected:
   IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
