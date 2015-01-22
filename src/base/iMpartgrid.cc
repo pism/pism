@@ -115,11 +115,9 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
   const int max_loopcount = 3;
 
   bool done = false;
-  int i = 0;
-  while (done == false && i < max_loopcount) {
+  for (int i = 0; not done and i < max_loopcount; ++i) {
     residual_redistribution_iteration(H_residual, done);
     verbPrintf(4, grid.com, "redistribution loopcount = %d\n", i);
-    i += 1;
   }
 }
 
