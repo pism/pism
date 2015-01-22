@@ -84,8 +84,9 @@ public:
   double average(double t, double dt, unsigned int N);
   void append(double value, double a, double b);
   int length();
-  NCTimeseries& get_metadata();
-  NCTimeseries& get_dimension_metadata();
+
+  NCTimeseries& metadata();
+  NCTimeseries& dimension_metadata();
 
   void scale(double scaling_factor);
 

@@ -281,11 +281,11 @@ void Timeseries::append(double v, double a, double b) {
   time_bounds.push_back(b);
 }
 
-NCTimeseries& Timeseries::get_metadata() {
+NCTimeseries& Timeseries::metadata() {
   return var;
 }
 
-NCTimeseries& Timeseries::get_dimension_metadata() {
+NCTimeseries& Timeseries::dimension_metadata() {
   return dimension;
 }
 

@@ -126,7 +126,7 @@ public:
   }
 
   virtual std::string get_string(const std::string &name) {
-    return m_ts->get_metadata().get_string(name);
+    return m_ts->metadata().get_string(name);
   }
 
 protected:

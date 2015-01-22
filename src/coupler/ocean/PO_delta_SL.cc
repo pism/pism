@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,9 +33,9 @@ PO_delta_SL::PO_delta_SL(const IceGrid &g, OceanModel* in)
 
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
-  offset->get_metadata().set_units("m");
-  offset->get_metadata().set_string("long_name", "sea level elevation offsets");
-  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
+  offset->metadata().set_units("m");
+  offset->metadata().set_string("long_name", "sea level elevation offsets");
+  offset->dimension_metadata().set_units(m_grid.time->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,9 +31,9 @@ PO_delta_SMB::PO_delta_SMB(const IceGrid &g, OceanModel* in)
 
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
-  offset->get_metadata().set_units("m s-1");
-  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
-  offset->get_metadata().set_string("long_name",
+  offset->metadata().set_units("m s-1");
+  offset->dimension_metadata().set_units(m_grid.time->units_string());
+  offset->metadata().set_string("long_name",
                                     "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
 
   shelfbmassflux.set_string("pism_intent", "climate_state");

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,9 +30,9 @@ PA_paleo_precip::PA_paleo_precip(const IceGrid &g, AtmosphereModel* in)
   option_prefix = "-atmosphere_paleo_precip";
   offset_name = "delta_T";
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
-  offset->get_metadata().set_units("Kelvin");
-  offset->get_metadata().set_string("long_name", "air temperature offsets");
-  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
+  offset->metadata().set_units("Kelvin");
+  offset->metadata().set_string("long_name", "air temperature offsets");
+  offset->dimension_metadata().set_units(m_grid.time->units_string());
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,9 +33,9 @@ PS_delta_T::PS_delta_T(const IceGrid &g, SurfaceModel* in)
 
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
-  offset->get_metadata().set_units("Kelvin");
-  offset->get_metadata().set_string("long_name", "ice-surface temperature offsets");
-  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
+  offset->metadata().set_units("Kelvin");
+  offset->metadata().set_string("long_name", "ice-surface temperature offsets");
+  offset->dimension_metadata().set_units(m_grid.time->units_string());
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",

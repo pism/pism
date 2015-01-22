@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,11 +31,11 @@ PA_delta_P::PA_delta_P(const IceGrid &g, AtmosphereModel* in)
   option_prefix = "-atmosphere_delta_P";
   offset_name = "delta_P";
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
-  offset->get_metadata().set_units("m / second");
-  offset->get_metadata().set_glaciological_units("m / year");
-  offset->get_metadata().set_string("long_name",
+  offset->metadata().set_units("m / second");
+  offset->metadata().set_glaciological_units("m / year");
+  offset->metadata().set_string("long_name",
                                     "precipitation offsets, units of ice-equivalent thickness");
-  offset->get_dimension_metadata().set_units(m_grid.time->units_string());
+  offset->dimension_metadata().set_units(m_grid.time->units_string());
 
 
   air_temp.set_string("pism_intent", "diagnostic");
