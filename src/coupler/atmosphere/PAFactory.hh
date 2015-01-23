@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 PISM Authors
+// Copyright (C) 2011, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,14 +27,8 @@ namespace pism {
 
 class PAFactory : public PCFactory<AtmosphereModel,PAModifier> {
 public:
-  PAFactory(const IceGrid& g)
-    : PCFactory<AtmosphereModel,PAModifier>(g)
-  {
-    add_standard_types();
-    m_option = "atmosphere";
-  }
-  virtual ~PAFactory() {}
-  virtual void add_standard_types();
+  PAFactory(const IceGrid& g);
+  ~PAFactory();
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,14 +26,8 @@ namespace pism {
 
 class POFactory : public PCFactory<OceanModel,POModifier> {
 public:
-  POFactory(const IceGrid& g)
-    : PCFactory<OceanModel,POModifier>(g)
-  {
-    add_standard_types();
-    m_option = "ocean";
-  }
-  virtual ~POFactory() {}
-  virtual void add_standard_types();
+  POFactory(const IceGrid& g);
+  ~POFactory();
 };
 
 } // end of namespace pism

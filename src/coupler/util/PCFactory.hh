@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -180,7 +180,6 @@ public:
     m_modifiers.clear();
   }
 protected:
-  virtual void add_standard_types() {}
   std::string m_default_type, m_option;
   std::map<std::string, ModelCreatorPtr> m_models;
   std::map<std::string, ModifierCreatorPtr> m_modifiers;

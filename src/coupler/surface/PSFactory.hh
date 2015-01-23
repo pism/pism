@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 PISM Authors
+// Copyright (C) 2011, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,15 +25,8 @@ namespace pism {
 
 class PSFactory : public PCFactory<SurfaceModel,PSModifier> {
 public:
-  PSFactory(const IceGrid& g)
-    : PCFactory<SurfaceModel,PSModifier>(g)
-  {
-    add_standard_types();
-    m_option = "surface";
-  }
-
-  virtual ~PSFactory() {}
-  virtual void add_standard_types();
+  PSFactory(const IceGrid& g);
+  ~PSFactory();
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Torsten Albrecht
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -69,7 +69,11 @@
 namespace pism {
 
 // Atmosphere
-void PAFactory::add_standard_types() {
+
+PAFactory::PAFactory(const IceGrid& g)
+  : PCFactory<AtmosphereModel,PAModifier>(g) {
+  m_option = "atmosphere";
+
   add_model<PAConstantPIK>("pik");
   add_model<PAGivenClimate>("given");
   add_model<PA_SeaRISE_Greenland>("searise_greenland");
@@ -85,9 +89,15 @@ void PAFactory::add_standard_types() {
   add_modifier<PALapseRates>("lapse_rate");
 }
 
+PAFactory::~PAFactory() {
+  // empty
+}
 
 // Ocean
-void POFactory::add_standard_types() {
+POFactory::POFactory(const IceGrid& g)
+  : PCFactory<OceanModel,POModifier>(g) {
+  m_option = "ocean";
+
   add_model<POGivenTH>("th");
   add_model<POConstantPIK>("pik");
   add_model<POConstant>("constant");
@@ -101,8 +111,15 @@ void POFactory::add_standard_types() {
   add_modifier<PO_delta_SL>("delta_SL");
 }
 
+POFactory::~POFactory() {
+  // empty
+}
+
 // Surface
-void PSFactory::add_standard_types() {
+PSFactory::PSFactory(const IceGrid& g)
+  : PCFactory<SurfaceModel,PSModifier>(g) {
+  m_option = "surface";
+
   add_model<PSElevation>("elevation");
   add_model<PSGivenClimate>("given");
   add_model<PSTemperatureIndex>("pdd");
@@ -117,6 +134,10 @@ void PSFactory::add_standard_types() {
   add_modifier<PSForceThickness>("forcing");
   add_modifier<PSLapseRates>("lapse_rate");
   add_modifier<PSStuffAsAnomaly>("turn_into_anomaly");
+}
+
+PSFactory::~PSFactory() {
+  // empty
 }
 
 } // end of namespace pism
