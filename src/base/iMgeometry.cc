@@ -780,14 +780,14 @@ void IceModel::massContExplicitStep() {
     double tmp_global[8];
     GlobalSum(grid.com, tmp_local, tmp_global, 8);
 
-    proc_grounded_basal_ice_flux = tmp_global[0];
-    proc_nonneg_rule_flux        = tmp_global[1];
-    proc_sub_shelf_ice_flux      = tmp_global[2];
-    proc_surface_ice_flux        = tmp_global[3];
-    proc_sum_divQ_SIA            = tmp_global[4];
-    proc_sum_divQ_SSA            = tmp_global[5];
-    proc_Href_to_H_flux          = tmp_global[6];
-    proc_H_to_Href_flux          = tmp_global[7];
+    total_grounded_basal_ice_flux = tmp_global[0];
+    total_nonneg_rule_flux        = tmp_global[1];
+    total_sub_shelf_ice_flux      = tmp_global[2];
+    total_surface_ice_flux        = tmp_global[3];
+    total_sum_divQ_SIA            = tmp_global[4];
+    total_sum_divQ_SSA            = tmp_global[5];
+    total_Href_to_H_flux          = tmp_global[6];
+    total_H_to_Href_flux          = tmp_global[7];
 
     grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
     sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;
