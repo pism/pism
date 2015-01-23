@@ -61,7 +61,7 @@ public:
   virtual void update_cumulative();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
-  //! IceModelVec. NB: The caller needs to de-allocate it.
+  //! IceModelVec.
   virtual IceModelVec::Ptr compute() = 0;
 
   virtual int get_nvars();

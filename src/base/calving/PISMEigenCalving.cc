@@ -175,8 +175,8 @@ void EigenCalving::update(double dt,
       //
       // eigen1 * eigen2 has units [s^-2] and calving_rate_horizontal
       // [m*s^1] hence, eigen_calving_K has units [m*s]
-      if (eigen2 > eigenCalvOffset &&
-          eigen1 > 0.0) { // if spreading in all directions
+      if (eigen2 > eigenCalvOffset and eigen1 > 0.0) {
+        // spreading in all directions
         calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
       }
 
@@ -329,12 +329,9 @@ void EigenCalving::max_timestep(double /*my_t*/,
       calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
       my_calving_rate_counter += 1.0;
       my_calving_rate_mean += calving_rate_horizontal;
-      my_calving_rate_max = PetscMax(my_calving_rate_max, calving_rate_horizontal);
-    } else {
-      calving_rate_horizontal = 0.0;
+      my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
     }
   }
-
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
   calving_rate_mean    = GlobalSum(m_grid.com, my_calving_rate_mean);

@@ -99,8 +99,7 @@ void IceModel::update_viewers() {
       Diagnostic *diag = diagnostics[*i];
 
       if (diag != NULL) {
-        IceModelVec::Ptr v = diag->compute();
-        this->view_field(v.get());
+        this->view_field(diag->compute().get());
       }
     }
   }

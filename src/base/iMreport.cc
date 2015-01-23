@@ -137,20 +137,6 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
 
 
 void IceModel::summary(bool tempAndAge) {
-  double meltfrac = 0.0, origfrac = 0.0;
-  double max_diffusivity;
-
-  // get volumes in m^3 and areas in m^2
-  double ice_volume = compute_ice_volume();
-  double ice_area = compute_ice_area();
-
-  if (tempAndAge or getVerbosityLevel() >= 3) {
-    meltfrac = compute_temperate_base_fraction(ice_area);
-
-    if (config.get_flag("do_age")) {
-      origfrac = compute_original_ice_fraction(ice_volume);
-    }
-  }
 
   // report CFL violations
   if (CFLviolcount > 0.0) {
@@ -168,7 +154,15 @@ void IceModel::summary(bool tempAndAge) {
   }
 
   // get maximum diffusivity
-  max_diffusivity = stress_balance->max_diffusivity();
+  double max_diffusivity = stress_balance->max_diffusivity();
+  // get volumes in m^3 and areas in m^2
+  double ice_volume = compute_ice_volume();
+  double ice_area = compute_ice_area();
+
+  double meltfrac = 0.0;
+  if (tempAndAge or getVerbosityLevel() >= 3) {
+    meltfrac = compute_temperate_base_fraction(ice_area);
+  }
 
   // main report: 'S' line
   summaryPrintLine(false, tempAndAge, dt,

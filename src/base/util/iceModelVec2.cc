@@ -404,7 +404,7 @@ void IceModelVec2::view(int viewer_size) const {
     throw RuntimeError("dof > 2 is not supported");
   }
 
-  for (unsigned int j = 0; j < m_dof; ++j) {
+  for (unsigned int j = 0; j < std::min(m_dof, 2U); ++j) {
     std::string c_name = m_metadata[j].get_name(),
       long_name = m_metadata[j].get_string("long_name"),
       units = m_metadata[j].get_string("glaciological_units"),
@@ -418,7 +418,7 @@ void IceModelVec2::view(int viewer_size) const {
     viewers[j] = map_viewers[c_name];
   }
 
-  view(viewers[0], viewers[1]); 
+  view(viewers[0], viewers[1]);
 }
 
 //! \brief View a 2D vector field using existing PETSc viewers.
@@ -426,32 +426,30 @@ void IceModelVec2::view(int viewer_size) const {
 //! should not matter here.
 void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
   PetscErrorCode ierr;
-  Vec tmp;
+
+  Viewer::Ptr viewers[2] = {v1, v2};
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
   PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
+  Vec tmp;
   DMGetGlobalVector(*da2, &tmp);
 
-  PetscViewer viewers[2] = {NULL, NULL};
-  if (v1) {
-    viewers[0] = *v1;
-  }
-  if (v2) {
-    viewers[1] = *v2;
-  }
+  for (unsigned int i = 0; i < std::min(m_dof, 2U); ++i) {
+    std::string
+      long_name = m_metadata[i].get_string("long_name"),
+      units     = m_metadata[i].get_string("glaciological_units"),
+      title     = long_name + " (" + units + ")";
 
-  for (unsigned int i = 0; i < m_dof; ++i) {
-    std::string long_name = m_metadata[i].get_string("long_name"),
-      units = m_metadata[i].get_string("glaciological_units"),
-      title = long_name + " (" + units + ")";
+    if (not (bool)viewers[i]) {
+      continue;
+    }
 
-    PetscDraw draw;
-    ierr = PetscViewerDrawGetDraw(viewers[i], 0, &draw);
-    PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
-    ierr = PetscDrawSetTitle(draw, title.c_str());
-    PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
+    PetscViewer v = *viewers[i].get();
+    PetscDraw draw = NULL;
+    ierr = PetscViewerDrawGetDraw(v, 0, &draw); PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+    ierr = PetscDrawSetTitle(draw, title.c_str()); PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 
     IceModelVec2::get_dof(da2, tmp, i);
 
@@ -459,8 +457,7 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
                 m_metadata[i].get_units(),
                 m_metadata[i].get_glaciological_units());
 
-    ierr = VecView(tmp, viewers[i]);
-    PISM_PETSC_CHK(ierr, "VecView");
+    ierr = VecView(tmp, v); PISM_PETSC_CHK(ierr, "VecView");
   }
 
   DMRestoreGlobalVector(*da2, &tmp);

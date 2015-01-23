@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucTikhonovGNSolver.hh"
-#include <assert.h>
+#include <cassert>
 #include "TerminationReason.hh"
 #include "pism_options.hh"
 
@@ -109,6 +109,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   ierr = multCallback::connect(m_mat_GN);
+  PISM_PETSC_CHK(ierr, "multCallback::connect");
 
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -110,7 +110,7 @@ int NC4File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &re
   int stat, dimid = -1;
   size_t len;
 
-  stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid);
+  stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid); check(stat);
 
   stat = nc_inq_dimlen(m_file_id, dimid, &len); check(stat);
 
@@ -548,15 +548,15 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
   for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
+    nc_start[j]  = start[j];
+    nc_count[j]  = count[j];
+    nc_imap[j]   = imap[j];
     nc_stride[j] = 1;
   }
 
   if (mapped) {
 
-    stat = set_access_mode(varid, mapped);
+    stat = set_access_mode(varid, mapped); check(stat);
 
     if (get == true) {
       stat = nc_get_varm_double(m_file_id, varid,
@@ -569,7 +569,7 @@ int NC4File::get_put_var_double(const std::string &variable_name,
     }
   } else {
 
-    stat = set_access_mode(varid, mapped);
+    stat = set_access_mode(varid, mapped); check(stat);
 
     if (get == true) {
       stat = nc_get_vara_double(m_file_id, varid,
