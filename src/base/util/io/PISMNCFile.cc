@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -118,7 +118,7 @@ int NCFile::move_if_exists_impl(const std::string &file_to_move, int rank_to_use
  * Note: only processor 0 does the job.
  */
 int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to_use) {
-  int stat, rank = 0;
+  int stat = 0, rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
   if (rank == rank_to_use) {
