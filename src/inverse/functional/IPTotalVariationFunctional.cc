@@ -28,7 +28,7 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(const IceGrid &grid,
     m_c(c), m_lebesgue_exp(exponent), m_epsilon_sq(eps*eps) {
 }
 
-PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
+void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
@@ -67,11 +67,9 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
   GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
-
-  return 0;
 }
 
-PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   // Clear the gradient before doing anything with it.
   gradient.set(0);
@@ -127,7 +125,6 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   } // i
 
   dirichletBC.finish();
-  return 0;
 }
 
 } // end of namespace pism

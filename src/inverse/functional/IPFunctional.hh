@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ public:
   virtual ~IPFunctional() {};
 
   //! Computes the value of the functional at the vector x.
-  virtual PetscErrorCode valueAt(IMVecType &x, double *OUTPUT) = 0;
+  virtual void valueAt(IMVecType &x, double *OUTPUT) = 0;
 
   //! Computes the gradient of the functional at the vector x.
   /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
@@ -61,7 +61,7 @@ public:
     \f]
     This vector is returned as `gradient`.
   */
-  virtual PetscErrorCode gradientAt(IMVecType &x, IMVecType &gradient) = 0;
+  virtual void gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
 protected:
   const IceGrid &m_grid;
@@ -95,7 +95,7 @@ public:
   IPInnerProductFunctional(const IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a, b)\f$.
-  virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
+  virtual void dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
 
   //! Computes the interior product of a vector with the IPInnerProductFunctional's underlying bilinear form.
   /*! If \f$Q(x, y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the
@@ -110,26 +110,25 @@ public:
     \f]
     This method returns the vector \f$y\f$.
   */
-  virtual PetscErrorCode interior_product(IMVecType &x, IMVecType &y) {
+  virtual void interior_product(IMVecType &x, IMVecType &y) {
     this->gradientAt(x, y);
     y.scale(0.5);
-    return 0;
   }
 
   //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
   /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
     \f$Q_{ij}= Q(x_i, x_j)\f$. */
-  // virtual PetscErrorCode assemble_form(Mat Q) = 0;
+  // virtual void assemble_form(Mat Q) = 0;
 
 };
 
 //! Computes finite difference approximations of a IPFunctional<IceModelVec2S> gradient.
 /*! Useful for debugging a hand coded gradient. */
-PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
+void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
 
 //! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
 /*! Useful for debugging a hand coded gradient. */
-PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
 
 } // end of namespace pism
 

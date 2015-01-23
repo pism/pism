@@ -22,7 +22,7 @@
 
 namespace pism {
 
-PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
+void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
@@ -71,11 +71,9 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double
   GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
-
-  return 0;
 }
 
-PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
+void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
@@ -134,12 +132,10 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVe
   GlobalSum(m_grid.com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
-
-  return 0;
 }
 
 
-PetscErrorCode IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
@@ -205,12 +201,11 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, Ice
   } // i
 
   dirichletBC.finish();
-  return 0;
 }
 
-PetscErrorCode IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
+void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
+  PetscErrorCode ierr;
   int         i, j;
-  PetscErrorCode   ierr;
 
   // Zero out the Jacobian in preparation for updating it.
   MatZeroEntries(form);
@@ -279,8 +274,6 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY);
-
-  return 0;
 }
 
 } // end of namespace pism

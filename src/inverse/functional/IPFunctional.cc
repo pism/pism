@@ -21,14 +21,13 @@
 
 namespace pism {
 
-PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
-  PetscErrorCode ierr;
+void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   const IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
   
-  ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
+  f.valueAt(x,&F0);
   
   IceModelVec::AccessList list(gradient);
 
@@ -41,7 +40,7 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
     }
     x.update_ghosts();
 
-    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
+    f.valueAt(x,&Fh);
 
     {
       IceModelVec::AccessList access_x(x);
@@ -51,17 +50,15 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
 
     gradient(i,j) = (Fh-F0)/h;
   }
-  return 0;
 }
 
-PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
-  PetscErrorCode ierr;
+void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
   const IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
   
-  ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
+  f.valueAt(x,&F0);
   
   IceModelVec::AccessList access_gradient(gradient);
 
@@ -74,7 +71,7 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceM
     }
     x.update_ghosts();
 
-    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
+    f.valueAt(x,&Fh);
 
     {
       IceModelVec::AccessList access_x(x);
@@ -90,7 +87,7 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceM
     }
     x.update_ghosts();
 
-    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
+    f.valueAt(x,&Fh);
 
     {
       IceModelVec::AccessList access_x(x);
@@ -100,7 +97,6 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceM
 
     gradient(i,j).v = (Fh-F0)/h;
   }
-  return 0;
 }
 
 // PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);

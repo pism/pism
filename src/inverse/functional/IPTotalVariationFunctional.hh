@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,8 +34,8 @@ class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
   IPTotalVariationFunctional2S(const IceGrid &grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
 
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:
 

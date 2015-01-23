@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,9 +36,9 @@ public:
   IP_L2NormFunctional2S(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *v);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *v);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 private:
   IP_L2NormFunctional2S(IP_L2NormFunctional2S const &);
@@ -58,9 +58,9 @@ public:
   IP_L2NormFunctional2V(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *v);
-  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, double *v);
-  virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(IceModelVec2V &x, double *v);
+  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *v);
+  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 private:
   IP_L2NormFunctional2V(IP_L2NormFunctional2V const &);

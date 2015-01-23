@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,11 +46,11 @@ public:
     m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};
   virtual ~IPGroundedIceH1NormFunctional2S() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
-  virtual PetscErrorCode assemble_form(Mat J);
+  virtual void assemble_form(Mat J);
 
 protected:
 

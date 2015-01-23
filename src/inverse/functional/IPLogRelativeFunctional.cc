@@ -28,7 +28,7 @@ J(x)=1
 \f]
 if \f$|x| = \mathtt{scale}\f$ everywhere.
 */
-PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
+void IPLogRelativeFunctional::normalize(double scale) {
 
   // The local value of the weights
   double value = 0;
@@ -56,10 +56,9 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
   }
 
   m_normalization = GlobalSum(m_grid.com, value);
-  return 0;
 }
 
-PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
+void IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -88,11 +87,9 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
   value /= m_normalization;
 
   GlobalSum(m_grid.com, &value, OUTPUT, 1);
-
-  return 0;
 }
 
-PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   gradient.set(0);
 
   double w = 1;
@@ -119,8 +116,6 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
     gradient(i, j).u = dJdxsq*2*x_ij.u/m_normalization;
     gradient(i, j).v = dJdxsq*2*x_ij.v/m_normalization;
   }
-
-  return 0;
 }
 
 } // end of namespace pism

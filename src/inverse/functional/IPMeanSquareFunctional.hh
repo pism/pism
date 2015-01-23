@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -38,11 +38,11 @@ public:
     IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
-  virtual PetscErrorCode normalize(double scale);
+  virtual void normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:
   IceModelVec2S *m_weights;
@@ -68,11 +68,11 @@ public:
     IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 
-  virtual PetscErrorCode normalize(double scale);
+  virtual void normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
+  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
   IceModelVec2S *m_weights;

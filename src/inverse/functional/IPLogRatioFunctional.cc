@@ -28,7 +28,7 @@ J(x)=1
 \f]
 if  \f$|x| = \mathtt{scale}|u_{\rm obs}| \f$ everywhere.
 */
-PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
+void IPLogRatioFunctional::normalize(double scale) {
 
   double value = 0;
 
@@ -58,11 +58,9 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
   }
 
   m_normalization = GlobalSum(m_grid.com, value);
-
-  return 0;
 }
 
-PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
+void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -97,11 +95,9 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
   value /= m_normalization;
 
   GlobalSum(m_grid.com, &value, OUTPUT, 1);
-
-  return 0;
 }
 
-PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   gradient.set(0);
 
   double w = 1.;
@@ -133,8 +129,6 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
     gradient(i, j).u = dJdw*2*u_model_ij.u/m_normalization;
     gradient(i, j).v = dJdw*2*u_model_ij.v/m_normalization;
   }
-
-  return 0;
 }
 
 } // end of namespace pism

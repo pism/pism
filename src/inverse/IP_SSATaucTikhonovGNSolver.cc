@@ -477,7 +477,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   // positive number.
 
   double ddisc_sq_dalpha;
-  ierr = m_designFunctional.dot(m_dh_dalpha,m_d_diff_lin,&ddisc_sq_dalpha);
+  m_designFunctional.dot(m_dh_dalpha,m_d_diff_lin,&ddisc_sq_dalpha);
   ddisc_sq_dalpha *= -2*m_alpha;
 
   if (ddisc_sq_dalpha <= 0) {
