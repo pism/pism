@@ -717,11 +717,11 @@ void RoutingHydrology::update(double icet, double icedt) {
   W.update_ghosts();
 
   MaskQuery M(*mask);
-  double ht = m_t, hdt, // hydrology model time and time step
-            maxKW, maxV, maxD, dtCFL, dtDIFFW;
+  double ht = m_t, hdt = 0.0, // hydrology model time and time step
+    maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
   double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
-            delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
-  int hydrocount = 0; // count hydrology time steps
+    delta_icefree = 0.0, delta_ocean = 0.0, delta_neggain = 0.0, delta_nullstrip = 0.0;
+  unsigned int hydrocount = 0; // count hydrology time steps
 
   while (ht < m_t + m_dt) {
     hydrocount++;
