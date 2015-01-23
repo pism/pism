@@ -270,12 +270,11 @@ protected:
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
 
-  virtual void destroy();
   virtual void checkCompatibility(const char *function, const IceModelVec &other) const;
 
   //! \brief Check the array indices and warn if they are out of range.
   void check_array_indices(int i, int j, unsigned int k) const;
-  virtual void reset_attrs(unsigned int N);
+  void reset_attrs(unsigned int N);
   NormType int_to_normtype(int input) const;
 
   void get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
@@ -504,9 +503,9 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 protected:
-  virtual void allocate(const IceGrid &mygrid, const std::string &my_short_name,
-                        IceModelVecKind ghostedp, const std::vector<double> &levels,
-                        unsigned int stencil_width = 1);
+  void allocate(const IceGrid &mygrid, const std::string &my_short_name,
+                IceModelVecKind ghostedp, const std::vector<double> &levels,
+                unsigned int stencil_width = 1);
 };
 
 

@@ -105,7 +105,12 @@ void IceModelVec::inc_state_counter() {
 }
 
 IceModelVec::~IceModelVec() {
-  destroy();
+  if (m_v != NULL) {
+    PetscErrorCode ierr = VecDestroy(&m_v); CHKERRCONTINUE(ierr);
+    m_v = NULL;
+  }
+
+  assert(m_access_counter == 0);
 }
 
 //! Returns true if create() was called and false otherwise.
@@ -130,19 +135,6 @@ void IceModelVec::set_time_independent(bool flag) {
   for (unsigned int j = 0; j < m_dof; ++j) {
     m_metadata[j].set_time_independent(flag);
   }
-}
-
-//! \brief De-allocates an IceModelVec object.
-void  IceModelVec::destroy() {
-  PetscErrorCode ierr;
-
-  if (m_v != NULL) {
-    ierr = VecDestroy(&m_v);
-    PISM_PETSC_CHK(ierr, "VecDestroy");
-    m_v = NULL;
-  }
-
-  assert(m_access_counter == 0);
 }
 
 //! Result: min <- min(v[j]), max <- max(v[j]).

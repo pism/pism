@@ -142,7 +142,6 @@ protected:
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 
-  virtual void destroy();
   double*** get_array3();
   virtual void update(unsigned int start);
   virtual void discard(int N);

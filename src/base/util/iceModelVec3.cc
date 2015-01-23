@@ -47,10 +47,11 @@ namespace pism {
 // are in "iceModelVec.cc"
 
 IceModelVec3D::IceModelVec3D() : IceModelVec() {
+  // empty
 }
 
 IceModelVec3D::~IceModelVec3D() {
-  destroy();
+  // empty
 }
 
 IceModelVec3::IceModelVec3() {

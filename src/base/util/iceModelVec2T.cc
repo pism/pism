@@ -45,7 +45,10 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
 }
 
 IceModelVec2T::~IceModelVec2T() {
-  destroy();
+  if (m_v3 != NULL) {
+    PetscErrorCode ierr = VecDestroy(&m_v3); CHKERRCONTINUE(ierr);
+    m_v3 = NULL;
+  }
 }
 
 
@@ -77,18 +80,6 @@ void IceModelVec2T::create(const IceGrid &my_grid, const std::string &my_short_n
 
   // allocate the 3D Vec:
   DMCreateGlobalVector(*m_da3, &m_v3);
-}
-
-void IceModelVec2T::destroy() {
-  PetscErrorCode ierr;
-
-  IceModelVec2S::destroy();
-
-  if (m_v3 != NULL) {
-    ierr = VecDestroy(&m_v3);
-    PISM_PETSC_CHK(ierr, "VecDestroy");
-    m_v3 = NULL;
-  }
 }
 
 double*** IceModelVec2T::get_array3() {
