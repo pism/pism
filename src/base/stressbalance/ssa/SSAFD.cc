@@ -902,11 +902,11 @@ void SSAFD::solve() {
 
 void SSAFD::picard_iteration(double nuH_regularization,
                              double nuH_iter_failure_underrelax) {
+
   if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
     // Give BJACOBI another shot if we haven't tried it enough yet
 
     try {
-
       PetscErrorCode ierr = pc_setup_bjacobi();
       if (ierr != 0) {
         throw RuntimeError("SSAFD::pc_setup_bjacobi() failed");
@@ -914,8 +914,7 @@ void SSAFD::picard_iteration(double nuH_regularization,
       picard_manager(nuH_regularization,
                      nuH_iter_failure_underrelax);
 
-    }
-    catch (KSPFailure) {
+    } catch (KSPFailure) {
 
       m_default_pc_failure_count += 1;
 
@@ -926,7 +925,6 @@ void SSAFD::picard_iteration(double nuH_regularization,
       if (ierr != 0) {
         throw RuntimeError("SSAFD::pc_setup_asm() failed");
       }
-
 
       m_velocity.copy_from(m_velocity_old);
 
@@ -949,12 +947,6 @@ void SSAFD::picard_iteration(double nuH_regularization,
 }
 
 //! \brief Manages the Picard iteration loop.
-/*!
- *
- * Returns 0 on success, 1 if the KSP solver failed to converge, and 2 if the
- * Picard iteration failed to converge.
- *
- */
 void SSAFD::picard_manager(double nuH_regularization,
                            double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
@@ -1133,7 +1125,7 @@ void SSAFD::picard_strategy_regularization() {
 
     try {
       // 1.0 is the under-relaxation parameter
-      picard_iteration(m_config.get("epsilon_ssa"), 1.0);
+      picard_iteration(nuH_regularization, 1.0);
       // if this call succeeded, stop over-regularizing
       break;
     }
