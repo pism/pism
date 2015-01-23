@@ -38,7 +38,7 @@ static calcalcs_cal *cal_std=NULL;
    in seconds, so, for example, 1.e-3 means round up to 1 second if the value is 0.999 seconds or greater,
    and 1.e-6 means round up to 1 second if the value is 0.999999 seconds or greater.
 */
-static double sec_rounding_value = 1.e-8;
+static const double sec_rounding_value = 1.e-8;
 
 
 /* Internal to this file only */
@@ -50,7 +50,7 @@ static calcalcs_cal *getcal( const char *name );
 static void unknown_cal_emit_warning( const char *calendar_name );
 
 /* Stores previuosly initialized calendars and their names */
-static int		maxcals_known=100;
+static const int        maxcals_known=100;
 static int		ncals_known=0;
 static calcalcs_cal	**known_cal;		/* ptr to array of calcals_cal ptrs */
 static char		**known_cal_name;
