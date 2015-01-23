@@ -94,10 +94,7 @@ void IceCompModel::set_grid_defaults() {
   // equal spacing is the default for all the tests except K
   SpacingType spacing = EQUAL;
 
-  double
-    Lx = grid.Lx(),
-    Ly = grid.Ly(),
-    Lz = grid.Lz();
+  double Lx = 0.0, Ly = 0.0, Lz = 0.0;
 
   unsigned int
     Mx = grid.Mx(),
@@ -148,6 +145,8 @@ void IceCompModel::set_grid_defaults() {
   case 'V':
     My = 3;             // it's a flow-line setup
     Lx = 500e3;            // 500 km long
+    Ly = grid.Ly();
+    Lz = grid.Lz();
     periodicity = Y_PERIODIC;
     break;
   default:
