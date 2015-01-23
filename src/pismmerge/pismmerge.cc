@@ -33,7 +33,6 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
   NC4_Serial input(MPI_COMM_SELF, 0),
     output(MPI_COMM_SELF, compression_level);
   bool exists;
-  int ierr;
 
   fprintf(stderr, "Merging variable %s from %s into %s, compression level %d...\n",
           var_name.c_str(), input_file.c_str(), output_file.c_str(), compression_level);
@@ -45,54 +44,54 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
   output.create(output_file);
 
   // global attributes
-  ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
+  copy_attributes(input, output, "PISM_GLOBAL");
 
-  ierr = define_variable(input, output, var_name); CHKERRQ(ierr);
+  define_variable(input, output, var_name);
 
   input.inq_varid("time_bounds", exists);
   if (exists) {
-    ierr = define_variable(input, output, "time_bounds"); CHKERRQ(ierr);
+    define_variable(input, output, "time_bounds");
   }
 
   // mapping
   input.inq_varid("mapping", exists);
   if (exists) {
-    ierr = define_variable(input, output, "mapping"); CHKERRQ(ierr);
+    define_variable(input, output, "mapping");
   }
 
   // pism_override
   input.inq_varid("pism_override", exists);
   if (exists) {
-    ierr = define_variable(input, output, "pism_override"); CHKERRQ(ierr);
+    define_variable(input, output, "pism_override");
   }
 
   // run_stats
   input.inq_varid("run_stats", exists);
   if (exists) {
-    ierr = define_variable(input, output, "run_stats"); CHKERRQ(ierr);
+    define_variable(input, output, "run_stats");
   }
 
   // timestamp
   input.inq_varid("timestamp", exists);
   if (exists) {
-    ierr = define_variable(input, output, "timestamp"); CHKERRQ(ierr);
+    define_variable(input, output, "timestamp");
   }
 
   // lat
   input.inq_varid("lat", exists);
   if (exists) {
-    ierr = define_variable(input, output, "lat"); CHKERRQ(ierr);
+    define_variable(input, output, "lat");
   }
 
   // lon
   input.inq_varid("lon", exists);
   if (exists) {
-    ierr = define_variable(input, output, "lon"); CHKERRQ(ierr);
+    define_variable(input, output, "lon");
   }
 
   input.close();
 
-  ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
+  copy_all_variables(input_file, output);
 
   output.close();
 
@@ -103,7 +102,6 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
 
 int process_all_variables(std::string input_file, std::string output_file,
                           unsigned int compression_level) {
-  int ierr, n_vars;
   NC4_Serial input(MPI_COMM_SELF, 0),
     output(MPI_COMM_SELF, compression_level);
 
@@ -117,9 +115,10 @@ int process_all_variables(std::string input_file, std::string output_file,
   output.create(output_file);
 
   // global attributes
-  ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
+  copy_attributes(input, output, "PISM_GLOBAL");
 
   // define all variables (except for {x,y}_patch)
+  int n_vars;
   input.inq_nvars(n_vars);
 
   for (int j = 0; j < n_vars; ++j) {
@@ -131,10 +130,10 @@ int process_all_variables(std::string input_file, std::string output_file,
       continue;
     }
 
-    ierr = define_variable(input, output, var_name); check(ierr);
+    define_variable(input, output, var_name);
   }
 
-  ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
+  copy_all_variables(input_file, output);
 
   output.close();
 

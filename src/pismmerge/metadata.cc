@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014 PISM Authors
+// Copyright (C) 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,17 +26,18 @@
  * Ignores dimensions that already exist in the output file or don't exist in
  * the input file.
  */
-int define_dimension(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string dim_name) {
+void define_dimension(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+                      const std::string &dim_name) {
   bool exists;
 
   input.inq_dimid(dim_name, exists);
   if (exists == false) {
-    return 0;
+    return;
   }
 
   output.inq_dimid(dim_name, exists);
   if (exists == true) {
-    return 0;
+    return;
   }
 
   if (dim_name == "time") {
@@ -46,8 +47,6 @@ int define_dimension(pism::NC4_Serial &input, pism::NC4_Serial &output, std::str
     input.inq_dimlen(dim_name, dim_len);
     output.def_dim(dim_name, dim_len);
   }
-
-  return 0;
 }
 
 //! \brief Defines a variable in an output file.
@@ -57,19 +56,19 @@ int define_dimension(pism::NC4_Serial &input, pism::NC4_Serial &output, std::str
  * The `extra_vars` output argument will contain names of coordinate variables
  * corresponding to dimensions used by this variable.
  */
-int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string variable_name) {
-  int stat;
+void define_variable(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+                     const std::string &variable_name) {
   bool exists;
   std::vector<std::string> dimensions;
 
   input.inq_varid(variable_name, exists);
   if (exists == false) {
-    return 0;
+    return;
   }
 
   output.inq_varid(variable_name, exists);
   if (exists == true) {
-    return 0;
+    return;
   }
 
   input.inq_vardimid(variable_name, dimensions);
@@ -86,10 +85,10 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
       dim_name = "y";
     }
 
-    stat = define_dimension(input, output, dim_name); check(stat);
+    define_dimension(input, output, dim_name);
 
     if (dim_name != variable_name) {
-      stat = define_variable(input, output, dim_name); check(stat);
+      define_variable(input, output, dim_name);
     }
 
     dimensions[k] = dim_name;
@@ -100,13 +99,12 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
 
   output.def_var(variable_name, var_type, dimensions);
 
-  stat = copy_attributes(input, output, variable_name); check(stat);
-
-  return 0;
+  copy_attributes(input, output, variable_name);
 }
 
 //! \brief Copies variable attributes.
-int copy_attributes(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string var_name) {
+void copy_attributes(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+                     const std::string &var_name) {
   int n_attrs;
 
   input.inq_varnatts(var_name, n_attrs);
@@ -133,6 +131,4 @@ int copy_attributes(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
       output.put_att_double(var_name, att_name, att_type, tmp);
     }
   }
-
-  return 0;
 }

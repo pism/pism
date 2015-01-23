@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014 PISM Authors
+// Copyright (C) 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,14 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pismmerge.hh"
 #include <stdexcept>
+#include <cassert>
+
+#include "pismmerge.hh"
 
 //! \brief Copies 1D variables.
 /*!
  * This function processes coordinate variables and time bounds.
  */
-int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism::NC4_Serial &output) {
+void copy_coordinate_variable(const pism::NC4_Serial &input,
+                              const std::string &var_name,
+                              const pism::NC4_Serial &output) {
   unsigned int dim1_len = 0, dim2_len = 0;
   std::vector<unsigned int> start, count;
   std::vector<std::string> dims;
@@ -61,8 +65,6 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
     output.put_vara_double(var_name, start, count, &data[0]);
 
   }
-
-  return 0;
 }
 
 //! \brief Copies 2D and 3D variables.
@@ -80,10 +82,11 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
  * maximum buffer size and allocate once, although it is also not clear if this
  * would give any performance benefit.
  */
-int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_Serial &output) {
+void copy_spatial_variable(const std::string &filename,
+                           const std::string &var_name,
+                           const pism::NC4_Serial &output) {
   std::map<std::string, int> dim_lengths;
   pism::NC4_Serial input(MPI_COMM_SELF, 0);
-  int stat;
   std::vector<std::string> dims;
   std::vector<unsigned int> in_start, out_start, count;
 
@@ -95,9 +98,8 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
     dim_lengths[dims[d]] = tmp;
   }
 
-  int mpi_size;
   input.open(patch_filename(filename, 0), pism::PISM_READONLY);
-  stat = get_quilt_size(input, mpi_size); check(stat);
+  int mpi_size = get_quilt_size(input);
   input.close();
 
   for (int r = 0; r < mpi_size; ++r) { // for each patch...
@@ -106,7 +108,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
 
     input.open(patch_filename(filename, r), pism::PISM_READONLY);
 
-    stat = patch_geometry(input, xs, ys, xm, ym); check(stat);
+    patch_geometry(input, xs, ys, xm, ym);
 
     int max_time_start = dim_lengths["time"] > 0 ? dim_lengths["time"] : 1;
 
@@ -173,8 +175,6 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
 
     input.close();
   } // end of "for each patch..."
-
-  return 0;
 }
 
 //! \brief Copies all variables.
@@ -182,8 +182,8 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
  * Loops over variables present in an output file. This allows us to process
  * both cases ("-v foo" and without "-v").
  */
-int copy_all_variables(std::string filename, pism::NC4_Serial &output) {
-  int n_vars, stat;
+void copy_all_variables(const std::string &filename, const pism::NC4_Serial &output) {
+  int n_vars;
   pism::NC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
@@ -199,7 +199,7 @@ int copy_all_variables(std::string filename, pism::NC4_Serial &output) {
 
     // copy coordinate variables from the rank 0 file:
     if (dimensions.size() == 1 || var_name == "time_bounds") {
-      stat = copy_coordinate_variable(input, var_name, output); check(stat);
+      copy_coordinate_variable(input, var_name, output);
     } else {
       spatial_vars.push_back(var_name);
     }
@@ -210,9 +210,7 @@ int copy_all_variables(std::string filename, pism::NC4_Serial &output) {
   for (unsigned int k = 0; k < spatial_vars.size(); ++k) {
     // 2D or 3D variables
     fprintf(stderr, "Copying %s... ", spatial_vars[k].c_str());
-    stat = copy_spatial_variable(filename, spatial_vars[k], output); check(stat);
+    copy_spatial_variable(filename, spatial_vars[k], output);
     fprintf(stderr, "done.\n");
   }
-
-  return 0;
 }
