@@ -88,7 +88,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   // Default of maximum 200 iterations; possibly overridded by commandline
   int snes_max_it = 200;
   ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
-                           snes_max_it, PETSC_DEFAULT);
+                           snes_max_it, PETSC_DEFAULT); CHKERRQ(ierr);
   // ierr = SNESSetOptionsPrefix(snes, ((PetscObject)this)->prefix); CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
