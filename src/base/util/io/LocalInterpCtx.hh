@@ -47,8 +47,8 @@ public:
   unsigned int start[4], count[4]; // Indices in netCDF file.
   std::vector<int> x_left, x_right, y_left, y_right; // neighbors
   std::vector<double> x_alpha, y_alpha;
-  double *a;                       //!< temporary buffer
-  unsigned int a_len;              //!< the size of the buffer
+  //! temporary buffer
+  std::vector<double> buffer;
   std::vector<double> zlevels;     //!< input z levels
   bool report_range;
   MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)

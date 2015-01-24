@@ -119,7 +119,7 @@ static int k_below(double z, const vector<double> &zlevels) {
  * Note that its inputs are (essentially)
  * - the definition of the input grid
  * - the definition of the output grid
- * - input array (lic->a)
+ * - input array (lic->buffer)
  * - output array (double *output_array)
  *
  * The `output_array` is expected to be big enough to contain
@@ -137,7 +137,7 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
 
   vector<double> &zlevels_in = lic->zlevels;
   unsigned int nlevels = zlevels_out.size();
-  double *input_array = lic->a;
+  double *input_array = &(lic->buffer[0]);
 
   // array sizes for mapping from logical to "flat" indices
   int
@@ -1090,6 +1090,8 @@ void PIO::regrid_vec(const IceGrid &grid, const string &var_name,
     shared_ptr<LocalInterpCtx> lic(get_interp_context(*this, var_name, grid, zlevels_out));
     assert((bool)lic);
 
+    double *buffer = &(lic->buffer[0]);
+
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
                             t_start, t_count,
@@ -1101,9 +1103,9 @@ void PIO::regrid_vec(const IceGrid &grid, const string &var_name,
     bool mapped_io = true;
     use_mapped_io(var_name, mapped_io);
     if (mapped_io == true) {
-      get_varm_double(var_name, start, count, imap, lic->a);
+      get_varm_double(var_name, start, count, imap, buffer);
     } else {
-      get_vara_double(var_name, start, count, lic->a);
+      get_vara_double(var_name, start, count, buffer);
     }
 
     // interpolate
@@ -1136,6 +1138,8 @@ void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
     shared_ptr<LocalInterpCtx> lic(get_interp_context(*this, var_name, grid, zlevels_out));
     assert((bool)lic);
 
+    double *buffer = &(lic->buffer[0]);
+    
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
                             t_start, t_count,
@@ -1147,9 +1151,9 @@ void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
     bool mapped_io = true;
     use_mapped_io(var_name, mapped_io);
     if (mapped_io == true) {
-      get_varm_double(var_name, start, count, imap, lic->a);
+      get_varm_double(var_name, start, count, imap, buffer);
     } else {
-      get_vara_double(var_name, start, count, lic->a);
+      get_vara_double(var_name, start, count, buffer);
     }
 
     // Replace missing values if the _FillValue attribute is present,
@@ -1160,9 +1164,9 @@ void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
       if (attribute.size() == 1) {
         const double fill_value = attribute[0],
           epsilon = 1e-12;
-        for (unsigned int i = 0; i < lic->a_len; ++i) {
-          if (fabs(lic->a[i] - fill_value) < epsilon) {
-            lic->a[i] = default_value;
+        for (unsigned int i = 0; i < lic->buffer.size(); ++i) {
+          if (fabs(buffer[i] - fill_value) < epsilon) {
+            buffer[i] = default_value;
           }
         }
       }

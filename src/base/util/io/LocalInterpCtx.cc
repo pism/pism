@@ -128,14 +128,14 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  a_len = count[X] * count[Y] * std::max(count[Z], 1u);
-  int my_a_len = a_len, mpi_a_len = a_len;
-  // MPI_Reduce takes a pointer to int and a_len is an unsigned int,
-  // so we create a copy with the type int.
-  MPI_Reduce(&my_a_len, &(mpi_a_len), 1, MPI_INT, MPI_MAX, 0, com);
-  a_len = (unsigned int)mpi_a_len;
-  PetscMalloc(a_len * sizeof(double), &(a));
-  // FIXME: we need error checking here
+  int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
+  int proc0_buffer_size = buffer_size;
+  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_INT, MPI_MAX, 0, com);
+  if (rank == 0) {
+    buffer.resize(proc0_buffer_size);
+  } else {
+    buffer.resize(buffer_size);
+  }
 
   // Compute indices of neighbors and map-plane interpolation coefficients.
   x_left.resize(grid.xm());
@@ -245,10 +245,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
 }
 
-
-//! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
-  PetscFreeVoid(a);
+  // empty
 }
 
 } // end of namespace pism
