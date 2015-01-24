@@ -27,24 +27,11 @@ namespace pism {
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(const IceGrid &g)
   : BedDef(g) {
-  PetscErrorCode ierr;
-
-  ierr = allocate();
-  if (ierr != 0) {
-    throw std::runtime_error("PBPointwiseIsostasy allocation failed");
-  }
-
+  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
 }
 
 PBPointwiseIsostasy::~PBPointwiseIsostasy() {
   // empty
-}
-
-PetscErrorCode PBPointwiseIsostasy::allocate() {
-
-  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
-
-  return 0;
 }
 
 void PBPointwiseIsostasy::init() {

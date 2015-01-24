@@ -33,13 +33,10 @@ BedDef::BedDef(const IceGrid &g)
 
   m_t_beddef_last = GSL_NAN;
 
-  PetscErrorCode ierr = pismbeddef_allocate();
-  if (ierr != 0) {
-    throw std::runtime_error("BedDef allocation failed");
-  }
+  pismbeddef_allocate();
 }
 
-PetscErrorCode BedDef::pismbeddef_allocate() {
+void BedDef::pismbeddef_allocate() {
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
   m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
@@ -72,8 +69,6 @@ PetscErrorCode BedDef::pismbeddef_allocate() {
   // before BedDef::init()).
   m_topg.set(0.0);
   m_uplift.set(0.0);
-
-  return 0;
 }
 
 void BedDef::set_elevation(const IceModelVec2S &input) {

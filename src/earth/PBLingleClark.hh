@@ -36,7 +36,7 @@ public:
   void update(double my_t, double my_dt);
 protected:
   void correct_topg();
-  PetscErrorCode allocate();
+  void allocate();
   PetscErrorCode deallocate();
   // Vecs on processor 0:
   Vec m_Hp0,                      //!< ice thickness

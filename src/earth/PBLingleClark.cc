@@ -30,11 +30,24 @@ namespace pism {
 
 PBLingleClark::PBLingleClark(const IceGrid &g)
   : BedDef(g) {
+  m_topg_initial.allocate_proc0_copy(m_Hp0);
+  m_topg_initial.allocate_proc0_copy(m_bedp0);
+  m_topg_initial.allocate_proc0_copy(m_Hstartp0);
+  m_topg_initial.allocate_proc0_copy(m_bedstartp0);
+  m_topg_initial.allocate_proc0_copy(m_upliftp0);
 
-  if (allocate() != 0) {
-    throw std::runtime_error("PBLingleClark allocation failed");
+  bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
+
+  // FIXME: we need to check if this succeeds and prevent PISM from
+  // locking up if it fails in a parallel run.
+  if (m_grid.rank() == 0) {
+    m_bdLC.settings(m_config, use_elastic_model,
+                  m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
+                  4,     // use Z = 4 for now; to reduce global drift?
+                  &m_Hstartp0, &m_bedstartp0, &m_upliftp0, &m_Hp0, &m_bedp0);
+
+    m_bdLC.alloc();
   }
-
 }
 
 PBLingleClark::~PBLingleClark() {
@@ -45,41 +58,14 @@ PBLingleClark::~PBLingleClark() {
 
 }
 
-PetscErrorCode PBLingleClark::allocate() {
-
-  m_topg_initial.allocate_proc0_copy(m_Hp0);
-  m_topg_initial.allocate_proc0_copy(m_bedp0);
-  m_topg_initial.allocate_proc0_copy(m_Hstartp0);
-  m_topg_initial.allocate_proc0_copy(m_bedstartp0);
-  m_topg_initial.allocate_proc0_copy(m_upliftp0);
-
-  bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
-
-  if (m_grid.rank() == 0) {
-    m_bdLC.settings(m_config, use_elastic_model,
-                  m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
-                  4,     // use Z = 4 for now; to reduce global drift?
-                  &m_Hstartp0, &m_bedstartp0, &m_upliftp0, &m_Hp0, &m_bedp0);
-
-    m_bdLC.alloc();
-  }
-
-  return 0;
-}
-
 PetscErrorCode PBLingleClark::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&m_Hp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&m_bedp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&m_Hstartp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&m_bedstartp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
-  ierr = VecDestroy(&m_upliftp0);
-  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&m_Hp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_bedp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_Hstartp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_bedstartp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_upliftp0); CHKERRQ(ierr);
 
   return 0;
 }

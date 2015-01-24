@@ -46,7 +46,7 @@ public:
                                 IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
-  PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
+  void pismbeddef_allocate(); // packaged to simplify error checking
   void compute_uplift(double dt_beddef);
 
   //! time of the last bed deformation update
@@ -83,7 +83,6 @@ public:
   virtual void init();
   virtual void update(double my_t, double my_dt);
 protected:
-  PetscErrorCode allocate();
   IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 
