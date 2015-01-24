@@ -231,7 +231,7 @@ public:
 
 protected:
 
-  virtual PetscErrorCode construct();
+  PetscErrorCode construct();
   
   const IceGrid *m_grid;
   

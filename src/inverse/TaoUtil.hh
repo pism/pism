@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -148,7 +148,7 @@ public:
 protected:
 
   //! Initialize the TaoSolver and allow the Problem to connect its callbacks.
-  virtual PetscErrorCode construct(const std::string & tao_type) {
+  PetscErrorCode construct(const std::string & tao_type) {
     PetscErrorCode ierr;
     ierr = TaoCreate(m_comm ,&m_tao); CHKERRQ(ierr); 
     ierr = TaoSetType(m_tao,tao_type.c_str()); CHKERRQ(ierr);    
@@ -158,7 +158,7 @@ protected:
   }
 
   //! Finalize the TaoSolver.
-  virtual PetscErrorCode destruct() {
+  PetscErrorCode destruct() {
     PetscErrorCode ierr;
     if (m_tao) {
       ierr = TaoDestroy(&m_tao); CHKERRQ(ierr);

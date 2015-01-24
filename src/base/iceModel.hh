@@ -164,7 +164,7 @@ public:
   virtual void run_to(double time);
   virtual void step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
   virtual void setExecName(const std::string &my_executable_short_name);
-  virtual void reset_counters();
+  void reset_counters();
 
   // see iMbootstrap.cc 
   virtual void bootstrapFromFile(const std::string &fname);

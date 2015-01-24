@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -115,8 +115,8 @@ public:
 
 protected:
 
-  virtual PetscErrorCode construct();
-  virtual PetscErrorCode destruct();
+  PetscErrorCode construct();
+  PetscErrorCode destruct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
