@@ -118,13 +118,10 @@ void RoutingHydrology::init_bwat() {
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
 
-  try {
-    const IceModelVec2S *W_input = NULL;
-    // FIXME: this is not an "exceptional" situation...
+  if (m_grid.variables().is_available("bwap")) {
     // a variable called "bwat" is already in context
-    W_input = m_grid.variables().get_2d_scalar("bwat");
-    W.copy_from(*W_input);
-  } catch (RuntimeError) {
+    W.copy_from(*m_grid.variables().get_2d_scalar("bwat"));
+  } else {
     if (i || bootstrap) {
       std::string filename;
       int start;

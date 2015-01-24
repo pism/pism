@@ -117,12 +117,9 @@ void DistributedHydrology::init_bwp() {
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   const double bwp_default = m_config.get("bootstrapping_bwp_value_no_var");
 
-  try {
-    const IceModelVec2S *P_input = NULL;
-    // FIXME: this is not an "exceptional" situation...
-    P_input = m_grid.variables().get_2d_scalar("bwp");
-    P.copy_from(*P_input);
-  } catch (RuntimeError) {
+  if (m_grid.variables().is_available("bwp")) {
+    P.copy_from(*m_grid.variables().get_2d_scalar("bwp"));
+  } else {
     if (i || bootstrap) {
       std::string filename;
       int start;

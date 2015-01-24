@@ -147,13 +147,9 @@ void Hydrology::init() {
 
   // initialize till water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  const IceModelVec2S *Wtil_input = NULL;
-
-  try {
-    // FIXME: this is not an exceptional situation...
-    Wtil_input = m_grid.variables().get_2d_scalar("tillwat");
-    Wtil.copy_from(*Wtil_input);
-  } catch (RuntimeError) {
+  if (m_grid.variables().is_available("tillwat")) {
+    Wtil.copy_from(*m_grid.variables().get_2d_scalar("tillwat"));
+  } else {
     if (i || bootstrap) {
       std::string filename;
       int start;
