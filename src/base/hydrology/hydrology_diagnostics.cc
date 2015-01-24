@@ -185,4 +185,72 @@ PetscErrorCode Hydrology_wallmelt::compute(IceModelVec* &output) {
 }
 
 
+MCHydrology_ice_free_land_loss_cumulative::MCHydrology_ice_free_land_loss_cumulative(
+          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
+      : TSDiag<RoutingHydrology>(m, g, my_vars) {
+  ts = new DiagnosticTimeseries(&grid, "hydrology_ice_free_land_loss_cumulative", time_dimension_name);
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name",
+                                "cumulative liquid water loss from subglacial hydrology into cells with mask as ice free land");
+}
+
+PetscErrorCode MCHydrology_ice_free_land_loss_cumulative::update(double a, double b) {
+  PetscErrorCode ierr;
+  double value = model->ice_free_land_loss_cumulative;  // RoutingHydrology has member with this name
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+  return 0;
+}
+
+MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(
+          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
+      : TSDiag<RoutingHydrology>(m, g, my_vars) {
+  ts = new DiagnosticTimeseries(&grid, "hydrology_ocean_loss_cumulative", time_dimension_name);
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name",
+                                "cumulative liquid water loss from subglacial hydrology into cells with mask as ocean");
+}
+
+PetscErrorCode MCHydrology_ocean_loss_cumulative::update(double a, double b) {
+  PetscErrorCode ierr;
+  double value = model->ocean_loss_cumulative;  // RoutingHydrology has member with this name
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+  return 0;
+}
+
+MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_gain_cumulative(
+          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
+      : TSDiag<RoutingHydrology>(m, g, my_vars) {
+  ts = new DiagnosticTimeseries(&grid, "hydrology_negative_thickness_gain_cumulative", time_dimension_name);
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name",
+                                "cumulative non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero");
+}
+
+PetscErrorCode MCHydrology_negative_thickness_gain_cumulative::update(double a, double b) {
+  PetscErrorCode ierr;
+  double value = model->negative_thickness_gain_cumulative;  // RoutingHydrology has member with this name
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+  return 0;
+}
+
+MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(
+          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
+      : TSDiag<RoutingHydrology>(m, g, my_vars) {
+  ts = new DiagnosticTimeseries(&grid, "hydrology_null_strip_loss_cumulative", time_dimension_name);
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name",
+                                "cumulative liquid water loss from subglacial hydrology into cells inside the null strip");
+}
+
+PetscErrorCode MCHydrology_null_strip_loss_cumulative::update(double a, double b) {
+  PetscErrorCode ierr;
+  double value = model->null_strip_loss_cumulative;  // RoutingHydrology has member with this name
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+  return 0;
+}
+
 } // end of namespace pism

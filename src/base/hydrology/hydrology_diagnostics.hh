@@ -121,6 +121,59 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+/* OLD CODE DID:
+  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
+                                               double &icefreelost, double &oceanlost,
+                                               double &negativegain, double &nullstriplost);
+...
+    ierr = verbPrintf(2, grid.com,
+                      " 'routing' hydrology summary:\n"
+                      "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
+                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
+                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
+                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
+                      hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
+                      maxV, maxD,
+                      icefreelost, oceanlost,
+                      negativegain, nullstriplost); CHKERRQ(ierr);
+*/
+
+// Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
+// These four report the quantities computed in RoutingHydrology::boundary_mass_changes()
+// FIXME: issue #256
+
+//! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ice_free_land()==true".
+class MCHydrology_ice_free_land_loss_cumulative : public TSDiag<RoutingHydrology>
+{
+public:
+  MCHydrology_ice_free_land_loss_cumulative(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode update(double a, double b);
+};
+
+//! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ocean()==true".
+class MCHydrology_ocean_loss_cumulative : public TSDiag<RoutingHydrology>
+{
+public:
+  MCHydrology_ocean_loss_cumulative(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode update(double a, double b);
+};
+
+//! \brief Reports the cumulative non-conserving gain of liquid water, in kg, from water thickness coming out negative during a time step, and being projected up to zero.
+class MCHydrology_negative_thickness_gain_cumulative : public TSDiag<RoutingHydrology>
+{
+public:
+  MCHydrology_negative_thickness_gain_cumulative(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode update(double a, double b);
+};
+
+//! \brief Reports the cumulative loss of liquid water, in kg, to locations in the null strip, if that strip has positive width.
+class MCHydrology_null_strip_loss_cumulative : public TSDiag<RoutingHydrology>
+{
+public:
+  MCHydrology_null_strip_loss_cumulative(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode update(double a, double b);
+};
+
 } // end of namespace pism
 
 #endif /* _HYDROLOGY_DIAGNOSTICS_H_ */

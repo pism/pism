@@ -255,6 +255,10 @@ public:
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
+  friend class MCHydrology_ice_free_land_loss_cumulative;
+  friend class MCHydrology_ocean_loss_cumulative;
+  friend class MCHydrology_negative_thickness_gain_cumulative;
+  friend class MCHydrology_null_strip_loss_cumulative;
 
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
@@ -280,6 +284,11 @@ protected:
   double stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
 
+  double ice_free_land_loss_cumulative,
+         ocean_loss_cumulative,
+         negative_thickness_gain_cumulative,
+         null_strip_loss_cumulative;
+
   PetscErrorCode allocate();
   virtual PetscErrorCode init_bwat(Vars &vars);
 
@@ -299,6 +308,7 @@ protected:
   virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
+
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
