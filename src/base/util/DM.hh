@@ -22,11 +22,7 @@
 
 #include <petscdmda.h>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
+#include "Wrapper.hh"
 
 namespace pism {
 /** Wrapper around PETSc's DM. Simplifies memory management.
@@ -35,21 +31,10 @@ namespace pism {
  *
  * The destructor call DMDestroy().
  */
-class PISMDM {
+class PISMDM : public petsc::Wrapper<DM> {
 public:
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<PISMDM> Ptr;
-  typedef std::tr1::weak_ptr<PISMDM> WeakPtr;
-#else
-  typedef std::shared_ptr<PISMDM> Ptr;
-  typedef std::weak_ptr<PISMDM> WeakPtr;
-#endif
   PISMDM(DM dm);
   ~PISMDM();
-  DM get() const;
-  operator DM() const;
-private:
-  DM m_dm;
 };
 
 } // end of namespace pism

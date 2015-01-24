@@ -34,28 +34,24 @@ Viewer::Viewer(MPI_Comm com,  const std::string &title, unsigned int target_size
 
   // note we reverse x <-> y; see IceGrid::allocate() for original reversal
   ierr = PetscViewerDrawOpen(com, NULL, title.c_str(),
-                             PETSC_DECIDE, PETSC_DECIDE, Y, X, &m_viewer);
+                             PETSC_DECIDE, PETSC_DECIDE, Y, X, &m_value);
   PISM_PETSC_CHK(ierr, "PetscViewerDrawOpen");
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
   // there is a no titles bug
   PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(m_viewer, 0, &draw);
+  ierr = PetscViewerDrawGetDraw(m_value, 0, &draw);
   PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
   ierr = PetscDrawSetTitle(draw, title.c_str());
   PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 }
 
 Viewer::Viewer(PetscViewer v) {
-  m_viewer = v;
+  m_value = v;
 }
 
 Viewer::~Viewer() {
-  PetscViewerDestroy(&m_viewer);
-}
-
-Viewer::operator PetscViewer() const {
-  return m_viewer;
+  PetscViewerDestroy(&m_value);
 }
 
 void Viewer::compute_size(unsigned int target_size, double Lx, double Ly, unsigned int &X, unsigned int &Y) {

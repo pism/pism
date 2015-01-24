@@ -22,25 +22,17 @@
 namespace pism {
 
 PISMDM::PISMDM(DM dm) {
-  m_dm = dm;
+  m_value = dm;
 }
 
 PISMDM::~PISMDM() {
-  PetscErrorCode ierr = DMDestroy(&m_dm); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = DMDestroy(&m_value); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
     // We can't do anything about this failure. We can't recover
     // from it, and it is almost certainly caused by a programming
     // error. So, we call abort().
     abort();
   }
-}
-
-DM PISMDM::get() const {
-  return m_dm;
-}
-
-PISMDM::operator DM() const {
-  return m_dm;
 }
 
 } // end of namespace pism

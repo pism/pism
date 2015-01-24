@@ -23,33 +23,19 @@
 #include <petscviewer.h>
 #include <string>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
+#include "Wrapper.hh"
 
 namespace pism {
 
-class Viewer {
+class Viewer : public petsc::Wrapper<PetscViewer> {
 public:
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<Viewer> Ptr;
-#else
-  typedef std::shared_ptr<Viewer> Ptr;
-#endif
-  Viewer(MPI_Comm com, const std::string &name, unsigned int target_size, double Lx, double Ly);
+  Viewer(MPI_Comm com, const std::string &name,
+         unsigned int target_size, double Lx, double Ly);
   Viewer(PetscViewer v);
   ~Viewer();
-  operator PetscViewer() const;
 private:
   void compute_size(unsigned int target_size, double Lx, double Ly,
                     unsigned int &X, unsigned int &Y);
-  PetscViewer m_viewer;
-private:
-  // Hide copy constructor / assignment operator.
-  Viewer(Viewer const &);
-  Viewer & operator=(Viewer const &);
 };
 } // end of namespace pism
 
