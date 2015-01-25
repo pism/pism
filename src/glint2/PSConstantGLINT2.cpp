@@ -180,7 +180,7 @@ PetscErrorCode PSConstantGLINT2::ice_surface_temperature(IceModelVec2S &result) 
 	return 0;
 }
 
-void PSConstantGLINT2::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void PSConstantGLINT2::add_vars_to_output_impl(std::string /*keyword*/, std::set<std::string> &result) {
 	result.insert("climatic_mass_balance");
 	result.insert("ice_surface_temp");
 	// does not call atmosphere->add_vars_to_output().

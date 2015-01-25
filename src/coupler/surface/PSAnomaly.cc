@@ -105,7 +105,7 @@ void PSAnomaly::ice_surface_temperature(IceModelVec2S &result) {
   result.add(1.0, *ice_surface_temp_anomaly);
 }
 
-void PSAnomaly::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

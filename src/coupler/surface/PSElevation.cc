@@ -247,7 +247,7 @@ void PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   }
 }
 
-void PSElevation::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSElevation::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");

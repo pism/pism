@@ -157,7 +157,6 @@ public:
 
   virtual std::string stdout_report();
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void compute_driving_stress(IceModelVec2V &taud);
@@ -165,6 +164,7 @@ public:
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 

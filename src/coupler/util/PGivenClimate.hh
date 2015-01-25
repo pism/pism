@@ -44,20 +44,6 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result)
-  {
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      result.insert(k->first);
-      ++k;
-    }
-
-    if (Model::input_model != NULL) {
-      Model::input_model->add_vars_to_output(keyword, result);
-    }
-
-  }
-
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc) {
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -76,6 +62,20 @@ public:
   }
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
+  {
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      result.insert(k->first);
+      ++k;
+    }
+
+    if (Model::input_model != NULL) {
+      Model::input_model->add_vars_to_output(keyword, result);
+    }
+
+  }
+
   virtual void define_variables_impl(const std::set<std::string> &vars_input,
                                      const PIO &nc, IO_Type nctype)
   {

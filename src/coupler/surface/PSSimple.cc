@@ -80,8 +80,8 @@ void PSSimple::ice_surface_temperature(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 
-void PSSimple::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  SurfaceModel::add_vars_to_output(keyword, result);
+void PSSimple::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  SurfaceModel::add_vars_to_output_impl(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");

@@ -36,7 +36,6 @@ public:
 
   virtual void init();
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
@@ -45,6 +44,7 @@ public:
   virtual const IceModelVec2S& basal_material_yield_stress();
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
 

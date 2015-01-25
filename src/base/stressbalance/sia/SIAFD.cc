@@ -105,7 +105,7 @@ void SIAFD::init() {
   m_bed_state_counter = -1;
 }
 
-void SIAFD::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void SIAFD::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
   (void) result;
 }

@@ -63,7 +63,7 @@ class IceModelVec;
 
   A PISM component needs to implement the following I/O methods:
 
-  - add_vars_to_output(), which adds variable names to the list of fields that need
+  - add_vars_to_output_impl(), which adds variable names to the list of fields that need
   to be written.
   - define_variables_impl(), which defines variables to be written and writes variable metadata.
   - write_variables(), which writes data itself.
@@ -100,7 +100,7 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
   */
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result) = 0;
+  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
@@ -117,6 +117,8 @@ public:
   const IceGrid& get_grid() const;
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword,
+                                       std::set<std::string> &result) = 0;
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype) = 0;
   virtual bool find_pism_input(std::string &filename, bool &regrid, int &start);

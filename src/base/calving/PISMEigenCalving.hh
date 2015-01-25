@@ -41,9 +41,9 @@ public:
   virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
 
   // empty methods that we're required to implement:
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
   void update_strain_rates();

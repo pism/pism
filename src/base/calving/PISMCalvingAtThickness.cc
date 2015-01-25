@@ -80,7 +80,7 @@ void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
 }
 
 
-void CalvingAtThickness::add_vars_to_output(const std::string &/*keyword*/,
+void CalvingAtThickness::add_vars_to_output_impl(const std::string &/*keyword*/,
                                                 std::set<std::string> &/*result*/) {
   // empty
 }

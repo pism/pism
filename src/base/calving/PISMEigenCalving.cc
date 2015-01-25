@@ -359,7 +359,7 @@ void EigenCalving::max_timestep(double /*my_t*/,
   my_dt = std::max(my_dt, dt_min);
 }
 
-void EigenCalving::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
+void EigenCalving::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
   // empty
 }
 

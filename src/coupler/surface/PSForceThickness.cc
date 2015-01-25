@@ -345,7 +345,7 @@ void PSForceThickness::max_timestep(double my_t, double &my_dt, bool &restrict) 
 }
 
 //! Adds variables to output files.
-void PSForceThickness::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSForceThickness::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }

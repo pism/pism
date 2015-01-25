@@ -105,7 +105,6 @@ public:
   friend class Hydrology_hydroinput;
 
   // in the base class these only add/define/write tillwat
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   // all Hydrology models have a Wtil state variable, which this returns
@@ -123,6 +122,7 @@ public:
   virtual void update(double icet, double icedt) = 0;
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
@@ -246,7 +246,6 @@ public:
 
   virtual void init();
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -261,6 +260,7 @@ public:
   virtual void update(double icet, double icedt);
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
 protected:
@@ -331,8 +331,6 @@ public:
 
   virtual void init();
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class DistributedHydrology_hydrovelbase_mag;
@@ -344,6 +342,8 @@ public:
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual void init_bwp();

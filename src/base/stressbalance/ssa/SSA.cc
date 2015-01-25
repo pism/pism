@@ -327,7 +327,7 @@ void SSA::set_initial_guess(const IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
+void SSA::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("vel_ssa");
 }
 

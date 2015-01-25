@@ -112,7 +112,7 @@ void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
   }
 }
 
-void OceanKill::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void OceanKill::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
   }

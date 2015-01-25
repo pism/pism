@@ -147,7 +147,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   ice_thickness.update_ghosts();
 }
 
-void IcebergRemover::add_vars_to_output(const std::string &, std::set<std::string> &) {
+void IcebergRemover::add_vars_to_output_impl(const std::string &, std::set<std::string> &) {
   // empty
 }
 

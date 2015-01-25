@@ -264,7 +264,7 @@ A PISM component needs to implement the following I/O methods:
   read their input fields there; see PA_SeaRISE_Greenland::init().
 - add_vars_to_output(), which adds variable names to the list of
   fields that need to be written. See
-  PSTemperatureIndex::add_vars_to_output() for an example.
+  PSTemperatureIndex::add_vars_to_output_impl() for an example.
 - define_variables(), which defines variables. (See
   PSTemperatureIndex::define_variables().)
 - write_variables(), which writes data; see

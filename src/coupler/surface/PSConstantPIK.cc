@@ -118,7 +118,7 @@ void PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   ice_surface_temp.copy_to(result);
 }
 
-void PSConstantPIK::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
+void PSConstantPIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("climatic_mass_balance");
   result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().

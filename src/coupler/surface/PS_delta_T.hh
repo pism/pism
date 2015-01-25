@@ -41,8 +41,8 @@ public:
   virtual void ice_surface_temperature(IceModelVec2S &result);
 
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
 protected:

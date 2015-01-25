@@ -439,9 +439,9 @@ void PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 
-void PSTemperatureIndex::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSTemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
-  SurfaceModel::add_vars_to_output(keyword, result);
+  SurfaceModel::add_vars_to_output_impl(keyword, result);
 
   result.insert("snow_depth");
 

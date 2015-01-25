@@ -71,7 +71,7 @@ void PO_delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   offset_data(result);
 }
 
-void PO_delta_SMB::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PO_delta_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");

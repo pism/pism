@@ -88,7 +88,7 @@ void SIA_Sliding::define_variables_impl(const std::set<std::string> &vars, const
   (void) nctype;
 }
 
-void SIA_Sliding::add_vars_to_output(const std::string &keyword,
+void SIA_Sliding::add_vars_to_output_impl(const std::string &keyword,
                                      std::set<std::string> &result) {
   (void) keyword;
   (void) result;

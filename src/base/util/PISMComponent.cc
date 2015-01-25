@@ -44,6 +44,11 @@ void Component::define_variables(const std::set<std::string> &vars, const PIO &n
   this->define_variables_impl(vars, nc, nctype);
 }
 
+void Component::add_vars_to_output(const std::string &keyword,
+                                   std::set<std::string> &result) {
+  this->add_vars_to_output_impl(keyword, result);
+}
+
 void Component::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                 std::map<std::string, TSDiagnostic*> &ts_dict) {
   (void)dict;

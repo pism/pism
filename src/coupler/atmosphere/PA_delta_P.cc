@@ -89,7 +89,7 @@ void PA_delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PA_delta_P::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PA_delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

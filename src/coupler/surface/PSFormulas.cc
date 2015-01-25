@@ -59,7 +59,7 @@ void PSFormulas::ice_surface_temperature(IceModelVec2S &result) {
   m_ice_surface_temp.copy_to(result);
 }
 
-void PSFormulas::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSFormulas::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
 
   result.insert(m_climatic_mass_balance.metadata().get_name());

@@ -285,7 +285,7 @@ void MohrCoulombYieldStress::init() {
 }
 
 
-void MohrCoulombYieldStress::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
+void MohrCoulombYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("tillphi");
 }
 

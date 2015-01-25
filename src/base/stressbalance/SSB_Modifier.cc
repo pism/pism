@@ -153,7 +153,7 @@ void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
   m_D_max = 0.0;
 }
 
-void ConstantInColumn::add_vars_to_output(const std::string &keyword,
+void ConstantInColumn::add_vars_to_output_impl(const std::string &keyword,
                                           std::set<std::string> &result) {
   (void)keyword;
   (void)result;

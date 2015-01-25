@@ -153,8 +153,8 @@ void PAWeatherStation::temp_snapshot(IceModelVec2S &result) {
   result.set(m_air_temperature(m_t + 0.5*m_dt));
 }
 
-void PAWeatherStation::add_vars_to_output(const std::string &keyword,
-                                          std::set<std::string> &result) {
+void PAWeatherStation::add_vars_to_output_impl(const std::string &keyword,
+                                               std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("air_temp");
     result.insert("precipitation");

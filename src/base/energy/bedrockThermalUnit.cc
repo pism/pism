@@ -200,7 +200,7 @@ unsigned int BedThermalUnit::Mbz() {
   return m_Mbz;
 }
 
-void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
+void BedThermalUnit::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   if (m_temp.was_created()) {
     result.insert(m_temp.metadata().get_string("short_name"));
   }

@@ -154,8 +154,8 @@ void RoutingHydrology::init_bwat() {
 }
 
 
-void RoutingHydrology::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  Hydrology::add_vars_to_output(keyword, result);
+void RoutingHydrology::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  Hydrology::add_vars_to_output_impl(keyword, result);
   result.insert("bwat");
 }
 

@@ -110,7 +110,7 @@ void SurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
   }
 }
 
-void SurfaceModel::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (atmosphere != NULL) {
     atmosphere->add_vars_to_output(keyword, result);
   }

@@ -90,7 +90,7 @@ void PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
   mean_annual_temp(result);
 }
 
-void PAConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PAConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
   result.insert("air_temp");
 

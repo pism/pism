@@ -88,7 +88,7 @@ void PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &resu
   }
 }
 
-void PA_paleo_precip::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PA_paleo_precip::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

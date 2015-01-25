@@ -116,7 +116,7 @@ void POConstant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   result.set(meltrate);
 }
 
-void POConstant::add_vars_to_output(const std::string&, std::set<std::string> &result) {
+void POConstant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }

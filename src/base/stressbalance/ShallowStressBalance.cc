@@ -94,7 +94,7 @@ ZeroSliding::~ZeroSliding() {
   delete m_flow_law;
 }
 
-void ZeroSliding::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
+void ZeroSliding::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
 {
   // empty
 }

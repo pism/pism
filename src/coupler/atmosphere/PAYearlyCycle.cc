@@ -94,7 +94,7 @@ void PAYearlyCycle::init_internal(const std::string &input_filename, bool do_reg
   }
 }
 
-void PAYearlyCycle::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PAYearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
 
   if (keyword == "big") {

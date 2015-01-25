@@ -72,7 +72,7 @@ void PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
   offset_data(result);
 }
 
-void PS_delta_T::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PS_delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

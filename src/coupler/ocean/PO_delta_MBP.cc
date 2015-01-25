@@ -69,7 +69,7 @@ void PO_delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.shift((*offset)(m_t + 0.5*m_dt));
 }
 
-void PO_delta_MBP::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PO_delta_MBP::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");

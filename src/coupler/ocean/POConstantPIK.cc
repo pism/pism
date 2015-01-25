@@ -139,7 +139,7 @@ void POConstantPIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   }
 }
 
-void POConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void POConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("shelfbtemp");
     result.insert("shelfbmassflux");

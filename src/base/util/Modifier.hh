@@ -42,13 +42,6 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result)
-  {
-    if (input_model != NULL) {
-      input_model->add_vars_to_output(keyword, result);
-    }
-  }
-
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc)
   {
     if (input_model != NULL) {
@@ -84,6 +77,13 @@ public:
   }
 
 protected:
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
+  {
+    if (input_model != NULL) {
+      input_model->add_vars_to_output(keyword, result);
+    }
+  }
+
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) {
     if (input_model != NULL) {

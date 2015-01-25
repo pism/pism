@@ -118,8 +118,8 @@ void POGivenTH::init_impl() {
   }
 }
 
-void POGivenTH::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  PGivenClimate<POModifier,OceanModel>::add_vars_to_output(keyword, result);
+void POGivenTH::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  PGivenClimate<POModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
 
   if (keyword != "none" && keyword != "small") {
     result.insert("shelfbtemp");

@@ -351,7 +351,7 @@ void PSTemperatureIndex_Old::ice_surface_temperature(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 
-void PSTemperatureIndex_Old::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSTemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert(mass_balance_name);
     result.insert(temperature_name);

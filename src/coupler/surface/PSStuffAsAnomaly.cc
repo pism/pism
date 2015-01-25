@@ -135,7 +135,7 @@ void PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
   temp.copy_to(result);
 }
 
-void PSStuffAsAnomaly::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSStuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }

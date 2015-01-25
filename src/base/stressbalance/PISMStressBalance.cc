@@ -507,7 +507,7 @@ void StressBalance::write_variables(const std::set<std::string> &vars, const PIO
   m_modifier->write_variables(vars, nc);
 }
 
-void StressBalance::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void StressBalance::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
   m_stress_balance->add_vars_to_output(keyword, result);
   m_modifier->add_vars_to_output(keyword, result);
