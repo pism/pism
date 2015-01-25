@@ -106,6 +106,11 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
 
   ierr = RoutingHydrology::init_bwat(vars); CHKERRQ(ierr);
 
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
+
   ierr = init_bwp(vars); CHKERRQ(ierr);
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
@@ -535,7 +540,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // FIXME issue #256
+  // FIXME issue #256: remove/simplify this stdout version, and replace with below
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
                       " 'distributed' hydrology summary:\n"
@@ -548,6 +553,11 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
                       icefreelost, oceanlost,
                       negativegain, nullstriplost); CHKERRQ(ierr);
   }
+  ice_free_land_loss_cumulative      += icefreelost;
+  ocean_loss_cumulative              += oceanlost;
+  negative_thickness_gain_cumulative += negativegain;
+  null_strip_loss_cumulative         += nullstriplost;
+
   return 0;
 }
 

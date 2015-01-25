@@ -32,6 +32,11 @@ RoutingHydrology::RoutingHydrology(IceGrid &g, const Config &conf)
     PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in RoutingHydrology constructor.\n");
     PISMEnd();
   }
+  // these variables are also set to zero every time init() is called
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
 }
 
 RoutingHydrology::~RoutingHydrology() {
@@ -122,6 +127,11 @@ PetscErrorCode RoutingHydrology::init(Vars &vars) {
   ierr = Hydrology::init(vars); CHKERRQ(ierr);
 
   ierr = init_bwat(vars); CHKERRQ(ierr);
+
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
   return 0;
 }
 
@@ -818,7 +828,7 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // FIXME issue #256
+  // FIXME issue #256: remove/simplify this stdout version, and replace with below
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
                       " 'routing' hydrology summary:\n"
@@ -831,6 +841,11 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
                       icefreelost, oceanlost,
                       negativegain, nullstriplost); CHKERRQ(ierr);
   }
+  ice_free_land_loss_cumulative      += icefreelost;
+  ocean_loss_cumulative              += oceanlost;
+  negative_thickness_gain_cumulative += negativegain;
+  null_strip_loss_cumulative         += nullstriplost;
+
   return 0;
 }
 
