@@ -121,25 +121,10 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-/* OLD CODE DID:
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
-                                               double &icefreelost, double &oceanlost,
-                                               double &negativegain, double &nullstriplost);
-...
-    ierr = verbPrintf(2, grid.com,
-                      " 'routing' hydrology summary:\n"
-                      "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-                      hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-                      maxV, maxD,
-                      icefreelost, oceanlost,
-                      negativegain, nullstriplost); CHKERRQ(ierr);
-*/
-
 // Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
 // These four report the quantities computed in RoutingHydrology::boundary_mass_changes()
+// FIXME: -report_mass_accounting option still present; it reports time steps, max |V|, max D; should remove ...
+// FIXME: need non-cumulative versions of these?
 // FIXME: issue #256
 
 //! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ice_free_land()==true".
