@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -99,7 +99,7 @@ void PAConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std:
   }
 }
 
-void PAConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PAConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   if (set_contains(vars, "air_temp_snapshot")) {
     air_temp_snapshot.define(nc, nctype, false);

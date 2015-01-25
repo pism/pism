@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -105,7 +105,7 @@ void PAYearlyCycle::add_vars_to_output(const std::string &keyword, std::set<std:
 }
 
 
-void PAYearlyCycle::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void PAYearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp_snapshot")) {
     m_air_temp_snapshot.define(nc, nctype, false);

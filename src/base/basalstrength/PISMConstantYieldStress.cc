@@ -74,7 +74,7 @@ void ConstantYieldStress::add_vars_to_output(const std::string &/*keyword*/, std
 }
 
 
-void ConstantYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void ConstantYieldStress::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                          IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
     m_tauc.define(nc, nctype);

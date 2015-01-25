@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -51,9 +51,11 @@ public:
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
 protected:
   AtmosphereModel *atmosphere;
 };

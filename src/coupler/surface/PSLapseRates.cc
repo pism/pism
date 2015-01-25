@@ -91,7 +91,7 @@ void PSLapseRates::add_vars_to_output(const std::string &keyword, std::set<std::
   input_model->add_vars_to_output(keyword, result);
 }
 
-void PSLapseRates::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void PSLapseRates::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);

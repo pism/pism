@@ -40,21 +40,15 @@ public:
 
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
-  }
+  virtual void add_vars_to_output(const std::string &keyword,
+                                  std::set<std::string> &result);
 
-  //! Defines requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/) {
-  }
-
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual void write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-  }
+  virtual void write_variables(const std::set<std::string> &vars,
+                               const PIO &nc);
 
 protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 
   virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 

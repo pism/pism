@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 PISM Authors
+// Copyright (C) 2008-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -124,8 +124,8 @@ void PSConstantPIK::add_vars_to_output(const std::string &/*keyword*/, std::set<
   // does not call atmosphere->add_vars_to_output().
 }
 
-void PSConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  SurfaceModel::define_variables(vars, nc, nctype);
+void PSConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype);

@@ -99,7 +99,7 @@ void PA_delta_P::add_vars_to_output(const std::string &keyword, std::set<std::st
 }
 
 
-void PA_delta_P::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+void PA_delta_P::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 

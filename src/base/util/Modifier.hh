@@ -49,14 +49,6 @@ public:
     }
   }
 
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype)
-  {
-    if (input_model != NULL) {
-      input_model->define_variables(vars, nc, nctype);
-    }
-  }
-
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc)
   {
     if (input_model != NULL) {
@@ -91,6 +83,13 @@ public:
     }
   }
 
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype) {
+    if (input_model != NULL) {
+      input_model->define_variables(vars, nc, nctype);
+    }
+  }
 protected:
   Model *input_model;
 };  

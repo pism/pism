@@ -157,9 +157,9 @@ void DistributedHydrology::add_vars_to_output(const std::string &keyword, std::s
 }
 
 
-void DistributedHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void DistributedHydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
-  RoutingHydrology::define_variables(vars, nc, nctype);
+  RoutingHydrology::define_variables_impl(vars, nc, nctype);
   if (set_contains(vars, "bwp")) {
     P.define(nc, nctype);
   }

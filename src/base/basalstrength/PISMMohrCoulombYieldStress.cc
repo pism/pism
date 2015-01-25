@@ -290,7 +290,7 @@ void MohrCoulombYieldStress::add_vars_to_output(const std::string &/*keyword*/, 
 }
 
 
-void MohrCoulombYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void MohrCoulombYieldStress::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
     m_till_phi.define(nc, nctype);

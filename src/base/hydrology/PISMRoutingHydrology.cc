@@ -160,9 +160,9 @@ void RoutingHydrology::add_vars_to_output(const std::string &keyword, std::set<s
 }
 
 
-void RoutingHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void RoutingHydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
-  Hydrology::define_variables(vars, nc, nctype);
+  Hydrology::define_variables_impl(vars, nc, nctype);
   if (set_contains(vars, "bwat")) {
     W.define(nc, nctype);
   }

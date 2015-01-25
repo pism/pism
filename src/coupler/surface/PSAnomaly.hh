@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,9 +37,11 @@ public:
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
   IceModelVec2T *climatic_mass_balance_anomaly, *ice_surface_temp_anomaly;

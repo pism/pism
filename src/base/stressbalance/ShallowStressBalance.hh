@@ -130,14 +130,12 @@ public:
 
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/);
 
-  //! Defines requested couplings fields and/or asks an attached model
-  //! to do so.
-  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/);
-
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual void write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+                                     IO_Type /*nctype*/);
 };
 
 class PrescribedSliding : public ZeroSliding {

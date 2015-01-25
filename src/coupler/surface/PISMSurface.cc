@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -89,7 +89,7 @@ void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
   result.set(0.0);
 }
 
-void SurfaceModel::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   if (atmosphere != NULL) {
     atmosphere->define_variables(vars, nc, nctype);
   }

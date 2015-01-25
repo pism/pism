@@ -130,7 +130,7 @@ void PALapseRates::temp_snapshot(IceModelVec2S &result) {
   lapse_rate_correction(result, temp_lapse_rate);
 }
 
-void PALapseRates::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void PALapseRates::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp")) {
     air_temp.define(nc, nctype, true);

@@ -55,10 +55,12 @@ public:
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);  
   virtual void update_internal(PetscReal my_t, PetscReal my_dt);
+protected:
   LocalMassBalance_Old *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject_Old *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff

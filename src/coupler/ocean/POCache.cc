@@ -123,7 +123,7 @@ void POCache::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
 }
 
 
-void POCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+void POCache::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                          IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 

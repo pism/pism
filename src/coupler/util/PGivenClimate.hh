@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,23 +58,6 @@ public:
 
   }
 
-  virtual void define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype)
-  {
-    std::set<std::string> vars = vars_input;
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      if (set_contains(vars, k->first)) {
-        (k->second)->define(nc, nctype);
-        vars.erase(k->first);
-      }
-      ++k;
-    }
-
-    if (Model::input_model != NULL) {
-      Model::input_model->define_variables(vars, nc, nctype);
-    }
-  }
-
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc) {
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -93,11 +76,23 @@ public:
   }
 
 protected:
-  std::map<std::string, IceModelVec2T*> m_fields;
-  std::string filename, option_prefix;
+  virtual void define_variables_impl(const std::set<std::string> &vars_input,
+                                     const PIO &nc, IO_Type nctype)
+  {
+    std::set<std::string> vars = vars_input;
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      if (set_contains(vars, k->first)) {
+        (k->second)->define(nc, nctype);
+        vars.erase(k->first);
+      }
+      ++k;
+    }
 
-  unsigned int bc_period;       // in (integer) years
-  double bc_reference_time;  // in seconds
+    if (Model::input_model != NULL) {
+      Model::input_model->define_variables(vars, nc, nctype);
+    }
+  }
 
   void process_options()
   {
@@ -199,6 +194,12 @@ protected:
       ++k;
     }
   }
+protected:
+  std::map<std::string, IceModelVec2T*> m_fields;
+  std::string filename, option_prefix;
+
+  unsigned int bc_period;       // in (integer) years
+  double bc_reference_time;  // in seconds
 };
 
 } // end of namespace pism

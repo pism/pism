@@ -56,11 +56,6 @@ public:
   */
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  //! Defines requested fields to file and/or asks an attached
-  //! model to do so.
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                IO_Type nctype);
-
   //! Writes requested fields to a file.
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
@@ -127,6 +122,9 @@ public:
     return m_modifier;
   }
 protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+
   virtual void compute_vertical_velocity(const IceModelVec3 &u,
                                          const IceModelVec3 &v,
                                          const IceModelVec2S *bmr,

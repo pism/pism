@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,10 +38,12 @@ public:
   virtual void mass_held_in_surface_layer(IceModelVec2S &result);
   virtual void surface_layer_thickness(IceModelVec2S &result);
 
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void max_timestep(double t, double &dt, bool &restrict);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
 protected:
   IceModelVec2S m_mass_flux, m_temperature, m_liquid_water_fraction,
     m_mass_held_in_surface_layer, m_surface_layer_thickness;

@@ -65,7 +65,7 @@ class IceModelVec;
 
   - add_vars_to_output(), which adds variable names to the list of fields that need
   to be written.
-  - define_variables(), which defines variables to be written and writes variable metadata.
+  - define_variables_impl(), which defines variables to be written and writes variable metadata.
   - write_variables(), which writes data itself.
   
   Why are all these methods needed? In PISM we separate defining and writing
@@ -104,8 +104,7 @@ public:
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                IO_Type nctype) = 0;
+  void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
@@ -118,9 +117,9 @@ public:
   const IceGrid& get_grid() const;
 
 protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype) = 0;
   virtual bool find_pism_input(std::string &filename, bool &regrid, int &start);
-  const IceGrid &m_grid;
-  const Config &m_config;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
@@ -129,6 +128,9 @@ protected:
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual void regrid(const std::string &module_name, IceModelVec *variable,
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
+protected:
+  const IceGrid &m_grid;
+  const Config &m_config;
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

@@ -38,8 +38,10 @@ public:
   virtual void ice_surface_temperature(IceModelVec2S &result);
   virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
 private:
   std::string m_input_file;
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;

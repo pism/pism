@@ -85,7 +85,7 @@ void CalvingAtThickness::add_vars_to_output(const std::string &/*keyword*/,
   // empty
 }
 
-void CalvingAtThickness::define_variables(const std::set<std::string> &/*vars*/,
+void CalvingAtThickness::define_variables_impl(const std::set<std::string> &/*vars*/,
                                                         const PIO &/*nc*/,
                                                         IO_Type /*nctype*/) {
   // empty

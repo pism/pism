@@ -42,9 +42,12 @@ public:
 
   // empty methods that we're required to implement:
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+  void update_strain_rates();
+  void remove_narrow_tongues(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
@@ -53,9 +56,6 @@ protected:
   StressBalance *m_stress_balance;
   double m_K;
   bool m_restrict_timestep;
-
-  void update_strain_rates();
-  void remove_narrow_tongues(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 };
 
 

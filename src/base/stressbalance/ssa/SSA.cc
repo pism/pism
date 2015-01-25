@@ -332,7 +332,7 @@ void SSA::add_vars_to_output(const std::string &/*keyword*/, std::set<std::strin
 }
 
 
-void SSA::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void SSA::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "vel_ssa")) {
     m_velocity.define(nc, nctype);

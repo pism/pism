@@ -81,6 +81,25 @@ void SIA_Sliding::init() {
   m_enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 }
 
+void SIA_Sliding::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                        IO_Type nctype) {
+  (void) vars;
+  (void) nc;
+  (void) nctype;
+}
+
+void SIA_Sliding::add_vars_to_output(const std::string &keyword,
+                                     std::set<std::string> &result) {
+  (void) keyword;
+  (void) result;
+}
+
+void SIA_Sliding::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+  (void) vars;
+  (void) nc;
+}
+
+
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.
 /*!
   THIS KIND OF SIA SLIDING LAW IS A BAD IDEA. THAT'S WHY \f$\mu\f$ IS SET TO

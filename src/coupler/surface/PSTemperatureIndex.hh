@@ -51,8 +51,11 @@ public:
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);  
+  double compute_next_balance_year_start(double time);
 protected:
   LocalMassBalance *mbscheme;         //!< mass balance scheme to use
 
@@ -82,7 +85,6 @@ protected:
   bool sd_use_param, sd_file_set;
   int sd_period, sd_period_years;
   double sd_ref_time, sd_param_a, sd_param_b;
-  double compute_next_balance_year_start(double time);
 };
 
 } // end of namespace pism

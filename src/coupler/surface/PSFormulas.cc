@@ -66,7 +66,7 @@ void PSFormulas::add_vars_to_output(const std::string &keyword, std::set<std::st
   result.insert(m_ice_surface_temp.metadata().get_name());
 }
 
-void PSFormulas::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PSFormulas::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                              IO_Type nctype) {
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {

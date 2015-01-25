@@ -493,7 +493,7 @@ std::string StressBalance::stdout_report() {
   return m_stress_balance->stdout_report() + m_modifier->stdout_report();
 }
 
-void StressBalance::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void StressBalance::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
 
   m_stress_balance->define_variables(vars, nc, nctype);

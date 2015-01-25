@@ -121,7 +121,7 @@ void POConstant::add_vars_to_output(const std::string&, std::set<std::string> &r
   result.insert("shelfbmassflux");
 }
 
-void POConstant::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void POConstant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
 
   if (set_contains(vars, "shelfbtemp")) {

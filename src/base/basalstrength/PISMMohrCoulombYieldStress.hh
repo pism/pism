@@ -38,9 +38,6 @@ public:
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void update(double my_t, double my_dt);
@@ -48,14 +45,17 @@ public:
   virtual const IceModelVec2S& basal_material_yield_stress();
 
 protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+
+  void topg_to_phi();
+  void tauc_to_phi();
+protected:
   IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
   IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
   const IceModelVec2S *m_bed_topography;
   const IceModelVec2Int *m_mask;
   Hydrology *m_hydrology;
-
-  void topg_to_phi();
-  void tauc_to_phi();
 };
 
 } // end of namespace pism

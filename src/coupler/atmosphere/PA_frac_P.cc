@@ -95,7 +95,7 @@ void PA_frac_P::add_vars_to_output(const std::string &keyword,
   }
 }
 
-void PA_frac_P::define_variables(const std::set<std::string> &vars_input,
+void PA_frac_P::define_variables_impl(const std::set<std::string> &vars_input,
                                            const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 

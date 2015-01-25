@@ -39,6 +39,11 @@ Component::~Component() {
   // empty
 }
 
+void Component::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                 IO_Type nctype) {
+  this->define_variables_impl(vars, nc, nctype);
+}
+
 void Component::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                 std::map<std::string, TSDiagnostic*> &ts_dict) {
   (void)dict;

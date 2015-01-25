@@ -34,9 +34,6 @@ public:
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual void define_variables(const std::set<std::string> &vars,
-                                          const PIO &nc, IO_Type nctype);
-
   virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
 
   class POGivenTHConstants {
@@ -68,6 +65,8 @@ public:
     bool limit_salinity_range;
   };
 protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
   virtual void sea_level_elevation_impl(double &result);

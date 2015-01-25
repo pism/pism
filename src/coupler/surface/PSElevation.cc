@@ -254,8 +254,8 @@ void PSElevation::add_vars_to_output(const std::string &keyword, std::set<std::s
   }
 }
 
-void PSElevation::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  SurfaceModel::define_variables(vars, nc, nctype);
+void PSElevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);

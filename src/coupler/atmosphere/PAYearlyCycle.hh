@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,6 @@ public:
 
   virtual void init();
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   //! This method implements the parameterization.
   virtual void update(double my_t, double my_dt) = 0;
@@ -48,6 +47,9 @@ public:
   virtual void init_timeseries(const std::vector<double> &ts);
   virtual void temp_time_series(int i, int j, std::vector<double> &result);
   virtual void precip_time_series(int i, int j, std::vector<double> &result);
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
 protected:
   void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);

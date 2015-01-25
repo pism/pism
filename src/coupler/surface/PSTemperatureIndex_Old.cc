@@ -366,9 +366,9 @@ void PSTemperatureIndex_Old::add_vars_to_output(const std::string &keyword, std:
   atmosphere->add_vars_to_output(keyword, result);
 }
 
-void PSTemperatureIndex_Old::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void PSTemperatureIndex_Old::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
-  SurfaceModel::define_variables(vars, nc, nctype);
+  SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, temperature_name)) {
     ice_surface_temp.define(nc, nctype, true);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -166,7 +166,7 @@ void PAAnomaly::add_vars_to_output(const std::string &keyword, std::set<std::str
   }
 }
 
-void PAAnomaly::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+void PAAnomaly::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                            IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 

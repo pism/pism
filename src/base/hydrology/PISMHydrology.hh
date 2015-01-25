@@ -106,8 +106,6 @@ public:
 
   // in the base class these only add/define/write tillwat
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   // all Hydrology models have a Wtil state variable, which this returns
@@ -124,6 +122,11 @@ public:
   virtual void subglacial_water_pressure(IceModelVec2S &result) = 0;
   virtual void update(double icet, double icedt) = 0;
 
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
+  virtual void check_Wtil_bounds();
 protected:
   // this model's state
   IceModelVec2S Wtil;      // effective thickness of till
@@ -143,9 +146,6 @@ protected:
   unsigned int inputtobed_period;      // in years
   double inputtobed_reference_time; // in seconds
 
-  virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
-
-  virtual void check_Wtil_bounds();
 };
 
 
@@ -247,8 +247,6 @@ public:
   virtual void init();
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -262,6 +260,9 @@ public:
 
   virtual void update(double icet, double icedt);
 
+protected:
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 protected:
   // this model's state
   IceModelVec2S W;      // water layer thickness
@@ -336,8 +337,6 @@ public:
                                std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class DistributedHydrology_hydrovelbase_mag;
 
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void update(double icet, double icedt);
@@ -345,17 +344,8 @@ public:
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
-  // this model's state, in addition to what is in RoutingHydrology
-  IceModelVec2S P;      //!< water pressure
-  // this model's auxiliary variables, in addition ...
-  IceModelVec2S psi,    //!< hydraulic potential
-    velbase_mag,  //!< sliding speed of overlying ice
-    Pnew;   //!< pressure during update
-  bool hold_velbase_mag;
-
-  // need to get basal sliding velocity (thus speed):
-  StressBalance* stressbalance;
-
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
   virtual void init_bwp();
 
   virtual void check_P_bounds(bool enforce_upper);
@@ -367,6 +357,17 @@ protected:
                                             double &dt_result,
                                             double &maxV_result, double &maxD_result,
                                             double &PtoCFLratio);
+protected:
+  // this model's state, in addition to what is in RoutingHydrology
+  IceModelVec2S P;      //!< water pressure
+  // this model's auxiliary variables, in addition ...
+  IceModelVec2S psi,    //!< hydraulic potential
+    velbase_mag,  //!< sliding speed of overlying ice
+    Pnew;   //!< pressure during update
+  bool hold_velbase_mag;
+
+  // need to get basal sliding velocity (thus speed):
+  StressBalance* stressbalance;
 };
 
 } // end of namespace pism

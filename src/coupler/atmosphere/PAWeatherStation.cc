@@ -161,7 +161,7 @@ void PAWeatherStation::add_vars_to_output(const std::string &keyword,
   }
 }
 
-void PAWeatherStation::define_variables(const std::set<std::string> &vars,
+void PAWeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units

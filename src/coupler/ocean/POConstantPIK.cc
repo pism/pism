@@ -146,7 +146,7 @@ void POConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std:
   }
 }
 
-void POConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void POConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
   if (set_contains(vars, "shelfbtemp")) {
     shelfbtemp.define(nc, nctype, true);

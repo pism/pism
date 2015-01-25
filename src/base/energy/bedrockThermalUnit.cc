@@ -206,7 +206,7 @@ void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set
   }
 }
 
-void BedThermalUnit::define_variables(const std::set<std::string> &vars,
+void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
   if (m_temp.was_created()) {
     if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {

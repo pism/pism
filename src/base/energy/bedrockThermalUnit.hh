@@ -92,7 +92,6 @@ public:
   virtual void init(bool &bootstrapping_needed);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void max_timestep(double /*my_t*/, double &my_dt, bool &restrict);
@@ -107,7 +106,9 @@ public:
 
   unsigned int Mbz();
 protected:
-
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);  
+protected:
   IceModelVec3Custom m_temp;
   IceModelVec2S m_upward_flux;
   //!< storage for bedrock thermal layer temperature; part of state;

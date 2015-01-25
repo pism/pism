@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -89,7 +89,7 @@ void PSSimple::add_vars_to_output(const std::string &keyword, std::set<std::stri
   }
 }
 
-void PSSimple::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void PSSimple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);
@@ -99,7 +99,7 @@ void PSSimple::define_variables(const std::set<std::string> &vars, const PIO &nc
     climatic_mass_balance.define(nc, nctype, true);
   }
 
-  SurfaceModel::define_variables(vars, nc, nctype);
+  SurfaceModel::define_variables_impl(vars, nc, nctype);
 }
 
 void PSSimple::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
