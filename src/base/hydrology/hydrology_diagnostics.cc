@@ -188,7 +188,7 @@ PetscErrorCode Hydrology_wallmelt::compute(IceModelVec* &output) {
 MCHydrology_ice_free_land_loss_cumulative::MCHydrology_ice_free_land_loss_cumulative(
           RoutingHydrology *m, IceGrid &g, Vars &my_vars)
       : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydrology_ice_free_land_loss_cumulative", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "hydro_ice_free_land_loss_cumulative", time_dimension_name);
   ts->get_metadata().set_units("kg");
   ts->get_dimension_metadata().set_units(time_units);
   ts->get_metadata().set_string("long_name",
@@ -205,7 +205,7 @@ PetscErrorCode MCHydrology_ice_free_land_loss_cumulative::update(double a, doubl
 MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(
           RoutingHydrology *m, IceGrid &g, Vars &my_vars)
       : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydrology_ocean_loss_cumulative", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "hydro_ocean_loss_cumulative", time_dimension_name);
   ts->get_metadata().set_units("kg");
   ts->get_dimension_metadata().set_units(time_units);
   ts->get_metadata().set_string("long_name",
@@ -222,7 +222,7 @@ PetscErrorCode MCHydrology_ocean_loss_cumulative::update(double a, double b) {
 MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_gain_cumulative(
           RoutingHydrology *m, IceGrid &g, Vars &my_vars)
       : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydrology_negative_thickness_gain_cumulative", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "hydro_negative_thickness_gain_cumulative", time_dimension_name);
   ts->get_metadata().set_units("kg");
   ts->get_dimension_metadata().set_units(time_units);
   ts->get_metadata().set_string("long_name",
@@ -239,7 +239,7 @@ PetscErrorCode MCHydrology_negative_thickness_gain_cumulative::update(double a, 
 MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(
           RoutingHydrology *m, IceGrid &g, Vars &my_vars)
       : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydrology_null_strip_loss_cumulative", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "hydro_null_strip_loss_cumulative", time_dimension_name);
   ts->get_metadata().set_units("kg");
   ts->get_dimension_metadata().set_units(time_units);
   ts->get_metadata().set_string("long_name",

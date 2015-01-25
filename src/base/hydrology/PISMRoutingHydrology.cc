@@ -215,7 +215,7 @@ PetscErrorCode RoutingHydrology::write_variables(const std::set<std::string> &va
 
 
 void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                                           std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+                                           std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
@@ -225,6 +225,15 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
   // add diagnostic that only makes sense if transport is modeled
   dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
+  // add time-series diagnostics
+  ts_dict["hydro_ice_free_land_loss_cumulative"]
+      = new MCHydrology_ice_free_land_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_ocean_loss_cumulative"]
+      = new MCHydrology_ocean_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_negative_thickness_gain_cumulative"]
+      = new MCHydrology_negative_thickness_gain_cumulative(this, grid, *variables);
+  ts_dict["hydro_null_strip_loss_cumulative"]
+      = new MCHydrology_null_strip_loss_cumulative(this, grid, *variables);
 }
 
 
@@ -833,13 +842,9 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     ierr = verbPrintf(2, grid.com,
                       " 'routing' hydrology summary:\n"
                       "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
+                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n",
                       hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-                      maxV, maxD,
-                      icefreelost, oceanlost,
-                      negativegain, nullstriplost); CHKERRQ(ierr);
+                      maxV, maxD); CHKERRQ(ierr);
   }
   ice_free_land_loss_cumulative      += icefreelost;
   ocean_loss_cumulative              += oceanlost;
