@@ -78,10 +78,9 @@ void IceModel::updateSurfaceElevationAndMask() {
 void IceModel::update_mask(const IceModelVec2S &bed,
                            const IceModelVec2S &thickness,
                            IceModelVec2Int &result) {
-  double sea_level;
 
   assert(ocean != NULL);
-  ocean->sea_level_elevation(sea_level);
+  double sea_level = ocean->sea_level_elevation();
 
   GeometryCalculator gc(sea_level, config);
 
@@ -116,10 +115,8 @@ void IceModel::update_mask(const IceModelVec2S &bed,
 void IceModel::update_surface_elevation(const IceModelVec2S &bed,
                                         const IceModelVec2S &thickness,
                                         IceModelVec2S &result) {
-  double sea_level;
-
   assert(ocean != NULL);
-  ocean->sea_level_elevation(sea_level);
+  double sea_level = ocean->sea_level_elevation();
 
   GeometryCalculator gc(sea_level, config);
 
@@ -898,11 +895,10 @@ void IceModel::update_floatation_mask() {
   double
     ice_density   = config.get("ice_density"),
     ocean_density = config.get("sea_water_density"),
-    mu            = ice_density / ocean_density,
-    sea_level     = 0.0;
+    mu            = ice_density / ocean_density;
 
   assert(ocean != NULL);
-  ocean->sea_level_elevation(sea_level);
+  double sea_level = ocean->sea_level_elevation();
 
   gl_mask.set(0.0);
   gl_mask_x.set(0.0);

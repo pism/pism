@@ -52,7 +52,7 @@ PO_delta_SMB::~PO_delta_SMB() {
   // empty
 }
 
-void PO_delta_SMB::init() {
+void PO_delta_SMB::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   input_model->init();
@@ -66,7 +66,7 @@ void PO_delta_SMB::init() {
   offset->scale(m_config.get("ice_density"));
 }
 
-void PO_delta_SMB::shelf_base_mass_flux(IceModelVec2S &result) {
+void PO_delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   input_model->shelf_base_mass_flux(result);
   offset_data(result);
 }

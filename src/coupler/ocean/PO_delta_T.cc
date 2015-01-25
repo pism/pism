@@ -51,7 +51,7 @@ PO_delta_T::~PO_delta_T() {
   // empty
 }
 
-void PO_delta_T::init() {
+void PO_delta_T::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   input_model->init();
@@ -62,7 +62,7 @@ void PO_delta_T::init() {
   init_internal();
 }
 
-void PO_delta_T::shelf_base_temperature(IceModelVec2S &result) {
+void PO_delta_T::shelf_base_temperature_impl(IceModelVec2S &result) {
   input_model->shelf_base_temperature(result);
   offset_data(result);
 }

@@ -184,7 +184,7 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   surface->ice_surface_temperature(ice_surface_temp);
 
   assert(ocean != NULL);
-  ocean->sea_level_elevation(sea_level);
+  sea_level = ocean->sea_level_elevation();
 
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
   Enth3.getHorSlice(result, 0.0);

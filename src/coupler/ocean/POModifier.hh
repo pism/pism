@@ -31,24 +31,23 @@ public:
     : Modifier<OceanModel>(g, in) {}
   virtual ~POModifier() {}
 
-  virtual void sea_level_elevation(double &result)
+protected:
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result)
   {
-    input_model->sea_level_elevation(result);
+    input_model->melange_back_pressure_fraction(result);
   }
-
-  virtual void shelf_base_temperature(IceModelVec2S &result)
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result)
   {
     input_model->shelf_base_temperature(result);
   }
 
-  virtual void shelf_base_mass_flux(IceModelVec2S &result)
+  virtual void sea_level_elevation_impl(double &result)
+  {
+    result = input_model->sea_level_elevation();
+  }
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result)
   {
     input_model->shelf_base_mass_flux(result);
-  }
-
-  virtual void melange_back_pressure_fraction(IceModelVec2S &result)
-  {
-    input_model->melange_back_pressure_fraction(result);
   }
 };
 

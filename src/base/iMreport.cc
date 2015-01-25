@@ -329,8 +329,7 @@ double IceModel::compute_sealevel_volume() {
   double ice_rho = config.get("ice_density");
 
   assert (ocean != NULL);
-  double sea_level;
-  ocean->sea_level_elevation(sea_level);
+  double sea_level = ocean->sea_level_elevation();
 
   assert(beddef != NULL);
   const IceModelVec2S &bed_topography = beddef->bed_elevation();

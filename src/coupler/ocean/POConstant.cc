@@ -47,7 +47,7 @@ POConstant::POConstant(const IceGrid &g)
   shelfbtemp.set_units("Kelvin");
 }
 
-void POConstant::init() {
+void POConstant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -70,11 +70,11 @@ void POConstant::init() {
   ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 }
 
-void POConstant::sea_level_elevation(double &result) {
+void POConstant::sea_level_elevation_impl(double &result) {
   result = sea_level;
 }
 
-void POConstant::shelf_base_temperature(IceModelVec2S &result) {
+void POConstant::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double T0 = m_config.get("water_melting_point_temperature"), // K
     beta_CC       = m_config.get("beta_CC"),
     g             = m_config.get("standard_gravity"),
@@ -93,7 +93,7 @@ void POConstant::shelf_base_temperature(IceModelVec2S &result) {
 
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
-void POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
+void POConstant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   double
     L           = m_config.get("water_latent_heat_fusion"),
     ice_density = m_config.get("ice_density"),

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,13 +35,14 @@ public:
   PO_delta_MBP(const IceGrid &g, OceanModel* in);
   virtual ~PO_delta_MBP();
 
-  virtual void init();
-  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
+protected:
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,28 @@
 
 namespace pism {
 
+void OceanModel::init() {
+  this->init_impl();
+}
+
+double OceanModel::sea_level_elevation() {
+  double result;
+  this->sea_level_elevation_impl(result);
+  return result;
+}
+
+void OceanModel::shelf_base_temperature(IceModelVec2S &result) {
+  this->shelf_base_temperature_impl(result);
+}
+
+void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) {
+  this->shelf_base_mass_flux_impl(result);
+}
+
+void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
+  this->melange_back_pressure_fraction_impl(result);
+}
+
 /** Set `result` to the melange back pressure fraction.
  *
  * This default implementation sets `result` to 0.0.
@@ -30,7 +52,7 @@ namespace pism {
  *
  * @return 0 on success
  */
-void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
+void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 

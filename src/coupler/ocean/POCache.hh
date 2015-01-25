@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,18 +30,18 @@ public:
   POCache(const IceGrid &g, OceanModel* in);
   virtual ~POCache();
 
-  virtual void init();
   virtual void update(double my_t, double my_dt);
-
-  virtual void sea_level_elevation(double &result);
-  virtual void shelf_base_temperature(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux(IceModelVec2S &result);
-  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual void max_timestep(double t, double &dt, bool &restrict);
+protected:
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
   IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux,
     m_melange_back_pressure_fraction;

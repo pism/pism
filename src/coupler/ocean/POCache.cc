@@ -59,7 +59,7 @@ POCache::~POCache() {
 }
 
 
-void POCache::init() {
+void POCache::init_impl() {
   int update_interval = m_update_interval_years;
 
   input_model->init();
@@ -98,7 +98,7 @@ void POCache::update(double my_t, double my_dt) {
     m_next_update_time = m_grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
-    input_model->sea_level_elevation(m_sea_level);
+    m_sea_level = input_model->sea_level_elevation();
     input_model->shelf_base_temperature(m_shelf_base_temperature);
     input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
     input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction);
@@ -106,19 +106,19 @@ void POCache::update(double my_t, double my_dt) {
 }
 
 
-void POCache::sea_level_elevation(double &result) {
+void POCache::sea_level_elevation_impl(double &result) {
   result = m_sea_level;
 }
 
-void POCache::shelf_base_temperature(IceModelVec2S &result) {
+void POCache::shelf_base_temperature_impl(IceModelVec2S &result) {
   m_shelf_base_temperature.copy_to(result);
 }
 
-void POCache::shelf_base_mass_flux(IceModelVec2S &result) {
+void POCache::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   m_shelf_base_mass_flux.copy_to(result);
 }
 
-void POCache::melange_back_pressure_fraction(IceModelVec2S &result) {
+void POCache::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   m_melange_back_pressure_fraction.copy_to(result);
 }
 

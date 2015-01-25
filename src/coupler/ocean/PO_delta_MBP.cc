@@ -53,7 +53,7 @@ PO_delta_MBP::~PO_delta_MBP() {
   // empty
 }
 
-void PO_delta_MBP::init() {
+void PO_delta_MBP::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   input_model->init();
@@ -63,7 +63,7 @@ void PO_delta_MBP::init() {
   init_internal();
 }
 
-void PO_delta_MBP::melange_back_pressure_fraction(IceModelVec2S &result) {
+void PO_delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   input_model->melange_back_pressure_fraction(result);
 
   result.shift((*offset)(m_t + 0.5*m_dt));

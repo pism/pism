@@ -30,7 +30,6 @@ public:
   POGivenTH(const IceGrid &g);
   virtual ~POGivenTH();
 
-  virtual void init();
   virtual void update(double my_t, double my_dt);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
@@ -39,13 +38,6 @@ public:
                                           const PIO &nc, IO_Type nctype);
 
   virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
-
-  virtual void sea_level_elevation(double &result);
-
-  virtual void shelf_base_temperature(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux(IceModelVec2S &result);
-
-  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 
   class POGivenTHConstants {
   public:
@@ -75,6 +67,12 @@ public:
     double ice_thermal_diffusivity;
     bool limit_salinity_range;
   };
+protected:
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 private:
   IceModelVec2S shelfbtemp, shelfbmassflux;
   const IceModelVec2S *ice_thickness;

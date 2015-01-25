@@ -42,16 +42,17 @@ public:
   POConstantPIK(const IceGrid &g);
   virtual ~POConstantPIK();
 
-  virtual void init();
   virtual void update(double my_t, double my_dt);
-  virtual void sea_level_elevation(double &result);
-  virtual void shelf_base_temperature(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux(IceModelVec2S &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
+protected:
+  virtual void init_impl();
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
   const IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;

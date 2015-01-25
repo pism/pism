@@ -635,8 +635,7 @@ void IceModel::step(bool do_mass_continuity,
     update_floatation_mask();
   }
 
-  double sea_level = 0;
-  ocean->sea_level_elevation(sea_level);
+  double sea_level = ocean->sea_level_elevation();
 
   IceModelVec2S &melange_back_pressure = vWork2d[0];
 

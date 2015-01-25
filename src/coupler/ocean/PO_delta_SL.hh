@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,13 +30,14 @@ public:
   PO_delta_SL(const IceGrid &g, OceanModel* in);
   virtual ~PO_delta_SL();
 
-  virtual void init();
-  virtual void sea_level_elevation(double &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
+protected:
+  virtual void init_impl();
+  virtual void sea_level_elevation_impl(double &result);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };

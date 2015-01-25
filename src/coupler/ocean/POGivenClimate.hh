@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,14 +30,14 @@ public:
   POGiven(const IceGrid &g);
   virtual ~POGiven();
 
-  virtual void init();
   virtual void update(double my_t, double my_dt);
 
-  virtual void sea_level_elevation(double &result);
-
-  virtual void shelf_base_temperature(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux(IceModelVec2S &result);
-  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
+protected:
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
   IceModelVec2T *shelfbtemp, *shelfbmassflux;
 };

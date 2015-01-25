@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ POGiven::~POGiven() {
   // empty
 }
 
-void POGiven::init() {
+void POGiven::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -79,20 +79,20 @@ void POGiven::update(double my_t, double my_dt) {
   shelfbtemp->average(m_t, m_dt);
 }
 
-void POGiven::sea_level_elevation(double &result) {
+void POGiven::sea_level_elevation_impl(double &result) {
   result = sea_level;
 }
 
-void POGiven::shelf_base_temperature(IceModelVec2S &result) {
+void POGiven::shelf_base_temperature_impl(IceModelVec2S &result) {
   shelfbtemp->copy_to(result);
 }
 
 
-void POGiven::shelf_base_mass_flux(IceModelVec2S &result) {
+void POGiven::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   shelfbmassflux->copy_to(result);
 }
 
-void POGiven::melange_back_pressure_fraction(IceModelVec2S &result) {
+void POGiven::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 

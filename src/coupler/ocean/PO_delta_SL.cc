@@ -53,7 +53,7 @@ PO_delta_SL::~PO_delta_SL() {
   // empty
 }
 
-void PO_delta_SL::init() {
+void PO_delta_SL::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -65,8 +65,8 @@ void PO_delta_SL::init() {
 }
 
 
-void PO_delta_SL::sea_level_elevation(double &result) {
-  input_model->sea_level_elevation(result);
+void PO_delta_SL::sea_level_elevation_impl(double &result) {
+  result = input_model->sea_level_elevation();
 
   if (offset) {
     result += (*offset)(m_t + 0.5*m_dt);
