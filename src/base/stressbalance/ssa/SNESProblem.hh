@@ -57,7 +57,7 @@ protected:
 
   const IceGrid &m_grid;
 
-  Vec          m_X;
+  petsc::Vec   m_X;
   SNES         m_snes;
   PISMDM::Ptr  m_DA;
 
@@ -126,7 +126,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   int stencil_width=1;
   m_DA = m_grid.get_dm(DOF, stencil_width);
 
-  ierr = DMCreateGlobalVector(*m_DA, &m_X); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr()); CHKERRQ(ierr);
 
   ierr = SNESCreate(m_grid.com, &m_snes); CHKERRQ(ierr);
 
@@ -164,7 +164,6 @@ PetscErrorCode SNESProblem<DOF,U>::finalize() {
   PetscErrorCode ierr;
 
   ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_X); CHKERRQ(ierr);
 
   return 0;
 }
