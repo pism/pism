@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
       PISM_PETSC_CHK(ierr, "PetscPrintf");
       ierr = bdlc.settings(config,
                            include_elastic, Mx, My, dx, dy, Z,
-                           &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
+                           Hstart, bedstart, uplift, H, bed); CHKERRQ(ierr);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");

@@ -30,11 +30,11 @@ IcebergRemover::IcebergRemover(const IceGrid &g)
   : Component(g) {
 
   m_iceberg_mask.create(m_grid, "iceberg_mask", WITHOUT_GHOSTS);
-  m_iceberg_mask.allocate_proc0_copy(m_mask_p0);
+  m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }
 
 IcebergRemover::~IcebergRemover() {
-  PetscErrorCode ierr = VecDestroy(&m_mask_p0); CHKERRCONTINUE(ierr);
+  // empty
 }
 
 void IcebergRemover::init() {
@@ -91,20 +91,20 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // identify icebergs using serial code on processor 0:
   {
-    m_iceberg_mask.put_on_proc0(m_mask_p0);
+    m_iceberg_mask.put_on_proc0(*m_mask_p0);
 
     if (m_grid.rank() == 0) {
       double *mask;
-      ierr = VecGetArray(m_mask_p0, &mask);
+      ierr = VecGetArray(*m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecGetArray");
 
       cc(mask, m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
 
-      ierr = VecRestoreArray(m_mask_p0, &mask);
+      ierr = VecRestoreArray(*m_mask_p0, &mask);
       PISM_PETSC_CHK(ierr, "VecRestoreArray");
     }
 
-    m_iceberg_mask.get_from_proc0(m_mask_p0);
+    m_iceberg_mask.get_from_proc0(*m_mask_p0);
   }
 
   // correct ice thickness and the cell type mask using the resulting

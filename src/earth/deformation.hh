@@ -55,10 +55,10 @@ public:
                           bool myinclude_elastic,
                           int myMx, int myMy, double mydx, double mydy,
                           int myZ,
-                          Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
-                          Vec* myH,     // generally gets changed by calling program
+                          Vec myHstart, Vec mybedstart, Vec myuplift,  // initial state
+                          Vec myH,     // generally gets changed by calling program
                           // before each call to step
-                          Vec* mybed);  // mybed gets modified by step()
+                          Vec mybed);  // mybed gets modified by step()
   PetscErrorCode alloc();
   PetscErrorCode init();
   PetscErrorCode uplift_init();
@@ -77,18 +77,22 @@ protected:
 
 private:
   double   standard_gravity;
-  bool          settingsDone, allocDone;
+  bool settingsDone, allocDone;
   int      Nx, Ny,         // fat sizes
     Nxge, Nyge;     // fat with boundary sizes
   int      i0_plate,  j0_plate; // indices into fat array for corner of thin
   double   Lx, Ly;         // half-lengths of the physical domain
   double   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
   std::vector<double>  cx, cy;        // coeffs of derivatives in Fourier space
-  Vec          *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
-  Vec           Hdiff, dbedElastic, // sequential; working space
+
+  // point to storage owned elsewhere
+  Vec          H, bed, H_start, bed_start, uplift;
+
+  Vec Hdiff, dbedElastic, // sequential; working space
     U, U_start,     // sequential and fat
     vleft, vright,  // coefficients; sequential and fat
     lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
+
   fftw_complex *fftw_input, *fftw_output, *loadhat; // 2D sequential
   fftw_plan     dft_forward, dft_inverse;
 

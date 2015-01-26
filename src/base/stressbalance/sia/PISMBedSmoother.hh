@@ -107,7 +107,7 @@ protected:
   void allocate(int MAX_GHOSTS);
   void deallocate();
 
-  Vec topgp0,         //!< original bed elevation on processor 0
+  petsc::Vec::Ptr topgp0,         //!< original bed elevation on processor 0
     topgsmoothp0,   //!< smoothed bed elevation on processor 0
     maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
     C2p0, C3p0, C4p0;

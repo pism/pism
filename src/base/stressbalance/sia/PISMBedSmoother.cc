@@ -27,14 +27,6 @@ namespace pism {
 BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
     : grid(g), config(g.config) {
 
-  topgp0 = NULL;
-  topgsmoothp0 = NULL;
-  maxtlp0 = NULL;
-  C2p0 = NULL;
-  C3p0 = NULL;
-  C4p0 = NULL;
-
-
   {
     // allocate Vecs that live on all procs; all have to be as "wide" as any of
     //   their prospective uses
@@ -60,12 +52,12 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
                  "m4", "");
 
     // allocate Vecs that live on processor 0:
-    topgsmooth.allocate_proc0_copy(topgp0);
-    topgsmooth.allocate_proc0_copy(topgsmoothp0);
-    maxtl.allocate_proc0_copy(maxtlp0);
-    C2.allocate_proc0_copy(C2p0);
-    C3.allocate_proc0_copy(C3p0);
-    C4.allocate_proc0_copy(C4p0);
+    topgp0 = topgsmooth.allocate_proc0_copy();
+    topgsmoothp0 = topgsmooth.allocate_proc0_copy();
+    maxtlp0 = maxtl.allocate_proc0_copy();
+    C2p0 = C2.allocate_proc0_copy();
+    C3p0 = C3.allocate_proc0_copy();
+    C4p0 = C4.allocate_proc0_copy();
   }
 
   m_Glen_exponent = config.get("sia_Glen_exponent"); // choice is SIA; see #285
@@ -76,19 +68,11 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
                "* Initializing bed smoother object with %.3f km half-width ...\n",
                grid.convert(m_smoothing_range, "m", "km"));
   }
-
 }
 
 
 BedSmoother::~BedSmoother() {
-  PetscErrorCode ierr;
-
-  ierr = VecDestroy(&topgp0); CHKERRCONTINUE(ierr);
-  ierr = VecDestroy(&topgsmoothp0); CHKERRCONTINUE(ierr);
-  ierr = VecDestroy(&maxtlp0); CHKERRCONTINUE(ierr);
-  ierr = VecDestroy(&C2p0); CHKERRCONTINUE(ierr);
-  ierr = VecDestroy(&C3p0); CHKERRCONTINUE(ierr);
-  ierr = VecDestroy(&C4p0); CHKERRCONTINUE(ierr);
+  // empty
 }
 
 /*!
@@ -139,17 +123,17 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
   }
   Nx = Nx_in; Ny = Ny_in;
 
-  topg.put_on_proc0(topgp0);
+  topg.put_on_proc0(*topgp0);
   smooth_the_bed_on_proc0();
   // next call *does indeed* fill ghosts in topgsmooth
-  topgsmooth.get_from_proc0(topgsmoothp0);
+  topgsmooth.get_from_proc0(*topgsmoothp0);
 
   compute_coefficients_on_proc0();
   // following calls *do* fill the ghosts
-  maxtl.get_from_proc0(maxtlp0);
-  C2.get_from_proc0(C2p0);
-  C3.get_from_proc0(C3p0);
-  C4.get_from_proc0(C4p0);
+  maxtl.get_from_proc0(*maxtlp0);
+  C2.get_from_proc0(*C2p0);
+  C3.get_from_proc0(*C3p0);
+  C4.get_from_proc0(*C4p0);
 }
 
 
@@ -168,9 +152,9 @@ void BedSmoother::smooth_the_bed_on_proc0() {
   if (grid.rank() == 0) {
     PetscErrorCode ierr;
     double **b0, **bs;
-    ierr = VecGetArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
+    ierr = VecGetArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
+    ierr = VecGetArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
 
     for (int i=0; i < (int)grid.Mx(); i++) {
@@ -191,9 +175,9 @@ void BedSmoother::smooth_the_bed_on_proc0() {
       }
     }
 
-    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
+    ierr = VecRestoreArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
+    ierr = VecRestoreArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
   }
 }
@@ -204,17 +188,17 @@ void BedSmoother::compute_coefficients_on_proc0() {
   if (grid.rank() == 0) {
     PetscErrorCode ierr;
     double **b0, **bs, **c2, **c3, **c4, **mt;
-    ierr = VecGetArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
+    ierr = VecGetArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
+    ierr = VecGetArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
+    ierr = VecGetArray2d(*maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
+    ierr = VecGetArray2d(*C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
+    ierr = VecGetArray2d(*C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
+    ierr = VecGetArray2d(*C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
     PISM_PETSC_CHK(ierr, "VecGetArray2d");
 
     for (int i=0; i < (int)grid.Mx(); i++) {
@@ -250,17 +234,17 @@ void BedSmoother::compute_coefficients_on_proc0() {
       }
     }
 
-    ierr = VecRestoreArray2d(C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
+    ierr = VecRestoreArray2d(*C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
+    ierr = VecRestoreArray2d(*C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
+    ierr = VecRestoreArray2d(*C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
+    ierr = VecRestoreArray2d(*maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
+    ierr = VecRestoreArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
+    ierr = VecRestoreArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
     PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
 
     // scale the coeffs in Taylor series
@@ -270,11 +254,11 @@ void BedSmoother::compute_coefficients_on_proc0() {
       s2 = k * (2 * n + 2) / (2 * n),
       s3 = s2 * (3 * n + 2) / (3 * n),
       s4 = s3 * (4 * n + 2) / (4 * n);
-    ierr = VecScale(C2p0,s2);
+    ierr = VecScale(*C2p0,s2);
     PISM_PETSC_CHK(ierr, "VecScale");
-    ierr = VecScale(C3p0,s3);
+    ierr = VecScale(*C3p0,s3);
     PISM_PETSC_CHK(ierr, "VecScale");
-    ierr = VecScale(C4p0,s4);
+    ierr = VecScale(*C4p0,s4);
     PISM_PETSC_CHK(ierr, "VecScale");
   }
 }

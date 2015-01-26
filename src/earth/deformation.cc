@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014 Ed Bueler
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -58,8 +58,8 @@ PetscErrorCode BedDeformLC::settings(const Config &config,
                                      int myMx, int myMy,
                                      double mydx, double mydy,
                                      int myZ,
-                                     Vec* myHstart, Vec* mybedstart, Vec* myuplift,
-                                     Vec* myH, Vec* mybed) {
+                                     Vec myHstart, Vec mybedstart, Vec myuplift,
+                                     Vec myH, Vec mybed) {
 
   // set parameters
   include_elastic = myinclude_elastic;
@@ -106,9 +106,10 @@ PetscErrorCode BedDeformLC::alloc() {
   assert(settingsDone == true);
   assert(allocDone == false);
 
-  ierr = VecDuplicate(*H, &Hdiff);
+  ierr = VecDuplicate(H, &Hdiff);
   PISM_PETSC_CHK(ierr, "VecDuplicate");
-  ierr = VecDuplicate(*H, &dbedElastic);
+
+  ierr = VecDuplicate(H, &dbedElastic);
   PISM_PETSC_CHK(ierr, "VecDuplicate");
 
   // allocate plate displacement
@@ -220,7 +221,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
   // fft2(uplift)
   clear_fftw_input();
-  set_fftw_input(*uplift, 1.0, Mx, My, i0_plate, j0_plate);
+  set_fftw_input(uplift, 1.0, Mx, My, i0_plate, j0_plate);
   fftw_execute(dft_forward);
 
   // compute left and right coefficients
@@ -289,7 +290,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   PetscVecAccessor2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
 
   // Compute Hdiff
-  PetscErrorCode ierr = VecWAXPY(Hdiff, -1, *H_start, *H);
+  PetscErrorCode ierr = VecWAXPY(Hdiff, -1, H_start, H);
   PISM_PETSC_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
@@ -352,7 +353,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   //    (new bed) = ue + (bed start) + plate
   // (but use only central part of plate if Z>1)
   {
-    PetscVecAccessor2D b(*bed, Mx, My), b_start(*bed_start, Mx, My), db_elastic(dbedElastic, Mx, My),
+    PetscVecAccessor2D b(bed, Mx, My), b_start(bed_start, Mx, My), db_elastic(dbedElastic, Mx, My),
       u(U, Nx, Ny, i0_plate, j0_plate), u_start(U_start, Nx, Ny, i0_plate, j0_plate);
 
     for (int i = 0; i < Mx; i++) {

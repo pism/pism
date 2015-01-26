@@ -30,11 +30,12 @@ namespace pism {
 
 PBLingleClark::PBLingleClark(const IceGrid &g)
   : BedDef(g) {
-  m_topg_initial.allocate_proc0_copy(m_Hp0);
-  m_topg_initial.allocate_proc0_copy(m_bedp0);
-  m_topg_initial.allocate_proc0_copy(m_Hstartp0);
-  m_topg_initial.allocate_proc0_copy(m_bedstartp0);
-  m_topg_initial.allocate_proc0_copy(m_upliftp0);
+
+  m_Hp0        = m_topg_initial.allocate_proc0_copy();
+  m_bedp0      = m_topg_initial.allocate_proc0_copy();
+  m_Hstartp0   = m_topg_initial.allocate_proc0_copy();
+  m_bedstartp0 = m_topg_initial.allocate_proc0_copy();
+  m_upliftp0   = m_topg_initial.allocate_proc0_copy();
 
   bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
 
@@ -44,30 +45,14 @@ PBLingleClark::PBLingleClark(const IceGrid &g)
     m_bdLC.settings(m_config, use_elastic_model,
                   m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
                   4,     // use Z = 4 for now; to reduce global drift?
-                  &m_Hstartp0, &m_bedstartp0, &m_upliftp0, &m_Hp0, &m_bedp0);
+                  *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
 
     m_bdLC.alloc();
   }
 }
 
 PBLingleClark::~PBLingleClark() {
-
-  if (deallocate() != 0) {
-    PetscPrintf(m_grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
-  }
-
-}
-
-PetscErrorCode PBLingleClark::deallocate() {
-  PetscErrorCode ierr;
-
-  ierr = VecDestroy(&m_Hp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_bedp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_Hstartp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_bedstartp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_upliftp0); CHKERRQ(ierr);
-
-  return 0;
+  // empty
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
@@ -79,9 +64,9 @@ void PBLingleClark::init() {
 
   correct_topg();
 
-  m_thk->put_on_proc0(m_Hstartp0);
-  m_topg.put_on_proc0(m_bedstartp0);
-  m_uplift.put_on_proc0(m_upliftp0);
+  m_thk->put_on_proc0(*m_Hstartp0);
+  m_topg.put_on_proc0(*m_bedstartp0);
+  m_uplift.put_on_proc0(*m_upliftp0);
 
   if (m_grid.rank() == 0) {
     m_bdLC.init();
@@ -190,15 +175,15 @@ void PBLingleClark::update_impl(double my_t, double my_dt) {
 
   m_t_beddef_last = t_final;
 
-  m_thk->put_on_proc0(m_Hp0);
-  m_topg.put_on_proc0(m_bedp0);
+  m_thk->put_on_proc0(*m_Hp0);
+  m_topg.put_on_proc0(*m_bedp0);
 
   if (m_grid.rank() == 0) {  // only processor zero does the step
     m_bdLC.step(dt_beddef, // time step, in seconds
               t_final - m_grid.time->start()); // time since the start of the run, in seconds
   }
 
-  m_topg.get_from_proc0(m_bedp0);
+  m_topg.get_from_proc0(*m_bedp0);
 
   //! Finally, we need to update bed uplift and topg_last.
   compute_uplift(dt_beddef);

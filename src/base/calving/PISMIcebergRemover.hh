@@ -58,7 +58,7 @@ protected:
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   IceModelVec2S m_iceberg_mask;
-  Vec m_mask_p0;
+  petsc::Vec::Ptr m_mask_p0;
 
   const IceModelVec2Int *m_bc_mask;
 };

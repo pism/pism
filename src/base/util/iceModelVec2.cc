@@ -90,9 +90,10 @@ double** IceModelVec2S::get_array() {
  *
  * The caller is responsible for de-allocating result by calling VecDestroy.
  */
-void IceModelVec2S::allocate_proc0_copy(Vec &result) const {
+petsc::Vec::Ptr IceModelVec2S::allocate_proc0_copy() const {
   PetscErrorCode ierr;
   Vec v_proc0 = NULL;
+  Vec result = NULL;
 
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "v_proc0", (PetscObject*)&v_proc0);
   PISM_PETSC_CHK(ierr, "PetscObjectQuery")
@@ -136,6 +137,7 @@ void IceModelVec2S::allocate_proc0_copy(Vec &result) const {
     ierr = VecDuplicate(v_proc0, &result);
     PISM_PETSC_CHK(ierr, "VecDuplicate");
   }
+  return petsc::Vec::Ptr(new petsc::Vec(result));
 }
 
 //! Puts a local IceModelVec2S on processor 0.
@@ -145,9 +147,11 @@ void IceModelVec2S::put_on_proc0(Vec onp0) const {
 
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
+
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
                           (PetscObject*)&scatter_to_zero);
   PISM_PETSC_CHK(ierr, "PetscObjectQuery");
+
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
                           (PetscObject*)&natural_work);
   PISM_PETSC_CHK(ierr, "PetscObjectQuery");
@@ -175,8 +179,10 @@ void IceModelVec2S::put_on_proc0(Vec onp0) const {
   ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
                          INSERT_VALUES, SCATTER_FORWARD);
   PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  VecScatterEnd(scatter_to_zero, natural_work, onp0,
-                INSERT_VALUES, SCATTER_FORWARD);
+
+  ierr = VecScatterEnd(scatter_to_zero, natural_work, onp0,
+                       INSERT_VALUES, SCATTER_FORWARD);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
 }
 
 //! Gets a local IceModelVec2 from processor 0.

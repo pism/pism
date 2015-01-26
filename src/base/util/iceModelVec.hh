@@ -26,6 +26,7 @@
 #include "Vector2.hh"
 #include "StarStencil.hh"
 #include "DM.hh"
+#include "Vec.hh"
 
 namespace pism {
 
@@ -367,7 +368,7 @@ public:
   using IceModelVec2::create;
   virtual void  create(const IceGrid &my_grid, const std::string &my_name,
                        IceModelVecKind ghostedp, int width = 1);
-  void allocate_proc0_copy(Vec &result) const;
+  petsc::Vec::Ptr allocate_proc0_copy() const;
   void put_on_proc0(Vec onp0) const;
   void get_from_proc0(Vec onp0);
   virtual void  copy_to(IceModelVec &destination) const;

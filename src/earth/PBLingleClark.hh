@@ -37,9 +37,8 @@ protected:
   void update_impl(double my_t, double my_dt);
   void correct_topg();
   void allocate();
-  PetscErrorCode deallocate();
   // Vecs on processor 0:
-  Vec m_Hp0,                      //!< ice thickness
+  petsc::Vec::Ptr m_Hp0,                      //!< ice thickness
     m_bedp0,                      //!< bed elevation
     m_Hstartp0,                   //!< initial (start-of-the-run) thickness
     m_bedstartp0,                 //!< initial bed elevation
