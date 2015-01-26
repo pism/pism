@@ -87,8 +87,6 @@ double** IceModelVec2S::get_array() {
 }
 
 /*! Allocate a copy on processor zero and the scatter needed to move data.
- *
- * The caller is responsible for de-allocating result by calling VecDestroy.
  */
 petsc::Vec::Ptr IceModelVec2S::allocate_proc0_copy() const {
   PetscErrorCode ierr;
@@ -131,7 +129,8 @@ petsc::Vec::Ptr IceModelVec2S::allocate_proc0_copy() const {
                               (PetscObject)v_proc0);
     PISM_PETSC_CHK(ierr, "PetscObjectCompose");
 
-    // We DO NOT call VecDestroy(v_proc0): the caller is expected to call VecDestroy
+    // We DO NOT call VecDestroy(v_proc0): the petsc::Vec wrapper will
+    // take care of this.
     result = v_proc0;
   } else {
     ierr = VecDuplicate(v_proc0, &result);
@@ -625,9 +624,9 @@ void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
   m_da = m_grid->get_dm(this->m_dof, this->m_da_stencil_width);
 
   if (ghostedp) {
-    DMCreateLocalVector(*m_da, &m_v);
+    DMCreateLocalVector(*m_da, m_v.rawptr());
   } else {
-    DMCreateGlobalVector(*m_da, &m_v);
+    DMCreateGlobalVector(*m_da, m_v.rawptr());
   }
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);

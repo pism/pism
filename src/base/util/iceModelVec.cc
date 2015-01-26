@@ -55,8 +55,6 @@ IceModelVec::IceModelVec() {
 
   m_state_counter = 0;
 
-  m_v = NULL;
-
   zlevels.resize(1);
   zlevels[0] = 0.0;
 }
@@ -105,11 +103,6 @@ void IceModelVec::inc_state_counter() {
 }
 
 IceModelVec::~IceModelVec() {
-  if (m_v != NULL) {
-    PetscErrorCode ierr = VecDestroy(&m_v); CHKERRCONTINUE(ierr);
-    m_v = NULL;
-  }
-
   assert(m_access_counter == 0);
 }
 

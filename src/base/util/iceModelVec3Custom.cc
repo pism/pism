@@ -65,7 +65,7 @@ PetscErrorCode IceModelVec3Custom::create(const IceGrid &mygrid,
 
   m_da = m_grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
-  ierr = DMCreateGlobalVector(*m_da, &m_v); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_da, m_v.rawptr()); CHKERRQ(ierr);
 
   m_dof = 1;
 

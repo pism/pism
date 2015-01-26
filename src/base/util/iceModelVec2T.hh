@@ -129,7 +129,7 @@ protected:
     time_bounds;                //!< time bounds
   std::string filename;         //!< file to read (regrid) from
   PISMDM::Ptr m_da3;
-  Vec m_v3;                       //!< a 3D Vec used to store records
+  petsc::Vec m_v3;                       //!< a 3D Vec used to store records
   mutable void ***array3;
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory

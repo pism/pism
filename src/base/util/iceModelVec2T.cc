@@ -31,7 +31,6 @@ namespace pism {
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   m_has_ghosts           = false;
-  m_v3                     = NULL;
   array3                 = NULL;
   first                  = -1;
   N                      = 0;
@@ -45,10 +44,7 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
 }
 
 IceModelVec2T::~IceModelVec2T() {
-  if (m_v3 != NULL) {
-    PetscErrorCode ierr = VecDestroy(&m_v3); CHKERRCONTINUE(ierr);
-    m_v3 = NULL;
-  }
+  // empty
 }
 
 
@@ -79,7 +75,8 @@ void IceModelVec2T::create(const IceGrid &my_grid, const std::string &my_short_n
   m_da3 = m_grid->get_dm(this->n_records, this->m_da_stencil_width);
 
   // allocate the 3D Vec:
-  DMCreateGlobalVector(*m_da3, &m_v3);
+  PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
 }
 
 double*** IceModelVec2T::get_array3() {
