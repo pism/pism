@@ -145,7 +145,7 @@ void POCache::define_variables_impl(const std::set<std::string> &vars_input, con
   input_model->define_variables(vars, nc, nctype);
 }
 
-void POCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void POCache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {

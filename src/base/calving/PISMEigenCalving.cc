@@ -368,7 +368,7 @@ void EigenCalving::define_variables_impl(const std::set<std::string> &/*vars*/, 
   // empty
 }
 
-void EigenCalving::write_variables(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
+void EigenCalving::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
 }
 

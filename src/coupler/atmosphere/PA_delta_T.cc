@@ -117,7 +117,7 @@ void PA_delta_T::define_variables_impl(const std::set<std::string> &vars_input, 
 }
 
 
-void PA_delta_T::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PA_delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

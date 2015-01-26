@@ -196,7 +196,7 @@ void Hydrology::define_variables_impl(const std::set<std::string> &vars, const P
 }
 
 
-void Hydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void Hydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tillwat")) {
     Wtil.write(nc);
   }

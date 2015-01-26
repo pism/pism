@@ -39,8 +39,8 @@ public:
   void attach_atmosphere_model(AtmosphereModel *input);
   void ice_surface_mass_flux(IceModelVec2S &result);
   void ice_surface_temperature(IceModelVec2S &result);
-  void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
+  void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                              IO_Type nctype);

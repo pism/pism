@@ -116,7 +116,7 @@ void PA_paleo_precip::define_variables_impl(const std::set<std::string> &vars_in
 }
 
 
-void PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PA_paleo_precip::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

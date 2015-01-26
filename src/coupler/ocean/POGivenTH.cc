@@ -141,9 +141,9 @@ void POGivenTH::define_variables_impl(const std::set<std::string> &vars,
   }
 }
 
-void POGivenTH::write_variables(const std::set<std::string> &vars, const PIO& nc) {
+void POGivenTH::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
 
-  PGivenClimate<POModifier,OceanModel>::write_variables(vars, nc);
+  PGivenClimate<POModifier,OceanModel>::write_variables_impl(vars, nc);
 
   if (set_contains(vars, "shelfbtemp")) {
     shelfbtemp.write(nc);

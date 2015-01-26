@@ -340,7 +340,7 @@ void SSA::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
 }
 
 
-void SSA::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void SSA::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "vel_ssa")) {
     m_velocity.write(nc);

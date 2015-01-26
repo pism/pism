@@ -104,9 +104,6 @@ public:
   friend class Hydrology_hydrobmelt;
   friend class Hydrology_hydroinput;
 
-  // in the base class these only add/define/write tillwat
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
-
   // all Hydrology models have a Wtil state variable, which this returns
   virtual void till_water_thickness(IceModelVec2S &result);
 
@@ -122,6 +119,8 @@ public:
   virtual void update(double icet, double icedt) = 0;
 
 protected:
+  // in the base class these only add/define/write tillwat
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
@@ -246,8 +245,6 @@ public:
 
   virtual void init();
 
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
-
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 
@@ -260,6 +257,7 @@ public:
   virtual void update(double icet, double icedt);
 
 protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
@@ -335,13 +333,12 @@ public:
                                std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class DistributedHydrology_hydrovelbase_mag;
 
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
-
   virtual void update(double icet, double icedt);
 
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
 
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

@@ -114,7 +114,7 @@ void PAConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void PAConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);

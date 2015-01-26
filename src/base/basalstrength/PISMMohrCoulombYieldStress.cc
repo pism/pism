@@ -298,7 +298,7 @@ void MohrCoulombYieldStress::define_variables_impl(const std::set<std::string> &
 }
 
 
-void MohrCoulombYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void MohrCoulombYieldStress::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tillphi")) {
     m_till_phi.write(nc);
   }

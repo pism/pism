@@ -76,7 +76,7 @@ void FloatKill::define_variables_impl(const std::set<std::string> &/*vars*/, con
   // empty
 }
 
-void FloatKill::write_variables(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
+void FloatKill::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
 }
 

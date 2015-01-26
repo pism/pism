@@ -166,8 +166,8 @@ void DistributedHydrology::define_variables_impl(const std::set<std::string> &va
 }
 
 
-void DistributedHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  RoutingHydrology::write_variables(vars, nc);
+void DistributedHydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+  RoutingHydrology::write_variables_impl(vars, nc);
   if (set_contains(vars, "bwp")) {
     P.write(nc);
   }

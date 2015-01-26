@@ -202,7 +202,7 @@ PetscErrorCode PSConstantGLINT2::define_variables(std::set<std::string> vars, co
 	return 0;
 }
 
-PetscErrorCode PSConstantGLINT2::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSConstantGLINT2::write_variables_impl(std::set<std::string> vars, const PIO &nc) {
 	PetscErrorCode ierr;
 
 	if (set_contains(vars, "ice_surface_temp")) {

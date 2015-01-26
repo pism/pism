@@ -157,7 +157,7 @@ void POConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void POConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void POConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {

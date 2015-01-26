@@ -94,7 +94,7 @@ void SIA_Sliding::add_vars_to_output_impl(const std::string &keyword,
   (void) result;
 }
 
-void SIA_Sliding::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void SIA_Sliding::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   (void) vars;
   (void) nc;
 }

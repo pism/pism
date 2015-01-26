@@ -156,7 +156,7 @@ void IcebergRemover::define_variables_impl(const std::set<std::string> &, const 
   // empty
 }
 
-void IcebergRemover::write_variables(const std::set<std::string> &, const PIO&) {
+void IcebergRemover::write_variables_impl(const std::set<std::string> &, const PIO&) {
   // empty
 }
 

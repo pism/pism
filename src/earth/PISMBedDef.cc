@@ -100,7 +100,7 @@ void BedDef::define_variables_impl(const std::set<std::string> &vars, const PIO 
   }
 }
 
-void BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void BedDef::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "topg_initial")) {
     m_topg_initial.write(nc);
   }

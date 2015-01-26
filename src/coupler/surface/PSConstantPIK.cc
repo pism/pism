@@ -136,7 +136,7 @@ void PSConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void PSConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void PSConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.write(nc);
   }

@@ -82,7 +82,7 @@ void ConstantYieldStress::define_variables_impl(const std::set<std::string> &var
 }
 
 
-void ConstantYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
     m_tauc.write(nc);
   }

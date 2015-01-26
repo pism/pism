@@ -215,7 +215,7 @@ void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
   }
 }
 
-void BedThermalUnit::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (m_temp.was_created()) {
     if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {
       m_temp.write(nc); 

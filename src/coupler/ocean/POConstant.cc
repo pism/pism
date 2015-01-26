@@ -133,7 +133,7 @@ void POConstant::define_variables_impl(const std::set<std::string> &vars, const 
   }
 }
 
-void POConstant::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void POConstant::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {

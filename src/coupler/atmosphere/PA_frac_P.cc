@@ -112,7 +112,7 @@ void PA_frac_P::define_variables_impl(const std::set<std::string> &vars_input,
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PA_frac_P::write_variables(const std::set<std::string> &vars_input,
+void PA_frac_P::write_variables_impl(const std::set<std::string> &vars_input,
                                           const PIO &nc) {
   std::set<std::string> vars = vars_input;
 

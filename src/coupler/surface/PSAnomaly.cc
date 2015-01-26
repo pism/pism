@@ -127,7 +127,7 @@ void PSAnomaly::define_variables_impl(const std::set<std::string> &vars, const P
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PSAnomaly::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {

@@ -184,7 +184,7 @@ void PAAnomaly::define_variables_impl(const std::set<std::string> &vars_input, c
 }
 
 
-void PAAnomaly::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PAAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

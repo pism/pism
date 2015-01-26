@@ -167,7 +167,7 @@ void ConstantInColumn::define_variables_impl(const std::set<std::string> &vars,
   (void)nctype;
 }
 
-void ConstantInColumn::write_variables(const std::set<std::string> &vars,
+void ConstantInColumn::write_variables_impl(const std::set<std::string> &vars,
                                        const PIO &nc) {
   (void)vars;
   (void)nc;

@@ -169,8 +169,8 @@ void RoutingHydrology::define_variables_impl(const std::set<std::string> &vars, 
 }
 
 
-void RoutingHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  Hydrology::write_variables(vars, nc);
+void RoutingHydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+  Hydrology::write_variables_impl(vars, nc);
   if (set_contains(vars, "bwat")) {
     W.write(nc);
   }

@@ -78,7 +78,7 @@ void PSFormulas::define_variables_impl(const std::set<std::string> &vars, const 
   }
 }
 
-void PSFormulas::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void PSFormulas::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
     m_climatic_mass_balance.write(nc);

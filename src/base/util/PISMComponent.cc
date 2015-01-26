@@ -49,6 +49,11 @@ void Component::add_vars_to_output(const std::string &keyword,
   this->add_vars_to_output_impl(keyword, result);
 }
 
+void Component::write_variables(const std::set<std::string> &vars, const PIO& nc) {
+  this->write_variables_impl(vars, nc);
+}
+
+
 void Component::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                 std::map<std::string, TSDiagnostic*> &ts_dict) {
   (void)dict;

@@ -125,7 +125,7 @@ void PAYearlyCycle::define_variables_impl(const std::set<std::string> &vars, con
 }
 
 
-void PAYearlyCycle::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void PAYearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;

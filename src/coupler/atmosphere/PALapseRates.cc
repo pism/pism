@@ -143,7 +143,7 @@ void PALapseRates::define_variables_impl(const std::set<std::string> &vars, cons
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PALapseRates::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PALapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

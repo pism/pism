@@ -491,7 +491,7 @@ void PSTemperatureIndex::define_variables_impl(const std::set<std::string> &vars
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 }
 
-void PSTemperatureIndex::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSTemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -536,7 +536,7 @@ void PSTemperatureIndex::write_variables(const std::set<std::string> &vars_input
     vars.erase("snow_depth");
   }
 
-  SurfaceModel::write_variables(vars, nc);
+  SurfaceModel::write_variables_impl(vars, nc);
 }
 
 } // end of namespace pism

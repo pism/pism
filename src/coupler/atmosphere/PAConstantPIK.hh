@@ -35,10 +35,10 @@ public:
   virtual void end_pointwise_access();
   virtual void temp_time_series(int i, int j, std::vector<double> &values);
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual void temp_snapshot(IceModelVec2S &result);
   virtual void init_timeseries(const std::vector<double> &ts);
 protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);

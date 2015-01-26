@@ -38,10 +38,9 @@ public:
   virtual void mass_held_in_surface_layer(IceModelVec2S &result);
   virtual void surface_layer_thickness(IceModelVec2S &result);
 
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
-
   virtual void max_timestep(double t, double &dt, bool &restrict);
 protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:

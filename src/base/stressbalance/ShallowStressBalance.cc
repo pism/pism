@@ -103,7 +103,7 @@ void ZeroSliding::define_variables_impl(const std::set<std::string> &/*vars*/, c
                                              IO_Type /*nctype*/) {
 }
 
-void ZeroSliding::write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
+void ZeroSliding::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
 }
 
 

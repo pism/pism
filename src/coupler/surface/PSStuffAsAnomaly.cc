@@ -165,7 +165,7 @@ void PSStuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_i
   }
 }
 
-void PSStuffAsAnomaly::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSStuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {

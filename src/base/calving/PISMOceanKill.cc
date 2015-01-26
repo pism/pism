@@ -126,7 +126,7 @@ void OceanKill::define_variables_impl(const std::set<std::string> &vars, const P
   }
 }
 
-void OceanKill::write_variables(const std::set<std::string> &vars, const PIO& nc) {
+void OceanKill::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
 
   if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
     m_ocean_kill_mask.write(nc);

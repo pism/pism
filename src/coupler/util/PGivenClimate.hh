@@ -44,7 +44,8 @@ public:
     }
   }
 
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc) {
+protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
@@ -61,7 +62,6 @@ public:
     }
   }
 
-protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
   {
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();

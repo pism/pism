@@ -95,7 +95,7 @@ void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, cons
   }
 }
 
-void SurfaceModel::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (atmosphere != NULL) {
     atmosphere->write_variables(vars, nc);
   }

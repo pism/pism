@@ -266,7 +266,7 @@ void PSElevation::define_variables_impl(const std::set<std::string> &vars, const
   }
 }
 
-void PSElevation::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void PSElevation::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);

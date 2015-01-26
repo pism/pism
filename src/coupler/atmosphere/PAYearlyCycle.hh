@@ -34,7 +34,6 @@ public:
   virtual ~PAYearlyCycle();
 
   virtual void init();
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   //! This method implements the parameterization.
   virtual void update(double my_t, double my_dt) = 0;
   virtual void mean_precipitation(IceModelVec2S &result);
@@ -47,6 +46,7 @@ public:
   virtual void temp_time_series(int i, int j, std::vector<double> &result);
   virtual void precip_time_series(int i, int j, std::vector<double> &result);
 protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);

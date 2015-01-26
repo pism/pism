@@ -391,7 +391,7 @@ void PSTemperatureIndex_Old::define_variables_impl(const std::set<std::string> &
   }
 }
 
-void PSTemperatureIndex_Old::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSTemperatureIndex_Old::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, temperature_name)) {
@@ -425,7 +425,7 @@ void PSTemperatureIndex_Old::write_variables(const std::set<std::string> &vars_i
     vars.erase("srunoff");
   }
 
-  SurfaceModel::write_variables(vars, nc);
+  SurfaceModel::write_variables_impl(vars, nc);
 }
 
 } // end of namespace pism

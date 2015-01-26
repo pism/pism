@@ -501,7 +501,7 @@ void StressBalance::define_variables_impl(const std::set<std::string> &vars, con
 }
 
 
-void StressBalance::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void StressBalance::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   m_stress_balance->write_variables(vars, nc);
   m_modifier->write_variables(vars, nc);

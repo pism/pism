@@ -102,7 +102,7 @@ void PSSimple::define_variables_impl(const std::set<std::string> &vars, const PI
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 }
 
-void PSSimple::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSSimple::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -129,7 +129,7 @@ void PSSimple::write_variables(const std::set<std::string> &vars_input, const PI
     vars.erase("climatic_mass_balance");
   }
 
-  SurfaceModel::write_variables(vars, nc);
+  SurfaceModel::write_variables_impl(vars, nc);
 }
 
 } // end of namespace pism

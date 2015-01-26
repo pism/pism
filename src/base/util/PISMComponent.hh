@@ -66,7 +66,7 @@ class IceModelVec;
   - add_vars_to_output_impl(), which adds variable names to the list of fields that need
   to be written.
   - define_variables_impl(), which defines variables to be written and writes variable metadata.
-  - write_variables(), which writes data itself.
+  - write_variables_impl(), which writes data itself.
   
   Why are all these methods needed? In PISM we separate defining and writing
   NetCDF variables because defining all the NetCDF variables before writing
@@ -108,7 +108,7 @@ public:
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual void write_variables(const std::set<std::string> &vars, const PIO& nc) = 0;
+  void write_variables(const std::set<std::string> &vars, const PIO& nc);
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -121,6 +121,8 @@ protected:
                                        std::set<std::string> &result) = 0;
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype) = 0;
+  virtual void write_variables_impl(const std::set<std::string> &vars,
+                                    const PIO& nc) = 0;
   virtual bool find_pism_input(std::string &filename, bool &regrid, int &start);
 
   /** @brief This flag determines whether a variable is read from the

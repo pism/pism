@@ -385,7 +385,7 @@ void PSForceThickness::define_variables_impl(const std::set<std::string> &vars, 
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PSForceThickness::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSForceThickness::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ftt_mask")) {

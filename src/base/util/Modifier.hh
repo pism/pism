@@ -42,13 +42,6 @@ public:
     }
   }
 
-  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc)
-  {
-    if (input_model != NULL) {
-      input_model->write_variables(vars, nc);
-    }
-  }
-
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict)
   {
@@ -77,6 +70,13 @@ public:
   }
 
 protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
+  {
+    if (input_model != NULL) {
+      input_model->write_variables(vars, nc);
+    }
+  }
+
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
   {
     if (input_model != NULL) {

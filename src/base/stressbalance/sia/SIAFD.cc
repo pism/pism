@@ -117,7 +117,7 @@ void SIAFD::define_variables_impl(const std::set<std::string> &vars, const PIO &
   (void) nctype;
 }
 
-void SIAFD::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void SIAFD::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   (void) vars;
   (void) nc;
 }
