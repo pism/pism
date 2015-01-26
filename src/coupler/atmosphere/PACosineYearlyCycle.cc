@@ -93,7 +93,7 @@ void PACosineYearlyCycle::init() {
 }
 
 
-void PACosineYearlyCycle::update(double my_t, double my_dt) {
+void PACosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
 }

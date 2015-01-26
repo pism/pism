@@ -45,7 +45,8 @@ public:
     }
   }
 
-  virtual void update(double my_t, double my_dt)
+protected:
+  virtual void update_impl(double my_t, double my_dt)
   {
     Mod::m_t  = Mod::m_grid.time->mod(my_t - bc_reference_time, bc_period);
     Mod::m_dt = my_dt;
@@ -53,7 +54,6 @@ public:
     Mod::input_model->update(my_t, my_dt);
   }
 
-protected:
   virtual void init_internal()
   {
     const IceGrid &g = Mod::m_grid;

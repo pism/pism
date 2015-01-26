@@ -168,7 +168,7 @@ void PBLingleClark::correct_topg() {
 
 
 //! Update the Lingle-Clark bed deformation model.
-void PBLingleClark::update(double my_t, double my_dt) {
+void PBLingleClark::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {

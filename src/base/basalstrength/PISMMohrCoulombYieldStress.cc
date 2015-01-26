@@ -337,7 +337,7 @@ that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 RoutingHydrology (or derived class thereof).
  */
-void MohrCoulombYieldStress::update(double my_t, double my_dt) {
+void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {

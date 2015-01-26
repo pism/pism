@@ -268,7 +268,7 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
 }
 
 
-void PSTemperatureIndex::update(double my_t, double my_dt) {
+void PSTemperatureIndex::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {

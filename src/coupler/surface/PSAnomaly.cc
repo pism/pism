@@ -88,7 +88,7 @@ void PSAnomaly::init() {
   climatic_mass_balance_anomaly->init(filename, bc_period, bc_reference_time);
 }
 
-void PSAnomaly::update(double my_t, double my_dt) {
+void PSAnomaly::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   climatic_mass_balance_anomaly->average(m_t, m_dt);

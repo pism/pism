@@ -693,7 +693,7 @@ own shorter time steps, perhaps hours to weeks.
 To update W = `bwat` we call raw_update_W(), and to update Wtil = `tillwat` we
 call raw_update_Wtil().
  */
-void RoutingHydrology::update(double icet, double icedt) {
+void RoutingHydrology::update_impl(double icet, double icedt) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time

@@ -92,7 +92,7 @@ void PAWeatherStation::init() {
   nc.close();
 }
 
-void PAWeatherStation::update(double t, double dt) {
+void PAWeatherStation::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
 }

@@ -131,7 +131,7 @@ void PS_EISMINTII::initialize_using_formulas() {
   m_climatic_mass_balance.scale(m_config.get("ice_density"));
 }
 
-void PS_EISMINTII::update(PetscReal t, PetscReal dt) {
+void PS_EISMINTII::update_impl(PetscReal t, PetscReal dt) {
   (void) t;
   (void) dt;
 

@@ -32,7 +32,6 @@ public:
   virtual ~PAAnomaly();
 
   virtual void init();
-  virtual void update(double my_t, double my_dt);
 
   virtual void mean_precipitation(IceModelVec2S &result);
   virtual void mean_annual_temp(IceModelVec2S &result); 
@@ -45,6 +44,7 @@ public:
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

@@ -142,8 +142,7 @@ protected:
 //! \brief An abstract class for time-stepping PISM components. Created to
 //! simplify creating basic surface, snow, atmosphere, ocean... models for
 //! PISM.
-class Component_TS : public Component
-{
+class Component_TS : public Component {
 public:
   /** Create an instance of Component_TS given a grid. */
   Component_TS(const IceGrid &g);
@@ -194,8 +193,10 @@ public:
    * @param[in] dt length of the time-step, in seconds
    *
    */
-  virtual void update(double t, double dt) = 0;
+  void update(double t, double dt);
 
+protected:
+  virtual void update_impl(double t, double dt) = 0;
 protected:
   //! Last time used as an argument for the update() method.
   double m_t;

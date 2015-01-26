@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -72,7 +72,7 @@ void PAGivenClimate::init() {
   }
 }
 
-void PAGivenClimate::update(double my_t, double my_dt) {
+void PAGivenClimate::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   // compute mean precipitation

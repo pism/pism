@@ -33,7 +33,6 @@ public:
   BedDef(const IceGrid &g);
   virtual ~BedDef() {}
   virtual void init();
-  virtual void update(double my_t, double my_dt) = 0;
 
   const IceModelVec2S& bed_elevation() const;
   const IceModelVec2S& uplift() const;
@@ -72,7 +71,8 @@ class PBNull : public BedDef {
 public:
   PBNull(const IceGrid &g);
   virtual void init();
-  virtual void update(double my_t, double my_dt);
+protected:
+  virtual void update_impl(double my_t, double my_dt);
 };
 
 //! Pointwide isostasy bed deformation model.
@@ -81,8 +81,8 @@ public:
   PBPointwiseIsostasy(const IceGrid &g); 
   virtual ~PBPointwiseIsostasy();
   virtual void init();
-  virtual void update(double my_t, double my_dt);
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 

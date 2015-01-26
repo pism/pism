@@ -89,7 +89,7 @@ void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars
 }
 
 
-void ConstantYieldStress::update(double my_t, double my_dt) {
+void ConstantYieldStress::update_impl(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt;
 }
 

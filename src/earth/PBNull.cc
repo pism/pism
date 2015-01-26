@@ -35,7 +35,7 @@ void PBNull::init() {
   m_uplift.set(0.0);
 }
 
-void PBNull::update(double t, double dt) {
+void PBNull::update_impl(double t, double dt) {
   m_t  = t;
   m_dt = dt;
   // This model does not update bed topography or bed uplift.

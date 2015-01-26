@@ -163,7 +163,7 @@ void PAConstantPIK::init() {
   lat   = m_grid.variables().get_2d_scalar("latitude");
 }
 
-void PAConstantPIK::update(double, double) {
+void PAConstantPIK::update_impl(double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,9 +32,9 @@ public:
 
   virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);
-  virtual void update(double my_t, double my_dt);
   virtual void temp_snapshot(IceModelVec2S &result);
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   Timeseries *A;                 // amplitude scaling
 };
 

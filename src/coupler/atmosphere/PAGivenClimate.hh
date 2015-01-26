@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,6 @@ public:
   virtual ~PAGivenClimate();
 
   virtual void init();
-  virtual void update(double my_t, double my_dt);
 
   virtual void mean_precipitation(IceModelVec2S &result);
   virtual void mean_annual_temp(IceModelVec2S &result); 
@@ -44,6 +43,7 @@ public:
   virtual void temp_time_series(int i, int j, std::vector<double> &values);
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   IceModelVec2T *precipitation, *air_temp;
 };
 

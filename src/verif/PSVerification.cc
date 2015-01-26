@@ -117,7 +117,7 @@ void PSVerification::update_V() {
   m_climatic_mass_balance.set(0.0);
 }
 
-void PSVerification::update(PetscReal t, PetscReal dt) {
+void PSVerification::update_impl(PetscReal t, PetscReal dt) {
 
   (void) dt;
 

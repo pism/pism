@@ -184,7 +184,7 @@ void PSElevation::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dic
   // empty
 }
 
-void PSElevation::update(double my_t, double my_dt)
+void PSElevation::update_impl(double my_t, double my_dt)
 {
   m_t = my_t;
   m_dt = my_dt;

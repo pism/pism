@@ -28,7 +28,6 @@ class PAConstantPIK : public AtmosphereModel {
 public:
   PAConstantPIK(const IceGrid &g);
   virtual void init();
-  virtual void update(double my_t, double my_dt);
   virtual void mean_precipitation(IceModelVec2S &result);
   virtual void mean_annual_temp(IceModelVec2S &result);
   virtual void begin_pointwise_access();
@@ -38,6 +37,7 @@ public:
   virtual void temp_snapshot(IceModelVec2S &result);
   virtual void init_timeseries(const std::vector<double> &ts);
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,

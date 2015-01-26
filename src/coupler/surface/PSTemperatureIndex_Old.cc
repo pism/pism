@@ -206,7 +206,7 @@ void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool
   }
 }
 
-void PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
+void PSTemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
 
   PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
 

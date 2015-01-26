@@ -30,9 +30,8 @@ public:
   POGiven(const IceGrid &g);
   virtual ~POGiven();
 
-  virtual void update(double my_t, double my_dt);
-
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
   virtual void sea_level_elevation_impl(double &result);

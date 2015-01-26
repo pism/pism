@@ -42,9 +42,8 @@ public:
   POConstantPIK(const IceGrid &g);
   virtual ~POConstantPIK();
 
-  virtual void update(double my_t, double my_dt);
-
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

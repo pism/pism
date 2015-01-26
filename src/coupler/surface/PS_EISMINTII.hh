@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,8 +37,8 @@ public:
 
   // the interface:
   void init();
-  void update(PetscReal t, PetscReal dt);
 protected:
+  void update_impl(PetscReal t, PetscReal dt);
   void initialize_using_formulas();
   int m_experiment;
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;

@@ -79,7 +79,7 @@ void POCache::init_impl() {
   m_next_update_time = m_grid.time->current();
 }
 
-void POCache::update(double my_t, double my_dt) {
+void POCache::update_impl(double my_t, double my_dt) {
   // ignore my_dt and always use 1 year long time-steps when updating
   // an input model
   (void) my_dt;

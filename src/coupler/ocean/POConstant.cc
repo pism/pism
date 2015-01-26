@@ -47,6 +47,13 @@ POConstant::POConstant(const IceGrid &g)
   shelfbtemp.set_units("Kelvin");
 }
 
+
+void POConstant::update_impl(double my_t, double my_dt) {
+  // do nothing
+  m_t = my_t;
+  m_dt = my_dt;
+}
+
 void POConstant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock

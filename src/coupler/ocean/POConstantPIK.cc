@@ -65,7 +65,7 @@ void POConstantPIK::init_impl() {
                              meltfactor);
 }
 
-void POConstantPIK::update(double my_t, double my_dt) {
+void POConstantPIK::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
 }

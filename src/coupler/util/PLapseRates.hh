@@ -45,31 +45,6 @@ public:
 
   virtual ~PLapseRates() {}
 
-  virtual void update(double my_t, double my_dt)
-  {
-    // a convenience
-    double &t = Mod::m_t;
-    double &dt = Mod::m_dt;
-
-    // "Periodize" the climate:
-    my_t = Mod::m_grid.time->mod(my_t - bc_reference_time,  bc_period);
-
-    if ((fabs(my_t - t) < 1e-12) &&
-        (fabs(my_dt - dt) < 1e-12)) {
-      return;
-    }
-
-    t  = my_t;
-    dt = my_dt;
-
-    // NB! Input model uses original t and dt
-    Mod::input_model->update(my_t, my_dt);
-
-    reference_surface.update(t, dt);
-
-    reference_surface.interp(t + 0.5*dt);
-  }
-
   virtual void max_timestep(double t, double &dt, bool &restrict) {
     double max_dt = -1;
 
@@ -96,12 +71,30 @@ public:
   }
 
 protected:
-  IceModelVec2T reference_surface;
-  const IceModelVec2S *surface, *thk;
-  unsigned int bc_period;
-  double bc_reference_time,          // in seconds
-    temp_lapse_rate;
-  std::string option_prefix;
+  virtual void update_impl(double my_t, double my_dt)
+  {
+    // a convenience
+    double &t = Mod::m_t;
+    double &dt = Mod::m_dt;
+
+    // "Periodize" the climate:
+    my_t = Mod::m_grid.time->mod(my_t - bc_reference_time,  bc_period);
+
+    if ((fabs(my_t - t) < 1e-12) &&
+        (fabs(my_dt - dt) < 1e-12)) {
+      return;
+    }
+
+    t  = my_t;
+    dt = my_dt;
+
+    // NB! Input model uses original t and dt
+    Mod::input_model->update(my_t, my_dt);
+
+    reference_surface.update(t, dt);
+
+    reference_surface.interp(t + 0.5*dt);
+  }
 
   virtual void init_internal()
   {
@@ -198,6 +191,13 @@ protected:
       }
     }
   }
+protected:
+  IceModelVec2T reference_surface;
+  const IceModelVec2S *surface, *thk;
+  unsigned int bc_period;
+  double bc_reference_time,          // in seconds
+    temp_lapse_rate;
+  std::string option_prefix;
 };
 
 

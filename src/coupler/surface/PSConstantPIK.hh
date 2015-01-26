@@ -40,10 +40,10 @@ public:
 
   virtual void attach_atmosphere_model(AtmosphereModel *input);
 
-  virtual void update(double my_t, double my_dt);
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);

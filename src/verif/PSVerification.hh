@@ -34,8 +34,8 @@ public:
 
   // the interface:
   void init();
-  void update(PetscReal t, PetscReal dt);
 private:
+  void update_impl(PetscReal t, PetscReal dt);
   int m_testname;
   EnthalpyConverter *m_EC;
   void update_ABCDEH(double t);

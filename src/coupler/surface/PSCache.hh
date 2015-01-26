@@ -31,7 +31,6 @@ public:
   virtual ~PSCache();
 
   virtual void init();
-  virtual void update(double my_t, double my_dt);
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
   virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result);
@@ -40,6 +39,7 @@ public:
 
   virtual void max_timestep(double t, double &dt, bool &restrict);
 protected:
+  virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);

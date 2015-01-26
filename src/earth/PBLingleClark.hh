@@ -33,8 +33,8 @@ public:
   virtual ~PBLingleClark();
 
   void init();
-  void update(double my_t, double my_dt);
 protected:
+  void update_impl(double my_t, double my_dt);
   void correct_topg();
   void allocate();
   PetscErrorCode deallocate();

@@ -62,7 +62,7 @@ void PSSimple::init() {
              "    ice upper surface temperature := 2m air temperature.\n");
 }
 
-void PSSimple::update(double my_t, double my_dt) {
+void PSSimple::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
   if (atmosphere) {

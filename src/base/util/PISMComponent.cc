@@ -168,4 +168,8 @@ void Component_TS::max_timestep(double t, double &dt, bool &restrict) {
   restrict = false;
 }
 
+void Component_TS::update(double t, double dt) {
+  this->update_impl(t, dt);
+}
+
 } // end of namespace pism

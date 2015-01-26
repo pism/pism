@@ -52,7 +52,8 @@ public:
     }
   }
 
-  virtual void update(double my_t, double my_dt)
+protected:
+  virtual void update_impl(double my_t, double my_dt)
   {
     Model::m_t = my_t;
     Model::m_dt = my_dt;
@@ -61,7 +62,6 @@ public:
     }
   }
 
-protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict) {
     if (input_model != NULL) {

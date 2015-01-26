@@ -170,7 +170,7 @@ void POGivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 
-void POGivenTH::update(double my_t, double my_dt) {
+void POGivenTH::update_impl(double my_t, double my_dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:

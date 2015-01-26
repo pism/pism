@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ NullTransportHydrology model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-void NullTransportHydrology::update(double icet, double icedt) {
+void NullTransportHydrology::update_impl(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
     return;

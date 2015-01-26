@@ -322,7 +322,7 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
  */
-void DistributedHydrology::update(double icet, double icedt) {
+void DistributedHydrology::update_impl(double icet, double icedt) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time

@@ -33,10 +33,10 @@ public:
   virtual ~EigenCalving();
 
   virtual void init();
-  virtual void update(double dt,
-                      IceModelVec2Int &pism_mask,
-                      IceModelVec2S &Href,
-                      IceModelVec2S &ice_thickness);
+  void update(double dt,
+              IceModelVec2Int &pism_mask,
+              IceModelVec2S &Href,
+              IceModelVec2S &ice_thickness);
 
   virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
 

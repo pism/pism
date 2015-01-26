@@ -72,7 +72,7 @@ void POGiven::init_impl() {
   }
 }
 
-void POGiven::update(double my_t, double my_dt) {
+void POGiven::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   shelfbmassflux->average(m_t, m_dt);

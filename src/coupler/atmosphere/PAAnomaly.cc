@@ -86,7 +86,7 @@ void PAAnomaly::init() {
   precipitation_anomaly->init(filename, bc_period, bc_reference_time);
 }
 
-void PAAnomaly::update(double my_t, double my_dt) {
+void PAAnomaly::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   precipitation_anomaly->average(m_t, m_dt);

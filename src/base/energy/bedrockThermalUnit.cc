@@ -264,7 +264,7 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 
 FIXME:  now a trapezoid rule could be used
 */
-void BedThermalUnit::update(double my_t, double my_dt) {
+void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   if (m_temp.was_created() == false) {
     return;  // in this case we are up to date

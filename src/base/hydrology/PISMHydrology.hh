@@ -114,9 +114,9 @@ public:
   // these methods MUST be implemented in the derived class
   virtual void subglacial_water_thickness(IceModelVec2S &result) = 0;
   virtual void subglacial_water_pressure(IceModelVec2S &result) = 0;
-  virtual void update(double icet, double icedt) = 0;
 
 protected:
+  virtual void update_impl(double icet, double icedt) = 0;
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
   // in the base class these only add/define/write tillwat
@@ -174,8 +174,9 @@ public:
   //! Returns the overburden pressure in hope it is harmless.
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
+protected:
   //! Solves an implicit step of a highly-simplified ODE.
-  virtual void update(double icet, double icedt);
+  virtual void update_impl(double icet, double icedt);
 };
 
 
@@ -251,9 +252,8 @@ public:
 
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
-  virtual void update(double icet, double icedt);
-
 protected:
+  virtual void update_impl(double icet, double icedt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
@@ -330,11 +330,10 @@ public:
 
   friend class DistributedHydrology_hydrovelbase_mag;
 
-  virtual void update(double icet, double icedt);
-
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual void update_impl(double icet, double icedt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);

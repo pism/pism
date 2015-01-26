@@ -89,7 +89,7 @@ void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> 
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
-void PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
+void PA_SeaRISE_Greenland::update_impl(double my_t, double my_dt) {
 
   if (m_lat->metadata().has_attribute("missing_at_bootstrap")) {
     throw RuntimeError("latitude variable was missing at bootstrap;\n"
