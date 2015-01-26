@@ -22,12 +22,18 @@
 namespace pism {
 namespace petsc {
 
+Vec::Vec() {
+  m_value = NULL;
+}
+
 Vec::Vec(::Vec v) {
   m_value = v;
 }
 
 Vec::~Vec() {
-  PetscErrorCode ierr = VecDestroy(&m_value); CHKERRCONTINUE(ierr);
+  if (m_value != NULL) {
+    PetscErrorCode ierr = VecDestroy(&m_value); CHKERRCONTINUE(ierr);
+  }
 }
 
 } // end of namespace petsc

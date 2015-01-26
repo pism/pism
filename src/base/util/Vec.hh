@@ -34,6 +34,7 @@ namespace petsc {
  */
 class Vec : public petsc::Wrapper< ::Vec > {
 public:
+  Vec();
   Vec(::Vec dm);
   ~Vec();
 };
