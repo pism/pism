@@ -30,6 +30,7 @@ set(PISM_PARALLEL_IO_FLAGS "")
 set(PISMUTIL_SRC
   base/util/petscwrappers/PetscInitializer.cc
   base/util/petscwrappers/DM.cc
+  base/util/petscwrappers/KSP.cc
   base/util/petscwrappers/Vec.cc
   base/util/petscwrappers/Viewer.cc
   base/util/error_handling.cc
