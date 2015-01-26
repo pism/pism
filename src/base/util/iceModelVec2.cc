@@ -447,9 +447,13 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
     }
 
     PetscViewer v = *viewers[i].get();
+
     PetscDraw draw = NULL;
-    ierr = PetscViewerDrawGetDraw(v, 0, &draw); PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
-    ierr = PetscDrawSetTitle(draw, title.c_str()); PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
+    ierr = PetscViewerDrawGetDraw(v, 0, &draw);
+    PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+
+    ierr = PetscDrawSetTitle(draw, title.c_str());
+    PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 
     IceModelVec2::get_dof(da2, tmp, i);
 

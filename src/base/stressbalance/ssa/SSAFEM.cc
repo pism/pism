@@ -190,7 +190,9 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     ierr = PetscViewerASCIIPrintf(viewer, "SNES before SSASolve_FE\n");
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
-    ierr = SNESView(m_snes, viewer); PISM_PETSC_CHK(ierr, "SNESView");
+    ierr = SNESView(m_snes, viewer);
+    PISM_PETSC_CHK(ierr, "SNESView");
+
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
@@ -732,30 +734,33 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
     return;
   }
 
-  PetscViewer viewer;
+  PetscInt iter = 0;
+  ierr = SNESGetIterationNumber(m_snes, &iter);
+  PISM_PETSC_CHK(ierr, "SNESGetIterationNumber");
 
   char file_name[PETSC_MAX_PATH_LEN];
-  PetscInt iter = 0;
-  ierr = SNESGetIterationNumber(m_snes, &iter); PISM_PETSC_CHK(ierr, "SNESGetIterationNumber");
-
   snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
 
   verbPrintf(2, m_grid.com,
              "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
              file_name);
 
-  ierr = PetscViewerCreate(m_grid.com, &viewer);
-  PISM_PETSC_CHK(ierr, "PetscViewerCreate");
+  pism::Viewer viewer(m_grid.com);
+
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
   PISM_PETSC_CHK(ierr, "PetscViewerSetType");
+
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
   PISM_PETSC_CHK(ierr, "PetscViewerSetFormat");
+
   ierr = PetscViewerFileSetName(viewer, file_name);
   PISM_PETSC_CHK(ierr, "PetscViewerFileSetName");
 
   ierr = PetscObjectSetName((PetscObject) Jac, "A");
   PISM_PETSC_CHK(ierr, "PetscObjectSetName");
-  ierr = MatView(Jac, viewer); PISM_PETSC_CHK(ierr, "MatView");
+
+  ierr = MatView(Jac, viewer);
+  PISM_PETSC_CHK(ierr, "MatView");
 }
 
 //!

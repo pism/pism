@@ -1662,10 +1662,14 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   pism::Viewer viewer;       // will be destroyed automatically
   ierr = PetscViewerBinaryOpen(m_grid.com, filename.c_str(), FILE_MODE_WRITE,
-                               viewer.rawptr()); PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
+                               viewer.rawptr());
+  PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
 
-  ierr = MatView(m_A, viewer); PISM_PETSC_CHK(ierr, "MatView");
-  ierr = VecView(m_b.get_vec(), viewer); PISM_PETSC_CHK(ierr, "VecView");
+  ierr = MatView(m_A, viewer);
+  PISM_PETSC_CHK(ierr, "MatView");
+
+  ierr = VecView(m_b.get_vec(), viewer);
+  PISM_PETSC_CHK(ierr, "VecView");
 }
 
 //! \brief Write the SSA system to an .m (MATLAB) file (for debugging).
