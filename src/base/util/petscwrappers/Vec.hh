@@ -42,10 +42,10 @@ public:
 
 class TemporaryGlobalVec : public Vec {
 public:
-  TemporaryGlobalVec(pism::PISMDM::Ptr dm);
+  TemporaryGlobalVec(DM::Ptr dm);
   ~TemporaryGlobalVec();
 private:
-  pism::PISMDM::Ptr m_dm;
+  DM::Ptr m_dm;
 };
 
 } // end of namespace petsc

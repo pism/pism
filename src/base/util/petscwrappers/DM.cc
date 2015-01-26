@@ -20,19 +20,19 @@
 #include "DM.hh"
 
 namespace pism {
-
-PISMDM::PISMDM(DM dm) {
+namespace petsc {
+DM::DM(::DM dm) {
   m_value = dm;
 }
 
-PISMDM::PISMDM() {
+DM::DM() {
   m_value = NULL;
 }
 
-PISMDM::~PISMDM() {
+DM::~DM() {
   if (m_value != NULL) {
     PetscErrorCode ierr = DMDestroy(&m_value); CHKERRCONTINUE(ierr);
   }
 }
-
+} // end of namespace petsc
 } // end of namespace pism

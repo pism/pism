@@ -37,7 +37,7 @@ Vec::~Vec() {
   }
 }
 
-TemporaryGlobalVec::TemporaryGlobalVec(pism::PISMDM::Ptr dm) {
+TemporaryGlobalVec::TemporaryGlobalVec(DM::Ptr dm) {
   m_dm = dm;
   PetscErrorCode ierr = DMGetGlobalVector(*m_dm, &m_value);
   PISM_PETSC_CHK(ierr, "DMGetGlobalVector");

@@ -25,19 +25,20 @@
 #include "Wrapper.hh"
 
 namespace pism {
+namespace petsc {
 /** Wrapper around PETSc's DM. Simplifies memory management.
  *
  * The constructor takes ownership of the dm argument passed to it.
  *
  * The destructor call DMDestroy().
  */
-class PISMDM : public petsc::Wrapper<DM> {
+class DM : public petsc::Wrapper< ::DM > {
 public:
-  PISMDM(DM dm);
-  PISMDM();
-  ~PISMDM();
+  DM(::DM dm);
+  DM();
+  ~DM();
 };
-
+} // end of namespace petsc
 } // end of namespace pism
 
 #endif /* _DM_H_ */

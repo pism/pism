@@ -192,12 +192,12 @@ public:
   virtual void  squareroot();
   virtual void  shift(double alpha);
   virtual void  scale(double alpha);
-  void copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const;
+  void copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) const;
   void copy_from_vec(Vec source);
   virtual void copy_to(IceModelVec &destination) const;
   void copy_from(const IceModelVec &source);
   Vec get_vec();
-  PISMDM::Ptr get_dm() const;
+  petsc::DM::Ptr get_dm() const;
   virtual void  set_name(const std::string &name, int component = 0);
   virtual std::string name() const;
   virtual void  set_glaciological_units(const std::string &units);
@@ -241,7 +241,7 @@ public:
 
 protected:
 
-  void global_to_local(PISMDM::Ptr dm, Vec source, Vec destination) const;
+  void global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const;
   virtual void read_impl(const PIO &nc, unsigned int time);
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
@@ -260,7 +260,7 @@ protected:
   unsigned int m_dof;                     //!< number of "degrees of freedom" per grid point
   unsigned int m_da_stencil_width;      //!< stencil width supported by the DA
   bool m_has_ghosts;            //!< m_has_ghosts == true means "has ghosts"
-  PISMDM::Ptr m_da;          //!< distributed mesh manager (DM)
+  petsc::DM::Ptr m_da;          //!< distributed mesh manager (DM)
 
   bool begin_end_access_use_dof;
 
@@ -280,9 +280,9 @@ protected:
   void reset_attrs(unsigned int N);
   NormType int_to_normtype(int input) const;
 
-  void get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
+  void get_dof(petsc::DM::Ptr da_result, Vec result, unsigned int n,
                unsigned int count=1) const;
-  void set_dof(PISMDM::Ptr da_source, Vec source, unsigned int n,
+  void set_dof(petsc::DM::Ptr da_source, Vec source, unsigned int n,
                unsigned int count=1);
 private:
   // disable copy constructor and the assignment operator:

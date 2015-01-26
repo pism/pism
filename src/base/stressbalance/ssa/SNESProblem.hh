@@ -59,7 +59,7 @@ protected:
 
   petsc::Vec   m_X;
   SNES         m_snes;
-  PISMDM::Ptr  m_DA;
+  petsc::DM::Ptr  m_DA;
 
 private:
 

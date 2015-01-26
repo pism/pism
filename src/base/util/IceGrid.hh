@@ -178,7 +178,7 @@ public:
   // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
   //                          const std::string &filename);
 
-  PISMDM::Ptr get_dm(int dm_dof, int stencil_width) const;
+  petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
 
   void report_parameters() const;
 
@@ -281,12 +281,12 @@ private:
   //! half width of the ice model grid in y-direction (m)
   double m_Ly;
 
-  mutable std::map<int,PISMDM::WeakPtr> m_dms;
+  mutable std::map<int,petsc::DM::WeakPtr> m_dms;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.
-  PISMDM::Ptr m_dm_scalar_global;
+  petsc::DM::Ptr m_dm_scalar_global;
 
   //! @brief A dictionary with pointers to IceModelVecs, for passing
   //! them from the one component to another (e.g. from IceModel to

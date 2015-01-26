@@ -403,7 +403,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 \overload */
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta) {
   double **dzeta_a;
-  PISMDM::Ptr da2 = m_grid.get_dm(1, m_config.get("grid_max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid.get_dm(1, m_config.get("grid_max_stencil_width"));
 
   DMDAVecGetArray(*da2, dzeta, &dzeta_a);
   this->apply_jacobian_design_transpose(u, du, dzeta_a);

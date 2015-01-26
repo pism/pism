@@ -460,7 +460,7 @@ void IceGrid::allocate() {
   unsigned int max_stencil_width = (unsigned int)config.get("grid_max_stencil_width");
 
   try {
-    PISMDM::Ptr tmp = this->get_dm(1, max_stencil_width);
+    petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
   } catch (RuntimeError) {
     throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
                                   m_Mx, m_My, m_size);
@@ -784,8 +784,8 @@ void IceGrid::check_parameters() {
 
 }
 
-PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
-  PISMDM::Ptr result;
+petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
+  petsc::DM::Ptr result;
 
   if (da_dof < 0 || da_dof > 10000) {
     throw RuntimeError::formatted("Invalid da_dof argument: %d", da_dof);
@@ -800,7 +800,7 @@ PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   if (m_dms[j].expired() == true) {
     DM tmp = this->create_dm(da_dof, stencil_width);
 
-    result = PISMDM::Ptr(new PISMDM(tmp));
+    result = petsc::DM::Ptr(new petsc::DM(tmp));
     m_dms[j] = result;
   } else {
     result = m_dms[j].lock();

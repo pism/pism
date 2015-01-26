@@ -290,7 +290,7 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
 
   // a temporary one-component vector, distributed across processors
   // the same way v is
@@ -330,7 +330,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
 
   // a temporary one-component vector, distributed across processors
   // the same way v is
@@ -370,7 +370,7 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
 
   // a temporary one-component vector, distributed across processors
   // the same way v is
@@ -429,7 +429,7 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
 
   petsc::TemporaryGlobalVec tmp(da2);
 

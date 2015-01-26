@@ -183,7 +183,7 @@ protected:
   std::string m_stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  PISMDM::Ptr  m_da;               // dof=2 DA
+  petsc::DM::Ptr  m_da;               // dof=2 DA
   IceModelVec2V m_velocity_global; // global vector for solution
 
   // profiling

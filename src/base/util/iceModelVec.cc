@@ -270,7 +270,7 @@ void IceModelVec::scale(double alpha) {
     DMLocalToGlobalBegin/End is broken in PETSc 3.5, so we roll our
     own.
  */
-void  IceModelVec::copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const {
+void  IceModelVec::copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) const {
   assert(m_v != NULL);
 
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
@@ -303,8 +303,8 @@ void IceModelVec::copy_from_vec(Vec source) {
 }
 
 
-void IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
-                                    unsigned int start, unsigned int count) const {
+void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
+                          unsigned int start, unsigned int count) const {
   PetscErrorCode ierr;
   void *tmp_res = NULL, *tmp_v = NULL;
 
@@ -329,8 +329,8 @@ void IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
   DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v);
 }
 
-void IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
-                                    unsigned int start, unsigned int count) {
+void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
+                          unsigned int start, unsigned int count) {
   PetscErrorCode ierr;
   void *tmp_src = NULL, *tmp_v = NULL;
 
@@ -388,7 +388,7 @@ Vec IceModelVec::get_vec() {
   return m_v;
 }
 
-PISMDM::Ptr IceModelVec::get_dm() const {
+petsc::DM::Ptr IceModelVec::get_dm() const {
   return m_da;
 }
 
@@ -712,7 +712,7 @@ void  IceModelVec::update_ghosts() {
 #endif
 }
 
-void IceModelVec::global_to_local(PISMDM::Ptr dm, Vec source, Vec destination) const {
+void IceModelVec::global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const {
   PetscErrorCode ierr;
 
   ierr = DMGlobalToLocalBegin(*dm, source, INSERT_VALUES, destination);

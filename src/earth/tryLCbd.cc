@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     init_config(com, config, overrides);
 
     BedDeformLC bdlc;
-    pism::PISMDM da2;
+    pism::petsc::DM da2;
     petsc::Vec H, bed, Hstart, bedstart, uplift;
     
     bool

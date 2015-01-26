@@ -1,7 +1,7 @@
 %{
 /* Using directives needed to compile IceModelVec wrappers. */  
 using pism::IceGrid;
-using pism::PISMDM;
+using pism::petsc::DM;
 using pism::IO_Type;
 using pism::RegriddingFlag;
 using pism::NCSpatialVariable;
