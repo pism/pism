@@ -111,12 +111,14 @@ public:
   void write_variables(const std::set<std::string> &vars, const PIO& nc);
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
+  void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                       std::map<std::string, TSDiagnostic*> &ts_dict);
 
   const IceGrid& get_grid() const;
 
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void add_vars_to_output_impl(const std::string &keyword,
                                        std::set<std::string> &result) = 0;
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

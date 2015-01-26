@@ -21,7 +21,7 @@
 
 namespace pism {
 
-void SIAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   dict["diffusivity"] = new SIAFD_diffusivity(this);
   dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this);

@@ -347,10 +347,10 @@ void SSA::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
   }
 }
 
-void SSA::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                           std::map<std::string, TSDiagnostic*> &ts_dict) {
 
-  ShallowStressBalance::get_diagnostics(dict, ts_dict);
+  ShallowStressBalance::get_diagnostics_impl(dict, ts_dict);
 
   if (dict["taud"] != NULL) {
     delete dict["taud"];

@@ -99,9 +99,6 @@ public:
   //! \brief Produce a report string for the standard output.
   virtual std::string stdout_report();
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-
   //! \brief Returns a pointer to a stress balance solver implementation.
   virtual ShallowStressBalance* get_stressbalance() {
     return m_stress_balance;
@@ -112,6 +109,9 @@ public:
     return m_modifier;
   }
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

@@ -174,7 +174,7 @@ void DistributedHydrology::write_variables_impl(const std::set<std::string> &var
 }
 
 
-void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void DistributedHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                                std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   // bwp is state

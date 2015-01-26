@@ -39,9 +39,10 @@ public:
 
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+
   virtual PetscErrorCode pc_setup_bjacobi();
 
   virtual PetscErrorCode pc_setup_asm();

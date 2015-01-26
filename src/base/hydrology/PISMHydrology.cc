@@ -171,7 +171,7 @@ void Hydrology::init() {
 }
 
 
-void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   dict["bwat"] = new Hydrology_bwat(this);
   dict["bwp"] = new Hydrology_bwp(this);

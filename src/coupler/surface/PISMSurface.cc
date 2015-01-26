@@ -40,7 +40,7 @@ SurfaceModel::~SurfaceModel() {
   delete atmosphere;
 }
 
-void SurfaceModel::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
   if (atmosphere) {
     atmosphere->get_diagnostics(dict, ts_dict);

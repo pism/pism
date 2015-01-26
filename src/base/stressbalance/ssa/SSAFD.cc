@@ -1766,9 +1766,9 @@ IceModelVec::Ptr SSAFD_nuH::compute() {
   return result;
 }
 
-void SSAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &ts_dict) {
-  SSA::get_diagnostics(dict, ts_dict);
+  SSA::get_diagnostics_impl(dict, ts_dict);
 
   dict["nuH"] = new SSAFD_nuH(this);
 }

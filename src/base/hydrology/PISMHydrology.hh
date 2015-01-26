@@ -99,8 +99,6 @@ public:
 
   virtual void init();
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class Hydrology_hydrobmelt;
   friend class Hydrology_hydroinput;
 
@@ -119,6 +117,8 @@ public:
   virtual void update(double icet, double icedt) = 0;
 
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
   // in the base class these only add/define/write tillwat
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
@@ -245,9 +245,6 @@ public:
 
   virtual void init();
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-
   virtual void wall_melt(IceModelVec2S &result);
 
   virtual void subglacial_water_thickness(IceModelVec2S &result);
@@ -257,6 +254,8 @@ public:
   virtual void update(double icet, double icedt);
 
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
@@ -329,8 +328,6 @@ public:
 
   virtual void init();
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class DistributedHydrology_hydrovelbase_mag;
 
   virtual void update(double icet, double icedt);
@@ -338,6 +335,8 @@ public:
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
 

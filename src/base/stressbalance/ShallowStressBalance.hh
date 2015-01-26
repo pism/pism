@@ -58,10 +58,6 @@ public:
 
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure) = 0;
 
-  // interface to the data provided by the stress balance object:
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual const IceModelVec2V& advective_velocity() {
     return m_velocity;
@@ -103,6 +99,9 @@ public:
     return basal_sliding_law;
   }
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+
   double sea_level;
   IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *m_flow_law;

@@ -177,7 +177,7 @@ void RoutingHydrology::write_variables_impl(const std::set<std::string> &vars, c
 }
 
 
-void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void RoutingHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   dict["bwp"] = new Hydrology_bwp(this);

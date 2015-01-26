@@ -158,7 +158,7 @@ printf("PSConstantGLINT2::update(%f) done dumping variables\n", my_t);
 	return 0;
 }
 
-void PSConstantGLINT2::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+void PSConstantGLINT2::get_diagnostics_impl(std::map<std::string, PISMDiagnostic*> &/*dict*/,
 	std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/)
 {
 	// empty (does not have an atmosphere model)

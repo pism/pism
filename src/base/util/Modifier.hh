@@ -42,14 +42,6 @@ public:
     }
   }
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict)
-  {
-    if (input_model != NULL) {
-      input_model->get_diagnostics(dict, ts_dict);
-    }
-  }
-
   virtual void max_timestep(double my_t, double &my_dt, bool &restrict)
   {
     if (input_model != NULL) {
@@ -70,6 +62,13 @@ public:
   }
 
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict) {
+    if (input_model != NULL) {
+      input_model->get_diagnostics(dict, ts_dict);
+    }
+  }
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
   {
     if (input_model != NULL) {

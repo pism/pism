@@ -104,7 +104,7 @@ void PSConstantPIK::update(double my_t, double my_dt)
   }
 }
 
-void PSConstantPIK::get_diagnostics(std::map<std::string, Diagnostic*> &/*dict*/,
+void PSConstantPIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/)
 {
   // empty (does not have an atmosphere model)

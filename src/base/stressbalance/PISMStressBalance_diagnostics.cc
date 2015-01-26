@@ -27,7 +27,7 @@
 
 namespace pism {
 
-void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                         std::map<std::string, TSDiagnostic*> &ts_dict) {
 
   dict["bfrict"]   = new PSB_bfrict(this);

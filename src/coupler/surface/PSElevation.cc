@@ -179,7 +179,7 @@ void PSElevation::attach_atmosphere_model(AtmosphereModel *input)
   delete input;
 }
 
-void PSElevation::get_diagnostics(std::map<std::string, Diagnostic*> &/*dict*/,
+void PSElevation::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
                                   std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // empty
 }

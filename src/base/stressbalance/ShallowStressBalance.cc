@@ -69,7 +69,7 @@ ShallowStressBalance::~ShallowStressBalance() {
   delete basal_sliding_law;
 }
 
-void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   dict["beta"]     = new SSB_beta(this);
   dict["taub"]     = new SSB_taub(this);
