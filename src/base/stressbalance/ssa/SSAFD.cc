@@ -112,8 +112,9 @@ SSAFD::SSAFD(const IceGrid &g, const EnthalpyConverter &e)
     ierr = DMCreateMatrix(*m_da, &m_A); CHKERRCONTINUE(ierr);
 #endif
 
-    ierr = KSPCreate(m_grid.com, &m_KSP);
+    ierr = KSPCreate(m_grid.com, m_KSP.rawptr());
     PISM_PETSC_CHK(ierr, "KSPCreate");
+
     ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
     PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
 
@@ -126,9 +127,6 @@ SSAFD::SSAFD(const IceGrid &g, const EnthalpyConverter &e)
 
 SSAFD::~SSAFD() {
   PetscErrorCode ierr = 0;
-  if (m_KSP != NULL) {
-    ierr = KSPDestroy(&m_KSP); CHKERRCONTINUE(ierr);
-  }
 
   if (m_A != NULL) {
     ierr = MatDestroy(&m_A); CHKERRCONTINUE(ierr);

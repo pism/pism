@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
 #include "TerminationReason.hh"
+#include "KSP.hh"
 
 namespace pism {
 
@@ -137,7 +138,7 @@ protected:
   StateVec &m_u_obs;
   StateVec m_u_diff;
 
-  KSP m_ksp;  
+  petsc::KSP m_ksp;  
   Mat m_mat_GN;
 
   double m_eta;

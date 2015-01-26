@@ -22,6 +22,7 @@
 
 #include "SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
+#include "KSP.hh"
 
 namespace pism {
 
@@ -195,7 +196,7 @@ protected:
   FEDOFMap     m_dofmap;
 
   /// KSP used in \ref apply_linearization and \ref apply_linearization_transpose
-  KSP  m_ksp;
+  petsc::KSP  m_ksp;
   /// Mat used in \ref apply_linearization and \ref apply_linearization_transpose
   Mat  m_J_state;
 

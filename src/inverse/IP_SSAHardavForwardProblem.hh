@@ -21,6 +21,7 @@
 
 #include "SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
+#include "KSP.hh"
 
 namespace pism {
 
@@ -183,7 +184,7 @@ protected:
   FEQuadrature_Scalar m_quadrature;
   FEDOFMap     m_dofmap;
 
-  KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
+  petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
   Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose
 
   SNESConvergedReason m_reason;

@@ -67,7 +67,7 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   DMCreateMatrix(*m_da, &m_J_state);
 #endif
 
-  ierr = KSPCreate(m_grid.com, &m_ksp);
+  ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
   PISM_PETSC_CHK(ierr, "KSPCreate");
   double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
@@ -83,10 +83,7 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
 }
 
 PetscErrorCode IP_SSATaucForwardProblem::destruct() {
-  PetscErrorCode ierr;
   MatDestroy(&m_J_state);
-  ierr = KSPDestroy(&m_ksp);
-  PISM_PETSC_CHK(ierr, "KSPDestroy");
   return 0;
 }
 

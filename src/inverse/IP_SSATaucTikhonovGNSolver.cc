@@ -81,7 +81,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS);
   m_gradient.create(grid, "grad design", WITHOUT_GHOSTS);
 
-  ierr = KSPCreate(grid.com, &m_ksp);
+  ierr = KSPCreate(grid.com, m_ksp.rawptr());
   PISM_PETSC_CHK(ierr, "KSPCreate");
 
   ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_");
@@ -127,7 +127,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::destruct() {
-  KSPDestroy(&m_ksp);
   MatDestroy(&m_mat_GN);
   return 0;
 }

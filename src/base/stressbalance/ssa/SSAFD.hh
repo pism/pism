@@ -24,6 +24,7 @@
 
 #include "error_handling.hh"
 #include "Viewer.hh"
+#include "KSP.hh"
 
 namespace pism {
 
@@ -94,7 +95,7 @@ protected:
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
   IceModelVec2 m_work;
-  KSP m_KSP;
+  petsc::KSP m_KSP;
   Mat m_A;
   IceModelVec2V m_b;            // right hand side
   double m_scaling;

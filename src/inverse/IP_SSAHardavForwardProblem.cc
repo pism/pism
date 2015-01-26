@@ -65,15 +65,19 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   DMCreateMatrix(*m_da, &m_J_state);
 #endif
 
-  ierr = KSPCreate(m_grid.com, &m_ksp);
+  ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
   PISM_PETSC_CHK(ierr, "KSPCreate");
+
   double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   PISM_PETSC_CHK(ierr, "KSPSetTolerances");
+
   PC pc;
   ierr = KSPGetPC(m_ksp, &pc);
   PISM_PETSC_CHK(ierr, "KSPGetPC");
+
   PCSetType(pc, PCBJACOBI);
+
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
@@ -81,10 +85,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
 }
 
 PetscErrorCode IP_SSAHardavForwardProblem::destruct() {
-  PetscErrorCode ierr;
   MatDestroy(&m_J_state);
-  ierr = KSPDestroy(&m_ksp);
-  PISM_PETSC_CHK(ierr, "KSPDestroy");
   return 0;
 }
 
