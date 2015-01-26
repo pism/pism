@@ -333,7 +333,7 @@ void IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
     PISM_PETSC_CHK(ierr, "PetscMemcpy");
   }
 
-  DMDAVecRestoreArray(*da_result, result, &tmp_res);
+  DMDAVecRestoreArrayDOF(*da_result, result, &tmp_res);
   DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v);
 }
 
@@ -359,7 +359,7 @@ void IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
     PISM_PETSC_CHK(ierr, "PetscMemcpy");
   }
 
-  DMDAVecRestoreArray(*da_source, source, &tmp_src);
+  DMDAVecRestoreArrayDOF(*da_source, source, &tmp_src);
   DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v);
 
   inc_state_counter();          // mark as modified
