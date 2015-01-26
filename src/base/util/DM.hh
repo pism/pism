@@ -34,6 +34,7 @@ namespace pism {
 class PISMDM : public petsc::Wrapper<DM> {
 public:
   PISMDM(DM dm);
+  PISMDM();
   ~PISMDM();
 };
 

@@ -25,13 +25,13 @@ PISMDM::PISMDM(DM dm) {
   m_value = dm;
 }
 
+PISMDM::PISMDM() {
+  m_value = NULL;
+}
+
 PISMDM::~PISMDM() {
-  PetscErrorCode ierr = DMDestroy(&m_value); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    // We can't do anything about this failure. We can't recover
-    // from it, and it is almost certainly caused by a programming
-    // error. So, we call abort().
-    abort();
+  if (m_value != NULL) {
+    PetscErrorCode ierr = DMDestroy(&m_value); CHKERRCONTINUE(ierr);
   }
 }
 
