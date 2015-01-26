@@ -24,6 +24,14 @@
 
 #include <cassert>
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::dynamic_pointer_cast;
+#else
+#include <memory>
+using std::dynamic_pointer_cast;
+#endif
+
 #include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
@@ -32,13 +40,7 @@
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-using std::tr1::dynamic_pointer_cast;
-#else
-#include <memory>
-using std::dynamic_pointer_cast;
-#endif
+#include "Vec.hh"
 
 namespace pism {
 
@@ -97,22 +99,23 @@ void IceModelVec2S::allocate_proc0_copy(Vec &result) const {
                                                                                           ;
   if (v_proc0 == NULL) {
 
-    Vec natural_work = NULL;
+    // natural_work will be destroyed at the end of scope, but it will
+    // only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    petsc::Vec natural_work;
     // create a work vector with natural ordering:
-    DMDACreateNaturalVector(*m_da, &natural_work);
+    ierr = DMDACreateNaturalVector(*m_da, natural_work.rawptr());
+    PISM_PETSC_CHK(ierr, "DMDACreateNaturalVector");
+
     // this increments the reference counter of natural_work
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "natural_work",
-                              (PetscObject)natural_work);
+                              (PetscObject)((::Vec)natural_work));
     PISM_PETSC_CHK(ierr, "PetscObjectCompose");
 
     // initialize the scatter to processor 0 and create storage on processor 0
     VecScatter scatter_to_zero = NULL;
     ierr = VecScatterCreateToZero(natural_work, &scatter_to_zero, &v_proc0);
     PISM_PETSC_CHK(ierr, "VecScatterCreateToZero");
-
-    // decrement the reference counter; will be destroyed once m_da is destroyed
-    ierr = VecDestroy(&natural_work);
-    PISM_PETSC_CHK(ierr, "VecDestroy");
 
     // this increments the reference counter of scatter_to_zero
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "scatter_to_zero",
@@ -274,9 +277,6 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
 
   assert(m_v != NULL);
 
-  Vec tmp;                      // a temporary one-component vector,
-                                // distributed across processors the same way v is
-
   // The simplest case:
   if ((m_dof == 1) && (m_has_ghosts == false)) {
     IceModelVec::write_impl(nc, nctype);
@@ -287,7 +287,9 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
   // and we just need a global Vec):
   PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
-  DMGetGlobalVector(*da2, &tmp);
+  // a temporary one-component vector, distributed across processors
+  // the same way v is
+  petsc::TemporaryGlobalVec tmp(da2);
 
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(m_grid->com, "  Writing %s...\n", m_name.c_str());
@@ -304,9 +306,6 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
 
     ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
   }
-
-  // Clean up:
-  DMRestoreGlobalVector(*da2, &tmp);
 }
 
 void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
@@ -328,9 +327,9 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   // and we just need a global Vec):
   PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
-  Vec tmp;                      // a temporary one-component vector,
-                                // distributed across processors the same way v is
-  DMGetGlobalVector(*da2, &tmp);
+  // a temporary one-component vector, distributed across processors
+  // the same way v is
+  petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     double *tmp_array = NULL;
@@ -348,9 +347,6 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   if (m_has_ghosts) {
     update_ghosts();
   }
-
-  // Clean up:
-  DMRestoreGlobalVector(*da2, &tmp);
 }
 
 void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
@@ -371,9 +367,9 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   // and we just need a global Vec):
   PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
-  Vec tmp;                      // a temporary one-component vector,
-                                // distributed across processors the same way v is
-  DMGetGlobalVector(*da2, &tmp);
+  // a temporary one-component vector, distributed across processors
+  // the same way v is
+  petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     double *tmp_array = NULL;
@@ -391,9 +387,6 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   if (m_has_ghosts == true) {
     update_ghosts();
   }
-
-  // Clean up:
-  DMRestoreGlobalVector(*da2, &tmp);
 }
 
 //! \brief View a 2D field.
@@ -433,8 +426,7 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
   // and we just need a global Vec):
   PISMDM::Ptr da2 = m_grid->get_dm(1, 0);
 
-  Vec tmp;
-  DMGetGlobalVector(*da2, &tmp);
+  petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int i = 0; i < std::min(m_dof, 2U); ++i) {
     std::string
@@ -463,8 +455,6 @@ void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
 
     ierr = VecView(tmp, v); PISM_PETSC_CHK(ierr, "VecView");
   }
-
-  DMRestoreGlobalVector(*da2, &tmp);
 }
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite

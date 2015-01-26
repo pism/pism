@@ -239,6 +239,8 @@ public:
   //!< \brief If true, data is written to a file in "human-friendly" units.
 
 protected:
+
+  void global_to_local(PISMDM::Ptr dm, Vec source, Vec destination) const;
   virtual void read_impl(const PIO &nc, unsigned int time);
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);

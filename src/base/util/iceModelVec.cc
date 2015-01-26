@@ -300,8 +300,7 @@ void IceModelVec::copy_from_vec(Vec source) {
   assert(m_v != NULL);
 
   if (m_has_ghosts) {
-    DMGlobalToLocalBegin(*m_da, source, INSERT_VALUES, m_v);
-    DMGlobalToLocalEnd(*m_da, source, INSERT_VALUES, m_v);
+    global_to_local(m_da, source, m_v);
   } else {
     ierr = VecCopy(source, m_v);
     PISM_PETSC_CHK(ierr, "VecCopy");
@@ -366,7 +365,7 @@ void IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
 }
 
 //! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
-void  IceModelVec::copy_to(IceModelVec &destination) const {
+void IceModelVec::copy_to(IceModelVec &destination) const {
   PetscErrorCode ierr;
   assert(m_v != NULL && destination.m_v != NULL);
 
@@ -499,7 +498,8 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   }
 
   if (m_dof != 1) {
-    throw RuntimeError("This method (IceModelVec::regrid_impl) only supports IceModelVecs with dof == 1.");
+    throw RuntimeError("This method (IceModelVec::regrid_impl)"
+                       " only supports IceModelVecs with dof == 1.");
   }
 
   if (m_has_ghosts) {
@@ -516,8 +516,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   if (m_has_ghosts) {
-    DMGlobalToLocalBegin(*m_da, tmp, INSERT_VALUES, m_v);
-    DMGlobalToLocalEnd(*m_da, tmp, INSERT_VALUES, m_v);
+    global_to_local(m_da, tmp, m_v);
 
     DMRestoreGlobalVector(*m_da, &tmp);
   }
@@ -551,8 +550,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   if (m_has_ghosts) {
-    DMGlobalToLocalBegin(*m_da, tmp, INSERT_VALUES, m_v);
-    DMGlobalToLocalEnd(*m_da, tmp, INSERT_VALUES, m_v);
+    global_to_local(m_da, tmp, m_v);
 
     DMRestoreGlobalVector(*m_da, &tmp);
   }
@@ -721,6 +719,17 @@ void  IceModelVec::update_ghosts() {
 #endif
 }
 
+void IceModelVec::global_to_local(PISMDM::Ptr dm, Vec source, Vec destination) const {
+  PetscErrorCode ierr;
+
+  ierr = DMGlobalToLocalBegin(*dm, source, INSERT_VALUES, destination);
+  PISM_PETSC_CHK(ierr, "DMGlobalToLocalBegin");
+
+  ierr = DMGlobalToLocalEnd(*dm, source, INSERT_VALUES, destination);
+  PISM_PETSC_CHK(ierr, "DMGlobalToLocalEnd");
+}
+
+
 //! Scatters ghost points to IceModelVec destination.
 void  IceModelVec::update_ghosts(IceModelVec &destination) const {
 
@@ -741,8 +750,7 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
   }
 
   if (m_has_ghosts == false && destination.m_has_ghosts == true) {
-    DMGlobalToLocalBegin(*destination.m_da, m_v, INSERT_VALUES, destination.m_v);
-    DMGlobalToLocalEnd(*destination.m_da, m_v, INSERT_VALUES, destination.m_v);
+    global_to_local(destination.m_da, m_v, destination.m_v);
     return;
   }
 
