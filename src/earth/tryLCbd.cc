@@ -51,6 +51,8 @@ static char help[] =
 #include "Viewer.hh"
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
+#include "Vec.hh"
+#include "DM.hh"
 
 using namespace pism;
 
@@ -73,8 +75,8 @@ int main(int argc, char *argv[]) {
     init_config(com, config, overrides);
 
     BedDeformLC bdlc;
-    DM          da2;
-    Vec         H, bed, Hstart, bedstart, uplift;
+    pism::PISMDM da2;
+    petsc::Vec H, bed, Hstart, bedstart, uplift;
     
     bool
       include_elastic = false,
@@ -124,13 +126,13 @@ int main(int argc, char *argv[]) {
     
     if (rank == 0) { // only runs on proc 0; all sequential
       // allocate the variables needed before BedDeformLC can work:
-      ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, &H);
+      ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, H.rawptr());
       PISM_PETSC_CHK(ierr, "VecCreateSeq");
-      ierr = VecDuplicate(H, &Hstart);
+      ierr = VecDuplicate(H, Hstart.rawptr());
       PISM_PETSC_CHK(ierr, "VecDuplicate");
-      ierr = VecDuplicate(H, &bedstart);
+      ierr = VecDuplicate(H, bedstart.rawptr());
       PISM_PETSC_CHK(ierr, "VecDuplicate");
-      ierr = VecDuplicate(H, &uplift);
+      ierr = VecDuplicate(H, uplift.rawptr());
       PISM_PETSC_CHK(ierr, "VecDuplicate");
 
       // in order to show bed elevation as a picture, create a da 
@@ -139,38 +141,42 @@ int main(int argc, char *argv[]) {
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          NULL, NULL, &da2); CHKERRQ(ierr);
+                          NULL, NULL, da2.rawptr()); CHKERRQ(ierr);
 #else
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          NULL, NULL, &da2); CHKERRQ(ierr);
+                          NULL, NULL, da2.rawptr()); CHKERRQ(ierr);
 #endif
       ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0); CHKERRQ(ierr);
-      ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
+
+      ierr = DMCreateGlobalVector(da2, bed.rawptr()); CHKERRQ(ierr);
 
       // create a bed viewer
-      PetscViewer petsc_viewer;
       PetscDraw   draw;
       const int  windowx = 500,
-                      windowy = (int) (((float) windowx) * Ly / Lx);
+        windowy = (int) (((float) windowx) * Ly / Lx);
+      Viewer viewer;
       ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, NULL, "bed elev (m)",
-                                 PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &petsc_viewer);
+                                 PETSC_DECIDE, PETSC_DECIDE, windowy, windowx,
+                                 viewer.rawptr());
       PISM_PETSC_CHK(ierr, "PetscViewerDrawOpen");
-      Viewer viewer(petsc_viewer);
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
       // there is a no-titles bug
       ierr = PetscViewerDrawGetDraw(viewer,0,&draw);
       PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+
       ierr = PetscDrawSetDoubleBuffer(draw);
       PISM_PETSC_CHK(ierr, "PetscDrawSetDoubleBuffer");  // remove flicker while we are at it
+
       ierr = PetscDrawSetTitle(draw,"bed elev (m)");
       PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 
       // make disc load
       ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
+
       // see "Results: Earth deformation only" section of Bueler et al "Fast computation ..."
       const double dx = (2.0*Lx)/((double) Mx - 1), 
                         dy = (2.0*Ly)/((double) My - 1);
@@ -267,18 +273,6 @@ int main(int argc, char *argv[]) {
       }
       ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
-
-      ierr = VecDestroy(&H);
-      PISM_PETSC_CHK(ierr, "VecDestroy");
-      ierr = VecDestroy(&bed);
-      PISM_PETSC_CHK(ierr, "VecDestroy");
-      ierr = VecDestroy(&Hstart);
-      PISM_PETSC_CHK(ierr, "VecDestroy");
-      ierr = VecDestroy(&bedstart);
-      PISM_PETSC_CHK(ierr, "VecDestroy");
-      ierr = VecDestroy(&uplift);
-      PISM_PETSC_CHK(ierr, "VecDestroy");
-      ierr = DMDestroy(&da2); CHKERRQ(ierr);
     }
   }
   catch (...) {
