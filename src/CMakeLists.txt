@@ -7,6 +7,7 @@ include_directories (
   base/calving
   base/util
   base/util/io
+  base/util/petscwrappers
   base/energy
   base/rheology
   base/basalstrength
@@ -27,8 +28,10 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
-  base/util/PetscInitializer.cc
-  base/util/Vec.cc
+  base/util/petscwrappers/PetscInitializer.cc
+  base/util/petscwrappers/DM.cc
+  base/util/petscwrappers/Vec.cc
+  base/util/petscwrappers/Viewer.cc
   base/util/error_handling.cc
   base/util/options.cc
   base/util/Context.cc
@@ -36,8 +39,6 @@ set(PISMUTIL_SRC
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/ColumnInterpolation.cc
-  base/util/DM.cc
-  base/util/Viewer.cc
   base/util/Mask.cc
   base/util/NCVariable.cc
   base/util/PISMConfig.cc
