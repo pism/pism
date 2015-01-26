@@ -172,4 +172,39 @@ void Component_TS::update(double t, double dt) {
   this->update_impl(t, dt);
 }
 
+// Time step restrictions
+MaxTimestep::MaxTimestep()
+  : m_active(false), m_value(0.0) {
+  // empty
+}
+
+MaxTimestep::MaxTimestep(double value)
+  : m_active(true), m_value(value) {
+  // empty
+}
+
+MaxTimestep::operator bool() const {
+  return m_active;
+}
+
+double MaxTimestep::value() const {
+  return m_value;
+}
+
+bool operator<(const MaxTimestep &a, const MaxTimestep &b) {
+  if (a and b) {
+    return a.value() < b.value();
+  } else if (a) {
+    return true;
+  } else if (b) {
+    return false;
+  } else {
+    return false;
+  }
+}
+
+bool operator>(const MaxTimestep &a, const MaxTimestep &b) {
+  return (not (a == b)) and (not (a < b));
+}
+
 } // end of namespace pism

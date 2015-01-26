@@ -139,6 +139,22 @@ protected:
   const Config &m_config;
 };
 
+class MaxTimestep {
+public:
+  MaxTimestep();
+  MaxTimestep(double value);
+  operator bool() const;
+  double value() const;
+private:
+  bool m_active;
+  double m_value;
+};
+
+// Comparison operators.
+
+bool operator>(const MaxTimestep &a, const MaxTimestep &b);
+bool operator<(const MaxTimestep &a, const MaxTimestep &b);
+
 //! \brief An abstract class for time-stepping PISM components. Created to
 //! simplify creating basic surface, snow, atmosphere, ocean... models for
 //! PISM.
