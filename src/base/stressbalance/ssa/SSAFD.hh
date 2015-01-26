@@ -75,8 +75,13 @@ protected:
   virtual void write_system_petsc(const std::string &namepart);
 
   // Lots of PETSc function calls here, so PetscErrorCode is appropriate.
-  virtual PetscErrorCode write_system_matlab(const std::string &namepart);
-
+  virtual void write_system_matlab(const std::string &namepart);
+private:
+  PetscErrorCode write_system_matlab_c(const pism::Viewer &viewer,
+                                       const std::string &file_name,
+                                       const std::string &cmdstr,
+                                       double year);
+protected:
   virtual void update_nuH_viewers();
 
   virtual void set_diagonal_matrix_entry(Mat A, int i, int j,

@@ -1659,42 +1659,55 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   std::string filename = "SSAFD_" + namepart + ".petsc";
   verbPrintf(1, m_grid.com,
              "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
-  PetscViewer viewer;
+
+  pism::Viewer viewer;       // will be destroyed automatically
   ierr = PetscViewerBinaryOpen(m_grid.com, filename.c_str(), FILE_MODE_WRITE,
-                               &viewer); PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
+                               viewer.rawptr()); PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
+
   ierr = MatView(m_A, viewer); PISM_PETSC_CHK(ierr, "MatView");
   ierr = VecView(m_b.get_vec(), viewer); PISM_PETSC_CHK(ierr, "VecView");
-  ierr = PetscViewerDestroy(&viewer); PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
 }
 
 //! \brief Write the SSA system to an .m (MATLAB) file (for debugging).
-PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
-  PetscErrorCode ierr;
-  PetscViewer    viewer;
-  std::string    prefix = "SSAFD_" + namepart, file_name;
-  char           yearappend[PETSC_MAX_PATH_LEN];
+void SSAFD::write_system_matlab(const std::string &namepart) {
 
-  IceModelVec2S component;
-  component.create(m_grid, "temp_storage", WITHOUT_GHOSTS);
+  std::string prefix = options::String("-ssafd_matlab",
+                                       "Save the linear system to an ASCII .m file. Sets the file prefix.",
+                                       "SSAFD_" + namepart);
 
-  prefix = options::String("-ssafd_matlab",
-                           "Save the linear system to an ASCII .m file. Sets the file prefix.",
-                           prefix);
-
-  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m",
-           m_grid.convert(m_grid.time->current(), "seconds", "years"));
-  file_name = prefix + std::string(yearappend);
+  double year = m_grid.convert(m_grid.time->current(), "seconds", "years");
+  char file_name[TEMPORARY_STRING_LENGTH];
+  snprintf(file_name, TEMPORARY_STRING_LENGTH, "%s_y%.0f.m", prefix.c_str(), year);
 
   verbPrintf(2, m_grid.com,
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
-             file_name.c_str());
-  ierr = PetscViewerCreate(m_grid.com, &viewer); CHKERRQ(ierr);
+             file_name);
+
+  pism::Viewer viewer(m_grid.com);
+
+  // petsc calls
+  PetscErrorCode ierr = write_system_matlab_c(viewer, file_name, pism_args_string(), year);
+  if (ierr != 0) {
+    throw RuntimeError("A PETSc call failed while writing the SSA system."
+                       " See stdout output for more.");
+  }
+}
+
+//! PETSc calls (internals of write_system_matlab()), packaged to simplify error handling.
+/**
+ * @note This method should contain **C function calls only** or calls
+ *       that **will not throw**. Each call should be followed by
+ *       `CHKERRQ(ierr)`.
+ */
+PetscErrorCode SSAFD::write_system_matlab_c(const pism::Viewer &viewer,
+                                            const std::string &file_name,
+                                            const std::string &cmdstr,
+                                            double year) {
+  PetscErrorCode ierr;
+
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
   ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
-
-  // get the command which started the run
-  std::string cmdstr = pism_args_string();
 
   // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -1711,29 +1724,32 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
     "%% these are on the staggered grid.\n",
                                 cmdstr.c_str()); CHKERRQ(ierr);
 
-  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n"); CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) m_A,"A"); CHKERRQ(ierr);
-  ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer, "\n\necho off\n"); CHKERRQ(ierr);
 
+  // matrix
+  ierr = PetscObjectSetName((PetscObject) m_A, "A"); CHKERRQ(ierr);
+  ierr = MatView(m_A, viewer); CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer, "clear zzz\n\n"); CHKERRQ(ierr);
+
+  // right hand side
   ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs"); CHKERRQ(ierr);
   ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
+
+  // solution
   ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv"); CHKERRQ(ierr);
   ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
-  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
-                                m_grid.convert(m_grid.time->current(), "seconds", "years"));
-  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer, "\nyear=%10.6f;\n", year); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "x=%12.3f + (0:%d)*%12.3f;\n"
                                 "y=%12.3f + (0:%d)*%12.3f;\n",
                                 -m_grid.Lx(), m_grid.Mx() - 1, m_grid.dx(),
                                 -m_grid.Ly(), m_grid.My() - 1, m_grid.dy()); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer, "[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer, "echo on\n"); CHKERRQ(ierr);
 
   return 0;
 }
