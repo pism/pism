@@ -42,16 +42,28 @@ Viewer::Viewer(MPI_Comm com,  const std::string &title, unsigned int target_size
   PetscDraw draw;
   ierr = PetscViewerDrawGetDraw(m_value, 0, &draw);
   PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+
   ierr = PetscDrawSetTitle(draw, title.c_str());
   PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
+}
+
+Viewer::Viewer(MPI_Comm com) {
+  PetscErrorCode ierr = PetscViewerCreate(com, &m_value);
+  PISM_PETSC_CHK(ierr, "PetscViewerCreate");
 }
 
 Viewer::Viewer(PetscViewer v) {
   m_value = v;
 }
 
+Viewer::Viewer() {
+  m_value = NULL;
+}
+
 Viewer::~Viewer() {
-  PetscViewerDestroy(&m_value);
+  if (m_value != NULL) {
+    PetscErrorCode ierr = PetscViewerDestroy(&m_value); CHKERRCONTINUE(ierr);
+  }
 }
 
 void Viewer::compute_size(unsigned int target_size, double Lx, double Ly, unsigned int &X, unsigned int &Y) {
