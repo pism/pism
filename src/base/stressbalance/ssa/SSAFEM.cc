@@ -178,13 +178,13 @@ void SSAFEM::solve(TerminationReason::Ptr &reason) {
 //! points.  See the disccusion of SSAFEM::solve for more discussion.
 void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
-  PetscViewer    viewer;
 
   m_epsilon_ssa = m_config.get("epsilon_ssa");
 
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {
-    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), &viewer);
+    pism::Viewer viewer;
+    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
 
     ierr = PetscViewerASCIIPrintf(viewer, "SNES before SSASolve_FE\n");
@@ -196,8 +196,6 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
     ierr = VecView(m_velocity_global.get_vec(), viewer);
     PISM_PETSC_CHK(ierr, "VecView");
-    ierr = PetscViewerDestroy(&viewer);
-    PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
   }
 
   m_stdout_ssa.clear();
@@ -222,15 +220,15 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
   bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
   if (view_solution) {
-    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), &viewer);
+    pism::Viewer viewer;
+    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
+
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
     ierr = VecView(m_velocity_global.get_vec(), viewer);
     PISM_PETSC_CHK(ierr, "VecView");
-    ierr = PetscViewerDestroy(&viewer);
-    PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
   }
 }
 
