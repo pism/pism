@@ -88,6 +88,34 @@ elif field == 'mask':
   myvmin     = 0.0
   myvmax     = 4.0
   ticklist   = [0, 1, 2, 3, 4]
+elif field == 'bmelt':
+  fill       = -2.0e+09
+  logscale   = True
+  contour100 = False
+  myvmin     = 0.9e-4
+  myvmax     = 1.1
+  ticklist   = [0.0001, 0.001, 0.01, 0.1, 1.0]
+elif field == 'tillwat':
+  fill       = -2.0e+09
+  logscale   = False
+  contour100 = False
+  myvmin     = 0.0
+  myvmax     = 2.0
+  ticklist   = [0.0, 0.5, 1.0, 1.5, 2.0]
+elif field == 'bwat':
+  fill       = -2.0e+09
+  logscale   = True
+  contour100 = False
+  myvmin     = 0.9e-4
+  myvmax     = 1.1
+  ticklist   = [0.0001, 0.001, 0.01, 0.1, 1.0]
+elif field == 'bwprel':
+  fill       = -2.0e+09
+  logscale   = False
+  contour100 = False
+  myvmin     = 0.0
+  myvmax     = 1.0
+  ticklist   = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 else:
   print 'invalid choice for FIELD option'
   sys.exit(3)
@@ -110,11 +138,28 @@ else:
 width  = x.max() - x.min()
 height = y.max() - y.min()
 
-# load data and mask out ice-free areas
-myvar = np.squeeze(nc.variables[field][:])
+# load data
+if field == 'bwprel':
+    thkvar = np.squeeze(nc.variables['thk'][:])
+    myvar = np.squeeze(nc.variables['bwp'][:])
+    myvar = np.ma.array(myvar, mask=(thkvar == 0.0))
+    thkvar = np.ma.array(thkvar, mask=(thkvar == 0.0))
+    myvar = myvar / (910.0 * 9.81 * thkvar)
+else:
+    myvar = np.squeeze(nc.variables[field][:])
+
+# mask out ice free etc.
 if field == 'surfvelmag':
     myvar = myvar.transpose()
-myvar = np.ma.array(myvar, mask=(myvar == fill))
+    thkvar = np.squeeze(nc.variables['thk'][:]).transpose()
+    myvar = np.ma.array(myvar, mask=(thkvar == 0.0))
+elif (field == 'bmelt') | (field == 'bwat'):
+    myvar[myvar < myvmin] = myvmin
+    maskvar = np.squeeze(nc.variables['mask'][:])
+    myvar = np.ma.array(myvar, mask=(maskvar != 2))
+else:
+    maskvar = np.squeeze(nc.variables['mask'][:])
+    myvar = np.ma.array(myvar, mask=(maskvar != 2))
 
 m = Basemap(width=1.1*width,    # width in projection coordinates, in meters
             height=1.05*height,      # height
