@@ -45,6 +45,9 @@ public:
   T get() const {
     return m_value;
   }
+  T* rawptr() {
+    return &m_value;
+  }
 protected:
   Wrapper() {
     // empty
