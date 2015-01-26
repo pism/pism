@@ -23,6 +23,7 @@
 #include <petscvec.h>
 
 #include "Wrapper.hh"
+#include "DM.hh"
 
 namespace pism {
 namespace petsc {
@@ -35,9 +36,18 @@ namespace petsc {
 class Vec : public petsc::Wrapper< ::Vec > {
 public:
   Vec();
-  Vec(::Vec dm);
+  Vec(::Vec v);
   ~Vec();
 };
+
+class TemporaryGlobalVec : public Vec {
+public:
+  TemporaryGlobalVec(pism::PISMDM::Ptr dm);
+  ~TemporaryGlobalVec();
+private:
+  pism::PISMDM::Ptr m_dm;
+};
+
 } // end of namespace petsc
 } // end of namespace pism
 

@@ -18,6 +18,7 @@
  */
 
 #include "Vec.hh"
+#include "error_handling.hh"
 
 namespace pism {
 namespace petsc {
@@ -35,6 +36,24 @@ Vec::~Vec() {
     PetscErrorCode ierr = VecDestroy(&m_value); CHKERRCONTINUE(ierr);
   }
 }
+
+TemporaryGlobalVec::TemporaryGlobalVec(pism::PISMDM::Ptr dm) {
+  m_dm = dm;
+  PetscErrorCode ierr = DMGetGlobalVector(*m_dm, &m_value);
+  PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
+}
+
+TemporaryGlobalVec::~TemporaryGlobalVec() {
+  // This takes advantage of the fact that the destructor of a derived
+  // class is called before the destructor of its base class, so we
+  // can set m_value to NULL and turn the destructor of the base class
+  // (Vec) into a no-op.
+  if (m_value != NULL) {
+    PetscErrorCode ierr = DMRestoreGlobalVector(*m_dm, &m_value); CHKERRCONTINUE(ierr);
+    m_value = NULL;
+  }
+}
+
 
 } // end of namespace petsc
 } // end of namespace pism
