@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009, 2014 Ed Bueler
+/* Copyright (C) 2004-2009, 2014, 2015 Ed Bueler
 
  This file is part of PISM.
 
@@ -25,7 +25,7 @@
 
 
 PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
-                          Vec &vresult) {
+                          Vec vresult) {
   PetscErrorCode  ierr;
   double sum, **A, **B, **result;
   int i,j,r,s;

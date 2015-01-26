@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009 Ed Bueler
+/* Copyright (C) 2004-2009, 2015 Ed Bueler
 
  This file is part of PISM.
 
@@ -38,7 +38,7 @@ This operation is O(mA^2 nA^2), but an alternate FFT implementation would
 be O(mA nA log(mA nA)), presumably.
  */
 PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
-                          Vec &vresult);
+                          Vec vresult);
 
 
 /*! Functions like Matlab's interp1.  Wrapper for GSL 1D interpolation.

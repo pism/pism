@@ -42,14 +42,6 @@ BedDeformLC::~BedDeformLC() {
     fftw_free(fftw_input);
     fftw_free(fftw_output);
     fftw_free(loadhat);
-
-    VecDestroy(&Hdiff);
-    VecDestroy(&dbedElastic);
-    VecDestroy(&U);
-    VecDestroy(&U_start);
-    VecDestroy(&vleft);
-    VecDestroy(&vright);
-    VecDestroy(&lrmE);
   }
 }
 
@@ -106,23 +98,27 @@ PetscErrorCode BedDeformLC::alloc() {
   assert(settingsDone == true);
   assert(allocDone == false);
 
-  ierr = VecDuplicate(H, &Hdiff);
+  ierr = VecDuplicate(H, Hdiff.rawptr());
   PISM_PETSC_CHK(ierr, "VecDuplicate");
 
-  ierr = VecDuplicate(H, &dbedElastic);
+  ierr = VecDuplicate(H, dbedElastic.rawptr());
   PISM_PETSC_CHK(ierr, "VecDuplicate");
 
   // allocate plate displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, Nx * Ny, &U);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, Nx * Ny, U.rawptr());
   PISM_PETSC_CHK(ierr, "VecCreateSeq");
-  ierr = VecDuplicate(U, &U_start);
+
+  ierr = VecDuplicate(U, U_start.rawptr());
   PISM_PETSC_CHK(ierr, "VecDuplicate");
+
   // FFT - side coefficient fields (i.e. multiplication form of operators)
-  ierr = VecDuplicate(U, &vleft);
+  ierr = VecDuplicate(U, vleft.rawptr());
   PISM_PETSC_CHK(ierr, "VecDuplicate");
-  ierr = VecDuplicate(U, &vright);
+
+  ierr = VecDuplicate(U, vright.rawptr());
   PISM_PETSC_CHK(ierr, "VecDuplicate");
-  ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, &lrmE);
+
+  ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, lrmE.rawptr());
   PISM_PETSC_CHK(ierr, "VecCreateSeq");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance

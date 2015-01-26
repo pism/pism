@@ -22,6 +22,8 @@
 #include <petscvec.h>
 #include <fftw3.h>
 
+#include "Vec.hh"
+
 namespace pism {
 
 class Config;
@@ -88,7 +90,7 @@ private:
   // point to storage owned elsewhere
   Vec          H, bed, H_start, bed_start, uplift;
 
-  Vec Hdiff, dbedElastic, // sequential; working space
+  petsc::Vec Hdiff, dbedElastic, // sequential; working space
     U, U_start,     // sequential and fat
     vleft, vright,  // coefficients; sequential and fat
     lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
