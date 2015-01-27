@@ -33,6 +33,7 @@ set(PISMUTIL_SRC
   base/util/petscwrappers/IS.cc
   base/util/petscwrappers/KSP.cc
   base/util/petscwrappers/Mat.cc
+  base/util/petscwrappers/SNES.cc
   base/util/petscwrappers/Vec.cc
   base/util/petscwrappers/VecScatter.cc
   base/util/petscwrappers/Viewer.cc
