@@ -35,16 +35,14 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, const E
     m_element_index(m_grid),
     m_quadrature(m_grid, 1.0),
     m_rebuild_J_state(true) {
-  PetscErrorCode ierr = this->construct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+  this->construct();
 }
 
 IP_SSAHardavForwardProblem::~IP_SSAHardavForwardProblem() {
   // empty
 }
 
-PetscErrorCode IP_SSAHardavForwardProblem::construct() {
+void IP_SSAHardavForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencilWidth = 1;
 
@@ -57,10 +55,13 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
                     WITH_GHOSTS, stencilWidth);
 
 #if PETSC_VERSION_LT(3,5,0)
-  DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
+  ierr = DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #else
-  DMSetMatType(*m_da, MATBAIJ);
-  DMCreateMatrix(*m_da, m_J_state.rawptr());
+  ierr = DMSetMatType(*m_da, MATBAIJ);
+  PISM_PETSC_CHK(ierr, "DMSetMatType");
+  ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #endif
 
   ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
@@ -74,12 +75,11 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   ierr = KSPGetPC(m_ksp, &pc);
   PISM_PETSC_CHK(ierr, "KSPGetPC");
 
-  PCSetType(pc, PCBJACOBI);
+  ierr = PCSetType(pc, PCBJACOBI);
+  PISM_PETSC_CHK(ierr, "PCSetType");
 
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
-
-  return 0;
 }
 
 //! Sets the current value of of the design paramter \f$\zeta\f$.
@@ -91,8 +91,7 @@ directly.  Use this method in conjuction with
 The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
 kept.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta)
-{
+void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_zeta = &new_zeta;
 
   // Convert zeta to hardav.
@@ -117,25 +116,21 @@ PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta)
 
   // Flag the state jacobian as needing rebuilding.
   m_rebuild_J_state = true;
-
-  return 0;
 }
 
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-PetscErrorCode IP_SSAHardavForwardProblem::linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
+void IP_SSAHardavForwardProblem::linearize_at(IceModelVec2S &zeta,
+                                              TerminationReason::Ptr &reason) {
   this->set_design(zeta);
-
   this->solve_nocache(reason);
-
-  return 0;
 }
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ as defined in the class-level documentation.
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
-PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
+void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
 
   Vector2
     **u_a   = u.get_array(),
@@ -146,27 +141,20 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, I
 
   u.end_access();
   RHS.end_access();
-
-  return 0;
 }
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ defined in the class-level documentation.
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
-PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
+void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
 
   Vector2 **u_a = u.get_array();
 
-  Vector2 **rhs_a;
-  DMDAVecGetArray(*m_da, RHS, &rhs_a);
-
+  petsc::DMDAVecArray rhs_a(m_da, RHS);
   DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
-
-  DMDAVecRestoreArray(*m_da, RHS, &rhs_a);
+  this->compute_local_function(info, const_cast<const Vector2 **>(u_a),
+                               (Vector2**)rhs_a.get());
   u.end_access();
-
-  return 0;
 }
 
 //! Assembles the state Jacobian matrix.
@@ -177,7 +165,7 @@ to this method.
   @param[in] u Current state variable value.
   @param[out] J computed state Jacobian.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
+void IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
   Vector2 **u_a = u.get_array();
 
@@ -185,35 +173,29 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V
   this->compute_local_jacobian(info, const_cast<const Vector2 **>(u_a), Jac);
 
   u.end_access();
-
-  return 0;
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
 /*! The return value uses a DesignVector (IceModelVec2V), which can be ghostless. Ghosts (if present) are updated.
 \overload
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
-                                                                 IceModelVec2S &dzeta,
-                                                                 IceModelVec2V &du) {
+void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+                                                       IceModelVec2S &dzeta,
+                                                       IceModelVec2V &du) {
   Vector2 **du_a = du.get_array();
   this->apply_jacobian_design(u, dzeta, du_a);
   du.end_access();
-  return 0;
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
 /*! The return value is a Vec for the benefit of TAO. It is assumed to be ghostless; no communication is done.
 \overload
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
-                                                                 IceModelVec2S &dzeta,
-                                                                 Vec du) {
-  Vector2 **du_a;
-  DMDAVecGetArray(*m_da, du, &du_a);
-  this->apply_jacobian_design(u, dzeta, du_a);
-  DMDAVecRestoreArray(*m_da, du, &du_a);
-  return 0;
+void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+                                                       IceModelVec2S &dzeta,
+                                                       Vec du) {
+  petsc::DMDAVecArray du_a(m_da, du);
+  this->apply_jacobian_design(u, dzeta, (Vector2**)du_a.get());
 }
 
 //! @brief Applies the design Jacobian matrix to a perturbation of the
@@ -237,9 +219,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 
   Typically this method is called via one of its overloads.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
-                                                                 IceModelVec2S &dzeta,
-                                                                 Vector2 **du_a) {
+void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+                                                       IceModelVec2S &dzeta,
+                                                       Vector2 **du_a) {
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -336,22 +318,22 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
       }
       m_quadrature.computeTrialFunctionValues(dB_e, dB_q);
 
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         // Symmetric gradient at the quadrature point.
         double *Duqq = Du_q[q];
 
-        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq + q];
 
         double d_nuH = 0;
         if (coefficients->H >= strength_extension->get_min_thickness()) {
           m_flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
-          d_nuH  *= (2*coefficients->H);
+          d_nuH *= (2*coefficients->H);
         }
 
-        for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
+        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
           const FEFunctionGerm &testqk = test[q][k];
-          du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0]+Duqq[1]) + testqk.dy*Duqq[2]);
-          du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1]+Duqq[0]) + testqk.dx*Duqq[2]);
+          du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
+          du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
         }
       } // q
       m_dofmap.addLocalResidualBlock(du_e, du_a);
@@ -364,36 +346,30 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 
   dirichletBC.finish();
   fixedZeta.finish();
-
-  return 0;
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
 /*! The return value uses a StateVector (IceModelVec2S) which can be ghostless; ghosts (if present) are updated.
 \overload
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                           IceModelVec2V &du,
-                                                                           IceModelVec2S &dzeta) {
+void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
+                                                                 IceModelVec2V &du,
+                                                                 IceModelVec2S &dzeta) {
   double **dzeta_a = dzeta.get_array();
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
   dzeta.end_access();
-  return 0;
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
 /*! The return value uses a Vec for the benefit of TAO.  It is assumed to be ghostless; no communication is done.
 \overload */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                           IceModelVec2V &du,
-                                                                           Vec dzeta) {
-  double **dzeta_a;
-  petsc::DM::Ptr da2 = m_grid.get_dm(1, m_config.get("grid_max_stencil_width"));
+void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
+                                                                 IceModelVec2V &du,
+                                                                 Vec dzeta) {
 
-  DMDAVecGetArray(*da2, dzeta, &dzeta_a);
-  this->apply_jacobian_design_transpose(u, du, dzeta_a);
-  DMDAVecRestoreArray(*da2, dzeta, &dzeta_a);
-  return 0;
+  petsc::DM::Ptr da2 = m_grid.get_dm(1, m_config.get("grid_max_stencil_width"));
+  petsc::DMDAVecArray dzeta_a(da2, dzeta);
+  this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }
 
 //! @brief Applies the transpose of the design Jacobian matrix to a
@@ -416,9 +392,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 
   Typically this method is called via one of its overloads.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                           IceModelVec2V &du,
-                                                                           double **dzeta_a) {
+void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
+                                                                 IceModelVec2V &du,
+                                                                 double **dzeta_a) {
   IceModelVec::AccessList list;
   list.add(*m_zeta);
   list.add(u);
@@ -533,9 +509,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
     fixedZeta.fix_residual_homogeneous(dzeta_a);
     fixedZeta.finish();
   }
-
-
-  return 0;
 }
 
 /*!\brief Applies the linearization of the forward map (i.e. the reduced gradient \f$DF\f$ described in
@@ -551,7 +524,7 @@ These are established by first calling linearize_at.
   @param[in]   dzeta     Perturbation of the design variable
   @param[out]  du        Computed corresponding perturbation of the state variable; ghosts (if present) are updated.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
+void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
 
   PetscErrorCode ierr;
 
@@ -574,19 +547,22 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dz
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
   PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
 
-  KSPConvergedReason  reason;
+  KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+
   if (reason < 0) {
-    throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
+    throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve"
+                                  " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+    verbPrintf(4, m_grid.com,
+               "IP_SSAHardavForwardProblem::apply_linearization converged"
+               " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }
 
   du.copy_from(m_du_global);
-  return 0;
 }
 
 /*! \brief Applies the transpose of the linearization of the forward map
@@ -606,8 +582,8 @@ These are established by first calling linearize_at.
   @param[in]   du     Perturbation of the state variable
   @param[out]  dzeta  Computed corresponding perturbation of the design variable; ghosts (if present) are updated.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
-                                                                         IceModelVec2S &dzeta) {
+void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
+                                                               IceModelVec2S &dzeta) {
 
   PetscErrorCode ierr;
 
@@ -659,8 +635,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   if (dzeta.get_stencil_width() > 0) {
     dzeta.update_ghosts();
   }
-
-  return 0;
 }
 
 } // end of namespace pism

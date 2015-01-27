@@ -656,11 +656,13 @@ void  IceModelVec::begin_access() const {
   }
 
   if (m_access_counter == 0) {
-
+    PetscErrorCode ierr;
     if (begin_end_access_use_dof == true) {
-      DMDAVecGetArrayDOF(*m_da, m_v, &array);
+      ierr = DMDAVecGetArrayDOF(*m_da, m_v, &array);
+      PISM_PETSC_CHK(ierr, "DMDAVecGetArrayDOF");
     } else {
-      DMDAVecGetArray(*m_da, m_v, &array);
+      ierr = DMDAVecGetArray(*m_da, m_v, &array);
+      PISM_PETSC_CHK(ierr, "DMDAVecGetArray");
     }
   }
 

@@ -161,17 +161,17 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
  * coordinate system, not in reality.
  */
 void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
-  double    **slice_val;
 
   petsc::DM::Ptr da2 = m_grid->get_dm(1, m_grid->config.get("grid_max_stencil_width"));
 
   IceModelVec::AccessList list(*this);
-  DMDAVecGetArray(*da2, gslice, &slice_val);
+  petsc::DMDAVecArray slice(da2, gslice);
+  double **slice_val = (double**)slice.get();
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     slice_val[i][j] = getValZ(i,j,z);
   }
-  DMDAVecRestoreArray(*da2, gslice, &slice_val);
 }
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
