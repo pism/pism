@@ -57,7 +57,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
                     WITH_GHOSTS, stencilWidth);
 
 #if PETSC_VERSION_LT(3,5,0)
-  DMCreateMatrix(*m_da, "baij", &m_J_state);
+  DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
 #else
   DMSetMatType(*m_da, MATBAIJ);
   DMCreateMatrix(*m_da, m_J_state.rawptr());
