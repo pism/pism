@@ -106,10 +106,14 @@ SSAFD::SSAFD(const IceGrid &g, const EnthalpyConverter &e)
   {
     PetscErrorCode ierr;
 #if PETSC_VERSION_LT(3,5,0)
-    ierr = DMCreateMatrix(*m_da, MATAIJ, m_A.rawptr()); CHKERRCONTINUE(ierr);
+    ierr = DMCreateMatrix(*m_da, MATAIJ, m_A.rawptr());
+    PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #else
-    ierr = DMSetMatType(*m_da, MATAIJ); CHKERRCONTINUE(ierr);
-    ierr = DMCreateMatrix(*m_da, m_A.rawptr()); CHKERRCONTINUE(ierr);
+    ierr = DMSetMatType(*m_da, MATAIJ);
+    PISM_PETSC_CHK(ierr, "DMSetMatType");
+
+    ierr = DMCreateMatrix(*m_da, m_A.rawptr());
+    PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #endif
 
     ierr = KSPCreate(m_grid.com, m_KSP.rawptr());
@@ -129,7 +133,7 @@ SSAFD::~SSAFD() {
   // empty
 }
 
-
+//! @note Uses `PetscErrorCode` *intentionally*.
 PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
   PC pc;
@@ -153,6 +157,7 @@ PetscErrorCode SSAFD::pc_setup_bjacobi() {
   return 0;
 }
 
+//! @note Uses `PetscErrorCode` *intentionally*.
 PetscErrorCode SSAFD::pc_setup_asm() {
   PetscErrorCode ierr;
   PC pc, sub_pc;
@@ -487,7 +492,8 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   // shortcut:
   IceModelVec2V &vel = m_velocity;
 
-  MatZeroEntries(A);
+  ierr = MatZeroEntries(A);
+  PISM_PETSC_CHK(ierr, "MatZeroEntries");
 
   IceModelVec::AccessList list;
   list.add(nuH);
@@ -768,10 +774,14 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
   } // loop over points
 
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
+
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
 #if (PISM_DEBUG==1)
-  ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); PISM_PETSC_CHK(ierr, "MatSetOption");
+  ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);
+  PISM_PETSC_CHK(ierr, "MatSetOption");
 #endif
 
   int zero_pivot_flag_global = 0;
@@ -1018,6 +1028,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     // report on KSP success; the "inner" iteration is done
     ierr = KSPGetIterationNumber(m_KSP, &ksp_iterations);
     PISM_PETSC_CHK(ierr, "KSPGetIterationNumber");
+
     ksp_iterations_total += ksp_iterations;
 
     if (very_verbose) {
@@ -1593,14 +1604,21 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
                                       double value) {
   PetscErrorCode ierr;
   MatStencil row, col;
-  row.j = i; row.i = j;
-  col.j = i; col.i = j;
+  // NB: Transpose shows up here.
+  row.j = i;
+  row.i = j;
+  col.j = i;
+  col.i = j;
 
-  row.c = 0; col.c = 0;
+  row.c = 0;
+  col.c = 0;
+
   ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
   PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
 
-  row.c = 1; col.c = 1;
+  row.c = 1;
+  col.c = 1;
+
   ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
   PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
 }

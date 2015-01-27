@@ -94,28 +94,28 @@ public:
   virtual StateVec &stateSolution();
   virtual DesignVec &designSolution();
 
-  virtual PetscErrorCode setInitialGuess(DesignVec &d0);
+  virtual void setInitialGuess(DesignVec &d0);
 
-  PetscErrorCode connect(Tao tao);
+  void connect(Tao tao);
 
   PetscErrorCode monitorTao(Tao tao);
 
   virtual PetscErrorCode evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
   
-  virtual PetscErrorCode formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
+  virtual void formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode evaluateConstraints(Tao, Vec x, Vec r);
+  virtual void evaluateConstraints(Tao, Vec x, Vec r);
 
-  virtual PetscErrorCode evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv, MatStructure *s);
+  virtual void evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv, MatStructure *s);
   
-  virtual PetscErrorCode evaluateConstraintsJacobianDesign(Tao, Vec x, Mat Jdesign);
+  virtual void evaluateConstraintsJacobianDesign(Tao, Vec x, Mat Jdesign);
 
   virtual PetscErrorCode applyConstraintsJacobianDesign(Vec x, Vec y);
   virtual PetscErrorCode applyConstraintsJacobianDesignTranspose(Vec x, Vec y);
 
 protected:
 
-  PetscErrorCode construct();
+  void construct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 

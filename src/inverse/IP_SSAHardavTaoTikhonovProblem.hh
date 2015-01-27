@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,10 +49,10 @@ public:
 
   virtual ~IP_SSAHardavTaoTikhonovProblem() {};
 
-  virtual PetscErrorCode connect(Tao tao);
+  virtual void connect(Tao tao);
 
   //! Callback to TAO to set bounds on \f$\tau_c\f$ for constrained minimization algorithms.
-  virtual PetscErrorCode getVariableBounds(Tao tao, Vec lo, Vec hi); 
+  virtual void getVariableBounds(Tao tao, Vec lo, Vec hi); 
 
 };
 

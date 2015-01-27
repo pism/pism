@@ -60,6 +60,7 @@ void IP_SSAHardavForwardProblem::construct() {
 #else
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_PETSC_CHK(ierr, "DMSetMatType");
+
   ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
   PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #endif
@@ -621,6 +622,7 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   KSPConvergedReason  reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);

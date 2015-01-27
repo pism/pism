@@ -47,11 +47,11 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @return 0 on success
  */
 
-PetscErrorCode IceModelVec3Custom::create(const IceGrid &mygrid,
-                                          const std::string &short_name,
-                                          const std::string &z_name,
-                                          const std::vector<double> &my_zlevels,
-                                          const std::map<std::string, std::string> &z_attrs) {
+void IceModelVec3Custom::create(const IceGrid &mygrid,
+                                const std::string &short_name,
+                                const std::string &z_name,
+                                const std::vector<double> &my_zlevels,
+                                const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
 
@@ -65,7 +65,8 @@ PetscErrorCode IceModelVec3Custom::create(const IceGrid &mygrid,
 
   m_da = m_grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
-  ierr = DMCreateGlobalVector(*m_da, m_v.rawptr()); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
 
   m_dof = 1;
 
@@ -84,8 +85,6 @@ PetscErrorCode IceModelVec3Custom::create(const IceGrid &mygrid,
     }
     ++j;
   }
-
-  return 0;
 }
 
 } // end of namespace pism

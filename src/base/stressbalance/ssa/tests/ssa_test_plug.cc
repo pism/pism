@@ -167,8 +167,8 @@ void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
 int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
-
   PetscInitializer petsc(argc, argv, help);
+  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -185,11 +185,12 @@ int main(int argc, char *argv[]) {
       usage_set = options::Bool("-usage", "show the usage message"),
       help_set  = options::Bool("-help", "show the help message");
     if (usage_set or help_set) {
-      PetscPrintf(com,
-                  "\n"
-                  "usage of SSA_TEST_PLUG:\n"
-                  "  run ssa_test_plug -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                  "\n");
+      ierr = PetscPrintf(com,
+                         "\n"
+                         "usage of SSA_TEST_PLUG:\n"
+                         "  run ssa_test_plug -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                         "\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options

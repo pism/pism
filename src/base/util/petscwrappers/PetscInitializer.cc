@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,9 +34,11 @@ PetscInitializer::PetscInitializer(int argc, char **argv, const char *help) {
 
   ierr = PetscInitialized(&initialized);
   PISM_PETSC_CHK(ierr, "PetscInitialized");
+
   if (initialized == PETSC_FALSE) {
     ierr = PetscInitialize(&argc, &argv, NULL, help);
     PISM_PETSC_CHK(ierr, "PetscInitialize");
+
     if (ierr != 0) {
       printf("PETSc initialization failed. Aborting...\n");
       MPI_Abort(MPI_COMM_WORLD, -1);
@@ -48,6 +50,7 @@ PetscInitializer::~PetscInitializer() {
   PetscErrorCode ierr = 0;
   PetscBool initialized = PETSC_FALSE;
   ierr = PetscInitialized(&initialized); CHKERRCONTINUE(ierr);
+
   if (initialized == PETSC_TRUE) {
     // there is nothing we can do if this fails
     ierr = PetscFinalize(); CHKERRCONTINUE(ierr);

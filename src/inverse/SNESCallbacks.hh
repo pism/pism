@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@ public:
     m_cbData.p = NULL;
   };
   
-  PetscErrorCode connect(SNES snes, Problem &p, DM dm, Vec r, Mat J, Mat Jpc=NULL) {
+  void connect(SNES snes, Problem &p, DM dm, Vec r, Mat J, Mat Jpc=NULL) {
     PetscErrorCode ierr;
     if (m_cbData.dm != NULL) {
       throw RuntimeError::formatted("SNESDMCallbacks already connected");
@@ -40,15 +40,24 @@ public:
     m_cbData.dm = dm;
     m_cbData.p = &p;
     
-    ierr = DMDASetLocalFunction(dm,(DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formFunctionCallback); CHKERRQ(ierr);
-    ierr = DMDASetLocalJacobian(dm,(DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formJacobianCallback); CHKERRQ(ierr);
-    ierr = SNESSetDM(snes, dm); CHKERRQ(ierr);
-    ierr = SNESSetFunction(snes, r, SNESDAFormFunction, &m_cbData); CHKERRQ(ierr);
-    if (Jpc==NULL) {
+    ierr = DMDASetLocalFunction(dm, (DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formFunctionCallback);
+    PISM_PETSC_CHK(ierr, "DMDASetLocalFunction");
+
+    ierr = DMDASetLocalJacobian(dm, (DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formJacobianCallback);
+    PISM_PETSC_CHK(ierr, "DMDASetLocalJacobian");
+
+    ierr = SNESSetDM(snes, dm);
+    PISM_PETSC_CHK(ierr, "SNESSetDM");
+
+    ierr = SNESSetFunction(snes, r, SNESDAFormFunction, &m_cbData);
+    PISM_PETSC_CHK(ierr, "SNESSetFunction");
+
+    if (Jpc == NULL) {
       Jpc = J;
     }
-    ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian, &m_cbData); CHKERRQ(ierr);
-    return 0;
+
+    ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian, &m_cbData);
+    PISM_PETSC_CHK(ierr, "SNESSetJacobian");
   }
 
 protected:
@@ -85,19 +94,22 @@ template<class Problem>
 class SNESCallbacks {
 public:
   
-  static PetscErrorCode connect (SNES snes, Problem &p, Vec r, Mat J, Mat Jpc=NULL) {
+  static void connect(SNES snes, Problem &p, Vec r, Mat J, Mat Jpc=NULL) {
     PetscErrorCode ierr;
     
-    ierr = SNESSetFunction(snes,r,SNESCallbacks<Problem>::formFunctionCallback,&p); CHKERRQ(ierr);
-    if (Jpc==NULL) {
+    ierr = SNESSetFunction(snes,r,SNESCallbacks<Problem>::formFunctionCallback,&p);
+    PISM_PETSC_CHK(ierr, "SNESSetFunction");
+
+    if (Jpc == NULL) {
       Jpc = J;
     }
-    ierr = SNESSetJacobian(snes,J,Jpc,SNESCallbacks<Problem>::formJacobianCallback,&p); CHKERRQ(ierr);
-    return 0;
+
+    ierr = SNESSetJacobian(snes,J,Jpc,SNESCallbacks<Problem>::formJacobianCallback,&p);
+    PISM_PETSC_CHK(ierr, "SNESSetJacobian");
   }
 
 protected:
-  static PetscErrorCode formFunctionCallback(SNES snes,Vec x,Vec f, void*ctx) {
+  static PetscErrorCode formFunctionCallback(SNES snes, Vec x, Vec f, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->assembleFunction(x,f); CHKERRQ(ierr);

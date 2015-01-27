@@ -47,11 +47,11 @@ public:
   typedef std::shared_ptr<const IceModelVec3Custom> ConstPtr;
 #endif
 
-  virtual PetscErrorCode create(const IceGrid &mygrid,
-                                const std::string &short_name,
-                                const std::string &z_name,
-                                const std::vector<double> &my_zlevels,
-                                const std::map<std::string, std::string> &z_attrs);
+  virtual void create(const IceGrid &mygrid,
+                      const std::string &short_name,
+                      const std::string &z_name,
+                      const std::vector<double> &my_zlevels,
+                      const std::map<std::string, std::string> &z_attrs);
 };
 
 } // end of namespace pism

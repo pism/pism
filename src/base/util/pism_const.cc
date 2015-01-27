@@ -87,12 +87,14 @@ void verbPrintf(const int threshold,
       va_start(Argp, format);
       ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
       PISM_PETSC_CHK(ierr, "PetscVFPrintf");
+
       va_end(Argp);
     }
     if (petsc_history) { // always print to history
       va_start(Argp, format);
       ierr = PetscVFPrintf(petsc_history, format, Argp);
       PISM_PETSC_CHK(ierr, "PetscVFPrintf");
+
       va_end(Argp);
     }
   }
@@ -184,7 +186,8 @@ std::string pism_username_prefix(MPI_Comm com) {
 std::string pism_args_string() {
   int argc;
   char **argv;
-  PetscGetArgs(&argc, &argv);
+  PetscErrorCode ierr = PetscGetArgs(&argc, &argv);
+  PISM_PETSC_CHK(ierr, "PetscGetArgs");
 
   std::string cmdstr, argument;
   for (int j = 0; j < argc; j++) {
@@ -250,20 +253,24 @@ PetscLogDouble GetTime() {
 // PETSc profiling events
 
 Profiling::Profiling() {
-  PetscClassIdRegister("PISM", &m_classid);
+  PetscErrorCode ierr = PetscClassIdRegister("PISM", &m_classid);
+  PISM_PETSC_CHK(ierr, "PetscClassIdRegister");
 }
 
 void Profiling::begin(const char * name) const {
   PetscLogEvent event = 0;
+  PetscErrorCode ierr;
 
   if (m_events.find(name) == m_events.end()) {
     // not registered yet
-    PetscLogEventRegister(name, m_classid, &event);
+    ierr = PetscLogEventRegister(name, m_classid, &event);
+    PISM_PETSC_CHK(ierr, "PetscLogEventRegister");
     m_events[name] = event;
   } else {
     event = m_events[name];
   }
-  PetscLogEventBegin(event, 0, 0, 0, 0);
+  ierr = PetscLogEventBegin(event, 0, 0, 0, 0);
+  PISM_PETSC_CHK(ierr, "PetscLogEventBegin");
 }
 
 void Profiling::end(const char * name) const {
@@ -273,25 +280,30 @@ void Profiling::end(const char * name) const {
   } else {
     event = m_events[name];
   }
-  PetscLogEventEnd(event, 0, 0, 0, 0);
+  PetscErrorCode ierr = PetscLogEventEnd(event, 0, 0, 0, 0);
+  PISM_PETSC_CHK(ierr, "PetscLogEventEnd");
 }
 
 void Profiling::stage_begin(const char * name) const {
   PetscLogStage stage = 0;
+  PetscErrorCode ierr;
 
   if (m_stages.find(name) == m_stages.end()) {
     // not registered yet
-    PetscLogStageRegister(name, &stage);
+    ierr = PetscLogStageRegister(name, &stage);
+    PISM_PETSC_CHK(ierr, "PetscLogStageRegister");
     m_stages[name] = stage;
   } else {
     stage = m_stages[name];
   }
-  PetscLogStagePush(stage);
+  ierr = PetscLogStagePush(stage);
+  PISM_PETSC_CHK(ierr, "PetscLogStagePush");
 }
 
 void Profiling::stage_end(const char * name) const {
   (void) name;
-  PetscLogStagePop();
+  PetscErrorCode ierr = PetscLogStagePop();
+  PISM_PETSC_CHK(ierr, "PetscLogStagePop");
 }
 
 } // end of namespace pism

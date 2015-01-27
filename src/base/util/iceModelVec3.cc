@@ -75,6 +75,7 @@ IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
 void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
                              IceModelVecKind ghostedp, const std::vector<double> &levels,
                              unsigned int stencil_width) {
+  PetscErrorCode ierr;
   m_grid = &my_grid;
 
   zlevels = levels;
@@ -86,9 +87,11 @@ void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
   if (m_has_ghosts == true) {
-    DMCreateLocalVector(*m_da, m_v.rawptr());
+    ierr = DMCreateLocalVector(*m_da, m_v.rawptr());
+    PISM_PETSC_CHK(ierr, "DMCreateLocalVector");
   } else {
-    DMCreateGlobalVector(*m_da, m_v.rawptr());
+    ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
+    PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
   }
 
   m_name = my_name;

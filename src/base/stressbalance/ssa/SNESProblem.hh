@@ -112,6 +112,7 @@ PetscErrorCode SNESProblem<DOF,U>::setFromOptions() {
   return 0;
 }
 
+//! @note Uses `PetscErrorCode` *intentionally*.
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::initialize() {
   PetscErrorCode ierr;
@@ -157,6 +158,7 @@ const std::string& SNESProblem<DOF,U>::name() {
   return "UnnamedProblem";
 }
 
+//! @note Uses `PetscErrorCode` *intentionally*.
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::solve() {
   PetscErrorCode ierr;

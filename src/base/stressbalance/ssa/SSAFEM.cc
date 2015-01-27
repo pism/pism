@@ -54,6 +54,7 @@ SSAFEM::~SSAFEM() {
 }
 
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.
+//! @note Uses `PetscErrorCode` *intentionally*.
 PetscErrorCode SSAFEM::allocate_fem() {
   PetscErrorCode ierr;
 
@@ -89,7 +90,6 @@ PetscErrorCode SSAFEM::allocate_fem() {
   int snes_max_it = 200;
   ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
                            snes_max_it, PETSC_DEFAULT); CHKERRQ(ierr);
-  // ierr = SNESSetOptionsPrefix(snes, ((PetscObject)this)->prefix); CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
 
@@ -197,11 +197,14 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   }
 
   // Solve:
-  ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec()); PISM_PETSC_CHK(ierr, "SNESSolve");
+  ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec());
+  PISM_PETSC_CHK(ierr, "SNESSolve");
 
   // See if it worked.
   SNESConvergedReason snes_reason;
-  ierr = SNESGetConvergedReason(m_snes, &snes_reason); PISM_PETSC_CHK(ierr, "SNESGetConvergedReason");
+  ierr = SNESGetConvergedReason(m_snes, &snes_reason);
+  PISM_PETSC_CHK(ierr, "SNESGetConvergedReason");
+
   reason.reset(new SNESTerminationReason(snes_reason));
   if (reason->failed()) {
     return;
@@ -536,7 +539,6 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
                                    i, j,
                                    velocity_global[i][j].u, velocity_global[i][j].v,
                                    residual_global[i][j].u, residual_global[i][j].v);
-    
     PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
   }
 
@@ -568,7 +570,8 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   (void) info;
 
   // Zero out the Jacobian in preparation for updating it.
-  ierr = MatZeroEntries(Jac); PISM_PETSC_CHK(ierr, "MatZeroEntries");
+  ierr = MatZeroEntries(Jac);
+  PISM_PETSC_CHK(ierr, "MatZeroEntries");
 
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
@@ -627,6 +630,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K));
       PISM_PETSC_CHK(ierr, "PetscMemzero");
+
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         const double
           jw           = JxW[q],
@@ -674,7 +678,8 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
               psi_y = test[q][k].dy;
 
             if (eta == 0) {
-              PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
+              ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
+              PISM_PETSC_CHK(ierr, "PetscPrintf");
             }
 
             // u-u coupling
@@ -708,11 +713,17 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
   dirichlet_data.finish();
 
-  ierr = MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY); PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
-  ierr = MatAssemblyEnd(Jac, MAT_FINAL_ASSEMBLY); PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
+  ierr = MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY);
+  PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
 
-  ierr = MatSetOption(Jac, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE); PISM_PETSC_CHK(ierr, "MatSetOption");
-  ierr = MatSetOption(Jac, MAT_SYMMETRIC, PETSC_TRUE); PISM_PETSC_CHK(ierr, "MatSetOption");
+  ierr = MatAssemblyEnd(Jac, MAT_FINAL_ASSEMBLY);
+  PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
+
+  ierr = MatSetOption(Jac, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+  PISM_PETSC_CHK(ierr, "MatSetOption");
+
+  ierr = MatSetOption(Jac, MAT_SYMMETRIC, PETSC_TRUE);
+  PISM_PETSC_CHK(ierr, "MatSetOption");
 
   monitor_jacobian(Jac);
 }

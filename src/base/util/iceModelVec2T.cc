@@ -86,7 +86,8 @@ double*** IceModelVec2T::get_array3() {
 
 void IceModelVec2T::begin_access() const {
   if (m_access_counter == 0) {
-    DMDAVecGetArrayDOF(*m_da3, m_v3, &array3);
+    PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_da3, m_v3, &array3);
+    PISM_PETSC_CHK(ierr, "DMDAVecGetArrayDOF");
   }
 
   // this call will increment the m_access_counter
@@ -99,7 +100,8 @@ void IceModelVec2T::end_access() const {
   IceModelVec2S::end_access();
 
   if (m_access_counter == 0) {
-    DMDAVecRestoreArrayDOF(*m_da3, m_v3, &array3);
+    PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_da3, m_v3, &array3);
+    PISM_PETSC_CHK(ierr, "DMDAVecRestoreArrayDOF");
     array3 = NULL;
   }
 }

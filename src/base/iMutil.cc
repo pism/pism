@@ -135,7 +135,8 @@ void IceModel::update_run_stats() {
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
   PetscLogDouble my_flops = 0.0;
-  ierr = PetscGetFlops(&my_flops); PISM_PETSC_CHK(ierr, "PetscGetFlops");
+  ierr = PetscGetFlops(&my_flops);
+  PISM_PETSC_CHK(ierr, "PetscGetFlops");
 
   double flops = GlobalSum(grid.com, my_flops);
   

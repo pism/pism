@@ -44,27 +44,24 @@ class Config;
   run only on processor zero (or possibly by each processor once each processor 
   owns the entire 2D gridded ice thicknesses and bed elevations.)
 
-  This class SHOULD!
-  include the scatter structures necessary to make this work in parallel.
-
   A test program for this class is pism/src/verif/tryLCbd.cc.
 */
 class BedDeformLC {
 public:
   BedDeformLC();
   ~BedDeformLC();
-  PetscErrorCode settings(const Config &config,
-                          bool myinclude_elastic,
-                          int myMx, int myMy, double mydx, double mydy,
-                          int myZ,
-                          Vec myHstart, Vec mybedstart, Vec myuplift,  // initial state
-                          Vec myH,     // generally gets changed by calling program
-                          // before each call to step
-                          Vec mybed);  // mybed gets modified by step()
-  PetscErrorCode alloc();
-  PetscErrorCode init();
-  PetscErrorCode uplift_init();
-  PetscErrorCode step(const double dtyear, const double yearFromStart);
+  void settings(const Config &config,
+                bool myinclude_elastic,
+                int myMx, int myMy, double mydx, double mydy,
+                int myZ,
+                Vec myHstart, Vec mybedstart, Vec myuplift,  // initial state
+                Vec myH,     // generally gets changed by calling program
+                // before each call to step
+                Vec mybed);  // mybed gets modified by step()
+  void alloc();
+  void init();
+  void uplift_init();
+  void step(const double dtyear, const double yearFromStart);
 
 protected:
   bool        include_elastic;

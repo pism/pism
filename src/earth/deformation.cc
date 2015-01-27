@@ -46,13 +46,13 @@ BedDeformLC::~BedDeformLC() {
   }
 }
 
-PetscErrorCode BedDeformLC::settings(const Config &config,
-                                     bool  myinclude_elastic,
-                                     int myMx, int myMy,
-                                     double mydx, double mydy,
-                                     int myZ,
-                                     Vec myHstart, Vec mybedstart, Vec myuplift,
-                                     Vec myH, Vec mybed) {
+void BedDeformLC::settings(const Config &config,
+                           bool  myinclude_elastic,
+                           int myMx, int myMy,
+                           double mydx, double mydy,
+                           int myZ,
+                           Vec myHstart, Vec mybedstart, Vec myuplift,
+                           Vec myH, Vec mybed) {
 
   // set parameters
   include_elastic = myinclude_elastic;
@@ -89,11 +89,10 @@ PetscErrorCode BedDeformLC::settings(const Config &config,
   uplift    = myuplift;
 
   settingsDone = true;
-  return 0;
 }
 
 
-PetscErrorCode BedDeformLC::alloc() {
+void BedDeformLC::alloc() {
   PetscErrorCode  ierr;
 
   assert(settingsDone == true);
@@ -145,7 +144,6 @@ PetscErrorCode BedDeformLC::alloc() {
   cy.resize(Ny);
 
   allocDone = true;
-  return 0;
 }
 
 /**
@@ -154,7 +152,7 @@ PetscErrorCode BedDeformLC::alloc() {
  *
  * @return 0 on success
  */
-PetscErrorCode BedDeformLC::init() {
+void BedDeformLC::init() {
   PetscErrorCode ierr;
 
   // coeffs for Fourier spectral method Laplacian
@@ -180,6 +178,7 @@ PetscErrorCode BedDeformLC::init() {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "     computing spherical elastic load response matrix ...");
     PISM_PETSC_CHK(ierr, "PetscPrintf");
+
     petsc::VecArray2D II(lrmE, Nxge, Nyge);
     ge_params ge_data;
     ge_data.dx = dx;
@@ -196,11 +195,9 @@ PetscErrorCode BedDeformLC::init() {
     ierr = PetscPrintf(PETSC_COMM_SELF, " done\n");
     PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
-
-  return 0;
 }
 
-PetscErrorCode BedDeformLC::uplift_init() {
+void BedDeformLC::uplift_init() {
   // to initialize we solve:
   //   rho_r g U + D grad^4 U = 0 - 2 eta |grad| uplift
   // where U=U_start; yes it really should have "0" on right side because
@@ -268,12 +265,10 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
   ierr = VecCopy(U_start, U);
   PISM_PETSC_CHK(ierr, "VecCopy");
-
-  return 0;
 }
 
 
-PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_from_start) {
+void BedDeformLC::step(const double dt_seconds, const double seconds_from_start) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
   //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
@@ -339,6 +334,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   if (include_elastic == true) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
     conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);
+
     ierr = VecScale(dbedElastic, icerho);
     PISM_PETSC_CHK(ierr, "VecScale");
   } else {
@@ -359,8 +355,6 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
       }
     }
   }
-
-  return 0;
 }
 
 void BedDeformLC::tweak(double seconds_from_start) {
@@ -384,16 +378,19 @@ void BedDeformLC::tweak(double seconds_from_start) {
   // (instead of 1000km in Matlab code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2);  % trapezoid rule)
   const double Lav = (Lx_fat + Ly_fat) / 2.0;
   const double Requiv = Lav * (2.0 / 3.0);
+
   double delvolume;
-  VecSum(Hdiff, &delvolume);
+  PetscErrorCode ierr = VecSum(Hdiff, &delvolume);
+  PISM_PETSC_CHK(ierr, "VecSum");
+
   delvolume = delvolume * dx * dy;  // make into a volume
   const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
   const double discshift = viscDisc(seconds_from_start,
                                          Hequiv, Requiv, Lav, rho, standard_gravity, D, eta) - av;
 
-  VecShift(U, discshift);
-
+  ierr = VecShift(U, discshift);
+  PISM_PETSC_CHK(ierr, "VecShift");
 }
 
 //! \brief Fill fftw_input with zeros.

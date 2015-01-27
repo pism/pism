@@ -142,8 +142,11 @@ Range IceModelVec::range() const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  ierr = VecMin(m_v, NULL, &result.min); PISM_PETSC_CHK(ierr, "VecMin");
-  ierr = VecMax(m_v, NULL, &result.max); PISM_PETSC_CHK(ierr, "VecMax");
+  ierr = VecMin(m_v, NULL, &result.min);
+  PISM_PETSC_CHK(ierr, "VecMin");
+
+  ierr = VecMax(m_v, NULL, &result.max);
+  PISM_PETSC_CHK(ierr, "VecMax");
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMin and GlobalMax;
@@ -190,7 +193,8 @@ double IceModelVec::norm(int n) const {
 
   NormType type = int_to_normtype(n);
 
-  ierr = VecNorm(m_v, type, &result); PISM_PETSC_CHK(ierr, "VecNorm");
+  ierr = VecNorm(m_v, type, &result);
+  PISM_PETSC_CHK(ierr, "VecNorm");
 
   if (m_has_ghosts == true) {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
@@ -227,7 +231,8 @@ Name avoids clash with sqrt() in math.h.
 void IceModelVec::squareroot() {
   assert(m_v != NULL);
 
-  PetscErrorCode ierr = VecSqrtAbs(m_v); PISM_PETSC_CHK(ierr, "VecSqrtAbs");
+  PetscErrorCode ierr = VecSqrtAbs(m_v);
+  PISM_PETSC_CHK(ierr, "VecSqrtAbs");
 }
 
 
@@ -305,54 +310,42 @@ void IceModelVec::copy_from_vec(Vec source) {
 
 void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
                           unsigned int start, unsigned int count) const {
-  PetscErrorCode ierr;
-  void *tmp_res = NULL, *tmp_v = NULL;
-
   if (start >= m_dof) {
     throw RuntimeError::formatted("invalid argument (start); got %d", start);
   }
 
-  DMDAVecGetArrayDOF(*da_result, result, &tmp_res);
-  double ***result_a = static_cast<double***>(tmp_res);
+  petsc::DMDAVecArrayDOF tmp_res(da_result, result), tmp_v(m_da, m_v);
 
-  DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v);
-  double ***source_a = static_cast<double***>(tmp_v);
+  double
+    ***result_a = static_cast<double***>(tmp_res.get()),
+    ***source_a = static_cast<double***>(tmp_v.get());
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
-                       count*sizeof(PetscScalar));
+    PetscErrorCode ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
+                                      count*sizeof(PetscScalar));
     PISM_PETSC_CHK(ierr, "PetscMemcpy");
   }
-
-  DMDAVecRestoreArrayDOF(*da_result, result, &tmp_res);
-  DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v);
 }
 
 void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
                           unsigned int start, unsigned int count) {
-  PetscErrorCode ierr;
-  void *tmp_src = NULL, *tmp_v = NULL;
-
   if (start >= m_dof) {
     throw RuntimeError::formatted("invalid argument (start); got %d", start);
   }
 
-  DMDAVecGetArrayDOF(*da_source, source, &tmp_src);
-  double ***source_a = static_cast<double***>(tmp_src);
-
-  DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v);
-  double ***result_a = static_cast<double***>(tmp_v);
+  petsc::DMDAVecArrayDOF tmp_src(da_source, source), tmp_v(m_da, m_v);
+  
+  double
+    ***source_a = static_cast<double***>(tmp_src.get()),
+    ***result_a = static_cast<double***>(tmp_v.get());
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
-                       count*sizeof(PetscScalar));
+    PetscErrorCode ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
+                                      count*sizeof(PetscScalar));
     PISM_PETSC_CHK(ierr, "PetscMemcpy");
   }
-
-  DMDAVecRestoreArrayDOF(*da_source, source, &tmp_src);
-  DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v);
 
   inc_state_counter();          // mark as modified
 }
@@ -366,6 +359,7 @@ void IceModelVec::copy_to(IceModelVec &destination) const {
 
   ierr = VecCopy(m_v, destination.m_v);
   PISM_PETSC_CHK(ierr, "VecCopy");
+
   destination.inc_state_counter();          // mark as modified
 }
 
@@ -496,7 +490,8 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   }
 
   if (m_has_ghosts) {
-    DMGetGlobalVector(*m_da, &tmp);
+    ierr = DMGetGlobalVector(*m_da, &tmp);
+    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
   } else {
     tmp = m_v;
   }
@@ -509,7 +504,8 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   if (m_has_ghosts) {
     global_to_local(m_da, tmp, m_v);
 
-    DMRestoreGlobalVector(*m_da, &tmp);
+    ierr = DMRestoreGlobalVector(*m_da, &tmp);
+    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
   }
 }
 
@@ -528,7 +524,8 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   }
 
   if (m_has_ghosts) {
-    DMGetGlobalVector(*m_da, &tmp);
+    ierr = DMGetGlobalVector(*m_da, &tmp);
+    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
   } else {
     tmp = m_v;
   }
@@ -542,7 +539,8 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   if (m_has_ghosts) {
     global_to_local(m_da, tmp, m_v);
 
-    DMRestoreGlobalVector(*m_da, &tmp);
+    ierr = DMRestoreGlobalVector(*m_da, &tmp);
+    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
   }
 }
 
@@ -594,7 +592,8 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
   }
 
   if (m_has_ghosts) {
-    DMGetGlobalVector(*m_da, &tmp);
+    ierr = DMGetGlobalVector(*m_da, &tmp);
+    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
 
     this->copy_to_vec(m_da, tmp);
   } else {
@@ -607,7 +606,8 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
   }
 
   if (m_has_ghosts) {
-    DMRestoreGlobalVector(*m_da, &tmp);
+    ierr = DMRestoreGlobalVector(*m_da, &tmp);
+    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
   }
 }
 
@@ -639,8 +639,10 @@ void IceModelVec::checkCompatibility(const char* func, const IceModelVec &other)
 
   ierr = VecGetSize(m_v, &X_size);
   PISM_PETSC_CHK(ierr, "VecGetSize");
+
   ierr = VecGetSize(other.m_v, &Y_size);
   PISM_PETSC_CHK(ierr, "VecGetSize");
+
   if (X_size != Y_size) {
     throw RuntimeError::formatted("IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
                                   func, m_name.c_str(), func, other.m_name.c_str());
@@ -671,6 +673,7 @@ void  IceModelVec::begin_access() const {
 
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
 void  IceModelVec::end_access() const {
+  PetscErrorCode ierr;
   assert(m_v != NULL);
 
   if (array == NULL) {
@@ -685,9 +688,11 @@ void  IceModelVec::end_access() const {
   m_access_counter--;
   if (m_access_counter == 0) {
     if (begin_end_access_use_dof == true) {
-      DMDAVecRestoreArrayDOF(*m_da, m_v, &array);
+      ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &array);
+      PISM_PETSC_CHK(ierr, "DMDAVecRestoreArrayDOF");
     } else {
-      DMDAVecRestoreArray(*m_da, m_v, &array);
+      ierr = DMDAVecRestoreArray(*m_da, m_v, &array);
+      PISM_PETSC_CHK(ierr, "DMDAVecRestoreArray");
     }
     array = NULL;
   }
@@ -695,17 +700,24 @@ void  IceModelVec::end_access() const {
 
 //! Updates ghost points.
 void  IceModelVec::update_ghosts() {
+  PetscErrorCode ierr;
   if (m_has_ghosts == false) {
     return;
   }
 
   assert(m_v != NULL);
 #if PETSC_VERSION_LT(3,5,0)
-  DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
-  DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
+  ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
+  PISM_PETSC_CHK(ierr, "DMDALocalToLocalBegin");
+
+  ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
+  PISM_PETSC_CHK(ierr, "DMDALocalToLocalEnd");
 #else
-  DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
-  DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
+  ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
+  PISM_PETSC_CHK(ierr, "DMLocalToLocalBegin");
+  
+  ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
+  PISM_PETSC_CHK(ierr, "DMLocalToLocalEnd");
 #endif
 }
 
@@ -722,6 +734,7 @@ void IceModelVec::global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination
 
 //! Scatters ghost points to IceModelVec destination.
 void  IceModelVec::update_ghosts(IceModelVec &destination) const {
+  PetscErrorCode ierr;
 
   // Make sure it is allocated:
   assert(m_v != NULL);
@@ -730,11 +743,17 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
 
   if (m_has_ghosts == true && destination.m_has_ghosts == true) {
 #if PETSC_VERSION_LT(3,5,0)
-    DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    PISM_PETSC_CHK(ierr, "DMDALocalToLocalBegin");
+
+    ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    PISM_PETSC_CHK(ierr, "DMDALocalToLocalEnd");
 #else
-    DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    PISM_PETSC_CHK(ierr, "DMLocalToLocalBegin");
+
+    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    PISM_PETSC_CHK(ierr, "DMLocalToLocalEnd");
 #endif
     return;
   }
@@ -749,10 +768,11 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
 
 //! Result: v[j] <- c for all j.
 void  IceModelVec::set(const double c) {
-  PetscErrorCode ierr;
   assert(m_v != NULL);
-  ierr = VecSet(m_v,c);
+
+  PetscErrorCode ierr = VecSet(m_v,c);
   PISM_PETSC_CHK(ierr, "VecSet");
+
   inc_state_counter();          // mark as modified
 }
 
@@ -776,9 +796,11 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   assert(out_of_range == false);
 
   if (array == NULL) {
-    PetscPrintf(m_grid->com,
-                "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
-                m_name.c_str());
+    PetscErrorCode ierr;
+    ierr = PetscPrintf(m_grid->com,
+                       "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
+                       m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
   assert(array != NULL);
 }

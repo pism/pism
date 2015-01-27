@@ -102,7 +102,6 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   if (Ny < 1) {
     Ny = 1;
   }
-  //PetscPrintf(grid.com,"BedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
 
   preprocess_bed(topg, Nx, Ny);
 }

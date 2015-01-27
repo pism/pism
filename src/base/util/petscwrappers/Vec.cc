@@ -85,7 +85,7 @@ DMDAVecArray::~DMDAVecArray() {
   PetscErrorCode ierr = DMDAVecRestoreArray(*m_dm, m_v, &m_array); CHKERRCONTINUE(ierr);
 }
 
-double* DMDAVecArray::get() {
+void* DMDAVecArray::get() {
   return m_array;
 }
 
@@ -101,7 +101,7 @@ DMDAVecArrayDOF::~DMDAVecArrayDOF() {
   PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_dm, m_v, &m_array); CHKERRCONTINUE(ierr);
 }
 
-double* DMDAVecArrayDOF::get() {
+void* DMDAVecArrayDOF::get() {
   return m_array;
 }
 

@@ -28,18 +28,18 @@ typedef IceModelVec2V  StateVec;
 // typedef typename Listener::Ptr ListenerPtr;
 
 IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwardProblem &ssaforward,
-IP_SSATaucTaoTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTaoTikhonovProblemLCL::StateVec &u_obs, double eta,
-IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
-m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
-{
-  PetscErrorCode ierr;
-  ierr = this->construct();
-  assert(ierr==0);
+                                                                 IP_SSATaucTaoTikhonovProblemLCL::DesignVec &d0,
+                                                                 IP_SSATaucTaoTikhonovProblemLCL::StateVec &u_obs,
+                                                                 double eta,
+                                                                 IPFunctional<DesignVec> &designFunctional,
+                                                                 IPFunctional<StateVec> &stateFunctional)
+: m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
+  m_designFunctional(designFunctional), m_stateFunctional(stateFunctional) {
+  this->construct();
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
-
+void IP_SSATaucTaoTikhonovProblemLCL::construct() {
+  PetscErrorCode ierr;
   const IceGrid &grid = *m_d0.get_grid();
 
   double stressScale = grid.config.get("design_param_tauc_scale");
@@ -71,20 +71,28 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
   DM da;
   m_ssaforward.get_da(&da);
-  DMSetMatType(da, MATBAIJ);
-  DMCreateMatrix(da, m_Jstate.rawptr());
+
+  ierr = DMSetMatType(da, MATBAIJ);
+  PISM_PETSC_CHK(ierr, "DMSetMatType");
+
+  ierr = DMCreateMatrix(da, m_Jstate.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 
   int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx()*grid.My();
-  MatCreateShell(grid.com, 2*nLocalNodes, nLocalNodes, 2*nGlobalNodes, nGlobalNodes,
-                 this, m_Jdesign.rawptr());
-  MatShellSetOperation(m_Jdesign, MATOP_MULT,
-                       (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);
-  MatShellSetOperation(m_Jdesign, MATOP_MULT_TRANSPOSE,
-                       (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose);
+  ierr = MatCreateShell(grid.com, 2*nLocalNodes, nLocalNodes, 2*nGlobalNodes, nGlobalNodes,
+                        this, m_Jdesign.rawptr());
+  PISM_PETSC_CHK(ierr, "MatCreateShell");
+
+  ierr = MatShellSetOperation(m_Jdesign, MATOP_MULT,
+                              (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);
+  PISM_PETSC_CHK(ierr, "MatShellSetOperation");
+
+  ierr = MatShellSetOperation(m_Jdesign, MATOP_MULT_TRANSPOSE,
+                              (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose);
+  PISM_PETSC_CHK(ierr, "MatShellSetOperation");
 
   m_x.reset(new IPTwoBlockVec(m_dGlobal.get_vec(),m_uGlobal.get_vec()));
-  return 0;
 }
 
 IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL() 
@@ -92,9 +100,8 @@ IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL()
   // empty
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
+void IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
   m_dGlobal.copy_from(d0);
-  return 0;
 }
 
 IP_SSATaucTaoTikhonovProblemLCL::StateVec &IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
@@ -110,28 +117,36 @@ IP_SSATaucTaoTikhonovProblemLCL::DesignVec &IP_SSATaucTaoTikhonovProblemLCL::des
   return m_d;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
+void IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
   PetscErrorCode ierr;
-  ierr = TaoSetStateDesignIS(tao, m_x->blockBIndexSet() /*state*/ , m_x->blockAIndexSet() /*design*/); CHKERRQ(ierr);
-  ierr = TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,&IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoLCLCallbacks<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this,m_constraints.get_vec(),m_Jstate,m_Jdesign); CHKERRQ(ierr);
-  ierr = TaoMonitorCallback<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this); CHKERRQ(ierr);
-  return 0;
+  ierr = TaoSetStateDesignIS(tao,
+                             m_x->blockBIndexSet() /*state*/,
+                             m_x->blockAIndexSet() /*design*/);
+  PISM_PETSC_CHK(ierr, "TaoSetStateDesignIS");
+
+  TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,
+                     &IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao, *this);
+
+  TaoLCLCallbacks<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao, *this,
+                                                            m_constraints.get_vec(),
+                                                            m_Jstate, m_Jdesign);
+
+  TaoMonitorCallback<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this);
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {
   PetscErrorCode ierr;
-  
+
   PetscInt its;
-  ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
-  
+  ierr = TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
+
   int nListeners = m_listeners.size();
   for (int k=0; k<nListeners; k++) {
-   ierr = m_listeners[k]->iteration(*this,m_eta,
-                 its,m_val_design,m_val_state,
-                 m_d, m_d_diff, m_grad_design,
-                 m_ssaforward.solution(), m_u_diff, m_grad_state,
-                 m_constraints); CHKERRQ(ierr);
+    ierr = m_listeners[k]->iteration(*this, m_eta,
+                                     its, m_val_design, m_val_state,
+                                     m_d, m_d_diff, m_grad_design,
+                                     m_ssaforward.solution(), m_u_diff, m_grad_state,
+                                     m_constraints); CHKERRQ(ierr);
   }
 
   return 0;
@@ -165,27 +180,26 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x,TerminationReason::Ptr &reason) {
+void IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x, TerminationReason::Ptr &reason) {
   m_d.copy_from(m_dGlobal);
-  m_ssaforward.linearize_at(m_d,reason);
+  m_ssaforward.linearize_at(m_d, reason);
   if (reason->failed()) {
-    return 0;
+    return;
   }
   
   m_uGlobal.copy_from(m_ssaforward.solution());
-  m_uGlobal.scale(1./m_velocityScale);  
+  m_uGlobal.scale(1.0 / m_velocityScale);  
 
-  m_x->gather(m_dGlobal.get_vec(),m_uGlobal.get_vec());
+  m_x->gather(m_dGlobal.get_vec(), m_uGlobal.get_vec());
 
   // This is probably irrelevant.
   m_uGlobal.scale(m_velocityScale);  
 
   *x =  *m_x;
   reason = GenericTerminationReason::success();
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, Vec r) {
+void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, Vec r) {
   PetscErrorCode ierr;
 
   m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
@@ -200,27 +214,32 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, 
 
   ierr = VecScale(r,1./m_constraintsScale);
   PISM_PETSC_CHK(ierr, "VecScale");
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat /*Jpc*/, Mat /*Jinv*/, MatStructure *s) {
+void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec x,
+                                                                       Mat Jstate,
+                                                                       Mat /*Jpc*/,
+                                                                       Mat /*Jinv*/,
+                                                                       MatStructure *s) {
+  PetscErrorCode ierr;
 
-  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
+  m_x->scatter(x, m_dGlobal.get_vec(), m_uGlobal.get_vec());
   m_uGlobal.scale(m_velocityScale);
   
   m_d.copy_from(m_dGlobal);
   m_u.copy_from(m_uGlobal);
 
   m_ssaforward.set_design(m_d);
+
   m_ssaforward.assemble_jacobian_state(m_u, Jstate);
+
   *s = SAME_NONZERO_PATTERN;
 
-  MatScale(Jstate, m_velocityScale / m_constraintsScale);
-
-  return 0;
+  ierr = MatScale(Jstate, m_velocityScale / m_constraintsScale);
+  PISM_PETSC_CHK(ierr, "MatScale");
 }
 
-PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec x, Mat /*Jdesign*/) {
+void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec x, Mat /*Jdesign*/) {
   // I'm not sure if the following are necessary (i.e. will the copies that happen
   // in evaluateObjectiveAndGradient be sufficient) but we'll do them here
   // just in case.
@@ -228,8 +247,6 @@ PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesi
   m_uGlobal.scale(m_velocityScale);
   m_d_Jdesign.copy_from(m_dGlobal);
   m_u_Jdesign.copy_from(m_uGlobal);
-
-  return 0;
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
@@ -262,8 +279,11 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTr
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y) {
+
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
-  MatShellGetContext(A,&ctx);
+  PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+  PISM_PETSC_CHK(ierr, "MatShellGetContext");
+
   ctx->applyConstraintsJacobianDesign(x,y);
 
   return 0;
@@ -271,7 +291,9 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x,
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
-  MatShellGetContext(A,&ctx);
+  PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+  PISM_PETSC_CHK(ierr, "MatShellGetContext");
+
   ctx->applyConstraintsJacobianDesignTranspose(x,y);
 
   return 0;

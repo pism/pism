@@ -30,10 +30,10 @@ namespace pism {
 template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >
 class MatrixMultiplyCallback {
 public:
-  static PetscErrorCode connect(Mat A) {
+  static void connect(Mat A) {
     PetscErrorCode ierr;
-    ierr = MatShellSetOperation(A,MATOP_MULT,(void(*)(void))MatrixMultiplyCallback::multiply); CHKERRQ(ierr); 
-    return 0;
+    ierr = MatShellSetOperation(A, MATOP_MULT, (void(*)(void))MatrixMultiplyCallback::multiply);
+    PISM_PETSC_CHK(ierr, "MatShellSetOperation");
   }
 protected:
   static PetscErrorCode multiply(Mat A, Vec x, Vec y) {
@@ -75,30 +75,30 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode evaluateGNFunctional(DesignVec &h, double *value);
+  virtual void evaluateGNFunctional(DesignVec &h, double *value);
 
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
   virtual PetscErrorCode apply_GN(Vec h, Vec out);
 
-  virtual PetscErrorCode init(TerminationReason::Ptr &reason);
+  virtual void init(TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode check_convergence(TerminationReason::Ptr &reason); 
+  virtual void check_convergence(TerminationReason::Ptr &reason); 
   
-  virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+  virtual void solve(TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode evaluate_objective_and_gradient(TerminationReason::Ptr &reason);
+  virtual void evaluate_objective_and_gradient(TerminationReason::Ptr &reason);
 
 protected:
 
-  virtual PetscErrorCode assemble_GN_rhs(DesignVec &out);
+  virtual void assemble_GN_rhs(DesignVec &out);
 
-  virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
+  virtual void solve_linearized(TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode compute_dlogalpha(double *dalpha, TerminationReason::Ptr &reason);
+  virtual void compute_dlogalpha(double *dalpha, TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode linesearch(TerminationReason::Ptr &reason);
+  virtual void linesearch(TerminationReason::Ptr &reason);
 
-  PetscErrorCode construct();
+  void construct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 

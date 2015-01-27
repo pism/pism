@@ -971,7 +971,8 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
     }
   }
   if ((r == l) || (fabs(r - l) > 1)) {
-    PetscPrintf(m_grid.com, "binary search in grainSizeVostok: oops.\n");
+    PetscErrorCode ierr = PetscPrintf(m_grid.com, "binary search in grainSizeVostok: oops.\n");
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
   // Linear interpolation on the interval
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);

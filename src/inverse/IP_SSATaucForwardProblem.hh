@@ -168,7 +168,7 @@ public:
 
 protected:
 
-  PetscErrorCode construct();
+  void construct();
 
   /// Current value of zeta, provided from caller.
   IceModelVec2S   *m_zeta;

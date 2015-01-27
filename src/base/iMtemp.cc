@@ -247,6 +247,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                            "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j);
         PISM_PETSC_CHK(ierr, "PetscPrintf");
+
         system.viewColumnInfoMFile(x);
       }
 
@@ -278,6 +279,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                            Tnew[k], i, j, k, grid.rank(), vMask.as_int(i, j),
                            grid.convert(system.w(k), "m/s", "m/year"));
         PISM_PETSC_CHK(ierr, "PetscPrintf");
+
         myLowTempCount++;
       }
       if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
@@ -312,6 +314,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                            Tnew[0],i,j,grid.rank(),vMask.as_int(i,j),
                            grid.convert(system.w(0), "m/s", "m/year"));
         PISM_PETSC_CHK(ierr, "PetscPrintf");
+
         myLowTempCount++;
       }
       if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {

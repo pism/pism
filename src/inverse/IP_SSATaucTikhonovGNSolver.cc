@@ -29,11 +29,8 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
                                                        IPInnerProductFunctional<StateVec> &stateFunctional)
   : m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
     m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
-    m_target_misfit(0.0)
-{
-  PetscErrorCode ierr;
-  ierr = this->construct();
-  assert(ierr==0);
+    m_target_misfit(0.0) {
+  this->construct();
 }
 
 IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
@@ -41,7 +38,7 @@ IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
 }
 
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
+void IP_SSATaucTikhonovGNSolver::construct() {
   PetscErrorCode ierr;
   const IceGrid &grid = *m_d0.get_grid();
   m_comm = grid.com;
@@ -96,19 +93,20 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = KSPGetPC(m_ksp, &pc);
   PISM_PETSC_CHK(ierr, "KSPGetPC");
 
-  PCSetType(pc, PCNONE);
+  ierr = PCSetType(pc, PCNONE);
+  PISM_PETSC_CHK(ierr, "PCSetType");
 
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");  
 
   int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx()*grid.My();
-  MatCreateShell(grid.com, nLocalNodes, nLocalNodes,
-                 nGlobalNodes, nGlobalNodes, this, m_mat_GN.rawptr());
+  ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes,
+                        nGlobalNodes, nGlobalNodes, this, m_mat_GN.rawptr());
+  PISM_PETSC_CHK(ierr, "MatCreateShell");
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
-  ierr = multCallback::connect(m_mat_GN);
-  PISM_PETSC_CHK(ierr, "multCallback::connect");
+  multCallback::connect(m_mat_GN);
 
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
@@ -121,21 +119,19 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
   m_tikhonov_ptol = grid.config.get("tikhonov_ptol");
-
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
+void IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
   m_ssaforward.linearize_at(m_d0,reason);
-  return 0;
 }
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
-  this->apply_GN(x.get_vec(),y.get_vec());
-  return 0; 
+  PetscErrorCode ierr = this->apply_GN(x.get_vec(),y.get_vec()); CHKERRQ(ierr);
+  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
+//! @note This function has to return PetscErrorCode (it is used as a callback).
+PetscErrorCode  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   PetscErrorCode ierr;
 
   StateVec &tmp_gS    = m_tmp_S1Global;
@@ -158,11 +154,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
 
   ierr = VecCopy(GNx.get_vec(), y);
   PISM_PETSC_CHK(ierr, "VecCopy");
-
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
+void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
 
   rhs.set(0);
   
@@ -173,11 +168,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
   rhs.add(m_alpha,m_tmp_D1Global);
   
   rhs.scale(-1);
-
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason) {
+void IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   this->assemble_GN_rhs(m_GN_rhs);
@@ -199,11 +192,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   m_h.copy_from(m_hGlobal);
 
   reason.reset(new KSPTerminationReason(ksp_reason));
-
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
+void IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
   
   m_ssaforward.apply_linearization(h,m_tmp_S1Local);
   m_tmp_S1Local.update_ghosts();
@@ -220,12 +211,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, do
   m_designFunctional.valueAt(m_tmp_D1Local,&dValue);
   
   *value = m_alpha*dValue + sValue;
-
-  return 0;
 }
 
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
+void IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
 
   double designNorm, stateNorm, sumNorm;
   double dWeight, sWeight;
@@ -257,18 +246,18 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
     double disc_ratio = fabs((sqrt(m_val_state)/m_target_misfit) - 1.);
     if (disc_ratio > m_tikhonov_ptol) {
       reason = GenericTerminationReason::keep_iterating();
-      return 0;
+      return;
     }
   }
   
   if (sumNorm < m_tikhonov_atol) {
     reason.reset(new GenericTerminationReason(1,"TIKHONOV_ATOL"));
-    return 0;
+    return;
   }
 
   if (sumNorm < m_tikhonov_rtol*std::max(designNorm,stateNorm)) {
     reason.reset(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
-    return 0;
+    return;
   }
 
   if (m_iter>m_iter_max) {
@@ -276,14 +265,13 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
   } else {
     reason = GenericTerminationReason::keep_iterating();
   }
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
+void IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
 
   m_ssaforward.linearize_at(m_d,reason);
   if (reason->failed()) {
-    return 0;
+    return;
   }
 
   m_d_diff.copy_from(m_d);
@@ -311,11 +299,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(Termi
   m_val_state = valState;
   
   m_value = valDesign * m_alpha + valState;
-
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
+void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   TerminationReason::Ptr step_reason;
@@ -325,12 +311,14 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
   double descent_derivative;
 
   m_tmp_D1Global.copy_from(m_h);
-  ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
+
+  ierr = VecDot(m_gradient.get_vec(), m_tmp_D1Global.get_vec(), &descent_derivative);
   PISM_PETSC_CHK(ierr, "VecDot");
+
   if (descent_derivative >=0) {
     printf("descent derivative: %g\n",descent_derivative);
     reason.reset(new GenericTerminationReason(-1,"Not descent direction"));
-    return 0;
+    return;
   }
 
   double alpha = 1;
@@ -350,17 +338,16 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
     if (alpha<1e-20) {
       printf("alpha= %g; derivative = %g\n",alpha,descent_derivative);
       reason.reset(new GenericTerminationReason(-1,"Too many step shrinks."));
-      return 0;
+      return;
     }
     m_d.copy_from(m_tmp_D1Local);
   }
   
   reason = GenericTerminationReason::success();
-  return 0;
+  return;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
-
+void IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
 
   if (m_target_misfit == 0) {
     throw RuntimeError::formatted("Call set target misfit prior to calling IP_SSATaucTikhonovGNSolver::solve.");
@@ -377,14 +364,14 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   if (step_reason->failed()) {
     reason.reset(new GenericTerminationReason(-1,"Forward solve"));
     reason->set_root_cause(step_reason);
-    return 0;
+    return;
   }
 
   while(true) {
 
     this->check_convergence(reason);
     if (reason->done()) {
-      return 0;
+      return;
     }
 
     if (m_tikhonov_adaptive) {
@@ -396,7 +383,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
     if (step_reason->failed()) {
       reason.reset(new GenericTerminationReason(-1,"Gauss Newton solve"));
       reason->set_root_cause(step_reason);
-      return 0;
+      return;
     }
 
     this->linesearch(step_reason);
@@ -404,7 +391,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
       TerminationReason::Ptr cause = reason;
       reason.reset(new GenericTerminationReason(-1,"Linesearch"));
       reason->set_root_cause(step_reason);
-      return 0;
+      return;
     }
 
     if (m_tikhonov_adaptive) {
@@ -413,16 +400,16 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
         TerminationReason::Ptr cause = reason;
         reason.reset(new GenericTerminationReason(-1,"Tikhonov penalty update"));
         reason->set_root_cause(step_reason);
-        return 0;
+        return;
       }
     }
 
     m_iter++;
   }
-  return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, TerminationReason::Ptr &reason) {
+void IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha,
+                                                   TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
 
@@ -442,14 +429,16 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
 #endif
   ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec());
   PISM_PETSC_CHK(ierr, "KSPSolve");
+
   m_dh_dalpha.copy_from(m_dh_dalphaGlobal);
 
   KSPConvergedReason ksp_reason;
   ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
   PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+
   if (ksp_reason<0) {
     reason.reset(new KSPTerminationReason(ksp_reason));
-    return 0;
+    return;
   }
 
   // S1Local contains T(h) + F(x) - u_obs, i.e. the linearized misfit field.
@@ -512,8 +501,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   }
 
   reason = GenericTerminationReason::success();
-
-  return 0;
 }
 
 } // end of namespace pism

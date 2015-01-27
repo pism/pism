@@ -143,8 +143,8 @@ void SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
 int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
-
   PetscInitializer petsc(argc, argv, help);
+  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -161,11 +161,12 @@ int main(int argc, char *argv[]) {
       usage_set = options::Bool("-usage", "print usage info"),
       help_set  = options::Bool("-help", "print help info");
     if ((usage_set==true) || (help_set==true)) {
-      PetscPrintf(com,
-                  "\n"
-                  "usage of SSA_TESTJ:\n"
-                  "  run ssafe_test -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                  "\n");
+      ierr = PetscPrintf(com,
+                         "\n"
+                         "usage of SSA_TESTJ:\n"
+                         "  run ssafe_test -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                         "\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options

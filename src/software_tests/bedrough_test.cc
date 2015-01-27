@@ -55,7 +55,8 @@ int main(int argc, char *argv[]) {
     grid.set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
     grid.allocate();
 
-    PetscPrintf(grid.com,"BedSmoother TEST\n");
+    ierr = PetscPrintf(grid.com,"BedSmoother TEST\n");
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
 
     bool show = options::Bool("-show", "turn on diagnostic viewers");
 
@@ -91,7 +92,10 @@ int main(int argc, char *argv[]) {
     smoother.preprocess_bed(topg);
     int Nx,Ny;
     smoother.get_smoothing_domain(Nx,Ny);
-    PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
+
+    ierr = PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
+
     smoother.get_theta(usurf, theta);
 
     const IceModelVec2S &topg_smoothed = smoother.get_smoothed_bed();
@@ -101,6 +105,7 @@ int main(int argc, char *argv[]) {
       topg_smoothed.view(window);
       theta.view(window);
       printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
+
       ierr = PetscSleep(10);
       PISM_PETSC_CHK(ierr, "PetscSleep");
     }
@@ -112,15 +117,20 @@ int main(int argc, char *argv[]) {
     topgs_max = topg_smoothed.max();
     theta_min = theta.min();
     theta_max = theta.max();
-    PetscPrintf(grid.com,
-                "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
-                topg_min, topg_max);
-    PetscPrintf(grid.com,
-                "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
-                topgs_min, topgs_max);
-    PetscPrintf(grid.com,
-                "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
-                theta_min, theta_max);
+    ierr = PetscPrintf(grid.com,
+                       "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+                       topg_min, topg_max);
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
+
+    ierr = PetscPrintf(grid.com,
+                       "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+                       topgs_min, topgs_max);
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
+
+    ierr = PetscPrintf(grid.com,
+                       "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
+                       theta_min, theta_max);
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
 
     bool dump = options::Bool("-dump", "dump bed roughness data");
     if (dump) {

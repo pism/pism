@@ -34,6 +34,7 @@ IPTwoBlockVec::~IPTwoBlockVec() {
   // empty
 }
 
+//! @note Uses `PetscErrorCode` *intentionally*.
 PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   PetscErrorCode ierr;
   
@@ -97,8 +98,11 @@ void IPTwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
 
 void IPTwoBlockVec::scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m) {
   PetscErrorCode ierr;
-  ierr = VecScatterBegin(s, a, b, INSERT_VALUES, m); PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  ierr = VecScatterEnd(s, a, b, INSERT_VALUES, m); PISM_PETSC_CHK(ierr, "VecScatterEnd");
+  ierr = VecScatterBegin(s, a, b, INSERT_VALUES, m);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
+
+  ierr = VecScatterEnd(s, a, b, INSERT_VALUES, m);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
 }
 
 void IPTwoBlockVec::scatterToA(Vec ab, Vec a) {

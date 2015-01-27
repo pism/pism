@@ -339,12 +339,14 @@ double Time_Calendar::increment_date(double T, int years) {
   ccs_free_calendar(cal);
 
   if (leap == 0 && month == 2 && day == 29) {
-    PetscPrintf(m_com,
-                "PISM WARNING: date %d year(s) since %d-%d-%d does not exist. Using %d-%d-%d instead of %d-%d-%d.\n",
-                years,
-                year, month, day,
-                year + years, month, day-1,
-                year + years, month, day);
+    PetscErrorCode ierr = PetscPrintf(m_com,
+                                      "PISM WARNING: date %d year(s) since %d-%d-%d does not exist."
+                                      " Using %d-%d-%d instead of %d-%d-%d.\n",
+                                      years,
+                                      year, month, day,
+                                      year + years, month, day-1,
+                                      year + years, month, day);
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
     day -= 1;
   }
 

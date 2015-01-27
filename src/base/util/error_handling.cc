@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -71,6 +71,7 @@ std::vector<std::string> RuntimeError::get_context() const {
  * Should be called from a catch(...) block *only*.
  */
 void handle_fatal_errors(MPI_Comm com) {
+  PetscErrorCode ierr;
   try {
     throw;                      // re-throw the current exception
   }
@@ -89,8 +90,8 @@ void handle_fatal_errors(MPI_Comm com) {
     }
 
     // print the error message with "PISM ERROR:" in front:
-    PetscPrintf(com,
-                "%s%s\n", error.c_str(), message.c_str());
+    ierr = PetscPrintf(com,
+                       "%s%s\n", error.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
 
     // compute how much padding we need to align things:
     std::string while_str = std::string(error.size(), ' ') + "while ";
@@ -109,23 +110,23 @@ void handle_fatal_errors(MPI_Comm com) {
       }
 
       // print a "context" message
-      PetscPrintf(com,
-                  "%s%s\n", while_str.c_str(), message.c_str());
+      ierr = PetscPrintf(com,
+                         "%s%s\n", while_str.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
       ++j;
     }
   }
   catch (std::exception &e) {
-    PetscPrintf(PETSC_COMM_SELF,
-                "PISM ERROR: caught a C++ standard library exception: %s.\n"
-                "     This is probably a bug in PISM."
-                " Please send a report to help@pism-docs.org\n",
-                e.what());
+    ierr = PetscPrintf(PETSC_COMM_SELF,
+                       "PISM ERROR: caught a C++ standard library exception: %s.\n"
+                       "     This is probably a bug in PISM."
+                       " Please send a report to help@pism-docs.org\n",
+                       e.what()); CHKERRCONTINUE(ierr);
   }
   catch (...) {
-    PetscPrintf(PETSC_COMM_SELF,
-                "PISM ERROR: caught an unexpected exception.\n"
-                "     This is probably a bug in PISM."
-                " Please send a report to help@pism-docs.org\n");
+    ierr = PetscPrintf(PETSC_COMM_SELF,
+                       "PISM ERROR: caught an unexpected exception.\n"
+                       "     This is probably a bug in PISM."
+                       " Please send a report to help@pism-docs.org\n"); CHKERRCONTINUE(ierr);
   }
 }
 

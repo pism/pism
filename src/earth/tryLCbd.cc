@@ -128,10 +128,13 @@ int main(int argc, char *argv[]) {
       // allocate the variables needed before BedDeformLC can work:
       ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, H.rawptr());
       PISM_PETSC_CHK(ierr, "VecCreateSeq");
+
       ierr = VecDuplicate(H, Hstart.rawptr());
       PISM_PETSC_CHK(ierr, "VecDuplicate");
+
       ierr = VecDuplicate(H, bedstart.rawptr());
       PISM_PETSC_CHK(ierr, "VecDuplicate");
+
       ierr = VecDuplicate(H, uplift.rawptr());
       PISM_PETSC_CHK(ierr, "VecDuplicate");
 
@@ -141,17 +144,21 @@ int main(int argc, char *argv[]) {
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          NULL, NULL, da2.rawptr()); CHKERRQ(ierr);
+                          NULL, NULL, da2.rawptr());
+      PISM_PETSC_CHK(ierr, "DMDACreate2d");
 #else
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          NULL, NULL, da2.rawptr()); CHKERRQ(ierr);
+                          NULL, NULL, da2.rawptr());
+      PISM_PETSC_CHK(ierr, "DMDACreate2d");
 #endif
-      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0); CHKERRQ(ierr);
+      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0);
+      PISM_PETSC_CHK(ierr, "DMDASetUniformCoordinates");
 
-      ierr = DMCreateGlobalVector(da2, bed.rawptr()); CHKERRQ(ierr);
+      ierr = DMCreateGlobalVector(da2, bed.rawptr());
+      PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
 
       // create a bed viewer
       PetscDraw draw = NULL;
@@ -229,20 +236,20 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
 
-      ierr = bdlc.settings(config,
-                           include_elastic, Mx, My, dx, dy, Z,
-                           Hstart, bedstart, uplift, H, bed); CHKERRQ(ierr);
+      bdlc.settings(config,
+                    include_elastic, Mx, My, dx, dy, Z,
+                    Hstart, bedstart, uplift, H, bed);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
 
-      ierr = bdlc.alloc(); CHKERRQ(ierr);
+      bdlc.alloc();
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
 
-      ierr = bdlc.init(); CHKERRQ(ierr);
-      ierr = bdlc.uplift_init(); CHKERRQ(ierr);
+      bdlc.init();
+      bdlc.uplift_init();
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
@@ -258,7 +265,7 @@ int main(int argc, char *argv[]) {
       for (int k=0; k<KK; k++) {
         const double tyears = k*dtyears;
 
-        ierr = bdlc.step(dtyears, tyears); CHKERRQ(ierr);
+        bdlc.step(dtyears, tyears);
 
         ierr = VecView(bed,viewer);
         PISM_PETSC_CHK(ierr, "VecView");
@@ -278,6 +285,7 @@ int main(int argc, char *argv[]) {
 
         char title[100];
         snprintf(title,100, "bed elev (m)  [t = %9.1f]", tyears);
+
         ierr = PetscDrawSetTitle(draw,title);
         PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 

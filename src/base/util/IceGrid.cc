@@ -302,14 +302,17 @@ void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) const {
+  PetscErrorCode ierr;
   if (height < 0.0 - 1.0e-6) {
-    PetscPrintf(PETSC_COMM_SELF,
-                "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", m_rank, height);
+    ierr = PetscPrintf(PETSC_COMM_SELF,
+                       "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice"
+                       " (height must be non-negative)\n", m_rank, height); CHKERRCONTINUE(ierr);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
   if (height > Lz() + 1.0e-6) {
-    PetscPrintf(PETSC_COMM_SELF,
-                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", m_rank, height, Lz());
+    ierr = PetscPrintf(PETSC_COMM_SELF,
+                       "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational"
+                       " grid Lz = %5.4f\n", m_rank, height, Lz()); CHKERRCONTINUE(ierr);
     MPI_Abort(PETSC_COMM_WORLD, 1);
   }
 
@@ -471,7 +474,9 @@ void IceGrid::allocate() {
   m_dm_scalar_global = this->get_dm(1, 0);
 
   DMDALocalInfo info;
-  DMDAGetLocalInfo(*m_dm_scalar_global, &info);
+  PetscErrorCode ierr = DMDAGetLocalInfo(*m_dm_scalar_global, &info);
+  PISM_PETSC_CHK(ierr, "DMDAGetLocalInfo");
+
   // this continues the fundamental transpose
   m_xs = info.ys;
   m_xm = info.ym;

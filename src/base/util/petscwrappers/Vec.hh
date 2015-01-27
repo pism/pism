@@ -71,22 +71,22 @@ class DMDAVecArray {
 public:
   DMDAVecArray(DM::Ptr dm, ::Vec v);
   ~DMDAVecArray();
-  double* get();
+  void* get();
 private:
   DM::Ptr m_dm;
   ::Vec m_v;
-  double *m_array;
+  void *m_array;
 };
 
 class DMDAVecArrayDOF {
 public:
   DMDAVecArrayDOF(DM::Ptr dm, ::Vec v);
   ~DMDAVecArrayDOF();
-  double* get();
+  void* get();
 private:
   DM::Ptr m_dm;
   ::Vec m_v;
-  double *m_array;
+  void *m_array;
 };
 
 class TemporaryGlobalVec : public Vec {

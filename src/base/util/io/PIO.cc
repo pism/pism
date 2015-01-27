@@ -68,8 +68,11 @@ static NCFile::Ptr create_backend(MPI_Comm com, string mode) {
       char *endptr;
       compression_level = strtol(mode.c_str(), &endptr, 10);
       if ((*endptr != '\0') || (compression_level < 0) || (compression_level > 9)) {
-        PetscPrintf(com, "PISM WARNING: invalid compression level %s. Output compression is disabled.\n",
-                    mode.c_str());
+        PetscErrorCode ierr;
+        ierr = PetscPrintf(com, "PISM WARNING: invalid compression level %s."
+                           " Output compression is disabled.\n",
+                           mode.c_str());
+        PISM_PETSC_CHK(ierr, "PetscPrintf");
         compression_level = 0;
       }
     }

@@ -167,17 +167,23 @@ void IceModelVec2S::put_on_proc0(Vec onp0) const {
   Vec global = NULL;
 
   if (m_has_ghosts) {
-    DMGetGlobalVector(*m_da, &global);
+    ierr = DMGetGlobalVector(*m_da, &global);
+    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
+
     this->copy_to_vec(m_da, global);
   } else {
     global = m_v;
   }
 
-  DMDAGlobalToNaturalBegin(*m_da, global, INSERT_VALUES, natural_work);
-  DMDAGlobalToNaturalEnd(*m_da, global, INSERT_VALUES, natural_work);
+  ierr = DMDAGlobalToNaturalBegin(*m_da, global, INSERT_VALUES, natural_work);
+  PISM_PETSC_CHK(ierr, "DMDAGlobalToNaturalBegin");
+
+  ierr = DMDAGlobalToNaturalEnd(*m_da, global, INSERT_VALUES, natural_work);
+  PISM_PETSC_CHK(ierr, "DMDAGlobalToNaturalEnd");
 
   if (m_has_ghosts) {
-    DMRestoreGlobalVector(*m_da, &global);
+    ierr = DMRestoreGlobalVector(*m_da, &global);
+    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
   }
 
   ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
@@ -199,6 +205,7 @@ void IceModelVec2S::get_from_proc0(Vec onp0) {
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
                           (PetscObject*)&scatter_to_zero);
   PISM_PETSC_CHK(ierr, "PetscObjectQuery");
+
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
                           (PetscObject*)&natural_work);
   PISM_PETSC_CHK(ierr, "PetscObjectQuery");
@@ -210,23 +217,30 @@ void IceModelVec2S::get_from_proc0(Vec onp0) {
   ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work,
                          INSERT_VALUES, SCATTER_REVERSE);
   PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  VecScatterEnd(scatter_to_zero, onp0, natural_work,
-                INSERT_VALUES, SCATTER_REVERSE);
+
+  ierr = VecScatterEnd(scatter_to_zero, onp0, natural_work,
+                       INSERT_VALUES, SCATTER_REVERSE);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
 
   Vec global = NULL;
 
   if (m_has_ghosts) {
-    DMGetGlobalVector(*m_da, &global);
+    ierr = DMGetGlobalVector(*m_da, &global);
+    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
   } else {
     global = m_v;
   }
 
-  DMDANaturalToGlobalBegin(*m_da, natural_work, INSERT_VALUES, global);
-  DMDANaturalToGlobalEnd(*m_da, natural_work, INSERT_VALUES, global);
+  ierr = DMDANaturalToGlobalBegin(*m_da, natural_work, INSERT_VALUES, global);
+  PISM_PETSC_CHK(ierr, "DMDANaturalToGlobalBegin");
+
+  ierr = DMDANaturalToGlobalEnd(*m_da, natural_work, INSERT_VALUES, global);
+  PISM_PETSC_CHK(ierr, "DMDANaturalToGlobalEnd");
 
   if (m_has_ghosts) {
     this->copy_from_vec(global);
-    DMRestoreGlobalVector(*m_da, &global);
+    ierr = DMRestoreGlobalVector(*m_da, &global);
+    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
   }
 
   inc_state_counter();          // mark as modified
@@ -456,7 +470,8 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
                 m_metadata[i].get_units(),
                 m_metadata[i].get_glaciological_units());
 
-    ierr = VecView(tmp, v); PISM_PETSC_CHK(ierr, "VecView");
+    ierr = VecView(tmp, v);
+    PISM_PETSC_CHK(ierr, "VecView");
   }
 }
 
@@ -606,7 +621,7 @@ void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
 void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
                            IceModelVecKind ghostedp,
                            unsigned int stencil_width, int my_dof) {
-
+  PetscErrorCode ierr;
   assert(m_v == NULL);
 
   m_dof  = my_dof;
@@ -622,9 +637,11 @@ void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
   m_da = m_grid->get_dm(this->m_dof, this->m_da_stencil_width);
 
   if (ghostedp) {
-    DMCreateLocalVector(*m_da, m_v.rawptr());
+    ierr = DMCreateLocalVector(*m_da, m_v.rawptr());
+    PISM_PETSC_CHK(ierr, "DMCreateLocalVector");
   } else {
-    DMCreateGlobalVector(*m_da, m_v.rawptr());
+    ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
+    PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
   }
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);

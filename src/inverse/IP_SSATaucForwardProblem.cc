@@ -33,18 +33,15 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(const IceGrid &g, const Entha
     m_element_index(m_grid),
     m_quadrature(g, 1.0),
     m_quadrature_vector(g, 1.0),
-    m_rebuild_J_state(true)
-{
-  PetscErrorCode ierr = this->construct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+    m_rebuild_J_state(true) {
+  this->construct();
 }
 
 IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
   // empty
 }
 
-PetscErrorCode IP_SSATaucForwardProblem::construct() {
+void IP_SSATaucForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencil_width = 1;
 
@@ -59,25 +56,31 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
                         "Pa", "");
 
 #if PETSC_VERSION_LT(3,5,0)
-  DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
+  ierr = DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #else
-  DMSetMatType(*m_da, MATBAIJ);
-  DMCreateMatrix(*m_da, m_J_state.rawptr());
+  ierr = DMSetMatType(*m_da, MATBAIJ);
+  PISM_PETSC_CHK(ierr, "DMSetMatType");
+  ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
+  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
 #endif
 
   ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
   PISM_PETSC_CHK(ierr, "KSPCreate");
+
   double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   PISM_PETSC_CHK(ierr, "KSPSetTolerances");
+
   PC pc;
   ierr = KSPGetPC(m_ksp, &pc);
   PISM_PETSC_CHK(ierr, "KSPGetPC");
-  PCSetType(pc, PCBJACOBI);
+
+  ierr = PCSetType(pc, PCBJACOBI);
+  PISM_PETSC_CHK(ierr, "PCSetType");
+
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
-
-  return 0;
 }
 
 void IP_SSATaucForwardProblem::init() {
