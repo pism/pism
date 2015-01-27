@@ -95,20 +95,18 @@ void IPTwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
   this->scatterToB(ab,b);  
 }
 
-void IPTwoBlockVec::scatterToA(Vec ab, Vec a) {
+void IPTwoBlockVec::scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m) {
   PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD);
-  PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  ierr = VecScatterEnd(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD);
-  PISM_PETSC_CHK(ierr, "VecScatterEnd");
+  ierr = VecScatterBegin(s, a, b, INSERT_VALUES, m); PISM_PETSC_CHK(ierr, "VecScatterBegin");
+  ierr = VecScatterEnd(s, a, b, INSERT_VALUES, m); PISM_PETSC_CHK(ierr, "VecScatterEnd");
+}
+
+void IPTwoBlockVec::scatterToA(Vec ab, Vec a) {
+  scatter_begin_end(m_scatter_a, ab, a, SCATTER_FORWARD);
 }
 
 void IPTwoBlockVec::scatterToB(Vec ab, Vec b) {
-  PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD);
-  PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  ierr = VecScatterEnd(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD);
-  PISM_PETSC_CHK(ierr, "VecScatterEnd");
+  scatter_begin_end(m_scatter_b, ab, b, SCATTER_FORWARD);
 }
 
 void IPTwoBlockVec::gather(Vec a, Vec b) {
@@ -130,19 +128,11 @@ void IPTwoBlockVec::gather(Vec a, Vec b, Vec ab) {
 }
 
 void IPTwoBlockVec::gatherFromA(Vec a, Vec ab) {
-  PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE);
-  PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  ierr = VecScatterEnd(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE);
-  PISM_PETSC_CHK(ierr, "VecScatterEnd");
+  scatter_begin_end(m_scatter_a, a, ab, SCATTER_REVERSE);
 }
 
 void IPTwoBlockVec::gatherFromB(Vec b, Vec ab) {
-  PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE);
-  PISM_PETSC_CHK(ierr, "VecScatterBegin");
-  ierr = VecScatterEnd(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE);
-  PISM_PETSC_CHK(ierr, "VecScatterEnd");
+  scatter_begin_end(m_scatter_b, b, ab, SCATTER_REVERSE);
 }
 
 } // end of namespace pism
