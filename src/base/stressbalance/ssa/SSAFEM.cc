@@ -50,7 +50,7 @@ SSA* SSAFEMFactory(const IceGrid &g, const EnthalpyConverter &ec) {
 }
 
 SSAFEM::~SSAFEM() {
-  deallocate_fem();
+  // empty
 }
 
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.
@@ -62,7 +62,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   m_earth_grav = m_config.get("standard_gravity");
   m_beta_ice_free_bedrock = m_config.get("beta_ice_free_bedrock");
 
-  ierr = SNESCreate(m_grid.com, &m_snes); CHKERRQ(ierr);
+  ierr = SNESCreate(m_grid.com, m_snes.rawptr()); CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
@@ -93,20 +93,11 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
 
-  // Allocate m_coefficients, which contains coefficient data at the quadrature points of all the elements.
-  // There are nElement elements, and FEQuadrature::Nq quadrature points.
+  // Allocate m_coefficients, which contains coefficient data at the
+  // quadrature points of all the elements. There are nElement
+  // elements, and FEQuadrature::Nq quadrature points.
   int nElements = m_element_index.element_count();
-  m_coefficients = new SSACoefficients[FEQuadrature::Nq*nElements];
-
-  return 0;
-}
-
-//! Undo the allocations of SSAFEM::allocate_fem; called by the destructor.
-PetscErrorCode SSAFEM::deallocate_fem() {
-  PetscErrorCode ierr;
-
-  ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
-  delete[] m_coefficients;
+  m_coefficients.resize(FEQuadrature::Nq * nElements);
 
   return 0;
 }

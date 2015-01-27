@@ -22,6 +22,7 @@
 
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
 #include "iceModelVec.hh"       // to get Vector2
+#include "SNES.hh"
 
 namespace pism {
 
@@ -49,8 +50,6 @@ protected:
 
   virtual PetscErrorCode setFromOptions();
 
-  virtual PetscErrorCode finalize();
-
   virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
 
   virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
@@ -58,8 +57,8 @@ protected:
   const IceGrid &m_grid;
 
   petsc::Vec   m_X;
-  SNES         m_snes;
-  petsc::DM::Ptr  m_DA;
+  petsc::SNES m_snes;
+  petsc::DM::Ptr m_DA;
 
 private:
 
@@ -83,44 +82,38 @@ typedef SNESProblem<2,Vector2> SNESVectorProblem;
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::LocalFunction(DMDALocalInfo *info,
                                                  const U **x, U **f,
-                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
-{
+                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb) {
   return cb->solver->compute_local_function(info,x,f);
 }
 
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DMDALocalInfo *info,
                                                  const U **x, Mat J,
-                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
-{
+                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb) {
   return cb->solver->compute_local_jacobian(info,x,J);
 }
 
 
 template<int DOF, class U>
-SNESProblem<DOF,U>::SNESProblem(const IceGrid &g) :
-  m_grid(g)
-{
+SNESProblem<DOF,U>::SNESProblem(const IceGrid &g)
+  : m_grid(g) {
   PetscErrorCode ierr;
   ierr = setFromOptions(); CHKERRABORT(m_grid.com,ierr);
   ierr = initialize();     CHKERRABORT(m_grid.com,ierr);
 }
+
 template<int DOF, class U>
-SNESProblem<DOF,U>::~SNESProblem()
-{
-  PetscErrorCode ierr = finalize();
-  CHKERRABORT(m_grid.com,ierr);
+SNESProblem<DOF,U>::~SNESProblem() {
+  // empty
 }
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::setFromOptions()
-{
+PetscErrorCode SNESProblem<DOF,U>::setFromOptions() {
   return 0;
 }
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::initialize()
-{
+PetscErrorCode SNESProblem<DOF,U>::initialize() {
   PetscErrorCode ierr;
 
   int stencil_width=1;
@@ -128,12 +121,13 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr()); CHKERRQ(ierr);
 
-  ierr = SNESCreate(m_grid.com, &m_snes); CHKERRQ(ierr);
+  ierr = SNESCreate(m_grid.com, m_snes.rawptr()); CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
   m_callbackData.da = *m_DA;
   m_callbackData.solver = this;
+
 #if PETSC_VERSION_LT(3,5,0)
   ierr = DMDASNESSetFunctionLocal(*m_DA,INSERT_VALUES,
                                   (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,
@@ -158,25 +152,13 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   return 0;
 }
 
-//! Undo the allocations of SSAFEM::allocate_fem; called by the destructor.
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::finalize() {
-  PetscErrorCode ierr;
-
-  ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
-
-  return 0;
-}
-
-template<int DOF, class U>
-const std::string& SNESProblem<DOF,U>::name()
-{
+const std::string& SNESProblem<DOF,U>::name() {
   return "UnnamedProblem";
 }
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::solve()
-{
+PetscErrorCode SNESProblem<DOF,U>::solve() {
   PetscErrorCode ierr;
 
   // Solve:
@@ -195,7 +177,6 @@ PetscErrorCode SNESProblem<DOF,U>::solve()
 
   return 0;
 }
-
 
 } // end of namespace pism
 

@@ -21,7 +21,7 @@
 
 #include "SSA.hh"
 #include "FETools.hh"
-#include <petscsnes.h>
+#include "SNES.hh"
 #include "TerminationReason.hh"
 
 namespace pism {
@@ -35,7 +35,6 @@ struct SSACoefficients {
   Vector2 driving_stress;
   int mask;
 };
-
 
 class SSAFEM;
 
@@ -98,7 +97,6 @@ public:
 
 private:
   PetscErrorCode allocate_fem();
-  PetscErrorCode deallocate_fem();
 protected:
 
   virtual void PointwiseNuHAndBeta(const SSACoefficients &,
@@ -121,8 +119,8 @@ protected:
   // objects used internally
   SSAFEM_SNESCallbackData m_callback_data;
 
-  SNES         m_snes;
-  SSACoefficients *m_coefficients;
+  petsc::SNES m_snes;
+  std::vector<SSACoefficients> m_coefficients;
   double    m_dirichletScale;
   double    m_ocean_rho;
   double    m_earth_grav;
