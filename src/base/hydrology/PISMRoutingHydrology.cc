@@ -32,6 +32,11 @@ RoutingHydrology::RoutingHydrology(IceGrid &g, const Config &conf)
     PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in RoutingHydrology constructor.\n");
     PISMEnd();
   }
+  // these variables are also set to zero every time init() is called
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
 }
 
 RoutingHydrology::~RoutingHydrology() {
@@ -104,10 +109,6 @@ PetscErrorCode RoutingHydrology::init(Vars &vars) {
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = OptionsIsSet("-report_mass_accounting",
-      "Report to stdout on mass accounting in hydrology models",
-                            report_mass_accounting); CHKERRQ(ierr);
-
     stripwidth = grid.convert(stripwidth, "m", "km");
     ierr = OptionsReal("-hydrology_null_strip",
                            "set the width, in km, of the strip around the edge"
@@ -122,6 +123,11 @@ PetscErrorCode RoutingHydrology::init(Vars &vars) {
   ierr = Hydrology::init(vars); CHKERRQ(ierr);
 
   ierr = init_bwat(vars); CHKERRQ(ierr);
+
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
   return 0;
 }
 
@@ -205,7 +211,7 @@ PetscErrorCode RoutingHydrology::write_variables(const std::set<std::string> &va
 
 
 void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                                           std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+                                           std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
@@ -215,6 +221,23 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
   // add diagnostic that only makes sense if transport is modeled
   dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
+  // add mass-conservation time-series diagnostics
+  ts_dict["hydro_ice_free_land_loss_cumulative"]
+      = new MCHydrology_ice_free_land_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_ice_free_land_loss"]
+      = new MCHydrology_ice_free_land_loss(this, grid, *variables);
+  ts_dict["hydro_ocean_loss_cumulative"]
+      = new MCHydrology_ocean_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_ocean_loss"]
+      = new MCHydrology_ocean_loss(this, grid, *variables);
+  ts_dict["hydro_negative_thickness_gain_cumulative"]
+      = new MCHydrology_negative_thickness_gain_cumulative(this, grid, *variables);
+  ts_dict["hydro_negative_thickness_gain"]
+      = new MCHydrology_negative_thickness_gain(this, grid, *variables);
+  ts_dict["hydro_null_strip_loss_cumulative"]
+      = new MCHydrology_null_strip_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_null_strip_loss"]
+      = new MCHydrology_null_strip_loss(this, grid, *variables);
 }
 
 
@@ -818,19 +841,18 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // FIXME issue #256
-  if (report_mass_accounting) {
-    ierr = verbPrintf(2, grid.com,
-                      " 'routing' hydrology summary:\n"
-                      "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-                      hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-                      maxV, maxD,
-                      icefreelost, oceanlost,
-                      negativegain, nullstriplost); CHKERRQ(ierr);
-  }
+  ierr = verbPrintf(2, grid.com,
+           "  'routing' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
+           hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years")); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com,
+           "  (hydrology info: dt = %.2f s,  max |V| = %.2e m s-1,  max D = %.2e m^2 s-1)\n",
+           m_dt/hydrocount, maxV, maxD); CHKERRQ(ierr);
+
+  ice_free_land_loss_cumulative      += icefreelost;
+  ocean_loss_cumulative              += oceanlost;
+  negative_thickness_gain_cumulative += negativegain;
+  null_strip_loss_cumulative         += nullstriplost;
+
   return 0;
 }
 

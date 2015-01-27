@@ -159,7 +159,8 @@ protected:
 
   It has no transportable water and subglacial_water_thickness() returns zero.
 
-  This model can give no meaningful report on conservation errors.
+  This model can give no meaningful report on conservation errors, and thus it
+  does not use the TSDiag objects used by mass-conserving derived classes.
 
   This talk illustrates a "till-can" metaphor applicable to this model:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
@@ -185,11 +186,8 @@ public:
 //! \brief A subglacial hydrology model which assumes water pressure
 //! equals overburden pressure.
 /*!
-  This is the minimal PISM hydrology model that has lateral motion of
-  subglacial water and which conserves the water mass.  It was promised
-  as a PISM addition in in Bueler's talk at IGS 2012 Fairbanks:
-  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
-  Further documentation is in [\ref BuelervanPeltDRAFT].
+  This PISM hydrology model has lateral motion of subglacial water and which
+  conserves the water mass.  Further documentation is in [\ref BuelervanPeltDRAFT].
 
   The water velocity is along the steepest descent route for the hydraulic
   potential.  This potential is (mostly) a function of ice sheet geometry,
@@ -208,9 +206,6 @@ public:
 
   This model should generally be tested using static ice geometry first, i.e.
   using option -no_mass.
-
-  Use option `-report_mass_accounting` to see stdout reports which balance the
-  books on this model.
 
   The state space includes both the till water effective thickness \f$W_{til}\f$,
   which is in Hydrology, and the transportable water layer thickness \f$W\f$.
@@ -255,6 +250,14 @@ public:
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
+  friend class MCHydrology_ice_free_land_loss_cumulative;
+  friend class MCHydrology_ice_free_land_loss;
+  friend class MCHydrology_ocean_loss_cumulative;
+  friend class MCHydrology_ocean_loss;
+  friend class MCHydrology_negative_thickness_gain_cumulative;
+  friend class MCHydrology_negative_thickness_gain;
+  friend class MCHydrology_null_strip_loss_cumulative;
+  friend class MCHydrology_null_strip_loss;
 
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
@@ -280,13 +283,16 @@ protected:
   double stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
 
+  double ice_free_land_loss_cumulative,
+         ocean_loss_cumulative,
+         negative_thickness_gain_cumulative,
+         null_strip_loss_cumulative;
+
   PetscErrorCode allocate();
   virtual PetscErrorCode init_bwat(Vars &vars);
 
-  // when we update the water amounts, careful mass accounting at the
-  // boundary is needed; we update the new thickness variable, typically a
-  // temporary during the update
-  bool report_mass_accounting;
+  // when we update the water amounts, careful mass accounting at the boundary
+  // is needed; we update the new thickness variable, a temporary during update
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
                                                double &icefreelost, double &oceanlost,
                                                double &negativegain, double &nullstriplost);
@@ -299,6 +305,7 @@ protected:
   virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
+
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(

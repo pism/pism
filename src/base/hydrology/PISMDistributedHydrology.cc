@@ -80,10 +80,6 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = OptionsIsSet("-report_mass_accounting",
-      "Report to stdout on mass accounting in hydrology models",
-                            report_mass_accounting); CHKERRQ(ierr);
-
     stripwidth = grid.convert(stripwidth, "m", "km");
     ierr = OptionsReal("-hydrology_null_strip",
                            "set the width, in km, of the strip around the edge "
@@ -95,7 +91,6 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
     ierr = OptionsIsSet("-init_P_from_steady",
                             "initialize P from formula P(W) which applies in steady state",
                             init_P_from_steady); CHKERRQ(ierr);
-
     ierr = OptionsString("-hydrology_velbase_mag_file",
                             "Specifies a file to get velbase_mag from, for 'distributed' hydrology model",
                             filename, hold_flag); CHKERRQ(ierr);
@@ -105,6 +100,11 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
   ierr = Hydrology::init(vars); CHKERRQ(ierr);
 
   ierr = RoutingHydrology::init_bwat(vars); CHKERRQ(ierr);
+
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
 
   ierr = init_bwp(vars); CHKERRQ(ierr);
 
@@ -207,7 +207,7 @@ PetscErrorCode DistributedHydrology::write_variables(const std::set<std::string>
 
 
 void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                                               std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+                                               std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   // bwp is state
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
@@ -217,6 +217,23 @@ void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &d
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
   dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
   dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, grid, *variables);
+  // add mass-conservation time-series diagnostics
+  ts_dict["hydro_ice_free_land_loss_cumulative"]
+      = new MCHydrology_ice_free_land_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_ice_free_land_loss"]
+      = new MCHydrology_ice_free_land_loss(this, grid, *variables);
+  ts_dict["hydro_ocean_loss_cumulative"]
+      = new MCHydrology_ocean_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_ocean_loss"]
+      = new MCHydrology_ocean_loss(this, grid, *variables);
+  ts_dict["hydro_negative_thickness_gain_cumulative"]
+      = new MCHydrology_negative_thickness_gain_cumulative(this, grid, *variables);
+  ts_dict["hydro_negative_thickness_gain"]
+      = new MCHydrology_negative_thickness_gain(this, grid, *variables);
+  ts_dict["hydro_null_strip_loss_cumulative"]
+      = new MCHydrology_null_strip_loss_cumulative(this, grid, *variables);
+  ts_dict["hydro_null_strip_loss"]
+      = new MCHydrology_null_strip_loss(this, grid, *variables);
 }
 
 
@@ -350,7 +367,7 @@ PetscErrorCode DistributedHydrology::adaptive_for_WandP_evolution(
   else
     PtoCFLratio = 1.0;
 
-  ierr = verbPrintf(3,grid.com,
+  ierr = verbPrintf(4,grid.com,
                     "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
                     grid.convert(maxV_result, "m/second", "m/year"),
                     grid.convert(dtCFL,       "seconds",  "years"),
@@ -522,19 +539,18 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // FIXME issue #256
-  if (report_mass_accounting) {
-    ierr = verbPrintf(2, grid.com,
-                      " 'distributed' hydrology summary:\n"
-                      "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
-                      "        (average of %.2f steps per CFL time; max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-                      hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-                      cumratio/hydrocount, maxV, maxD,
-                      icefreelost, oceanlost,
-                      negativegain, nullstriplost); CHKERRQ(ierr);
-  }
+  ierr = verbPrintf(2, grid.com,
+           "  'distributed' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
+           hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years")); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com,
+           "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,  max D = %.2e m^2 s-1)\n",
+           m_dt/hydrocount, cumratio/hydrocount, maxV, maxD); CHKERRQ(ierr);
+
+  ice_free_land_loss_cumulative      += icefreelost;
+  ocean_loss_cumulative              += oceanlost;
+  negative_thickness_gain_cumulative += negativegain;
+  null_strip_loss_cumulative         += nullstriplost;
+
   return 0;
 }
 
