@@ -23,6 +23,8 @@
 namespace pism {
 namespace petsc {
 
+// Wrapper around Vec (calls VecDestroy)
+
 Vec::Vec() {
   m_value = NULL;
 }
@@ -37,6 +39,8 @@ Vec::~Vec() {
   }
 }
 
+// Wrapper around VecGetArray / VecRestoreArray
+
 VecArray::VecArray(::Vec v)
   : m_v(v), m_array(NULL) {
   PetscErrorCode ierr = VecGetArray(m_v, &m_array);
@@ -50,6 +54,8 @@ VecArray::~VecArray() {
 double* VecArray::get() {
   return m_array;
 }
+
+// Wrapper around VecGetArray2d / VecRestoreArray2d
 
 VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My)
     : m_Mx(my_Mx), m_My(my_My), m_i_offset(0), m_j_offset(0), m_v(vec) {
@@ -67,6 +73,39 @@ VecArray2D::~VecArray2D() {
   PetscErrorCode ierr = VecRestoreArray2d(m_v, m_Mx, m_My, 0, 0, &m_array); CHKERRCONTINUE(ierr);
 }
 
+// Wrapper around DMDAVecGetArray / DMDAVecRestoreArray
+
+DMDAVecArray::DMDAVecArray(DM::Ptr dm, ::Vec v)
+  : m_dm(dm), m_v(v) {
+  PetscErrorCode ierr = DMDAVecGetArray(*m_dm, m_v, &m_array);
+  PISM_PETSC_CHK(ierr, "DMDAVecGetArray");
+}
+
+DMDAVecArray::~DMDAVecArray() {
+  PetscErrorCode ierr = DMDAVecRestoreArray(*m_dm, m_v, &m_array); CHKERRCONTINUE(ierr);
+}
+
+double* DMDAVecArray::get() {
+  return m_array;
+}
+
+// Wrapper around DMDAVecGetArrayDOF / DMDAVecRestoreArrayDOF
+
+DMDAVecArrayDOF::DMDAVecArrayDOF(DM::Ptr dm, ::Vec v)
+  : m_dm(dm), m_v(v) {
+  PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_dm, m_v, &m_array);
+  PISM_PETSC_CHK(ierr, "DMDAVecGetArrayDOF");
+}
+
+DMDAVecArrayDOF::~DMDAVecArrayDOF() {
+  PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_dm, m_v, &m_array); CHKERRCONTINUE(ierr);
+}
+
+double* DMDAVecArrayDOF::get() {
+  return m_array;
+}
+
+// Wrapper around DMGetGlobalVector / DMRestoreGlobalVector
 
 TemporaryGlobalVec::TemporaryGlobalVec(DM::Ptr dm) {
   m_dm = dm;
