@@ -22,6 +22,9 @@
 #include <petscis.h>
 #include <petscvec.h>
 
+#include "Vec.hh"
+#include "IS.hh"
+
 namespace pism {
 
 class IPTwoBlockVec {
@@ -48,7 +51,7 @@ public:
   void gatherFromA(Vec a, Vec ab);
   void gatherFromB(Vec b, Vec ab);
 
-  operator Vec &() {
+  operator Vec () {
     return m_ab;
   }
 
@@ -56,12 +59,12 @@ protected:
   PetscErrorCode construct(Vec a, Vec b);
   void destruct();
 
-  Vec m_ab;
+  petsc::Vec m_ab;
   
   PetscInt m_na_local, m_na_global, m_nb_local, m_nb_global;
   
-  IS m_a_in_ab;
-  IS m_b_in_ab;
+  petsc::IS m_a_in_ab;
+  petsc::IS m_b_in_ab;
   
   VecScatter m_scatter_a;
   VecScatter m_scatter_b;

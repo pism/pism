@@ -51,31 +51,26 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   ierr = VecGetSize(b, &m_nb_global); CHKERRQ(ierr);
   m_nb_local = hi_b - lo_b;
 
-  IS is_a, is_b;
-  ierr = ISCreateStride(comm, m_na_local, lo_a, 1, &is_a); CHKERRQ(ierr);  // a in a
-  ierr = ISCreateStride(comm, m_na_local, lo_a+lo_b, 1, &m_a_in_ab); CHKERRQ(ierr); // a in ab
-  ierr = ISCreateStride(comm, m_nb_local, lo_b, 1, &is_b); CHKERRQ(ierr); // b in b
-  ierr = ISCreateStride(comm, m_nb_local, lo_a+lo_b+m_na_local, 1, &m_b_in_ab); CHKERRQ(ierr);  // b in ab
+  petsc::IS is_a, is_b;
+  ierr = ISCreateStride(comm, m_na_local, lo_a, 1, is_a.rawptr()); CHKERRQ(ierr);  // a in a
+  ierr = ISCreateStride(comm, m_na_local, lo_a+lo_b, 1, m_a_in_ab.rawptr()); CHKERRQ(ierr); // a in ab
 
-  ierr = VecCreate(comm, &m_ab); CHKERRQ(ierr);
+  ierr = ISCreateStride(comm, m_nb_local, lo_b, 1, is_b.rawptr()); CHKERRQ(ierr); // b in b
+  ierr = ISCreateStride(comm, m_nb_local, lo_a+lo_b+m_na_local, 1, m_b_in_ab.rawptr()); CHKERRQ(ierr);  // b in ab
+
+  ierr = VecCreate(comm, m_ab.rawptr()); CHKERRQ(ierr);
   ierr = VecSetType(m_ab, "mpi"); CHKERRQ(ierr);
   ierr = VecSetSizes(m_ab, m_na_local+m_nb_local, m_na_global+m_nb_global); CHKERRQ(ierr);
 
   ierr = VecScatterCreate(m_ab, m_a_in_ab, a, is_a, &m_scatter_a); CHKERRQ(ierr);
   ierr = VecScatterCreate(m_ab, m_b_in_ab, b, is_b, &m_scatter_b); CHKERRQ(ierr);
   
-  ierr = ISDestroy(&is_a); CHKERRQ(ierr);
-  ierr = ISDestroy(&is_b); CHKERRQ(ierr);
-
   return 0;
 }
 
 void IPTwoBlockVec::destruct() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&m_ab); CHKERRCONTINUE(ierr);
-  ierr = ISDestroy(&m_a_in_ab); CHKERRCONTINUE(ierr);
-  ierr = ISDestroy(&m_b_in_ab); CHKERRCONTINUE(ierr);
   ierr = VecScatterDestroy(&m_scatter_a); CHKERRCONTINUE(ierr);
   ierr = VecScatterDestroy(&m_scatter_b); CHKERRCONTINUE(ierr);
 }
