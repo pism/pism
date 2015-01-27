@@ -99,7 +99,6 @@ protected:
   virtual PetscErrorCode linesearch(TerminationReason::Ptr &reason);
 
   PetscErrorCode construct();
-  PetscErrorCode destruct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
@@ -139,7 +138,7 @@ protected:
   StateVec m_u_diff;
 
   petsc::KSP m_ksp;  
-  Mat m_mat_GN;
+  petsc::Mat m_mat_GN;
 
   double m_eta;
   IPInnerProductFunctional<DesignVec> &m_designFunctional;

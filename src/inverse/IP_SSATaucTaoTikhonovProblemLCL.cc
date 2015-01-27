@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -72,13 +72,16 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   DM da;
   m_ssaforward.get_da(&da);
   DMSetMatType(da, MATBAIJ);
-  DMCreateMatrix(da, &m_Jstate);
+  DMCreateMatrix(da, m_Jstate.rawptr());
 
   int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx()*grid.My();
-  MatCreateShell(grid.com,2*nLocalNodes,nLocalNodes,2*nGlobalNodes,nGlobalNodes,this,&m_Jdesign);
-  MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);
-  MatShellSetOperation(m_Jdesign,MATOP_MULT_TRANSPOSE,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose);
+  MatCreateShell(grid.com, 2*nLocalNodes, nLocalNodes, 2*nGlobalNodes, nGlobalNodes,
+                 this, m_Jdesign.rawptr());
+  MatShellSetOperation(m_Jdesign, MATOP_MULT,
+                       (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);
+  MatShellSetOperation(m_Jdesign, MATOP_MULT_TRANSPOSE,
+                       (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose);
 
   m_x.reset(new IPTwoBlockVec(m_dGlobal.get_vec(),m_uGlobal.get_vec()));
   return 0;
@@ -86,16 +89,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
 IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL() 
 {
-  PetscErrorCode ierr;
-  ierr = this->destruct();
-  assert(ierr==0);
-}
-
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::destruct() {
-  MatDestroy(&m_Jstate);
-  MatDestroy(&m_Jdesign);
-
-  return 0;
+  // empty
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {

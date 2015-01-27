@@ -106,10 +106,10 @@ SSAFD::SSAFD(const IceGrid &g, const EnthalpyConverter &e)
   {
     PetscErrorCode ierr;
 #if PETSC_VERSION_LT(3,5,0)
-    ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRCONTINUE(ierr);
+    ierr = DMCreateMatrix(*m_da, MATAIJ, m_A.rawptr()); CHKERRCONTINUE(ierr);
 #else
     ierr = DMSetMatType(*m_da, MATAIJ); CHKERRCONTINUE(ierr);
-    ierr = DMCreateMatrix(*m_da, &m_A); CHKERRCONTINUE(ierr);
+    ierr = DMCreateMatrix(*m_da, m_A.rawptr()); CHKERRCONTINUE(ierr);
 #endif
 
     ierr = KSPCreate(m_grid.com, m_KSP.rawptr());
@@ -126,11 +126,7 @@ SSAFD::SSAFD(const IceGrid &g, const EnthalpyConverter &e)
 }
 
 SSAFD::~SSAFD() {
-  PetscErrorCode ierr = 0;
-
-  if (m_A != NULL) {
-    ierr = MatDestroy(&m_A); CHKERRCONTINUE(ierr);
-  }
+  // empty
 }
 
 
@@ -1729,7 +1725,7 @@ PetscErrorCode SSAFD::write_system_matlab_c(const pism::Viewer &viewer,
   ierr = PetscViewerASCIIPrintf(viewer, "\n\necho off\n"); CHKERRQ(ierr);
 
   // matrix
-  ierr = PetscObjectSetName((PetscObject) m_A, "A"); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject)((Mat)m_A), "A"); CHKERRQ(ierr);
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer, "clear zzz\n\n"); CHKERRQ(ierr);

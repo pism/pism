@@ -116,7 +116,6 @@ public:
 protected:
 
   PetscErrorCode construct();
-  PetscErrorCode destruct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
@@ -143,8 +142,8 @@ protected:
   double m_val_state;
 
   StateVec m_constraints;
-  Mat m_Jstate;
-  Mat m_Jdesign;
+  petsc::Mat m_Jstate;
+  petsc::Mat m_Jdesign;
 
   IceModelVec2S m_d_Jdesign;
   IceModelVec2V m_u_Jdesign;

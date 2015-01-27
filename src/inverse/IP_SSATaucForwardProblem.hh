@@ -23,6 +23,7 @@
 #include "SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
 #include "KSP.hh"
+#include "Mat.hh"
 
 namespace pism {
 
@@ -170,7 +171,6 @@ public:
 protected:
 
   PetscErrorCode construct();
-  PetscErrorCode destruct();
 
   /// Current value of zeta, provided from caller.
   IceModelVec2S   *m_zeta;
@@ -198,7 +198,7 @@ protected:
   /// KSP used in \ref apply_linearization and \ref apply_linearization_transpose
   petsc::KSP  m_ksp;
   /// Mat used in \ref apply_linearization and \ref apply_linearization_transpose
-  Mat  m_J_state;
+  petsc::Mat  m_J_state;
 
   SNESConvergedReason m_reason;
 

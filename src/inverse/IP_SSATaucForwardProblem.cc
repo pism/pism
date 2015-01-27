@@ -41,9 +41,7 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(const IceGrid &g, const Entha
 }
 
 IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
-  PetscErrorCode ierr = this->destruct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+  // empty
 }
 
 PetscErrorCode IP_SSATaucForwardProblem::construct() {
@@ -61,10 +59,10 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
                         "Pa", "");
 
 #if PETSC_VERSION_LT(3,5,0)
-  DMCreateMatrix(*m_da, "baij", &m_J_state);
+  DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
 #else
   DMSetMatType(*m_da, MATBAIJ);
-  DMCreateMatrix(*m_da, &m_J_state);
+  DMCreateMatrix(*m_da, m_J_state.rawptr());
 #endif
 
   ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
@@ -79,11 +77,6 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
-  return 0;
-}
-
-PetscErrorCode IP_SSATaucForwardProblem::destruct() {
-  MatDestroy(&m_J_state);
   return 0;
 }
 

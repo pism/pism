@@ -37,9 +37,7 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
 }
 
 IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
-  PetscErrorCode ierr;
-  ierr = this->destruct(); CHKERRCONTINUE(ierr);
-  assert(ierr==0);
+  // empty
 }
 
 
@@ -105,7 +103,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 
   int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx()*grid.My();
-  MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN);
+  MatCreateShell(grid.com, nLocalNodes, nLocalNodes,
+                 nGlobalNodes, nGlobalNodes, this, m_mat_GN.rawptr());
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   ierr = multCallback::connect(m_mat_GN);
@@ -123,11 +122,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
   m_tikhonov_ptol = grid.config.get("tikhonov_ptol");
 
-  return 0;
-}
-
-PetscErrorCode IP_SSATaucTikhonovGNSolver::destruct() {
-  MatDestroy(&m_mat_GN);
   return 0;
 }
 

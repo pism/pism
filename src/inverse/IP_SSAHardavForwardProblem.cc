@@ -41,9 +41,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, const E
 }
 
 IP_SSAHardavForwardProblem::~IP_SSAHardavForwardProblem() {
-  PetscErrorCode ierr = this->destruct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+  // empty
 }
 
 PetscErrorCode IP_SSAHardavForwardProblem::construct() {
@@ -62,7 +60,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   DMCreateMatrix(*m_da, "baij", &m_J_state);
 #else
   DMSetMatType(*m_da, MATBAIJ);
-  DMCreateMatrix(*m_da, &m_J_state);
+  DMCreateMatrix(*m_da, m_J_state.rawptr());
 #endif
 
   ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
@@ -81,11 +79,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   ierr = KSPSetFromOptions(m_ksp);
   PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
-  return 0;
-}
-
-PetscErrorCode IP_SSAHardavForwardProblem::destruct() {
-  MatDestroy(&m_J_state);
   return 0;
 }
 
