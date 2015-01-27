@@ -41,6 +41,7 @@ using std::dynamic_pointer_cast;
 #include "iceModelVec_helpers.hh"
 
 #include "Vec.hh"
+#include "VecScatter.hh"
 
 namespace pism {
 
@@ -111,18 +112,20 @@ petsc::Vec::Ptr IceModelVec2S::allocate_proc0_copy() const {
                               (PetscObject)((::Vec)natural_work));
     PISM_PETSC_CHK(ierr, "PetscObjectCompose");
 
+    // scatter_to_zero will be destroyed at the end of scope, but it
+    // will only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    petsc::VecScatter scatter_to_zero;
+
     // initialize the scatter to processor 0 and create storage on processor 0
-    VecScatter scatter_to_zero = NULL;
-    ierr = VecScatterCreateToZero(natural_work, &scatter_to_zero, &v_proc0);
+    ierr = VecScatterCreateToZero(natural_work, scatter_to_zero.rawptr(),
+                                  &v_proc0);
     PISM_PETSC_CHK(ierr, "VecScatterCreateToZero");
 
     // this increments the reference counter of scatter_to_zero
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "scatter_to_zero",
-                              (PetscObject)scatter_to_zero);
+                              (PetscObject)((::VecScatter)scatter_to_zero));
     PISM_PETSC_CHK(ierr, "PetscObjectCompose");
-    // decrement the reference counter; will be destroyed once m_da is destroyed
-    ierr = VecScatterDestroy(&scatter_to_zero);
-    PISM_PETSC_CHK(ierr, "VecScatterDestroy");
 
     // this increments the reference counter of v_proc0
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "v_proc0",
@@ -133,6 +136,8 @@ petsc::Vec::Ptr IceModelVec2S::allocate_proc0_copy() const {
     // take care of this.
     result = v_proc0;
   } else {
+    // We DO NOT call VecDestroy(result): the petsc::Vec wrapper will
+    // take care of this.
     ierr = VecDuplicate(v_proc0, &result);
     PISM_PETSC_CHK(ierr, "VecDuplicate");
   }

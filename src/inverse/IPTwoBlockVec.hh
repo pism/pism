@@ -24,6 +24,7 @@
 
 #include "Vec.hh"
 #include "IS.hh"
+#include "VecScatter.hh"
 
 namespace pism {
 
@@ -57,7 +58,6 @@ public:
 
 protected:
   PetscErrorCode construct(Vec a, Vec b);
-  void destruct();
 
   petsc::Vec m_ab;
   
@@ -66,8 +66,8 @@ protected:
   petsc::IS m_a_in_ab;
   petsc::IS m_b_in_ab;
   
-  VecScatter m_scatter_a;
-  VecScatter m_scatter_b;
+  petsc::VecScatter m_scatter_a;
+  petsc::VecScatter m_scatter_b;
 };
 
 } // end of namespace pism

@@ -30,7 +30,7 @@ IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
 }
 
 IPTwoBlockVec::~IPTwoBlockVec() {
-  this->destruct();
+  // empty
 }
 
 PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
@@ -62,17 +62,10 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   ierr = VecSetType(m_ab, "mpi"); CHKERRQ(ierr);
   ierr = VecSetSizes(m_ab, m_na_local+m_nb_local, m_na_global+m_nb_global); CHKERRQ(ierr);
 
-  ierr = VecScatterCreate(m_ab, m_a_in_ab, a, is_a, &m_scatter_a); CHKERRQ(ierr);
-  ierr = VecScatterCreate(m_ab, m_b_in_ab, b, is_b, &m_scatter_b); CHKERRQ(ierr);
+  ierr = VecScatterCreate(m_ab, m_a_in_ab, a, is_a, m_scatter_a.rawptr()); CHKERRQ(ierr);
+  ierr = VecScatterCreate(m_ab, m_b_in_ab, b, is_b, m_scatter_b.rawptr()); CHKERRQ(ierr);
   
   return 0;
-}
-
-void IPTwoBlockVec::destruct() {
-  PetscErrorCode ierr;
-
-  ierr = VecScatterDestroy(&m_scatter_a); CHKERRCONTINUE(ierr);
-  ierr = VecScatterDestroy(&m_scatter_b); CHKERRCONTINUE(ierr);
 }
 
 IS IPTwoBlockVec::blockAIndexSet() {
