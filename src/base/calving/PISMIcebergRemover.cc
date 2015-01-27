@@ -49,7 +49,6 @@ void IcebergRemover::init() {
  */
 void IcebergRemover::update(IceModelVec2Int &pism_mask,
                                       IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
@@ -94,14 +93,8 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     m_iceberg_mask.put_on_proc0(*m_mask_p0);
 
     if (m_grid.rank() == 0) {
-      double *mask;
-      ierr = VecGetArray(*m_mask_p0, &mask);
-      PISM_PETSC_CHK(ierr, "VecGetArray");
-
-      cc(mask, m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
-
-      ierr = VecRestoreArray(*m_mask_p0, &mask);
-      PISM_PETSC_CHK(ierr, "VecRestoreArray");
+      petsc::VecArray mask(*m_mask_p0);
+      cc(mask.get(), m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
     }
 
     m_iceberg_mask.get_from_proc0(*m_mask_p0);

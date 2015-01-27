@@ -30,21 +30,20 @@ Only works on sequential PETSc Vecs.
 Works by naively (sans FFT) convolving two sequential Vecs A,B.  Size of A is mA x nA.
 Size of B is mB x nB.  Returns a result Vec which is the same size as A.
 Effectively pads by zero, in that the result matches the discrete but
-infinite case .  (The infinite case is where A(i,j) and B(i,j) are defined for
+infinite case.  (The infinite case is where A(i,j) and B(i,j) are defined for
 -inf < i,j < inf but A(i,j)=0 if i<0 or i>mA-1 or j<0 or j>nA-1
 and B(i,j)=0 if i<0 or i>mB-1 or j<0 or j>nB-1.)
 
 This operation is O(mA^2 nA^2), but an alternate FFT implementation would
 be O(mA nA log(mA nA)), presumably.
  */
-PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
-                          Vec vresult);
+void conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB, Vec vresult);
 
 
 /*! Functions like Matlab's interp1.  Wrapper for GSL 1D interpolation.
 
-Compare Matlab's \code  yi=interp1(x,Y,xi,'linear') \endcode
-Also \code yi=interp1(x,Y,xi,'linear','extrap') \endcode.
+Compare Matlab's `yi=interp1(x,Y,xi,'linear')`
+Also `yi=interp1(x,Y,xi,'linear','extrap')`
 
 Does no input checking.
  */

@@ -309,12 +309,8 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
   for (unsigned int j = 0; j < m_dof; ++j) {
     IceModelVec2::get_dof(da2, tmp, j);
 
-    double *tmp_array = NULL;
-    ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
-
-    m_metadata[j].write(nc, nctype, write_in_glaciological_units, tmp_array);
-
-    ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+    petsc::VecArray tmp_array(tmp);
+    m_metadata[j].write(nc, nctype, write_in_glaciological_units, tmp_array.get());
   }
 }
 
@@ -342,12 +338,11 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < m_dof; ++j) {
-    double *tmp_array = NULL;
-    ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
 
-    m_metadata[j].read(nc, time, tmp_array);
-
-    ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+    {
+      petsc::VecArray tmp_array(tmp);
+      m_metadata[j].read(nc, time, tmp_array.get());
+    }
 
     IceModelVec2::set_dof(da2, tmp, j);
   }
@@ -382,12 +377,10 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < m_dof; ++j) {
-    double *tmp_array = NULL;
-    ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
-
-    m_metadata[j].regrid(nc, flag, m_report_range, default_value, tmp_array);
-
-    ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+    {
+      petsc::VecArray tmp_array(tmp);
+      m_metadata[j].regrid(nc, flag, m_report_range, default_value, tmp_array.get());
+    }
 
     IceModelVec2::set_dof(da2, tmp, j);
   }

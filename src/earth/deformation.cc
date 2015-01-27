@@ -338,7 +338,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   // now compute elastic response if desired; bed = ue at end of this block
   if (include_elastic == true) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
-    ierr = conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);  CHKERRQ(ierr);
+    conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);
     ierr = VecScale(dbedElastic, icerho);
     PISM_PETSC_CHK(ierr, "VecScale");
   } else {

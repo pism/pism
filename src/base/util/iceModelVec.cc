@@ -501,12 +501,10 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     tmp = m_v;
   }
 
-  double *tmp_array = NULL;
-  ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
-
-  metadata(0).regrid(nc, flag, m_report_range, default_value, tmp_array);
-
-  ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+  {
+    petsc::VecArray tmp_array(tmp);
+    metadata(0).regrid(nc, flag, m_report_range, default_value, tmp_array.get());
+  }
 
   if (m_has_ghosts) {
     global_to_local(m_da, tmp, m_v);
@@ -535,12 +533,11 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     tmp = m_v;
   }
 
-  double *tmp_array = NULL;
-  ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
+  {
+    petsc::VecArray tmp_array(tmp);
+    metadata(0).read(nc, time, tmp_array.get());
+  }
 
-  metadata(0).read(nc, time, tmp_array);
-
-  ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   if (m_has_ghosts) {
     global_to_local(m_da, tmp, m_v);
@@ -604,12 +601,10 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
     tmp = m_v;
   }
 
-  double *tmp_array = NULL;
-  ierr = VecGetArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecGetArray");
-
-  metadata(0).write(nc, nctype, write_in_glaciological_units, tmp_array);
-
-  ierr = VecRestoreArray(tmp, &tmp_array); PISM_PETSC_CHK(ierr, "VecRestoreArray");
+  {
+    petsc::VecArray tmp_array(tmp);
+    metadata(0).write(nc, nctype, write_in_glaciological_units, tmp_array.get());
+  }
 
   if (m_has_ghosts) {
     DMRestoreGlobalVector(*m_da, &tmp);
@@ -982,14 +977,8 @@ void convert_vec(Vec v, Unit from, Unit to) {
   ierr = VecGetLocalSize(v, &data_size);
   PISM_PETSC_CHK(ierr, "VecGetLocalSize");
 
-  double *data = NULL;
-  ierr = VecGetArray(v, &data);
-  PISM_PETSC_CHK(ierr, "VecGetArray");
-
-  c.convert_doubles(data, data_size);
-
-  ierr = VecRestoreArray(v, &data);
-  PISM_PETSC_CHK(ierr, "VecRestoreArray");
+  petsc::VecArray data(v);
+  c.convert_doubles(data.get(), data_size);
 }
 
 } // end of namespace pism
