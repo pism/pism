@@ -302,7 +302,7 @@ private:
   void compute_horizontal_spacing();
   void compute_horizontal_coordinates();
 
-  DM create_dm(int da_dof, int stencil_width) const;
+  petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
 
   int dm_key(int, int) const;
   std::string init_calendar();

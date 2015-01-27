@@ -787,20 +787,18 @@ void IceGrid::check_parameters() {
 petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   petsc::DM::Ptr result;
 
-  if (da_dof < 0 || da_dof > 10000) {
+  if (da_dof < 0 or da_dof > 10000) {
     throw RuntimeError::formatted("Invalid da_dof argument: %d", da_dof);
   }
 
-  if (stencil_width < 0 || stencil_width > 10000) {
+  if (stencil_width < 0 or stencil_width > 10000) {
     throw RuntimeError::formatted("Invalid stencil_width argument: %d", stencil_width);
   }
 
   int j = this->dm_key(da_dof, stencil_width);
 
-  if (m_dms[j].expired() == true) {
-    DM tmp = this->create_dm(da_dof, stencil_width);
-
-    result = petsc::DM::Ptr(new petsc::DM(tmp));
+  if (m_dms[j].expired()) {
+    result = this->create_dm(da_dof, stencil_width);
     m_dms[j] = result;
   } else {
     result = m_dms[j].lock();
@@ -821,8 +819,7 @@ double IceGrid::convert(double value, const std::string &unit1, const std::strin
   return config.get_unit_system().convert(value, unit1, unit2);
 }
 
-DM IceGrid::create_dm(int da_dof, int stencil_width) const {
-  DM result;
+petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
 
   verbPrintf(3, com,
              "* Creating a DM with dof=%d and stencil_width=%d...\n",
@@ -842,6 +839,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) const {
     procs_y[k] = m_procs_y[k];
   }
 
+  DM result;
   PetscErrorCode ierr = DMDACreate2d(com,
 #if PETSC_VERSION_LT(3,5,0)
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
@@ -856,7 +854,7 @@ DM IceGrid::create_dm(int da_dof, int stencil_width) const {
                       &result);
   PISM_PETSC_CHK(ierr,"DMDACreate2d");
 
-  return result;
+  return petsc::DM::Ptr(new petsc::DM(result));
 }
 
 // Computes the key corresponding to the DM with given dof and stencil_width.
