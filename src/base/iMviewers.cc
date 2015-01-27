@@ -41,10 +41,10 @@ void IceModel::view_field(const IceModelVec *field) {
 
   if (field->get_ndof() == 1) {    // scalar fields
     std::string name = field->metadata().get_string("short_name");
-    Viewer::Ptr viewer = viewers[name];
+    petsc::Viewer::Ptr viewer = viewers[name];
 
     if (not viewer) {
-      viewers[name].reset(new Viewer(grid.com, name, viewer_size, grid.Lx(), grid.Ly()));
+      viewers[name].reset(new petsc::Viewer(grid.com, name, viewer_size, grid.Lx(), grid.Ly()));
       viewer = viewers[name];
     }
 
@@ -53,23 +53,23 @@ void IceModel::view_field(const IceModelVec *field) {
       throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
     }
 
-    v2d->view(viewer, Viewer::Ptr());
+    v2d->view(viewer, petsc::Viewer::Ptr());
 
   } else if (field->get_ndof() == 2) { // vector fields
     std::string
       name_1 = field->metadata(0).get_string("short_name"),
       name_2 = field->metadata(1).get_string("short_name");
-    Viewer::Ptr
+    petsc::Viewer::Ptr
       v1 = viewers[name_1],
       v2 = viewers[name_2];
 
     if (not v1) {
-      viewers[name_1].reset(new Viewer(grid.com, name_1, viewer_size, grid.Lx(), grid.Ly()));
+      viewers[name_1].reset(new petsc::Viewer(grid.com, name_1, viewer_size, grid.Lx(), grid.Ly()));
       v1 = viewers[name_1];
     }
 
     if (not v2) {
-      viewers[name_2].reset(new Viewer(grid.com, name_2, viewer_size, grid.Lx(), grid.Ly()));
+      viewers[name_2].reset(new petsc::Viewer(grid.com, name_2, viewer_size, grid.Lx(), grid.Ly()));
       v2 = viewers[name_2];
     }
 

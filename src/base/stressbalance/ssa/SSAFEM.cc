@@ -174,7 +174,7 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {
-    pism::Viewer viewer;
+    petsc::Viewer viewer;
     ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
 
@@ -213,7 +213,7 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
   bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
   if (view_solution) {
-    pism::Viewer viewer;
+    petsc::Viewer viewer;
     ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
 
@@ -736,7 +736,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
              "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
              file_name);
 
-  pism::Viewer viewer(m_grid.com);
+  petsc::Viewer viewer(m_grid.com);
 
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
   PISM_PETSC_CHK(ierr, "PetscViewerSetType");

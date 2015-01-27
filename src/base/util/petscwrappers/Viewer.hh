@@ -26,7 +26,7 @@
 #include "Wrapper.hh"
 
 namespace pism {
-
+namespace petsc {
 class Viewer : public petsc::Wrapper<PetscViewer> {
 public:
   Viewer(MPI_Comm com, const std::string &name,
@@ -39,6 +39,7 @@ private:
   void compute_size(unsigned int target_size, double Lx, double Ly,
                     unsigned int &X, unsigned int &Y);
 };
+} // end of namespace petsc
 } // end of namespace pism
 
 #endif /* _VIEWER_H_ */

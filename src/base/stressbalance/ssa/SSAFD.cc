@@ -1582,11 +1582,11 @@ void SSAFD::update_nuH_viewers() {
   }
 
   if (not nuh_viewer) {
-    nuh_viewer.reset(new Viewer(m_grid.com, "nuH", nuh_viewer_size,
+    nuh_viewer.reset(new petsc::Viewer(m_grid.com, "nuH", nuh_viewer_size,
                                 m_grid.Lx(), m_grid.Ly()));
   }
 
-  tmp.view(nuh_viewer, Viewer::Ptr());
+  tmp.view(nuh_viewer, petsc::Viewer::Ptr());
 }
 
 void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
@@ -1654,7 +1654,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   verbPrintf(1, m_grid.com,
              "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
 
-  pism::Viewer viewer;       // will be destroyed automatically
+  petsc::Viewer viewer;       // will be destroyed automatically
   ierr = PetscViewerBinaryOpen(m_grid.com, filename.c_str(), FILE_MODE_WRITE,
                                viewer.rawptr());
   PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
@@ -1681,7 +1681,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
              file_name);
 
-  pism::Viewer viewer(m_grid.com);
+  petsc::Viewer viewer(m_grid.com);
 
   // petsc calls
   PetscErrorCode ierr = write_system_matlab_c(viewer, file_name, pism_args_string(), year);
@@ -1697,7 +1697,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
  *       that **will not throw**. Each call should be followed by
  *       `CHKERRQ(ierr)`.
  */
-PetscErrorCode SSAFD::write_system_matlab_c(const pism::Viewer &viewer,
+PetscErrorCode SSAFD::write_system_matlab_c(const petsc::Viewer &viewer,
                                             const std::string &file_name,
                                             const std::string &cmdstr,
                                             double year) {

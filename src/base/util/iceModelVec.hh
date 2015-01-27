@@ -266,7 +266,7 @@ protected:
 
   //! It is a map, because a temporary IceModelVec can be used to view
   //! different quantities
-  mutable std::map<std::string,Viewer::Ptr> map_viewers;
+  mutable std::map<std::string,petsc::Viewer::Ptr> map_viewers;
 
   mutable void *array;  // will be cast to double** or double*** in derived classes
 
@@ -329,7 +329,7 @@ public:
 #endif
 
   virtual void view(int viewer_size) const;
-  virtual void view(Viewer::Ptr v1, Viewer::Ptr v2) const;
+  virtual void view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const;
   // component-wise access:
   virtual void get_component(unsigned int n, IceModelVec2S &result) const;
   virtual void set_component(unsigned int n, const IceModelVec2S &source);

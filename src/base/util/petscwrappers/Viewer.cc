@@ -24,6 +24,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace petsc {
 
 Viewer::Viewer(MPI_Comm com,  const std::string &title, unsigned int target_size,
                double Lx, double Ly) {
@@ -98,4 +99,5 @@ void Viewer::compute_size(unsigned int target_size, double Lx, double Ly, unsign
   }
 }
 
+} // end of namespace petsc
 } // end of namespace pism

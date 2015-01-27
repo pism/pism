@@ -493,7 +493,7 @@ protected:
   virtual void view_field(const IceModelVec *field);
   std::set<std::string> map_viewers, slice_viewers;
   int     id, jd;            // sounding indexes
-  std::map<std::string,Viewer::Ptr> viewers;
+  std::map<std::string,petsc::Viewer::Ptr> viewers;
 
 private:
   double start_time;    // this is used in the wall-clock-time backup code

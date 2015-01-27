@@ -5,7 +5,7 @@ using pism::petsc::DM;
 using pism::IO_Type;
 using pism::RegriddingFlag;
 using pism::NCSpatialVariable;
-using pism::Viewer;
+using pism::petsc::Viewer;
 using pism::Profiling; 
 using pism::Vars;
 using pism::Unit;

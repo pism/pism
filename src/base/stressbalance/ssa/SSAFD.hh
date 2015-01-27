@@ -79,7 +79,7 @@ protected:
   // Lots of PETSc function calls here, so PetscErrorCode is appropriate.
   virtual void write_system_matlab(const std::string &namepart);
 private:
-  PetscErrorCode write_system_matlab_c(const pism::Viewer &viewer,
+  PetscErrorCode write_system_matlab_c(const petsc::Viewer &viewer,
                                        const std::string &file_name,
                                        const std::string &cmdstr,
                                        double year);
@@ -108,7 +108,7 @@ protected:
     m_default_pc_failure_max_count;
   
   bool view_nuh;
-  Viewer::Ptr nuh_viewer;
+  petsc::Viewer::Ptr nuh_viewer;
   int nuh_viewer_size;
 
   bool dump_system_matlab;

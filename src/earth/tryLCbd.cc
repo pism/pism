@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
         windowx = 500,
         windowy = (int) (((float) windowx) * Ly / Lx);
 
-      Viewer viewer;
+      petsc::Viewer viewer;
       ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, NULL, "bed elev (m)",
                                  PETSC_DECIDE, PETSC_DECIDE, windowy, windowx,
                                  viewer.rawptr());

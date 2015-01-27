@@ -394,7 +394,7 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
 //! \brief View a 2D field.
 void IceModelVec2::view(int viewer_size) const {
-  Viewer::Ptr viewers[2];
+  petsc::Viewer::Ptr viewers[2];
 
   if (m_dof > 2) {
     throw RuntimeError("dof > 2 is not supported");
@@ -407,7 +407,7 @@ void IceModelVec2::view(int viewer_size) const {
       title = long_name + " (" + units + ")";
 
     if (not map_viewers[c_name]) {
-      map_viewers[c_name].reset(new Viewer(m_grid->com, title, viewer_size,
+      map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
                                            m_grid->Lx(), m_grid->Ly()));
     }
 
@@ -420,10 +420,10 @@ void IceModelVec2::view(int viewer_size) const {
 //! \brief View a 2D vector field using existing PETSc viewers.
 //! Allocates and de-allocates g2, the temporary global vector; performance
 //! should not matter here.
-void IceModelVec2::view(Viewer::Ptr v1, Viewer::Ptr v2) const {
+void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
   PetscErrorCode ierr;
 
-  Viewer::Ptr viewers[2] = {v1, v2};
+  petsc::Viewer::Ptr viewers[2] = {v1, v2};
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
