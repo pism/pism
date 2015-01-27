@@ -20,12 +20,12 @@
 #define TAOUTIL_HH_W42GJNRO
 
 #include <petsc.h>
-#include <petsctao.h>
-
+#include <stdexcept>
 #include <string>
+
 #include "pism_const.hh"
 #include "TerminationReason.hh"
-#include <stdexcept>
+#include "Tao.hh"
 
 namespace pism {
 
@@ -92,25 +92,17 @@ class TaoBasicSolver {
 public:
     
   //! Construct a solver to solve `prob` using TAO algorithm `tao_type`.
-  TaoBasicSolver(MPI_Comm comm, const std::string & tao_type, Problem &prob):
-    m_comm(comm), m_problem(prob)
-  {
-    PetscErrorCode ierr;
-    ierr = this->construct(tao_type);
-    if (ierr) {
+  TaoBasicSolver(MPI_Comm comm, const std::string & tao_type, Problem &prob)
+    : m_comm(comm), m_problem(prob) {
+    PetscErrorCode ierr = this->construct(tao_type);
+    if (ierr != 0) {
       throw std::runtime_error("TaoBasicSolver allocation failed");
     }    
   }
   
   virtual ~TaoBasicSolver() {
-    PetscErrorCode ierr;
-    ierr = this->destruct();
-    if (ierr) {
-      CHKERRCONTINUE(ierr);
-      PetscPrintf(m_comm, "FATAL ERROR: TaoBasicSolver deallocation failed.\n");
-      abort();
-    }
-  };
+    // empty
+  }
 
   //! Solve the minimization problem.
   virtual PetscErrorCode solve(TerminationReason::Ptr &reason) {
@@ -150,24 +142,15 @@ protected:
   //! Initialize the TaoSolver and allow the Problem to connect its callbacks.
   PetscErrorCode construct(const std::string & tao_type) {
     PetscErrorCode ierr;
-    ierr = TaoCreate(m_comm ,&m_tao); CHKERRQ(ierr); 
+    ierr = TaoCreate(m_comm, m_tao.rawptr()); CHKERRQ(ierr); 
     ierr = TaoSetType(m_tao,tao_type.c_str()); CHKERRQ(ierr);    
     ierr = m_problem.connect(m_tao); CHKERRQ(ierr);
     ierr = TaoSetFromOptions(m_tao); CHKERRQ(ierr);
     return 0;
   }
-
-  //! Finalize the TaoSolver.
-  PetscErrorCode destruct() {
-    PetscErrorCode ierr;
-    if (m_tao) {
-      ierr = TaoDestroy(&m_tao); CHKERRQ(ierr);
-    }
-    return 0; 
-  }
   
   MPI_Comm m_comm;
-  Tao m_tao;
+  petsc::Tao m_tao;
   Problem  &m_problem;
 };
 
