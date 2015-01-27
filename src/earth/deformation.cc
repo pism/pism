@@ -17,15 +17,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include <petscvec.h>
 #include <fftw3.h>
-#include <assert.h>
+#include <cassert>
+
 #include "pism_const.hh"
 #include "matlablike.hh"
 #include "greens.hh"
 #include "deformation.hh"
 #include "PISMConfig.hh"
 #include "error_handling.hh"
+#include "Vec.hh"
 
 namespace pism {
 
@@ -179,7 +180,7 @@ PetscErrorCode BedDeformLC::init() {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "     computing spherical elastic load response matrix ...");
     PISM_PETSC_CHK(ierr, "PetscPrintf");
-    PetscVecAccessor2D II(lrmE, Nxge, Nyge);
+    petsc::VecArray2D II(lrmE, Nxge, Nyge);
     ge_params ge_data;
     ge_data.dx = dx;
     ge_data.dy = dy;
@@ -213,7 +214,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
   // spectral/FFT quantities are on fat computational grid but uplift is on thin
   PetscErrorCode ierr;
-  PetscVecAccessor2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
+  petsc::VecArray2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
 
   // fft2(uplift)
   clear_fftw_input();
@@ -248,7 +249,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
   get_fftw_output(U_start, 1.0 / (Nx * Ny), Nx, Ny, 0, 0);
 
   {
-    PetscVecAccessor2D u_start(U_start, Nx, Ny);
+    petsc::VecArray2D u_start(U_start, Nx, Ny);
 
     double av = 0.0;
     for (int i = 0; i < Nx; i++) {
@@ -283,7 +284,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   // note ice thicknesses and bed elevations only on physical ("thin") grid
   //   while spectral/FFT quantities are on fat computational grid
 
-  PetscVecAccessor2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
+  petsc::VecArray2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
 
   // Compute Hdiff
   PetscErrorCode ierr = VecWAXPY(Hdiff, -1, H_start, H);
@@ -349,7 +350,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   //    (new bed) = ue + (bed start) + plate
   // (but use only central part of plate if Z>1)
   {
-    PetscVecAccessor2D b(bed, Mx, My), b_start(bed_start, Mx, My), db_elastic(dbedElastic, Mx, My),
+    petsc::VecArray2D b(bed, Mx, My), b_start(bed_start, Mx, My), db_elastic(dbedElastic, Mx, My),
       u(U, Nx, Ny, i0_plate, j0_plate), u_start(U_start, Nx, Ny, i0_plate, j0_plate);
 
     for (int i = 0; i < Mx; i++) {
@@ -363,7 +364,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
 }
 
 void BedDeformLC::tweak(double seconds_from_start) {
-  PetscVecAccessor2D u(U, Nx, Ny);
+  petsc::VecArray2D u(U, Nx, Ny);
 
   // find average value along "distant" boundary of [-Lx_fat, Lx_fat]X[-Ly_fat, Ly_fat]
   // note domain is periodic, so think of cut locus of torus (!)
@@ -422,7 +423,7 @@ void BedDeformLC::copy_fftw_output(fftw_complex *output) {
  * Sets the imaginary part to zero.
  */
 void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int N, int i0, int j0) {
-  PetscVecAccessor2D in(vec_input, M, N);
+  petsc::VecArray2D in(vec_input, M, N);
   VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny, i0, j0);
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {
@@ -434,7 +435,7 @@ void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int
 
 //! \brief Get the real part of fftw_output and put it in output.
 void BedDeformLC::get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0) {
-  PetscVecAccessor2D out(output, M, N);
+  petsc::VecArray2D out(output, M, N);
   VecAccessor2D<fftw_complex> fftw_out(fftw_output, Nx, Ny, i0, j0);
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {

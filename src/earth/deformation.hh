@@ -106,28 +106,6 @@ private:
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
 
-class PetscVecAccessor2D {
-public:
-  PetscVecAccessor2D(Vec vec, int my_Mx, int my_My)
-    : Mx(my_Mx), My(my_My), i_offset(0), j_offset(0), v(vec)
-  { VecGetArray2d(v, Mx, My, 0, 0, &array); }
-
-  PetscVecAccessor2D(Vec vec, int my_Mx, int my_My, int i0, int j0)
-    : Mx(my_Mx), My(my_My), i_offset(i0), j_offset(j0), v(vec)
-  { VecGetArray2d(v, Mx, My, 0, 0, &array); }
-
-  ~PetscVecAccessor2D()
-  { VecRestoreArray2d(v, Mx, My, 0, 0, &array); }
-
-  inline double& operator()(int i, int j) {
-    return array[i + i_offset][j + j_offset];
-  }
-private:
-  int Mx, My, i_offset, j_offset;
-  Vec v;
-  double **array;
-};
-
 template <class T>
 class VecAccessor2D {
 public:

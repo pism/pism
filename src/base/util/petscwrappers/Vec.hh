@@ -40,6 +40,33 @@ public:
   ~Vec();
 };
 
+//! Wrapper around VecGetArray and VecRestoreArray.
+class VecArray {
+public:
+  VecArray(::Vec v);
+  ~VecArray();
+  double* get();
+private:
+  ::Vec m_v;
+  double *m_array;
+};
+
+//! Wrapper around VecGetArray2d and VecRestoreArray2d.
+class VecArray2D {
+public:
+  VecArray2D(::Vec vec, int my_Mx, int my_My);
+  VecArray2D(::Vec vec, int my_Mx, int my_My, int i0, int j0);
+  ~VecArray2D();
+
+  inline double& operator()(int i, int j) {
+    return m_array[i + m_i_offset][j + m_j_offset];
+  }
+private:
+  int m_Mx, m_My, m_i_offset, m_j_offset;
+  ::Vec m_v;
+  double **m_array;
+};
+
 class TemporaryGlobalVec : public Vec {
 public:
   TemporaryGlobalVec(DM::Ptr dm);
