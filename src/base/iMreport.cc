@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -101,7 +101,7 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(ice_thickness);
-  list.add(tau3);
+  list.add(age3);
 
   const double one_year = grid.convert(1.0, "year", "seconds");
 
@@ -111,7 +111,7 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
 
     if (mask.icy(i, j)) {
       // accumulate volume of ice which is original
-      ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
+      ierr = age3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
       const int  ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k=1; k<=ks; k++) {
         // ice in segment is original if it is as old as one year less than current time

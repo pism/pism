@@ -7,7 +7,7 @@ if [ $# -lt 2 ] ; then
   echo "  where"
   echo "    PROCS     = 1,2,3,... is number of MPI processes"
   echo "    MX        = number of grid points in x,y directions;  MX -> cell width:"
-  echo "                53 -> 10mm,  105 -> 5mm, 209 -> 2.5mm, 521 -> 1mm"
+  echo "                52 -> 10mm,  104 -> 5mm, 208 -> 2.5mm, 520 -> 1mm"
   exit
 fi
 
@@ -16,10 +16,12 @@ myMx="$2"
 
 pismexec="pismr"
 
-initfile=initlab$myMx.nc
 oname=lab$myMx.nc
+initfile=init$oname
 
-grid="-Mx $myMx -My $myMx -Mz 26 -Lz 0.025 -Mbz 0 -Lbz 0 -z_spacing equal"
+grid="-Mx $myMx -My $myMx -Mz 101 -Lz 0.1 -Mbz 0 -Lbz 0 -z_spacing equal"
+
+climate="-surface given -surface_given_file $initfile"
 
 physics="-config_override gumparams.nc -energy none -sia_flow_law isothermal_glen -sia_e 1.0 -gradient mahaffy"
 
@@ -32,6 +34,6 @@ ex_dt=3.1689e-07     # = 10 / 31556926 = 10 s
 exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"
 exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times 0:$ex_dt:$endtime"
 
-mpiexec -n $NN $pismexec -boot_file $initfile $grid $physics \
+mpiexec -n $NN $pismexec -boot_file $initfile $grid $climate $physics \
     $timediag $exdiag -ys 0.0 -y $endtime -max_dt $ts_dt -o $oname
 

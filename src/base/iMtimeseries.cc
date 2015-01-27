@@ -435,6 +435,8 @@ PetscErrorCode IceModel::write_extras() {
     return 0;
   }
 
+  grid.profiling.begin("extra_file reporting");
+
   if (split_extra) {
     extra_file_is_ready = false;        // each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
@@ -511,6 +513,8 @@ PetscErrorCode IceModel::write_extras() {
   ierr = flush_timeseries(); CHKERRQ(ierr);
 
   last_extra = current_time;
+
+  grid.profiling.end("extra_file reporting");
 
   return 0;
 }

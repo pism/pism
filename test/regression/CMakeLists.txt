@@ -36,7 +36,7 @@ macro(pism_python_test name script)
 endmacro()
 
 # Tests themselves:
-pism_test (pism_testing_tools test_00.sh)
+pism_test (pism_testing_tools test_regression_tools.py)
 
 pism_test (pismr_exact_restartability_SIA_only test_01.sh)
 

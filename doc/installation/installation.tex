@@ -119,9 +119,9 @@ This table lists required dependencies for PISM alphabetically.
     \midrule
     FFTW & \url{http://www.fftw.org/} & version $\ge$ 3.0\\
     GSL &\url{http://www.gnu.org/software/gsl/} & version $\ge$ 1.15\\
-    MPI &\url{http://www-unix.mcs.anl.gov/mpi/} & \\
+    MPI &\url{http://www.mcs.anl.gov/mpi/} & \\
     NetCDF &\url{http://www.unidata.ucar.edu/software/netcdf/} & version $\ge$ 4.1 \\
-    PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ \PETSCREL \\
+    PETSc & \url{http://www.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ \PETSCREL \\
     UDUNITS-2 & \url{http://www.unidata.ucar.edu/software/udunits/} & \\
     \bottomrule
   \end{tabular}
@@ -247,7 +247,7 @@ From now on, this manual assumes the use of the \texttt{bash} shell.
   deformation of the solid earth (bed) under ice loads.  Install FFTW version
   3.x or check that it is installed already.
 
-\item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (=
+\item You will need a version of \href{http://www.mcs.anl.gov/mpi/}{MPI (=
     \emph{Message Passing Interface})}.\index{MPI (\emph{Message Passing
       Interface})} Your system may have an existing MPI installation, in which
   case the path to the MPI directory will be used when installing PETSc  (see \ref{subsec:prereq-petsc}).
@@ -276,7 +276,7 @@ it each time you use MPI.
 \subsubsection{Installing PETSc from source}
 \label{subsec:prereq-petsc}
   
-PISM uses \href{http://www-unix.mcs.anl.gov/petsc/}{PETSc (=
+PISM uses \href{http://www.mcs.anl.gov/petsc/}{PETSc (=
     \emph{Portable Extensible Toolkit for Scientific
       Computation})}.\index{PETSc (\emph{Portable Extensible Toolkit for
       Scientific computation})}\footnote{``PETSc''
@@ -284,7 +284,7 @@ PISM uses \href{http://www-unix.mcs.anl.gov/petsc/}{PETSc (=
   is unlikely to be available in package repositories.  Download the PETSc
   source by grabbing the current gzipped tarball at:
 \begin{center}
-    \url{http://www-unix.mcs.anl.gov/petsc/}
+    \url{http://www.mcs.anl.gov/petsc/}
 \end{center}
 PISM requires a version of PETSc which is \texttt{\PETSCREL} or later. The
 ``lite'' form of the tarball is fine if you are willing to depend on an Internet
@@ -318,7 +318,7 @@ etc.; check with your system administrator.
 
 \item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option ``\texttt{--with-mpi-dir=/home/user/mympi/}''.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}. If you get messages suggesting that PETSc cannot configure using your existing MPI, you might want to try adding the \texttt{--download-mpich=1} (or \texttt{--download-openmpi=1}) option to PETSc's configure command.
 
-\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \texttt{--with-batch=1}.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
+\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \texttt{--with-batch=1}.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
 
 \item  Configuring PETSc takes at least a few minutes even when everything goes smoothly.   A value for the environment variable \texttt{PETSC_ARCH} will be reported at the end of the configure process; take note of this value.  One may always reconfigure with additional/new \texttt{PETSC_ARCH} as needed.
 

@@ -480,12 +480,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
       else if (M.ocean(i,j))
         Pnew(i,j) = Pover(i,j);
       else if (W(i,j) <= 0.0) {
-        // see P(W) formula *in steady state*; note P(W) is continuous (in steady
-        // state); these facts imply:
-        if (velbase_mag(i,j) > 0.0)
-          Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
-        else
-          Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
+        Pnew(i,j) = Pover(i,j);
       } else {
         // opening and closure terms in pressure equation
         Open = PetscMax(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
@@ -527,6 +522,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+  // FIXME issue #256
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
                       " 'distributed' hydrology summary:\n"
