@@ -19,6 +19,7 @@
 #include "PISMBedSmoother.hh"
 #include "Mask.hh"
 #include "IceGrid.hh"
+#include "Vec.hh"
 
 #include "error_handling.hh"
 
@@ -150,35 +151,27 @@ void BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
 void BedSmoother::smooth_the_bed_on_proc0() {
 
   if (grid.rank() == 0) {
-    PetscErrorCode ierr;
-    double **b0, **bs;
-    ierr = VecGetArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    petsc::VecArray2D
+      b0(*topgp0,       grid.Mx(), grid.My()),
+      bs(*topgsmoothp0, grid.Mx(), grid.My());
 
     for (int i=0; i < (int)grid.Mx(); i++) {
       for (int j=0; j < (int)grid.My(); j++) {
-        // average only over those points which are in the grid; do not wrap
-        //   periodically
-        double sum   = 0.0;
-        int  count = 0;
+        // average only over those points which are in the grid; do
+        // not wrap periodically
+        double sum = 0.0, count = 0.0;
         for (int r = -Nx; r <= Nx; r++) {
           for (int s = -Ny; s <= Ny; s++) {
             if ((i+r >= 0) && (i+r < (int)grid.Mx()) && (j+s >= 0) && (j+s < (int)grid.My())) {
-              sum += b0[i+r][j+s];
-              count++;
+              sum += b0(i+r,j+s);
+              count += 1.0;
             }
           }
         }
-        bs[i][j] = sum / static_cast<double>(count);
+        // unprotected division by count but r=0,s=0 case guarantees count>=1
+        bs(i, j) = sum / count;
       }
     }
-
-    ierr = VecRestoreArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
   }
 }
 
@@ -186,66 +179,49 @@ void BedSmoother::smooth_the_bed_on_proc0() {
 void BedSmoother::compute_coefficients_on_proc0() {
 
   if (grid.rank() == 0) {
-    PetscErrorCode ierr;
-    double **b0, **bs, **c2, **c3, **c4, **mt;
-    ierr = VecGetArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(*maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(*C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(*C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
-    ierr = VecGetArray2d(*C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
-    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    petsc::VecArray2D
+      b0(*topgp0,       grid.Mx(), grid.My()),
+      bs(*topgsmoothp0, grid.Mx(), grid.My()),
+      mt(*maxtlp0,      grid.Mx(), grid.My()),
+      c2(*C2p0,         grid.Mx(), grid.My()),
+      c3(*C3p0,         grid.Mx(), grid.My()),
+      c4(*C4p0,         grid.Mx(), grid.My());
 
     for (int i=0; i < (int)grid.Mx(); i++) {
       for (int j=0; j < (int)grid.My(); j++) {
         // average only over those points which are in the grid
         // do not wrap periodically
-        double topgs     = bs[i][j],
-                  maxtltemp = 0.0,
-                  sum2      = 0.0,
-                  sum3      = 0.0,
-                  sum4      = 0.0;
-        int  count     = 0;
+        double
+          topgs     = bs(i, j),
+          maxtltemp = 0.0,
+          sum2      = 0.0,
+          sum3      = 0.0,
+          sum4      = 0.0,
+          count     = 0.0;
+
         for (int r = -Nx; r <= Nx; r++) {
           for (int s = -Ny; s <= Ny; s++) {
             if ((i+r >= 0) && (i+r < (int)grid.Mx()) && (j+s >= 0) && (j+s < (int)grid.My())) {
               // tl is elevation of local topography at a pt in patch
-              const double tl  = b0[i+r][j+s] - topgs;
+              const double tl  = b0(i+r, j+s) - topgs;
               maxtltemp = std::max(maxtltemp, tl);
-              // accumulate 2nd, 3rd, and 4th powers with only 3 mults
+              // accumulate 2nd, 3rd, and 4th powers with only 3 multiplications
               const double tl2 = tl * tl;
               sum2 += tl2;
               sum3 += tl2 * tl;
               sum4 += tl2 * tl2;
-              count++;
+              count += 1.0;
             }
           }
         }
-        mt[i][j] = maxtltemp;
+        mt(i, j) = maxtltemp;
+
         // unprotected division by count but r=0,s=0 case guarantees count>=1
-        c2[i][j] = sum2 / static_cast<double>(count);
-        c3[i][j] = sum3 / static_cast<double>(count);
-        c4[i][j] = sum4 / static_cast<double>(count);
+        c2(i, j) = sum2 / count;
+        c3(i, j) = sum3 / count;
+        c4(i, j) = sum4 / count;
       }
     }
-
-    ierr = VecRestoreArray2d(*C4p0,         grid.Mx(), grid.My(), 0, 0, &c4);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(*C3p0,         grid.Mx(), grid.My(), 0, 0, &c3);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(*C2p0,         grid.Mx(), grid.My(), 0, 0, &c2);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(*maxtlp0,      grid.Mx(), grid.My(), 0, 0, &mt);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(*topgsmoothp0, grid.Mx(), grid.My(), 0, 0, &bs);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
-    ierr = VecRestoreArray2d(*topgp0,       grid.Mx(), grid.My(), 0, 0, &b0);
-    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
 
     // scale the coeffs in Taylor series
     const double
@@ -254,10 +230,14 @@ void BedSmoother::compute_coefficients_on_proc0() {
       s2 = k * (2 * n + 2) / (2 * n),
       s3 = s2 * (3 * n + 2) / (3 * n),
       s4 = s3 * (4 * n + 2) / (4 * n);
+
+    PetscErrorCode ierr;
     ierr = VecScale(*C2p0,s2);
     PISM_PETSC_CHK(ierr, "VecScale");
+
     ierr = VecScale(*C3p0,s3);
     PISM_PETSC_CHK(ierr, "VecScale");
+
     ierr = VecScale(*C4p0,s4);
     PISM_PETSC_CHK(ierr, "VecScale");
   }
