@@ -45,9 +45,9 @@ protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  virtual PetscErrorCode pc_setup_bjacobi();
+  virtual void pc_setup_bjacobi();
 
-  virtual PetscErrorCode pc_setup_asm();
+  virtual void pc_setup_asm();
   
   virtual void solve();
 
@@ -76,7 +76,6 @@ protected:
 
   virtual void write_system_petsc(const std::string &namepart);
 
-  // Lots of PETSc function calls here, so PetscErrorCode is appropriate.
   virtual void write_system_matlab(const std::string &namepart);
 private:
   PetscErrorCode write_system_matlab_c(const petsc::Viewer &viewer,

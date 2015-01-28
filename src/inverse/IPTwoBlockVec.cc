@@ -24,50 +24,52 @@
 namespace pism {
 
 IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
-  PetscErrorCode ierr = this->construct(a, b);
-  if (ierr != 0) {
-    throw std::runtime_error("memory allocation failed");
-  }
+  PetscErrorCode ierr;
+
+  MPI_Comm comm, comm_b;
+  ierr = PetscObjectGetComm((PetscObject)a, &comm); PISM_CHK(ierr, "PetscObjectGetComm");
+  ierr = PetscObjectGetComm((PetscObject)b, &comm_b); PISM_CHK(ierr, "PetscObjectGetComm");
+  assert(comm == comm_b);
+
+  PetscInt lo_a, hi_a;
+  ierr = VecGetOwnershipRange(a, &lo_a, &hi_a); PISM_CHK(ierr, "VecGetOwnershipRange");
+  ierr = VecGetSize(a, &m_na_global); PISM_CHK(ierr, "VecGetSize");
+  m_na_local = hi_a - lo_a;
+
+  PetscInt lo_b, hi_b;
+  ierr = VecGetOwnershipRange(b, &lo_b, &hi_b); PISM_CHK(ierr, "VecGetOwnershipRange");
+  ierr = VecGetSize(b, &m_nb_global); PISM_CHK(ierr, "VecGetSize");
+  m_nb_local = hi_b - lo_b;
+
+  petsc::IS is_a, is_b;
+  // a in a
+  ierr = ISCreateStride(comm, m_na_local, lo_a, 1,
+                        is_a.rawptr()); PISM_CHK(ierr, "ISCreateStride");
+  // a in ab
+  ierr = ISCreateStride(comm, m_na_local, lo_a + lo_b, 1,
+                        m_a_in_ab.rawptr()); PISM_CHK(ierr, "ISCreateStride");
+
+  // b in b
+  ierr = ISCreateStride(comm, m_nb_local, lo_b, 1,
+                        is_b.rawptr()); PISM_CHK(ierr, "ISCreateStride");
+  // b in ab
+  ierr = ISCreateStride(comm, m_nb_local, lo_a + lo_b + m_na_local, 1,
+                        m_b_in_ab.rawptr()); PISM_CHK(ierr, "ISCreateStride");
+
+  ierr = VecCreate(comm, m_ab.rawptr()); PISM_CHK(ierr, "VecCreate");
+
+  ierr = VecSetType(m_ab, "mpi"); PISM_CHK(ierr, "VecSetType");
+  ierr = VecSetSizes(m_ab, m_na_local + m_nb_local, m_na_global + m_nb_global);
+  PISM_CHK(ierr, "VecSetSizes");
+
+  ierr = VecScatterCreate(m_ab, m_a_in_ab, a, is_a,
+                          m_scatter_a.rawptr()); PISM_CHK(ierr, "VecScatterCreate");
+  ierr = VecScatterCreate(m_ab, m_b_in_ab, b, is_b,
+                          m_scatter_b.rawptr()); PISM_CHK(ierr, "VecScatterCreate");
 }
 
 IPTwoBlockVec::~IPTwoBlockVec() {
   // empty
-}
-
-//! @note Uses `PetscErrorCode` *intentionally*.
-PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
-  PetscErrorCode ierr;
-  
-  MPI_Comm comm, comm_b;
-  ierr = PetscObjectGetComm((PetscObject)a, &comm); CHKERRQ(ierr);
-  ierr = PetscObjectGetComm((PetscObject)b, &comm_b); CHKERRQ(ierr);
-  assert(comm==comm_b);
-  
-  PetscInt lo_a, hi_a;
-  ierr = VecGetOwnershipRange(a, &lo_a, &hi_a); CHKERRQ(ierr);
-  ierr = VecGetSize(a, &m_na_global); CHKERRQ(ierr);
-  m_na_local = hi_a - lo_a;
-
-  PetscInt lo_b, hi_b;
-  ierr = VecGetOwnershipRange(b, &lo_b, &hi_b); CHKERRQ(ierr);
-  ierr = VecGetSize(b, &m_nb_global); CHKERRQ(ierr);
-  m_nb_local = hi_b - lo_b;
-
-  petsc::IS is_a, is_b;
-  ierr = ISCreateStride(comm, m_na_local, lo_a, 1, is_a.rawptr()); CHKERRQ(ierr);  // a in a
-  ierr = ISCreateStride(comm, m_na_local, lo_a+lo_b, 1, m_a_in_ab.rawptr()); CHKERRQ(ierr); // a in ab
-
-  ierr = ISCreateStride(comm, m_nb_local, lo_b, 1, is_b.rawptr()); CHKERRQ(ierr); // b in b
-  ierr = ISCreateStride(comm, m_nb_local, lo_a+lo_b+m_na_local, 1, m_b_in_ab.rawptr()); CHKERRQ(ierr);  // b in ab
-
-  ierr = VecCreate(comm, m_ab.rawptr()); CHKERRQ(ierr);
-  ierr = VecSetType(m_ab, "mpi"); CHKERRQ(ierr);
-  ierr = VecSetSizes(m_ab, m_na_local+m_nb_local, m_na_global+m_nb_global); CHKERRQ(ierr);
-
-  ierr = VecScatterCreate(m_ab, m_a_in_ab, a, is_a, m_scatter_a.rawptr()); CHKERRQ(ierr);
-  ierr = VecScatterCreate(m_ab, m_b_in_ab, b, is_b, m_scatter_b.rawptr()); CHKERRQ(ierr);
-  
-  return 0;
 }
 
 IS IPTwoBlockVec::blockAIndexSet() {

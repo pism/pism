@@ -57,7 +57,6 @@ public:
   }
 
 protected:
-  PetscErrorCode construct(Vec a, Vec b);
   void scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m);
   petsc::Vec m_ab;
   

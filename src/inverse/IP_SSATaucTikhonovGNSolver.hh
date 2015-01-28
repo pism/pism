@@ -27,20 +27,21 @@
 
 namespace pism {
 
-template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >
+template<class C, void (C::*MultiplyCallback)(Vec,Vec) >
 class MatrixMultiplyCallback {
 public:
   static void connect(Mat A) {
     PetscErrorCode ierr;
-    ierr = MatShellSetOperation(A, MATOP_MULT, (void(*)(void))MatrixMultiplyCallback::multiply);
+    ierr = MatShellSetOperation(A, MATOP_MULT,
+                                (void(*)(void))MatrixMultiplyCallback::callback);
     PISM_CHK(ierr, "MatShellSetOperation");
   }
 protected:
-  static PetscErrorCode multiply(Mat A, Vec x, Vec y) {
-    PetscErrorCode ierr;
+  static PetscErrorCode callback(Mat A, Vec x, Vec y) {
     C *ctx;
-    ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
-    ierr = (ctx->*MultiplyCallback)(x,y); CHKERRQ(ierr);
+    PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+    PISM_CHK(ierr, "MatShellGetContext");
+    (ctx->*MultiplyCallback)(x,y);
     return 0;
   }
 };
@@ -64,21 +65,19 @@ public:
     return m_d;
   }
 
-  virtual PetscErrorCode setInitialGuess(DesignVec &d) {
+  virtual void setInitialGuess(DesignVec &d) {
     m_d.copy_from(d);
-    return 0;
   }
 
   //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
-  virtual PetscErrorCode setTargetMisfit(double misfit) {
+  virtual void setTargetMisfit(double misfit) {
     m_target_misfit = misfit;
-    return 0;
   }
 
   virtual void evaluateGNFunctional(DesignVec &h, double *value);
 
-  virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
-  virtual PetscErrorCode apply_GN(Vec h, Vec out);
+  virtual void apply_GN(IceModelVec2S &h, IceModelVec2S &out);
+  virtual void  apply_GN(Vec h, Vec out);
 
   virtual void init(TerminationReason::Ptr &reason);
 

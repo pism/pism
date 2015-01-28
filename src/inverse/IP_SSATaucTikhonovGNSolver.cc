@@ -105,7 +105,8 @@ void IP_SSATaucTikhonovGNSolver::construct() {
                         nGlobalNodes, nGlobalNodes, this, m_mat_GN.rawptr());
   PISM_CHK(ierr, "MatCreateShell");
 
-  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
+  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver,
+                                 &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   multCallback::connect(m_mat_GN);
 
   m_alpha = 1./m_eta;
@@ -125,36 +126,31 @@ void IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
   m_ssaforward.linearize_at(m_d0,reason);
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
-  PetscErrorCode ierr = this->apply_GN(x.get_vec(),y.get_vec()); CHKERRQ(ierr);
-  return 0;
+void IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x, IceModelVec2S &y) {
+  this->apply_GN(x.get_vec(), y.get_vec());
 }
 
 //! @note This function has to return PetscErrorCode (it is used as a callback).
-PetscErrorCode  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
-  PetscErrorCode ierr;
+void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
+  StateVec  &tmp_gS = m_tmp_S1Global;
+  StateVec  &Tx     = m_tmp_S1Local;
+  DesignVec &tmp_gD = m_tmp_D1Global;
+  DesignVec &GNx    = m_tmp_D2Global;
 
-  StateVec &tmp_gS    = m_tmp_S1Global;
-  StateVec &Tx        = m_tmp_S1Local;
-  DesignVec &tmp_gD   = m_tmp_D1Global;
-  DesignVec  &GNx      = m_tmp_D2Global;
-  
   // FIXME: Needless copies for now.
   m_x.copy_from_vec(x);
 
   m_ssaforward.apply_linearization(m_x,Tx);
   Tx.update_ghosts();
-  
+
   m_stateFunctional.interior_product(Tx,tmp_gS);
-  
+
   m_ssaforward.apply_linearization_transpose(tmp_gS,GNx);
 
   m_designFunctional.interior_product(m_x,tmp_gD);
   GNx.add(m_alpha,tmp_gD);
 
-  ierr = VecCopy(GNx.get_vec(), y);
-  PISM_CHK(ierr, "VecCopy");
-  return 0;
+  PetscErrorCode ierr = VecCopy(GNx.get_vec(), y); PISM_CHK(ierr, "VecCopy");
 }
 
 void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {

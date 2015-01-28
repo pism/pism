@@ -117,3 +117,4 @@ void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<
 }
 
 } // end of namespace pism
+

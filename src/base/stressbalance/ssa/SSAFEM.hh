@@ -26,44 +26,6 @@
 
 namespace pism {
 
-//! Storage for SSA coefficients at a quadrature point.
-struct SSACoefficients {
-  double H,                     //!< ice thickness
-    tauc,                       //!< basal yield stress
-    b,                          //!< bed elevation
-    B;                          //!< ice hardness
-  Vector2 driving_stress;
-  int mask;
-};
-
-class SSAFEM;
-
-//! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
-/* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
-   convention that its context argument is a pointer to a struct 
-   having a DA as its first entry.  The SSAFEM_SNESCallbackData fulfills 
-   this requirement, and allows for passing the callback on to an honest 
-   SSAFEM object. */
-struct SSAFEM_SNESCallbackData {
-  DM           da;
-  SSAFEM      *ssa;
-};
-
-//! SNES callbacks.  
-/*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
-#if PETSC_VERSION_LT(3,5,0)
-PetscErrorCode SSAFEFunction(DMDALocalInfo *, const Vector2 **, 
-                             Vector2 **, SSAFEM_SNESCallbackData *);
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
-                             Mat A, Mat J,
-                             MatStructure *str, SSAFEM_SNESCallbackData *fe);
-#else
-PetscErrorCode SSAFEFunction(DMDALocalInfo *, const Vector2 **,
-                             Vector2 **, SSAFEM_SNESCallbackData *);
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
-                             Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
-#endif
-
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(const IceGrid &, const EnthalpyConverter &);
 
@@ -74,18 +36,6 @@ SSA * SSAFEMFactory(const IceGrid &, const EnthalpyConverter &);
 */
 class SSAFEM : public SSA
 {
-#if PETSC_VERSION_LT(3,5,0)
-  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const Vector2 **,
-                                            Vector2 **, SSAFEM_SNESCallbackData *);
-  friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
-                                            Mat A, Mat J,
-                                            MatStructure *str, SSAFEM_SNESCallbackData *fe);
-#else
-  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const Vector2 **,
-                                            Vector2 **, SSAFEM_SNESCallbackData *);
-  friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
-                                            Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
-#endif
 public:
   SSAFEM(const IceGrid &g, const EnthalpyConverter &e);
 
@@ -95,11 +45,19 @@ public:
 
   virtual void cacheQuadPtValues();
 
-private:
-  PetscErrorCode allocate_fem();
 protected:
 
-  virtual void PointwiseNuHAndBeta(const SSACoefficients &,
+  //! Storage for SSA coefficients at a quadrature point.
+  struct Coefficients {
+    double H,                     //!< ice thickness
+      tauc,                       //!< basal yield stress
+      b,                          //!< bed elevation
+      B;                          //!< ice hardness
+    Vector2 driving_stress;
+    int mask;
+  };
+
+  virtual void PointwiseNuHAndBeta(const Coefficients &,
                                    const Vector2 &, const double[],
                                    double *, double *, double *, double *);
 
@@ -112,20 +70,28 @@ protected:
   virtual void solve(TerminationReason::Ptr &reason);
 
   virtual void solve_nocache(TerminationReason::Ptr &reason);
-  
-  virtual void setFromOptions();
 
+  //! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
+  /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
+     convention that its context argument is a pointer to a struct
+     having a DA as its first entry.  The CallbackData fulfills
+     this requirement, and allows for passing the callback on to an honest
+     SSAFEM object. */
+  struct CallbackData {
+    DM da;
+    SSAFEM *ssa;
+  };
 
   // objects used internally
-  SSAFEM_SNESCallbackData m_callback_data;
+  CallbackData m_callback_data;
 
   petsc::SNES m_snes;
-  std::vector<SSACoefficients> m_coefficients;
-  double    m_dirichletScale;
-  double    m_ocean_rho;
-  double    m_earth_grav;
-  double    m_beta_ice_free_bedrock;
-  double    m_epsilon_ssa;
+  std::vector<Coefficients> m_coefficients;
+  double m_dirichletScale;
+  double m_ocean_rho;
+  double m_earth_grav;
+  double m_beta_ice_free_bedrock;
+  double m_epsilon_ssa;
 
   FEElementMap m_element_index;
   FEQuadrature_Scalar m_quadrature;
@@ -136,10 +102,26 @@ private:
   void monitor_jacobian(Mat Jac);
   void monitor_function(const Vector2 **velocity_global,
                         Vector2 **residual_global);
+
+  //! SNES callbacks.
+  /*! These simply forward the call on to the SSAFEM member of the CallbackData */
+#if PETSC_VERSION_LT(3,5,0)
+  static PetscErrorCode function_callback(DMDALocalInfo *, const Vector2 **,
+                                          Vector2 **, CallbackData *);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2 **xg,
+                                          Mat A, Mat J,
+                                          MatStructure *str, CallbackData *fe);
+#else
+  static PetscErrorCode function_callback(DMDALocalInfo *, const Vector2 **,
+                                          Vector2 **, CallbackData *);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2 **xg,
+                                          Mat A, Mat J, CallbackData *fe);
+#endif
+
+
 };
 
 
 } // end of namespace pism
 
 #endif /* _SSAFEM_H_ */
-

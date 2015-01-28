@@ -191,22 +191,22 @@ public:
   FaustoGrevePDDObject(const IceGrid &g);
   virtual ~FaustoGrevePDDObject() {}
 
-  virtual PetscErrorCode update_temp_mj(const IceModelVec2S &surfelev,
-                                        const IceModelVec2S &lat,
-                                        const IceModelVec2S &lon);
+  virtual void update_temp_mj(const IceModelVec2S &surfelev,
+                              const IceModelVec2S &lat,
+                              const IceModelVec2S &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
     for IceModelVec2S temp_mj. */
-  virtual PetscErrorCode setDegreeDayFactors(int i, int j,
-                                             double /* usurf */, double lat, double /* lon */,
-                                             DegreeDayFactors &ddf);
+  virtual void setDegreeDayFactors(int i, int j,
+                                   double /* usurf */, double lat, double /* lon */,
+                                   DegreeDayFactors &ddf);
 
 protected:
-  const IceGrid &grid;
-  const Config &config;
+  const IceGrid &m_grid;
+  const Config &m_config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
-  IceModelVec2S temp_mj;
+  IceModelVec2S m_temp_mj;
 };
 
 } // end of namespace pism

@@ -134,73 +134,89 @@ SSAFD::~SSAFD() {
 }
 
 //! @note Uses `PetscErrorCode` *intentionally*.
-PetscErrorCode SSAFD::pc_setup_bjacobi() {
+void SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
   PC pc;
 
-  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetType(m_KSP, KSPGMRES);
+  PISM_CHK(ierr, "KSPSetType");
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A);
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
 
   // Get the PC from the KSP solver:
-  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_KSP, &pc);
+  PISM_CHK(ierr, "KSPGetPC");
 
   // Set the PC type:
-  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCBJACOBI);
+  PISM_CHK(ierr, "PCSetType");
 
   // Process options:
-  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
-
-  return 0;
+  ierr = KSPSetFromOptions(m_KSP);
+  PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
 //! @note Uses `PetscErrorCode` *intentionally*.
-PetscErrorCode SSAFD::pc_setup_asm() {
+void SSAFD::pc_setup_asm() {
   PetscErrorCode ierr;
   PC pc, sub_pc;
 
   // Set parameters equivalent to
   // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
-  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetType(m_KSP, KSPGMRES);
+  PISM_CHK(ierr, "KSPSetType");
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A);
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
 
   // Switch to using the "unpreconditioned" norm.
-  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
+  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED);
+  PISM_CHK(ierr, "KSPSetNormType");
 
   // Switch to "right" preconditioning.
-  ierr = KSPSetPCSide(m_KSP, PC_RIGHT); CHKERRQ(ierr);
+  ierr = KSPSetPCSide(m_KSP, PC_RIGHT);
+  PISM_CHK(ierr, "KSPSetPCSide");
 
   // Get the PC from the KSP solver:
-  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_KSP, &pc);
+  PISM_CHK(ierr, "KSPGetPC");
 
   // Set the PC type:
-  ierr = PCSetType(pc, PCASM); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCASM);
+  PISM_CHK(ierr, "PCSetType");
 
   // Set the sub-KSP object to "preonly"
   KSP *sub_ksp;
-  ierr = PCSetUp(pc); CHKERRQ(ierr);
-  ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp); CHKERRQ(ierr);
+  ierr = PCSetUp(pc);
+  PISM_CHK(ierr, "PCSetUp");
 
-  ierr = KSPSetType(*sub_ksp, KSPPREONLY); CHKERRQ(ierr);
+  ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp);
+  PISM_CHK(ierr, "PCASMGetSubKSP");
+
+  ierr = KSPSetType(*sub_ksp, KSPPREONLY);
+  PISM_CHK(ierr, "KSPSetType");
 
   // Set the PC of the sub-KSP to "LU".
-  ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(*sub_ksp, &sub_pc);
+  PISM_CHK(ierr, "KSPGetPC");
 
-  ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
+  ierr = PCSetType(sub_pc, PCLU);
+  PISM_CHK(ierr, "PCSetType");
 
   // Let the user override all this:
   // Process options:
-  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
-
-  return 0;
+  ierr = KSPSetFromOptions(m_KSP);
+  PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
 void SSAFD::init() {
@@ -911,10 +927,7 @@ void SSAFD::picard_iteration(double nuH_regularization,
     // Give BJACOBI another shot if we haven't tried it enough yet
 
     try {
-      PetscErrorCode ierr = pc_setup_bjacobi();
-      if (ierr != 0) {
-        throw RuntimeError("SSAFD::pc_setup_bjacobi() failed");
-      }
+      pc_setup_bjacobi();
       picard_manager(nuH_regularization,
                      nuH_iter_failure_underrelax);
 
@@ -925,28 +938,20 @@ void SSAFD::picard_iteration(double nuH_regularization,
       verbPrintf(1, m_grid.com,
                  "  re-trying using the Additive Schwarz preconditioner...\n");
 
-      PetscErrorCode ierr = pc_setup_asm();
-      if (ierr != 0) {
-        throw RuntimeError("SSAFD::pc_setup_asm() failed");
-      }
+      pc_setup_asm();
 
       m_velocity.copy_from(m_velocity_old);
 
       picard_manager(nuH_regularization,
                      nuH_iter_failure_underrelax);
-
     }
 
   } else {
     // otherwise use ASM
+    pc_setup_asm();
 
-    PetscErrorCode ierr = pc_setup_asm();
-    if (ierr != 0) {
-      throw RuntimeError("SSAFD::pc_setup_asm() failed");
-    }
     picard_manager(nuH_regularization,
                    nuH_iter_failure_underrelax);
-
   }
 }
 

@@ -32,18 +32,73 @@ namespace pism {
  *
  */
 SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
-  : SSA(g, e), m_element_index(g), m_quadrature(m_grid, 1.0), m_quadrature_vector(m_grid, 1.0) {
-  PetscErrorCode ierr = allocate_fem();
-  if (ierr != 0) {
-    throw std::runtime_error("SSAFEM allocation failed");
-  }
-}
+  : SSA(g, e), m_element_index(g), m_quadrature(m_grid, 1.0),
+    m_quadrature_vector(m_grid, 1.0) {
+
+  PetscErrorCode ierr;
+
+  m_dirichletScale = 1.0;
+  m_ocean_rho = m_config.get("sea_water_density");
+  m_earth_grav = m_config.get("standard_gravity");
+  m_beta_ice_free_bedrock = m_config.get("beta_ice_free_bedrock");
+
+  ierr = SNESCreate(m_grid.com, m_snes.rawptr());
+  PISM_CHK(ierr, "SNESCreate");
+
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
+  // methods via SSAFEFunction and SSAFEJ
+  m_callback_data.da = *m_da;
+  m_callback_data.ssa = this;
 
 #if PETSC_VERSION_LT(3,5,0)
-// FIXME: we should never define PETSc objects!
-typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
-typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
+  typedef PetscErrorCode (*JacobianCallback)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
+  typedef PetscErrorCode (*FunctionCallback)(DMDALocalInfo*, void*, void*, void*);
+
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
+                                  (FunctionCallback)function_callback,
+                                  &m_callback_data);
+  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
+
+  ierr = DMDASNESSetJacobianLocal(*m_da,
+                                  (JacobianCallback)jacobian_callback,
+                                  &m_callback_data);
+  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
+#else
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
+                                  (DMDASNESFunction)function_callback,
+                                  &m_callback_data);
+  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
+
+  ierr = DMDASNESSetJacobianLocal(*m_da,
+                                  (DMDASNESJacobian)jacobian_callback,
+                                  &m_callback_data);
+  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 #endif
+
+  ierr = DMSetMatType(*m_da, "baij");
+  PISM_CHK(ierr, "DMSetMatType");
+
+  ierr = DMSetApplicationContext(*m_da, &m_callback_data);
+  PISM_CHK(ierr, "DMSetApplicationContext");
+
+  ierr = SNESSetDM(m_snes, *m_da);
+  PISM_CHK(ierr, "SNESSetDM");
+
+  // Default of maximum 200 iterations; possibly overridded by commandline
+  int snes_max_it = 200;
+  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
+                           snes_max_it, PETSC_DEFAULT);
+  PISM_CHK(ierr, "SNESSetTolerances");
+
+  ierr = SNESSetFromOptions(m_snes);
+  PISM_CHK(ierr, "SNESSetFromOptions");
+
+  // Allocate m_coefficients, which contains coefficient data at the
+  // quadrature points of all the elements. There are nElement
+  // elements, and FEQuadrature::Nq quadrature points.
+  int nElements = m_element_index.element_count();
+  m_coefficients.resize(FEQuadrature::Nq * nElements);
+}
 
 SSA* SSAFEMFactory(const IceGrid &g, const EnthalpyConverter &ec) {
   return new SSAFEM(g, ec);
@@ -53,55 +108,6 @@ SSAFEM::~SSAFEM() {
   // empty
 }
 
-//! \brief Allocating SSAFEM-specific objects; called by the constructor.
-//! @note Uses `PetscErrorCode` *intentionally*.
-PetscErrorCode SSAFEM::allocate_fem() {
-  PetscErrorCode ierr;
-
-  m_dirichletScale = 1.0;
-  m_ocean_rho = m_config.get("sea_water_density");
-  m_earth_grav = m_config.get("standard_gravity");
-  m_beta_ice_free_bedrock = m_config.get("beta_ice_free_bedrock");
-
-  ierr = SNESCreate(m_grid.com, m_snes.rawptr()); CHKERRQ(ierr);
-
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
-  m_callback_data.da = *m_da;
-  m_callback_data.ssa = this;
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
-                                  (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(*m_da,
-                                  (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
-#else
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
-                                  (DMDASNESFunction)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(*m_da,
-                                  (DMDASNESJacobian)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
-#endif
-
-  ierr = DMSetMatType(*m_da, "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(*m_da, &m_callback_data); CHKERRQ(ierr);
-
-  ierr = SNESSetDM(m_snes, *m_da); CHKERRQ(ierr);
-
-  // Default of maximum 200 iterations; possibly overridded by commandline
-  int snes_max_it = 200;
-  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
-                           snes_max_it, PETSC_DEFAULT); CHKERRQ(ierr);
-
-  ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
-
-  // Allocate m_coefficients, which contains coefficient data at the
-  // quadrature points of all the elements. There are nElement
-  // elements, and FEQuadrature::Nq quadrature points.
-  int nElements = m_element_index.element_count();
-  m_coefficients.resize(FEQuadrature::Nq * nElements);
-
-  return 0;
-}
-
 // Initialize the solver, called once by the client before use.
 void SSAFEM::init() {
 
@@ -109,8 +115,15 @@ void SSAFEM::init() {
   verbPrintf(2, m_grid.com,
              "  [using the SNES-based finite element method implementation]\n");
 
-  setFromOptions();
+  // process command-line options
+  {
+    m_dirichletScale = 1.0e9;
+    m_dirichletScale = options::Real("-ssa_fe_dirichlet_scale",
+                                     "Enforce Dirichlet conditions with this additional scaling",
+                                     m_dirichletScale);
 
+  }
+  
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
   // into IceModelVec2V "velocity". We use that field as an initial guess.
   // If we are not restarting from a PISM file, "velocity" is identically zero,
@@ -120,15 +133,6 @@ void SSAFEM::init() {
 
   // Store coefficient data at the quadrature points.
   cacheQuadPtValues();
-}
-
-//! Opportunity to modify behaviour based on command-line options.
-/*! Called from SSAFEM::init */
-void SSAFEM::setFromOptions() {
-  m_dirichletScale = 1.0e9;
-  m_dirichletScale = options::Real("-ssa_fe_dirichlet_scale",
-                                   "Enforce Dirichlet conditions with this additional scaling",
-                                   m_dirichletScale);
 }
 
 //! Solve the SSA.  The FEM solver exchanges time for memory by computing
@@ -285,7 +289,7 @@ void SSAFEM::cacheQuadPtValues() {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, taucq);
 
       const int ij = m_element_index.flatten(i, j);
-      SSACoefficients *coefficients = &m_coefficients[4*ij];
+      Coefficients *coefficients = &m_coefficients[4*ij];
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         coefficients[q].H  = Hq[q];
         coefficients[q].b  = bq[q];
@@ -363,7 +367,7 @@ void SSAFEM::cacheQuadPtValues() {
  *
  * @return 0 on success
  */
-void SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
+void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
                                            const Vector2 &u, const double Du[],
                                            double *nuH, double *dnuH,
                                            double *beta, double *dbeta) {
@@ -408,8 +412,8 @@ void SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
  * The weak form of the SSA system is
  */
 void SSAFEM::compute_local_function(DMDALocalInfo *info,
-                                              const Vector2 **velocity_global,
-                                              Vector2 **residual_global) {
+                                    const Vector2 **velocity_global,
+                                    Vector2 **residual_global) {
 
   (void) info; // Avoid compiler warning.
 
@@ -450,7 +454,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       const int ij = m_element_index.flatten(i, j);
 
       // Coefficients and weights for this quadrature point.
-      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      const Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -563,7 +567,7 @@ approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 
 */
 void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
-                                              const Vector2 **velocity_global, Mat Jac) {
+                                    const Vector2 **velocity_global, Mat Jac) {
   PetscErrorCode ierr;
 
   // Avoid compiler warning.
@@ -609,7 +613,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       const int ij = m_element_index.flatten(i, j);
 
       // Coefficients at quadrature points in the current element:
-      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      const Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -766,17 +770,18 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 }
 
 //!
-PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
-			     const Vector2 **velocity, Vector2 **residual,
-			     SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
+                                         const Vector2 **velocity, Vector2 **residual,
+                                         CallbackData *fe) {
+
   fe->ssa->compute_local_function(info, velocity, residual);
 
   return 0;
 }
 
 #if PETSC_VERSION_LT(3,5,0)
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
-			     Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **velocity,
+                                         Mat A, Mat J, MatStructure *str, CallbackData *fe) {
 
   (void) A;
 
@@ -787,8 +792,8 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
   return 0;
 }
 #else
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
-			     Mat A, Mat J, SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **velocity,
+                                         Mat A, Mat J, CallbackData *fe) {
 
   (void) A;
 

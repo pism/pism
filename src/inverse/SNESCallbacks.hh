@@ -22,6 +22,9 @@
 #include <petscsnes.h>
 #include <petscdmda.h>
 
+//! @note January 28, 2015: I don't think this code is used, which means
+//! that it is almost certainly broken. -- CK
+
 namespace pism {
 
 template<class Problem, class VecArrayType>
@@ -29,9 +32,9 @@ class SNESDMCallbacks {
 public:
   SNESDMCallbacks() {
     m_cbData.dm = NULL;
-    m_cbData.p = NULL;
+    m_cbData.p  = NULL;
   };
-  
+
   void connect(SNES snes, Problem &p, DM dm, Vec r, Mat J, Mat Jpc=NULL) {
     PetscErrorCode ierr;
     if (m_cbData.dm != NULL) {
@@ -39,89 +42,91 @@ public:
     }
     m_cbData.dm = dm;
     m_cbData.p = &p;
-    
-    ierr = DMDASetLocalFunction(dm, (DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formFunctionCallback);
+
+    ierr = DMDASetLocalFunction(dm,
+                                (DMDALocalFunction1)
+                                SNESDMCallbacks<Problem,VecArrayType>::function_callback);
     PISM_CHK(ierr, "DMDASetLocalFunction");
 
-    ierr = DMDASetLocalJacobian(dm, (DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formJacobianCallback);
+    ierr = DMDASetLocalJacobian(dm,
+                                (DMDALocalFunction1)
+                                SNESDMCallbacks<Problem,VecArrayType>::jacobian_callback);
     PISM_CHK(ierr, "DMDASetLocalJacobian");
 
-    ierr = SNESSetDM(snes, dm);
-    PISM_CHK(ierr, "SNESSetDM");
+    ierr = SNESSetDM(snes, dm); PISM_CHK(ierr, "SNESSetDM");
 
-    ierr = SNESSetFunction(snes, r, SNESDAFormFunction, &m_cbData);
-    PISM_CHK(ierr, "SNESSetFunction");
+    ierr = SNESSetFunction(snes, r, SNESDAFormFunction,
+                           &m_cbData); PISM_CHK(ierr, "SNESSetFunction");
 
     if (Jpc == NULL) {
       Jpc = J;
     }
 
-    ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian, &m_cbData);
-    PISM_CHK(ierr, "SNESSetJacobian");
+    ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian,
+                           &m_cbData); PISM_CHK(ierr, "SNESSetJacobian");
   }
 
 protected:
   //! Adaptor for gluing SNESDAFormFunction callbacks to a C++ class
   /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
-     convention that its context argument is a pointer to a struct 
-     having a DA as its first entry.  The SNESDMCallbackData fulfills 
+     convention that its context argument is a pointer to a struct
+     having a DA as its first entry.  The SNESDMCallbackData fulfills
      this requirement, and allows for passing the callback on to a
      class. */
-  struct SNESDMCallbackData {
-    DM           dm;
+  struct CallbackData {
+    DM dm;
     Problem  *p;
   };
-  static PetscErrorCode formFunctionCallback(DMDALocalInfo *info,
-                                             VecArrayType xg, VecArrayType yg,
-                                             SNESDMCallbackData *data) {
+
+  static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                          VecArrayType xg, VecArrayType yg,
+                                          CallbackData *data) {
     PetscErrorCode ierr;
     ierr = data->p->assembleFunction(info,xg,yg); CHKERRQ(ierr);
     return 0;
   }
 
-  static PetscErrorCode formJacobianCallback(DMDALocalInfo *info,
-                                             VecArrayType xg, Mat J,
-                                             SNESDMCallbackData *data) {
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          VecArrayType xg, Mat J,
+                                          CallbackData *data) {
     PetscErrorCode ierr;
     ierr = data->p->assembleJacobian(info,xg,J); CHKERRQ(ierr);
     return 0;
   }
 
-  SNESDMCallbackData m_cbData;
+  CallbackData m_cbData;
 };
 
 template<class Problem>
 class SNESCallbacks {
 public:
-  
+
   static void connect(SNES snes, Problem &p, Vec r, Mat J, Mat Jpc=NULL) {
     PetscErrorCode ierr;
-    
-    ierr = SNESSetFunction(snes,r,SNESCallbacks<Problem>::formFunctionCallback,&p);
-    PISM_CHK(ierr, "SNESSetFunction");
+
+    ierr = SNESSetFunction(snes, r, SNESCallbacks<Problem>::function_callback,
+                           &p); PISM_CHK(ierr, "SNESSetFunction");
 
     if (Jpc == NULL) {
       Jpc = J;
     }
 
-    ierr = SNESSetJacobian(snes,J,Jpc,SNESCallbacks<Problem>::formJacobianCallback,&p);
-    PISM_CHK(ierr, "SNESSetJacobian");
+    ierr = SNESSetJacobian(snes, J, Jpc, SNESCallbacks<Problem>::jacobian_callback,
+                           &p); PISM_CHK(ierr, "SNESSetJacobian");
   }
 
 protected:
-  static PetscErrorCode formFunctionCallback(SNES snes, Vec x, Vec f, void*ctx) {
-    PetscErrorCode ierr;
+  static PetscErrorCode function_callback(SNES snes, Vec x, Vec f, void*ctx) {
     Problem *p = reinterpret_cast<Problem *>(ctx);
-    ierr = p->assembleFunction(x,f); CHKERRQ(ierr);
+    PetscErrorCode ierr = p->assembleFunction(x,f); CHKERRQ(ierr);
     return 0;
   }
 
-  static PetscErrorCode formJacobianCallback(SNES snes,
-                                             Vec x, Mat *J, Mat*Jpc, MatStructure* structure,
-                                             void *ctx) {
-    PetscErrorCode ierr;
+  static PetscErrorCode jacobian_callback(SNES snes,
+                                          Vec x, Mat *J, Mat*Jpc, MatStructure* structure,
+                                          void *ctx) {
     Problem *p = reinterpret_cast<Problem *>(ctx);
-    ierr = p->assembleJacobian(x,J); CHKERRQ(ierr);
+    PetscErrorCode ierr = p->assembleJacobian(x,J); CHKERRQ(ierr);
     return 0;
   }
 };

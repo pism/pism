@@ -34,20 +34,19 @@ IceModel::surface to get access to PSConstantGLINT2 from outside of
 Glint2IceModel.
 */
 
-class Glint2IceModel : public ::IceModel
-{
+class Glint2IceModel : public ::IceModel {
 public:
 
-	// see iceModel.cc for implementation of constructor and destructor:
-	Glint2IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
-	virtual ~Glint2IceModel(); // must be virtual merely because some members are virtual
+  // see iceModel.cc for implementation of constructor and destructor:
+  Glint2IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
+  virtual ~Glint2IceModel(); // must be virtual merely because some members are virtual
 
-	virtual PetscErrorCode allocate_couplers();
+  virtual void allocate_couplers();
 
-	/** @return Our instance of PSConstantGLINT2 */
-	PSConstantGLINT2 *ps_constant_glint2() {
-          return dynamic_cast<PSConstantGLINT2 *>(surface);
-        }
+  /** @return Our instance of PSConstantGLINT2 */
+  PSConstantGLINT2 *ps_constant_glint2() {
+    return dynamic_cast<PSConstantGLINT2 *>(surface);
+  }
 };
 
 }}

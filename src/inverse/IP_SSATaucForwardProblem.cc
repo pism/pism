@@ -133,7 +133,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
     for (int j = ys; j < ys + ym; j++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
-      SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         coefficients[q].tauc = tauc_q[q];
       }
@@ -334,7 +334,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         Vector2 u_qq = u_q[q];
 
-        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq + q];
+        const Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq + q];
 
         // Determine "dbeta / dzeta" at the quadrature point
         double dbeta = 0;
@@ -473,7 +473,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         Vector2 du_qq = du_q[q];
         Vector2 u_qq = u_q[q];
 
-        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
+        const Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
 
         // Determine "dbeta/dtauc" at the quadrature point
         double dbeta_dtauc = 0;
