@@ -88,10 +88,10 @@ void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
 
   if (m_has_ghosts == true) {
     ierr = DMCreateLocalVector(*m_da, m_v.rawptr());
-    PISM_PETSC_CHK(ierr, "DMCreateLocalVector");
+    PISM_CHK(ierr, "DMCreateLocalVector");
   } else {
     ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
-    PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
+    PISM_CHK(ierr, "DMCreateGlobalVector");
   }
 
   m_name = my_name;
@@ -121,7 +121,7 @@ void IceModelVec3D::set_column(int i, int j, double c) {
 
   if (c == 0.0) {
     ierr = PetscMemzero(arr[i][j], m_n_levels * sizeof(double));
-    PISM_PETSC_CHK(ierr, "PetscMemzero");
+    PISM_CHK(ierr, "PetscMemzero");
   } else {
     for (unsigned int k=0; k < m_n_levels; k++) {
       arr[i][j][k] = c;
@@ -226,7 +226,7 @@ void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
 #endif
   double ***arr = (double***) array;
   PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, m_n_levels*sizeof(double));
-  PISM_PETSC_CHK(ierr, "PetscMemcpy");
+  PISM_CHK(ierr, "PetscMemcpy");
 }
 
 void  IceModelVec3::create(const IceGrid &my_grid, const std::string &my_name,

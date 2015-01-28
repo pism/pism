@@ -209,7 +209,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(form);
-  PISM_PETSC_CHK(ierr, "MatZeroEntries");
+  PISM_CHK(ierr, "MatZeroEntries");
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -252,7 +252,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K));
-      PISM_PETSC_CHK(ierr, "PetscMemzero");
+      PISM_CHK(ierr, "PetscMemzero");
 
       for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
@@ -275,10 +275,10 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
 
   ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);
-  PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
+  PISM_CHK(ierr, "MatAssemblyBegin");
 
   ierr = MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY);
-  PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
+  PISM_CHK(ierr, "MatAssemblyEnd");
 }
 
 } // end of namespace pism

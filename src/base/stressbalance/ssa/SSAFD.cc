@@ -107,25 +107,25 @@ SSAFD::SSAFD(const IceGrid &g, const EnthalpyConverter &e)
     PetscErrorCode ierr;
 #if PETSC_VERSION_LT(3,5,0)
     ierr = DMCreateMatrix(*m_da, MATAIJ, m_A.rawptr());
-    PISM_PETSC_CHK(ierr, "DMCreateMatrix");
+    PISM_CHK(ierr, "DMCreateMatrix");
 #else
     ierr = DMSetMatType(*m_da, MATAIJ);
-    PISM_PETSC_CHK(ierr, "DMSetMatType");
+    PISM_CHK(ierr, "DMSetMatType");
 
     ierr = DMCreateMatrix(*m_da, m_A.rawptr());
-    PISM_PETSC_CHK(ierr, "DMCreateMatrix");
+    PISM_CHK(ierr, "DMCreateMatrix");
 #endif
 
     ierr = KSPCreate(m_grid.com, m_KSP.rawptr());
-    PISM_PETSC_CHK(ierr, "KSPCreate");
+    PISM_CHK(ierr, "KSPCreate");
 
     ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
-    PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
+    PISM_CHK(ierr, "KSPSetOptionsPrefix");
 
     // Use non-zero initial guess (i.e. SSA velocities from the last
     // solve() call).
     ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
-    PISM_PETSC_CHK(ierr, "KSPSetInitialGuessNonzero");
+    PISM_CHK(ierr, "KSPSetInitialGuessNonzero");
   }
 }
 
@@ -493,7 +493,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   IceModelVec2V &vel = m_velocity;
 
   ierr = MatZeroEntries(A);
-  PISM_PETSC_CHK(ierr, "MatZeroEntries");
+  PISM_CHK(ierr, "MatZeroEntries");
 
   IceModelVec::AccessList list;
   list.add(nuH);
@@ -766,22 +766,22 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     // set coefficients of the first equation:
     row.c = 0;
     ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES);
-    PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
+    PISM_CHK(ierr, "MatSetValuesStencil");
 
     // set coefficients of the second equation:
     row.c = 1;
     ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES);
-    PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
+    PISM_CHK(ierr, "MatSetValuesStencil");
   } // loop over points
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
+  PISM_CHK(ierr, "MatAssemblyBegin");
 
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-  PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
+  PISM_CHK(ierr, "MatAssemblyEnd");
 #if (PISM_DEBUG==1)
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);
-  PISM_PETSC_CHK(ierr, "MatSetOption");
+  PISM_CHK(ierr, "MatSetOption");
 #endif
 
   int zero_pivot_flag_global = 0;
@@ -1000,17 +1000,17 @@ void SSAFD::picard_manager(double nuH_regularization,
     // Call PETSc to solve linear system by iterative method; "inner iteration":
 #if PETSC_VERSION_LT(3,5,0)
     ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
-    PISM_PETSC_CHK(ierr, "KSPSetOperators");
+    PISM_CHK(ierr, "KSPSetOperators");
 #else
     ierr = KSPSetOperators(m_KSP, m_A, m_A);
-    PISM_PETSC_CHK(ierr, "KSPSetOperator");
+    PISM_CHK(ierr, "KSPSetOperator");
 #endif
     ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec());
-    PISM_PETSC_CHK(ierr, "KSPSolve");
+    PISM_CHK(ierr, "KSPSolve");
 
     // Check if diverged; report to standard out about iteration
     ierr = KSPGetConvergedReason(m_KSP, &reason);
-    PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+    PISM_CHK(ierr, "KSPGetConvergedReason");
 
     if (reason < 0) {
       // KSP diverged
@@ -1027,7 +1027,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     // report on KSP success; the "inner" iteration is done
     ierr = KSPGetIterationNumber(m_KSP, &ksp_iterations);
-    PISM_PETSC_CHK(ierr, "KSPGetIterationNumber");
+    PISM_CHK(ierr, "KSPGetIterationNumber");
 
     ksp_iterations_total += ksp_iterations;
 
@@ -1614,13 +1614,13 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
   col.c = 0;
 
   ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
-  PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
+  PISM_CHK(ierr, "MatSetValuesStencil");
 
   row.c = 1;
   col.c = 1;
 
   ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
-  PISM_PETSC_CHK(ierr, "MatSetValuesStencil");
+  PISM_CHK(ierr, "MatSetValuesStencil");
 }
 
 //! \brief Checks if a cell is near or at the ice front.
@@ -1675,13 +1675,13 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   petsc::Viewer viewer;       // will be destroyed automatically
   ierr = PetscViewerBinaryOpen(m_grid.com, filename.c_str(), FILE_MODE_WRITE,
                                viewer.rawptr());
-  PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
+  PISM_CHK(ierr, "PetscViewerBinaryOpen");
 
   ierr = MatView(m_A, viewer);
-  PISM_PETSC_CHK(ierr, "MatView");
+  PISM_CHK(ierr, "MatView");
 
   ierr = VecView(m_b.get_vec(), viewer);
-  PISM_PETSC_CHK(ierr, "VecView");
+  PISM_CHK(ierr, "VecView");
 }
 
 //! \brief Write the SSA system to an .m (MATLAB) file (for debugging).

@@ -56,31 +56,31 @@ void IP_SSAHardavForwardProblem::construct() {
 
 #if PETSC_VERSION_LT(3,5,0)
   ierr = DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
-  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
+  PISM_CHK(ierr, "DMCreateMatrix");
 #else
   ierr = DMSetMatType(*m_da, MATBAIJ);
-  PISM_PETSC_CHK(ierr, "DMSetMatType");
+  PISM_CHK(ierr, "DMSetMatType");
 
   ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
-  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
+  PISM_CHK(ierr, "DMCreateMatrix");
 #endif
 
   ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
-  PISM_PETSC_CHK(ierr, "KSPCreate");
+  PISM_CHK(ierr, "KSPCreate");
 
   double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
-  PISM_PETSC_CHK(ierr, "KSPSetTolerances");
+  PISM_CHK(ierr, "KSPSetTolerances");
 
   PC pc;
   ierr = KSPGetPC(m_ksp, &pc);
-  PISM_PETSC_CHK(ierr, "KSPGetPC");
+  PISM_CHK(ierr, "KSPGetPC");
 
   ierr = PCSetType(pc, PCBJACOBI);
-  PISM_PETSC_CHK(ierr, "PCSetType");
+  PISM_CHK(ierr, "PCSetType");
 
   ierr = KSPSetFromOptions(m_ksp);
-  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
+  PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
 //! Sets the current value of of the design paramter \f$\zeta\f$.
@@ -540,17 +540,17 @@ void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMo
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
-  PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
+  PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
-  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+  PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve"
@@ -611,17 +611,17 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
-  PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
+  PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
-  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+  PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",

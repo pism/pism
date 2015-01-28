@@ -268,7 +268,7 @@ void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
 void FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row,
                                                    Nk, m_col, K, ADD_VALUES);
-  PISM_PETSC_CHK(ierr, "MatSetValuesBlockedStencil");
+  PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
 const int FEDOFMap::kIOffset[4] = {0, 1, 1, 0};
@@ -277,7 +277,7 @@ const int FEDOFMap::kJOffset[4] = {0, 0, 1, 1};
 FEQuadrature_Scalar::FEQuadrature_Scalar(const IceGrid &grid, double L)
   : FEQuadrature(grid, L) {
   PetscErrorCode ierr = PetscMemzero(m_tmp, Nk*sizeof(double));
-  PISM_PETSC_CHK(ierr, "PetscMemzero");
+  PISM_CHK(ierr, "PetscMemzero");
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
@@ -313,7 +313,7 @@ FEQuadrature::FEQuadrature(const IceGrid &grid, double L) {
 FEQuadrature_Vector::FEQuadrature_Vector(const IceGrid &grid, double L)
   : FEQuadrature(grid, L) {
   PetscErrorCode ierr = PetscMemzero(m_tmp, Nk*sizeof(Vector2));
-  PISM_PETSC_CHK(ierr, "PetscMemzero");
+  PISM_CHK(ierr, "PetscMemzero");
 }
 
 //! Return the values at all quadrature points of all shape functions.
@@ -657,7 +657,7 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
       row.j = i; row.i = j;
       PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
                                                        ADD_VALUES);
-      PISM_PETSC_CHK(ierr, "MatSetValuesBlockedStencil");
+      PISM_CHK(ierr, "MatSetValuesBlockedStencil");
     }
   }
 }
@@ -756,7 +756,7 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
       row.j = i; row.i = j;
       PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
                                                        ADD_VALUES);
-      PISM_PETSC_CHK(ierr, "MatSetValuesBlockedStencil");
+      PISM_CHK(ierr, "MatSetValuesBlockedStencil");
     }
   }
 }

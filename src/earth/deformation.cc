@@ -99,27 +99,27 @@ void BedDeformLC::alloc() {
   assert(allocDone == false);
 
   ierr = VecDuplicate(H, Hdiff.rawptr());
-  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  PISM_CHK(ierr, "VecDuplicate");
 
   ierr = VecDuplicate(H, dbedElastic.rawptr());
-  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  PISM_CHK(ierr, "VecDuplicate");
 
   // allocate plate displacement
   ierr = VecCreateSeq(PETSC_COMM_SELF, Nx * Ny, U.rawptr());
-  PISM_PETSC_CHK(ierr, "VecCreateSeq");
+  PISM_CHK(ierr, "VecCreateSeq");
 
   ierr = VecDuplicate(U, U_start.rawptr());
-  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  PISM_CHK(ierr, "VecDuplicate");
 
   // FFT - side coefficient fields (i.e. multiplication form of operators)
   ierr = VecDuplicate(U, vleft.rawptr());
-  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  PISM_CHK(ierr, "VecDuplicate");
 
   ierr = VecDuplicate(U, vright.rawptr());
-  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  PISM_CHK(ierr, "VecDuplicate");
 
   ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, lrmE.rawptr());
-  PISM_PETSC_CHK(ierr, "VecCreateSeq");
+  PISM_CHK(ierr, "VecCreateSeq");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
 
@@ -177,7 +177,7 @@ void BedDeformLC::init() {
   if (include_elastic == true) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "     computing spherical elastic load response matrix ...");
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     petsc::VecArray2D II(lrmE, Nxge, Nyge);
     ge_params ge_data;
@@ -193,7 +193,7 @@ void BedDeformLC::init() {
     }
 
     ierr = PetscPrintf(PETSC_COMM_SELF, " done\n");
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
   }
 }
 
@@ -260,11 +260,11 @@ void BedDeformLC::uplift_init() {
     av = av / ((double) (Nx + Ny));
 
     ierr = VecShift(U_start, -av);
-    PISM_PETSC_CHK(ierr, "VecShift");
+    PISM_CHK(ierr, "VecShift");
   }
 
   ierr = VecCopy(U_start, U);
-  PISM_PETSC_CHK(ierr, "VecCopy");
+  PISM_CHK(ierr, "VecCopy");
 }
 
 
@@ -283,7 +283,7 @@ void BedDeformLC::step(const double dt_seconds, const double seconds_from_start)
 
   // Compute Hdiff
   PetscErrorCode ierr = VecWAXPY(Hdiff, -1, H_start, H);
-  PISM_PETSC_CHK(ierr, "VecWAXPY");
+  PISM_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
   clear_fftw_input();
@@ -336,10 +336,10 @@ void BedDeformLC::step(const double dt_seconds, const double seconds_from_start)
     conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);
 
     ierr = VecScale(dbedElastic, icerho);
-    PISM_PETSC_CHK(ierr, "VecScale");
+    PISM_CHK(ierr, "VecScale");
   } else {
     ierr = VecSet(dbedElastic, 0.0);
-    PISM_PETSC_CHK(ierr, "VecSet");
+    PISM_CHK(ierr, "VecSet");
   }
 
   // now sum contributions to get new bed elevation:
@@ -381,7 +381,7 @@ void BedDeformLC::tweak(double seconds_from_start) {
 
   double delvolume;
   PetscErrorCode ierr = VecSum(Hdiff, &delvolume);
-  PISM_PETSC_CHK(ierr, "VecSum");
+  PISM_CHK(ierr, "VecSum");
 
   delvolume = delvolume * dx * dy;  // make into a volume
   const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
@@ -390,7 +390,7 @@ void BedDeformLC::tweak(double seconds_from_start) {
                                          Hequiv, Requiv, Lav, rho, standard_gravity, D, eta) - av;
 
   ierr = VecShift(U, discshift);
-  PISM_PETSC_CHK(ierr, "VecShift");
+  PISM_CHK(ierr, "VecShift");
 }
 
 //! \brief Fill fftw_input with zeros.

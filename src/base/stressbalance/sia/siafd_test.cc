@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
                          "usage of SIAFD_TEST:\n"
                          "  run siafd_test -Mx <number> -My <number> -Mz <number> -o foo.nc\n"
                          "\n");
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     IceGrid grid(com, config);

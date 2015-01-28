@@ -55,7 +55,7 @@ void String::process(const std::string& option,
                             tmp,                   // output
                             TEMPORARY_STRING_LENGTH, // max. length of the output
                             &flag);                  // PETSC_TRUE if found, else PETSC_FALSE
-  PISM_PETSC_CHK(ierr, "PetscOptionsString");
+  PISM_CHK(ierr, "PetscOptionsString");
 
   std::string result = tmp;
 

@@ -76,7 +76,7 @@ void IceModelVec2T::create(const IceGrid &my_grid, const std::string &my_short_n
 
   // allocate the 3D Vec:
   PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
-  PISM_PETSC_CHK(ierr, "DMCreateGlobalVector");
+  PISM_CHK(ierr, "DMCreateGlobalVector");
 }
 
 double*** IceModelVec2T::get_array3() {
@@ -87,7 +87,7 @@ double*** IceModelVec2T::get_array3() {
 void IceModelVec2T::begin_access() const {
   if (m_access_counter == 0) {
     PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_da3, m_v3, &array3);
-    PISM_PETSC_CHK(ierr, "DMDAVecGetArrayDOF");
+    PISM_CHK(ierr, "DMDAVecGetArrayDOF");
   }
 
   // this call will increment the m_access_counter
@@ -101,7 +101,7 @@ void IceModelVec2T::end_access() const {
 
   if (m_access_counter == 0) {
     PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_da3, m_v3, &array3);
-    PISM_PETSC_CHK(ierr, "DMDAVecRestoreArrayDOF");
+    PISM_CHK(ierr, "DMDAVecRestoreArrayDOF");
     array3 = NULL;
   }
 }

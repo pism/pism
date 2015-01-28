@@ -41,23 +41,23 @@ public:
     m_cbData.p = &p;
     
     ierr = DMDASetLocalFunction(dm, (DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formFunctionCallback);
-    PISM_PETSC_CHK(ierr, "DMDASetLocalFunction");
+    PISM_CHK(ierr, "DMDASetLocalFunction");
 
     ierr = DMDASetLocalJacobian(dm, (DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formJacobianCallback);
-    PISM_PETSC_CHK(ierr, "DMDASetLocalJacobian");
+    PISM_CHK(ierr, "DMDASetLocalJacobian");
 
     ierr = SNESSetDM(snes, dm);
-    PISM_PETSC_CHK(ierr, "SNESSetDM");
+    PISM_CHK(ierr, "SNESSetDM");
 
     ierr = SNESSetFunction(snes, r, SNESDAFormFunction, &m_cbData);
-    PISM_PETSC_CHK(ierr, "SNESSetFunction");
+    PISM_CHK(ierr, "SNESSetFunction");
 
     if (Jpc == NULL) {
       Jpc = J;
     }
 
     ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian, &m_cbData);
-    PISM_PETSC_CHK(ierr, "SNESSetJacobian");
+    PISM_CHK(ierr, "SNESSetJacobian");
   }
 
 protected:
@@ -98,14 +98,14 @@ public:
     PetscErrorCode ierr;
     
     ierr = SNESSetFunction(snes,r,SNESCallbacks<Problem>::formFunctionCallback,&p);
-    PISM_PETSC_CHK(ierr, "SNESSetFunction");
+    PISM_CHK(ierr, "SNESSetFunction");
 
     if (Jpc == NULL) {
       Jpc = J;
     }
 
     ierr = SNESSetJacobian(snes,J,Jpc,SNESCallbacks<Problem>::formJacobianCallback,&p);
-    PISM_PETSC_CHK(ierr, "SNESSetJacobian");
+    PISM_CHK(ierr, "SNESSetJacobian");
   }
 
 protected:

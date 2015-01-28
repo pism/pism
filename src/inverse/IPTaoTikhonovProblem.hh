@@ -349,7 +349,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
     gttol = PETSC_DEFAULT;
 
   PetscErrorCode ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol);
-  PISM_PETSC_CHK(ierr, "TaoSetTolerances");
+  PISM_CHK(ierr, "TaoSetTolerances");
 }
 
 template<class ForwardProblem> void IPTaoTikhonovProblem<ForwardProblem>::monitorTao(Tao tao) {
@@ -402,7 +402,7 @@ PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradien
                "IPTaoTikhonovProblem::evaluateObjectiveAndGradient"
                " failure in forward solve\n%s\n", reason->description().c_str());
     ierr = TaoSetConvergedReason(tao,TAO_DIVERGED_USER);
-    PISM_PETSC_CHK(ierr, "TaoSetConvergedReason");
+    PISM_CHK(ierr, "TaoSetConvergedReason");
     return 0;
   }
 
@@ -422,7 +422,7 @@ PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradien
   m_grad.add(1,m_grad_state);
 
   ierr = VecCopy(m_grad.get_vec(), gradient);
-  PISM_PETSC_CHK(ierr, "VecCopy");
+  PISM_CHK(ierr, "VecCopy");
 
   double valDesign, valState;
   m_designFunctional.valueAt(m_d_diff,&valDesign);

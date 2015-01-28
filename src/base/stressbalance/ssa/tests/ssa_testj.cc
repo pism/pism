@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
                          "usage of SSA_TESTJ:\n"
                          "  run ssafe_test -Mx <number> -My <number> -ssa_method <fd|fem>\n"
                          "\n");
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options

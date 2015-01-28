@@ -62,7 +62,7 @@ inline bool set_contains(std::set<std::string> S, std::string name) {
 
 inline void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
   int err = MPI_Allreduce(local, result, count, MPIU_REAL, op, comm);
-  PISM_CHK(err, 0, "MPI_Allreduce");
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
 
 inline void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {

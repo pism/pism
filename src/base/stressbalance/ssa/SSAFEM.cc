@@ -176,19 +176,19 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   if (filename.is_set()) {
     petsc::Viewer viewer;
     ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
-    PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
+    PISM_CHK(ierr, "PetscViewerASCIIOpen");
 
     ierr = PetscViewerASCIIPrintf(viewer, "SNES before SSASolve_FE\n");
-    PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+    PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
     ierr = SNESView(m_snes, viewer);
-    PISM_PETSC_CHK(ierr, "SNESView");
+    PISM_CHK(ierr, "SNESView");
 
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
-    PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+    PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
     ierr = VecView(m_velocity_global.get_vec(), viewer);
-    PISM_PETSC_CHK(ierr, "VecView");
+    PISM_CHK(ierr, "VecView");
   }
 
   m_stdout_ssa.clear();
@@ -198,12 +198,12 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
   // Solve:
   ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec());
-  PISM_PETSC_CHK(ierr, "SNESSolve");
+  PISM_CHK(ierr, "SNESSolve");
 
   // See if it worked.
   SNESConvergedReason snes_reason;
   ierr = SNESGetConvergedReason(m_snes, &snes_reason);
-  PISM_PETSC_CHK(ierr, "SNESGetConvergedReason");
+  PISM_CHK(ierr, "SNESGetConvergedReason");
 
   reason.reset(new SNESTerminationReason(snes_reason));
   if (reason->failed()) {
@@ -218,13 +218,13 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   if (view_solution) {
     petsc::Viewer viewer;
     ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
-    PISM_PETSC_CHK(ierr, "PetscViewerASCIIOpen");
+    PISM_CHK(ierr, "PetscViewerASCIIOpen");
 
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
-    PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+    PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
     ierr = VecView(m_velocity_global.get_vec(), viewer);
-    PISM_PETSC_CHK(ierr, "VecView");
+    PISM_CHK(ierr, "VecView");
   }
 }
 
@@ -529,7 +529,7 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
 
   ierr = PetscPrintf(m_grid.com,
                      "SSA Solution and Function values (pointwise residuals)\n");
-  PISM_PETSC_CHK(ierr, "PetscPrintf");
+  PISM_CHK(ierr, "PetscPrintf");
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -539,15 +539,15 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
                                    i, j,
                                    velocity_global[i][j].u, velocity_global[i][j].v,
                                    residual_global[i][j].u, residual_global[i][j].v);
-    PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
+    PISM_CHK(ierr, "PetscSynchronizedPrintf");
   }
 
 #if PETSC_VERSION_LT(3,5,0)
   ierr = PetscSynchronizedFlush(grid.com);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
+  PISM_CHK(ierr, "PetscSynchronizedFlush");
 #else
   ierr = PetscSynchronizedFlush(m_grid.com, NULL);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
+  PISM_CHK(ierr, "PetscSynchronizedFlush");
 #endif
 }
 
@@ -571,7 +571,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(Jac);
-  PISM_PETSC_CHK(ierr, "MatZeroEntries");
+  PISM_CHK(ierr, "MatZeroEntries");
 
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
@@ -629,7 +629,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K));
-      PISM_PETSC_CHK(ierr, "PetscMemzero");
+      PISM_CHK(ierr, "PetscMemzero");
 
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         const double
@@ -679,7 +679,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
             if (eta == 0) {
               ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
-              PISM_PETSC_CHK(ierr, "PetscPrintf");
+              PISM_CHK(ierr, "PetscPrintf");
             }
 
             // u-u coupling
@@ -714,16 +714,16 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   dirichlet_data.finish();
 
   ierr = MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY);
-  PISM_PETSC_CHK(ierr, "MatAssemblyBegin");
+  PISM_CHK(ierr, "MatAssemblyBegin");
 
   ierr = MatAssemblyEnd(Jac, MAT_FINAL_ASSEMBLY);
-  PISM_PETSC_CHK(ierr, "MatAssemblyEnd");
+  PISM_CHK(ierr, "MatAssemblyEnd");
 
   ierr = MatSetOption(Jac, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
-  PISM_PETSC_CHK(ierr, "MatSetOption");
+  PISM_CHK(ierr, "MatSetOption");
 
   ierr = MatSetOption(Jac, MAT_SYMMETRIC, PETSC_TRUE);
-  PISM_PETSC_CHK(ierr, "MatSetOption");
+  PISM_CHK(ierr, "MatSetOption");
 
   monitor_jacobian(Jac);
 }
@@ -738,7 +738,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 
   PetscInt iter = 0;
   ierr = SNESGetIterationNumber(m_snes, &iter);
-  PISM_PETSC_CHK(ierr, "SNESGetIterationNumber");
+  PISM_CHK(ierr, "SNESGetIterationNumber");
 
   char file_name[PETSC_MAX_PATH_LEN];
   snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
@@ -750,19 +750,19 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   petsc::Viewer viewer(m_grid.com);
 
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
-  PISM_PETSC_CHK(ierr, "PetscViewerSetType");
+  PISM_CHK(ierr, "PetscViewerSetType");
 
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
-  PISM_PETSC_CHK(ierr, "PetscViewerSetFormat");
+  PISM_CHK(ierr, "PetscViewerSetFormat");
 
   ierr = PetscViewerFileSetName(viewer, file_name);
-  PISM_PETSC_CHK(ierr, "PetscViewerFileSetName");
+  PISM_CHK(ierr, "PetscViewerFileSetName");
 
   ierr = PetscObjectSetName((PetscObject) Jac, "A");
-  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
+  PISM_CHK(ierr, "PetscObjectSetName");
 
   ierr = MatView(Jac, viewer);
-  PISM_PETSC_CHK(ierr, "MatView");
+  PISM_CHK(ierr, "MatView");
 }
 
 //!

@@ -346,7 +346,7 @@ double Time_Calendar::increment_date(double T, int years) {
                                       year, month, day,
                                       year + years, month, day-1,
                                       year + years, month, day);
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
     day -= 1;
   }
 
@@ -479,7 +479,7 @@ void Time_Calendar::compute_times_monthly(std::vector<double> &result) {
                             &year, &month, &day,
                             &hour, &minute, &second,
                             m_calendar_string.c_str());
-  PISM_CHK(errcode, 0, "utCalendar2_cal");
+  PISM_C_CHK(errcode, 0, "utCalendar2_cal");
 
   result.clear();
   while (true) {
@@ -489,7 +489,7 @@ void Time_Calendar::compute_times_monthly(std::vector<double> &result) {
                                  0, 0, 0.0,      // hour, minute, second
                                  m_time_units.get(), &time,
                                  m_calendar_string.c_str());
-    PISM_CHK(errcode, 0, "utCalendar2_cal");
+    PISM_C_CHK(errcode, 0, "utCalendar2_cal");
 
     if (time > m_run_end) {
       break;
@@ -521,7 +521,7 @@ void Time_Calendar::compute_times_yearly(std::vector<double> &result) {
                             &year, &month, &day,
                             &hour, &minute, &second,
                             m_calendar_string.c_str());
-  PISM_CHK(errcode, 0, "utCalendar2_cal");
+  PISM_C_CHK(errcode, 0, "utCalendar2_cal");
 
   result.clear();
   while (true) {
@@ -531,7 +531,7 @@ void Time_Calendar::compute_times_yearly(std::vector<double> &result) {
                                  0, 0, 0.0,  // hour, minute, second
                                  m_time_units.get(), &time,
                                  m_calendar_string.c_str());
-    PISM_CHK(errcode, 0, "utInvCalendar2_cal");
+    PISM_C_CHK(errcode, 0, "utInvCalendar2_cal");
 
     if (time > m_run_end) {
       break;

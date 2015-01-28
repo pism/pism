@@ -290,7 +290,7 @@ void IceModel::ageStep() {
                            "\n"
                            "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j);
-        PISM_PETSC_CHK(ierr, "PetscPrintf");
+        PISM_CHK(ierr, "PetscPrintf");
 
         system.viewColumnInfoMFile(x);
       }

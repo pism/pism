@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
                          "usage of SSA_TEST_CFBC:\n"
                          "  run ssa_test_cfbc -Mx <number> -My <number>\n"
                          "\n");
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options

@@ -73,24 +73,24 @@ void IP_SSATaucTaoTikhonovProblemLCL::construct() {
   m_ssaforward.get_da(&da);
 
   ierr = DMSetMatType(da, MATBAIJ);
-  PISM_PETSC_CHK(ierr, "DMSetMatType");
+  PISM_CHK(ierr, "DMSetMatType");
 
   ierr = DMCreateMatrix(da, m_Jstate.rawptr());
-  PISM_PETSC_CHK(ierr, "DMCreateMatrix");
+  PISM_CHK(ierr, "DMCreateMatrix");
 
   int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx()*grid.My();
   ierr = MatCreateShell(grid.com, 2*nLocalNodes, nLocalNodes, 2*nGlobalNodes, nGlobalNodes,
                         this, m_Jdesign.rawptr());
-  PISM_PETSC_CHK(ierr, "MatCreateShell");
+  PISM_CHK(ierr, "MatCreateShell");
 
   ierr = MatShellSetOperation(m_Jdesign, MATOP_MULT,
                               (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign);
-  PISM_PETSC_CHK(ierr, "MatShellSetOperation");
+  PISM_CHK(ierr, "MatShellSetOperation");
 
   ierr = MatShellSetOperation(m_Jdesign, MATOP_MULT_TRANSPOSE,
                               (void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose);
-  PISM_PETSC_CHK(ierr, "MatShellSetOperation");
+  PISM_CHK(ierr, "MatShellSetOperation");
 
   m_x.reset(new IPTwoBlockVec(m_dGlobal.get_vec(),m_uGlobal.get_vec()));
 }
@@ -122,7 +122,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
   ierr = TaoSetStateDesignIS(tao,
                              m_x->blockBIndexSet() /*state*/,
                              m_x->blockAIndexSet() /*design*/);
-  PISM_PETSC_CHK(ierr, "TaoSetStateDesignIS");
+  PISM_CHK(ierr, "TaoSetStateDesignIS");
 
   TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,
                      &IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao, *this);
@@ -213,7 +213,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, Vec r) {
   m_ssaforward.assemble_residual(m_u, r);
 
   ierr = VecScale(r,1./m_constraintsScale);
-  PISM_PETSC_CHK(ierr, "VecScale");
+  PISM_CHK(ierr, "VecScale");
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec x,
@@ -236,7 +236,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec 
   *s = SAME_NONZERO_PATTERN;
 
   ierr = MatScale(Jstate, m_velocityScale / m_constraintsScale);
-  PISM_PETSC_CHK(ierr, "MatScale");
+  PISM_CHK(ierr, "MatScale");
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec x, Mat /*Jdesign*/) {
@@ -258,7 +258,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(V
   m_ssaforward.apply_jacobian_design(m_u_Jdesign, m_dzeta, y);
   
   ierr = VecScale(y,1./m_constraintsScale);
-  PISM_PETSC_CHK(ierr, "VecScale");
+  PISM_CHK(ierr, "VecScale");
   
   return 0;
 }
@@ -273,7 +273,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTr
   m_ssaforward.apply_jacobian_design_transpose(m_u_Jdesign, m_du, y);
 
   ierr = VecScale(y,1./m_constraintsScale);
-  PISM_PETSC_CHK(ierr, "VecScale");
+  PISM_CHK(ierr, "VecScale");
 
   return 0;
 }
@@ -282,7 +282,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x,
 
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
   PetscErrorCode ierr = MatShellGetContext(A,&ctx);
-  PISM_PETSC_CHK(ierr, "MatShellGetContext");
+  PISM_CHK(ierr, "MatShellGetContext");
 
   ctx->applyConstraintsJacobianDesign(x,y);
 
@@ -292,7 +292,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x,
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
   PetscErrorCode ierr = MatShellGetContext(A,&ctx);
-  PISM_PETSC_CHK(ierr, "MatShellGetContext");
+  PISM_CHK(ierr, "MatShellGetContext");
 
   ctx->applyConstraintsJacobianDesignTranspose(x,y);
 

@@ -80,20 +80,20 @@ void verbPrintf(const int threshold,
 
   assert(1 <= threshold && threshold <= 5);
 
-  ierr = MPI_Comm_rank(comm, &rank); PISM_CHK(ierr, 0, "MPI_Comm_rank");
+  ierr = MPI_Comm_rank(comm, &rank); PISM_C_CHK(ierr, 0, "MPI_Comm_rank");
   if (rank == 0) {
     va_list Argp;
     if (verbosityLevel >= threshold) {
       va_start(Argp, format);
       ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
-      PISM_PETSC_CHK(ierr, "PetscVFPrintf");
+      PISM_CHK(ierr, "PetscVFPrintf");
 
       va_end(Argp);
     }
     if (petsc_history) { // always print to history
       va_start(Argp, format);
       ierr = PetscVFPrintf(petsc_history, format, Argp);
-      PISM_PETSC_CHK(ierr, "PetscVFPrintf");
+      PISM_CHK(ierr, "PetscVFPrintf");
 
       va_end(Argp);
     }
@@ -157,13 +157,13 @@ std::string pism_username_prefix(MPI_Comm com) {
 
   char username[50];
   ierr = PetscGetUserName(username, sizeof(username));
-  PISM_PETSC_CHK(ierr, "PetscGetUserName");
+  PISM_CHK(ierr, "PetscGetUserName");
   if (ierr != 0) {
     username[0] = '\0';
   }
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname));
-  PISM_PETSC_CHK(ierr, "PetscGetHostName");
+  PISM_CHK(ierr, "PetscGetHostName");
   if (ierr != 0) {
     hostname[0] = '\0';
   }
@@ -187,7 +187,7 @@ std::string pism_args_string() {
   int argc;
   char **argv;
   PetscErrorCode ierr = PetscGetArgs(&argc, &argv);
-  PISM_PETSC_CHK(ierr, "PetscGetArgs");
+  PISM_CHK(ierr, "PetscGetArgs");
 
   std::string cmdstr, argument;
   for (int j = 0; j < argc; j++) {
@@ -242,10 +242,10 @@ PetscLogDouble GetTime() {
   PetscLogDouble result;
 #if PETSC_VERSION_LT(3,4,0)
   PetscErrorCode ierr = PetscGetTime(&result);
-  PISM_PETSC_CHK(ierr, "PetscGetTime");
+  PISM_CHK(ierr, "PetscGetTime");
 #else
   PetscErrorCode ierr = PetscTime(&result);
-  PISM_PETSC_CHK(ierr, "PetscTime");
+  PISM_CHK(ierr, "PetscTime");
 #endif
   return result;
 }
@@ -254,7 +254,7 @@ PetscLogDouble GetTime() {
 
 Profiling::Profiling() {
   PetscErrorCode ierr = PetscClassIdRegister("PISM", &m_classid);
-  PISM_PETSC_CHK(ierr, "PetscClassIdRegister");
+  PISM_CHK(ierr, "PetscClassIdRegister");
 }
 
 void Profiling::begin(const char * name) const {
@@ -264,13 +264,13 @@ void Profiling::begin(const char * name) const {
   if (m_events.find(name) == m_events.end()) {
     // not registered yet
     ierr = PetscLogEventRegister(name, m_classid, &event);
-    PISM_PETSC_CHK(ierr, "PetscLogEventRegister");
+    PISM_CHK(ierr, "PetscLogEventRegister");
     m_events[name] = event;
   } else {
     event = m_events[name];
   }
   ierr = PetscLogEventBegin(event, 0, 0, 0, 0);
-  PISM_PETSC_CHK(ierr, "PetscLogEventBegin");
+  PISM_CHK(ierr, "PetscLogEventBegin");
 }
 
 void Profiling::end(const char * name) const {
@@ -281,7 +281,7 @@ void Profiling::end(const char * name) const {
     event = m_events[name];
   }
   PetscErrorCode ierr = PetscLogEventEnd(event, 0, 0, 0, 0);
-  PISM_PETSC_CHK(ierr, "PetscLogEventEnd");
+  PISM_CHK(ierr, "PetscLogEventEnd");
 }
 
 void Profiling::stage_begin(const char * name) const {
@@ -291,19 +291,19 @@ void Profiling::stage_begin(const char * name) const {
   if (m_stages.find(name) == m_stages.end()) {
     // not registered yet
     ierr = PetscLogStageRegister(name, &stage);
-    PISM_PETSC_CHK(ierr, "PetscLogStageRegister");
+    PISM_CHK(ierr, "PetscLogStageRegister");
     m_stages[name] = stage;
   } else {
     stage = m_stages[name];
   }
   ierr = PetscLogStagePush(stage);
-  PISM_PETSC_CHK(ierr, "PetscLogStagePush");
+  PISM_CHK(ierr, "PetscLogStagePush");
 }
 
 void Profiling::stage_end(const char * name) const {
   (void) name;
   PetscErrorCode ierr = PetscLogStagePop();
-  PISM_PETSC_CHK(ierr, "PetscLogStagePop");
+  PISM_CHK(ierr, "PetscLogStagePop");
 }
 
 } // end of namespace pism

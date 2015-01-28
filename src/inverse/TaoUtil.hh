@@ -95,15 +95,15 @@ public:
     PetscErrorCode ierr;
 
     ierr = TaoCreate(m_comm, m_tao.rawptr());
-    PISM_PETSC_CHK(ierr, "TaoCreate");
+    PISM_CHK(ierr, "TaoCreate");
 
     ierr = TaoSetType(m_tao,tao_type.c_str());
-    PISM_PETSC_CHK(ierr, "TaoSetType");
+    PISM_CHK(ierr, "TaoSetType");
 
     m_problem.connect(m_tao);
 
     ierr = TaoSetFromOptions(m_tao);
-    PISM_PETSC_CHK(ierr, "TaoSetFromOptions");
+    PISM_CHK(ierr, "TaoSetFromOptions");
   }
   
   virtual ~TaoBasicSolver() {
@@ -124,14 +124,14 @@ public:
       return;
     }
     ierr = TaoSetInitialVector(m_tao, x0);
-    PISM_PETSC_CHK(ierr, "TaoSetInitialVector");
+    PISM_CHK(ierr, "TaoSetInitialVector");
 
     ierr = TaoSolve(m_tao);
-    PISM_PETSC_CHK(ierr, "TaoSolve");
+    PISM_CHK(ierr, "TaoSolve");
 
     TaoConvergedReason tao_reason;
     ierr = TaoGetConvergedReason(m_tao, &tao_reason);
-    PISM_PETSC_CHK(ierr, "TaoGetConvergedReason");
+    PISM_CHK(ierr, "TaoGetConvergedReason");
 
     reason.reset(new TAOTerminationReason(tao_reason));
   }
@@ -139,7 +139,7 @@ public:
   virtual void setMaximumIterations(int max_it) {
     PetscErrorCode ierr;
     ierr = TaoSetMaximumIterations(m_tao, max_it);
-    PISM_PETSC_CHK(ierr, "TaoSetMaximumIterations");
+    PISM_CHK(ierr, "TaoSetMaximumIterations");
   }
   
   virtual Problem &problem() {
@@ -181,7 +181,7 @@ public:
     ierr = TaoSetObjectiveRoutine(tao,
                                   TaoObjectiveCallback<Problem>::evaluateObjectiveCallback,
                                   &p);
-    PISM_PETSC_CHK(ierr, "TaoSetObjectiveRoutine");
+    PISM_CHK(ierr, "TaoSetObjectiveRoutine");
   }
 
 protected:
@@ -223,7 +223,7 @@ public:
     ierr = TaoSetMonitor(tao,
                          TaoMonitorCallback<Problem>::monitorTao,
                          &p, NULL);
-    PISM_PETSC_CHK(ierr, "TaoSetMonitor");
+    PISM_CHK(ierr, "TaoSetMonitor");
   }
 
 protected:
@@ -261,7 +261,7 @@ public:
     ierr = TaoSetVariableBoundsRoutine(tao,
                                        TaoGetVariableBoundsCallback<Problem>::getVariableBounds,
                                        &p);
-    PISM_PETSC_CHK(ierr, "TaoSetVariableBoundsRoutine");
+    PISM_CHK(ierr, "TaoSetVariableBoundsRoutine");
   }
 
 protected:
@@ -300,7 +300,7 @@ public:
     ierr = TaoSetGradientRoutine(tao,
                                  TaoGradientCallback<Problem>::evaluateGradient,
                                  &p);
-    PISM_PETSC_CHK(ierr, "TaoSetGradientRoutine");
+    PISM_CHK(ierr, "TaoSetGradientRoutine");
   }
 
 protected:
@@ -340,7 +340,7 @@ public:
     ierr = TaoSetConvergenceTest(tao,
                                  TaoConvergenceCallback<Problem>::convergenceTestCallback,
                                  &p);
-    PISM_PETSC_CHK(ierr, "TaoSetConvergenceTest");
+    PISM_CHK(ierr, "TaoSetConvergenceTest");
   }
 
 protected:
@@ -380,7 +380,7 @@ public:
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
                                              TaoObjGradCallback<Problem,Callback>::evaluateObjectiveAndGradientCallback,
                                              &p);
-    PISM_PETSC_CHK(ierr, "TaoSetObjectiveAndGradientRoutine");
+    PISM_CHK(ierr, "TaoSetObjectiveAndGradientRoutine");
   }
   
 protected:
@@ -419,7 +419,7 @@ public:
 
     ierr = TaoSetConstraintsRoutine(tao, c,
                                     TaoLCLCallbacks<Problem>::evaluateConstraintsCallback, &p);
-    PISM_PETSC_CHK(ierr, "TaoSetConstraintsRoutine");
+    PISM_CHK(ierr, "TaoSetConstraintsRoutine");
 
     if (Jcpc == NULL) {
       Jcpc = Jc;
@@ -427,11 +427,11 @@ public:
 
     ierr = TaoSetJacobianStateRoutine(tao, Jc, Jcpc, Jcinv,
                                       TaoLCLCallbacks<Problem>::evaluateJacobianStateCallback, &p);
-    PISM_PETSC_CHK(ierr, "TaoSetJacobianStateRoutine");
+    PISM_CHK(ierr, "TaoSetJacobianStateRoutine");
 
     ierr = TaoSetJacobianDesignRoutine(tao, Jd,
                                        TaoLCLCallbacks<Problem>::evaluateJacobianDesignCallback, &p);
-    PISM_PETSC_CHK(ierr, "TaoSetJacobianDesignRoutine");
+    PISM_CHK(ierr, "TaoSetJacobianDesignRoutine");
   }
 protected:
   static PetscErrorCode evaluateConstraintsCallback(Tao tao, Vec x, Vec c, void*ctx) {

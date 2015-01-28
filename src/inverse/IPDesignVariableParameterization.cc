@@ -60,7 +60,7 @@ void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &ze
       ierr = PetscPrintf(PETSC_COMM_WORLD,
                          "made a d nan zeta = %g d = %g\n",
                          zeta(i, j), d(i, j));
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
   }
   if (communicate) {
@@ -85,7 +85,7 @@ void IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &
       ierr = PetscPrintf(PETSC_COMM_WORLD,
                          "made a zeta nan d = %g zeta = %g\n",
                          d(i, j), zeta(i, j));
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
   }
 

@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     grid.allocate();
 
     ierr = PetscPrintf(grid.com,"BedSmoother TEST\n");
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     bool show = options::Bool("-show", "turn on diagnostic viewers");
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     smoother.get_smoothing_domain(Nx,Ny);
 
     ierr = PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     smoother.get_theta(usurf, theta);
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
       printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
 
       ierr = PetscSleep(10);
-      PISM_PETSC_CHK(ierr, "PetscSleep");
+      PISM_CHK(ierr, "PetscSleep");
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
@@ -120,17 +120,17 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(grid.com,
                        "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
                        topg_min, topg_max);
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     ierr = PetscPrintf(grid.com,
                        "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
                        topgs_min, topgs_max);
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     ierr = PetscPrintf(grid.com,
                        "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
                        theta_min, theta_max);
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     bool dump = options::Bool("-dump", "dump bed roughness data");
     if (dump) {

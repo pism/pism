@@ -232,13 +232,13 @@ void BedSmoother::compute_coefficients_on_proc0() {
 
     PetscErrorCode ierr;
     ierr = VecScale(*C2p0,s2);
-    PISM_PETSC_CHK(ierr, "VecScale");
+    PISM_CHK(ierr, "VecScale");
 
     ierr = VecScale(*C3p0,s3);
-    PISM_PETSC_CHK(ierr, "VecScale");
+    PISM_CHK(ierr, "VecScale");
 
     ierr = VecScale(*C4p0,s4);
-    PISM_PETSC_CHK(ierr, "VecScale");
+    PISM_CHK(ierr, "VecScale");
   }
 }
 

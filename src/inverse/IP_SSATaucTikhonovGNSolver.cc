@@ -77,33 +77,33 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_gradient.create(grid, "grad design", WITHOUT_GHOSTS);
 
   ierr = KSPCreate(grid.com, m_ksp.rawptr());
-  PISM_PETSC_CHK(ierr, "KSPCreate");
+  PISM_CHK(ierr, "KSPCreate");
 
   ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_");
-  PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
+  PISM_CHK(ierr, "KSPSetOptionsPrefix");
 
   double ksp_rtol = 1e-5; // Soft tolerance
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
-  PISM_PETSC_CHK(ierr, "KSPSetTolerances");
+  PISM_CHK(ierr, "KSPSetTolerances");
 
   ierr = KSPSetType(m_ksp, KSPCG);
-  PISM_PETSC_CHK(ierr, "KSPSetType");
+  PISM_CHK(ierr, "KSPSetType");
 
   PC pc;
   ierr = KSPGetPC(m_ksp, &pc);
-  PISM_PETSC_CHK(ierr, "KSPGetPC");
+  PISM_CHK(ierr, "KSPGetPC");
 
   ierr = PCSetType(pc, PCNONE);
-  PISM_PETSC_CHK(ierr, "PCSetType");
+  PISM_CHK(ierr, "PCSetType");
 
   ierr = KSPSetFromOptions(m_ksp);
-  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");  
+  PISM_CHK(ierr, "KSPSetFromOptions");  
 
   int nLocalNodes  = grid.xm()*grid.ym();
   int nGlobalNodes = grid.Mx()*grid.My();
   ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes,
                         nGlobalNodes, nGlobalNodes, this, m_mat_GN.rawptr());
-  PISM_PETSC_CHK(ierr, "MatCreateShell");
+  PISM_CHK(ierr, "MatCreateShell");
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   multCallback::connect(m_mat_GN);
@@ -153,7 +153,7 @@ PetscErrorCode  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   GNx.add(m_alpha,tmp_gD);
 
   ierr = VecCopy(GNx.get_vec(), y);
-  PISM_PETSC_CHK(ierr, "VecCopy");
+  PISM_CHK(ierr, "VecCopy");
   return 0;
 }
 
@@ -177,17 +177,17 @@ void IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason
 
 #if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
   ierr = KSPSolve(m_ksp,m_GN_rhs.get_vec(),m_hGlobal.get_vec());
-  PISM_PETSC_CHK(ierr, "KSPSolve");
+  PISM_CHK(ierr, "KSPSolve");
 
   KSPConvergedReason ksp_reason;
   ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
-  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+  PISM_CHK(ierr, "KSPGetConvergedReason");
   
   m_h.copy_from(m_hGlobal);
 
@@ -313,7 +313,7 @@ void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
   m_tmp_D1Global.copy_from(m_h);
 
   ierr = VecDot(m_gradient.get_vec(), m_tmp_D1Global.get_vec(), &descent_derivative);
-  PISM_PETSC_CHK(ierr, "VecDot");
+  PISM_CHK(ierr, "VecDot");
 
   if (descent_derivative >=0) {
     printf("descent derivative: %g\n",descent_derivative);
@@ -422,19 +422,19 @@ void IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha,
   // Solve linear equation for dh/dalpha. 
 #if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
   ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec());
-  PISM_PETSC_CHK(ierr, "KSPSolve");
+  PISM_CHK(ierr, "KSPSolve");
 
   m_dh_dalpha.copy_from(m_dh_dalphaGlobal);
 
   KSPConvergedReason ksp_reason;
   ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
-  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
+  PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (ksp_reason<0) {
     reason.reset(new KSPTerminationReason(ksp_reason));

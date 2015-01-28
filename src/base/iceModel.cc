@@ -884,7 +884,7 @@ void IceModel::run() {
   if (pause_time > 0) {
     verbPrintf(2,grid.com,"pausing for %d secs ...\n", pause_time.value());
     ierr = PetscSleep(pause_time);
-    PISM_PETSC_CHK(ierr, "PetscSleep");
+    PISM_CHK(ierr, "PetscSleep");
   }
 
   if (stepcount >= 0) {

@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
     if ((not iset) && (not bfset)) {
       ierr = PetscPrintf(com,
                          "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
       show_usage(com, "pismo", usage);
       return 0;
     } else {

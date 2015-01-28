@@ -33,7 +33,7 @@ public:
   static void connect(Mat A) {
     PetscErrorCode ierr;
     ierr = MatShellSetOperation(A, MATOP_MULT, (void(*)(void))MatrixMultiplyCallback::multiply);
-    PISM_PETSC_CHK(ierr, "MatShellSetOperation");
+    PISM_CHK(ierr, "MatShellSetOperation");
   }
 protected:
   static PetscErrorCode multiply(Mat A, Vec x, Vec y) {

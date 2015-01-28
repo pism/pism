@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
                          "usage of SSA_TEST_CONST:\n"
                          "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
                          "\n");
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options

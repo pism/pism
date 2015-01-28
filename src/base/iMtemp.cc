@@ -246,7 +246,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                            "\n"
                            "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j);
-        PISM_PETSC_CHK(ierr, "PetscPrintf");
+        PISM_CHK(ierr, "PetscPrintf");
 
         system.viewColumnInfoMFile(x);
       }
@@ -278,7 +278,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                            " proc %d; mask=%d; w=%f m/year]]\n",
                            Tnew[k], i, j, k, grid.rank(), vMask.as_int(i, j),
                            grid.convert(system.w(k), "m/s", "m/year"));
-        PISM_PETSC_CHK(ierr, "PetscPrintf");
+        PISM_CHK(ierr, "PetscPrintf");
 
         myLowTempCount++;
       }
@@ -313,7 +313,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                            " proc %d; mask=%d; w=%f]]\n",
                            Tnew[0],i,j,grid.rank(),vMask.as_int(i,j),
                            grid.convert(system.w(0), "m/s", "m/year"));
-        PISM_PETSC_CHK(ierr, "PetscPrintf");
+        PISM_CHK(ierr, "PetscPrintf");
 
         myLowTempCount++;
       }

@@ -28,7 +28,7 @@ void IP_SSATaucTaoTikhonovProblem::connect(Tao tao) {
 
   const char *type;
   ierr = TaoGetType(tao,&type);
-  PISM_PETSC_CHK(ierr, "TaoGetType");
+  PISM_CHK(ierr, "TaoGetType");
 
   if (strcmp(type,"blmvm") == 0) {
     TaoGetVariableBoundsCallback<IP_SSATaucTaoTikhonovProblem>::connect(tao,*this);
@@ -47,10 +47,10 @@ void IP_SSATaucTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi
   tauc_param.fromDesignVariable(tauc_max,&zeta_max);
 
   PetscErrorCode ierr = VecSet(lo,zeta_min);
-  PISM_PETSC_CHK(ierr, "VecSet");
+  PISM_CHK(ierr, "VecSet");
 
   ierr = VecSet(hi,zeta_max);
-  PISM_PETSC_CHK(ierr, "VecSet");
+  PISM_CHK(ierr, "VecSet");
 }
 
 

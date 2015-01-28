@@ -143,10 +143,10 @@ Range IceModelVec::range() const {
   assert(m_v != NULL);
 
   ierr = VecMin(m_v, NULL, &result.min);
-  PISM_PETSC_CHK(ierr, "VecMin");
+  PISM_CHK(ierr, "VecMin");
 
   ierr = VecMax(m_v, NULL, &result.max);
-  PISM_PETSC_CHK(ierr, "VecMax");
+  PISM_CHK(ierr, "VecMax");
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMin and GlobalMax;
@@ -194,7 +194,7 @@ double IceModelVec::norm(int n) const {
   NormType type = int_to_normtype(n);
 
   ierr = VecNorm(m_v, type, &result);
-  PISM_PETSC_CHK(ierr, "VecNorm");
+  PISM_CHK(ierr, "VecNorm");
 
   if (m_has_ghosts == true) {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
@@ -232,7 +232,7 @@ void IceModelVec::squareroot() {
   assert(m_v != NULL);
 
   PetscErrorCode ierr = VecSqrtAbs(m_v);
-  PISM_PETSC_CHK(ierr, "VecSqrtAbs");
+  PISM_CHK(ierr, "VecSqrtAbs");
 }
 
 
@@ -243,7 +243,7 @@ void IceModelVec::add(double alpha, const IceModelVec &x) {
   checkCompatibility("add", x);
 
   PetscErrorCode ierr = VecAXPY(m_v, alpha, x.m_v);
-  PISM_PETSC_CHK(ierr, "VecAXPY");
+  PISM_CHK(ierr, "VecAXPY");
 
   inc_state_counter();          // mark as modified
 }
@@ -253,7 +253,7 @@ void IceModelVec::shift(double alpha) {
   assert(m_v != NULL);
 
   PetscErrorCode ierr = VecShift(m_v, alpha);
-  PISM_PETSC_CHK(ierr, "VecShift");
+  PISM_CHK(ierr, "VecShift");
 
   inc_state_counter();          // mark as modified
 }
@@ -263,7 +263,7 @@ void IceModelVec::scale(double alpha) {
   assert(m_v != NULL);
 
   PetscErrorCode ierr = VecScale(m_v, alpha);
-  PISM_PETSC_CHK(ierr, "VecScale");
+  PISM_CHK(ierr, "VecScale");
 
   inc_state_counter();          // mark as modified
 }
@@ -301,7 +301,7 @@ void IceModelVec::copy_from_vec(Vec source) {
     global_to_local(m_da, source, m_v);
   } else {
     ierr = VecCopy(source, m_v);
-    PISM_PETSC_CHK(ierr, "VecCopy");
+    PISM_CHK(ierr, "VecCopy");
   }
 
   inc_state_counter();          // mark as modified
@@ -324,7 +324,7 @@ void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
     const int i = p.i(), j = p.j();
     PetscErrorCode ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
                                       count*sizeof(PetscScalar));
-    PISM_PETSC_CHK(ierr, "PetscMemcpy");
+    PISM_CHK(ierr, "PetscMemcpy");
   }
 }
 
@@ -344,7 +344,7 @@ void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
     const int i = p.i(), j = p.j();
     PetscErrorCode ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
                                       count*sizeof(PetscScalar));
-    PISM_PETSC_CHK(ierr, "PetscMemcpy");
+    PISM_CHK(ierr, "PetscMemcpy");
   }
 
   inc_state_counter();          // mark as modified
@@ -358,7 +358,7 @@ void IceModelVec::copy_to(IceModelVec &destination) const {
   checkCompatibility("copy_to", destination);
 
   ierr = VecCopy(m_v, destination.m_v);
-  PISM_PETSC_CHK(ierr, "VecCopy");
+  PISM_CHK(ierr, "VecCopy");
 
   destination.inc_state_counter();          // mark as modified
 }
@@ -481,7 +481,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(m_grid->com, "  Regridding %s...\n", m_name.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
   }
 
   if (m_dof != 1) {
@@ -491,7 +491,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp);
-    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
+    PISM_CHK(ierr, "DMGetGlobalVector");
   } else {
     tmp = m_v;
   }
@@ -505,7 +505,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     global_to_local(m_da, tmp, m_v);
 
     ierr = DMRestoreGlobalVector(*m_da, &tmp);
-    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
+    PISM_CHK(ierr, "DMRestoreGlobalVector");
   }
 }
 
@@ -516,7 +516,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(m_grid->com, "  Reading %s...\n", m_name.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
   }
 
   if (m_dof != 1) {
@@ -525,7 +525,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp);
-    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
+    PISM_CHK(ierr, "DMGetGlobalVector");
   } else {
     tmp = m_v;
   }
@@ -540,7 +540,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     global_to_local(m_da, tmp, m_v);
 
     ierr = DMRestoreGlobalVector(*m_da, &tmp);
-    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
+    PISM_CHK(ierr, "DMRestoreGlobalVector");
   }
 }
 
@@ -584,7 +584,7 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
 
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(m_grid->com, "  Writing %s...\n", m_name.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
   }
 
   if (m_dof != 1) {
@@ -593,7 +593,7 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp);
-    PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
+    PISM_CHK(ierr, "DMGetGlobalVector");
 
     this->copy_to_vec(m_da, tmp);
   } else {
@@ -607,7 +607,7 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
 
   if (m_has_ghosts) {
     ierr = DMRestoreGlobalVector(*m_da, &tmp);
-    PISM_PETSC_CHK(ierr, "DMRestoreGlobalVector");
+    PISM_CHK(ierr, "DMRestoreGlobalVector");
   }
 }
 
@@ -638,10 +638,10 @@ void IceModelVec::checkCompatibility(const char* func, const IceModelVec &other)
   }
 
   ierr = VecGetSize(m_v, &X_size);
-  PISM_PETSC_CHK(ierr, "VecGetSize");
+  PISM_CHK(ierr, "VecGetSize");
 
   ierr = VecGetSize(other.m_v, &Y_size);
-  PISM_PETSC_CHK(ierr, "VecGetSize");
+  PISM_CHK(ierr, "VecGetSize");
 
   if (X_size != Y_size) {
     throw RuntimeError::formatted("IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
@@ -661,10 +661,10 @@ void  IceModelVec::begin_access() const {
     PetscErrorCode ierr;
     if (begin_end_access_use_dof == true) {
       ierr = DMDAVecGetArrayDOF(*m_da, m_v, &array);
-      PISM_PETSC_CHK(ierr, "DMDAVecGetArrayDOF");
+      PISM_CHK(ierr, "DMDAVecGetArrayDOF");
     } else {
       ierr = DMDAVecGetArray(*m_da, m_v, &array);
-      PISM_PETSC_CHK(ierr, "DMDAVecGetArray");
+      PISM_CHK(ierr, "DMDAVecGetArray");
     }
   }
 
@@ -689,10 +689,10 @@ void  IceModelVec::end_access() const {
   if (m_access_counter == 0) {
     if (begin_end_access_use_dof == true) {
       ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &array);
-      PISM_PETSC_CHK(ierr, "DMDAVecRestoreArrayDOF");
+      PISM_CHK(ierr, "DMDAVecRestoreArrayDOF");
     } else {
       ierr = DMDAVecRestoreArray(*m_da, m_v, &array);
-      PISM_PETSC_CHK(ierr, "DMDAVecRestoreArray");
+      PISM_CHK(ierr, "DMDAVecRestoreArray");
     }
     array = NULL;
   }
@@ -708,16 +708,16 @@ void  IceModelVec::update_ghosts() {
   assert(m_v != NULL);
 #if PETSC_VERSION_LT(3,5,0)
   ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
-  PISM_PETSC_CHK(ierr, "DMDALocalToLocalBegin");
+  PISM_CHK(ierr, "DMDALocalToLocalBegin");
 
   ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
-  PISM_PETSC_CHK(ierr, "DMDALocalToLocalEnd");
+  PISM_CHK(ierr, "DMDALocalToLocalEnd");
 #else
   ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
-  PISM_PETSC_CHK(ierr, "DMLocalToLocalBegin");
+  PISM_CHK(ierr, "DMLocalToLocalBegin");
   
   ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
-  PISM_PETSC_CHK(ierr, "DMLocalToLocalEnd");
+  PISM_CHK(ierr, "DMLocalToLocalEnd");
 #endif
 }
 
@@ -725,10 +725,10 @@ void IceModelVec::global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination
   PetscErrorCode ierr;
 
   ierr = DMGlobalToLocalBegin(*dm, source, INSERT_VALUES, destination);
-  PISM_PETSC_CHK(ierr, "DMGlobalToLocalBegin");
+  PISM_CHK(ierr, "DMGlobalToLocalBegin");
 
   ierr = DMGlobalToLocalEnd(*dm, source, INSERT_VALUES, destination);
-  PISM_PETSC_CHK(ierr, "DMGlobalToLocalEnd");
+  PISM_CHK(ierr, "DMGlobalToLocalEnd");
 }
 
 
@@ -744,16 +744,16 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
   if (m_has_ghosts == true && destination.m_has_ghosts == true) {
 #if PETSC_VERSION_LT(3,5,0)
     ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    PISM_PETSC_CHK(ierr, "DMDALocalToLocalBegin");
+    PISM_CHK(ierr, "DMDALocalToLocalBegin");
 
     ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    PISM_PETSC_CHK(ierr, "DMDALocalToLocalEnd");
+    PISM_CHK(ierr, "DMDALocalToLocalEnd");
 #else
     ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    PISM_PETSC_CHK(ierr, "DMLocalToLocalBegin");
+    PISM_CHK(ierr, "DMLocalToLocalBegin");
 
     ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    PISM_PETSC_CHK(ierr, "DMLocalToLocalEnd");
+    PISM_CHK(ierr, "DMLocalToLocalEnd");
 #endif
     return;
   }
@@ -771,7 +771,7 @@ void  IceModelVec::set(const double c) {
   assert(m_v != NULL);
 
   PetscErrorCode ierr = VecSet(m_v,c);
-  PISM_PETSC_CHK(ierr, "VecSet");
+  PISM_CHK(ierr, "VecSet");
 
   inc_state_counter();          // mark as modified
 }
@@ -800,7 +800,7 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
     ierr = PetscPrintf(m_grid->com,
                        "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
                        m_name.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
   }
   assert(array != NULL);
 }
@@ -855,7 +855,7 @@ std::vector<double> IceModelVec::norm_all(int n) const {
   NormType type = this->int_to_normtype(n);
 
   PetscErrorCode ierr = VecStrideNormAll(m_v, type, &result[0]);
-  PISM_PETSC_CHK(ierr, "VecStrideNormAll");
+  PISM_CHK(ierr, "VecStrideNormAll");
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
@@ -999,7 +999,7 @@ void convert_vec(Vec v, Unit from, Unit to) {
 
   PetscInt data_size = 0;
   ierr = VecGetLocalSize(v, &data_size);
-  PISM_PETSC_CHK(ierr, "VecGetLocalSize");
+  PISM_CHK(ierr, "VecGetLocalSize");
 
   petsc::VecArray data(v);
   c.convert_doubles(data.get(), data_size);

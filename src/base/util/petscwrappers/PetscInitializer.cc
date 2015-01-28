@@ -33,11 +33,11 @@ PetscInitializer::PetscInitializer(int argc, char **argv, const char *help) {
   PetscBool initialized = PETSC_FALSE;
 
   ierr = PetscInitialized(&initialized);
-  PISM_PETSC_CHK(ierr, "PetscInitialized");
+  PISM_CHK(ierr, "PetscInitialized");
 
   if (initialized == PETSC_FALSE) {
     ierr = PetscInitialize(&argc, &argv, NULL, help);
-    PISM_PETSC_CHK(ierr, "PetscInitialize");
+    PISM_CHK(ierr, "PetscInitialize");
 
     if (ierr != 0) {
       printf("PETSc initialization failed. Aborting...\n");

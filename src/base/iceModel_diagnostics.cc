@@ -157,7 +157,7 @@ void IceModel::list_diagnostics() {
   PetscErrorCode ierr;
 
   ierr = PetscPrintf(grid.com, "\n");
-  PISM_PETSC_CHK(ierr, "PetscPrintf");
+  PISM_CHK(ierr, "PetscPrintf");
 
   // quantities with dedicated storage
   {
@@ -196,7 +196,7 @@ void IceModel::list_diagnostics() {
       ierr = PetscPrintf(grid.com,
                          "======== Available %dD quantities with dedicated storage ========\n",
                          d);
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
 
       std::set<std::string>::iterator j;
       for (j = list.begin(); j != list.end(); ++j) {
@@ -218,7 +218,7 @@ void IceModel::list_diagnostics() {
           ierr = PetscPrintf(grid.com,
                              "   Name: %s [%s]\n"
                              "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
-          PISM_PETSC_CHK(ierr, "PetscPrintf");
+          PISM_CHK(ierr, "PetscPrintf");
         }
       }
     }
@@ -231,7 +231,7 @@ void IceModel::list_diagnostics() {
     ierr = PetscPrintf(grid.com,
                        "======== Available %dD diagnostic quantities ========\n",
                        d);
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     std::map<std::string, Diagnostic*>::iterator j = diagnostics.begin();
     while (j != diagnostics.end()) {
@@ -248,7 +248,7 @@ void IceModel::list_diagnostics() {
       if (diag->get_metadata().get_n_spatial_dimensions() == d) {
 
         ierr = PetscPrintf(grid.com, "   Name: %s [%s]\n", name.c_str(), units.c_str());
-        PISM_PETSC_CHK(ierr, "PetscPrintf");
+        PISM_CHK(ierr, "PetscPrintf");
 
         for (int k = 0; k < diag->get_nvars(); ++k) {
           NCSpatialVariable var = diag->get_metadata(k);
@@ -256,11 +256,11 @@ void IceModel::list_diagnostics() {
           std::string long_name = var.get_string("long_name");
 
           ierr = PetscPrintf(grid.com, "      -  %s\n", long_name.c_str());
-          PISM_PETSC_CHK(ierr, "PetscPrintf");
+          PISM_CHK(ierr, "PetscPrintf");
         }
 
         ierr = PetscPrintf(grid.com, "\n");
-        PISM_PETSC_CHK(ierr, "PetscPrintf");
+        PISM_CHK(ierr, "PetscPrintf");
       }
 
       ++j;
@@ -269,7 +269,7 @@ void IceModel::list_diagnostics() {
 
   // scalar time-series
   ierr = PetscPrintf(grid.com, "======== Available time-series ========\n");
-  PISM_PETSC_CHK(ierr, "PetscPrintf");
+  PISM_CHK(ierr, "PetscPrintf");
 
   std::map<std::string, TSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
@@ -288,7 +288,7 @@ void IceModel::list_diagnostics() {
                        "   Name: %s [%s]\n"
                        "      -  %s\n\n",
                        name.c_str(), units.c_str(), long_name.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
+    PISM_CHK(ierr, "PetscPrintf");
 
     ++j;
   }

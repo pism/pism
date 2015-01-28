@@ -483,7 +483,7 @@ void StressBalance::compute_volumetric_strain_heating() {
     if (remaining_levels > 0) {
       ierr = PetscMemzero(&Sigma[ks+1],
                           remaining_levels*sizeof(double));
-      PISM_PETSC_CHK(ierr, "PetscMemzero");
+      PISM_CHK(ierr, "PetscMemzero");
     }
   }
 

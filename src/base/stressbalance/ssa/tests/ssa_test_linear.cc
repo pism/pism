@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
                          "usage:\n"
                          "  run %s -Mx <number> -My <number> -ssa_method <fd|fem>\n"
                          "\n",argv[0]);
-      PISM_PETSC_CHK(ierr, "PetscPrintf");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options

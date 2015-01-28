@@ -475,7 +475,7 @@ void IceGrid::allocate() {
 
   DMDALocalInfo info;
   PetscErrorCode ierr = DMDAGetLocalInfo(*m_dm_scalar_global, &info);
-  PISM_PETSC_CHK(ierr, "DMDAGetLocalInfo");
+  PISM_CHK(ierr, "DMDAGetLocalInfo");
 
   // this continues the fundamental transpose
   m_xs = info.ys;
@@ -857,7 +857,7 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
                       da_dof, stencil_width,
                       &procs_y[0], &procs_x[0], // ly, lx
                       &result);
-  PISM_PETSC_CHK(ierr,"DMDACreate2d");
+  PISM_CHK(ierr,"DMDACreate2d");
 
   return petsc::DM::Ptr(new petsc::DM(result));
 }

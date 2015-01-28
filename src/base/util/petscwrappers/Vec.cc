@@ -44,7 +44,7 @@ Vec::~Vec() {
 VecArray::VecArray(::Vec v)
   : m_v(v), m_array(NULL) {
   PetscErrorCode ierr = VecGetArray(m_v, &m_array);
-  PISM_PETSC_CHK(ierr, "VecGetArray");
+  PISM_CHK(ierr, "VecGetArray");
 }
 
 VecArray::~VecArray() {
@@ -60,13 +60,13 @@ double* VecArray::get() {
 VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My)
     : m_Mx(my_Mx), m_My(my_My), m_i_offset(0), m_j_offset(0), m_v(vec) {
   PetscErrorCode ierr = VecGetArray2d(m_v, m_Mx, m_My, 0, 0, &m_array);
-  PISM_PETSC_CHK(ierr, "VecGetArray2d");
+  PISM_CHK(ierr, "VecGetArray2d");
 }
 
 VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My, int i0, int j0)
   : m_Mx(my_Mx), m_My(my_My), m_i_offset(i0), m_j_offset(j0), m_v(vec) {
   PetscErrorCode ierr = VecGetArray2d(m_v, m_Mx, m_My, 0, 0, &m_array);
-  PISM_PETSC_CHK(ierr, "VecGetArray2d");
+  PISM_CHK(ierr, "VecGetArray2d");
 }
 
 VecArray2D::~VecArray2D() {
@@ -78,7 +78,7 @@ VecArray2D::~VecArray2D() {
 DMDAVecArray::DMDAVecArray(DM::Ptr dm, ::Vec v)
   : m_dm(dm), m_v(v) {
   PetscErrorCode ierr = DMDAVecGetArray(*m_dm, m_v, &m_array);
-  PISM_PETSC_CHK(ierr, "DMDAVecGetArray");
+  PISM_CHK(ierr, "DMDAVecGetArray");
 }
 
 DMDAVecArray::~DMDAVecArray() {
@@ -94,7 +94,7 @@ void* DMDAVecArray::get() {
 DMDAVecArrayDOF::DMDAVecArrayDOF(DM::Ptr dm, ::Vec v)
   : m_dm(dm), m_v(v) {
   PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_dm, m_v, &m_array);
-  PISM_PETSC_CHK(ierr, "DMDAVecGetArrayDOF");
+  PISM_CHK(ierr, "DMDAVecGetArrayDOF");
 }
 
 DMDAVecArrayDOF::~DMDAVecArrayDOF() {
@@ -110,7 +110,7 @@ void* DMDAVecArrayDOF::get() {
 TemporaryGlobalVec::TemporaryGlobalVec(DM::Ptr dm) {
   m_dm = dm;
   PetscErrorCode ierr = DMGetGlobalVector(*m_dm, &m_value);
-  PISM_PETSC_CHK(ierr, "DMGetGlobalVector");
+  PISM_CHK(ierr, "DMGetGlobalVector");
 }
 
 TemporaryGlobalVec::~TemporaryGlobalVec() {

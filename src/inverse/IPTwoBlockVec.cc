@@ -99,10 +99,10 @@ void IPTwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
 void IPTwoBlockVec::scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m) {
   PetscErrorCode ierr;
   ierr = VecScatterBegin(s, a, b, INSERT_VALUES, m);
-  PISM_PETSC_CHK(ierr, "VecScatterBegin");
+  PISM_CHK(ierr, "VecScatterBegin");
 
   ierr = VecScatterEnd(s, a, b, INSERT_VALUES, m);
-  PISM_PETSC_CHK(ierr, "VecScatterEnd");
+  PISM_CHK(ierr, "VecScatterEnd");
 }
 
 void IPTwoBlockVec::scatterToA(Vec ab, Vec a) {
