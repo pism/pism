@@ -38,10 +38,17 @@ public:
   }
 protected:
   static PetscErrorCode callback(Mat A, Vec x, Vec y) {
-    C *ctx;
-    PetscErrorCode ierr = MatShellGetContext(A,&ctx);
-    PISM_CHK(ierr, "MatShellGetContext");
-    (ctx->*MultiplyCallback)(x,y);
+    try {
+      C *ctx;
+      PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+      PISM_CHK(ierr, "MatShellGetContext");
+      (ctx->*MultiplyCallback)(x,y);
+    } catch (...) {
+      MPI_Comm com = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)A, &com); CHKERRQ(ierr);
+      handle_fatal_errors(com);
+      SETERRQ(com, 1, "A PISM callback failed");
+    }
     return 0;
   }
 };

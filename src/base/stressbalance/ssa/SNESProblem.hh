@@ -74,7 +74,14 @@ template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::function_callback(DMDALocalInfo *info,
                                                      const U **x, U **f,
                                                      SNESProblem<DOF,U>::CallbackData *cb) {
-  cb->solver->compute_local_function(info,x,f);
+  try {
+    cb->solver->compute_local_function(info,x,f);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 
@@ -82,7 +89,14 @@ template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::jacobian_callback(DMDALocalInfo *info,
                                                      const U **x, Mat J,
                                                      SNESProblem<DOF,U>::CallbackData *cb) {
-  cb->solver->compute_local_jacobian(info,x,J);
+  try {
+    cb->solver->compute_local_jacobian(info, x, J);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 

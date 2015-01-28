@@ -773,32 +773,44 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
                                          const Vector2 **velocity, Vector2 **residual,
                                          CallbackData *fe) {
-
-  fe->ssa->compute_local_function(info, velocity, residual);
-
+  try {
+    fe->ssa->compute_local_function(info, velocity, residual);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 
 #if PETSC_VERSION_LT(3,5,0)
 PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **velocity,
                                          Mat A, Mat J, MatStructure *str, CallbackData *fe) {
-
-  (void) A;
-
-  fe->ssa->compute_local_jacobian(info, velocity, J);
-
-  *str = SAME_NONZERO_PATTERN;
-
+  try {
+    (void) A;
+    fe->ssa->compute_local_jacobian(info, velocity, J);
+    *str = SAME_NONZERO_PATTERN;
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 #else
 PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **velocity,
                                          Mat A, Mat J, CallbackData *fe) {
-
-  (void) A;
-
-  fe->ssa->compute_local_jacobian(info, velocity, J);
-
+  try {
+    (void) A;
+    fe->ssa->compute_local_jacobian(info, velocity, J);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 #endif

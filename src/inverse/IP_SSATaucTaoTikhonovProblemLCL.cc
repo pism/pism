@@ -270,23 +270,35 @@ void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Ve
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::jacobian_design_callback(Mat A, Vec x, Vec y) {
+  try {
+    IP_SSATaucTaoTikhonovProblemLCL *ctx;
+    PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+    PISM_CHK(ierr, "MatShellGetContext");
 
-  IP_SSATaucTaoTikhonovProblemLCL *ctx;
-  PetscErrorCode ierr = MatShellGetContext(A,&ctx);
-  PISM_CHK(ierr, "MatShellGetContext");
-
-  ctx->applyConstraintsJacobianDesign(x,y);
-
+    ctx->applyConstraintsJacobianDesign(x,y);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)A, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::jacobian_design_transpose_callback(Mat A, Vec x, Vec y) {
-  IP_SSATaucTaoTikhonovProblemLCL *ctx;
-  PetscErrorCode ierr = MatShellGetContext(A,&ctx);
-  PISM_CHK(ierr, "MatShellGetContext");
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::jacobian_design_transpose_callback(Mat A, Vec x,
+                                                                                   Vec y) {
+  try {
+    IP_SSATaucTaoTikhonovProblemLCL *ctx;
+    PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+    PISM_CHK(ierr, "MatShellGetContext");
 
-  ctx->applyConstraintsJacobianDesignTranspose(x,y);
-
+    ctx->applyConstraintsJacobianDesignTranspose(x,y);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)A, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 
