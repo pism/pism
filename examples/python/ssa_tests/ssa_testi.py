@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -56,9 +56,11 @@ class testi(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
     vecs = self.modeldata.vecs
 
+    vecs.lock()
+
     vecs.bc_mask.set(0)
-    vecs.thickness.set(H0_schoof)
-    vecs.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.thk.set(H0_schoof)
+    vecs.mask.set(PISM.MASK_GROUNDED)
 
     # The finite difference code uses the following flag to treat 
     # the non-periodic grid correctly.
@@ -77,8 +79,8 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     bc_mask = vecs.bc_mask
     vel_bc  = vecs.vel_bc
-    surface = vecs.surface
-    bed     = vecs.bed
+    surface = vecs.surface_altitude
+    bed     = vecs.bedrock_altitude
     grid = self.grid
     with PISM.vec.Access(comm=[surface,bed,vel_bc,bc_mask]):
       for (i,j) in grid.points():

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -50,16 +50,16 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
+    vecs.lock()
     
-    vecs.thickness.set(H0)
-    vecs.surface.set(H0)
-    vecs.bed.set(0.)
+    vecs.land_ice_thickness.set(H0)
+    vecs.surface_altitude.set(H0)
+    vecs.bedrock_altitude.set(0.)
     vecs.tauc.set(tauc0)
 
+    vel_bc  = vecs.vel_bc
     bc_mask = vecs.bc_mask
     bc_mask.set(0)
-
-    vel_bc  = vecs.vel_bc
     
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc]):

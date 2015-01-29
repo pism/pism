@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -50,17 +50,19 @@ class test_plug(PISM.ssa.SSAExactTestCase):
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
+
     vecs = self.modeldata.vecs
+    vecs.lock()
 
     # Set constant coefficients.
-    vecs.thickness.set(H0)
+    vecs.land_ice_thickness.set(H0)
     vecs.tauc.set(tauc0)
-    vecs.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.mask.set(PISM.MASK_GROUNDED)
   
     bc_mask = vecs.bc_mask
     vel_bc  = vecs.vel_bc
-    bed     = vecs.bed
-    surface = vecs.surface
+    bed     = vecs.bedrock_altitude
+    surface = vecs.surface_altitude
     
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc, bed, surface]):

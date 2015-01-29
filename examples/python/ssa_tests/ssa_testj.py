@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -43,9 +43,11 @@ class testj(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
+    vecs.lock()
+
     vecs.tauc.set(0.0) # irrelevant for test J
-    vecs.bed.set(0.0) 
-    vecs.ice_mask.set(PISM.MASK_FLOATING)
+    vecs.bedrock_altitude.set(0.0)
+    vecs.mask.set(PISM.MASK_FLOATING)
     vecs.bc_mask.set(0) # No dirichlet data.
 
     EC = PISM.EnthalpyConverter(PISM.Context().config)
@@ -59,13 +61,16 @@ class testj(PISM.ssa.SSAExactTestCase):
     # variable in 'vars', and that endAccess is called for each one on exiting
     # the 'with' block.
     
-    with PISM.vec.Access(comm=[vecs.thickness, vecs.surface, vecs.bc_mask, vecs.vel_bc]):
+    with PISM.vec.Access(comm=[vecs.land_ice_thickness,
+                               vecs.surface_altitude,
+                               vecs.bc_mask,
+                               vecs.vel_bc]):
       grid = self.grid
       for (i,j) in grid.points():
         x = grid.x(i); y = grid.y(j)
         (H,junk,u,v) = PISM.exactJ(x,y);
-        vecs.thickness[i,j] = H;
-        vecs.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
+        vecs.land_ice_thickness[i,j] = H;
+        vecs.surface_altitude[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
   
         # // special case at center point (Dirichlet BC)
         if (i == (grid.Mx())/2) and (j == (grid.My())/2):

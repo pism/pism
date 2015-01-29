@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -72,28 +72,30 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     config.set_string("ssa_flow_law", "isothermal_glen")
-    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")))
+    config.set_double("ice_softness", pow(1.9e8, -config.get("ssa_Glen_exponent")))
     
     self.modeldata.setPhysics(enthalpyconverter)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
+
     vecs = self.modeldata.vecs
+    vecs.lock()
 
     vecs.tauc.set(0.0)     # irrelevant
-    vecs.bed.set(-1000.0); # assures shelf is floating
+    vecs.bedrock_altitude.set(-1000.0); # assures shelf is floating
 
     EC = PISM.EnthalpyConverter(PISM.Context().config)
     enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
     vecs.enthalpy.set(enth0)
 
     grid      = self.grid
-    thickness = vecs.thickness;
-    surface   = vecs.surface
+    thickness = vecs.land_ice_thickness;
+    surface   = vecs.surface_altitude
     bc_mask   = vecs.bc_mask
     vel_bc    = vecs.vel_bc
-    ice_mask  = vecs.ice_mask
+    ice_mask  = vecs.mask
 
     ocean_rho = self.config.get("sea_water_density");
     ice_rho   = self.config.get("ice_density")
@@ -102,7 +104,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
       for (i,j) in grid.points():
         x = grid.x(i)
         if x <= 0:
-          thickness[i,j] = H_exact(x + self.grid.Lx)
+          thickness[i,j] = H_exact(x + self.grid.Lx())
           ice_mask[i,j]  = PISM.MASK_FLOATING
         else:
           thickness[i,j] = 0
@@ -121,7 +123,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
   def exactSolution(self,i,j,x,y):
     if x<= 0:
-      u = u_exact(x+self.grid.Lx)
+      u = u_exact(x + self.grid.Lx())
     else:
       u = 0
     return [u,0]
