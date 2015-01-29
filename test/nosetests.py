@@ -229,11 +229,6 @@ def create_special_vecs_test():
 
     lat = PISM.model.createLatitudeVec(grid)
 
-    # test var_cmp
-    PISM.model.var_cmp(lon, lat)
-    PISM.model.var_cmp(lat, lon)
-    PISM.model.var_cmp(lon, lon)
-
     # test ModelVecs.add()
     modeldata = PISM.model.ModelData(grid)
     vecs = modeldata.vecs

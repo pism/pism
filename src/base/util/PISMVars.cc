@@ -289,7 +289,7 @@ bool Vars::is_available_shared(const std::string &name) const {
 IceModelVec::Ptr Vars::get_shared(const std::string &name) const {
   IceModelVec::Ptr tmp = get_internal_shared(name);
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared variable %s is not available", name.c_str());
+    throw RuntimeError::formatted("shared variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
