@@ -239,7 +239,9 @@ def create_special_vecs_test():
     vecs = modeldata.vecs
 
     vecs.add(mask)
+    vecs.lock()
 
+    print vecs
     # test getattr
     vecs.mask
 
@@ -312,6 +314,9 @@ def modelvecs_test():
     except RuntimeError:
         # should fail: mask was added already
         pass
+
+    # test __repr__ before the lock() call
+    print vecs
 
     vecs.lock()
 
