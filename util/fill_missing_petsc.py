@@ -28,7 +28,7 @@ def assemble_matrix(mask):
     """Assemble the matrix corresponding to the standard 5-point stencil
     approximation of the Laplace operator on the domain defined by
     mask == True, where mask is a 2D NumPy array. The stencil wraps
-    around the grid, i.e. this is the approximation of the Laplacian
+    around the grid, i.e. this is an approximation of the Laplacian
     on a torus.
 
     The grid spacing is ignored, which is equivalent to assuming equal

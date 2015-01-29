@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -500,7 +500,8 @@ if __name__ == "__main__":
 
   # It may be that a 'tauc'/'hardav' was read in earlier.  We replace it with
   # our newly generated one.
-  if vecs.has(design_var): vecs.remove(design_var)
+  if vecs.has(design_var):
+    vecs.remove(design_var)
   vecs.add(design,writing=True)
 
   vecs.add(zeta,writing=True)

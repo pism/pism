@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2014 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
   ssa_run.setup()
 
   solve_t0 = time.clock()
-  ssa_run.solve()
+  vel_ssa = ssa_run.solve()
   solve_t = time.clock()-solve_t0
 
   PISM.verbPrintf(2,context.com,"Solve time %g seconds.\n",solve_t)
