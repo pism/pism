@@ -62,7 +62,9 @@ if __name__ == '__main__':
 
   PISM.verbosityLevelFromOptions()
   PISM.verbPrintf(2, PISM.Context().com, "SSA forward model.\n")
-  PISM.stop_on_version_option()
+  if PISM.OptionBool("-version", "stop after printing PISM version"):
+    sys.exit(0)
+
   usage = \
 """  %s -i IN.nc -Mx number -My number [-o file.nc]
   or (at python prompt)
@@ -78,22 +80,74 @@ if __name__ == '__main__':
   PISM.show_usage_check_req_opts(com, sys.argv[0], ["-i"], usage)
 
   config = context.config
-  if not PISM.optionsIsSet("-ssa_method"):
+  if not PISM.OptionString("-ssa_method", "").is_set():
     config.set_string("ssa_method", "fem")
 
-  input_file_name = PISM.optionsString("-i", "file to bootstrap from")
-  output_file_name = PISM.optionsString("-o", "output file", default="make_synth_ssa.nc")
-  design_prior_scale = PISM.optionsReal("-design_prior_scale", "initial guess for design variable to be this factor of the true value", default=design_prior_scale)
-  design_prior_const = PISM.optionsReal("-design_prior_const", "initial guess for design variable to be this constant", default=design_prior_const)
-  noise = PISM.optionsReal("-rms_noise", "pointwise rms noise to add (in m/a)", default=None)
-  misfit_weight_type = PISM.optionsList(context.com, "-misfit_type", "Choice of misfit weight function", ["grounded", "fast"], "grounded")
-  fast_ice_speed = PISM.optionsReal("-fast_ice_speed", "Threshold in m/a for determining if ice is fast", 500.)
-  generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed", "generate observed SSA velocities", default=False)
-  is_regional = PISM.optionsFlag("-regional", "Compute SIA/SSA using regional model semantics", default=False)
-  design_var = PISM.optionsList(context.com, "-inv_ssa", "design variable for inversion", ["tauc", "hardav"], "tauc")
-    
-  
+  input_file_name = PISM.optionsString("-i",
+                                       "file to bootstrap from")
+
+  output_file_name = PISM.optionsString("-o",
+                                        "output file",
+                                        default="make_synth_ssa.nc")
+
+  design_prior_scale = PISM.optionsReal("-design_prior_scale",
+                                        "initial guess for design variable to be this factor of the true value",
+                                        default=design_prior_scale)
+
+  design_prior_const = PISM.optionsReal("-design_prior_const",
+                                        "initial guess for design variable to be this constant",
+                                        default=design_prior_const)
+
+  noise = PISM.optionsReal("-rms_noise",
+                           "pointwise rms noise to add (in m/a)",
+                           default=None)
+
+  misfit_weight_type = PISM.optionsList(context.com,
+                                        "-misfit_type",
+                                        "Choice of misfit weight function",
+                                        "grounded,fast",
+                                        "grounded")
+
+  fast_ice_speed = PISM.optionsReal("-fast_ice_speed",
+                                    "Threshold in m/a for determining if ice is fast",
+                                    500.0)
+
+  generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed",
+                                           "generate observed SSA velocities",
+                                           default=False)
+
+  is_regional = PISM.optionsFlag("-regional",
+                                 "Compute SIA/SSA using regional model semantics",
+                                 default=False)
+
+  design_var = PISM.optionsList(context.com,
+                                "-inv_ssa",
+                                "design variable for inversion",
+                                "tauc,hardav",
+                                "tauc")
+
   ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
+
+  modeldata = ssa_run.modeldata
+  grid = modeldata.grid
+  vecs = modeldata.vecs
+
+  # add everything we need to "vecs" *before* it is locked in ssa_run.setup()
+  if design_var == 'tauc':
+    # Generate a prior guess for tauc
+    tauc_prior = PISM.model.createYieldStressVec(grid, name='tauc_prior',
+                                                 desc="initial guess for (pseudo-plastic)"
+                                                 " basal yield stress in an inversion")
+    vecs.add(tauc_prior, writing=True)
+  elif design_var == 'hardav':
+    # Generate a prior guess for hardav
+    vecs.add(PISM.model.createAveragedHardnessVec(grid))
+
+    hardav_prior = PISM.model.createAveragedHardnessVec(grid,
+                                                        name='hardav_prior',
+                                                        desc="initial guess for vertically averaged"
+                                                        " ice hardness in an inversion")
+    vecs.add(hardav_prior, writing=True)
 
   ssa_run.setup()
 
@@ -103,23 +157,18 @@ if __name__ == '__main__':
 
   PISM.verbPrintf(2, context.com, "Solve time %g seconds.\n", solve_t)
 
-  modeldata = ssa_run.modeldata
-  grid = modeldata.grid
-  vecs = modeldata.vecs
-
   if design_var == 'tauc':
-    # Generate a prior guess for tauc
-    tauc_prior = PISM.model.createYieldStressVec(grid, name='tauc_prior', desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
-    vecs.add(tauc_prior, writing=True)
     if design_prior_const is not None:
-      tauc_prior.set(design_prior_const)
+      vecs.tauc_prior.set(design_prior_const)
     else:
-      tauc_prior.copy_from(modeldata.vecs.tauc)
-      tauc_prior.scale(design_prior_scale)
+      vecs.tauc_prior.copy_from(modeldata.vecs.tauc)
+      vecs.tauc_prior.scale(design_prior_scale)
   
     tauc_true = modeldata.vecs.tauc
     tauc_true.set_name('tauc_true')
-    tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", ""); 
+    tauc_true.set_attrs("diagnostic",
+                        "value of basal yield stress used to generate synthetic SSA velocities",
+                        "Pa", ""); 
     vecs.markForWriting(tauc_true)
   elif design_var == 'hardav':
     # Generate a prior guess for hardav
@@ -130,19 +179,15 @@ if __name__ == '__main__':
     ice_factory.setType(config.get_string("ssa_flow_law")); 
     ice_factory.setFromOptions();
     flow_law = ice_factory.create()
-    hardav = PISM.model.createAveragedHardnessVec(grid)
-    flow_law.averaged_hardness_vec(vecs.thickness, vecs.enthalpy, hardav)
-    vecs.add(hardav)
+    flow_law.averaged_hardness_vec(vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)
 
-    hardav_prior = PISM.model.createAveragedHardnessVec(grid, name='hardav_prior', desc="initial guess for vertically averaged ice hardness in an inversion")
-    vecs.add(hardav_prior, writing=True)
     if design_prior_const is not None:
-      hardav_prior.set(design_prior_const)
+      vecs.hardav_prior.set(design_prior_const)
     else:
-      hardav_prior.copy_from(modeldata.vecs.hardav)
-      hardav_prior.scale(hardav_prior_scale)
+      vecs.hardav_prior.copy_from(vecs.hardav)
+      vecs.hardav_prior.scale(hardav_prior_scale)
   
-    hardav_true = modeldata.vecs.hardav
+    hardav_true = vecs.hardav
     hardav_true.set_name('hardav_true')
     hardav_true.set_attrs("diagnostic",
                           "vertically averaged ice hardness used to generate synthetic SSA velocities",
