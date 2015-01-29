@@ -793,16 +793,14 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
     (j > m_grid->ys() + m_grid->ym() + ghost_width) ||
     (k >= N);
 
-  assert(out_of_range == false);
+  if (out_of_range) {
+    throw RuntimeError::formatted("%s(%d, %d, %d) is out of bounds",
+                                  m_name.c_str(), i, j, k);
+  }
 
   if (array == NULL) {
-    PetscErrorCode ierr;
-    ierr = PetscPrintf(m_grid->com,
-                       "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
-                       m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
+    throw RuntimeError::formatted("%s: begin_access() was not called", m_name.c_str());
   }
-  assert(array != NULL);
 }
 
 //! \brief Compute parameters for 2D loop computations involving 3
