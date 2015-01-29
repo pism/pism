@@ -90,16 +90,16 @@ def vars_ownership_test():
     grid = create_dummy_grid()
     variables = PISM.Vars()
 
-    def add_thk(context):
-        v = PISM.model.createIceThicknessVec(grid)
-        context.add(v)
-
     print "Adding 'thk'..."
-    add_thk(variables)
+    variables.add(PISM.model.createIceThicknessVec(grid))
     print "Returned from add_thk()..."
     variables.lock()
     print "Getting 'thk' from variables..."
-    variables.get("thk")
+    thk = variables.get("thk")
+    print thk
+    thk.begin_access()
+    print "thickness at 0,0 is", thk[0,0]
+    thk.end_access()
 
 def vec_access_test():
     "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
@@ -293,9 +293,7 @@ def pism_vars_test():
 def modelvecs_test():
     "Test the ModelVecs class"
 
-    ctx = PISM.Context()
-    grid = ctx.newgrid()
-    PISM.model.initGrid(grid, 1e5, 1e5, 1000.0, 100, 100, 11, PISM.NOT_PERIODIC)
+    grid = create_dummy_grid()
 
     mask = PISM.model.createIceMaskVec(grid)
     mask.set(PISM.MASK_GROUNDED)
@@ -305,6 +303,9 @@ def modelvecs_test():
 
     vecs.add(mask, "ice_mask", writing=True)
 
+    # use the default name, no writing
+    vecs.add(PISM.model.createIceThicknessVec(grid))
+
     try:
         vecs.add(mask, "ice_mask")
         return False
@@ -312,36 +313,39 @@ def modelvecs_test():
         # should fail: mask was added already
         pass
 
+    vecs.lock()
+
     # get a field:
-    vecs.get("ice_mask")
+    print "get() method: ice mask: ", vecs.get("ice_mask").metadata().get_string("long_name")
+
+    print "dot notation: ice mask: ", vecs.ice_mask.metadata().get_string("long_name")
+
+    try:
+        vecs.invalid
+        return False
+    except AttributeError:
+        # should fail
+        pass
 
     try:
         vecs.get("invalid")
         return False
-    except AttributeError:
+    except RuntimeError:
         # should fail
         pass
 
     # test __repr__
     print vecs
 
-    # test rename()
-    vecs.rename("ice_mask", "mask")
-
-    # remove() a vec not marked for writing
-    vecs.remove("mask")
-
-    vecs.add(mask, "mask")
-
-    # test asPISMVars()
-    vecs.asPISMVars()
-
     # test has()
-    vecs.has("thickness")
+    print "Has thickness?", vecs.has("thickness")
 
     # test markForWriting
-    vecs.markForWriting("mask")
+    vecs.markForWriting("ice_mask")
+
     vecs.markForWriting(mask)
+
+    vecs.markForWriting("thk")
 
     # test write()
     output_file = "test_ModelVecs.nc"
@@ -356,9 +360,6 @@ def modelvecs_test():
 
     # test writeall()
     vecs.writeall(output_file)
-
-    # test remove()
-    vecs.remove("mask")
 
 
 def sia_test():
