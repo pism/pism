@@ -454,7 +454,7 @@ IceModelVec::Ptr SSB_taub::compute() {
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2V &velocity = model->advective_velocity();
+  const IceModelVec2V &velocity = model->velocity();
   const IceModelVec2S   *tauc = m_grid.variables().get_2d_scalar("tauc");
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
@@ -564,7 +564,7 @@ IceModelVec::Ptr SSB_beta::compute() {
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  const IceModelVec2V &velocity = model->advective_velocity();
+  const IceModelVec2V &velocity = model->velocity();
 
   IceModelVec::AccessList list;
   list.add(*result);

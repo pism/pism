@@ -58,8 +58,8 @@ public:
 
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure) = 0;
 
-  //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual const IceModelVec2V& advective_velocity() {
+  //! \brief Get the thickness-advective 2D velocity.
+  virtual const IceModelVec2V& velocity() {
     return m_velocity;
   }
 

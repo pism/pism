@@ -187,7 +187,7 @@ void SSATestCase::report(const std::string &testname) {
              "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
-  const IceModelVec2V &vel_ssa = m_ssa->advective_velocity();
+  const IceModelVec2V &vel_ssa = m_ssa->velocity();
 
   IceModelVec::AccessList list;
   list.add(vel_ssa);
@@ -366,7 +366,7 @@ void SSATestCase::write(const std::string &filename) {
   m_enthalpy.write(pio);
   m_vel_bc.write(pio);
 
-  const IceModelVec2V &vel_ssa = m_ssa->advective_velocity();
+  const IceModelVec2V &vel_ssa = m_ssa->velocity();
   vel_ssa.write(pio);
 
   IceModelVec2V exact;

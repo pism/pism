@@ -85,7 +85,7 @@ void StressBalance::update(bool fast, double sea_level,
     m_grid.profiling.end("SSB");
 
     m_grid.profiling.begin("SB modifier");
-    const IceModelVec2V &velocity_2d = m_stress_balance->advective_velocity();
+    const IceModelVec2V &velocity_2d = m_stress_balance->velocity();
     m_modifier->update(velocity_2d, fast);
     m_grid.profiling.end("SB modifier");
 
@@ -110,7 +110,7 @@ void StressBalance::update(bool fast, double sea_level,
 }
 
 const IceModelVec2V& StressBalance::advective_velocity() {
-  return m_stress_balance->advective_velocity();
+  return m_stress_balance->velocity();
 }
 
 const IceModelVec2Stag& StressBalance::diffusive_flux() {
