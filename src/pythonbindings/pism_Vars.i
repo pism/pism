@@ -32,6 +32,13 @@
 %extend pism::Vars {
   %pythoncode %{
 def get(self, key):
+    # try this first (a mask is a scalar, so having this second would
+    # make it impossible to get() a mask)
+    try:
+        return self.get_2d_mask(key)
+    except:
+        pass
+  
     try:
         return self.get_2d_scalar(key)
     except:
@@ -39,11 +46,6 @@ def get(self, key):
   
     try:
         return self.get_2d_vector(key)
-    except:
-        pass
-  
-    try:
-        return self.get_2d_mask(key)
     except:
         pass
   
