@@ -62,16 +62,16 @@ void String::process(const std::string& option,
   if (flag == PETSC_TRUE) {
     if (result.empty()) {
       if (argument_flag == ALLOW_EMPTY) {
-        set("", true);
+        this->set("", true);
       } else {
         throw RuntimeError::formatted("command line option '%s' requires an argument.",
                                       option.c_str());
       }
     } else {
-      set(result, true);
+      this->set(result, true);
     }
   } else {
-    set(default_value, false);
+    this->set(default_value, false);
   }
 }
 
@@ -87,7 +87,7 @@ StringList::StringList(const std::string& option,
     result.push_back(token);
   }
 
-  set(result, input.is_set());
+  this->set(result, input.is_set());
 }
 
 const std::string& StringList::operator[](size_t index) const {
@@ -116,7 +116,7 @@ StringSet::StringSet(const std::string& option,
     result.insert(input[k]);
   }
 
-  set(result, input.is_set());
+  this->set(result, input.is_set());
 }
 
 std::string StringSet::to_string() {
@@ -147,7 +147,7 @@ Keyword::Keyword(const std::string& option,
   
   // use the default value if the option was not set
   if (not input.is_set()) {
-    set(input, input.is_set());
+    this->set(input, input.is_set());
     return;
   }
 
@@ -171,7 +171,7 @@ Keyword::Keyword(const std::string& option,
 
   // use the choice if it is valid and stop if it is not
   if (choices_set.find(word) != choices_set.end()) {
-    set(word, true);
+    this->set(word, true);
   } else {
     throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
                                   option.c_str(), word.c_str(), list.c_str());
@@ -187,7 +187,7 @@ Integer::Integer(const std::string& option,
     throw RuntimeError::formatted("Can't process '%s': (%f is not an integer).",
                                   option.c_str(), result);
   }
-  set(static_cast<int>(result), input.is_set());
+  this->set(static_cast<int>(result), input.is_set());
 }
 
 
@@ -204,7 +204,7 @@ IntegerList::IntegerList(const std::string& option,
     result.push_back(static_cast<int>(input[k]));
   }
   
-  set(result, input.is_set());
+  this->set(result, input.is_set());
 }
 
 const int& IntegerList::operator[](size_t index) const {
@@ -225,7 +225,7 @@ Real::Real(const std::string& option,
     throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
                                   option.c_str(), str.c_str(), str.c_str());
   }
-  set(result, input.is_set());
+  this->set(result, input.is_set());
 }
 
 
@@ -252,7 +252,7 @@ RealList::RealList(const std::string& option,
       }
     }
   }
-  set(result, input.is_set());
+  this->set(result, input.is_set());
 }
 
 const double& RealList::operator[](size_t index) const {
