@@ -29,8 +29,6 @@ namespace pism {
 
 BedThermalUnit::BedThermalUnit(const IceGrid &g)
     : Component_TS(g) {
-  m_bedtoptemp = NULL;
-  m_ghf        = NULL;
 
   m_upward_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
   // PROPOSED standard_name = lithosphere_upward_heat_flux
@@ -148,10 +146,6 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
 
   verbPrintf(2,m_grid.com,
              "* Initializing the bedrock thermal unit... setting constants...\n");
-
-  // Get pointers to fields owned by IceModel.
-  m_bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp");
-  m_ghf = m_grid.variables().get_2d_scalar("bheatflx");
 
   // If we're using a minimal model, then we're done:
   if (!m_temp.was_created()) {
@@ -313,8 +307,10 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  assert(m_bedtoptemp != NULL);
-  assert(m_ghf != NULL);
+  // Get pointers to fields owned by IceModel.
+  const IceModelVec2S
+    *bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp"),
+    *ghf        = m_grid.variables().get_2d_scalar("bheatflx");
 
   double dzb = this->vertical_spacing();
   const int  k0  = m_Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
@@ -325,21 +321,21 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   IceModelVec::AccessList list;
   list.add(m_temp);
-  list.add(*m_ghf);
-  list.add(*m_bedtoptemp);
+  list.add(*ghf);
+  list.add(*bedtoptemp);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tbold = m_temp.get_column(i,j); // Tbold actually points into temp memory
-    Tbold[k0] = (*m_bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
+    Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
-    const double Tbold_negone = Tbold[1] + 2 * (*m_ghf)(i,j) * dzb / m_bed_k;
+    const double Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / m_bed_k;
     Tbnew[0] = Tbold[0] + bed_R * (Tbold_negone - 2 * Tbold[0] + Tbold[1]);
     for (int k = 1; k < k0; k++) { // working upward from base
       Tbnew[k] = Tbold[k] + bed_R * (Tbold[k-1] - 2 * Tbold[k] + Tbold[k+1]);
     }
-    Tbnew[k0] = (*m_bedtoptemp)(i,j);
+    Tbnew[k0] = (*bedtoptemp)(i,j);
 
     m_temp.set_column(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
@@ -360,7 +356,7 @@ the `Mbz` <= 1 cases, we return the stored geothermal flux.
 const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
 
   if (not m_temp.was_created()) {
-    return *m_ghf;
+    return *m_grid.variables().get_2d_scalar("bheatflx");
   }
 
   double dzb = this->vertical_spacing();
@@ -389,6 +385,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     }
 
   }
+
   return m_upward_flux;
 }
 
@@ -405,17 +402,22 @@ void BedThermalUnit::bootstrap() {
   double dzb = this->vertical_spacing();
   const int k0 = m_Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
+  // Get pointers to fields owned by IceModel.
+  const IceModelVec2S
+    *bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp"),
+    *ghf        = m_grid.variables().get_2d_scalar("bheatflx");
+
   IceModelVec::AccessList list;
-  list.add(*m_bedtoptemp);
-  list.add(*m_ghf);
+  list.add(*bedtoptemp);
+  list.add(*ghf);
   list.add(m_temp);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tb = m_temp.get_column(i,j); // Tb points into temp memory
-    Tb[k0] = (*m_bedtoptemp)(i,j);
+    Tb[k0] = (*bedtoptemp)(i,j);
     for (int k = k0-1; k >= 0; k--) {
-      Tb[k] = Tb[k+1] + dzb * (*m_ghf)(i,j) / m_bed_k;
+      Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / m_bed_k;
     }
   }
 

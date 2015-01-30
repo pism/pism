@@ -122,11 +122,6 @@ protected:
   unsigned int m_Mbz;             //!< number of vertical levels within the bedrock
   double m_Lbz;                   //!< thickness of the bedrock layer, in meters
   std::string m_input_file;             //!< non-empty if "-i" was set
-
-  //! upper boundary temp, owned by the model to which we are attached
-  const IceModelVec2S *m_bedtoptemp;
-  //! lower boundary flux, owned by the model to which we are attached
-  const IceModelVec2S *m_ghf;
 };
 
 } // end of namespace pism
