@@ -145,6 +145,13 @@ add_custom_target (retest
   VERBATIM
 )
 
+# run Python tests
+add_custom_target (test-python
+  COMMAND ${CMAKE_CTEST_COMMAND} -R "Python:"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  VERBATIM
+)
+
 # Install helper scripts residing in util/
 install (PROGRAMS
   util/check_stationarity.py

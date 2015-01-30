@@ -122,17 +122,17 @@ endif()
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 
-	pism_python_test (verif_test_I_SSAFD_regress_SSA_plastic_py ssa/ssa_testi_fd.sh)
+	pism_python_test (Python:verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
 
-	pism_python_test (verif_test_I_SSAFEM_regress_SSA_plastic_py ssa/ssa_testi_fem.sh)
+	pism_python_test (Python:verif_test_I_SSAFEM_regress_SSA_plastic ssa/ssa_testi_fem.sh)
 
-	pism_python_test (verif_test_J_SSAFD_regress_linear_SSA_floating_py ssa/ssa_testj_fd.sh)
+	pism_python_test (Python:verif_test_J_SSAFD_regress_linear_SSA_floating ssa/ssa_testj_fd.sh)
 
-	pism_python_test (verif_test_J_SSAFEM_regress_linear_SSA_floating_py ssa/ssa_testj_fem.sh)
+	pism_python_test (Python:verif_test_J_SSAFEM_regress_linear_SSA_floating ssa/ssa_testj_fem.sh)
 
-	pism_python_test (verif_SSAFEM_regress_linear_flow_py ssa/ssafem_test_linear.sh)
+	pism_python_test (Python:verif_SSAFEM_regress_linear_flow ssa/ssafem_test_linear.sh)
 
-        pism_python_test (verif_SSAFEM_regress_plug_flow_py ssa/ssafem_test_plug.sh)
+        pism_python_test (Python:verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
 
 
 # Inversion regression tests.  We run the appropriate ones if we can find
@@ -161,7 +161,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
           message (STATUS "Enabling regression tests that use siple")
 
-          pism_python_test (simple_inversion_test_nlcg inverse/tiny_nlcg.sh)
+          pism_python_test (Python:simple_inversion_test_nlcg inverse/tiny_nlcg.sh)
 
         endif()
 
@@ -169,7 +169,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
           message (STATUS "Enabling regression tests that use TAO")
 
-          pism_python_test (simple_inversion_test_tikhonov  inverse/tiny_tikhonov_lmvm.sh)
+          pism_python_test (Python:simple_inversion_test_tikhonov  inverse/tiny_tikhonov_lmvm.sh)
 
         endif()
 
