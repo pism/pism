@@ -128,22 +128,22 @@ protected:
   virtual void check_Wtil_bounds();
 protected:
   // this model's state
-  IceModelVec2S Wtil;      // effective thickness of till
+  IceModelVec2S m_Wtil;      // effective thickness of till
   // this model's workspace
-  IceModelVec2S total_input, bmelt_local;
+  IceModelVec2S m_total_input, m_bmelt_local;
 
   // pointers into IceModel; these describe the ice sheet and the source
-  const IceModelVec2S *thk,   // ice thickness
-    *bed,   // bed elevation (not all models need this)
-    *cellarea, // projection-dependent area of each cell, used in mass reporting
-    *bmelt; // ice sheet basal melt rate
-  const IceModelVec2Int *mask;// floating, grounded, etc. mask
+  const IceModelVec2S *m_thk,   // ice thickness
+    *m_bed,   // bed elevation (not all models need this)
+    *m_cellarea, // projection-dependent area of each cell, used in mass reporting
+    *m_bmelt; // ice sheet basal melt rate
+  const IceModelVec2Int *m_mask;// floating, grounded, etc. mask
 
-  bool hold_bmelt;
+  bool m_hold_bmelt;
 
-  IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
-  unsigned int inputtobed_period;      // in years
-  double inputtobed_reference_time; // in seconds
+  IceModelVec2T *m_inputtobed;// time dependent input of water to bed, in addition to bmelt
+  unsigned int m_inputtobed_period;      // in years
+  double m_inputtobed_reference_time; // in seconds
 
 };
 

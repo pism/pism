@@ -399,8 +399,8 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
 
-    if ((inputtobed != NULL) || (hydrocount==1)) {
-      get_input_rate(ht,hdt,total_input);
+    if ((m_inputtobed != NULL) || (hydrocount==1)) {
+      get_input_rate(ht,hdt,m_total_input);
     }
 
     // update Wtilnew from Wtil
@@ -420,19 +420,19 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
                divadflux, diffW;
     overburden_pressure(Pover);
 
-    MaskQuery M(*mask);
+    MaskQuery M(*m_mask);
 
     IceModelVec::AccessList list;
     list.add(P);
     list.add(W);
-    list.add(Wtil);
+    list.add(m_Wtil);
     list.add(Wtilnew);
     list.add(velbase_mag);
     list.add(Wstag);
     list.add(Kstag);
     list.add(Qstag);
-    list.add(total_input);
-    list.add(*mask);
+    list.add(m_total_input);
+    list.add(*m_mask);
     list.add(Pover);
     list.add(Pnew);
 
@@ -462,7 +462,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
         divflux = - divadflux + diffW;
 
         // pressure update equation
-        ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
+        ZZ = Close - Open + m_total_input(i,j) - (Wtilnew(i,j) - m_Wtil(i,j)) / hdt;
         Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
         // projection to enforce  0 <= P <= P_o
         Pnew(i,j) = std::min(std::max(0.0, Pnew(i,j)), Pover(i,j));
@@ -480,7 +480,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
 
     // transfer new into old
     Wnew.update_ghosts(W);
-    Wtilnew.copy_to(Wtil);
+    Wtilnew.copy_to(m_Wtil);
     Pnew.update_ghosts(P);
 
     ht += hdt;

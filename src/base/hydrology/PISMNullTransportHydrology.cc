@@ -74,7 +74,7 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
-  get_input_rate(icet,icedt,total_input);
+  get_input_rate(icet,icedt,m_total_input);
 
   const double tillwat_max = m_config.get("hydrology_tillwat_max"),
                C           = m_config.get("hydrology_tillwat_decay_rate");
@@ -84,19 +84,19 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
                        "This is not allowed.");
   }
 
-  MaskQuery M(*mask);
+  MaskQuery M(*m_mask);
   IceModelVec::AccessList list;
-  list.add(*mask);
-  list.add(Wtil);
-  list.add(total_input);
+  list.add(*m_mask);
+  list.add(m_Wtil);
+  list.add(m_total_input);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ocean(i,j) || M.ice_free(i,j)) {
-      Wtil(i,j) = 0.0;
+      m_Wtil(i,j) = 0.0;
     } else {
-      Wtil(i,j) += icedt * (total_input(i,j) - C);
-      Wtil(i,j) = std::min(std::max(0.0, Wtil(i,j)), tillwat_max);
+      m_Wtil(i,j) += icedt * (m_total_input(i,j) - C);
+      m_Wtil(i,j) = std::min(std::max(0.0, m_Wtil(i,j)), tillwat_max);
     }
   }
 }

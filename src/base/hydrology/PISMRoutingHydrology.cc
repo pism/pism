@@ -244,17 +244,17 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
                                              double &negativegain, double &nullstriplost) {
   double fresh_water_density = m_config.get("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
-  MaskQuery M(*mask);
+  MaskQuery M(*m_mask);
 
   IceModelVec::AccessList list;
   list.add(newthk);
-  list.add(*cellarea);
-  list.add(*mask);
+  list.add(*m_cellarea);
+  list.add(*m_mask);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    const double dmassdz = (*m_cellarea)(i,j) * fresh_water_density; // kg m-1
     if (newthk(i,j) < 0.0) {
       my_negativegain += -newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
@@ -283,7 +283,7 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    const double dmassdz = (*m_cellarea)(i,j) * fresh_water_density; // kg m-1
     if (in_null_strip(m_grid, i, j, stripwidth)) {
       my_nullstriplost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
@@ -317,16 +317,16 @@ void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
     rg = m_config.get("fresh_water_density") * m_config.get("standard_gravity");
 
   subglacial_water_pressure(result);
-  result.add(rg, (*bed)); // result  <-- P + rhow g b
+  result.add(rg, (*m_bed)); // result  <-- P + rhow g b
   result.add(rg, W);      // result  <-- result + rhow g (b + W)
 
   // now mask: psi = P_o if ocean
-  MaskQuery M(*mask);
+  MaskQuery M(*m_mask);
   overburden_pressure(Pover);
 
   IceModelVec::AccessList list;
   list.add(Pover);
-  list.add(*mask);
+  list.add(*m_mask);
   list.add(result);
 
   for (Points p(m_grid); p; p.next()) {
@@ -343,10 +343,10 @@ void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
 /*! Uses mask values to avoid averaging using water thickness values from
 either ice-free or floating areas. */
 void RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
-  MaskQuery M(*mask);
+  MaskQuery M(*m_mask);
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(*m_mask);
   list.add(W);
   list.add(result);
 
@@ -414,7 +414,7 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
   // temporarily in "result"
   if (beta != 2.0) {
     subglacial_water_pressure(R);  // yes, it updates ghosts
-    R.add(rg, (*bed)); // R  <-- P + rhow g b
+    R.add(rg, (*m_bed)); // R  <-- P + rhow g b
     R.update_ghosts();
 
     list.add(R);
@@ -488,7 +488,7 @@ void RoutingHydrology::wall_melt(IceModelVec2S &result) {
   }
 
   subglacial_water_pressure(R);  // yes, it updates ghosts
-  R.add(rg, (*bed)); // R  <-- P + rhow g b
+  R.add(rg, (*m_bed)); // R  <-- P + rhow g b
   R.update_ghosts();
 
   IceModelVec::AccessList list;
@@ -553,7 +553,7 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   list.add(R);
   list.add(Wstag);
   list.add(Kstag);
-  list.add(*bed);
+  list.add(*m_bed);
   list.add(result);
 
   for (Points p(m_grid); p; p.next()) {
@@ -561,7 +561,7 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
 
     if (Wstag(i,j,0) > 0.0) {
       dPdx = (R(i+1,j) - R(i,j)) / m_grid.dx();
-      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / m_grid.dx();
+      dbdx = ((*m_bed)(i+1,j) - (*m_bed)(i,j)) / m_grid.dx();
       result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
     } else {
       result(i,j,0) = 0.0;
@@ -569,7 +569,7 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
     
     if (Wstag(i,j,1) > 0.0) {
       dPdy = (R(i,j+1) - R(i,j)) / m_grid.dy();
-      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / m_grid.dy();
+      dbdy = ((*m_bed)(i,j+1) - (*m_bed)(i,j)) / m_grid.dy();
       result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
     } else {
       result(i,j,1) = 0.0;
@@ -653,14 +653,14 @@ void RoutingHydrology::raw_update_Wtil(double hdt) {
                C           = m_config.get("hydrology_tillwat_decay_rate");
 
   IceModelVec::AccessList list;
-  list.add(Wtil);
+  list.add(m_Wtil);
   list.add(Wtilnew);
-  list.add(total_input);
+  list.add(m_total_input);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
+    Wtilnew(i,j) = m_Wtil(i,j) + hdt * (m_total_input(i,j) - C);
     Wtilnew(i,j) = std::min(std::max(0.0, Wtilnew(i,j)), tillwat_max);
   }
 }
@@ -676,12 +676,12 @@ void RoutingHydrology::raw_update_W(double hdt) {
 
   IceModelVec::AccessList list;
   list.add(W);
-  list.add(Wtil);
+  list.add(m_Wtil);
   list.add(Wtilnew);
   list.add(Wstag);
   list.add(Kstag);
   list.add(Qstag);
-  list.add(total_input);
+  list.add(m_total_input);
   list.add(Wnew);
 
   for (Points p(m_grid); p; p.next()) {
@@ -695,8 +695,8 @@ void RoutingHydrology::raw_update_W(double hdt) {
       Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
     diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
       + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
-    Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
-      + hdt * (- divadflux + diffW + total_input(i,j));
+    Wnew(i,j) = W(i,j) - Wtilnew(i,j) + m_Wtil(i,j)
+      + hdt * (- divadflux + diffW + m_total_input(i,j));
   }
 }
 
@@ -730,7 +730,7 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
   // make sure W has valid ghosts before starting hydrology steps
   W.update_ghosts();
 
-  MaskQuery M(*mask);
+  MaskQuery M(*m_mask);
   double ht = m_t, hdt = 0.0, // hydrology model time and time step
     maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
   double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
@@ -760,8 +760,8 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
     adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
                              hdt, maxV, maxD, dtCFL, dtDIFFW);
 
-    if ((inputtobed != NULL) || (hydrocount==1)) {
-      get_input_rate(ht,hdt,total_input);
+    if ((m_inputtobed != NULL) || (hydrocount==1)) {
+      get_input_rate(ht,hdt,m_total_input);
     }
 
     // update Wtilnew from Wtil
@@ -784,7 +784,7 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
 
     // transfer new into old
     Wnew.update_ghosts(W);
-    Wtilnew.copy_to(Wtil);
+    Wtilnew.copy_to(m_Wtil);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop
