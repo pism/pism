@@ -51,37 +51,44 @@ void OceanKill::init() {
   options::String ocean_kill_file("-ocean_kill_file",
                                   "Specifies a file to get ocean_kill thickness from");
 
-  IceModelVec2S thickness, *tmp;
+  if (not ocean_kill_file.is_set()) {
+    throw RuntimeError("option -ocean_kill_file is required.");
+  }
 
-  if (ocean_kill_file.is_set()) {
+  IceModelVec2S thickness, bed;
+
+  {
     verbPrintf(2, m_grid.com,
                "  setting fixed calving front location using\n"
-               "  ice thickness from '%s'.\n", ocean_kill_file->c_str());
+               "  ice thickness and bed topography from '%s'\n"
+               "  assuming sea level elevation of 0 meters.\n", ocean_kill_file->c_str());
 
     thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",
                         "m", "land_ice_thickness");
     thickness.metadata().set_double("valid_min", 0.0);
 
+    bed.create(m_grid, "topg", WITHOUT_GHOSTS);
+    bed.set_attrs("temporary", "bedrock surface elevation",
+                  "m", "bedrock_altitude");
+
     thickness.regrid(ocean_kill_file, CRITICAL);
-
-    tmp = &thickness;
-  } else {
-    throw RuntimeError("option -ocean_kill_file is required.");
+    bed.regrid(ocean_kill_file, CRITICAL);
   }
-
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
-  MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
   list.add(m_ocean_kill_mask);
-  list.add(*tmp);
-  list.add(*mask);
+  list.add(thickness);
+  list.add(bed);
+
+  GeometryCalculator gc(0.0, m_config);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if ((*tmp)(i, j) > 0 || m.grounded(i, j)) { // FIXME: use GeometryCalculator
+    int M = gc.mask(bed(i, j), thickness(i, j));
+
+    if (thickness(i, j) > 0 or mask::grounded(M)) {
       m_ocean_kill_mask(i, j) = 0;
     } else {
       m_ocean_kill_mask(i, j) = 1;
