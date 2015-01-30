@@ -125,7 +125,7 @@ void RoutingHydrology::init_bwat() {
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
 
-  if (m_grid.variables().is_available("bwap")) {
+  if (m_grid.variables().is_available("bwat")) {
     // a variable called "bwat" is already in context
     W.copy_from(*m_grid.variables().get_2d_scalar("bwat"));
   } else {
