@@ -119,48 +119,45 @@ void DistributedHydrology::init_bwp() {
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   const double bwp_default = m_config.get("bootstrapping_bwp_value_no_var");
 
-  if (m_grid.variables().is_available("bwp")) {
-    P.copy_from(*m_grid.variables().get_2d_scalar("bwp"));
-  } else {
-    if (i || bootstrap) {
-      std::string filename;
-      int start;
-      bool bootstrap_set = false;
-      find_pism_input(filename, bootstrap_set, start);
-      if (i) {
-        PIO nc(m_grid, "guess_mode");
-        nc.open(filename, PISM_READONLY);
-        bool bwp_exists = nc.inq_var("bwp");
-        nc.close();
-        if (bwp_exists == true) {
-          P.read(filename, start);
-        } else {
-          verbPrintf(2, m_grid.com,
-                     "PISM WARNING: bwp for hydrology model not found in '%s'."
-                     "  Setting it to %.2f ...\n",
-                     filename.c_str(), bwp_default);
-          P.set(bwp_default);
-        }
+  if (i || bootstrap) {
+    std::string filename;
+    int start;
+    bool bootstrap_set = false;
+    find_pism_input(filename, bootstrap_set, start);
+    if (i) {
+      PIO nc(m_grid, "guess_mode");
+      nc.open(filename, PISM_READONLY);
+      bool bwp_exists = nc.inq_var("bwp");
+      nc.close();
+      if (bwp_exists == true) {
+        P.read(filename, start);
       } else {
-        P.regrid(filename, OPTIONAL, bwp_default);
+        verbPrintf(2, m_grid.com,
+                   "PISM WARNING: bwp for hydrology model not found in '%s'."
+                   "  Setting it to %.2f ...\n",
+                   filename.c_str(), bwp_default);
+        P.set(bwp_default);
       }
     } else {
-      P.set(bwp_default);
+      P.regrid(filename, OPTIONAL, bwp_default);
     }
+  } else {
+    P.set(bwp_default);
   }
 
   regrid("DistributedHydrology", P); //  we could be asked to regrid from file
 }
 
 
-void DistributedHydrology::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void DistributedHydrology::add_vars_to_output_impl(const std::string &keyword,
+                                                   std::set<std::string> &result) {
   RoutingHydrology::add_vars_to_output_impl(keyword, result);
   result.insert("bwp");
 }
 
 
-void DistributedHydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                                 IO_Type nctype) {
+void DistributedHydrology::define_variables_impl(const std::set<std::string> &vars,
+                                                 const PIO &nc, IO_Type nctype) {
   RoutingHydrology::define_variables_impl(vars, nc, nctype);
   if (set_contains(vars, "bwp")) {
     P.define(nc, nctype);
@@ -168,7 +165,8 @@ void DistributedHydrology::define_variables_impl(const std::set<std::string> &va
 }
 
 
-void DistributedHydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void DistributedHydrology::write_variables_impl(const std::set<std::string> &vars,
+                                                const PIO &nc) {
   RoutingHydrology::write_variables_impl(vars, nc);
   if (set_contains(vars, "bwp")) {
     P.write(nc);
@@ -177,7 +175,7 @@ void DistributedHydrology::write_variables_impl(const std::set<std::string> &var
 
 
 void DistributedHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                               std::map<std::string, TSDiagnostic*> &ts_dict) {
+                                                std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   // bwp is state
   dict["bwprel"]           = new Hydrology_bwprel(this);
