@@ -57,34 +57,29 @@ protected:
                                      const PIO &nc, IO_Type nctype);  
   double compute_next_balance_year_start(double time);
 protected:
-  LocalMassBalance *mbscheme;         //!< mass balance scheme to use
+  LocalMassBalance *m_mbscheme;         //!< mass balance scheme to use
 
-  FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
+  FaustoGrevePDDObject *m_faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
-  DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
-  double  base_pddStdDev,        //!< K; daily amount of randomness
-    base_pddThresholdTemp, //!< K; temps are positive above this
+  DegreeDayFactors m_base_ddf;          //!< holds degree-day factors in location-independent case
+  double  m_base_pddStdDev,        //!< K; daily amount of randomness
+    m_base_pddThresholdTemp, //!< K; temps are positive above this
     m_next_balance_year_start;
   IceModelVec2S
-  climatic_mass_balance, //!< cached surface mass balance rate
-    accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
-    melt_rate,             //!< diagnostic output melt rate (rate at which snow
+  m_climatic_mass_balance, //!< cached surface mass balance rate
+    m_accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
+    m_melt_rate,             //!< diagnostic output melt rate (rate at which snow
   //!< and ice is melted, but some snow melt refreezes)
-    runoff_rate,           //!< diagnostic output meltwater runoff rate
-    snow_depth;            //!< snow depth (reset once a year)
-  IceModelVec2T air_temp_sd;
-
-  const IceModelVec2S *lat, *lon, *usurf;
-  //!< PSTemperatureIndex must hold these pointers in order to use
-  //! object which needs 3D location to determine degree day factors.
-  const IceModelVec2Int *mask;
+    m_runoff_rate,           //!< diagnostic output meltwater runoff rate
+    m_snow_depth;            //!< snow depth (reset once a year)
+  IceModelVec2T m_air_temp_sd;
 
   NCSpatialVariable ice_surface_temp;
 
-  bool randomized, randomized_repeatable, fausto_params;
-  bool sd_use_param, sd_file_set;
-  int sd_period, sd_period_years;
-  double sd_ref_time, sd_param_a, sd_param_b;
+  bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
+  bool m_sd_use_param, m_sd_file_set;
+  int m_sd_period, m_sd_period_years;
+  double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
 };
 
 } // end of namespace pism
