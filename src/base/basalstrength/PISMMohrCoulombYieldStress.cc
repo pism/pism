@@ -53,8 +53,10 @@ This submodel is inactive in floating areas.
 MohrCoulombYieldStress::MohrCoulombYieldStress(const IceGrid &g,
                                                Hydrology *hydro)
   : YieldStress(g) {
-  m_bed_topography = NULL;
-  m_mask           = NULL;
+
+  m_topg_to_phi = false;
+  m_tauc_to_phi = false;
+
   m_hydrology      = hydro;
 
   m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
@@ -129,7 +131,6 @@ read-in-from-file state or with a default constant value from the config file.
 */
 void MohrCoulombYieldStress::init() {
   std::string filename;
-  int start;
 
   {
     std::string hydrology_tillwat_max = "hydrology_tillwat_max";
@@ -157,9 +158,6 @@ void MohrCoulombYieldStress::init() {
 
   verbPrintf(2, m_grid.com, "* Initializing the default basal yield stress model...\n");
 
-  m_bed_topography = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  m_mask = m_grid.variables().get_2d_mask("mask");
-
   options::String
     i("-i", "PISM input file"),
     bootstrap("-boot_file", "PISM bootstrapping file");
@@ -173,35 +171,18 @@ void MohrCoulombYieldStress::init() {
                 "Turn on, and specify, the till friction angle parameterization"
                 " based on bedrock elevation (topg)");
 
-  // Get the till friction angle from the the context and ignore options that
-  // would be used to set it otherwise.
-  const IceModelVec2S *till_phi_input = m_grid.variables().get_2d_scalar("tillphi");
-  if (till_phi_input != NULL) {
-    m_till_phi.copy_from(*till_phi_input);
-
-    options::ignored(m_grid.com, "-plastic_phi");
-    options::ignored(m_grid.com, "-topg_to_phi");
-
-    // We do not allow re-gridding in this case.
-
-    return;
-  }
-
-  if (topg_to_phi_option.is_set() && plastic_phi.is_set()) {
+  if (topg_to_phi_option.is_set() and plastic_phi.is_set()) {
     throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
   }
 
-  if (plastic_phi.is_set()) {
-
-    m_till_phi.set(m_config.get("default_till_phi"));
-
-  } else if (topg_to_phi_option.is_set()) {
+  if (topg_to_phi_option.is_set()) {
 
     verbPrintf(2, m_grid.com,
                "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
     if (i.is_set() || bootstrap.is_set()) {
       bool boot = false;
+      int start = 0;
       find_pism_input(filename, boot, start);
 
       PIO nc(m_grid.com, "guess_mode", m_grid.config.get_unit_system());
@@ -219,10 +200,25 @@ void MohrCoulombYieldStress::init() {
     }
 
     // note option -topg_to_phi will be read again to get comma separated array of parameters
-    this->topg_to_phi();
+    m_topg_to_phi = true;
 
-  } else if (i.is_set() || bootstrap.is_set()) {
+    double phi_min  = topg_to_phi_option[0];
+    double phi_max  = topg_to_phi_option[1];
+    double topg_min = topg_to_phi_option[2];
+    double topg_max = topg_to_phi_option[3];
+
+    verbPrintf(2, m_grid.com,
+               "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
+               "            /  %5.2f                                 for   topg < %.f\n"
+               "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+               "            \\  %5.2f                                 for   %.f < topg\n",
+               phi_min, topg_min,
+               phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
+               phi_max, topg_max);
+
+  } else if (i.is_set() or bootstrap.is_set()) {
     bool boot = false;
+    int start = 0;
     find_pism_input(filename, boot, start);
 
     if (i.is_set()) {
@@ -231,10 +227,14 @@ void MohrCoulombYieldStress::init() {
       m_till_phi.regrid(filename, OPTIONAL,
                         m_config.get("bootstrapping_tillphi_value_no_var"));
     }
+  } else {
+    // Use the default value *or* the value set using the -plastic_phi
+    // command-line option.
+    m_till_phi.set(plastic_phi);
   }
 
   // regrid if requested, regardless of how initialized
-  regrid("MohrCoulombYieldStress", &m_till_phi);
+  regrid("MohrCoulombYieldStress", m_till_phi);
 
   options::String tauc_to_phi_file("-tauc_to_phi",
                               "Turn on, and specify, the till friction angle computation"
@@ -250,6 +250,7 @@ void MohrCoulombYieldStress::init() {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
       bool boot = false;
+      int start = 0;
       find_pism_input(filename, boot, start);
 
       if (boot == false) {
@@ -259,22 +260,11 @@ void MohrCoulombYieldStress::init() {
       }
     }
 
-    // At this point tauc is initialized in one of the following ways:
-    // - from a -tauc_to_phi file
-    // - from an input (or bootstrapping) file if -tauc_to_phi did not have an
-    //  argument
-    //
-    // In addition to this, till_phi is initialized
-    // - from an input file or
-    // - using the -plastic_phi option
-    // - using the topg_to_phi option
-    //
-    // Now tauc_to_phi() will correct till_phi at all locations where grounded
-    // ice is present:
+    verbPrintf(2, m_grid.com,
+               "  Will compute till friction angle (tillphi) as a function"
+               " of the yield stress (tauc)...\n");
 
-    verbPrintf(2, m_grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n");
-
-    this->tauc_to_phi();
+    m_tauc_to_phi = true;
 
   } else {
     m_tauc.set(0.0);
@@ -284,21 +274,26 @@ void MohrCoulombYieldStress::init() {
   m_t = m_dt = GSL_NAN;
 }
 
+void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input) {
+  m_till_phi.copy_from(input);
+}
 
-void MohrCoulombYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
+void MohrCoulombYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/,
+                                                     std::set<std::string> &result) {
   result.insert("tillphi");
 }
 
 
-void MohrCoulombYieldStress::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                                 IO_Type nctype) {
+void MohrCoulombYieldStress::define_variables_impl(const std::set<std::string> &vars,
+                                                   const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
     m_till_phi.define(nc, nctype);
   }
 }
 
 
-void MohrCoulombYieldStress::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void MohrCoulombYieldStress::write_variables_impl(const std::set<std::string> &vars,
+                                                  const PIO &nc) {
   if (set_contains(vars, "tillphi")) {
     m_till_phi.write(nc);
   }
@@ -339,12 +334,23 @@ RoutingHydrology (or derived class thereof).
  */
 void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
 
+  if (m_topg_to_phi) {
+    this->topg_to_phi();
+    m_topg_to_phi = false;
+  }
+
+  if (m_tauc_to_phi) {
+    this->tauc_to_phi();
+    m_tauc_to_phi = false;
+  }
+
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
     return;
   }
 
-  m_t = my_t; m_dt = my_dt;
+  m_t = my_t;
+  m_dt = my_dt;
   // this model does no internal time-stepping
 
   bool slipperygl       = m_config.get_flag("tauc_slippery_grounding_lines"),
@@ -369,6 +375,9 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
     }
   }
 
+  const IceModelVec2Int &mask           = *m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S   &bed_topography = *m_grid.variables().get_2d_scalar("bedrock_altitude");
+
   IceModelVec::AccessList list;
   if (addtransportable == true) {
     list.add(m_bwat);
@@ -376,11 +385,11 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
   list.add(m_tillwat);
   list.add(m_till_phi);
   list.add(m_tauc);
-  list.add(*m_mask);
-  list.add(*m_bed_topography);
+  list.add(mask);
+  list.add(bed_topography);
   list.add(m_Po);
 
-  MaskQuery m(*m_mask);
+  MaskQuery m(mask);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -394,7 +403,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
       const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
       double water = m_tillwat(i,j); // usual case
       if (slipperygl == true &&
-          (*m_bed_topography)(i,j) <= sea_level &&
+          bed_topography(i,j) <= sea_level &&
           (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
       } else if (addtransportable == true) {
@@ -415,7 +424,6 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
 const IceModelVec2S& MohrCoulombYieldStress::basal_material_yield_stress() {
   return m_tauc;
 }
-
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
@@ -444,10 +452,17 @@ void MohrCoulombYieldStress::topg_to_phi() {
                            "Turn on, and specify, the till friction angle parameterization"
                            " based on bedrock elevation (topg)");
 
-  phi_min  = option[0];
-  phi_max  = option[1];
-  topg_min = option[2];
-  topg_max = option[3];
+  if (option.is_set() and option->size() != 4) {
+    throw RuntimeError::formatted("invalid -topg_to_phi arguments: has to be a list"
+                                  " of 4 numbers, got %d", (int)option->size());
+  }
+
+  if (option.is_set()) {
+    phi_min  = option[0];
+    phi_max  = option[1];
+    topg_min = option[2];
+    topg_max = option[3];
+  }
 
   if (phi_min >= phi_max) {
     throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required");
@@ -457,24 +472,17 @@ void MohrCoulombYieldStress::topg_to_phi() {
     throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
-  verbPrintf(2, m_grid.com,
-             "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-             "            /  %5.2f                                 for   topg < %.f\n"
-             "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-             "            \\  %5.2f                                 for   %.f < topg\n",
-             phi_min, topg_min,
-             phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
-             phi_max, topg_max);
+  const IceModelVec2S &bed_topography = *m_grid.variables().get_2d_scalar("bedrock_altitude");
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
   IceModelVec::AccessList list;
-  list.add(*m_bed_topography);
+  list.add(bed_topography);
   list.add(m_till_phi);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    double bed = (*m_bed_topography)(i, j);
+    const double bed = bed_topography(i, j);
 
     if (bed <= topg_min) {
       m_till_phi(i, j) = phi_min;
@@ -494,7 +502,8 @@ void MohrCoulombYieldStress::topg_to_phi() {
 void MohrCoulombYieldStress::tauc_to_phi() {
   const double c0 = m_config.get("till_cohesion"),
     N0            = m_config.get("till_reference_effective_pressure"),
-    e0overCc      = m_config.get("till_reference_void_ratio")/ m_config.get("till_compressibility_coefficient"),
+    e0overCc      = (m_config.get("till_reference_void_ratio") /
+                     m_config.get("till_compressibility_coefficient")),
     delta         = m_config.get("till_effective_fraction_overburden"),
     tillwat_max   = m_config.get("hydrology_tillwat_max");
 
@@ -503,18 +512,20 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   m_hydrology->till_water_thickness(m_tillwat);
   m_hydrology->overburden_pressure(m_Po);
 
+  const IceModelVec2Int &mask = *m_grid.variables().get_2d_mask("mask");
+
   IceModelVec::AccessList list;
-  list.add(*m_mask);
+  list.add(mask);
   list.add(m_tauc);
   list.add(m_tillwat);
   list.add(m_Po);
   list.add(m_till_phi);
 
-  MaskQuery m(*m_mask);
+  MaskQuery m(mask);
 
   // make sure that we have enough ghosts:
   unsigned int GHOSTS = m_till_phi.get_stencil_width();
-  assert(m_mask->get_stencil_width()   >= GHOSTS);
+  assert(mask.get_stencil_width()      >= GHOSTS);
   assert(m_tauc.get_stencil_width()    >= GHOSTS);
   assert(m_tillwat.get_stencil_width() >= GHOSTS);
   assert(m_Po.get_stencil_width()      >= GHOSTS);

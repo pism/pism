@@ -38,6 +38,8 @@ public:
 
   virtual const IceModelVec2S& basal_material_yield_stress();
 
+  void set_till_friction_angle(const IceModelVec2S &input);
+
 protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
@@ -48,10 +50,9 @@ protected:
   void topg_to_phi();
   void tauc_to_phi();
 protected:
+  bool m_topg_to_phi, m_tauc_to_phi;
   IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
   IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
-  const IceModelVec2S *m_bed_topography;
-  const IceModelVec2Int *m_mask;
   Hydrology *m_hydrology;
 };
 
