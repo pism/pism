@@ -132,7 +132,7 @@ protected:
       `-regrid_vars`.
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
-  virtual void regrid(const std::string &module_name, IceModelVec *variable,
+  virtual void regrid(const std::string &module_name, IceModelVec &variable,
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 protected:
   const IceGrid &m_grid;

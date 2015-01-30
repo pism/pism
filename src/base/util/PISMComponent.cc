@@ -124,10 +124,8 @@ bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
  *            =-regrid_vars= are set *and* the name of the variable is
  *            found in the set of names given with =-regrid_vars=.
  */
-void Component::regrid(const std::string &module_name, IceModelVec *variable,
+void Component::regrid(const std::string &module_name, IceModelVec &variable,
                        RegriddingFlag flag) {
-
-  assert(variable != NULL);
 
   options::String regrid_file("-regrid_file", "regridding file name");
 
@@ -139,7 +137,7 @@ void Component::regrid(const std::string &module_name, IceModelVec *variable,
     return;
   }
 
-  NCSpatialVariable &m = variable->metadata();
+  NCSpatialVariable &m = variable.metadata();
 
   if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
       (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
@@ -149,7 +147,7 @@ void Component::regrid(const std::string &module_name, IceModelVec *variable,
                module_name.c_str(),
                m.get_string("short_name").c_str(), regrid_file->c_str());
 
-    variable->regrid(regrid_file, CRITICAL);
+    variable.regrid(regrid_file, CRITICAL);
   }
 }
 
