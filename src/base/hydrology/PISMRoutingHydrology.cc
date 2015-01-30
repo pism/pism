@@ -30,6 +30,12 @@ RoutingHydrology::RoutingHydrology(const IceGrid &g)
 {
   stripwidth = m_config.get("hydrology_null_strip_width");
 
+  // these variables are also set to zero every time init() is called
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
+
   // model state variables; need ghosts
   W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   W.set_attrs("model_state",
@@ -92,9 +98,6 @@ void RoutingHydrology::init() {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
 
-  report_mass_accounting = options::Bool("-report_mass_accounting",
-                                         "Report to stdout on mass accounting in hydrology models");
-
   stripwidth = m_grid.convert(stripwidth, "m", "km");
   options::Real hydrology_null_strip("-hydrology_null_strip",
                                      "set the width, in km, of the strip around the edge"
@@ -102,10 +105,14 @@ void RoutingHydrology::init() {
                                      stripwidth);
   stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
 
-
   Hydrology::init();
 
   init_bwat();
+
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
 }
 
 
@@ -178,16 +185,26 @@ void RoutingHydrology::write_variables_impl(const std::set<std::string> &vars, c
 
 
 void RoutingHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                           std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+                                            std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
-  dict["bwp"] = new Hydrology_bwp(this);
-  dict["bwprel"] = new Hydrology_bwprel(this);
-  dict["effbwp"] = new Hydrology_effbwp(this);
+  dict["bwp"]        = new Hydrology_bwp(this);
+  dict["bwprel"]     = new Hydrology_bwprel(this);
+  dict["effbwp"]     = new Hydrology_effbwp(this);
   dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
   dict["hydroinput"] = new Hydrology_hydroinput(this);
-  dict["wallmelt"] = new Hydrology_wallmelt(this);
+  dict["wallmelt"]   = new Hydrology_wallmelt(this);
   // add diagnostic that only makes sense if transport is modeled
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this);
+  dict["bwatvel"]    = new RoutingHydrology_bwatvel(this);
+
+  // add mass-conservation time-series diagnostics
+  ts_dict["hydro_ice_free_land_loss_cumulative"]      = new MCHydrology_ice_free_land_loss_cumulative(this);
+  ts_dict["hydro_ice_free_land_loss"]                 = new MCHydrology_ice_free_land_loss(this);
+  ts_dict["hydro_ocean_loss_cumulative"]              = new MCHydrology_ocean_loss_cumulative(this);
+  ts_dict["hydro_ocean_loss"]                         = new MCHydrology_ocean_loss(this);
+  ts_dict["hydro_negative_thickness_gain_cumulative"] = new MCHydrology_negative_thickness_gain_cumulative(this);
+  ts_dict["hydro_negative_thickness_gain"]            = new MCHydrology_negative_thickness_gain(this);
+  ts_dict["hydro_null_strip_loss_cumulative"]         = new MCHydrology_null_strip_loss_cumulative(this);
+  ts_dict["hydro_null_strip_loss"]                    = new MCHydrology_null_strip_loss(this);
 }
 
 
@@ -772,19 +789,18 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // FIXME issue #256
-  if (report_mass_accounting) {
-    verbPrintf(2, m_grid.com,
-               " 'routing' hydrology summary:\n"
-               "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-               "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-               "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-               "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-               hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-               maxV, maxD,
-               icefreelost, oceanlost,
-               negativegain, nullstriplost);
-  }
+  verbPrintf(2, m_grid.com,
+             "  'routing' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
+             hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"));
+
+  verbPrintf(3, m_grid.com,
+             "  (hydrology info: dt = %.2f s,  max |V| = %.2e m s-1,  max D = %.2e m^2 s-1)\n",
+             m_dt/hydrocount, maxV, maxD);
+
+  ice_free_land_loss_cumulative      += icefreelost;
+  ocean_loss_cumulative              += oceanlost;
+  negative_thickness_gain_cumulative += negativegain;
+  null_strip_loss_cumulative         += nullstriplost;
 }
 
 

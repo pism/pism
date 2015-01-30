@@ -72,9 +72,6 @@ void DistributedHydrology::init() {
     stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
   }
 
-  report_mass_accounting = options::Bool("-report_mass_accounting",
-                                         "Report to stdout on mass accounting in hydrology models");
-
   bool init_P_from_steady = options::Bool("-init_P_from_steady",
                                           "initialize P from formula P(W) which applies in steady state");
 
@@ -88,6 +85,11 @@ void DistributedHydrology::init() {
   RoutingHydrology::init_bwat();
 
   init_bwp();
+
+  ice_free_land_loss_cumulative      = 0.0;
+  ocean_loss_cumulative              = 0.0;
+  negative_thickness_gain_cumulative = 0.0;
+  null_strip_loss_cumulative         = 0.0;
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     verbPrintf(2, m_grid.com,
@@ -175,16 +177,26 @@ void DistributedHydrology::write_variables_impl(const std::set<std::string> &var
 
 
 void DistributedHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                               std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+                                               std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   // bwp is state
-  dict["bwprel"] = new Hydrology_bwprel(this);
-  dict["effbwp"] = new Hydrology_effbwp(this);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
-  dict["hydroinput"] = new Hydrology_hydroinput(this);
-  dict["wallmelt"] = new Hydrology_wallmelt(this);
-  dict["bwatvel"] = new RoutingHydrology_bwatvel(this);
+  dict["bwprel"]           = new Hydrology_bwprel(this);
+  dict["effbwp"]           = new Hydrology_effbwp(this);
+  dict["hydrobmelt"]       = new Hydrology_hydrobmelt(this);
+  dict["hydroinput"]       = new Hydrology_hydroinput(this);
+  dict["wallmelt"]         = new Hydrology_wallmelt(this);
+  dict["bwatvel"]          = new RoutingHydrology_bwatvel(this);
   dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this);
+
+  // add mass-conservation time-series diagnostics
+  ts_dict["hydro_ice_free_land_loss_cumulative"]      = new MCHydrology_ice_free_land_loss_cumulative(this);
+  ts_dict["hydro_ice_free_land_loss"]                 = new MCHydrology_ice_free_land_loss(this);
+  ts_dict["hydro_ocean_loss_cumulative"]              = new MCHydrology_ocean_loss_cumulative(this);
+  ts_dict["hydro_ocean_loss"]                         = new MCHydrology_ocean_loss(this);
+  ts_dict["hydro_negative_thickness_gain_cumulative"] = new MCHydrology_negative_thickness_gain_cumulative(this);
+  ts_dict["hydro_negative_thickness_gain"]            = new MCHydrology_negative_thickness_gain(this);
+  ts_dict["hydro_null_strip_loss_cumulative"]         = new MCHydrology_null_strip_loss_cumulative(this);
+  ts_dict["hydro_null_strip_loss"]                    = new MCHydrology_null_strip_loss(this);
 }
 
 
@@ -305,7 +317,7 @@ void DistributedHydrology::adaptive_for_WandP_evolution(double t_current, double
     PtoCFLratio = 1.0;
   }
 
-  verbPrintf(3,m_grid.com,
+  verbPrintf(4, m_grid.com,
              "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
              m_grid.convert(maxV_result, "m/second", "m/year"),
              m_grid.convert(dtCFL,       "seconds",  "years"),
@@ -434,13 +446,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
       } else if (M.ocean(i,j)) {
         Pnew(i,j) = Pover(i,j);
       } else if (W(i,j) <= 0.0) {
-        // see P(W) formula *in steady state*; note P(W) is continuous (in steady
-        // state); these facts imply:
-        if (velbase_mag(i,j) > 0.0) {
-          Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
-        } else {
-          Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
-        }
+        Pnew(i,j) = Pover(i,j);
       } else {
         // opening and closure terms in pressure equation
         Open = std::max(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
@@ -482,19 +488,17 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // FIXME issue #256
-  if (report_mass_accounting) {
-    verbPrintf(2, m_grid.com,
-               " 'distributed' hydrology summary:\n"
-               "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
-               "        (average of %.2f steps per CFL time; max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-               "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-               "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-               hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-               cumratio/hydrocount, maxV, maxD,
-               icefreelost, oceanlost,
-               negativegain, nullstriplost);
-  }
+  verbPrintf(2, m_grid.com,
+             "  'distributed' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
+             hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"));
+  verbPrintf(3, m_grid.com,
+             "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,  max D = %.2e m^2 s-1)\n",
+             m_dt/hydrocount, cumratio/hydrocount, maxV, maxD);
+
+  ice_free_land_loss_cumulative      += icefreelost;
+  ocean_loss_cumulative              += oceanlost;
+  negative_thickness_gain_cumulative += negativegain;
+  null_strip_loss_cumulative         += nullstriplost;
 }
 
 
