@@ -52,7 +52,6 @@ protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
   const int m_stencil_width;
-  const IceModelVec2Int *m_mask;
   StressBalance *m_stress_balance;
   double m_K;
   bool m_restrict_timestep;
