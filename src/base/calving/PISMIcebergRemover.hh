@@ -59,8 +59,6 @@ protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   IceModelVec2S m_iceberg_mask;
   petsc::Vec::Ptr m_mask_p0;
-
-  const IceModelVec2Int *m_bc_mask;
 };
 
 } // end of namespace pism
