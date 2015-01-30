@@ -975,7 +975,7 @@ IceModelVec::AccessList::AccessList() {
 }
 
 IceModelVec::AccessList::~AccessList() {
-  while (m_vecs.empty() == false) {
+  while (not m_vecs.empty()) {
     m_vecs.back()->end_access();
     m_vecs.pop_back();
   }
