@@ -200,7 +200,11 @@ void IceModel::list_diagnostics() {
 
       std::set<std::string>::iterator j;
       for (j = list.begin(); j != list.end(); ++j) {
-        const IceModelVec *v = grid.variables().get(*j);
+        const IceModelVec *v = NULL;
+
+        if (grid.variables().is_available(*j)) {
+          v = grid.variables().get(*j);
+        }
 
         if (v != NULL && v->get_ndims() == d) {
           const NCSpatialVariable &var = v->metadata();
