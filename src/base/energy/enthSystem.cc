@@ -116,16 +116,16 @@ void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
     return;
   }
 
-  coarse_to_fine(m_u3, m_i, m_j, m_ks, &m_u[0]);
-  coarse_to_fine(m_v3, m_i, m_j, m_ks, &m_v[0]);
-  coarse_to_fine(m_w3, m_i, m_j, m_ks, &m_w[0]);
-  coarse_to_fine(m_strain_heating3, m_i, m_j, m_ks, &m_strain_heating[0]);
-  coarse_to_fine(m_Enth3, m_i, m_j, m_ks, &m_Enth[0]);
+  coarse_to_fine(m_u3, m_i, m_j, &m_u[0]);
+  coarse_to_fine(m_v3, m_i, m_j, &m_v[0]);
+  coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+  coarse_to_fine(m_strain_heating3, m_i, m_j, &m_strain_heating[0]);
+  coarse_to_fine(m_Enth3, m_i, m_j, &m_Enth[0]);
 
-  coarse_to_fine(m_Enth3, m_i, m_j+1, m_ks, &m_E_n[0]);
-  coarse_to_fine(m_Enth3, m_i+1, m_j, m_ks, &m_E_e[0]);
-  coarse_to_fine(m_Enth3, m_i, m_j-1, m_ks, &m_E_s[0]);
-  coarse_to_fine(m_Enth3, m_i-1, m_j, m_ks, &m_E_w[0]);
+  coarse_to_fine(m_Enth3, m_i, m_j+1, &m_E_n[0]);
+  coarse_to_fine(m_Enth3, m_i+1, m_j, &m_E_e[0]);
+  coarse_to_fine(m_Enth3, m_i, m_j-1, &m_E_s[0]);
+  coarse_to_fine(m_Enth3, m_i-1, m_j, &m_E_w[0]);
 
   compute_enthalpy_CTS();
 

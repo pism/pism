@@ -76,16 +76,16 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
     return;
   }
 
-  coarse_to_fine(m_u3, m_i, m_j, m_ks, &m_u[0]);
-  coarse_to_fine(m_v3, m_i, m_j, m_ks, &m_v[0]);
-  coarse_to_fine(m_w3, m_i, m_j, m_ks, &m_w[0]);
-  coarse_to_fine(m_strain_heating3, m_i, m_j, m_ks, &m_strain_heating[0]);
-  coarse_to_fine(m_T3, m_i, m_j, m_ks, &m_T[0]);
+  coarse_to_fine(m_u3, m_i, m_j, &m_u[0]);
+  coarse_to_fine(m_v3, m_i, m_j, &m_v[0]);
+  coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+  coarse_to_fine(m_strain_heating3, m_i, m_j, &m_strain_heating[0]);
+  coarse_to_fine(m_T3, m_i, m_j, &m_T[0]);
 
-  coarse_to_fine(m_T3, m_i, m_j+1, m_ks, &m_T_n[0]);
-  coarse_to_fine(m_T3, m_i+1, m_j, m_ks, &m_T_e[0]);
-  coarse_to_fine(m_T3, m_i, m_j-1, m_ks, &m_T_s[0]);
-  coarse_to_fine(m_T3, m_i-1, m_j, m_ks, &m_T_w[0]);
+  coarse_to_fine(m_T3, m_i, m_j+1, &m_T_n[0]);
+  coarse_to_fine(m_T3, m_i+1, m_j, &m_T_e[0]);
+  coarse_to_fine(m_T3, m_i, m_j-1, &m_T_s[0]);
+  coarse_to_fine(m_T3, m_i-1, m_j, &m_T_w[0]);
 
   m_lambda = compute_lambda();
 }

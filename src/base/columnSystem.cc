@@ -46,8 +46,8 @@ with the last row
 Thus the index into the arrays L, D, U is always the row number.
  */
 TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
-                                     const std::string &prefix)
-  : m_max_system_size(max_size), m_prefix(prefix) {
+                                     const std::string &my_prefix)
+  : m_max_system_size(max_size), m_prefix(my_prefix) {
   assert(m_max_system_size >= 1 && m_max_system_size < 1e6);
 
   m_L.resize(m_max_system_size);
@@ -326,10 +326,10 @@ void columnSystemCtx::fine_to_coarse(const std::vector<double> &fine, int i, int
   m_interp->fine_to_coarse(&fine[0], array);
 }
 
-void columnSystemCtx::coarse_to_fine(const IceModelVec3 &coarse, int i, int j, int ks,
+void columnSystemCtx::coarse_to_fine(const IceModelVec3 &coarse, int i, int j,
                                      double* fine) const {
   const double *array = coarse.get_column(i, j);
-  m_interp->coarse_to_fine(array, ks, fine);
+  m_interp->coarse_to_fine(array, m_ks, fine);
 }
 
 void columnSystemCtx::init_fine_grid(const std::vector<double>& storage_grid) {

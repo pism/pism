@@ -319,7 +319,7 @@ void set_config_from_options(Config &config) {
   if (topg_to_phi.is_set()) {
     if (topg_to_phi->size() != 4) {
       throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
-                                    topg_to_phi->size());
+                                    (int)topg_to_phi->size());
     }
     config.set_flag("till_use_topg_to_phi", true);
     config.set_double("till_topg_to_phi_phi_min", topg_to_phi[0]);

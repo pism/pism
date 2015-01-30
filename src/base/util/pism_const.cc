@@ -44,7 +44,7 @@ static int verbosityLevel;
 //! \brief Set the PISM verbosity level.
 void setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
-    throw RuntimeError::formatted("verbosity level %s is invalid", level);
+    throw RuntimeError::formatted("verbosity level %d is invalid", level);
   }
   verbosityLevel = level;
 }

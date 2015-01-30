@@ -35,6 +35,10 @@
 
 namespace pism {
 
+#ifndef __GNUC__
+#  define  __attribute__(x)  /* nothing */
+#endif
+
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 

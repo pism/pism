@@ -169,7 +169,7 @@ void MohrCoulombYieldStress::init() {
                 m_config.get("default_till_phi"));
 
   options::RealList
-    topg_to_phi("-topg_to_phi",
+    topg_to_phi_option("-topg_to_phi",
                 "Turn on, and specify, the till friction angle parameterization"
                 " based on bedrock elevation (topg)");
 
@@ -187,7 +187,7 @@ void MohrCoulombYieldStress::init() {
     return;
   }
 
-  if (topg_to_phi.is_set() && plastic_phi.is_set()) {
+  if (topg_to_phi_option.is_set() && plastic_phi.is_set()) {
     throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
   }
 
@@ -195,7 +195,7 @@ void MohrCoulombYieldStress::init() {
 
     m_till_phi.set(m_config.get("default_till_phi"));
 
-  } else if (topg_to_phi.is_set()) {
+  } else if (topg_to_phi_option.is_set()) {
 
     verbPrintf(2, m_grid.com,
                "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
@@ -236,16 +236,16 @@ void MohrCoulombYieldStress::init() {
   // regrid if requested, regardless of how initialized
   regrid("MohrCoulombYieldStress", &m_till_phi);
 
-  options::String tauc_to_phi("-tauc_to_phi",
+  options::String tauc_to_phi_file("-tauc_to_phi",
                               "Turn on, and specify, the till friction angle computation"
                               " which uses basal yield stress (tauc) and the rest of the model state",
                               "", options::ALLOW_EMPTY);
 
-  if (tauc_to_phi.is_set()) {
+  if (tauc_to_phi_file.is_set()) {
 
-    if (not tauc_to_phi->empty()) {
+    if (not tauc_to_phi_file->empty()) {
       // "-tauc_to_phi filename.nc" is given
-      m_tauc.regrid(tauc_to_phi, CRITICAL);
+      m_tauc.regrid(tauc_to_phi_file, CRITICAL);
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
@@ -439,6 +439,15 @@ void MohrCoulombYieldStress::topg_to_phi() {
          phi_max  = m_config.get("till_topg_to_phi_phi_max"),
          topg_min = m_config.get("till_topg_to_phi_topg_min"),
          topg_max = m_config.get("till_topg_to_phi_topg_max");
+
+  options::RealList option("-topg_to_phi",
+                           "Turn on, and specify, the till friction angle parameterization"
+                           " based on bedrock elevation (topg)");
+
+  phi_min  = option[0];
+  phi_max  = option[1];
+  topg_min = option[2];
+  topg_max = option[3];
 
   if (phi_min >= phi_max) {
     throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required");

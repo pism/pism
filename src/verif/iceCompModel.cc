@@ -759,7 +759,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       areaexact += a;
       volexact += a * Hexact * 1e-3;
     }
-    if (i == (grid.Mx() - 1)/2 && j == (grid.My() - 1)/2) {
+    if (i == ((int)grid.Mx() - 1)/2 and
+        j == ((int)grid.My() - 1)/2) {
       domeH = ice_thickness(i,j);
       domeHexact = Hexact;
     }

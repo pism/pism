@@ -55,8 +55,8 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
   {
     options::String i("-i", "PISM input file name");
 
-    options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer", m_Mbz);
-    m_Mbz = Mbz;
+    options::Integer Mbz_option("-Mbz", "number of levels in bedrock thermal layer", m_Mbz);
+    m_Mbz = Mbz_option;
 
     options::Real Lbz("-Lbz",
                       "depth (thickness) of bedrock thermal layer, in meters", m_Lbz);
@@ -90,10 +90,10 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
     } else {
       // Bootstrapping
 
-      if (Mbz.is_set() && m_Mbz == 1) {
+      if (Mbz_option.is_set() && m_Mbz == 1) {
         options::ignored(m_grid.com, "-Lbz");
         m_Lbz = 0;
-      } else if (Mbz.is_set() ^ Lbz.is_set()) {
+      } else if (Mbz_option.is_set() ^ Lbz.is_set()) {
         throw RuntimeError("please specify both -Mbz and -Lbz");
       }
     }

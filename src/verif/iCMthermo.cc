@@ -425,7 +425,8 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
     }
 
     const double Tbase = T3.get_column(i,j)[0];
-    if (i == (grid.Mx() - 1)/2 && j == (grid.My() - 1)/2) {
+    if (i == ((int)grid.Mx() - 1) / 2 and
+        j == ((int)grid.My() - 1) / 2) {
       domeT = Tbase;
       domeTexact = Texact;
     }

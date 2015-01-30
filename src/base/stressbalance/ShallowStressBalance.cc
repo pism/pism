@@ -121,19 +121,19 @@ void ZeroSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
 /*!
   Ice shelves have zero basal friction heating.
 
-  \param[in] velocity *basal* sliding velocity
+  \param[in] V *basal* sliding velocity
   \param[in] tauc basal yield stress
   \param[in] mask (used to determine if floating or grounded)
   \param[out] result
  */
-void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &velocity,
+void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &V,
                                                             const IceModelVec2S &tauc,
                                                             const IceModelVec2Int &mask,
                                                             IceModelVec2S &result) {
   MaskQuery m(mask);
 
   IceModelVec::AccessList list;
-  list.add(velocity);
+  list.add(V);
   list.add(result);
   list.add(tauc);
   list.add(mask);
@@ -145,10 +145,10 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
       result(i,j) = 0.0;
     } else {
       const double
-        C = basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
-        basal_stress_x = - C * velocity(i,j).u,
-        basal_stress_y = - C * velocity(i,j).v;
-      result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
+        C = basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
+        basal_stress_x = - C * V(i,j).u,
+        basal_stress_y = - C * V(i,j).v;
+      result(i,j) = - basal_stress_x * V(i,j).u - basal_stress_y * V(i,j).v;
     }
   }
 }
@@ -171,7 +171,7 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
-void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &V,
                                                              const IceModelVec2Int &mask,
                                                              IceModelVec2 &result) {
   double    dx = m_grid.dx(), dy = m_grid.dy();
@@ -181,7 +181,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
   }
 
   IceModelVec::AccessList list;
-  list.add(velocity);
+  list.add(V);
   list.add(result);
   list.add(mask);
 
@@ -195,7 +195,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
     }
 
     StarStencil<int> m = mask.int_star(i,j);
-    StarStencil<Vector2> U = velocity.star(i,j);
+    StarStencil<Vector2> U = V.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
@@ -254,7 +254,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
 
 //! \brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
-void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
+void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
                                                const IceModelVec2Int &mask,
                                                IceModelVec2 &result) {
   double    dx = m_grid.dx(), dy = m_grid.dy();
@@ -267,7 +267,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
   double hardness = pow(m_config.get("ice_softness"),-1.0/m_config.get("ssa_Glen_exponent"));
 
   IceModelVec::AccessList list;
-  list.add(velocity);
+  list.add(V);
   list.add(result);
   list.add(mask);
 
@@ -282,7 +282,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
     }
 
     StarStencil<int> m = mask.int_star(i,j);
-    StarStencil<Vector2> U = velocity.star(i,j);
+    StarStencil<Vector2> U = V.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,

@@ -45,8 +45,8 @@ The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
 double IceModel::max_timestep_cfl_3d() {
-  double max_timestep = config.get("maximum_time_step_years",
-                                   "years", "seconds");
+  double max_dt = config.get("maximum_time_step_years",
+                             "years", "seconds");
 
   const IceModelVec3
     &u3 = stress_balance->velocity_u(),
@@ -83,7 +83,7 @@ double IceModel::max_timestep_cfl_3d() {
         max_w = std::max(max_w, fabs(w[k]));
         const double denom = fabs(absu / grid.dx()) + fabs(absv / grid.dy());
         if (denom > 0.0) {
-          max_timestep = std::min(max_timestep, 1.0 / denom);
+          max_dt = std::min(max_dt, 1.0 / denom);
         }
       }
     }
@@ -93,7 +93,7 @@ double IceModel::max_timestep_cfl_3d() {
   gmaxv = GlobalMax(grid.com, max_v);
   gmaxw = GlobalMax(grid.com, max_w);
 
-  return GlobalMin(grid.com, max_timestep);
+  return GlobalMin(grid.com, max_dt);
 }
 
 
@@ -108,7 +108,7 @@ double IceModel::max_timestep_cfl_3d() {
   sliding case we have a CFL condition.
  */
 double IceModel::max_timestep_cfl_2d() {
-  double max_timestep = config.get("maximum_time_step_years", "years", "seconds");
+  double max_dt = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -123,12 +123,12 @@ double IceModel::max_timestep_cfl_2d() {
     if (mask.icy(i, j)) {
       const double denom = fabs(vel(i, j).u) / grid.dx() + fabs(vel(i, j).v) / grid.dy();
       if (denom > 0.0) {
-        max_timestep = std::min(max_timestep, 1.0 / denom);
+        max_dt = std::min(max_dt, 1.0 / denom);
       }
     }
   }
 
-  return GlobalMin(grid.com, max_timestep);
+  return GlobalMin(grid.com, max_dt);
 }
 
 

@@ -180,7 +180,7 @@ protected:
 
   void init_fine_grid(const std::vector<double>& storage_grid);
 
-  void coarse_to_fine(const IceModelVec3 &coarse, int i, int j, int ks, double* fine) const;
+  void coarse_to_fine(const IceModelVec3 &coarse, int i, int j, double* fine) const;
 };
 
 } // end of namespace pism

@@ -29,6 +29,7 @@ RuntimeError::RuntimeError(const std::string &message)
   // empty
 }
 
+
 RuntimeError RuntimeError::formatted(const char format[], ...) {
   char buffer[8192];
   va_list argp;

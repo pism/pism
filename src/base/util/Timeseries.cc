@@ -88,7 +88,7 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
                                   "but a time-series variable can only depend on 1 dimension.",
                                   short_name.c_str(),
                                   nc.inq_filename().c_str(),
-                                  dims.size());
+                                  (int)dims.size());
   }
 
   time_name = dims[0];
@@ -248,7 +248,7 @@ double Timeseries::operator[](unsigned int j) const {
 #if (PISM_DEBUG==1)
   if (j >= values.size()) {
     throw RuntimeError::formatted("Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
-                                  var.get_name().c_str(), values.size(), j);
+                                  var.get_name().c_str(), (int)values.size(), j);
   }
 #endif
 

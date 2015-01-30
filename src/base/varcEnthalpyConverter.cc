@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 The PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -123,7 +123,8 @@ double varcEnthalpyConverter::getEnth(double T, double omega, double p) const {
     throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory",T,T_m,omega);
+    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory; got T=%f, T_m=%f, omega=%f",
+                                  T, T_m, omega);
   }
 
   if (T < T_m) {

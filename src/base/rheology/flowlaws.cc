@@ -59,7 +59,7 @@ bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
 IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
                        const EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
 
-  prefix = pre;
+  m_prefix = pre;
 
   if (EC == NULL) {
     throw RuntimeError("EC is NULL in IceFlowLaw::IceFlowLaw()");
@@ -71,8 +71,8 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
   rho                = config.get("ice_density");
   beta_CC_grad       = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
-  e                  = config.get(prefix + "enhancement_factor");
-  n                  = config.get(prefix + "Glen_exponent");
+  e                  = config.get(m_prefix + "enhancement_factor");
+  n                  = config.get(m_prefix + "Glen_exponent");
   viscosity_power    = (1.0 - n) / (2.0 * n);
   hardness_power     = -1.0 / n;
 
@@ -322,13 +322,15 @@ void GoldsbyKohlstedtIce::effective_viscosity(double, double,
   throw std::runtime_error("GoldsbyKohlstedtIce::effective_viscosity is not implemented");
 }
 
-double GoldsbyKohlstedtIce::averaged_hardness(double,
-                                                 int,
-                                                 const double *,
-                                                 const double *) const {
+double GoldsbyKohlstedtIce::averaged_hardness(double, int,
+                                              const double *,
+                                              const double *) const {
 
   throw std::runtime_error("double GoldsbyKohlstedtIce::averaged_hardness is not implemented");
+
+#ifndef __GNUC__
   return 0;
+#endif
 }
 
 double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure) const {
@@ -350,7 +352,10 @@ double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure)
 
 double GoldsbyKohlstedtIce::softness_parameter(double , double) const {
   throw std::runtime_error("double GoldsbyKohlstedtIce::softness_parameter is not implemented");
+
+#ifndef __GNUC__
   return 0;
+#endif
 }
 
 /*!

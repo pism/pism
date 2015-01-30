@@ -150,7 +150,7 @@ protected:
     n;                          // power law exponent
 
   MPI_Comm com;
-  std::string prefix;           // option (parameter) prefix
+  std::string m_prefix;           // option (parameter) prefix
 };
 
 // Helper functions:
@@ -352,16 +352,16 @@ public:
                       double pressure, double grainsize) const;
 
   virtual void effective_viscosity(double hardness, double gamma,
-                                   double *nu, double *dnu) const;
+                                   double *nu, double *dnu) const __attribute__((noreturn));
 
   virtual double averaged_hardness(double thickness,
                                    int kbelowH,
                                    const double *zlevels,
-                                   const double *enthalpy) const;
+                                   const double *enthalpy) const __attribute__((noreturn));
 
   virtual double hardness_parameter(double E, double p) const;
 
-  virtual double softness_parameter(double E, double p) const;
+  virtual double softness_parameter(double E, double p) const __attribute__((noreturn));
 
   virtual std::string name() const {
     return "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";

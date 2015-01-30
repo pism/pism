@@ -178,8 +178,8 @@ MaxTimestep::MaxTimestep()
   // empty
 }
 
-MaxTimestep::MaxTimestep(double value)
-  : m_active(true), m_value(value) {
+MaxTimestep::MaxTimestep(double my_value)
+  : m_active(true), m_value(my_value) {
   // empty
 }
 

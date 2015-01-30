@@ -76,15 +76,15 @@ void ageSystemCtx::initThisColumn(int i, int j, double thickness) {
     return;
   }
 
-  coarse_to_fine(m_u3, i, j, m_ks, &m_u[0]);
-  coarse_to_fine(m_v3, i, j, m_ks, &m_v[0]);
-  coarse_to_fine(m_w3, i, j, m_ks, &m_w[0]);
+  coarse_to_fine(m_u3, i, j, &m_u[0]);
+  coarse_to_fine(m_v3, i, j, &m_v[0]);
+  coarse_to_fine(m_w3, i, j, &m_w[0]);
 
-  coarse_to_fine(m_age3, m_i, m_j,   m_ks, &m_A[0]);
-  coarse_to_fine(m_age3, m_i, m_j+1, m_ks, &m_A_n[0]);
-  coarse_to_fine(m_age3, m_i+1, m_j, m_ks, &m_A_e[0]);
-  coarse_to_fine(m_age3, m_i, m_j-1, m_ks, &m_A_s[0]);
-  coarse_to_fine(m_age3, m_i-1, m_j, m_ks, &m_A_w[0]);
+  coarse_to_fine(m_age3, m_i, m_j,   &m_A[0]);
+  coarse_to_fine(m_age3, m_i, m_j+1, &m_A_n[0]);
+  coarse_to_fine(m_age3, m_i+1, m_j, &m_A_e[0]);
+  coarse_to_fine(m_age3, m_i, m_j-1, &m_A_s[0]);
+  coarse_to_fine(m_age3, m_i-1, m_j, &m_A_w[0]);
 }
 
 //! Conservative first-order upwind scheme with implicit in the vertical: one column solve.

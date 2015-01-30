@@ -448,7 +448,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
-      Vector2 velocity[FEQuadrature::Nk], residual[FEQuadrature::Nk];
+      Vector2 velocity_local[FEQuadrature::Nk], residual[FEQuadrature::Nk];
 
       // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
@@ -460,12 +460,12 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       m_dofmap.reset(i, j, m_grid);
 
       // Obtain the value of the solution at the nodes adjacent to the element.
-      m_dofmap.extractLocalDOFs(velocity_global, velocity);
+      m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (dirichlet_data) {
-        dirichlet_data.update(m_dofmap, velocity);
+        dirichlet_data.update(m_dofmap, velocity_local);
         dirichlet_data.constrain(m_dofmap);
       }
 
@@ -476,7 +476,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       }
 
       // Compute the solution values and symmetric gradient at the quadrature points.
-      m_quadrature_vector.computeTrialFunctionValues(velocity, u, Du);
+      m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
 
       // loop over quadrature points on this element:
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
@@ -602,7 +602,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       // Values of the solution at the nodes of the current element.
-      Vector2 velocity[FEQuadrature::Nk];
+      Vector2 velocity_local[FEQuadrature::Nk];
 
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per element, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
@@ -619,17 +619,17 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       m_dofmap.reset(i, j, m_grid);
 
       // Obtain the value of the solution at the adjacent nodes to the element.
-      m_dofmap.extractLocalDOFs(velocity_global, velocity);
+      m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (dirichlet_data) {
-        dirichlet_data.update(m_dofmap, velocity);
+        dirichlet_data.update(m_dofmap, velocity_local);
         dirichlet_data.constrain(m_dofmap);
       }
 
       // Compute the values of the solution at the quadrature points.
-      m_quadrature_vector.computeTrialFunctionValues(velocity, u, Du);
+      m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K));

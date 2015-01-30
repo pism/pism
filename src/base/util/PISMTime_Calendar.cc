@@ -417,7 +417,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) {
   // wrong number of parts in the YYYY-MM-DD date:
   if (numbers.size() != 3) {
     throw RuntimeError::formatted("date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
-                                  spec.c_str(), numbers.size());
+                                  spec.c_str(), (int)numbers.size());
   }
 
   if (year_is_negative) {
