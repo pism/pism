@@ -149,7 +149,7 @@ void DistributedHydrology::init_bwp() {
     }
   }
 
-  regrid("DistributedHydrology", &P); //  we could be asked to regrid from file
+  regrid("DistributedHydrology", P); //  we could be asked to regrid from file
 }
 
 

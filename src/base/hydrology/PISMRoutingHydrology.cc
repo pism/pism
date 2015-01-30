@@ -157,7 +157,7 @@ void RoutingHydrology::init_bwat() {
   }
 
   // however we initialized it, we could be asked to regrid from file
-  regrid("RoutingHydrology", &W);
+  regrid("RoutingHydrology", W);
 }
 
 

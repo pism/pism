@@ -175,7 +175,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
   }
 
   if (m_temp.was_created() == true) {
-    regrid("BedThermalUnit", &m_temp, REGRID_WITHOUT_REGRID_VARS);
+    regrid("BedThermalUnit", m_temp, REGRID_WITHOUT_REGRID_VARS);
   }
 
   if (m_temp.get_state_counter() == temp_revision) {

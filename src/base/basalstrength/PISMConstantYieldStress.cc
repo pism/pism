@@ -65,7 +65,7 @@ void ConstantYieldStress::init() {
     m_tauc.set(m_config.get("default_tauc"));
   }
 
-  regrid("ConstantYieldStress", &m_tauc);
+  regrid("ConstantYieldStress", m_tauc);
 }
 
 

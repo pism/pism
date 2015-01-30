@@ -142,8 +142,8 @@ void BedDef::init() {
   }
 
   // process -regrid_file and -regrid_vars
-  regrid("BedDef", &m_topg);
-  regrid("BedDef", &m_uplift);
+  regrid("BedDef", m_topg);
+  regrid("BedDef", m_uplift);
 
   // this should be the last thing we do here
   m_topg.copy_to(m_topg_initial);

@@ -167,7 +167,7 @@ void Hydrology::init() {
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file
-  regrid("Hydrology", &Wtil);
+  regrid("Hydrology", Wtil);
 }
 
 
