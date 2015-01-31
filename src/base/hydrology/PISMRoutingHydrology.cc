@@ -238,17 +238,21 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
                                              double &negativegain, double &nullstriplost) {
   double fresh_water_density = m_config.get("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
-  MaskQuery M(*m_mask);
+
+  const IceModelVec2S *cellarea = m_grid.variables().get_2d_scalar("cell_area");
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+
+  MaskQuery M(*mask);
 
   IceModelVec::AccessList list;
   list.add(newthk);
-  list.add(*m_cellarea);
-  list.add(*m_mask);
+  list.add(*cellarea);
+  list.add(*mask);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = (*m_cellarea)(i,j) * fresh_water_density; // kg m-1
+    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
     if (newthk(i,j) < 0.0) {
       my_negativegain += -newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
@@ -277,7 +281,7 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = (*m_cellarea)(i,j) * fresh_water_density; // kg m-1
+    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
     if (in_null_strip(m_grid, i, j, m_stripwidth)) {
       my_nullstriplost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
@@ -310,17 +314,20 @@ void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
   const double
     rg = m_config.get("fresh_water_density") * m_config.get("standard_gravity");
 
+  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+
   subglacial_water_pressure(result);
-  result.add(rg, (*m_bed)); // result  <-- P + rhow g b
+  result.add(rg, *bed); // result  <-- P + rhow g b
   result.add(rg, m_W);      // result  <-- result + rhow g (b + W)
 
   // now mask: psi = P_o if ocean
-  MaskQuery M(*m_mask);
+  MaskQuery M(*mask);
   overburden_pressure(m_Pover);
 
   IceModelVec::AccessList list;
   list.add(m_Pover);
-  list.add(*m_mask);
+  list.add(*mask);
   list.add(result);
 
   for (Points p(m_grid); p; p.next()) {
@@ -337,10 +344,12 @@ void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
 /*! Uses mask values to avoid averaging using water thickness values from
 either ice-free or floating areas. */
 void RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
-  MaskQuery M(*m_mask);
+
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  MaskQuery M(*mask);
 
   IceModelVec::AccessList list;
-  list.add(*m_mask);
+  list.add(*mask);
   list.add(m_W);
   list.add(result);
 
@@ -403,12 +412,14 @@ void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
 
   IceModelVec::AccessList list(result);
 
+  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+
   // the following calculation is bypassed if beta == 2.0 exactly; it puts
   // the squared norm of the gradient of the simplified hydrolic potential
   // temporarily in "result"
   if (beta != 2.0) {
     subglacial_water_pressure(m_R);  // yes, it updates ghosts
-    m_R.add(rg, (*m_bed)); // R  <-- P + rhow g b
+    m_R.add(rg, *bed); // R  <-- P + rhow g b
     m_R.update_ghosts();
 
     list.add(m_R);
@@ -476,13 +487,15 @@ void RoutingHydrology::wall_melt(IceModelVec2S &result) {
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
+  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
     throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
   }
 
   subglacial_water_pressure(m_R);  // yes, it updates ghosts
-  m_R.add(rg, (*m_bed)); // R  <-- P + rhow g b
+  m_R.add(rg, *bed); // R  <-- P + rhow g b
   m_R.update_ghosts();
 
   IceModelVec::AccessList list;
@@ -543,11 +556,13 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
 
   subglacial_water_pressure(m_R);  // R=P; yes, it updates ghosts
 
+  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+
   IceModelVec::AccessList list;
   list.add(m_R);
   list.add(m_Wstag);
   list.add(m_Kstag);
-  list.add(*m_bed);
+  list.add(*bed);
   list.add(result);
 
   for (Points p(m_grid); p; p.next()) {
@@ -555,15 +570,15 @@ void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
 
     if (m_Wstag(i,j,0) > 0.0) {
       dPdx = (m_R(i+1,j) - m_R(i,j)) / m_grid.dx();
-      dbdx = ((*m_bed)(i+1,j) - (*m_bed)(i,j)) / m_grid.dx();
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / m_grid.dx();
       result(i,j,0) = - m_Kstag(i,j,0) * (dPdx + rg * dbdx);
     } else {
       result(i,j,0) = 0.0;
     }
-    
+
     if (m_Wstag(i,j,1) > 0.0) {
       dPdy = (m_R(i,j+1) - m_R(i,j)) / m_grid.dy();
-      dbdy = ((*m_bed)(i,j+1) - (*m_bed)(i,j)) / m_grid.dy();
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / m_grid.dy();
       result(i,j,1) = - m_Kstag(i,j,1) * (dPdy + rg * dbdy);
     } else {
       result(i,j,1) = 0.0;
@@ -724,7 +739,9 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
 
-  MaskQuery M(*m_mask);
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  MaskQuery M(*mask);
+
   double ht = m_t, hdt = 0.0, // hydrology model time and time step
     maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
   double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,

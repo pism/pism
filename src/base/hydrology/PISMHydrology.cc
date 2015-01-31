@@ -28,11 +28,6 @@ namespace pism {
 Hydrology::Hydrology(const IceGrid &g)
   : Component_TS(g)
 {
-  m_thk        = NULL;
-  m_bed        = NULL;
-  m_cellarea   = NULL;
-  m_bmelt      = NULL;
-  m_mask       = NULL;
   m_inputtobed = NULL;
   m_hold_bmelt = false;
 
@@ -89,12 +84,6 @@ void Hydrology::init() {
 
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
   // update() method at the current Hydrology time
-
-  m_thk      = m_grid.variables().get_2d_scalar("thk");
-  m_bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  m_bmelt    = m_grid.variables().get_2d_scalar("bmelt");
-  m_cellarea = m_grid.variables().get_2d_scalar("cell_area");
-  m_mask     = m_grid.variables().get_2d_mask("mask");
 
   if (bmelt_file.is_set()) {
     verbPrintf(2, m_grid.com,
@@ -205,7 +194,9 @@ Accesses H=thk from Vars, which points into IceModel.
  */
 void Hydrology::overburden_pressure(IceModelVec2S &result) {
   // FIXME issue #15
-  result.copy_from(*m_thk);  // copies into ghosts if result has them
+  const IceModelVec2S *thk = m_grid.variables().get_2d_scalar("thk");
+
+  result.copy_from(*thk);  // copies into ghosts if result has them
   result.scale(m_config.get("ice_density") * m_config.get("standard_gravity"));
 }
 
@@ -261,7 +252,7 @@ may be called many times per IceModel time step.  See update() method
 in derived classes of Hydrology.
  */
 void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
-                                         IceModelVec2S &result) {
+                               IceModelVec2S &result) {
   bool   use_const   = m_config.get_flag("hydrology_use_const_bmelt");
   double const_bmelt = m_config.get("hydrology_const_bmelt");
 
@@ -272,14 +263,17 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
     list.add(*m_inputtobed);
   }
 
-  if (!m_hold_bmelt) {
-    m_bmelt->copy_to(m_bmelt_local);
+  const IceModelVec2S   *bmelt = m_grid.variables().get_2d_scalar("bmelt");
+  const IceModelVec2Int *mask  = m_grid.variables().get_2d_mask("mask");
+
+  if (not m_hold_bmelt) {
+    m_bmelt_local.copy_from(*bmelt);
   }
 
   list.add(m_bmelt_local);
-  list.add(*m_mask);
+  list.add(*mask);
   list.add(result);
-  MaskQuery m(*m_mask);
+  MaskQuery m(*mask);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

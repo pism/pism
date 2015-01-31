@@ -420,7 +420,9 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
                divadflux, diffW;
     overburden_pressure(m_Pover);
 
-    MaskQuery M(*m_mask);
+    const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+
+    MaskQuery M(*mask);
 
     IceModelVec::AccessList list;
     list.add(P);
@@ -432,7 +434,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
     list.add(m_Kstag);
     list.add(m_Qstag);
     list.add(m_total_input);
-    list.add(*m_mask);
+    list.add(*mask);
     list.add(m_Pover);
     list.add(Pnew);
 

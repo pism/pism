@@ -84,9 +84,11 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
                        "This is not allowed.");
   }
 
-  MaskQuery M(*m_mask);
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+
+  MaskQuery M(*mask);
   IceModelVec::AccessList list;
-  list.add(*m_mask);
+  list.add(*mask);
   list.add(m_Wtil);
   list.add(m_total_input);
   for (Points p(m_grid); p; p.next()) {
