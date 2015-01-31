@@ -46,8 +46,8 @@ public:
 
   virtual void set_boundary_conditions(const IceModelVec2Int &locations,
                                        const IceModelVec2V &velocities) {
-    m_vel_bc = &velocities;
-    bc_locations = &locations;
+    m_bc_values = &velocities;
+    m_bc_mask = &locations;
   }
 
   //! \brief Set the sea level used to check for floatation. (Units: meters,
@@ -108,8 +108,8 @@ protected:
   const EnthalpyConverter &m_EC;
 
   IceModelVec2V m_velocity;
-  const IceModelVec2V *m_vel_bc;
-  const IceModelVec2Int *bc_locations;
+  const IceModelVec2V *m_bc_values;
+  const IceModelVec2Int *m_bc_mask;
   IceModelVec2S m_basal_frictional_heating;
 };
 

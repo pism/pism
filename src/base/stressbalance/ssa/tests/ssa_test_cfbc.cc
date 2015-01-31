@@ -121,7 +121,7 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   list.add(m_thickness);
   list.add(m_surface);
   list.add(m_bc_mask);
-  list.add(m_vel_bc);
+  list.add(m_bc_values);
   list.add(m_ice_mask);
 
   double ocean_rho = m_config.get("sea_water_density"),
@@ -144,12 +144,12 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
     if (i == 0) {
       m_bc_mask(i, j)  = 1;
-      m_vel_bc(i, j).u = V0;
-      m_vel_bc(i, j).v = 0;
+      m_bc_values(i, j).u = V0;
+      m_bc_values(i, j).v = 0;
     } else {
       m_bc_mask(i, j)  = 0;
-      m_vel_bc(i, j).u = 0;
-      m_vel_bc(i, j).v = 0;
+      m_bc_values(i, j).u = 0;
+      m_bc_values(i, j).v = 0;
     }
   }
 
@@ -163,9 +163,9 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
   m_ice_mask.update_ghosts();
 
-  m_vel_bc.update_ghosts();
+  m_bc_values.update_ghosts();
 
-  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 void SSATestCaseCFBC::exactSolution(int i, int /*j*/,

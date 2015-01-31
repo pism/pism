@@ -427,7 +427,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
 
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
-  dirichlet_data.init(bc_locations, m_vel_bc, m_dirichletScale);
+  dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -579,7 +579,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
-  dirichlet_data.init(bc_locations, m_vel_bc, m_dirichletScale);
+  dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();

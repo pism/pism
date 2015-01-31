@@ -277,7 +277,7 @@ The values of the driving stress on the i,j grid come from a call to
 compute_driving_stress().
 
 In the case of Dirichlet boundary conditions, the entries on the right-hand side
-come from known velocity values.  The fields vel_bc and bc_locations are used for
+come from known velocity values.  The fields m_bc_values and m_bc_mask are used for
 this.
  */
 void SSAFD::assemble_rhs() {
@@ -302,9 +302,9 @@ void SSAFD::assemble_rhs() {
   list.add(m_taud);
   list.add(m_b);
 
-  if (m_vel_bc && bc_locations) {
-    list.add(*m_vel_bc);
-    list.add(*bc_locations);
+  if (m_bc_values && m_bc_mask) {
+    list.add(*m_bc_values);
+    list.add(*m_bc_mask);
   }
 
   if (use_cfbc) {
@@ -320,10 +320,10 @@ void SSAFD::assemble_rhs() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_vel_bc != NULL &&
-        bc_locations->as_int(i, j) == 1) {
-      m_b(i, j).u = m_scaling * (*m_vel_bc)(i, j).u;
-      m_b(i, j).v = m_scaling * (*m_vel_bc)(i, j).v;
+    if (m_bc_values != NULL &&
+        m_bc_mask->as_int(i, j) == 1) {
+      m_b(i, j).u = m_scaling * (*m_bc_values)(i, j).u;
+      m_b(i, j).v = m_scaling * (*m_bc_values)(i, j).v;
       continue;
     }
 
@@ -517,8 +517,8 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   list.add(vel);
   list.add(*m_mask);
 
-  if (m_vel_bc && bc_locations) {
-    list.add(*bc_locations);
+  if (m_bc_values && m_bc_mask) {
+    list.add(*m_bc_mask);
   }
 
   const bool sub_gl = m_config.get_flag("sub_groundingline");
@@ -541,7 +541,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     const int i = p.i(), j = p.j();
 
     // Handle the easy case: provided Dirichlet boundary conditions
-    if (m_vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
+    if (m_bc_values && m_bc_mask && m_bc_mask->as_int(i,j) == 1) {
       // set diagonal entry to one (scaled); RHS entry will be known velocity;
       set_diagonal_matrix_entry(A, i, j, m_scaling);
       continue;

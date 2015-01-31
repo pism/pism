@@ -143,8 +143,8 @@ void SSA::init() {
   }
 
   if (m_config.get_flag("ssa_dirichlet_bc")) {
-    bc_locations = m_grid.variables().get_2d_mask("bc_mask");
-    m_vel_bc = m_grid.variables().get_2d_vector("vel_ssa_bc");
+    m_bc_mask = m_grid.variables().get_2d_mask("bc_mask");
+    m_bc_values = m_grid.variables().get_2d_vector("vel_ssa_bc");
   }
 }
 

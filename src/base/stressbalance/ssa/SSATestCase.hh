@@ -99,7 +99,7 @@ protected:
   // SSA coefficient variables.
   IceModelVec2S  m_surface, m_thickness, m_bed, m_tauc, m_melange_back_pressure;
   IceModelVec3 m_enthalpy;
-  IceModelVec2V m_vel_bc;
+  IceModelVec2V m_bc_values;
   IceModelVec2Int m_ice_mask, m_bc_mask;
 
   SSA *m_ssa;

@@ -67,22 +67,22 @@ void SSATestCase::buildSSACoefficients()
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  m_vel_bc.create(*m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
-  m_vel_bc.set_attrs("intent",
+  m_bc_values.create(*m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
+  m_bc_values.set_attrs("intent",
                      "X-component of the SSA velocity boundary conditions",
                      "m s-1", "", 0);
-  m_vel_bc.set_attrs("intent",
+  m_bc_values.set_attrs("intent",
                      "Y-component of the SSA velocity boundary conditions",
                      "m s-1", "", 1);
-  m_vel_bc.set_glaciological_units("m year-1");
-  m_vel_bc.metadata(0).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
-  m_vel_bc.metadata(0).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
-  m_vel_bc.metadata(0).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
-  m_vel_bc.metadata(1).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
-  m_vel_bc.metadata(1).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
-  m_vel_bc.metadata(1).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
-  m_vel_bc.write_in_glaciological_units = true;
-  m_vel_bc.set(m_config.get("fill_value", "m/year", "m/s"));
+  m_bc_values.set_glaciological_units("m year-1");
+  m_bc_values.metadata(0).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(1).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
+  m_bc_values.write_in_glaciological_units = true;
+  m_bc_values.set(m_config.get("fill_value", "m/year", "m/s"));
 
   // grounded_dragging_floating integer mask
   m_ice_mask.create(*m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
@@ -364,7 +364,7 @@ void SSATestCase::write(const std::string &filename) {
   m_tauc.write(pio);
   m_bed.write(pio);
   m_enthalpy.write(pio);
-  m_vel_bc.write(pio);
+  m_bc_values.write(pio);
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
   vel_ssa.write(pio);

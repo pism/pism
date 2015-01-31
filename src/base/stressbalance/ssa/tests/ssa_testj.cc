@@ -100,7 +100,7 @@ void SSATestCaseJ::initializeSSACoefficients() {
   list.add(m_thickness);
   list.add(m_surface);
   list.add(m_bc_mask);
-  list.add(m_vel_bc);
+  list.add(m_bc_values);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -114,13 +114,13 @@ void SSATestCaseJ::initializeSSACoefficients() {
     m_thickness(i,j) = H;
     m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
 
-    // special case at center point: here we set vel_bc at (i,j) by marking
-    // this grid point as SHEET and setting vel_bc approriately
+    // special case at center point: here we set bc_values at (i,j) by
+    // setting bc_mask and bc_values appropriately
     if ((i == ((int)m_grid->Mx()) / 2) and
         (j == ((int)m_grid->My()) / 2)) {
       m_bc_mask(i,j) = 1;
-      m_vel_bc(i,j).u = myu;
-      m_vel_bc(i,j).v = myv;
+      m_bc_values(i,j).u = myu;
+      m_bc_values(i,j).v = myv;
     }
   }
 
@@ -128,9 +128,9 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_surface.update_ghosts();
   m_thickness.update_ghosts();
   m_bc_mask.update_ghosts();
-  m_vel_bc.update_ghosts();
+  m_bc_values.update_ghosts();
 
-  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 void SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,

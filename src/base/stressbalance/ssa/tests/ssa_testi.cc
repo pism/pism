@@ -112,7 +112,7 @@ void SSATestCaseI::initializeSSACoefficients() {
   }
   m_tauc.update_ghosts();
 
-  list.add(m_vel_bc);
+  list.add(m_bc_values);
   list.add(m_bc_mask);
   list.add(m_surface);
   list.add(m_bed);
@@ -129,8 +129,8 @@ void SSATestCaseI::initializeSSACoefficients() {
                  (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
       m_bc_mask(i,j) = 1;
-      m_vel_bc(i,j).u = myu;
-      m_vel_bc(i,j).v = myv;
+      m_bc_values(i,j).u = myu;
+      m_bc_values(i,j).v = myv;
     }
   }
 
@@ -138,9 +138,9 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_surface.update_ghosts();
   m_bed.update_ghosts();
   m_bc_mask.update_ghosts();
-  m_vel_bc.update_ghosts();
+  m_bc_values.update_ghosts();
 
-  m_ssa->set_boundary_conditions(m_bc_mask, m_vel_bc);
+  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 

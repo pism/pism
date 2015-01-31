@@ -35,8 +35,8 @@ using mask::ice_free;
 ShallowStressBalance::ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e)
   : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
-  m_vel_bc = NULL;
-  bc_locations = NULL;
+  m_bc_values = NULL;
+  m_bc_mask = NULL;
   sea_level = 0;
 
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");

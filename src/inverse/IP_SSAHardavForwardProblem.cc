@@ -246,8 +246,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *m_dirichletLocations = bc_locations;
-  const IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
   double           m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[FEQuadrature::Nk];
@@ -425,8 +425,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
   DirichletData_Vector dirichletBC;
   // Aliases to help with notation consistency.
-  const IceModelVec2Int *m_dirichletLocations = bc_locations;
-  const IceModelVec2V   *m_dirichletValues = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues = m_bc_values;
   double        m_dirichletWeight = m_dirichletScale;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                    m_dirichletWeight);
@@ -594,8 +594,8 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *m_dirichletLocations = bc_locations;
-  const IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
   double        m_dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
