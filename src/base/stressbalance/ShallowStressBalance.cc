@@ -69,6 +69,50 @@ ShallowStressBalance::~ShallowStressBalance() {
   delete basal_sliding_law;
 }
 
+void ShallowStressBalance::init() {
+  // empty
+}
+
+std::string ShallowStressBalance::stdout_report() {
+  return "";
+}
+
+const IceFlowLaw* ShallowStressBalance::flow_law() {
+  return m_flow_law;
+}
+
+const EnthalpyConverter& ShallowStressBalance::enthalpy_converter() {
+  return m_EC;
+}
+
+const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() {
+  return basal_sliding_law;
+}
+
+
+void ShallowStressBalance::set_boundary_conditions(const IceModelVec2Int &locations,
+                                                   const IceModelVec2V &velocities) {
+  m_bc_values = &velocities;
+  m_bc_mask = &locations;
+}
+
+//! \brief Set the sea level used to check for floatation. (Units: meters,
+//! relative to the geoid.)
+void ShallowStressBalance::set_sea_level_elevation(double new_sea_level) {
+  sea_level = new_sea_level;
+}
+
+//! \brief Get the thickness-advective 2D velocity.
+const IceModelVec2V& ShallowStressBalance::velocity() {
+  return m_velocity;
+}
+
+//! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
+const IceModelVec2S& ShallowStressBalance::basal_frictional_heating() {
+  return m_basal_frictional_heating;
+}
+
+
 void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   dict["beta"]     = new SSB_beta(this);

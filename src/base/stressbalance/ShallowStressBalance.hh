@@ -41,32 +41,22 @@ public:
 
   //  initialization and I/O:
 
-  virtual void init() {
-  }
+  virtual void init();
 
   virtual void set_boundary_conditions(const IceModelVec2Int &locations,
-                                       const IceModelVec2V &velocities) {
-    m_bc_values = &velocities;
-    m_bc_mask = &locations;
-  }
+                                       const IceModelVec2V &velocities);
 
   //! \brief Set the sea level used to check for floatation. (Units: meters,
   //! relative to the geoid.)
-  void set_sea_level_elevation(double new_sea_level) {
-    sea_level = new_sea_level;
-  }
+  void set_sea_level_elevation(double new_sea_level);
 
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  virtual const IceModelVec2V& velocity() {
-    return m_velocity;
-  }
+  virtual const IceModelVec2V& velocity();
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  virtual const IceModelVec2S& basal_frictional_heating() {
-    return m_basal_frictional_heating;
-  }
+  virtual const IceModelVec2S& basal_frictional_heating();
 
   virtual void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                                  const IceModelVec2Int &mask,
@@ -83,21 +73,13 @@ public:
   // helpers:
 
   //! \brief Produce a report string for the standard output.
-  virtual std::string stdout_report() {
-    return "";
-  }
+  virtual std::string stdout_report();
 
-  const IceFlowLaw* flow_law() {
-    return m_flow_law;
-  }
+  const IceFlowLaw* flow_law();
 
-  const EnthalpyConverter& enthalpy_converter() {
-    return m_EC;
-  }
+  const EnthalpyConverter& enthalpy_converter();
 
-  const IceBasalResistancePlasticLaw* sliding_law() {
-    return basal_sliding_law;
-  }
+  const IceBasalResistancePlasticLaw* sliding_law();
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -119,8 +101,7 @@ protected:
   implementation ignores any basal resistance fields (e.g. yield stress from
   the IceModel or other user of this class).
 */
-class ZeroSliding : public ShallowStressBalance
-{
+class ZeroSliding : public ShallowStressBalance {
 public:
   ZeroSliding(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~ZeroSliding();
