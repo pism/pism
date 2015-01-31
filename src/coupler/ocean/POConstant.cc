@@ -29,24 +29,27 @@ namespace pism {
 
 POConstant::POConstant(const IceGrid &g)
   : OceanModel(g),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
+    m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
+    m_shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
 
-  mymeltrate = 0.0;
-  meltrate_set = false;
+  m_mymeltrate = 0.0;
+  m_meltrate_set = false;
 
-  shelfbmassflux.set_string("pism_intent", "climate_state");
-  shelfbmassflux.set_string("long_name",
+  m_shelfbmassflux.set_string("pism_intent", "climate_state");
+  m_shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("kg m-2 s-1");
-  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
+  m_shelfbmassflux.set_units("kg m-2 s-1");
+  m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
-  shelfbtemp.set_string("pism_intent", "climate_state");
-  shelfbtemp.set_string("long_name",
+  m_shelfbtemp.set_string("pism_intent", "climate_state");
+  m_shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units("Kelvin");
+  m_shelfbtemp.set_units("Kelvin");
 }
 
+POConstant::~POConstant() {
+  // empty
+}
 
 void POConstant::update_impl(double my_t, double my_dt) {
   // do nothing
@@ -64,17 +67,15 @@ void POConstant::init_impl() {
 
   options::Real meltrate("-shelf_base_melt_rate",
                          "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-                         mymeltrate);
+                         m_mymeltrate);
 
   if (meltrate.is_set()) {
-    mymeltrate = meltrate;
+    m_mymeltrate = meltrate;
     verbPrintf(2, m_grid.com,
                "    - option '-shelf_base_melt_rate' seen, "
                "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
-               mymeltrate);
+               m_mymeltrate);
   }
-
-  ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 }
 
 void POConstant::sea_level_elevation_impl(double &result) {
@@ -86,6 +87,8 @@ void POConstant::shelf_base_temperature_impl(IceModelVec2S &result) {
     beta_CC       = m_config.get("beta_CC"),
     g             = m_config.get("standard_gravity"),
     ice_density   = m_config.get("ice_density");
+
+  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
@@ -106,9 +109,9 @@ void POConstant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
     ice_density = m_config.get("ice_density"),
     meltrate    = 0.0;
 
-  if (meltrate_set) {
+  if (m_meltrate_set) {
 
-    meltrate = m_grid.convert(mymeltrate, "m year-1", "m s-1");
+    meltrate = m_grid.convert(m_mymeltrate, "m year-1", "m s-1");
 
   } else {
 
@@ -132,11 +135,11 @@ void POConstant::define_variables_impl(const std::set<std::string> &vars, const 
                                   IO_Type nctype) {
 
   if (set_contains(vars, "shelfbtemp")) {
-    shelfbtemp.define(nc, nctype, true);
+    m_shelfbtemp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    shelfbmassflux.define(nc, nctype, true);
+    m_shelfbmassflux.define(nc, nctype, true);
   }
 }
 
@@ -148,7 +151,7 @@ void POConstant::write_variables_impl(const std::set<std::string> &vars, const P
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbtemp;
+    tmp.metadata() = m_shelfbtemp;
     shelf_base_temperature(tmp);
     tmp.write(nc);
   }
@@ -158,7 +161,7 @@ void POConstant::write_variables_impl(const std::set<std::string> &vars, const P
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbmassflux;
+    tmp.metadata() = m_shelfbmassflux;
     tmp.write_in_glaciological_units = true;
     shelf_base_mass_flux(tmp);
     tmp.write(nc);
