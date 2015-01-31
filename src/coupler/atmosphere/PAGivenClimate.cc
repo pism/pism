@@ -41,8 +41,8 @@ PAGivenClimate::PAGivenClimate(const IceGrid &g)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  air_temp->create(m_grid, "air_temp", false);
-  precipitation->create(m_grid, "precipitation", false);
+  air_temp->create(m_grid, "air_temp");
+  precipitation->create(m_grid, "precipitation");
 
   air_temp->set_attrs("climate_forcing", "near-surface air temperature",
                       "Kelvin", "");

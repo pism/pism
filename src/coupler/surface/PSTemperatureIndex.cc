@@ -119,7 +119,7 @@ PSTemperatureIndex::PSTemperatureIndex(const IceGrid &g)
     m_air_temp_sd.set_n_records(1);
   }
 
-  m_air_temp_sd.create(m_grid, "air_temp_sd", false);
+  m_air_temp_sd.create(m_grid, "air_temp_sd");
   m_air_temp_sd.set_attrs("climate_forcing",
                           "standard deviation of near-surface air temperature",
                           "Kelvin", "");

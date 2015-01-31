@@ -42,12 +42,12 @@ PAAnomaly::PAAnomaly(const IceGrid &g, AtmosphereModel* in)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  air_temp_anomaly->create(m_grid, "air_temp_anomaly", false);
+  air_temp_anomaly->create(m_grid, "air_temp_anomaly");
   air_temp_anomaly->set_attrs("climate_forcing",
                               "anomaly of the near-surface air temperature",
                               "Kelvin", "");
 
-  precipitation_anomaly->create(m_grid, "precipitation_anomaly", false);
+  precipitation_anomaly->create(m_grid, "precipitation_anomaly");
   precipitation_anomaly->set_attrs("climate_forcing",
                                    "anomaly of the ice-equivalent precipitation rate",
                                    "m s-1", "");

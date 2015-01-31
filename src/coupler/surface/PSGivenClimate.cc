@@ -38,8 +38,8 @@ PSGivenClimate::PSGivenClimate(const IceGrid &g)
   standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance_flux";
   set_vec_parameters(standard_names);
 
-  ice_surface_temp->create(m_grid, "ice_surface_temp", false);
-  climatic_mass_balance->create(m_grid, "climatic_mass_balance", false);
+  ice_surface_temp->create(m_grid, "ice_surface_temp");
+  climatic_mass_balance->create(m_grid, "climatic_mass_balance");
 
   ice_surface_temp->set_attrs("climate_forcing",
                               "temperature of the ice at the ice surface but below firn processes",

@@ -38,8 +38,8 @@ POGiven::POGiven(const IceGrid &g)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  shelfbtemp->create(m_grid, "shelfbtemp", false);
-  shelfbmassflux->create(m_grid, "shelfbmassflux", false);
+  shelfbtemp->create(m_grid, "shelfbtemp");
+  shelfbmassflux->create(m_grid, "shelfbmassflux");
 
   shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",

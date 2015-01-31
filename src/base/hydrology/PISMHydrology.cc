@@ -123,12 +123,12 @@ void Hydrology::init() {
                "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records);
     m_inputtobed = new IceModelVec2T;
     m_inputtobed->set_n_records(n_records);
-    m_inputtobed->create(m_grid, "inputtobed", WITHOUT_GHOSTS);
+    m_inputtobed->create(m_grid, "inputtobed");
     m_inputtobed->set_attrs("climate_forcing",
-                          "amount of water (depth per time like bmelt)"
-                          " which should be put at the ice sheet bed",
-                          "m s-1", "");
-    verbPrintf(2,m_grid.com,
+                            "amount of water (depth per time like bmelt)"
+                            " which should be put at the ice sheet bed",
+                            "m s-1", "");
+    verbPrintf(2, m_grid.com,
                "    reading 'inputtobed' variable from file '%s' ...\n",
                itb_file->c_str());
     m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);
@@ -155,14 +155,14 @@ void Hydrology::init() {
 
 
 void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["bwat"] = new Hydrology_bwat(this);
-  dict["bwp"] = new Hydrology_bwp(this);
-  dict["bwprel"] = new Hydrology_bwprel(this);
-  dict["effbwp"] = new Hydrology_effbwp(this);
+                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+  dict["bwat"]       = new Hydrology_bwat(this);
+  dict["bwp"]        = new Hydrology_bwp(this);
+  dict["bwprel"]     = new Hydrology_bwprel(this);
+  dict["effbwp"]     = new Hydrology_effbwp(this);
   dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
   dict["hydroinput"] = new Hydrology_hydroinput(this);
-  dict["wallmelt"] = new Hydrology_wallmelt(this);
+  dict["wallmelt"]   = new Hydrology_wallmelt(this);
 }
 
 
@@ -172,7 +172,7 @@ void Hydrology::add_vars_to_output_impl(const std::string &/*keyword*/, std::set
 
 
 void Hydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                               IO_Type nctype) {
+                                      IO_Type nctype) {
   if (set_contains(vars, "tillwat")) {
     m_Wtil.define(nc, nctype);
   }

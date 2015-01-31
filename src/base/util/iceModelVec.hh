@@ -335,8 +335,8 @@ public:
   virtual void set_component(unsigned int n, const IceModelVec2S &source);
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
-  virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
-                      IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
+  void create(const IceGrid &my_grid, const std::string &my_short_name,
+              IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const PIO &nc, const unsigned int time);
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
@@ -366,8 +366,8 @@ public:
 
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  virtual void  create(const IceGrid &my_grid, const std::string &my_name,
-                       IceModelVecKind ghostedp, int width = 1);
+  void create(const IceGrid &my_grid, const std::string &my_name,
+              IceModelVecKind ghostedp, int width = 1);
   petsc::Vec::Ptr allocate_proc0_copy() const;
   void put_on_proc0(Vec onp0) const;
   void get_from_proc0(Vec onp0);
@@ -436,9 +436,8 @@ public:
 
   static Ptr ToVector(IceModelVec::Ptr input);
 
-  using IceModelVec2::create;
-  virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
-                      IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+  void create(const IceGrid &my_grid, const std::string &my_short_name,
+              IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_to(IceModelVec &destination) const;
   virtual void add(double alpha, const IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
@@ -474,9 +473,8 @@ public:
 
   static Ptr ToStaggered(IceModelVec::Ptr input);
 
-  using IceModelVec2::create;
-  virtual void create(const IceGrid &my_grid, const std::string &my_short_name,
-                      IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+  void create(const IceGrid &my_grid, const std::string &my_short_name,
+              IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
   virtual std::vector<double> absmaxcomponents() const;
@@ -528,9 +526,9 @@ public:
 
   static Ptr To3DScalar(IceModelVec::Ptr input);
 
-  virtual void create(const IceGrid &mygrid, const std::string &my_short_name,
-                      IceModelVecKind ghostedp,
-                      unsigned int stencil_width = 1);
+  void create(const IceGrid &mygrid, const std::string &my_short_name,
+              IceModelVecKind ghostedp,
+              unsigned int stencil_width = 1);
 
   void  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
   void  getHorSlice(IceModelVec2S &gslice, double z) const;

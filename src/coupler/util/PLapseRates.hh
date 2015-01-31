@@ -153,7 +153,7 @@ protected:
       }
 
       reference_surface.set_n_records(ref_surface_n_records);
-      reference_surface.create(g, "usurf", false);
+      reference_surface.create(g, "usurf");
       reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");

@@ -40,11 +40,12 @@ PSAnomaly::PSAnomaly(const IceGrid &g, SurfaceModel* in)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  ice_surface_temp_anomaly->create(m_grid, "ice_surface_temp_anomaly", false);
-  climatic_mass_balance_anomaly->create(m_grid, "climatic_mass_balance_anomaly", false);
+  ice_surface_temp_anomaly->create(m_grid, "ice_surface_temp_anomaly");
+  climatic_mass_balance_anomaly->create(m_grid, "climatic_mass_balance_anomaly");
 
   ice_surface_temp_anomaly->set_attrs("climate_forcing",
-                                      "anomaly of the temperature of the ice at the ice surface but below firn processes",
+                                      "anomaly of the temperature of the ice at the ice surface"
+                                      " but below firn processes",
                                       "Kelvin", "");
   climatic_mass_balance_anomaly->set_attrs("climate_forcing",
                                            "anomaly of the surface mass balance (accumulation/ablation) rate",
