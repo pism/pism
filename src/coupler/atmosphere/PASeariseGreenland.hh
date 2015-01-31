@@ -37,7 +37,6 @@ public:
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
   virtual void update_impl(double my_t, double my_dt);
-  const IceModelVec2S *m_lat, *m_lon, *m_surfelev;
 };
 
 

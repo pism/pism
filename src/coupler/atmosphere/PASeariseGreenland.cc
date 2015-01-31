@@ -72,11 +72,6 @@ void PA_SeaRISE_Greenland::init() {
   } else {
     PAYearlyCycle::init();
   }
-
-  // initialize pointers to fields the parameterization depends on:
-  m_surfelev = m_grid.variables().get_2d_scalar("surface_altitude");
-  m_lat      = m_grid.variables().get_2d_scalar("latitude");
-  m_lon      = m_grid.variables().get_2d_scalar("longitude");
 }
 
 void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> &result) {
@@ -90,16 +85,6 @@ void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> 
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
 void PA_SeaRISE_Greenland::update_impl(double my_t, double my_dt) {
-
-  if (m_lat->metadata().has_attribute("missing_at_bootstrap")) {
-    throw RuntimeError("latitude variable was missing at bootstrap;\n"
-                       "SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!");
-  }
-
-  if (m_lon->metadata().has_attribute("missing_at_bootstrap")) {
-    throw RuntimeError("longitude variable was missing at bootstrap;\n"
-                       "SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!");
-  }
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
@@ -119,10 +104,22 @@ void PA_SeaRISE_Greenland::update_impl(double my_t, double my_dt) {
     c_mj     = m_config.get("snow_temp_fausto_c_mj"),
     kappa_mj = m_config.get("snow_temp_fausto_kappa_mj");
 
+
+  // initialize pointers to fields the parameterization depends on:
   const IceModelVec2S
-    &h        = *m_surfelev,
-    &lat_degN = *m_lat,
-    &lon_degE = *m_lon;
+    &h        = *m_grid.variables().get_2d_scalar("surface_altitude"),
+    &lat_degN = *m_grid.variables().get_2d_scalar("latitude"),
+    &lon_degE = *m_grid.variables().get_2d_scalar("longitude");
+
+  if (lat_degN.metadata().has_attribute("missing_at_bootstrap")) {
+    throw RuntimeError("latitude variable was missing at bootstrap;\n"
+                       "SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!");
+  }
+
+  if (lon_degE.metadata().has_attribute("missing_at_bootstrap")) {
+    throw RuntimeError("longitude variable was missing at bootstrap;\n"
+                       "SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!");
+  }
 
   IceModelVec::AccessList list;
   list.add(h);
