@@ -52,6 +52,7 @@ protected:
 protected:
   double precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;
+  const IceModelVec2S *m_surface;
 };
 
 } // end of namespace pism

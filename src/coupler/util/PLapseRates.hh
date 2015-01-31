@@ -33,17 +33,16 @@
 namespace pism {
 
 template <class Model, class Mod>
-class PLapseRates : public Mod
-{
+class PLapseRates : public Mod {
 public:
-  PLapseRates(const IceGrid &g, Model* in)
-    : Mod(g, in)
-  {
-    surface = thk = NULL;
+  PLapseRates(const IceGrid &g, Model* in) 
+    : Mod(g, in) {
     temp_lapse_rate = 0.0;
   }
 
-  virtual ~PLapseRates() {}
+  virtual ~PLapseRates() {
+    // empty
+  }
 
   virtual void max_timestep(double t, double &dt, bool &restrict) {
     double max_dt = -1;
@@ -71,8 +70,7 @@ public:
   }
 
 protected:
-  virtual void update_impl(double my_t, double my_dt)
-  {
+  virtual void update_impl(double my_t, double my_dt) {
     // a convenience
     double &t = Mod::m_t;
     double &dt = Mod::m_dt;
@@ -96,8 +94,7 @@ protected:
     reference_surface.interp(t + 0.5*dt);
   }
 
-  virtual void init_internal()
-  {
+  virtual void init_internal() {
     const IceGrid &g = Mod::m_grid;
 
     options::String file(option_prefix + "_file",
@@ -131,7 +128,7 @@ protected:
     }
     bc_period = (unsigned int)period;
 
-    if (reference_surface.was_created() == false) {
+    if (not reference_surface.was_created()) {
       unsigned int buffer_size = (unsigned int) Mod::m_config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
@@ -165,16 +162,16 @@ protected:
                file->c_str());
 
     reference_surface.init(file, bc_period, bc_reference_time);
-
-    surface = g.variables().get_2d_scalar("surface_altitude");
-    thk     = g.variables().get_2d_scalar("land_ice_thickness");
   }
 
-  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
-  {
+  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) {
     if (fabs(lapse_rate) < 1e-12) {
       return;
     }
+
+    const IceModelVec2S
+      *surface = Mod::m_grid.variables().get_2d_scalar("surface_altitude"),
+      *thk     = Mod::m_grid.variables().get_2d_scalar("land_ice_thickness");
 
     IceModelVec::AccessList list;
     list.add(*thk);
@@ -193,7 +190,6 @@ protected:
   }
 protected:
   IceModelVec2T reference_surface;
-  const IceModelVec2S *surface, *thk;
   unsigned int bc_period;
   double bc_reference_time,          // in seconds
     temp_lapse_rate;
