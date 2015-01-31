@@ -50,8 +50,8 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  double precip_lapse_rate;
-  NCSpatialVariable precipitation, air_temp;
+  double m_precip_lapse_rate;
+  NCSpatialVariable m_precipitation, m_air_temp;
   const IceModelVec2S *m_surface;
 };
 

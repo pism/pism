@@ -41,8 +41,8 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  double smb_lapse_rate;
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+  double m_smb_lapse_rate;
+  NCSpatialVariable m_climatic_mass_balance, m_ice_surface_temp;
 };
 
 } // end of namespace pism

@@ -37,7 +37,7 @@ class PLapseRates : public Mod {
 public:
   PLapseRates(const IceGrid &g, Model* in) 
     : Mod(g, in) {
-    temp_lapse_rate = 0.0;
+    m_temp_lapse_rate = 0.0;
   }
 
   virtual ~PLapseRates() {
@@ -48,11 +48,11 @@ public:
     double max_dt = -1;
 
     // "Periodize" the climate:
-    t = Mod::m_grid.time->mod(t - bc_reference_time, bc_period);
+    t = Mod::m_grid.time->mod(t - m_bc_reference_time, m_bc_period);
 
     Mod::input_model->max_timestep(t, dt, restrict);
 
-    max_dt = reference_surface.max_timestep(t);
+    max_dt = m_reference_surface.max_timestep(t);
 
     if (restrict == true) {
       if (max_dt > 0) {
@@ -76,7 +76,7 @@ protected:
     double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
-    my_t = Mod::m_grid.time->mod(my_t - bc_reference_time,  bc_period);
+    my_t = Mod::m_grid.time->mod(my_t - m_bc_reference_time,  m_bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
         (fabs(my_dt - dt) < 1e-12)) {
@@ -89,46 +89,46 @@ protected:
     // NB! Input model uses original t and dt
     Mod::input_model->update(my_t, my_dt);
 
-    reference_surface.update(t, dt);
+    m_reference_surface.update(t, dt);
 
-    reference_surface.interp(t + 0.5*dt);
+    m_reference_surface.interp(t + 0.5*dt);
   }
 
   virtual void init_internal() {
     const IceGrid &g = Mod::m_grid;
 
-    options::String file(option_prefix + "_file",
+    options::String file(m_option_prefix + "_file",
                          "Specifies a file with top-surface boundary conditions");
 
-    options::Integer period(option_prefix + "_period",
+    options::Integer period(m_option_prefix + "_period",
                             "Specifies the length of the climate data period", 0.0);
 
-    options::Real reference_year(option_prefix + "_reference_year",
+    options::Real reference_year(m_option_prefix + "_reference_year",
                                  "Boundary condition reference year", 0.0);
 
     options::Real T_lapse_rate("-temp_lapse_rate",
                                "Elevation lapse rate for the temperature, in K per km",
-                               temp_lapse_rate);
-    temp_lapse_rate = T_lapse_rate;
+                               m_temp_lapse_rate);
+    m_temp_lapse_rate = T_lapse_rate;
 
     if (not file.is_set()) {
       throw RuntimeError::formatted("command-line option %s_file is required.",
-                                    option_prefix.c_str());
+                                    m_option_prefix.c_str());
     }
 
     if (reference_year.is_set()) {
-      bc_reference_time = Model::m_grid.convert(reference_year, "years", "seconds");
+      m_bc_reference_time = Model::m_grid.convert(reference_year, "years", "seconds");
     } else {
-      bc_reference_time = 0;
+      m_bc_reference_time = 0;
     }
 
     if (period.value() < 0.0) {
       throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
-                                    option_prefix.c_str(), period.value());
+                                    m_option_prefix.c_str(), period.value());
     }
-    bc_period = (unsigned int)period;
+    m_bc_period = (unsigned int)period;
 
-    if (not reference_surface.was_created()) {
+    if (not m_reference_surface.was_created()) {
       unsigned int buffer_size = (unsigned int) Mod::m_config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
@@ -149,19 +149,19 @@ protected:
                                       file->c_str());
       }
 
-      reference_surface.set_n_records(ref_surface_n_records);
-      reference_surface.create(g, "usurf");
-      reference_surface.set_attrs("climate_forcing",
+      m_reference_surface.set_n_records(ref_surface_n_records);
+      m_reference_surface.create(g, "usurf");
+      m_reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
-      reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config.get("climate_forcing_evaluations_per_year"));
+      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config.get("climate_forcing_evaluations_per_year"));
     }
 
     verbPrintf(2, g.com,
                "    reading reference surface elevation from %s ...\n",
                file->c_str());
 
-    reference_surface.init(file, bc_period, bc_reference_time);
+    m_reference_surface.init(file, m_bc_period, m_bc_reference_time);
   }
 
   void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) {
@@ -176,24 +176,24 @@ protected:
     IceModelVec::AccessList list;
     list.add(*thk);
     list.add(*surface);
-    list.add(reference_surface);
+    list.add(m_reference_surface);
     list.add(result);
 
     for (Points p(Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*thk)(i,j) > 0) {
-        const double correction = lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+        const double correction = lapse_rate * ((*surface)(i,j) - m_reference_surface(i,j));
         result(i,j) -= correction;
       }
     }
   }
 protected:
-  IceModelVec2T reference_surface;
-  unsigned int bc_period;
-  double bc_reference_time,          // in seconds
-    temp_lapse_rate;
-  std::string option_prefix;
+  IceModelVec2T m_reference_surface;
+  unsigned int m_bc_period;
+  double m_bc_reference_time,          // in seconds
+    m_temp_lapse_rate;
+  std::string m_option_prefix;
 };
 
 

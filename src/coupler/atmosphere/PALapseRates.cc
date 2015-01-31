@@ -22,21 +22,21 @@ namespace pism {
 
 PALapseRates::PALapseRates(const IceGrid &g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
-    precipitation(g.config.get_unit_system(), "precipitation", g),
-    air_temp(g.config.get_unit_system(), "air_temp", g) {
-  precip_lapse_rate = 0;
-  option_prefix     = "-atmosphere_lapse_rate";
+    m_precipitation(g.config.get_unit_system(), "precipitation", g),
+    m_air_temp(g.config.get_unit_system(), "air_temp", g) {
+  m_precip_lapse_rate = 0;
+  m_option_prefix     = "-atmosphere_lapse_rate";
 
-  precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name",
+  m_precipitation.set_string("pism_intent", "diagnostic");
+  m_precipitation.set_string("long_name",
                            "ice-equivalent precipitation rate with a lapse-rate correction");
-  precipitation.set_units("m s-1");
-  precipitation.set_glaciological_units("m year-1");
+  m_precipitation.set_units("m s-1");
+  m_precipitation.set_glaciological_units("m year-1");
 
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name",
+  m_air_temp.set_string("pism_intent", "diagnostic");
+  m_air_temp.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");
-  air_temp.set_units("K");
+  m_air_temp.set_units("K");
 
   m_surface = NULL;
 }
@@ -56,40 +56,40 @@ void PALapseRates::init() {
 
   init_internal();
 
-  precip_lapse_rate = options::Real("-precip_lapse_rate",
+  m_precip_lapse_rate = options::Real("-precip_lapse_rate",
                                     "Elevation lapse rate for the surface mass balance,"
                                     " in m/year per km",
-                                    precip_lapse_rate);
+                                    m_precip_lapse_rate);
 
   verbPrintf(2, m_grid.com,
              "   air temperature lapse rate: %3.3f K per km\n"
              "   precipitation lapse rate:   %3.3f m/year per km\n",
-             temp_lapse_rate, precip_lapse_rate);
+             m_temp_lapse_rate, m_precip_lapse_rate);
 
-  temp_lapse_rate = m_grid.convert(temp_lapse_rate, "K/km", "K/m");
+  m_temp_lapse_rate = m_grid.convert(m_temp_lapse_rate, "K/km", "K/m");
 
-  precip_lapse_rate = m_grid.convert(precip_lapse_rate, "m/year / km", "m/s / m");
+  m_precip_lapse_rate = m_grid.convert(m_precip_lapse_rate, "m/year / km", "m/s / m");
 }
 
 void PALapseRates::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
-  lapse_rate_correction(result, precip_lapse_rate);
+  lapse_rate_correction(result, m_precip_lapse_rate);
 }
 
 void PALapseRates::mean_annual_temp(IceModelVec2S &result) {
   input_model->mean_annual_temp(result);
-  lapse_rate_correction(result, temp_lapse_rate);
+  lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
 void PALapseRates::begin_pointwise_access() {
   input_model->begin_pointwise_access();
-  reference_surface.begin_access();
+  m_reference_surface.begin_access();
   m_surface->begin_access();
 }
 
 void PALapseRates::end_pointwise_access() {
   input_model->end_pointwise_access();
-  reference_surface.end_access();
+  m_reference_surface.end_access();
   m_surface->end_access();
 }
 
@@ -98,7 +98,7 @@ void PALapseRates::init_timeseries(const std::vector<double> &ts) {
 
   m_ts_times = ts;
 
-  reference_surface.init_interpolation(ts);
+  m_reference_surface.init_interpolation(ts);
 
   m_surface = m_grid.variables().get_2d_scalar("surface_altitude");
 }
@@ -108,10 +108,10 @@ void PALapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
 
   input_model->temp_time_series(i, j, result);
 
-  reference_surface.interp(i, j, usurf);
+  m_reference_surface.interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= temp_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
+    result[m] -= m_temp_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
   }
 }
 
@@ -120,27 +120,27 @@ void PALapseRates::precip_time_series(int i, int j, std::vector<double> &result)
 
   input_model->precip_time_series(i, j, result);
 
-  reference_surface.interp(i, j, usurf);
+  m_reference_surface.interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
+    result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
   }
 }
 
 void PALapseRates::temp_snapshot(IceModelVec2S &result) {
   input_model->temp_snapshot(result);
-  lapse_rate_correction(result, temp_lapse_rate);
+  lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
 void PALapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp")) {
-    air_temp.define(nc, nctype, true);
+    m_air_temp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "precipitation")) {
-    precipitation.define(nc, nctype, true);
+    m_precipitation.define(nc, nctype, true);
   }
 
   input_model->define_variables(vars, nc, nctype);
@@ -152,7 +152,7 @@ void PALapseRates::write_variables_impl(const std::set<std::string> &vars_input,
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = air_temp;
+    tmp.metadata() = m_air_temp;
 
     temp_snapshot(tmp);
 
@@ -164,7 +164,7 @@ void PALapseRates::write_variables_impl(const std::set<std::string> &vars_input,
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-    tmp.metadata() = precipitation;
+    tmp.metadata() = m_precipitation;
 
     mean_precipitation(tmp);
     tmp.write_in_glaciological_units = true;
