@@ -145,25 +145,19 @@ void Hydrology::init() {
     m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);
   }
 
-  // initialize till water layer thickness from the context if present,
-  //   otherwise from -i or -boot_file, otherwise with constant value
-  if (m_grid.variables().is_available("tillwat")) {
-    m_Wtil.copy_from(*m_grid.variables().get_2d_scalar("tillwat"));
-  } else {
-    if (i || bootstrap) {
-      std::string filename;
-      int start;
-      bool boot = false;
-      find_pism_input(filename, boot, start);
-      if (i) {
-        m_Wtil.read(filename, start);
-      } else {
-        m_Wtil.regrid(filename, OPTIONAL,
-                    m_config.get("bootstrapping_tillwat_value_no_var"));
-      }
+  if (i || bootstrap) {
+    std::string filename;
+    int start;
+    bool boot = false;
+    find_pism_input(filename, boot, start);
+    if (i) {
+      m_Wtil.read(filename, start);
     } else {
-      m_Wtil.set(m_config.get("bootstrapping_tillwat_value_no_var"));
+      m_Wtil.regrid(filename, OPTIONAL,
+                    m_config.get("bootstrapping_tillwat_value_no_var"));
     }
+  } else {
+    m_Wtil.set(m_config.get("bootstrapping_tillwat_value_no_var"));
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file
