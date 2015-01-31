@@ -30,6 +30,43 @@
 
 namespace pism {
 
+SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
+  m_min_thickness = config.get("min_thickness_strength_extension_ssa");
+  m_constant_nu = config.get("constant_nu_strength_extension_ssa");
+}
+
+//! Set strength = (viscosity times thickness).
+/*! Determines nu by input strength and current min_thickness. */
+void SSAStrengthExtension::set_notional_strength(double my_nuH) {
+  if (my_nuH <= 0.0) {
+    throw RuntimeError::formatted("nuH must be positive, got %f", my_nuH);
+  }
+  m_constant_nu = my_nuH / m_min_thickness;
+}
+
+//! Set minimum thickness to trigger use of extension.
+/*! Preserves strength (nuH) by also updating using current nu.  */
+void SSAStrengthExtension::set_min_thickness(double my_min_thickness) {
+  if (my_min_thickness <= 0.0) {
+    throw RuntimeError::formatted("min_thickness must be positive, got %f",
+                                  my_min_thickness);
+  }
+  double nuH = m_constant_nu * m_min_thickness;
+  m_min_thickness = my_min_thickness;
+  m_constant_nu = nuH / m_min_thickness;
+}
+
+//! Returns strength = (viscosity times thickness).
+double SSAStrengthExtension::get_notional_strength() const {
+  return m_constant_nu * m_min_thickness;
+}
+
+//! Returns minimum thickness to trigger use of extension.
+double SSAStrengthExtension::get_min_thickness() const {
+  return m_min_thickness;
+}
+
+
 SSA::SSA(const IceGrid &g, const EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
 {

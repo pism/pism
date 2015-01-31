@@ -54,47 +54,14 @@ namespace pism {
 */
 class SSAStrengthExtension {
 public:
-  SSAStrengthExtension(const Config &c) : config(c) {
-    min_thickness = config.get("min_thickness_strength_extension_ssa");
-    constant_nu = config.get("constant_nu_strength_extension_ssa");
-  }
+  SSAStrengthExtension(const Config &c);
 
-  virtual ~SSAStrengthExtension() {}
-
-  //! Set strength = (viscosity times thickness).
-  /*! Determines nu by input strength and current min_thickness. */
-  virtual void set_notional_strength(double my_nuH) {
-    if (my_nuH <= 0.0) {
-      throw RuntimeError::formatted("nuH must be positive, got %f", my_nuH);
-    }
-    constant_nu = my_nuH / min_thickness;
-  }
-
-  //! Set minimum thickness to trigger use of extension.
-  /*! Preserves strength (nuH) by also updating using current nu.  */
-  virtual void set_min_thickness(double my_min_thickness) {
-    if (my_min_thickness <= 0.0) {
-      throw RuntimeError::formatted("min_thickness must be positive, got %f",
-                                    my_min_thickness);
-    }
-    double nuH = constant_nu * min_thickness;
-    min_thickness = my_min_thickness;
-    constant_nu = nuH / min_thickness;
-  }
-
-  //! Returns strength = (viscosity times thickness).
-  double get_notional_strength() const {
-    return constant_nu * min_thickness;
-  }
-
-  //! Returns minimum thickness to trigger use of extension.
-  double get_min_thickness() const {
-    return min_thickness;
-  }
-
+  void set_notional_strength(double my_nuH);
+  void set_min_thickness(double my_min_thickness);
+  double get_notional_strength() const;
+  double get_min_thickness() const;
 private:
-  const Config &config;
-  double  min_thickness, constant_nu;
+  double m_min_thickness, m_constant_nu;
 };
 
 //! Callback for constructing a new SSA subclass.  The caller is
