@@ -53,11 +53,10 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result);
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
-  const IceModelVec2S *ice_thickness; // is not owned by this class
-  NCSpatialVariable shelfbmassflux, shelfbtemp;
+  NCSpatialVariable m_shelfbmassflux, m_shelfbtemp;
 private:
   //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
-  double meltfactor;
+  double m_meltfactor;
 };
 
 } // end of namespace pism

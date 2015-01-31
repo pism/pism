@@ -29,21 +29,21 @@ namespace pism {
 
 POConstantPIK::POConstantPIK(const IceGrid &g)
   : OceanModel(g),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)
+    m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
+    m_shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)
 {
-  shelfbmassflux.set_string("pism_intent", "climate_state");
-  shelfbmassflux.set_string("long_name",
+  m_shelfbmassflux.set_string("pism_intent", "climate_state");
+  m_shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("kg m-2 s-1");
-  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
+  m_shelfbmassflux.set_units("kg m-2 s-1");
+  m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
-  shelfbtemp.set_string("pism_intent", "climate_state");
-  shelfbtemp.set_string("long_name",
+  m_shelfbtemp.set_string("pism_intent", "climate_state");
+  m_shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units("Kelvin");
+  m_shelfbtemp.set_units("Kelvin");
 
-  meltfactor = m_config.get("ocean_pik_melt_factor");
+  m_meltfactor = m_config.get("ocean_pik_melt_factor");
 }
 
 POConstantPIK::~POConstantPIK() {
@@ -57,12 +57,10 @@ void POConstantPIK::init_impl() {
   verbPrintf(2, m_grid.com,
              "* Initializing the constant (PIK) ocean model...\n");
 
-  ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-
-  meltfactor = options::Real("-meltfactor_pik",
+  m_meltfactor = options::Real("-meltfactor_pik",
                              "Use as a melt factor as in sub-shelf-melting"
                              " parameterization of [@ref Martinetal2011]",
-                             meltfactor);
+                             m_meltfactor);
 }
 
 void POConstantPIK::update_impl(double my_t, double my_dt) {
@@ -81,12 +79,14 @@ void POConstantPIK::shelf_base_temperature_impl(IceModelVec2S &result) {
     g           = m_config.get("standard_gravity"),
     ice_density = m_config.get("ice_density");
 
+  const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
+
   IceModelVec::AccessList list;
-  list.add(*ice_thickness);
+  list.add(H);
   list.add(result);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME task #7297
+    const double pressure = ice_density * g * H(i,j); // FIXME task #7297
     // temp is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
@@ -108,8 +108,10 @@ void POConstantPIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
+  const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
+
   IceModelVec::AccessList list;
-  list.add(*ice_thickness);
+  list.add(H);
   list.add(result);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -120,13 +122,13 @@ void POConstantPIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
     // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
     // details]
     double
-      shelfbaseelev = - (ice_density / sea_water_density) * (*ice_thickness)(i,j),
+      shelfbaseelev = - (ice_density / sea_water_density) * H(i,j),
       T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
     // add 273.15 to convert from Celsius to Kelvin
 
     // compute ocean_heat_flux according to beckmann_goosse03
     // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
-    double ocean_heat_flux = meltfactor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
+    double ocean_heat_flux = m_meltfactor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
     
     // TODO: T_ocean -> field!
 
@@ -147,13 +149,13 @@ void POConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set
 }
 
 void POConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                               IO_Type nctype) {
+                                          IO_Type nctype) {
   if (set_contains(vars, "shelfbtemp")) {
-    shelfbtemp.define(nc, nctype, true);
+    m_shelfbtemp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    shelfbmassflux.define(nc, nctype, true);
+    m_shelfbmassflux.define(nc, nctype, true);
   }
 }
 
@@ -161,11 +163,11 @@ void POConstantPIK::write_variables_impl(const std::set<std::string> &vars, cons
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
-    if (!tmp.was_created()) {
+    if (not tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbtemp;
+    tmp.metadata() = m_shelfbtemp;
     shelf_base_temperature(tmp);
     tmp.write(nc);
   }
@@ -175,7 +177,7 @@ void POConstantPIK::write_variables_impl(const std::set<std::string> &vars, cons
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbmassflux;
+    tmp.metadata() = m_shelfbmassflux;
     tmp.write_in_glaciological_units = true;
     shelf_base_mass_flux(tmp);
     tmp.write(nc);
