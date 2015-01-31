@@ -139,31 +139,16 @@ void PSTemperatureIndex_Old::init() {
              method.c_str());
 
 
-  if ((m_config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
-    lat = m_grid.variables().get_2d_scalar("latitude");
-  } else
-    lat = NULL;
-
-
   if (fausto_params) {
     verbPrintf(2, m_grid.com,
                "  Setting PDD parameters from [Faustoetal2009] ...\n");
 
-    //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
     base_pddStdDev = 2.53;
 
-    lon   = m_grid.variables().get_2d_scalar("longitude");
-    usurf = m_grid.variables().get_2d_scalar("usurf");
+    if (faustogreve == NULL) {
+      faustogreve = new FaustoGrevePDDObject_Old(m_grid);
+    }
 
-  if (faustogreve == NULL) {
-    faustogreve = new FaustoGrevePDDObject_Old(m_grid);
-  }
-
-  } else {
-    // generally, this is the case in which degree day factors do not depend
-    //   on location; we use base_ddf
-    lon = NULL;
-    usurf = NULL;
   }
 
   // if -pdd_annualize is set, update mass balance immediately (at the
@@ -258,22 +243,14 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
     ts[k] = my_t + k * dtseries;
   }
 
+  const IceModelVec2S *lat = NULL, *lon = NULL, *usurf = NULL;
+
   IceModelVec::AccessList list;
 
-  if (lat != NULL) {
-    list.add(*lat);
-  }
-
   if (faustogreve != NULL) {
-    if (lat == NULL) {
-      throw RuntimeError("faustogreve object is allocated BUT lat==NULL");
-    }
-    if (lon == NULL) {
-      throw RuntimeError("faustogreve object is allocated BUT lon==NULL");
-    }
-    if (usurf == NULL) {
-      throw RuntimeError("faustogreve object is allocated BUT usurf==NULL");
-    }
+    lon   = m_grid.variables().get_2d_scalar("longitude");
+    usurf = m_grid.variables().get_2d_scalar("usurf");
+
     list.add(*lon);
     list.add(*usurf);
     faustogreve->update_temp_mj(*usurf, *lat, *lon);
@@ -282,9 +259,8 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   const PetscScalar sigmalapserate = m_config.get("pdd_std_dev_lapse_lat_rate"),
                     sigmabaselat   = m_config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
-    if (lat == NULL) {
-      throw RuntimeError("pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL");
-    }
+    lat = m_grid.variables().get_2d_scalar("latitude");
+    list.add(*lat);
   }
 
   DegreeDayFactors_Old  ddf = base_ddf;
