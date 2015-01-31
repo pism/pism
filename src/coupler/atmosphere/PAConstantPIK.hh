@@ -43,10 +43,9 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  const IceModelVec2S *usurf, *lat;
-  std::string input_file;
-  IceModelVec2S precipitation, air_temp;
-  NCSpatialVariable air_temp_snapshot;
+  std::string m_input_file;
+  IceModelVec2S m_precipitation, m_air_temp;
+  NCSpatialVariable m_air_temp_snapshot;
 };
 
 } // end of namespace pism

@@ -27,62 +27,62 @@ namespace pism {
 
 PAConstantPIK::PAConstantPIK(const IceGrid &g)
   : AtmosphereModel(g),
-    air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
+    m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in SurfaceModel)
-  precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  precipitation.set_attrs("climate_state",
+  m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+  m_precipitation.set_attrs("climate_state",
                           "mean annual ice-equivalent precipitation rate",
                           "m s-1",
                           ""); // no CF standard_name ??
-  precipitation.set_glaciological_units("m year-1");
-  precipitation.write_in_glaciological_units = true;
-  precipitation.set_time_independent(true);
+  m_precipitation.set_glaciological_units("m year-1");
+  m_precipitation.write_in_glaciological_units = true;
+  m_precipitation.set_time_independent(true);
 
-  air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-  air_temp.set_attrs("climate_state",
+  m_air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
+  m_air_temp.set_attrs("climate_state",
                      "mean annual near-surface (2 m) air temperature",
                      "K",
                      "");
-  air_temp.set_time_independent(true);
+  m_air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
-  air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  air_temp_snapshot.set_string("long_name",
+  m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
+  m_air_temp_snapshot.set_string("long_name",
                                "snapshot of the near-surface air temperature");
-  air_temp_snapshot.set_units("K");
+  m_air_temp_snapshot.set_units("K");
 }
 
 void PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
-  precipitation.copy_to(result);
+  m_precipitation.copy_to(result);
 }
 
 void PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
-  air_temp.copy_to(result);
+  m_air_temp.copy_to(result);
 }
 
 void PAConstantPIK::begin_pointwise_access() {
-  precipitation.begin_access();
-  air_temp.begin_access();
+  m_precipitation.begin_access();
+  m_air_temp.begin_access();
 }
 
 void PAConstantPIK::end_pointwise_access() {
-  precipitation.end_access();
-  air_temp.end_access();
+  m_precipitation.end_access();
+  m_air_temp.end_access();
 }
 
 void PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = air_temp(i,j);
+    result[k] = m_air_temp(i,j);
   }
 }
 
 void PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = precipitation(i,j);
+    result[k] = m_precipitation(i,j);
   }
 }
 
@@ -102,15 +102,15 @@ void PAConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set
 void PAConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   if (set_contains(vars, "air_temp_snapshot")) {
-    air_temp_snapshot.define(nc, nctype, false);
+    m_air_temp_snapshot.define(nc, nctype, false);
   }
 
   if (set_contains(vars, "precipitation")) {
-    precipitation.define(nc, nctype);
+    m_precipitation.define(nc, nctype);
   }
 
   if (set_contains(vars, "air_temp")) {
-    air_temp.define(nc, nctype);
+    m_air_temp.define(nc, nctype);
   }
 }
 
@@ -118,7 +118,7 @@ void PAConstantPIK::write_variables_impl(const std::set<std::string> &vars, cons
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
-    tmp.metadata() = air_temp_snapshot;
+    tmp.metadata() = m_air_temp_snapshot;
 
     temp_snapshot(tmp);
 
@@ -126,11 +126,11 @@ void PAConstantPIK::write_variables_impl(const std::set<std::string> &vars, cons
   }
 
   if (set_contains(vars, "precipitation")) {
-    precipitation.write(nc);
+    m_precipitation.write(nc);
   }
 
   if (set_contains(vars, "air_temp")) {
-    air_temp.write(nc);
+    m_air_temp.write(nc);
   }
 }
 
@@ -146,35 +146,36 @@ void PAConstantPIK::init() {
              "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
   // find PISM input file to read data from:
-  find_pism_input(input_file, do_regrid, start);
+  find_pism_input(m_input_file, do_regrid, start);
 
   // read snow precipitation rate and air_temps from file
   verbPrintf(2, m_grid.com,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "    from %s ... \n",
-             input_file.c_str());
+             m_input_file.c_str());
   if (do_regrid) {
-    precipitation.regrid(input_file, CRITICAL);
+    m_precipitation.regrid(m_input_file, CRITICAL);
   } else {
-    precipitation.read(input_file, start); // fails if not found!
+    m_precipitation.read(m_input_file, start); // fails if not found!
   }
-
-  usurf = m_grid.variables().get_2d_scalar("surface_altitude");
-  lat   = m_grid.variables().get_2d_scalar("latitude");
 }
 
 void PAConstantPIK::update_impl(double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
+  const IceModelVec2S
+    *usurf = m_grid.variables().get_2d_scalar("surface_altitude"),
+    *lat   = m_grid.variables().get_2d_scalar("latitude");
+
   IceModelVec::AccessList list;
-  list.add(air_temp);
+  list.add(m_air_temp);
   list.add(*usurf);
   list.add(*lat);
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
+    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
   }
 }
 
