@@ -92,11 +92,6 @@ protected:
   virtual void compute_diffusivity(IceModelVec2S &result);
   virtual void compute_diffusivity_staggered(IceModelVec2Stag &result);
 
-  // pointers to input fields:
-  const IceModelVec2S *m_bed, *m_thickness, *m_surface;
-  const IceModelVec2Int *m_mask;
-  const IceModelVec3 *m_age, *m_enthalpy;
-
   //! temporary storage for eta, theta and the smoothed thickness
   IceModelVec2S m_work_2d[2];
   //! temporary storage for the surface gradient
