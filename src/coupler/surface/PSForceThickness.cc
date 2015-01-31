@@ -36,7 +36,6 @@ PSForceThickness::PSForceThickness(const IceGrid &g, SurfaceModel *input)
     m_climatic_mass_balance_original(g.config.get_unit_system(), "climatic_mass_balance_original", m_grid),
     m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
-  m_ice_thickness = NULL;
   m_alpha = m_config.get("force_to_thickness_alpha", "yr-1", "s-1");
   m_alpha_ice_free_factor = m_config.get("force_to_thickness_ice_free_alpha_factor");
   m_ice_free_thickness_threshold = m_config.get("force_to_thickness_ice_free_thickness_threshold");
@@ -109,9 +108,6 @@ void PSForceThickness::init() {
                                                  "Specifies the ice thickness threshold"
                                                  " used to determine whether a location is ice-free, in m",
                                                  m_ice_free_thickness_threshold);
-
-  m_ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  m_pism_mask     = m_grid.variables().get_2d_mask("mask");
 
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
@@ -285,11 +281,14 @@ void PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
 
   double ice_density = m_config.get("ice_density");
 
-  MaskQuery m(*m_pism_mask);
+  const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2Int &mask = *m_grid.variables().get_2d_mask("mask");
+
+  MaskQuery m(mask);
 
   IceModelVec::AccessList list;
-  list.add(*m_pism_mask);
-  list.add(*m_ice_thickness);
+  list.add(mask);
+  list.add(H);
   list.add(m_target_thickness);
   list.add(m_ftt_mask);
   list.add(result);
@@ -299,9 +298,9 @@ void PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
 
     if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
       if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
-        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
+        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - H(i,j));
       } else {
-        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
+        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - H(i,j));
       }
     }
   }
