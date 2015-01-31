@@ -124,35 +124,30 @@ void RoutingHydrology::init_bwat() {
 
   const PetscReal bwatdefault = m_config.get("bootstrapping_bwat_value_no_var");
 
-  if (m_grid.variables().is_available("bwat")) {
-    // a variable called "bwat" is already in context
-    m_W.copy_from(*m_grid.variables().get_2d_scalar("bwat"));
-  } else {
-    if (i || bootstrap) {
-      std::string filename;
-      int start;
-      bool boot = false;
-      find_pism_input(filename, boot, start);
-      if (i) {
-        PIO nc(m_grid, "guess_mode");
-        nc.open(filename, PISM_READONLY);
-        bool bwat_exists = nc.inq_var("bwat");
-        if (bwat_exists == true) {
-          m_W.read(filename, start);
-        } else {
-          verbPrintf(2, m_grid.com,
-                     "PISM WARNING: bwat for hydrology model not found in '%s'."
-                     "  Setting it to %.2f ...\n",
-                     filename.c_str(), bwatdefault);
-          m_W.set(bwatdefault);
-        }
-        nc.close();
+  if (i || bootstrap) {
+    std::string filename;
+    int start;
+    bool boot = false;
+    find_pism_input(filename, boot, start);
+    if (i) {
+      PIO nc(m_grid, "guess_mode");
+      nc.open(filename, PISM_READONLY);
+      bool bwat_exists = nc.inq_var("bwat");
+      if (bwat_exists == true) {
+        m_W.read(filename, start);
       } else {
-        m_W.regrid(filename, OPTIONAL, bwatdefault);
+        verbPrintf(2, m_grid.com,
+                   "PISM WARNING: bwat for hydrology model not found in '%s'."
+                   "  Setting it to %.2f ...\n",
+                   filename.c_str(), bwatdefault);
+        m_W.set(bwatdefault);
       }
-    } else { // not sure if this case can be reached, but ...
-      m_W.set(bwatdefault);
+      nc.close();
+    } else {
+      m_W.regrid(filename, OPTIONAL, bwatdefault);
     }
+  } else { // not sure if this case can be reached, but ...
+    m_W.set(bwatdefault);
   }
 
   // however we initialized it, we could be asked to regrid from file
