@@ -189,7 +189,7 @@ MCHydrology_ice_free_land_loss_cumulative::MCHydrology_ice_free_land_loss_cumula
 }
 
 void MCHydrology_ice_free_land_loss_cumulative::update(double a, double b) {
-  m_ts->append(model->ice_free_land_loss_cumulative, a, b);
+  m_ts->append(model->m_ice_free_land_loss_cumulative, a, b);
 }
 
 MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(RoutingHydrology *m)
@@ -203,7 +203,7 @@ MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(RoutingHydrology 
 }
 
 void MCHydrology_ice_free_land_loss::update(double a, double b) {
-  m_ts->append(model->ice_free_land_loss_cumulative, a, b);
+  m_ts->append(model->m_ice_free_land_loss_cumulative, a, b);
 }
 
 MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(RoutingHydrology *m)
@@ -216,7 +216,7 @@ MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(RoutingHydr
 }
 
 void MCHydrology_ocean_loss_cumulative::update(double a, double b) {
-  m_ts->append(model->ocean_loss_cumulative, a, b);
+  m_ts->append(model->m_ocean_loss_cumulative, a, b);
 }
 
 MCHydrology_ocean_loss::MCHydrology_ocean_loss(RoutingHydrology *m)
@@ -230,7 +230,7 @@ MCHydrology_ocean_loss::MCHydrology_ocean_loss(RoutingHydrology *m)
 }
 
 void MCHydrology_ocean_loss::update(double a, double b) {
-  m_ts->append(model->ocean_loss_cumulative, a, b);
+  m_ts->append(model->m_ocean_loss_cumulative, a, b);
 }
 
 MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_gain_cumulative(RoutingHydrology *m)
@@ -243,7 +243,7 @@ MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_g
 }
 
 void MCHydrology_negative_thickness_gain_cumulative::update(double a, double b) {
-  m_ts->append(model->negative_thickness_gain_cumulative, a, b);
+  m_ts->append(model->m_negative_thickness_gain_cumulative, a, b);
 }
 
 MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(RoutingHydrology *m)
@@ -257,7 +257,7 @@ MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(Routing
 }
 
 void MCHydrology_negative_thickness_gain::update(double a, double b) {
-  m_ts->append(model->negative_thickness_gain_cumulative, a, b);
+  m_ts->append(model->m_negative_thickness_gain_cumulative, a, b);
 }
 
 MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(RoutingHydrology *m)
@@ -270,7 +270,7 @@ MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(R
 }
 
 void MCHydrology_null_strip_loss_cumulative::update(double a, double b) {
-  m_ts->append(model->null_strip_loss_cumulative, a, b);
+  m_ts->append(model->m_null_strip_loss_cumulative, a, b);
 }
 
 MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(RoutingHydrology *m)
@@ -284,7 +284,7 @@ MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(RoutingHydrology *m)
 }
 
 void MCHydrology_null_strip_loss::update(double a, double b) {
-  m_ts->append(model->null_strip_loss_cumulative, a, b);
+  m_ts->append(model->m_null_strip_loss_cumulative, a, b);
 }
 
 } // end of namespace pism

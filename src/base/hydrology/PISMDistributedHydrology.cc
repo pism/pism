@@ -64,12 +64,12 @@ void DistributedHydrology::init() {
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
   {
-    stripwidth = m_grid.convert(stripwidth, "m", "km");
+    m_stripwidth = m_grid.convert(m_stripwidth, "m", "km");
     options::Real hydrology_null_strip("-hydrology_null_strip",
                                        "set the width, in km, of the strip around the edge "
                                        "of the computational domain in which hydrology is inactivated",
-                                       stripwidth);
-    stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
+                                       m_stripwidth);
+    m_stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
   }
 
   bool init_P_from_steady = options::Bool("-init_P_from_steady",
@@ -86,10 +86,10 @@ void DistributedHydrology::init() {
 
   init_bwp();
 
-  ice_free_land_loss_cumulative      = 0.0;
-  ocean_loss_cumulative              = 0.0;
-  negative_thickness_gain_cumulative = 0.0;
-  null_strip_loss_cumulative         = 0.0;
+  m_ice_free_land_loss_cumulative      = 0.0;
+  m_ocean_loss_cumulative              = 0.0;
+  m_negative_thickness_gain_cumulative = 0.0;
+  m_null_strip_loss_cumulative         = 0.0;
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     verbPrintf(2, m_grid.com,
@@ -210,11 +210,11 @@ The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
  */
 void DistributedHydrology::check_P_bounds(bool enforce_upper) {
 
-  overburden_pressure(Pover);
+  overburden_pressure(m_Pover);
 
   IceModelVec::AccessList list;
   list.add(P);
-  list.add(Pover);
+  list.add(m_Pover);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -226,11 +226,11 @@ void DistributedHydrology::check_P_bounds(bool enforce_upper) {
     }
 
     if (enforce_upper) {
-      P(i,j) = std::min(P(i,j), Pover(i,j));
-    } else if (P(i,j) > Pover(i,j) + 0.001) {
+      P(i,j) = std::min(P(i,j), m_Pover(i,j));
+    } else if (P(i,j) > m_Pover(i,j) + 0.001) {
       throw RuntimeError::formatted("subglacial water pressure P = %.16f Pa exceeds\n"
                                     "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
-                                    P(i, j), Pover(i, j), i, j);
+                                    P(i, j), m_Pover(i, j), i, j);
     }
   }
 }
@@ -251,11 +251,11 @@ void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
     powglen = 1.0 / m_config.get("sia_Glen_exponent"), // choice is SIA; see #285
     Wr = m_config.get("hydrology_roughness_scale");
 
-  overburden_pressure(Pover);
+  overburden_pressure(m_Pover);
 
   IceModelVec::AccessList list;
-  list.add(W);
-  list.add(Pover);
+  list.add(m_W);
+  list.add(m_Pover);
   list.add(velbase_mag);
   list.add(result);
 
@@ -263,20 +263,20 @@ void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
     const int i = p.i(), j = p.j();
 
     double sb = pow(CC * velbase_mag(i, j), powglen);
-    if (W(i, j) == 0.0) {
+    if (m_W(i, j) == 0.0) {
       // see P(W) formula in steady state; note P(W) is continuous (in steady
       // state); these facts imply:
       if (sb > 0.0) {
         result(i, j) = 0.0;        // no water + cavitation = underpressure
       } else {
-        result(i, j) = Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
+        result(i, j) = m_Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
       }
     } else {
-      double Wratio = std::max(0.0, Wr - W(i, j)) / W(i, j);
+      double Wratio = std::max(0.0, Wr - m_W(i, j)) / m_W(i, j);
       // in cases where steady state is actually possible this will
       //   come out positive, but otherwise we should get underpressure P=0,
       //   and that is what it yields
-      result(i, j) = std::max(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
+      result(i, j) = std::max(0.0, m_Pover(i, j) - sb * pow(Wratio, powglen));
     }
   }
 }
@@ -345,7 +345,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
   m_dt = icedt;
 
   // make sure W,P have valid ghosts before starting hydrology steps
-  W.update_ghosts();
+  m_W.update_ghosts();
   P.update_ghosts();
 
   // from current ice geometry/velocity variables, initialize Po and velbase_mag
@@ -375,7 +375,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
     hydrocount++;
 
 #if (PISM_DEBUG==1)
-    check_water_thickness_nonnegative(W);
+    check_water_thickness_nonnegative(m_W);
     check_Wtil_bounds();
 #endif
 
@@ -384,17 +384,17 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
     //   first time through the current loop, we enforce them
     check_P_bounds((hydrocount == 1));
 
-    water_thickness_staggered(Wstag);
-    Wstag.update_ghosts();
+    water_thickness_staggered(m_Wstag);
+    m_Wstag.update_ghosts();
 
-    conductivity_staggered(Kstag,maxKW);
-    Kstag.update_ghosts();
+    conductivity_staggered(m_Kstag,maxKW);
+    m_Kstag.update_ghosts();
 
-    velocity_staggered(V);
+    velocity_staggered(m_V);
 
     // to get Qstag, W needs valid ghosts
-    advective_fluxes(Qstag);
-    Qstag.update_ghosts();
+    advective_fluxes(m_Qstag);
+    m_Qstag.update_ghosts();
 
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
@@ -405,7 +405,7 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
 
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);
-    boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+    boundary_mass_changes(m_Wtilnew, delta_icefree, delta_ocean,
                           delta_neggain, delta_nullstrip);
     icefreelost  += delta_icefree;
     oceanlost    += delta_ocean;
@@ -418,22 +418,22 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
                      wuy  = 1.0 / (m_grid.dy() * m_grid.dy());
     double  Open, Close, divflux, ZZ,
                divadflux, diffW;
-    overburden_pressure(Pover);
+    overburden_pressure(m_Pover);
 
     MaskQuery M(*m_mask);
 
     IceModelVec::AccessList list;
     list.add(P);
-    list.add(W);
+    list.add(m_W);
     list.add(m_Wtil);
-    list.add(Wtilnew);
+    list.add(m_Wtilnew);
     list.add(velbase_mag);
-    list.add(Wstag);
-    list.add(Kstag);
-    list.add(Qstag);
+    list.add(m_Wstag);
+    list.add(m_Kstag);
+    list.add(m_Qstag);
     list.add(m_total_input);
     list.add(*m_mask);
-    list.add(Pover);
+    list.add(m_Pover);
     list.add(Pnew);
 
     for (Points p(m_grid); p; p.next()) {
@@ -442,36 +442,36 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
       if (M.ice_free_land(i,j)) {
         Pnew(i,j) = 0.0;
       } else if (M.ocean(i,j)) {
-        Pnew(i,j) = Pover(i,j);
-      } else if (W(i,j) <= 0.0) {
-        Pnew(i,j) = Pover(i,j);
+        Pnew(i,j) = m_Pover(i,j);
+      } else if (m_W(i,j) <= 0.0) {
+        Pnew(i,j) = m_Pover(i,j);
       } else {
         // opening and closure terms in pressure equation
-        Open = std::max(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
-        Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
+        Open = std::max(0.0,c1 * velbase_mag(i,j) * (Wr - m_W(i,j)));
+        Close = c2 * Aglen * pow(m_Pover(i,j) - P(i,j),nglen) * m_W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
-        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / m_grid.dx()
-          + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / m_grid.dy();
-        const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
-          Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
-          Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
-          Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-        diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
-          + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
+        divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_grid.dx()
+          + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_grid.dy();
+        const double  De = rg * m_Kstag(i,  j,0) * m_Wstag(i,  j,0),
+          Dw = rg * m_Kstag(i-1,j,0) * m_Wstag(i-1,j,0),
+          Dn = rg * m_Kstag(i,j  ,1) * m_Wstag(i,j  ,1),
+          Ds = rg * m_Kstag(i,j-1,1) * m_Wstag(i,j-1,1);
+        diffW =   wux * (De * (m_W(i+1,j) - m_W(i,j)) - Dw * (m_W(i,j) - m_W(i-1,j)))
+          + wuy * (Dn * (m_W(i,j+1) - m_W(i,j)) - Ds * (m_W(i,j) - m_W(i,j-1)));
         divflux = - divadflux + diffW;
 
         // pressure update equation
-        ZZ = Close - Open + m_total_input(i,j) - (Wtilnew(i,j) - m_Wtil(i,j)) / hdt;
+        ZZ = Close - Open + m_total_input(i,j) - (m_Wtilnew(i,j) - m_Wtil(i,j)) / hdt;
         Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
         // projection to enforce  0 <= P <= P_o
-        Pnew(i,j) = std::min(std::max(0.0, Pnew(i,j)), Pover(i,j));
+        Pnew(i,j) = std::min(std::max(0.0, Pnew(i,j)), m_Pover(i,j));
       }
     }
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     raw_update_W(hdt);
-    boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
+    boundary_mass_changes(m_Wnew, delta_icefree, delta_ocean,
                           delta_neggain, delta_nullstrip);
     icefreelost  += delta_icefree;
     oceanlost    += delta_ocean;
@@ -479,8 +479,8 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
     nullstriplost+= delta_nullstrip;
 
     // transfer new into old
-    Wnew.update_ghosts(W);
-    Wtilnew.copy_to(m_Wtil);
+    m_Wnew.update_ghosts(m_W);
+    m_Wtilnew.copy_to(m_Wtil);
     Pnew.update_ghosts(P);
 
     ht += hdt;
@@ -493,10 +493,10 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
              "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,  max D = %.2e m^2 s-1)\n",
              m_dt/hydrocount, cumratio/hydrocount, maxV, maxD);
 
-  ice_free_land_loss_cumulative      += icefreelost;
-  ocean_loss_cumulative              += oceanlost;
-  negative_thickness_gain_cumulative += negativegain;
-  null_strip_loss_cumulative         += nullstriplost;
+  m_ice_free_land_loss_cumulative      += icefreelost;
+  m_ocean_loss_cumulative              += oceanlost;
+  m_negative_thickness_gain_cumulative += negativegain;
+  m_null_strip_loss_cumulative         += nullstriplost;
 }
 
 

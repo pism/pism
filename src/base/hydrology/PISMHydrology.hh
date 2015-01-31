@@ -266,18 +266,18 @@ protected:
                                      IO_Type nctype);
 protected:
   // this model's state
-  IceModelVec2S W;      // water layer thickness
+  IceModelVec2S m_W;      // water layer thickness
   // this model's auxiliary variables
-  IceModelVec2Stag V,   // components are
+  IceModelVec2Stag m_V,   // components are
   //   V(i,j,0) = u(i,j) = east-edge  centered x-component of water velocity
   //   V(i,j,1) = v(i,j) = north-edge centered y-component of water velocity
-    Wstag,// edge-centered (staggered) W values (averaged from regular)
-    Kstag,// edge-centered (staggered) values of nonlinear conductivity
-    Qstag;// edge-centered (staggered) advection fluxes
+    m_Wstag,// edge-centered (staggered) W values (averaged from regular)
+    m_Kstag,// edge-centered (staggered) values of nonlinear conductivity
+    m_Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew, Wtilnew, Pover, R;
+  IceModelVec2S m_Wnew, m_Wtilnew, m_Pover, m_R;
 
-  double stripwidth; // width in m of strip around margin where V and W are set to zero;
+  double m_stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
 
   virtual void init_bwat();
@@ -288,10 +288,10 @@ protected:
                                      double &icefreelost, double &oceanlost,
                                      double &negativegain, double &nullstriplost);
 
-  double ice_free_land_loss_cumulative,
-         ocean_loss_cumulative,
-         negative_thickness_gain_cumulative,
-         null_strip_loss_cumulative;
+  double m_ice_free_land_loss_cumulative,
+         m_ocean_loss_cumulative,
+         m_negative_thickness_gain_cumulative,
+         m_null_strip_loss_cumulative;
 
   virtual void check_water_thickness_nonnegative(IceModelVec2S &thk);
 
