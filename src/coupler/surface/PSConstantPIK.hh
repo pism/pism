@@ -51,9 +51,8 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  std::string input_file;
-  IceModelVec2S climatic_mass_balance, ice_surface_temp;
-  const IceModelVec2S *lat, *usurf;
+  std::string m_input_file;
+  IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
 };
 
 } // end of namespace pism

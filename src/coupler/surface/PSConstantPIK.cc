@@ -31,16 +31,16 @@ namespace pism {
 PSConstantPIK::PSConstantPIK(const IceGrid &g)
   : SurfaceModel(g) {
 
-  climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  climatic_mass_balance.set_attrs("climate_state",
+  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_climatic_mass_balance.set_attrs("climate_state",
                                   "constant-in-time surface mass balance (accumulation/ablation) rate",
                                   "kg m-2 s-1",
                                   "land_ice_surface_specific_mass_balance_flux");
-  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
-  climatic_mass_balance.write_in_glaciological_units = true;
+  m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  m_climatic_mass_balance.write_in_glaciological_units = true;
 
-  ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  ice_surface_temp.set_attrs("climate_state",
+  m_ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_ice_surface_temp.set_attrs("climate_state",
                              "constant-in-time ice temperature at the ice surface",
                              "K", "");
 }
@@ -62,20 +62,17 @@ void PSConstantPIK::init() {
              "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
              "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
 
-  usurf = m_grid.variables().get_2d_scalar("surface_altitude");
-  lat   = m_grid.variables().get_2d_scalar("latitude");
-
   // find PISM input file to read data from:
-  find_pism_input(input_file, do_regrid, start);
+  find_pism_input(m_input_file, do_regrid, start);
 
   // read snow precipitation rate from file
   verbPrintf(2, m_grid.com,
              "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
-             input_file.c_str());
+             m_input_file.c_str());
   if (do_regrid) {
-    climatic_mass_balance.regrid(input_file, CRITICAL); // fails if not found!
+    m_climatic_mass_balance.regrid(m_input_file, CRITICAL); // fails if not found!
   } else {
-    climatic_mass_balance.read(input_file, start); // fails if not found!
+    m_climatic_mass_balance.read(m_input_file, start); // fails if not found!
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
@@ -93,14 +90,18 @@ void PSConstantPIK::update_impl(double my_t, double my_dt)
   m_t  = my_t;
   m_dt = my_dt;
 
+  const IceModelVec2S
+    &usurf = *m_grid.variables().get_2d_scalar("surface_altitude"),
+    &lat   = *m_grid.variables().get_2d_scalar("latitude");
+
   IceModelVec::AccessList list;
-  list.add(ice_surface_temp);
-  list.add(*usurf);
-  list.add(*lat);
+  list.add(m_ice_surface_temp);
+  list.add(usurf);
+  list.add(lat);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
+    m_ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * usurf(i,j) - 0.68775 * lat(i,j)*(-1.0);
   }
 }
 
@@ -111,11 +112,11 @@ void PSConstantPIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*d
 }
 
 void PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
-  climatic_mass_balance.copy_to(result);
+  m_climatic_mass_balance.copy_to(result);
 }
 
 void PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
-  ice_surface_temp.copy_to(result);
+  m_ice_surface_temp.copy_to(result);
 }
 
 void PSConstantPIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
@@ -128,21 +129,21 @@ void PSConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ice_surface_temp.define(nc, nctype);
+    m_ice_surface_temp.define(nc, nctype);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    climatic_mass_balance.define(nc, nctype);
+    m_climatic_mass_balance.define(nc, nctype);
   }
 }
 
 void PSConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
-    ice_surface_temp.write(nc);
+    m_ice_surface_temp.write(nc);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    climatic_mass_balance.write(nc);
+    m_climatic_mass_balance.write(nc);
   }
 }
 
