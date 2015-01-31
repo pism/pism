@@ -67,18 +67,12 @@ void SIA_Sliding::init() {
 
   ShallowStressBalance::init();
 
-  m_standard_gravity = m_config.get("standard_gravity");
+  m_standard_gravity  = m_config.get("standard_gravity");
   m_verification_mode = m_config.get_flag("sia_sliding_verification_mode");
 
   if (m_config.is_set("EISMINT_II_experiment")) {
     m_eisII_experiment = m_config.get_string("EISMINT_II_experiment");
   }
-
-  m_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  m_mask      = m_grid.variables().get_2d_mask("mask");
-  m_surface   = m_grid.variables().get_2d_scalar("surface_altitude");
-  m_bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  m_enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 }
 
 void SIA_Sliding::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
@@ -125,16 +119,24 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
     minimum_temperature_for_sliding = m_config.get("minimum_temperature_for_sliding"),
     ice_rho = m_config.get("ice_density");
 
-  MaskQuery m(*m_mask);
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+
+  const IceModelVec2S
+    &surface  = *m_grid.variables().get_2d_scalar("surface_altitude"),
+    &bed      = *m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec3
+    &enthalpy = *m_grid.variables().get_3d_scalar("enthalpy");
+
+  MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
   list.add(h_x);
   list.add(h_y);
 
-  list.add(*m_mask);
-  list.add(*m_surface);
-  list.add(*m_bed);
-  list.add(*m_enthalpy);
+  list.add(*mask);
+  list.add(surface);
+  list.add(bed);
+  list.add(enthalpy);
 
   list.add(m_velocity);
   list.add(m_basal_frictional_heating);
@@ -158,8 +160,8 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
         alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
 
       // change r1200: new meaning of H
-      const double H = (*m_surface)(i,j) - (*m_bed)(i,j);
-      const double base_enthalpy = m_enthalpy->get_column(i,j)[0];
+      const double H = surface(i,j) - bed(i,j);
+      const double base_enthalpy = enthalpy.get_column(i,j)[0];
 
       double T = m_EC.getAbsTemp(base_enthalpy, m_EC.getPressureFromDepth(H));
 
@@ -295,22 +297,26 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
+  const IceModelVec2S
+    *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness"),
+    *bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
+
   IceModelVec::AccessList list;
-  list.add(*m_thickness);
+  list.add(*thickness);
   list.add(eta);
 
   unsigned int GHOSTS = eta.get_stencil_width();
-  assert(m_thickness->get_stencil_width() >= GHOSTS);
+  assert(thickness->get_stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    eta(i,j) = pow((*m_thickness)(i,j), etapow);
+    eta(i,j) = pow((*thickness)(i,j), etapow);
   }
 
   list.add(h_x);
   list.add(h_y);
-  list.add(*m_bed);
+  list.add(*bed);
 
   // now use Mahaffy on eta to get grad h on the staggered grid;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
@@ -318,7 +324,7 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
   assert(h_x.get_stencil_width()  >= 1);
   assert(h_y.get_stencil_width()  >= 1);
   assert(eta.get_stencil_width()  >= 2);
-  assert(m_bed->get_stencil_width() >= 2);
+  assert(bed->get_stencil_width() >= 2);
 
   for (int o=0; o<2; o++) {
 
@@ -337,8 +343,8 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
           h_y(i,j,o) = 0.0;
         }
         // now add bed slope to get actual h_x,h_y
-        h_x(i,j,o) += m_bed->diff_x_stagE(i,j);
-        h_y(i,j,o) += m_bed->diff_y_stagE(i,j);
+        h_x(i,j,o) += bed->diff_x_stagE(i,j);
+        h_y(i,j,o) += bed->diff_y_stagE(i,j);
       } else {        // J-offset
         const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
         if (mean_eta > 0.0) {
@@ -351,8 +357,8 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
           h_x(i,j,o) = 0.0;
         }
         // now add bed slope to get actual h_x,h_y
-        h_y(i,j,o) += m_bed->diff_y_stagN(i,j);
-        h_x(i,j,o) += m_bed->diff_x_stagN(i,j);
+        h_y(i,j,o) += bed->diff_y_stagN(i,j);
+        h_x(i,j,o) += bed->diff_x_stagN(i,j);
       }
     }
   }
@@ -368,22 +374,22 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
   const IceModelVec2S
-    &b = *m_bed,
-    &H = *m_thickness,
-    &h = *m_surface;
+    &b = *m_grid.variables().get_2d_scalar("bedrock_altitude"),
+    &H = *m_grid.variables().get_2d_scalar("land_ice_thickness"),
+    &h = *m_grid.variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(h_x);
   list.add(h_y);
-  list.add(*m_bed);
-  list.add(*m_thickness);
-  list.add(*m_surface);
+  list.add(b);
+  list.add(H);
+  list.add(h);
 
   assert(h_x.get_stencil_width() >= 1);
   assert(h_y.get_stencil_width() >= 1);
-  assert(m_bed->get_stencil_width()       >= 2);
-  assert(m_thickness->get_stencil_width() >= 2);
-  assert(m_surface->get_stencil_width()   >= 2);
+  assert(b.get_stencil_width()   >= 2);
+  assert(H.get_stencil_width()   >= 2);
+  assert(h.get_stencil_width()   >= 2);
 
   for (int o=0; o<2; o++) {
 
@@ -493,16 +499,16 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
 void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
 
-  const IceModelVec2S &h = *m_surface;
+  const IceModelVec2S &h = *m_grid.variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(h_x);
   list.add(h_y);
-  list.add(*m_surface);
+  list.add(h);
 
   assert(h_x.get_stencil_width() >= 1);
   assert(h_y.get_stencil_width() >= 1);
-  assert(m_surface->get_stencil_width() >= 2);
+  assert(h.get_stencil_width()   >= 2);
 
   for (int o=0; o<2; o++) {
     for (PointsWithGhosts p(m_grid); p; p.next()) {

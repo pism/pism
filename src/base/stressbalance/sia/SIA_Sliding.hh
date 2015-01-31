@@ -57,10 +57,7 @@ protected:
                                   double H, double T,
                                   double /*alpha*/, double mu,
                                   double min_T) const;
-  const IceModelVec2Int *m_mask;
-  const IceModelVec2S *m_thickness, *m_surface, *m_bed;
   IceModelVec2S m_work_2d;
-  const IceModelVec3 *m_enthalpy;
   IceModelVec2Stag m_work_2d_stag[2]; // for the surface gradient
   double m_standard_gravity;
 
