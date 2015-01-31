@@ -70,40 +70,39 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result);
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 private:
-  IceModelVec2S shelfbtemp, shelfbmassflux;
-  const IceModelVec2S *ice_thickness;
-  IceModelVec2T *theta_ocean, *salinity_ocean;
+  IceModelVec2S m_shelfbtemp, m_shelfbmassflux;
+  IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
   void pointwise_update(const POGivenTHConstants &constants,
-                                  double sea_water_salinity,
-                                  double sea_water_potential_temperature,
-                                  double ice_thickness,
-                                  double *shelf_base_temperature_out,
-                                  double *shelf_base_melt_rate_out);
+                        double sea_water_salinity,
+                        double sea_water_potential_temperature,
+                        double ice_thickness,
+                        double *shelf_base_temperature_out,
+                        double *shelf_base_melt_rate_out);
 
   void subshelf_salinity(const POGivenTHConstants &constants,
+                         double sea_water_salinity,
+                         double sea_water_potential_temperature,
+                         double ice_thickness,
+                         double *shelf_base_salinity);
+
+  void subshelf_salinity_melt(const POGivenTHConstants &constants,
+                              double sea_water_salinity,
+                              double sea_water_potential_temperature,
+                              double ice_thickness,
+                              double *shelf_base_salinity);
+
+  void subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
                                    double sea_water_salinity,
                                    double sea_water_potential_temperature,
                                    double ice_thickness,
                                    double *shelf_base_salinity);
 
-  void subshelf_salinity_melt(const POGivenTHConstants &constants,
+  void subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
                                         double sea_water_salinity,
                                         double sea_water_potential_temperature,
                                         double ice_thickness,
                                         double *shelf_base_salinity);
-
-  void subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
-                                             double sea_water_salinity,
-                                             double sea_water_potential_temperature,
-                                             double ice_thickness,
-                                             double *shelf_base_salinity);
-
-  void subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
-                                                  double sea_water_salinity,
-                                                  double sea_water_potential_temperature,
-                                                  double ice_thickness,
-                                                  double *shelf_base_salinity);
 };
 
 } // end of namespace pism

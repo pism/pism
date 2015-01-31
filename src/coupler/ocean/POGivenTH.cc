@@ -62,37 +62,37 @@ POGivenTH::POGivenTH(const IceGrid &g)
   option_prefix   = "-ocean_th";
 
   // will be de-allocated by the parent's destructor
-  theta_ocean    = new IceModelVec2T;
-  salinity_ocean = new IceModelVec2T;
+  m_theta_ocean    = new IceModelVec2T;
+  m_salinity_ocean = new IceModelVec2T;
 
-  m_fields["theta_ocean"]     = theta_ocean;
-  m_fields["salinity_ocean"]  = salinity_ocean;
+  m_fields["theta_ocean"]     = m_theta_ocean;
+  m_fields["salinity_ocean"]  = m_salinity_ocean;
 
   process_options();
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  theta_ocean->create(m_grid, "theta_ocean", false);
-  theta_ocean->set_attrs("climate_forcing",
+  m_theta_ocean->create(m_grid, "theta_ocean", false);
+  m_theta_ocean->set_attrs("climate_forcing",
                          "absolute potential temperature of the adjacent ocean",
                          "Kelvin", "");
 
-  salinity_ocean->create(m_grid, "salinity_ocean", false);
-  salinity_ocean->set_attrs("climate_forcing",
+  m_salinity_ocean->create(m_grid, "salinity_ocean", false);
+  m_salinity_ocean->set_attrs("climate_forcing",
                             "salinity of the adjacent ocean",
                             "g/kg", "");
 
-  shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
-  shelfbtemp.set_attrs("climate_forcing",
+  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelfbtemp.set_attrs("climate_forcing",
                        "absolute temperature at ice shelf base",
                        "Kelvin", "");
 
-  shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
-  shelfbmassflux.set_attrs("climate_forcing",
+  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  m_shelfbmassflux.set_attrs("climate_forcing",
                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                            "kg m-2 s-1", "");
-  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
+  m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 }
 
 POGivenTH::~POGivenTH() {
@@ -107,13 +107,11 @@ void POGivenTH::init_impl() {
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
-  ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-
-  theta_ocean->init(filename, bc_period, bc_reference_time);
-  salinity_ocean->init(filename, bc_period, bc_reference_time);
+  m_theta_ocean->init(filename, bc_period, bc_reference_time);
+  m_salinity_ocean->init(filename, bc_period, bc_reference_time);
 
   // read time-independent data right away:
-  if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
+  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
     update(m_grid.time->current(), 0); // dt is irrelevant
   }
 }
@@ -133,11 +131,11 @@ void POGivenTH::define_variables_impl(const std::set<std::string> &vars,
   PGivenClimate<POModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "shelfbtemp")) {
-    shelfbtemp.define(nc, nctype);
+    m_shelfbtemp.define(nc, nctype);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    shelfbmassflux.define(nc, nctype);
+    m_shelfbmassflux.define(nc, nctype);
   }
 }
 
@@ -146,20 +144,20 @@ void POGivenTH::write_variables_impl(const std::set<std::string> &vars, const PI
   PGivenClimate<POModifier,OceanModel>::write_variables_impl(vars, nc);
 
   if (set_contains(vars, "shelfbtemp")) {
-    shelfbtemp.write(nc);
+    m_shelfbtemp.write(nc);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    shelfbmassflux.write(nc);
+    m_shelfbmassflux.write(nc);
   }
 }
 
 void POGivenTH::shelf_base_temperature_impl(IceModelVec2S &result) {
-  shelfbtemp.copy_to(result);
+  m_shelfbtemp.copy_to(result);
 }
 
 void POGivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
-  shelfbmassflux.copy_to(result);
+  m_shelfbmassflux.copy_to(result);
 }
 
 void POGivenTH::sea_level_elevation_impl(double &result) {
@@ -176,41 +174,43 @@ void POGivenTH::update_impl(double my_t, double my_dt) {
   // temperature fields are up to date:
   update_internal(my_t, my_dt);
 
-  theta_ocean->average(m_t, m_dt);
-  salinity_ocean->average(m_t, m_dt);
+  m_theta_ocean->average(m_t, m_dt);
+  m_salinity_ocean->average(m_t, m_dt);
 
   POGivenTHConstants c(m_config);
 
+  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(*theta_ocean);
-  list.add(*salinity_ocean);
-  list.add(shelfbtemp);
-  list.add(shelfbmassflux);
+  list.add(*m_theta_ocean);
+  list.add(*m_salinity_ocean);
+  list.add(m_shelfbtemp);
+  list.add(m_shelfbmassflux);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
+    double potential_temperature_celsius = (*m_theta_ocean)(i,j) - 273.15;
 
     double
       shelf_base_temp_celsius = 0.0,
       shelf_base_massflux     = 0.0;
 
     pointwise_update(c,
-                     (*salinity_ocean)(i,j),
+                     (*m_salinity_ocean)(i,j),
                      potential_temperature_celsius,
                      (*ice_thickness)(i,j),
                      &shelf_base_temp_celsius,
                      &shelf_base_massflux);
 
     // Convert from Celsius to Kelvin:
-    shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
-    shelfbmassflux(i,j) = shelf_base_massflux;
+    m_shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
+    m_shelfbmassflux(i,j) = shelf_base_massflux;
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  shelfbmassflux.scale(m_config.get("ice_density"));
+  m_shelfbmassflux.scale(m_config.get("ice_density"));
 }
 
 
