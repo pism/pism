@@ -44,11 +44,9 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
-  const IceModelVec2S *usurf;
-  double T_min, T_max, z_T_min, z_T_max,
-    m_min, m_max, m_limit_min, m_limit_max,
-    z_m_min, z_ELA, z_m_max;
+  NCSpatialVariable m_climatic_mass_balance, m_ice_surface_temp;
+  double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
+  double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 };
 
 } // end of namespace pism
