@@ -27,8 +27,8 @@ PBNull::PBNull(const IceGrid &g)
   // empty
 }
 
-void PBNull::init() {
-  BedDef::init();
+void PBNull::init_impl() {
+  BedDef::init_impl();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the dummy (no-op) bed deformation model...\n");

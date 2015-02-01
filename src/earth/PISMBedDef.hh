@@ -31,8 +31,9 @@ namespace pism {
 class BedDef : public Component_TS {
 public:
   BedDef(const IceGrid &g);
-  virtual ~BedDef() {}
-  virtual void init();
+  virtual ~BedDef();
+
+  void init();
 
   const IceModelVec2S& bed_elevation() const;
   const IceModelVec2S& uplift() const;
@@ -41,11 +42,11 @@ public:
   void set_uplift(const IceModelVec2S &input);
   
 protected:
+  virtual void init_impl();
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
-  void pismbeddef_allocate(); // packaged to simplify error checking
   void compute_uplift(double dt_beddef);
 protected:
   //! time of the last bed deformation update
@@ -70,8 +71,8 @@ protected:
 class PBNull : public BedDef {
 public:
   PBNull(const IceGrid &g);
-  virtual void init();
 protected:
+  virtual void init_impl();
   virtual void update_impl(double my_t, double my_dt);
 };
 
@@ -80,8 +81,8 @@ class PBPointwiseIsostasy : public BedDef {
 public:
   PBPointwiseIsostasy(const IceGrid &g); 
   virtual ~PBPointwiseIsostasy();
-  virtual void init();
 protected:
+  virtual void init_impl();
   virtual void update_impl(double my_t, double my_dt);
   IceModelVec2S m_thk_last;       //!< last ice thickness
 };

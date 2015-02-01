@@ -34,9 +34,9 @@ PBPointwiseIsostasy::~PBPointwiseIsostasy() {
   // empty
 }
 
-void PBPointwiseIsostasy::init() {
+void PBPointwiseIsostasy::init_impl() {
 
-  BedDef::init();
+  BedDef::init_impl();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the pointwise isostasy bed deformation model...\n");

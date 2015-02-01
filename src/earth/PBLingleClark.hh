@@ -32,8 +32,8 @@ public:
   PBLingleClark(const IceGrid &g);
   virtual ~PBLingleClark();
 
-  void init();
 protected:
+  void init_impl();
   void update_impl(double my_t, double my_dt);
   void correct_topg();
   void allocate();

@@ -56,8 +56,8 @@ PBLingleClark::~PBLingleClark() {
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
-void PBLingleClark::init() {
-  BedDef::init();
+void PBLingleClark::init_impl() {
+  BedDef::init_impl();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the Lingle-Clark bed deformation model...\n");

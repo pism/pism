@@ -33,10 +33,6 @@ BedDef::BedDef(const IceGrid &g)
 
   m_t_beddef_last = GSL_NAN;
 
-  pismbeddef_allocate();
-}
-
-void BedDef::pismbeddef_allocate() {
   const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
 
   m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
@@ -69,6 +65,10 @@ void BedDef::pismbeddef_allocate() {
   // before BedDef::init()).
   m_topg.set(0.0);
   m_uplift.set(0.0);
+}
+
+BedDef::~BedDef() {
+  // empty
 }
 
 void BedDef::set_elevation(const IceModelVec2S &input) {
@@ -107,6 +107,10 @@ void BedDef::write_variables_impl(const std::set<std::string> &vars, const PIO &
 }
 
 void BedDef::init() {
+  this->init_impl();
+}
+
+void BedDef::init_impl() {
   m_t_beddef_last = m_grid.time->start();
 
   m_t  = GSL_NAN;
