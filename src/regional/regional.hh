@@ -34,28 +34,21 @@ namespace pism {
 class SIAFD_Regional : public SIAFD
 {
 public:
-  SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e)
-    : SIAFD(g, e) {}
-  virtual ~SIAFD_Regional() {}
+  SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e);
+  virtual ~SIAFD_Regional();
   virtual void init();
-  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
-  const IceModelVec2Int *no_model_mask;
-  const IceModelVec2S   *usurfstore;
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 };
 
 //! \brief A version of the SSA stress balance with tweaks for outlet glacier
 //! simulations.
-class SSAFD_Regional : public SSAFD
-{
+class SSAFD_Regional : public SSAFD {
 public:
   SSAFD_Regional(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSAFD_Regional();
   virtual void init();
   virtual void compute_driving_stress(IceModelVec2V &taud);
-protected:
-  const IceModelVec2Int *no_model_mask;
-  const IceModelVec2S   *usurfstore, *thkstore;
 };
 
 class RegionalDefaultYieldStress : public MohrCoulombYieldStress
@@ -66,8 +59,6 @@ public:
   virtual ~RegionalDefaultYieldStress() {}
   virtual void init();
   virtual const IceModelVec2S& basal_material_yield_stress();
-protected:
-  const IceModelVec2Int *no_model_mask;
 };
 
 } // end of namespace pism

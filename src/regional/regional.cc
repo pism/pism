@@ -1,4 +1,5 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler,
+// Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -21,22 +22,28 @@
 
 namespace pism {
 
+SIAFD_Regional::SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e)
+  : SIAFD(g, e) {
+  // empty
+}
+
+SIAFD_Regional::~SIAFD_Regional() {
+  // empty
+}
+
 void SIAFD_Regional::init() {
 
   SIAFD::init();
 
-  verbPrintf(2,m_grid.com,"  using the regional version of the SIA solver...\n");
-
-  no_model_mask = m_grid.variables().get_2d_mask("no_model_mask");
-  usurfstore    = m_grid.variables().get_2d_scalar("usurfstore");
+  verbPrintf(2, m_grid.com, "  using the regional version of the SIA solver...\n");
 }
 
 void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
   SIAFD::compute_surface_gradient(h_x, h_y);
 
-  const IceModelVec2Int &nmm = *no_model_mask;
-  const IceModelVec2S &hst = *usurfstore; // convenience
+  const IceModelVec2Int &nmm = *m_grid.variables().get_2d_mask("no_model_mask");
+  const IceModelVec2S &hst = *m_grid.variables().get_2d_scalar("usurfstore");
 
   const int Mx = m_grid.Mx(), My = m_grid.My();
   const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
@@ -115,17 +122,17 @@ void SSAFD_Regional::init() {
   if (m_config.get_flag("ssa_dirichlet_bc")) {
     verbPrintf(2,m_grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
-
-  no_model_mask = m_grid.variables().get_2d_mask("no_model_mask");
-  usurfstore    = m_grid.variables().get_2d_scalar("usurfstore");
-  thkstore      = m_grid.variables().get_2d_scalar("thkstore");
 }
 
 void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   SSAFD::compute_driving_stress(result);
 
-  const IceModelVec2Int &nmm = *no_model_mask;
+  const IceModelVec2Int &nmm = *m_grid.variables().get_2d_mask("no_model_mask");
+
+  const IceModelVec2S
+    *usurfstore = m_grid.variables().get_2d_scalar("usurfstore"),
+    *thkstore   = m_grid.variables().get_2d_scalar("thkstore");
 
   IceModelVec::AccessList list;
   list.add(result);
@@ -166,10 +173,7 @@ void RegionalDefaultYieldStress::init() {
   setVerbosityLevel(v);
   verbPrintf(2,m_grid.com,
              "  using the regional version with strong till in no_model_mask==1 area ...\n");
-
-  no_model_mask = m_grid.variables().get_2d_mask("no_model_mask");
 }
-
 
 const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
   
@@ -180,15 +184,17 @@ const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
   // the fact that the base class puts results in m_tauc.
   m_tauc.copy_from(result);
 
+  const IceModelVec2Int &nmm = *m_grid.variables().get_2d_mask("no_model_mask");
+
   // now set tauc to a big value in no_model_strip
   IceModelVec::AccessList list;
-  list.add(*no_model_mask);
+  list.add(nmm);
   list.add(m_tauc);
 
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if ((*no_model_mask)(i,j) > 0.5) {
+    if (nmm(i,j) > 0.5) {
       m_tauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
     }
   }
