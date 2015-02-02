@@ -399,6 +399,8 @@ void IceModel::model_state_setup() {
   // the regrid(0) call.
   if (beddef) {
     beddef->init();
+    grid.variables().add(beddef->bed_elevation());
+    grid.variables().add(beddef->uplift());
   }
 
   if (btu) {
@@ -543,6 +545,9 @@ void IceModel::model_state_setup() {
   }
 
   stampHistoryCommand();
+
+  // Lock IceModel::variables: we're done adding fields to it.
+  grid.variables().lock();
 }
 
 //! Sets starting values of model state variables using command-line options.

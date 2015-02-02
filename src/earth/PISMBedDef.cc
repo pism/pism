@@ -39,9 +39,6 @@ BedDef::BedDef(const IceGrid &g)
   m_topg.set_attrs("model_state", "bedrock surface elevation",
                    "m", "bedrock_altitude");
 
-  // let other models read topg
-  m_grid.variables().add(m_topg);
-
   m_topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
   m_topg_initial.set_attrs("model_state",
                            "bedrock surface elevation (at the beginning of the run)",
@@ -56,9 +53,6 @@ BedDef::BedDef(const IceGrid &g)
                      "m s-1", "tendency_of_bedrock_altitude");
   m_uplift.set_glaciological_units("m year-1");
   m_uplift.write_in_glaciological_units = true;
-
-  // let other models read uplift
-  m_grid.variables().add(m_uplift);
 
   // Set default values (we set them early so that pismv can override
   // them in IceCompModel::set_vars_from_options(), which is called
