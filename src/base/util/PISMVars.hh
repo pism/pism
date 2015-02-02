@@ -34,8 +34,8 @@ namespace pism {
 class Vars {
 public:
   Vars();
-  void add(const IceModelVec &) const;
-  void add(const IceModelVec &, const std::string &name) const;
+  void add(const IceModelVec &);
+  void add(const IceModelVec &, const std::string &name);
   void remove(const std::string &name);
   void lock();
   bool is_available(const std::string &name) const;
@@ -48,8 +48,9 @@ public:
 
   std::set<std::string> keys() const;
 
-  void add_shared(IceModelVec::Ptr) const;
-  void add_shared(IceModelVec::Ptr, const std::string &name) const;
+  void add_shared(IceModelVec::Ptr);
+  void add_shared(IceModelVec::Ptr, const std::string &name);
+
   bool is_available_shared(const std::string &name) const;
   IceModelVec::Ptr get_shared(const std::string &name) const;
   IceModelVec2S::Ptr get_2d_scalar_shared(const std::string &name) const;

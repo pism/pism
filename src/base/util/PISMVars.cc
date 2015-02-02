@@ -53,7 +53,7 @@ bool Vars::is_available(const std::string &name) const {
 }
 
 //! \brief Add an IceModelVec v using the name `name`.
-void Vars::add(const IceModelVec &v, const std::string &name) const {
+void Vars::add(const IceModelVec &v, const std::string &name) {
   ensure_that_not_locked();
 
   if (m_variables.find(name) != m_variables.end()) {
@@ -69,7 +69,7 @@ void Vars::add(const IceModelVec &v, const std::string &name) const {
 
   This code will only work for IceModelVecs with dof == 1.
 */
-void Vars::add(const IceModelVec &v) const {
+void Vars::add(const IceModelVec &v) {
   ensure_that_not_locked();
 
   const NCSpatialVariable &m = v.metadata();
@@ -228,7 +228,7 @@ std::set<std::string> Vars::keys() const {
   return result;
 }
 
-void Vars::add_shared(IceModelVec::Ptr variable) const {
+void Vars::add_shared(IceModelVec::Ptr variable) {
   ensure_that_not_locked();
 
   const NCSpatialVariable &m = variable->metadata();
@@ -254,7 +254,7 @@ void Vars::add_shared(IceModelVec::Ptr variable) const {
 }
 
 
-void Vars::add_shared(IceModelVec::Ptr variable, const std::string &name) const {
+void Vars::add_shared(IceModelVec::Ptr variable, const std::string &name) {
   ensure_that_not_locked();
 
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
