@@ -33,7 +33,6 @@ using std::dynamic_pointer_cast;
 namespace pism {
 
 Vars::Vars() {
-  m_locked = false;
 }
 
 bool Vars::is_available(const std::string &name) const {
@@ -54,7 +53,6 @@ bool Vars::is_available(const std::string &name) const {
 
 //! \brief Add an IceModelVec v using the name `name`.
 void Vars::add(const IceModelVec &v, const std::string &name) {
-  ensure_that_not_locked();
 
   if (m_variables.find(name) != m_variables.end()) {
     throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s'"
@@ -71,7 +69,6 @@ void Vars::add(const IceModelVec &v, const std::string &name) {
   This code will only work for IceModelVecs with dof == 1.
 */
 void Vars::add(const IceModelVec &v) {
-  ensure_that_not_locked();
 
   const NCSpatialVariable &m = v.metadata();
   std::string name = v.name();
@@ -99,7 +96,6 @@ void Vars::add(const IceModelVec &v) {
 
 //! Removes a variable with the key `name` from the dictionary.
 void Vars::remove(const std::string &name) {
-  ensure_that_not_locked();
 
   const IceModelVec *v = m_variables[name];
   const NCSpatialVariable &m = v->metadata();
@@ -122,24 +118,6 @@ void Vars::remove(const std::string &name) {
   }
 }
 
-void Vars::lock() {
-  m_locked = true;
-}
-
-void Vars::ensure_that_locked() const {
-  if (not m_locked) {
-    throw RuntimeError("pism::Vars is not fully initialized."
-                       " Make sure pism::Vars::lock() was called");
-  }
-}
-
-void Vars::ensure_that_not_locked() const {
-  if (m_locked) {
-    throw RuntimeError("this pism::Vars instance is locked");
-  }
-}
-
-
 //! \brief Returns a pointer to an IceModelVec containing variable `name` or
 //! NULL if that variable was not found.
 /*!
@@ -154,7 +132,6 @@ const IceModelVec* Vars::get(const std::string &name) const {
 }
 
 const IceModelVec* Vars::get_internal(const std::string &name) const {
-  ensure_that_locked();
 
   std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
@@ -220,7 +197,6 @@ const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
  * get written or de-allocated twice).
  */
 std::set<std::string> Vars::keys() const {
-  ensure_that_locked();
 
   std::set<std::string> result;
   std::map<std::string,const IceModelVec*>::const_iterator i;
@@ -232,7 +208,6 @@ std::set<std::string> Vars::keys() const {
 }
 
 void Vars::add_shared(IceModelVec::Ptr variable) {
-  ensure_that_not_locked();
 
   const NCSpatialVariable &m = variable->metadata();
   std::string name = variable->name();
@@ -260,7 +235,6 @@ void Vars::add_shared(IceModelVec::Ptr variable) {
 
 
 void Vars::add_shared(IceModelVec::Ptr variable, const std::string &name) {
-  ensure_that_not_locked();
 
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
     throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s'"
@@ -338,7 +312,6 @@ IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
 
 
 std::set<std::string> Vars::keys_shared() const {
-  ensure_that_locked();
 
   std::set<std::string> result;
   std::map<std::string,IceModelVec::Ptr>::const_iterator i;
@@ -350,7 +323,6 @@ std::set<std::string> Vars::keys_shared() const {
 }
 
 IceModelVec::Ptr Vars::get_internal_shared(const std::string &name) const {
-  ensure_that_locked();
 
   std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {

@@ -117,8 +117,6 @@ void SSATestCase::buildSSACoefficients()
   m_melange_back_pressure.set_attrs("boundary_condition",
                                     "melange back pressure fraction", "", "");
   m_melange_back_pressure.set(0.0);
-
-  m_grid->variables().lock();
 }
 
 SSATestCase::SSATestCase(MPI_Comm com, Config &c)

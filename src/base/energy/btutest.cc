@@ -168,8 +168,6 @@ int main(int argc, char *argv[]) {
                             "temperature at top of bedrock thermal layer",
                             "K", "");
       grid.variables().add(bedtoptemp);
-
-      grid.variables().lock();
     }
 
     // initialize BTU object:

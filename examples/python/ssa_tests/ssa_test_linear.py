@@ -50,7 +50,6 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
-    vecs.lock()
     
     vecs.land_ice_thickness.set(H0)
     vecs.surface_altitude.set(H0)

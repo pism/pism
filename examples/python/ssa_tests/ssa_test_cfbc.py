@@ -81,7 +81,6 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
-    vecs.lock()
 
     vecs.tauc.set(0.0)     # irrelevant
     vecs.bedrock_altitude.set(-1000.0); # assures shelf is floating

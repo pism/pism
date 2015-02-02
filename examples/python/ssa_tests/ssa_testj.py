@@ -43,7 +43,6 @@ class testj(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
-    vecs.lock()
 
     vecs.tauc.set(0.0) # irrelevant for test J
     vecs.bedrock_altitude.set(0.0)

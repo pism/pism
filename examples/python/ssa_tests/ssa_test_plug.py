@@ -52,7 +52,6 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
-    vecs.lock()
 
     # Set constant coefficients.
     vecs.land_ice_thickness.set(H0)

@@ -93,7 +93,7 @@ def vars_ownership_test():
     print "Adding 'thk'..."
     variables.add(PISM.model.createIceThicknessVec(grid))
     print "Returned from add_thk()..."
-    variables.lock()
+
     print "Getting 'thk' from variables..."
     thk = variables.get("thk")
     print thk
@@ -234,7 +234,6 @@ def create_special_vecs_test():
     vecs = modeldata.vecs
 
     vecs.add(mask)
-    vecs.lock()
 
     print vecs
     # test getattr
@@ -279,7 +278,6 @@ def pism_vars_test():
     v = grid.variables()
 
     v.add(PISM.model.createIceThicknessVec(grid))
-    v.lock()
 
     # test getting by short name
     print v.get("thk").metadata().get_string("units")
@@ -309,11 +307,6 @@ def modelvecs_test():
     except RuntimeError:
         # should fail: mask was added already
         pass
-
-    # test __repr__ before the lock() call
-    print vecs
-
-    vecs.lock()
 
     # get a field:
     print "get() method: ice mask: ", vecs.get("ice_mask").metadata().get_string("long_name")
@@ -394,7 +387,6 @@ def sia_test():
 
     for field in fields:
         vecs.add(field)
-    vecs.lock()
 
     vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata)
 

@@ -387,20 +387,21 @@ void IceModel::model_state_setup() {
     set_vars_from_options();
   }
 
+  // Initialize a bed deformation model (if needed); this should go
+  // after the regrid(0) call but before other init() calls that need
+  // bed elevation and uplift.
+  if (beddef) {
+    beddef->init();
+    grid.variables().add(beddef->bed_elevation());
+    grid.variables().add(beddef->uplift());
+  }
+
   if (stress_balance) {
     stress_balance->init();
 
     if (config.get_flag("include_bmr_in_continuity")) {
       stress_balance->set_basal_melt_rate(basal_melt_rate);
     }
-  }
-
-  // Initialize a bed deformation model (if needed); this should go after
-  // the regrid(0) call.
-  if (beddef) {
-    beddef->init();
-    grid.variables().add(beddef->bed_elevation());
-    grid.variables().add(beddef->uplift());
   }
 
   if (btu) {
@@ -545,9 +546,6 @@ void IceModel::model_state_setup() {
   }
 
   stampHistoryCommand();
-
-  // Lock IceModel::variables: we're done adding fields to it.
-  grid.variables().lock();
 }
 
 //! Sets starting values of model state variables using command-line options.

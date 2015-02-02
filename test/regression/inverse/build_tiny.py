@@ -72,7 +72,6 @@ if __name__ == '__main__':
   vecs.add(PISM.model.createIceMaskVec(grid))
   vecs.add(PISM.model.createNoModelMaskVec(grid), 'no_model_mask')
   vecs.add(PISM.model.create2dVelocityVec(grid,  name='_ssa_bc', desc='SSA Dirichlet BC'))
-  vecs.lock()
 
   # Set constant coefficients.
   vecs.enthalpy.set(enth0)

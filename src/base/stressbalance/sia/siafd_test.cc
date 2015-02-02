@@ -396,8 +396,6 @@ int main(int argc, char *argv[]) {
                                 "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
     vars.add(vMask);
 
-    vars.lock();
-
     // Create the SIA solver object:
 
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component

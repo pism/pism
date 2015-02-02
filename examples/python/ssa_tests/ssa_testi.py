@@ -56,8 +56,6 @@ class testi(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
     vecs = self.modeldata.vecs
 
-    vecs.lock()
-
     vecs.bc_mask.set(0)
     vecs.thk.set(H0_schoof)
     vecs.mask.set(PISM.MASK_GROUNDED)
