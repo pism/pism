@@ -31,7 +31,7 @@ namespace pism {
 StressBalance::StressBalance(const IceGrid &g,
                              ShallowStressBalance *sb,
                              SSB_Modifier *ssb_mod)
-  : Component(g), m_stress_balance(sb), m_modifier(ssb_mod) {
+  : Component(g), m_shallow_stress_balance(sb), m_modifier(ssb_mod) {
 
   m_basal_melt_rate = NULL;
 
@@ -51,19 +51,19 @@ StressBalance::StressBalance(const IceGrid &g,
 }
 
 StressBalance::~StressBalance() {
-  delete m_stress_balance;
+  delete m_shallow_stress_balance;
   delete m_modifier;
 }
 
 //! \brief Initialize the StressBalance object.
 void StressBalance::init() {
-  m_stress_balance->init();
+  m_shallow_stress_balance->init();
   m_modifier->init();
 }
 
 void StressBalance::set_boundary_conditions(const IceModelVec2Int &locations,
                                             const IceModelVec2V &velocities) {
-  m_stress_balance->set_boundary_conditions(locations, velocities);
+  m_shallow_stress_balance->set_boundary_conditions(locations, velocities);
 }
 
 //! \brief Set the basal melt rate. (If not NULL, it will be included in the
@@ -77,15 +77,15 @@ void StressBalance::update(bool fast, double sea_level,
                            const IceModelVec2S &melange_back_pressure) {
 
   // Tell the ShallowStressBalance object about the current sea level:
-  m_stress_balance->set_sea_level_elevation(sea_level);
+  m_shallow_stress_balance->set_sea_level_elevation(sea_level);
 
   try {
     m_grid.profiling.begin("SSB");
-    m_stress_balance->update(fast, melange_back_pressure);
+    m_shallow_stress_balance->update(fast, melange_back_pressure);
     m_grid.profiling.end("SSB");
 
     m_grid.profiling.begin("SB modifier");
-    const IceModelVec2V &velocity_2d = m_stress_balance->velocity();
+    const IceModelVec2V &velocity_2d = m_shallow_stress_balance->velocity();
     m_modifier->update(velocity_2d, fast);
     m_grid.profiling.end("SB modifier");
 
@@ -110,7 +110,7 @@ void StressBalance::update(bool fast, double sea_level,
 }
 
 const IceModelVec2V& StressBalance::advective_velocity() {
-  return m_stress_balance->velocity();
+  return m_shallow_stress_balance->velocity();
 }
 
 const IceModelVec2Stag& StressBalance::diffusive_flux() {
@@ -134,7 +134,7 @@ const IceModelVec3& StressBalance::velocity_w() {
 }
 
 const IceModelVec2S& StressBalance::basal_frictional_heating() {
-  return m_stress_balance->basal_frictional_heating();
+  return m_shallow_stress_balance->basal_frictional_heating();
 }
 
 const IceModelVec3& StressBalance::volumetric_strain_heating() {
@@ -144,13 +144,13 @@ const IceModelVec3& StressBalance::volumetric_strain_heating() {
 void StressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                                       const IceModelVec2Int &mask,
                                                       IceModelVec2 &result) {
-  m_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result);
+  m_shallow_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result);
 }
 
 void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
                                         const IceModelVec2Int &mask,
                                         IceModelVec2 &result) {
-  m_stress_balance->compute_2D_stresses(velocity, mask, result);
+  m_shallow_stress_balance->compute_2D_stresses(velocity, mask, result);
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
@@ -365,8 +365,8 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
 void StressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
 
-  const IceFlowLaw *flow_law = m_stress_balance->flow_law();
-  const EnthalpyConverter &EC = m_stress_balance->enthalpy_converter();
+  const IceFlowLaw *flow_law = m_shallow_stress_balance->flow_law();
+  const EnthalpyConverter &EC = m_shallow_stress_balance->enthalpy_converter();
 
   const IceModelVec3
     &u = m_modifier->velocity_u(),
@@ -490,26 +490,26 @@ void StressBalance::compute_volumetric_strain_heating() {
 }
 
 std::string StressBalance::stdout_report() {
-  return m_stress_balance->stdout_report() + m_modifier->stdout_report();
+  return m_shallow_stress_balance->stdout_report() + m_modifier->stdout_report();
 }
 
 void StressBalance::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
 
-  m_stress_balance->define_variables(vars, nc, nctype);
+  m_shallow_stress_balance->define_variables(vars, nc, nctype);
   m_modifier->define_variables(vars, nc, nctype);
 }
 
 
 void StressBalance::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
-  m_stress_balance->write_variables(vars, nc);
+  m_shallow_stress_balance->write_variables(vars, nc);
   m_modifier->write_variables(vars, nc);
 }
 
 void StressBalance::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
-  m_stress_balance->add_vars_to_output(keyword, result);
+  m_shallow_stress_balance->add_vars_to_output(keyword, result);
   m_modifier->add_vars_to_output(keyword, result);
 }
 

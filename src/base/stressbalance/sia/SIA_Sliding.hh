@@ -29,8 +29,7 @@ namespace pism {
  * It is used by pismv test E \b only, hence the code duplication (the surface
  * gradient code is from SIAFD).
  */
-class SIA_Sliding : public ShallowStressBalance
-{
+class SIA_Sliding : public ShallowStressBalance {
 public:
   SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e);
 

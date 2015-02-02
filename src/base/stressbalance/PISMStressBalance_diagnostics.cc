@@ -58,7 +58,7 @@ void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dic
   dict["tauxz"] = new PSB_tauxz(this);
   dict["tauyz"] = new PSB_tauyz(this);
 
-  m_stress_balance->get_diagnostics(dict, ts_dict);
+  m_shallow_stress_balance->get_diagnostics(dict, ts_dict);
   m_modifier->get_diagnostics(dict, ts_dict);
 }
 

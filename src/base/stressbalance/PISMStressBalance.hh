@@ -101,7 +101,7 @@ public:
 
   //! \brief Returns a pointer to a stress balance solver implementation.
   virtual ShallowStressBalance* get_stressbalance() {
-    return m_stress_balance;
+    return m_shallow_stress_balance;
   }
 
   //! \brief Returns a pointer to a stress balance modifier implementation.
@@ -126,7 +126,7 @@ protected:
   IceModelVec3 m_w, m_strain_heating;
   const IceModelVec2S *m_basal_melt_rate;
 
-  ShallowStressBalance *m_stress_balance;
+  ShallowStressBalance *m_shallow_stress_balance;
   SSB_Modifier *m_modifier;
 };
 
