@@ -91,8 +91,6 @@ public:
 
   virtual void init(bool &bootstrapping_needed);
 
-  virtual void max_timestep(double /*my_t*/, double &my_dt, bool &restrict);
-
   virtual const IceModelVec2S& upward_geothermal_flux();
 
   virtual void bootstrap();
@@ -101,6 +99,8 @@ public:
 
   unsigned int Mbz();
 protected:
+  virtual MaxTimestep max_timestep_impl(double my_t);
+
   virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);

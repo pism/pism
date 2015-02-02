@@ -36,6 +36,7 @@ public:
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);

@@ -34,6 +34,7 @@ public:
   virtual void init_timeseries(const std::vector<double> &ts);
   virtual void temp_snapshot(IceModelVec2S &result);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   Timeseries *A;                 // amplitude scaling
 };

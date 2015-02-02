@@ -233,15 +233,15 @@ This is a formula for the maximum stable timestep.  For more, see [\ref MortonMa
 
 The above describes the general case where Mbz > 1.
  */
-void BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
+MaxTimestep BedThermalUnit::max_timestep_impl(double t) {
+  (void) t;
 
   if (m_temp.was_created()) {
     double dzb = this->vertical_spacing();
-    my_dt = dzb * dzb / (2.0 * m_bed_D);  // max dt from stability; in seconds
-    restrict = true;
+    // max dt from stability; in seconds
+    return MaxTimestep(dzb * dzb / (2.0 * m_bed_D));
   } else {
-    my_dt = 0;
-    restrict = false;
+    return MaxTimestep();
   }
 }
 
@@ -296,10 +296,8 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
                                     m_t,m_dt,my_t,my_dt); }
   }
   // CHECK: is desired time-step too long?
-  double my_max_dt;
-  bool restrict_dt;
-  max_timestep(my_t, my_max_dt, restrict_dt);
-  if (restrict_dt && my_max_dt < my_dt) {
+  MaxTimestep my_max_dt = max_timestep(my_t);
+  if (my_max_dt and my_max_dt.value() < my_dt) {
      throw RuntimeError("BedThermalUnit::update() thinks you asked for too big a timestep.");
   }
 

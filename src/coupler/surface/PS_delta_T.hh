@@ -41,6 +41,7 @@ public:
   virtual void ice_surface_temperature(IceModelVec2S &result);
 
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

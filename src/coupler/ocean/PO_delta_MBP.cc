@@ -63,6 +63,11 @@ void PO_delta_MBP::init_impl() {
   init_internal();
 }
 
+MaxTimestep PO_delta_MBP::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PO_delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   input_model->melange_back_pressure_fraction(result);
 

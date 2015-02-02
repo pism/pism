@@ -75,6 +75,11 @@ void PBLingleClark::init_impl() {
   }
 }
 
+MaxTimestep PBLingleClark::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, topg_exists, topg_initial_exists;
 

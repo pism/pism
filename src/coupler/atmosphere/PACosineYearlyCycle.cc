@@ -92,6 +92,10 @@ void PACosineYearlyCycle::init() {
   }
 }
 
+MaxTimestep PACosineYearlyCycle::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
 void PACosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_t = my_t;

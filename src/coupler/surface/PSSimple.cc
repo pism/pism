@@ -62,6 +62,11 @@ void PSSimple::init() {
              "    ice upper surface temperature := 2m air temperature.\n");
 }
 
+MaxTimestep PSSimple::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PSSimple::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;

@@ -114,6 +114,10 @@ double IceModel::max_timestep_cfl_2d() {
 
   const IceModelVec2V &vel = stress_balance->advective_velocity();
 
+  const double
+    dx = grid.dx(),
+    dy = grid.dy();
+
   IceModelVec::AccessList list;
   list.add(vel);
   list.add(vMask);
@@ -121,7 +125,7 @@ double IceModel::max_timestep_cfl_2d() {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      const double denom = fabs(vel(i, j).u) / grid.dx() + fabs(vel(i, j).v) / grid.dy();
+      const double denom = fabs(vel(i, j).u) / dx + fabs(vel(i, j).v) / dy;
       if (denom > 0.0) {
         max_dt = std::min(max_dt, 1.0 / denom);
       }
@@ -147,8 +151,10 @@ double IceModel::max_timestep_diffusivity() {
 
   if (D_max > 0.0) {
     const double
+      dx = grid.dx(),
+      dy = grid.dy(),
       adaptive_timestepping_ratio = config.get("adaptive_timestepping_ratio"),
-      grid_factor                 = 1.0 / (grid.dx()*grid.dx()) + 1.0 / (grid.dy()*grid.dy());
+      grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
     return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
   } else {
@@ -251,37 +257,32 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     // ... else query sub-models, which might add more time-step
     // restrictions.
 
-    double surface_dt = 0.0;
-    surface->max_timestep(current_time, surface_dt, restrict_dt);
-    if (restrict_dt)  {
-      dt_restrictions["surface"] = surface_dt;
+    MaxTimestep surface_dt = surface->max_timestep(current_time);
+    if (surface_dt)  {
+      dt_restrictions["surface"] = surface_dt.value();
     }
 
-    double ocean_dt = 0.0;
-    ocean->max_timestep(current_time, ocean_dt, restrict_dt);
-    if (restrict_dt) {
-      dt_restrictions["ocean"] = ocean_dt;
+    MaxTimestep ocean_dt = ocean->max_timestep(current_time);
+    if (ocean_dt) {
+      dt_restrictions["ocean"] = ocean_dt.value();
     }
 
-    double hydrology_dt = 0.0;
-    subglacial_hydrology->max_timestep(current_time, hydrology_dt, restrict_dt);
+    MaxTimestep hydrology_dt = subglacial_hydrology->max_timestep(current_time);
     if (restrict_dt) {
       dt_restrictions["hydrology"] = hydrology_dt;
     }
 
     if (btu != NULL) {
-      double btu_dt = 0.0;
-      btu->max_timestep(current_time, btu_dt, restrict_dt);
-      if (restrict_dt) {
-        dt_restrictions["BTU"] = btu_dt;
+      MaxTimestep btu_dt = btu->max_timestep(current_time);
+      if (btu_dt) {
+        dt_restrictions["BTU"] = btu_dt.value();
       }
     }
 
     if (eigen_calving != NULL) {
-      double eigencalving_dt = 0.0;
-      eigen_calving->max_timestep(current_time, eigencalving_dt, restrict_dt);
-      if (restrict_dt) {
-        dt_restrictions["eigencalving"] = eigencalving_dt;
+      MaxTimestep eigencalving_dt = eigen_calving->max_timestep();
+      if (eigencalving_dt) {
+        dt_restrictions["eigencalving"] = eigencalving_dt.value();
       }
     }
 

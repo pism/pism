@@ -160,6 +160,11 @@ void PAConstantPIK::init() {
   }
 }
 
+MaxTimestep PAConstantPIK::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PAConstantPIK::update_impl(double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:

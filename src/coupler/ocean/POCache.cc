@@ -166,27 +166,26 @@ void POCache::write_variables_impl(const std::set<std::string> &vars_input, cons
   input_model->write_variables(vars, nc);
 }
 
-void POCache::max_timestep(double t, double &dt, bool &restrict) {
-  dt       = m_next_update_time - t;
-  restrict = true;
+MaxTimestep POCache::max_timestep_impl(double t) {
+  double dt = m_next_update_time - t;
 
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < 1.0) {
     double update_time_after_next = m_grid.time->increment_date(m_next_update_time,
-                                                              m_update_interval_years);
+                                                                m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;
     assert(dt > 0.0);
   }
 
-  bool input_restrict = false;
-  double input_model_dt = 0.0;
   assert(input_model != NULL);
 
-  input_model->max_timestep(t, input_model_dt, input_restrict);
-  if (input_restrict == true) {
-    dt = std::min(input_model_dt, dt);
+  MaxTimestep input_max_timestep = input_model->max_timestep(t);
+  if (input_max_timestep) {
+    return std::min(input_max_timestep, MaxTimestep(dt));
+  } else {
+    return MaxTimestep(dt);
   }
 }
 

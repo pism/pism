@@ -48,7 +48,7 @@ public:
 
   // provide default re-implementations of these parent's methods:
   virtual void init();
-  virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
+  virtual MaxTimestep max_timestep(double my_t);
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);

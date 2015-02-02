@@ -26,6 +26,7 @@
 #include <map>
 
 #include "PIO.hh"
+#include "MaxTimestep.hh"
 
 namespace pism {
 
@@ -139,22 +140,6 @@ protected:
   const Config &m_config;
 };
 
-class MaxTimestep {
-public:
-  MaxTimestep();
-  MaxTimestep(double value);
-  operator bool() const;
-  double value() const;
-private:
-  bool m_active;
-  double m_value;
-};
-
-// Comparison operators.
-
-bool operator>(const MaxTimestep &a, const MaxTimestep &b);
-bool operator<(const MaxTimestep &a, const MaxTimestep &b);
-
 //! \brief An abstract class for time-stepping PISM components. Created to
 //! simplify creating basic surface, snow, atmosphere, ocean... models for
 //! PISM.
@@ -166,7 +151,7 @@ public:
 
   //! \brief Reports the maximum time-step the model can take at t. Sets
   //! dt to -1 if any time-step is OK.
-  virtual void max_timestep(double t, double &dt, bool &restrict);
+  MaxTimestep max_timestep(double t);
 
   //! Update the *state* of a component, if necessary.
   /**
@@ -212,6 +197,7 @@ public:
   void update(double t, double dt);
 
 protected:
+  virtual MaxTimestep max_timestep_impl(double t) = 0;
   virtual void update_impl(double t, double dt) = 0;
 protected:
   //! Last time used as an argument for the update() method.

@@ -60,6 +60,11 @@ void PA_delta_T::init() {
   init_internal();
 }
 
+MaxTimestep PA_delta_T::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PA_delta_T::init_timeseries(const std::vector<double> &ts) {
 
   PAModifier::init_timeseries(ts);

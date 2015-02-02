@@ -36,6 +36,7 @@ public:
   virtual void init();
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
 };
 

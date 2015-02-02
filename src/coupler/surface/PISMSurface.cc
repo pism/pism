@@ -101,12 +101,11 @@ void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const
   }
 }
 
-void SurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
+MaxTimestep SurfaceModel::max_timestep(double my_t) {
   if (atmosphere != NULL) {
-    atmosphere->max_timestep(my_t, my_dt, restrict);
+    return atmosphere->max_timestep(my_t);
   } else {
-    my_dt = -1;
-    restrict = false;
+    return MaxTimestep();
   }
 }
 

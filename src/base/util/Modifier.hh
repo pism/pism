@@ -42,13 +42,12 @@ public:
     }
   }
 
-  virtual void max_timestep(double my_t, double &my_dt, bool &restrict)
+  virtual MaxTimestep max_timestep(double my_t)
   {
     if (input_model != NULL) {
-      input_model->max_timestep(my_t, my_dt, restrict);
+      return input_model->max_timestep(my_t);
     } else {
-      my_dt    = -1;
-      restrict = false;
+      return MaxTimestep();
     }
   }
 

@@ -161,34 +161,25 @@ void PSTemperatureIndex_Old::init() {
   ice_surface_temp.set_units("K");
 }
 
-void PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+MaxTimestep PSTemperatureIndex_Old::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
+MaxTimestep PSTemperatureIndex_Old::max_timestep(PetscReal my_t) {
+
+  MaxTimestep max_dt;
   if (pdd_annualize) {
     if (fabs(my_t - next_pdd_update) < 1e-12) {
-      my_dt = m_grid.convert(1.0, "years", "seconds");
+      max_dt = MaxTimestep(m_grid.convert(1.0, "years", "seconds"));
     } else {
-      my_dt = next_pdd_update - my_t;
-    }
-  } else {
-    my_dt = -1;
-  }
-
-  PetscReal dt_atmosphere;
-  atmosphere->max_timestep(my_t, dt_atmosphere, restrict);
-
-  if (restrict) {
-    if (my_dt > 0) {
-      my_dt = std::min(my_dt, dt_atmosphere);
-    } else {
-      my_dt = dt_atmosphere;
+      max_dt = MaxTimestep(next_pdd_update - my_t);
     }
   }
 
-  if (my_dt > 0) {
-    restrict = true;
-  } else {
-    restrict = false;
-  }
+  MaxTimestep dt_atmosphere = atmosphere->max_timestep(my_t);
+
+  return std::min(max_dt, dt_atmosphere);
 }
 
 void PSTemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {

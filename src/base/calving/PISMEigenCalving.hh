@@ -38,7 +38,7 @@ public:
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
-  virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
+  MaxTimestep max_timestep();
 
   // empty methods that we're required to implement:
 protected:

@@ -44,6 +44,11 @@ void PBPointwiseIsostasy::init_impl() {
   m_thk->copy_to(m_thk_last);
 }
 
+MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 //! Updates the pointwise isostasy model.
 void PBPointwiseIsostasy::update_impl(double my_t, double my_dt) {
   if ((fabs(my_t - m_t)   < 1e-12) &&

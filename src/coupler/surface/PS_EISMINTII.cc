@@ -101,6 +101,11 @@ void PS_EISMINTII::init() {
   initialize_using_formulas();
 }
 
+MaxTimestep PS_EISMINTII::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PS_EISMINTII::initialize_using_formulas() {
 
   PetscScalar cx = m_grid.Lx(), cy = m_grid.Ly();

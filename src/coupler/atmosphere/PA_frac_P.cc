@@ -62,6 +62,11 @@ void PA_frac_P::init() {
   init_internal();
 }
 
+MaxTimestep PA_frac_P::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PA_frac_P::init_timeseries(const std::vector<double> &ts) {
 
   PAModifier::init_timeseries(ts);

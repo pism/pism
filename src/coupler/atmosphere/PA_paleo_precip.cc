@@ -63,6 +63,11 @@ void PA_paleo_precip::init() {
   init_internal();
 }
 
+MaxTimestep PA_paleo_precip::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
 
   PAModifier::init_timeseries(ts);

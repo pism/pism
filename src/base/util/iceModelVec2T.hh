@@ -20,6 +20,7 @@
 #define __IceModelVec2T_hh
 
 #include "iceModelVec.hh"
+#include "MaxTimestep.hh"
 
 namespace pism {
 
@@ -109,7 +110,7 @@ public:
   virtual void update(double my_t, double my_dt);
   virtual void set_record(int n);
   virtual void get_record(int n);
-  virtual double max_timestep(double my_t);
+  MaxTimestep max_timestep(double my_t);
 
   virtual void interp(double my_t);
 

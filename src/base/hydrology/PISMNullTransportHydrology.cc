@@ -36,6 +36,10 @@ void NullTransportHydrology::init() {
   Hydrology::init();
 }
 
+MaxTimestep NullTransportHydrology::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
 void NullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {

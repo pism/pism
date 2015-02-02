@@ -38,6 +38,7 @@ public:
   // the interface:
   void init();
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   void update_impl(PetscReal t, PetscReal dt);
   void initialize_using_formulas();
   int m_experiment;

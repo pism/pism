@@ -405,22 +405,23 @@ void IceModelVec2T::get_record(int n) {
 /*!
   Returns -1 if any time step is OK at my_t.
  */
-double IceModelVec2T::max_timestep(double my_t) {
+MaxTimestep IceModelVec2T::max_timestep(double my_t) {
   // only allow going to the next record
   std::vector<double>::iterator l = upper_bound(time_bounds.begin(),
-                                           time_bounds.end(), my_t);
+                                                time_bounds.end(), my_t);
   if (l != time_bounds.end()) {
     double tmp = *l - my_t;
 
-    if (tmp > 1) {                // never take time-steps shorter than 1 second
-      return tmp;
-    } else if ((l + 1) != time_bounds.end() && (l + 2) != time_bounds.end()) {
-      return *(l + 2) - *l;
+    if (tmp > 1.0) {                // never take time-steps shorter than 1 second
+      return MaxTimestep(tmp);
+    } else if ((l + 1) != time_bounds.end() and
+               (l + 2) != time_bounds.end()) {
+      return MaxTimestep(*(l + 2) - *l);
     } else {
-      return -1;
+      return MaxTimestep();
     }
   } else {
-    return -1;
+    return MaxTimestep();
   }
 
 }

@@ -67,6 +67,11 @@ void PS_delta_T::init() {
   init_internal();
 }
 
+MaxTimestep PS_delta_T::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   offset_data(result);

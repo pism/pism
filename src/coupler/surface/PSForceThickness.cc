@@ -323,24 +323,11 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-void PSForceThickness::max_timestep(double my_t, double &my_dt, bool &restrict) {
+MaxTimestep PSForceThickness::max_timestep_impl(double my_t) {
   double max_dt = m_grid.convert(2.0 / m_alpha, "years", "seconds");
+  MaxTimestep input_max_dt = input_model->max_timestep(my_t);
 
-  input_model->max_timestep(my_t, my_dt, restrict);
-
-  if (restrict) {
-    if (max_dt > 0) {
-      my_dt = std::min(max_dt, my_dt);
-    }
-  } else {
-    my_dt = max_dt;
-  }
-
-  if (my_dt > 0) {
-    restrict = true;
-  } else {
-    restrict = false;
-  }
+  return std::min(input_max_dt, MaxTimestep(max_dt));
 }
 
 //! Adds variables to output files.

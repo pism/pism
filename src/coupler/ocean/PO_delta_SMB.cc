@@ -66,6 +66,11 @@ void PO_delta_SMB::init_impl() {
   offset->scale(m_config.get("ice_density"));
 }
 
+MaxTimestep PO_delta_SMB::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PO_delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   input_model->shelf_base_mass_flux(result);
   offset_data(result);

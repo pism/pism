@@ -50,10 +50,11 @@ public:
   PSTemperatureIndex_Old(const IceGrid &g);
   virtual ~PSTemperatureIndex_Old();
   virtual void init();
-  virtual void max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual MaxTimestep max_timestep(double my_t);
   virtual void ice_surface_mass_flux(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(PetscReal my_t, PetscReal my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);

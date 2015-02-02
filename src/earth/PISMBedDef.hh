@@ -72,6 +72,7 @@ class PBNull : public BedDef {
 public:
   PBNull(const IceGrid &g);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void init_impl();
   virtual void update_impl(double my_t, double my_dt);
 };
@@ -82,6 +83,7 @@ public:
   PBPointwiseIsostasy(const IceGrid &g); 
   virtual ~PBPointwiseIsostasy();
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void init_impl();
   virtual void update_impl(double my_t, double my_dt);
   IceModelVec2S m_thk_last;       //!< last ice thickness

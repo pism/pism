@@ -64,6 +64,11 @@ void PO_delta_SL::init_impl() {
   init_internal();
 }
 
+MaxTimestep PO_delta_SL::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 
 void PO_delta_SL::sea_level_elevation_impl(double &result) {
   result = input_model->sea_level_elevation();

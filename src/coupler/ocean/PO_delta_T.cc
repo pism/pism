@@ -62,6 +62,11 @@ void PO_delta_T::init_impl() {
   init_internal();
 }
 
+MaxTimestep PO_delta_T::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PO_delta_T::shelf_base_temperature_impl(IceModelVec2S &result) {
   input_model->shelf_base_temperature(result);
   offset_data(result);

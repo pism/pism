@@ -35,6 +35,7 @@ public:
   // the interface:
   void init();
 private:
+  MaxTimestep max_timestep_impl(double t);
   void update_impl(PetscReal t, PetscReal dt);
   int m_testname;
   EnthalpyConverter *m_EC;

@@ -35,6 +35,11 @@ void PBNull::init_impl() {
   m_uplift.set(0.0);
 }
 
+MaxTimestep PBNull::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PBNull::update_impl(double t, double dt) {
   m_t  = t;
   m_dt = dt;

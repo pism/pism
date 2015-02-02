@@ -173,6 +173,11 @@ void PSElevation::init() {
              m_grid.convert(m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
 }
 
+MaxTimestep PSElevation::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PSElevation::attach_atmosphere_model(AtmosphereModel *input)
 {
   delete input;

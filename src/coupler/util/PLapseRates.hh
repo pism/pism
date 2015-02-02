@@ -44,32 +44,21 @@ public:
     // empty
   }
 
-  virtual void max_timestep(double t, double &dt, bool &restrict) {
-    double max_dt = -1;
-
+protected:
+  virtual MaxTimestep max_timestep_impl(double t) {
     // "Periodize" the climate:
     t = Mod::m_grid.time->mod(t - m_bc_reference_time, m_bc_period);
 
-    Mod::input_model->max_timestep(t, dt, restrict);
+    MaxTimestep input_max_dt = Mod::input_model->max_timestep(t);
+    MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
 
-    max_dt = m_reference_surface.max_timestep(t);
-
-    if (restrict == true) {
-      if (max_dt > 0) {
-        dt = std::min(max_dt, dt);
-      }
+    if (input_max_dt) {
+      return std::min(surface_max_dt, input_max_dt);
     } else {
-      dt = max_dt;
-    }
-
-    if (dt > 0) {
-      restrict = true;
-    } else {
-      restrict = false;
+      return surface_max_dt;
     }
   }
 
-protected:
   virtual void update_impl(double my_t, double my_dt) {
     // a convenience
     double &t = Mod::m_t;

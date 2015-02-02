@@ -186,12 +186,10 @@ int main(int argc, char *argv[]) {
                "  user set timestep of %.4f years ...\n"
                "  reset to %.4f years to get integer number of steps ... \n",
                dt_years.value(), unit_system.convert(dt_seconds, "seconds", "years"));
-    double max_dt;
-    bool restrict_dt;
-    btu.max_timestep(0.0, max_dt, restrict_dt);
+    MaxTimestep max_dt = btu.max_timestep(0.0);
     verbPrintf(2,com,
                "  BedThermalUnit reports max timestep of %.4f years ...\n",
-               unit_system.convert(max_dt, "seconds", "years"));
+               unit_system.convert(max_dt.value(), "seconds", "years"));
 
     // actually do the time-stepping
     verbPrintf(2,com,"  running ...\n");

@@ -80,6 +80,11 @@ void PSConstantPIK::init() {
              "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 
+MaxTimestep PSConstantPIK::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PSConstantPIK::update_impl(double my_t, double my_dt)
 {
   if ((fabs(my_t - m_t) < 1e-12) &&

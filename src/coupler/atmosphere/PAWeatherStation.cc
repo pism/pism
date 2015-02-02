@@ -92,6 +92,11 @@ void PAWeatherStation::init() {
   nc.close();
 }
 
+MaxTimestep PAWeatherStation::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void PAWeatherStation::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;

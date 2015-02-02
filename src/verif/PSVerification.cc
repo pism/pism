@@ -62,6 +62,11 @@ void PSVerification::init() {
   update(m_grid.time->current(), 0);
 }
 
+MaxTimestep PSVerification::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 /** Initialize climate inputs of tests K and O.
  * 
  * @return 0 on success

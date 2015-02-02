@@ -274,6 +274,11 @@ void MohrCoulombYieldStress::init() {
   m_t = m_dt = GSL_NAN;
 }
 
+MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input) {
   m_till_phi.copy_from(input);
 }

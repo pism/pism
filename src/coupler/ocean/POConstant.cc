@@ -78,6 +78,11 @@ void POConstant::init_impl() {
   }
 }
 
+MaxTimestep POConstant::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void POConstant::sea_level_elevation_impl(double &result) {
   result = sea_level;
 }

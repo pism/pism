@@ -169,6 +169,7 @@ public:
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   //! Solves an implicit step of a highly-simplified ODE.
   virtual void update_impl(double icet, double icedt);
 };
@@ -250,6 +251,7 @@ public:
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double icet, double icedt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);

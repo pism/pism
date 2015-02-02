@@ -776,42 +776,28 @@ void IceModel::init_couplers() {
 //! surface and ocean models report a decent state
 void IceModel::init_step_couplers() {
 
+  const double
+    now               = grid.time->current(),
+    one_year_from_now = grid.time->increment_date(now, 1.0);
+
+  // Take a one year long step if we can.
+  MaxTimestep max_dt(one_year_from_now - now);
+
   assert(surface != NULL);
+  max_dt = std::min(max_dt, surface->max_timestep(now));
+
   assert(ocean != NULL);
-
-  double max_dt = 0.0;
-  bool restrict_dt = false;
-  const double current_time = grid.time->current();
-  std::vector<double> dt_restrictions;
-
-  // Take a one year long step if we can:
-  double one_year_from_now = grid.time->increment_date(current_time, 1.0);
-  dt_restrictions.push_back(one_year_from_now - current_time);
-
-  double apcc_dt = 0.0;
-  surface->max_timestep(current_time, apcc_dt, restrict_dt);
-  if (restrict_dt) {
-    dt_restrictions.push_back(apcc_dt);
-  }
-
-  double opcc_dt = 0.0;
-  ocean->max_timestep(current_time, opcc_dt, restrict_dt);
-  if (restrict_dt) {
-    dt_restrictions.push_back(opcc_dt);
-  }
-
-  // find the smallest of the max. time-steps reported by boundary models:
-  if (dt_restrictions.empty() == false) {
-    max_dt = *std::min_element(dt_restrictions.begin(), dt_restrictions.end());
-  }
-
+  max_dt = std::min(max_dt, ocean->max_timestep(now));
+  
   // Do not take time-steps shorter than 1 second
-  if (max_dt < 1.0) {
-    max_dt = 1.0;
+  if (max_dt.value() < 1.0) {
+    max_dt = MaxTimestep(1.0);
   }
 
-  surface->update(current_time, max_dt);
-  ocean->update(current_time, max_dt);
+  assert((bool)max_dt == true);
+
+  surface->update(now, max_dt.value());
+  ocean->update(now, max_dt.value());
 }
 
 

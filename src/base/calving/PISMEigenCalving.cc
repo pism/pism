@@ -239,10 +239,6 @@ void EigenCalving::update(double dt,
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
  *
- * @param[in] my_t current time, in seconds
- * @param[out] my_dt set the the maximum allowed time-step, in seconds
- * @param[out] restrict set to "true" if this component has a time-step restriction
- *
  * Note: this code uses the mask variable obtained from the Vars
  * dictionary. This is not the same mask that is used in the update()
  * call, since max_timestep() is called *before* the mass-continuity
@@ -250,16 +246,11 @@ void EigenCalving::update(double dt,
  *
  * @return 0 on success
  */
-void EigenCalving::max_timestep(double /*my_t*/,
-                                double &my_dt, bool &restrict) {
+MaxTimestep EigenCalving::max_timestep() {
 
-  if (m_restrict_timestep == false) {
-    restrict = false;
-    my_dt    = -1;
-    return;
+  if (not m_restrict_timestep) {
+    return MaxTimestep();
   }
-
-  restrict = true;
 
   // About 9 hours which corresponds to 10000 km/year on a 10 km grid
   double dt_min = m_grid.convert(0.001, "years", "seconds");
@@ -348,16 +339,16 @@ void EigenCalving::max_timestep(double /*my_t*/,
   double denom = calving_rate_max / m_grid.dx();
   const double epsilon = m_grid.convert(0.001 / (m_grid.dx() + m_grid.dy()), "seconds", "years");
 
-  my_dt = 1.0 / (denom + epsilon);
+  double dt = 1.0 / (denom + epsilon);
 
   verbPrintf(2, m_grid.com,
              "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
              m_grid.convert(calving_rate_max, "m/s", "m/year"),
-             m_grid.convert(my_dt, "seconds", "years"),
+             m_grid.convert(dt, "seconds", "years"),
              m_grid.convert(calving_rate_mean, "m/s", "m/year"),
              (int)calving_rate_counter);
 
-  my_dt = std::max(my_dt, dt_min);
+  return MaxTimestep(std::max(dt, dt_min));
 }
 
 void EigenCalving::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {

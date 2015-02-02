@@ -30,8 +30,8 @@ public:
   POCache(const IceGrid &g, OceanModel* in);
   virtual ~POCache();
 
-  virtual void max_timestep(double t, double &dt, bool &restrict);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

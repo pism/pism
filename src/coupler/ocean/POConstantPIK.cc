@@ -63,6 +63,11 @@ void POConstantPIK::init_impl() {
                              m_meltfactor);
 }
 
+MaxTimestep POConstantPIK::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 void POConstantPIK::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;

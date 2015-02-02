@@ -235,6 +235,7 @@
 %include pism_IceGrid.i
 
 %include "PISMDiagnostic.hh"
+%include "MaxTimestep.hh"
 %include "PISMComponent.hh"
 %include "basal_resistance.hh"
 %include "rheology/flowlaws.hh"

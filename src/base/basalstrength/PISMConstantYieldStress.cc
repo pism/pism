@@ -68,6 +68,11 @@ void ConstantYieldStress::init() {
   regrid("ConstantYieldStress", m_tauc);
 }
 
+MaxTimestep ConstantYieldStress::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 
 void ConstantYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("tauc");

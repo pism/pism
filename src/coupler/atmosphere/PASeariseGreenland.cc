@@ -81,6 +81,11 @@ void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> 
   }
 }
 
+MaxTimestep PA_SeaRISE_Greenland::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.

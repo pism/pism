@@ -114,6 +114,11 @@ void RoutingHydrology::init() {
   m_null_strip_loss_cumulative         = 0.0;
 }
 
+MaxTimestep RoutingHydrology::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
 
 void RoutingHydrology::init_bwat() {
 

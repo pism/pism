@@ -33,6 +33,7 @@ public:
   virtual ~PBLingleClark();
 
 protected:
+  MaxTimestep max_timestep_impl(double t);
   void init_impl();
   void update_impl(double my_t, double my_dt);
   void correct_topg();

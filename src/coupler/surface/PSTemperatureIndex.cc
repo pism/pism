@@ -234,8 +234,13 @@ void PSTemperatureIndex::init() {
   m_next_balance_year_start = compute_next_balance_year_start(m_grid.time->current());
 }
 
-void PSTemperatureIndex::max_timestep(double my_t, double &my_dt, bool &restrict) {
-  atmosphere->max_timestep(my_t, my_dt, restrict);
+MaxTimestep PSTemperatureIndex::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
+MaxTimestep PSTemperatureIndex::max_timestep(double my_t) {
+  return atmosphere->max_timestep(my_t);
 }
 
 double PSTemperatureIndex::compute_next_balance_year_start(double time) {
