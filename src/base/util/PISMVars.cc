@@ -57,7 +57,8 @@ void Vars::add(const IceModelVec &v, const std::string &name) {
   ensure_that_not_locked();
 
   if (m_variables.find(name) != m_variables.end()) {
-    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s' was added already.",
+    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s'"
+                                  " was added already.",
                                   name.c_str());
   }
   m_variables[name] = &v;
@@ -81,7 +82,8 @@ void Vars::add(const IceModelVec &v) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError::formatted("Vars::add(): an IceModelVec with the standard_name '%s' was added already.",
+      throw RuntimeError::formatted("Vars::add(): an IceModelVec with the standard_name '%s'"
+                                    " was added already.",
                                     standard_name.c_str());
     }
   }
@@ -89,7 +91,8 @@ void Vars::add(const IceModelVec &v) {
   if (m_variables[name] == NULL) {
     m_variables[name] = &v;
   } else {
-    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s' was added already.",
+    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s'"
+                                  " was added already.",
                                   name.c_str());
   }
 }
@@ -240,7 +243,8 @@ void Vars::add_shared(IceModelVec::Ptr variable) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the standard_name '%s' was added already.",
+      throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the standard_name '%s'"
+                                    " was added already.",
                                     standard_name.c_str());
     }
   }
@@ -248,7 +252,8 @@ void Vars::add_shared(IceModelVec::Ptr variable) {
   if (m_variables_shared.find(name) == m_variables_shared.end()) {
     m_variables_shared[name] = variable;
   } else {
-    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s' was added already.",
+    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s'"
+                                  " was added already.",
                                   name.c_str());
   }
 }
@@ -258,7 +263,8 @@ void Vars::add_shared(IceModelVec::Ptr variable, const std::string &name) {
   ensure_that_not_locked();
 
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
-    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s' was added already.",
+    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s'"
+                                  " was added already.",
                                   name.c_str());
   }
   m_variables_shared[name] = variable;
