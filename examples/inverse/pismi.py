@@ -290,7 +290,9 @@ if __name__ == "__main__":
   do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
   Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-  design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+  design_var = PISM.optionsList(context.com, "-inv_ssa",
+                                "design variable for inversion",
+                                "tauc,hardav", "tauc")
   do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
 
   do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
@@ -351,7 +353,7 @@ if __name__ == "__main__":
         logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
         zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
         zeta_fixed_mask.set(1);
-        mask = vecs.ice_mask
+        mask = vecs.mask
         with PISM.vec.Access(comm=zeta_fixed_mask,nocomm=mask):
           mq = PISM.MaskQuery(mask)
           for (i,j) in grid.points():
@@ -359,7 +361,7 @@ if __name__ == "__main__":
               zeta_fixed_mask[i,j] = 0;
         vecs.add(zeta_fixed_mask)
 
-        adjustTauc(vecs.ice_mask,design_prior)
+        adjustTauc(vecs.mask, design_prior)
       elif design_var == 'hardav':
         PISM.logging.logPrattle("Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
         pass
@@ -494,15 +496,17 @@ if __name__ == "__main__":
 
   (zeta,u) = solver.inverseSolution()
 
-  # Convert back from zeta to tauc
-  design = createDesignVec(grid,design_var)
-  design_param.convertToDesignVariable(zeta,design)
 
   # It may be that a 'tauc'/'hardav' was read in earlier.  We replace it with
   # our newly generated one.
   if vecs.has(design_var):
-    vecs.remove(design_var)
-  vecs.add(design,writing=True)
+    design = vecs.get(design_var)
+    design_param.convertToDesignVariable(zeta, design)
+  else:
+    # Convert back from zeta to tauc or hardav
+    design = createDesignVec(grid,design_var)
+    design_param.convertToDesignVariable(zeta,design)
+    vecs.add(design, writing=True)
 
   vecs.add(zeta,writing=True)
 
@@ -523,8 +527,8 @@ if __name__ == "__main__":
   r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True
 
-  residual.magnitude(r_mag)
-  r_mag.mask_by(vecs.thickness)
+  r_mag.set_to_magnitude(residual)
+  r_mag.mask_by(vecs.land_ice_thickness)
   
   vecs.add(residual,writing=True)
   vecs.add(r_mag,writing=True)

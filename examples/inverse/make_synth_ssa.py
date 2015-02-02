@@ -27,7 +27,7 @@ design_prior_const = None
 def groundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
   weight = PISM.model.createVelocityMisfitWeightVec(grid)
-  mask = modeldata.vecs.ice_mask
+  mask = modeldata.vecs.mask
   with PISM.vec.Access(comm=weight, nocomm=mask):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
@@ -128,6 +128,8 @@ if __name__ == '__main__':
 
   ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
 
+  ssa_run.setup()
+
   modeldata = ssa_run.modeldata
   grid = modeldata.grid
   vecs = modeldata.vecs
@@ -148,8 +150,6 @@ if __name__ == '__main__':
                                                         desc="initial guess for vertically averaged"
                                                         " ice hardness in an inversion")
     vecs.add(hardav_prior, writing=True)
-
-  ssa_run.setup()
 
   solve_t0 = time.clock()
   vel_ssa = ssa_run.solve()

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014 David Maxwell
+# Copyright (C) 2011, 2012, 2014, 2015 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -193,7 +193,7 @@ enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() >3:
   enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
 
-if PISM.optionsIsSet("-ssa_glen"):
+if PISM.OptionBool("-ssa_glen", "SSA flow law Glen exponent"):
   B_schoof = 3.7e8     # Pa s^{1/3}; hardness
   config.set_string("ssa_flow_law", "isothermal_glen")
   config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
