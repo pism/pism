@@ -41,8 +41,8 @@ public:
   //  initialization and I/O:
 
   void init();
-  virtual void set_boundary_conditions(const IceModelVec2Int &locations,
-                                       const IceModelVec2V &velocities);
+  void set_boundary_conditions(const IceModelVec2Int &locations,
+                               const IceModelVec2V &velocities);
 
   //! \brief Set the sea level used to check for floatation. (Units: meters,
   //! relative to the geoid.)

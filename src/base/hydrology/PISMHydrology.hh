@@ -354,15 +354,15 @@ protected:
                                             double &PtoCFLratio);
 protected:
   // this model's state, in addition to what is in RoutingHydrology
-  IceModelVec2S P;      //!< water pressure
+  IceModelVec2S m_P;      //!< water pressure
   // this model's auxiliary variables, in addition ...
-  IceModelVec2S psi,    //!< hydraulic potential
-    velbase_mag,  //!< sliding speed of overlying ice
-    Pnew;   //!< pressure during update
-  bool hold_velbase_mag;
+  IceModelVec2S m_psi,    //!< hydraulic potential
+    m_velbase_mag,  //!< sliding speed of overlying ice
+    m_Pnew;   //!< pressure during update
+  bool m_hold_velbase_mag;
 
   // need to get basal sliding velocity (thus speed):
-  StressBalance* stressbalance;
+  StressBalance* m_stressbalance;
 };
 
 } // end of namespace pism

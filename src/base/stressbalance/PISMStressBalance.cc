@@ -200,21 +200,19 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
     list.add(*basal_melt_rate);
   }
 
-  double *w_ij;
-  const double *u_ij, *u_w, *u_e, *v_ij, *v_s, *v_n;
-
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    w_ij = result.get_column(i,j);
+    double *w_ij = result.get_column(i,j);
 
-    u_w = u.get_column(i-1,j);
-    u_ij = u.get_column(i,j);
-    u_e = u.get_column(i+1,j);
-
-    v_s = v.get_column(i,j-1);
-    v_ij = v.get_column(i,j);
-    v_n = v.get_column(i,j+1);
+    const double
+      *u_w = u.get_column(i-1,j),
+      *u_ij = u.get_column(i,j),
+      *u_e = u.get_column(i+1,j);
+    const double
+      *v_s = v.get_column(i,j-1),
+      *v_ij = v.get_column(i,j),
+      *v_n = v.get_column(i,j+1);
 
     double west = 1, east = 1, south = 1, north = 1,
       D_x = 0,                // 1/(dx), 1/(2dx), or 0
@@ -255,11 +253,12 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
       }
     }
 
-    double u_x = D_x * (west * (u_ij[0] - u_w[0]) + east * (u_e[0] - u_ij[0])),
+    double
+      u_x = D_x *  (west * (u_ij[0] - u_w[0]) +  east * (u_e[0] - u_ij[0])),
       v_y = D_y * (south * (v_ij[0] - v_s[0]) + north * (v_n[0] - v_ij[0]));
 
     // at the base: include the basal melt rate
-    if (basal_melt_rate) {
+    if (basal_melt_rate != NULL) {
       w_ij[0] = - (*basal_melt_rate)(i,j);
     } else {
       w_ij[0] = 0.0;
@@ -491,6 +490,14 @@ void StressBalance::compute_volumetric_strain_heating() {
 
 std::string StressBalance::stdout_report() {
   return m_shallow_stress_balance->stdout_report() + m_modifier->stdout_report();
+}
+
+ShallowStressBalance* StressBalance::get_stressbalance() {
+  return m_shallow_stress_balance;
+}
+
+SSB_Modifier* StressBalance::get_ssb_modifier() {
+  return m_modifier;
 }
 
 void StressBalance::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
