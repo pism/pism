@@ -37,11 +37,11 @@ public:
   SSAFD(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSAFD();
 
-  virtual void init();
-
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
 protected:
+  virtual void init_impl();
+
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
 

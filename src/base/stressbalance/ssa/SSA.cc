@@ -125,9 +125,9 @@ SSA::~SSA() {
 
 
 //! \brief Initialize a generic regular-grid SSA solver.
-void SSA::init() {
+void SSA::init_impl() {
 
-  ShallowStressBalance::init();
+  ShallowStressBalance::init_impl();
 
   verbPrintf(2,m_grid.com,"* Initializing the SSA stress balance...\n");
   verbPrintf(2, m_grid.com,

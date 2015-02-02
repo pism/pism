@@ -36,11 +36,11 @@ public:
 
   virtual ~SIA_Sliding();
 
-  virtual void init();
-
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
 protected:
+  virtual void init_impl();
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword,
                                        std::set<std::string> &result);

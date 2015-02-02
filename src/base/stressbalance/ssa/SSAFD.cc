@@ -219,8 +219,8 @@ void SSAFD::pc_setup_asm() {
   PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
-void SSAFD::init() {
-  SSA::init();
+void SSAFD::init_impl() {
+  SSA::init_impl();
 
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.

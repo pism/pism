@@ -33,16 +33,14 @@ class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
 
 //! Shallow stress balance (such as the SSA).
-class ShallowStressBalance : public Component
-{
+class ShallowStressBalance : public Component {
 public:
   ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
 
-  virtual void init();
-
+  void init();
   virtual void set_boundary_conditions(const IceModelVec2Int &locations,
                                        const IceModelVec2V &velocities);
 
@@ -53,23 +51,23 @@ public:
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  virtual const IceModelVec2V& velocity();
+  const IceModelVec2V& velocity();
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  virtual const IceModelVec2S& basal_frictional_heating();
+  const IceModelVec2S& basal_frictional_heating();
 
-  virtual void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                                 const IceModelVec2Int &mask,
-                                                 IceModelVec2 &result);
+  void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                         const IceModelVec2Int &mask,
+                                         IceModelVec2 &result);
 
-  virtual void compute_2D_stresses(const IceModelVec2V &velocity,
-                                   const IceModelVec2Int &mask,
-                                   IceModelVec2 &result);
+  void compute_2D_stresses(const IceModelVec2V &velocity,
+                           const IceModelVec2Int &mask,
+                           IceModelVec2 &result);
 
-  virtual void compute_basal_frictional_heating(const IceModelVec2V &velocity,
-                                                const IceModelVec2S &tauc,
-                                                const IceModelVec2Int &mask,
-                                                IceModelVec2S &result);
+  void compute_basal_frictional_heating(const IceModelVec2V &velocity,
+                                        const IceModelVec2S &tauc,
+                                        const IceModelVec2Int &mask,
+                                        IceModelVec2S &result);
   // helpers:
 
   //! \brief Produce a report string for the standard output.
@@ -81,6 +79,8 @@ public:
 
   const IceBasalResistancePlasticLaw* sliding_law();
 protected:
+  virtual void init_impl();
+  
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
 

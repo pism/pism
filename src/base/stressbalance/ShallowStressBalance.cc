@@ -70,6 +70,10 @@ ShallowStressBalance::~ShallowStressBalance() {
 }
 
 void ShallowStressBalance::init() {
+  this->init_impl();
+}
+
+void ShallowStressBalance::init_impl() {
   // empty
 }
 

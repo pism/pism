@@ -41,11 +41,10 @@ public:
 
   virtual ~SSAFEM();
 
-  virtual void init();
-
-  virtual void cacheQuadPtValues();
+  void cacheQuadPtValues();
 
 protected:
+  virtual void init_impl();
 
   //! Storage for SSA coefficients at a quadrature point.
   struct Coefficients {

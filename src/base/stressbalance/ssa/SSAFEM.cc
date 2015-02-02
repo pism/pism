@@ -109,9 +109,10 @@ SSAFEM::~SSAFEM() {
 }
 
 // Initialize the solver, called once by the client before use.
-void SSAFEM::init() {
+void SSAFEM::init_impl() {
 
-  SSA::init();
+  SSA::init_impl();
+
   verbPrintf(2, m_grid.com,
              "  [using the SNES-based finite element method implementation]\n");
 

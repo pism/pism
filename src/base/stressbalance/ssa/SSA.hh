@@ -105,8 +105,7 @@ typedef SSA * (*SSAFactory)(const IceGrid &, const EnthalpyConverter &);
   to be common to all implementations (%i.e. regular grid implementations) and it
   provides the basic fields.
 */
-class SSA : public ShallowStressBalance
-{
+class SSA : public ShallowStressBalance {
   friend class SSA_taud;
   friend class SSA_taub;
   friend class SSA_beta;
@@ -116,17 +115,17 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void init();
-
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
-  virtual void set_initial_guess(const IceModelVec2V &guess);
+  void set_initial_guess(const IceModelVec2V &guess);
 
   virtual std::string stdout_report();
 
   virtual void compute_driving_stress(IceModelVec2V &taud);
 
 protected:
+  virtual void init_impl();
+
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);

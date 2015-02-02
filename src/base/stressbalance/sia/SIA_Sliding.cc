@@ -63,9 +63,9 @@ SIA_Sliding::~SIA_Sliding()
   }
 }
 
-void SIA_Sliding::init() {
+void SIA_Sliding::init_impl() {
 
-  ShallowStressBalance::init();
+  ShallowStressBalance::init_impl();
 
   m_standard_gravity  = m_config.get("standard_gravity");
   m_verification_mode = m_config.get_flag("sia_sliding_verification_mode");
