@@ -43,7 +43,7 @@ protected:
     m_Hstartp0,                   //!< initial (start-of-the-run) thickness
     m_bedstartp0,                 //!< initial bed elevation
     m_upliftp0;                   //!< bed uplift
-  BedDeformLC m_bdLC;
+  BedDeformLC *m_bdLC;
 };
 
 } // end of namespace pism

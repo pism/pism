@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015 Ed Bueler
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,29 +30,13 @@
 
 namespace pism {
 
-BedDeformLC::BedDeformLC() {
-  m_settingsDone = false;
-  m_allocDone    = false;
-}
-
-BedDeformLC::~BedDeformLC() {
-  if (m_allocDone == true) {
-
-    fftw_destroy_plan(m_dft_forward);
-    fftw_destroy_plan(m_dft_inverse);
-    fftw_free(m_fftw_input);
-    fftw_free(m_fftw_output);
-    fftw_free(m_loadhat);
-  }
-}
-
-void BedDeformLC::settings(const Config &config,
-                           bool myinclude_elastic,
-                           int myMx, int myMy,
-                           double mydx, double mydy,
-                           int myZ,
-                           Vec myHstart, Vec mybedstart, Vec myuplift,
-                           Vec myH, Vec mybed) {
+BedDeformLC::BedDeformLC(const Config &config,
+                         bool myinclude_elastic,
+                         int myMx, int myMy,
+                         double mydx, double mydy,
+                         int myZ,
+                         Vec myHstart, Vec mybedstart, Vec myuplift,
+                         Vec myH, Vec mybed) {
 
   // set parameters
   m_include_elastic = myinclude_elastic;
@@ -88,15 +72,8 @@ void BedDeformLC::settings(const Config &config,
   m_bed_start = mybedstart;
   m_uplift    = myuplift;
 
-  m_settingsDone = true;
-}
-
-
-void BedDeformLC::alloc() {
+  // memory allocation
   PetscErrorCode  ierr;
-
-  assert(m_settingsDone == true);
-  assert(m_allocDone == false);
 
   ierr = VecDuplicate(m_H, m_Hdiff.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
@@ -152,16 +129,21 @@ void BedDeformLC::alloc() {
   m_cx.resize(m_Nx);
   m_cy.resize(m_Ny);
 
-  m_allocDone = true;
+  precompute_coefficients();
+}
+
+BedDeformLC::~BedDeformLC() {
+  fftw_destroy_plan(m_dft_forward);
+  fftw_destroy_plan(m_dft_inverse);
+  fftw_free(m_fftw_input);
+  fftw_free(m_fftw_output);
+  fftw_free(m_loadhat);
 }
 
 /**
  * Pre-compute coefficients used by the model.
- *
- *
- * @return 0 on success
  */
-void BedDeformLC::init() {
+void BedDeformLC::precompute_coefficients() {
   PetscErrorCode ierr;
 
   // coeffs for Fourier spectral method Laplacian
@@ -277,7 +259,7 @@ void BedDeformLC::uplift_init() {
 }
 
 
-void BedDeformLC::step(const double dt_seconds, const double seconds_from_start) {
+void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
   //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
@@ -396,7 +378,7 @@ void BedDeformLC::tweak(double seconds_from_start) {
   const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
   const double discshift = viscDisc(seconds_from_start,
-                                         Hequiv, Requiv, Lav, m_rho, m_standard_gravity, m_D, m_eta) - av;
+                                    Hequiv, Requiv, Lav, m_rho, m_standard_gravity, m_D, m_eta) - av;
 
   ierr = VecShift(m_U, discshift);
   PISM_CHK(ierr, "VecShift");

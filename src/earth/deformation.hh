@@ -48,9 +48,7 @@ class Config;
 */
 class BedDeformLC {
 public:
-  BedDeformLC();
-  ~BedDeformLC();
-  void settings(const Config &config,
+  BedDeformLC(const Config &config,
                 bool myinclude_elastic,
                 int myMx, int myMy, double mydx, double mydy,
                 int myZ,
@@ -58,11 +56,13 @@ public:
                 Vec myH,     // generally gets changed by calling program
                 // before each call to step
                 Vec mybed);  // mybed gets modified by step()
-  void alloc();
-  void init();
-  void uplift_init();
-  void step(const double dtyear, const double yearFromStart);
+  ~BedDeformLC();
 
+  void uplift_init();
+  void step(double dtyear, double yearFromStart);
+
+protected:
+  void precompute_coefficients();
 protected:
   bool        m_include_elastic;
   int         m_Mx, m_My;
@@ -77,7 +77,6 @@ protected:
 
 private:
   double m_standard_gravity;
-  bool m_settingsDone, m_allocDone;
   int m_Nx, m_Ny,         // fat sizes
     m_Nxge, m_Nyge;     // fat with boundary sizes
   int      m_i0_plate,  m_j0_plate; // indices into fat array for corner of thin

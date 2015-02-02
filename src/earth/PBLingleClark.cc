@@ -42,17 +42,19 @@ PBLingleClark::PBLingleClark(const IceGrid &g)
   // FIXME: we need to check if this succeeds and prevent PISM from
   // locking up if it fails in a parallel run.
   if (m_grid.rank() == 0) {
-    m_bdLC.settings(m_config, use_elastic_model,
-                  m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
-                  4,     // use Z = 4 for now; to reduce global drift?
-                  *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
-
-    m_bdLC.alloc();
+    m_bdLC = new BedDeformLC(m_config, use_elastic_model,
+                             m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
+                             4,     // use Z = 4 for now; to reduce global drift?
+                             *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
+  } else {
+    m_bdLC = NULL;
   }
 }
 
 PBLingleClark::~PBLingleClark() {
-  // empty
+  if (m_bdLC != NULL) {
+    delete m_bdLC;
+  }
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
@@ -69,8 +71,7 @@ void PBLingleClark::init_impl() {
   m_uplift.put_on_proc0(*m_upliftp0);
 
   if (m_grid.rank() == 0) {
-    m_bdLC.init();
-    m_bdLC.uplift_init();
+    m_bdLC->uplift_init();
   }
 }
 
@@ -179,8 +180,8 @@ void PBLingleClark::update_impl(double my_t, double my_dt) {
   m_topg.put_on_proc0(*m_bedp0);
 
   if (m_grid.rank() == 0) {  // only processor zero does the step
-    m_bdLC.step(dt_beddef, // time step, in seconds
-              t_final - m_grid.time->start()); // time since the start of the run, in seconds
+    m_bdLC->step(dt_beddef, // time step, in seconds
+                 t_final - m_grid.time->start()); // time since the start of the run, in seconds
   }
 
   m_topg.get_from_proc0(*m_bedp0);

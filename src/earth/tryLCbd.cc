@@ -74,7 +74,6 @@ int main(int argc, char *argv[]) {
       overrides(com, "pism_overrides", unit_system);
     init_config(com, config, overrides);
 
-    BedDeformLC bdlc;
     pism::petsc::DM da2;
     petsc::Vec H, bed, Hstart, bedstart, uplift;
     
@@ -236,19 +235,16 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
 
-      bdlc.settings(config,
-                    include_elastic, Mx, My, dx, dy, Z,
-                    Hstart, bedstart, uplift, H, bed);
+      BedDeformLC bdlc(config,
+                       include_elastic, Mx, My, dx, dy, Z,
+                       Hstart, bedstart, uplift, H, bed);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
-
-      bdlc.alloc();
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n");
       PISM_CHK(ierr, "PetscPrintf");
 
-      bdlc.init();
       bdlc.uplift_init();
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n");
