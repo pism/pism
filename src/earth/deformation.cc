@@ -31,23 +31,23 @@
 namespace pism {
 
 BedDeformLC::BedDeformLC() {
-  settingsDone = false;
-  allocDone    = false;
+  m_settingsDone = false;
+  m_allocDone    = false;
 }
 
 BedDeformLC::~BedDeformLC() {
-  if (allocDone == true) {
+  if (m_allocDone == true) {
 
-    fftw_destroy_plan(dft_forward);
-    fftw_destroy_plan(dft_inverse);
-    fftw_free(fftw_input);
-    fftw_free(fftw_output);
-    fftw_free(loadhat);
+    fftw_destroy_plan(m_dft_forward);
+    fftw_destroy_plan(m_dft_inverse);
+    fftw_free(m_fftw_input);
+    fftw_free(m_fftw_output);
+    fftw_free(m_loadhat);
   }
 }
 
 void BedDeformLC::settings(const Config &config,
-                           bool  myinclude_elastic,
+                           bool myinclude_elastic,
                            int myMx, int myMy,
                            double mydx, double mydy,
                            int myZ,
@@ -55,95 +55,104 @@ void BedDeformLC::settings(const Config &config,
                            Vec myH, Vec mybed) {
 
   // set parameters
-  include_elastic = myinclude_elastic;
+  m_include_elastic = myinclude_elastic;
 
-  Mx     = myMx;
-  My     = myMy;
-  dx     = mydx;
-  dy     = mydy;
-  Z      = myZ;
-  icerho = config.get("ice_density");
-  rho    = config.get("lithosphere_density");
-  eta    = config.get("mantle_viscosity");
-  D      = config.get("lithosphere_flexural_rigidity");
+  m_Mx     = myMx;
+  m_My     = myMy;
+  m_dx     = mydx;
+  m_dy     = mydy;
+  m_Z      = myZ;
+  m_icerho = config.get("ice_density");
+  m_rho    = config.get("lithosphere_density");
+  m_eta    = config.get("mantle_viscosity");
+  m_D      = config.get("lithosphere_flexural_rigidity");
 
-  standard_gravity = config.get("standard_gravity");
+  m_standard_gravity = config.get("standard_gravity");
 
   // derive more parameters
-  Lx       = ((Mx - 1) / 2) * dx;
-  Ly       = ((My - 1) / 2) * dy;
-  Nx       = Z*(Mx - 1);
-  Ny       = Z*(My - 1);
-  Lx_fat   = (Nx / 2) *   dx;
-  Ly_fat   = (Ny / 2) *   dy;
-  Nxge     = Nx + 1;
-  Nyge     = Ny + 1;
-  i0_plate = (Z - 1)*(Mx - 1) / 2;
-  j0_plate = (Z - 1)*(My - 1) / 2;
+  m_Lx       = ((m_Mx - 1) / 2) * m_dx;
+  m_Ly       = ((m_My - 1) / 2) * m_dy;
+  m_Nx       = m_Z*(m_Mx - 1);
+  m_Ny       = m_Z*(m_My - 1);
+  m_Lx_fat   = (m_Nx / 2) *   m_dx;
+  m_Ly_fat   = (m_Ny / 2) *   m_dy;
+  m_Nxge     = m_Nx + 1;
+  m_Nyge     = m_Ny + 1;
+  m_i0_plate = (m_Z - 1)*(m_Mx - 1) / 2;
+  m_j0_plate = (m_Z - 1)*(m_My - 1) / 2;
 
   // attach to existing (must be allocated!) sequential Vecs
-  H         = myH;
-  bed       = mybed;
-  H_start   = myHstart;
-  bed_start = mybedstart;
-  uplift    = myuplift;
+  m_H         = myH;
+  m_bed       = mybed;
+  m_H_start   = myHstart;
+  m_bed_start = mybedstart;
+  m_uplift    = myuplift;
 
-  settingsDone = true;
+  m_settingsDone = true;
 }
 
 
 void BedDeformLC::alloc() {
   PetscErrorCode  ierr;
 
-  assert(settingsDone == true);
-  assert(allocDone == false);
+  assert(m_settingsDone == true);
+  assert(m_allocDone == false);
 
-  ierr = VecDuplicate(H, Hdiff.rawptr());
+  ierr = VecDuplicate(m_H, m_Hdiff.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
-  ierr = VecDuplicate(H, dbedElastic.rawptr());
+  ierr = VecDuplicate(m_H, m_dbedElastic.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
   // allocate plate displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, Nx * Ny, U.rawptr());
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nx * m_Ny, m_U.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
 
-  ierr = VecDuplicate(U, U_start.rawptr());
+  ierr = VecDuplicate(m_U, m_U_start.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
   // FFT - side coefficient fields (i.e. multiplication form of operators)
-  ierr = VecDuplicate(U, vleft.rawptr());
+  ierr = VecDuplicate(m_U, m_vleft.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
-  ierr = VecDuplicate(U, vright.rawptr());
+  ierr = VecDuplicate(m_U, m_vright.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
-  ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, lrmE.rawptr());
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nxge * m_Nyge, m_lrmE.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
 
-  fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx * Ny);
-  fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx * Ny);
-  loadhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx * Ny);
+  m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_loadhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
   // fftw manipulates the data in setting up a plan, so fill with nonconstant junk
   {
-    VecAccessor2D<fftw_complex> tmp(fftw_input, Nx, Ny);
-    for (int i = 0; i < Nx; i++) {
-      for (int j = 0; j < Ny; j++) {
+    VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
         tmp(i, j)[0] = i - 3;
         tmp(i, j)[1] = j*j + 2;
       }
     }
   }
-  dft_forward = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_FORWARD, FFTW_MEASURE);
-  dft_inverse = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_BACKWARD, FFTW_MEASURE);
+  m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
+                                   FFTW_FORWARD, FFTW_MEASURE);
+  m_dft_inverse = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
+                                   FFTW_BACKWARD, FFTW_MEASURE);
 
-  cx.resize(Nx);
-  cy.resize(Ny);
+  // Note: FFTW is weird. If a malloc() call fails it will just call
+  // abort() on you without giving you a chance to recover or tell the
+  // user what happened. This is why we don't check return values of
+  // fftw_malloc() and fftw_plan_dft_2d() calls here...
+  //
+  // (Constantine Khroulev, February 1, 2015)
 
-  allocDone = true;
+  m_cx.resize(m_Nx);
+  m_cy.resize(m_Ny);
+
+  m_allocDone = true;
 }
 
 /**
@@ -157,37 +166,37 @@ void BedDeformLC::init() {
 
   // coeffs for Fourier spectral method Laplacian
   // Matlab version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
-  for (int i = 0; i <= Nx / 2; i++) {
-    cx[i] = (M_PI / Lx_fat) * i;
+  for (int i = 0; i <= m_Nx / 2; i++) {
+    m_cx[i] = (M_PI / m_Lx_fat) * i;
   }
 
-  for (int i = Nx / 2 + 1; i < Nx; i++) {
-    cx[i] = (M_PI / Lx_fat) * (Nx - i);
+  for (int i = m_Nx / 2 + 1; i < m_Nx; i++) {
+    m_cx[i] = (M_PI / m_Lx_fat) * (m_Nx - i);
   }
 
-  for (int j = 0; j <= Ny / 2; j++) {
-    cy[j] = (M_PI / Ly_fat) * j;
+  for (int j = 0; j <= m_Ny / 2; j++) {
+    m_cy[j] = (M_PI / m_Ly_fat) * j;
   }
 
-  for (int j = Ny / 2 + 1; j < Ny; j++) {
-    cy[j] = (M_PI / Ly_fat) * (Ny - j);
+  for (int j = m_Ny / 2 + 1; j < m_Ny; j++) {
+    m_cy[j] = (M_PI / m_Ly_fat) * (m_Ny - j);
   }
 
   // compare geforconv.m
-  if (include_elastic == true) {
+  if (m_include_elastic == true) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "     computing spherical elastic load response matrix ...");
     PISM_CHK(ierr, "PetscPrintf");
 
-    petsc::VecArray2D II(lrmE, Nxge, Nyge);
+    petsc::VecArray2D II(m_lrmE, m_Nxge, m_Nyge);
     ge_params ge_data;
-    ge_data.dx = dx;
-    ge_data.dy = dy;
-    for (int i = 0; i < Nxge; i++) {
-      for (int j = 0; j < Nyge; j++) {
+    ge_data.dx = m_dx;
+    ge_data.dy = m_dy;
+    for (int i = 0; i < m_Nxge; i++) {
+      for (int j = 0; j < m_Nyge; j++) {
         ge_data.p = i;
         ge_data.q = j;
-        II(i, j) = dblquad_cubature(ge_integrand, -dx/2, dx/2, -dy/2, dy/2,
+        II(i, j) = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
                                     1.0e-8, &ge_data);
       }
     }
@@ -211,19 +220,19 @@ void BedDeformLC::uplift_init() {
 
   // spectral/FFT quantities are on fat computational grid but uplift is on thin
   PetscErrorCode ierr;
-  petsc::VecArray2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
+  petsc::VecArray2D left(m_vleft, m_Nx, m_Ny), right(m_vright, m_Nx, m_Ny);
 
   // fft2(uplift)
   clear_fftw_input();
-  set_fftw_input(uplift, 1.0, Mx, My, i0_plate, j0_plate);
-  fftw_execute(dft_forward);
+  set_fftw_input(m_uplift, 1.0, m_Mx, m_My, m_i0_plate, m_j0_plate);
+  fftw_execute(m_dft_forward);
 
   // compute left and right coefficients
-  for (int i = 0; i < Nx; i++) {
-    for (int j = 0; j < Ny; j++) {
-      const double cclap = cx[i]*cx[i] + cy[j]*cy[j];
-      left(i, j) = rho * standard_gravity + D * cclap * cclap;
-      right(i, j) = -2.0 * eta * sqrt(cclap);
+  for (int i = 0; i < m_Nx; i++) {
+    for (int j = 0; j < m_Ny; j++) {
+      const double cclap = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j];
+      left(i, j) = m_rho * m_standard_gravity + m_D * cclap * cclap;
+      right(i, j) = -2.0 * m_eta * sqrt(cclap);
     }
   }
 
@@ -231,39 +240,39 @@ void BedDeformLC::uplift_init() {
   //        frhs = right.*fft2(uplift);
   //        u = real(ifft2(frhs. / left));
   {
-    VecAccessor2D<fftw_complex> u0_hat(fftw_input, Nx, Ny),
-      uplift_hat(fftw_output, Nx, Ny);
+    VecAccessor2D<fftw_complex> u0_hat(m_fftw_input, m_Nx, m_Ny),
+      uplift_hat(m_fftw_output, m_Nx, m_Ny);
 
-    for (int i = 0; i < Nx; i++) {
-      for (int j = 0; j < Ny; j++) {
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
         u0_hat(i, j)[0] = (right(i, j) * uplift_hat(i, j)[0]) / left(i, j);
         u0_hat(i, j)[1] = (right(i, j) * uplift_hat(i, j)[1]) / left(i, j);
       }
     }
   }
 
-  fftw_execute(dft_inverse);
-  get_fftw_output(U_start, 1.0 / (Nx * Ny), Nx, Ny, 0, 0);
+  fftw_execute(m_dft_inverse);
+  get_fftw_output(m_U_start, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
   {
-    petsc::VecArray2D u_start(U_start, Nx, Ny);
+    petsc::VecArray2D u_start(m_U_start, m_Nx, m_Ny);
 
     double av = 0.0;
-    for (int i = 0; i < Nx; i++) {
+    for (int i = 0; i < m_Nx; i++) {
       av += u_start(i, 0);
     }
 
-    for (int j = 0; j < Ny; j++) {
+    for (int j = 0; j < m_Ny; j++) {
       av += u_start(0, j);
     }
 
-    av = av / ((double) (Nx + Ny));
+    av = av / ((double) (m_Nx + m_Ny));
 
-    ierr = VecShift(U_start, -av);
+    ierr = VecShift(m_U_start, -av);
     PISM_CHK(ierr, "VecShift");
   }
 
-  ierr = VecCopy(U_start, U);
+  ierr = VecCopy(m_U_start, m_U);
   PISM_CHK(ierr, "VecCopy");
 }
 
@@ -279,33 +288,33 @@ void BedDeformLC::step(const double dt_seconds, const double seconds_from_start)
   // note ice thicknesses and bed elevations only on physical ("thin") grid
   //   while spectral/FFT quantities are on fat computational grid
 
-  petsc::VecArray2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
+  petsc::VecArray2D left(m_vleft, m_Nx, m_Ny), right(m_vright, m_Nx, m_Ny);
 
   // Compute Hdiff
-  PetscErrorCode ierr = VecWAXPY(Hdiff, -1, H_start, H);
+  PetscErrorCode ierr = VecWAXPY(m_Hdiff, -1, m_H_start, m_H);
   PISM_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
   clear_fftw_input();
-  set_fftw_input(Hdiff, - icerho * standard_gravity * dt_seconds,
-                 Mx, My, i0_plate, j0_plate);
-  fftw_execute(dft_forward);
+  set_fftw_input(m_Hdiff, - m_icerho * m_standard_gravity * dt_seconds,
+                 m_Mx, m_My, m_i0_plate, m_j0_plate);
+  fftw_execute(m_dft_forward);
 
   // Save fft2(-ice_rho * g * dH * dt) in loadhat.
-  copy_fftw_output(loadhat);
+  copy_fftw_output(m_loadhat);
 
   // Compute fft2(u).
   // no need to clear fftw_input: all values are overwritten
-  set_fftw_input(U, 1.0, Nx, Ny, 0, 0);
-  fftw_execute(dft_forward);
+  set_fftw_input(m_U, 1.0, m_Nx, m_Ny, 0, 0);
+  fftw_execute(m_dft_forward);
 
   // Compute left and right coefficients; note they depend on the length of a
   // time-step and thus cannot be precomputed
-  for (int i = 0; i < Nx; i++) {
-    for (int j = 0; j < Ny; j++) {
-      const double cclap = cx[i]*cx[i] + cy[j]*cy[j],
-        part1 = 2.0 * eta * sqrt(cclap),
-        part2 = (dt_seconds / 2.0) * (rho * standard_gravity + D * cclap * cclap);
+  for (int i = 0; i < m_Nx; i++) {
+    for (int j = 0; j < m_Ny; j++) {
+      const double cclap = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
+        part1 = 2.0 * m_eta * sqrt(cclap),
+        part2 = (dt_seconds / 2.0) * (m_rho * m_standard_gravity + m_D * cclap * cclap);
       left(i, j)  = part1 + part2;
       right(i, j) = part1 - part2;
     }
@@ -314,31 +323,31 @@ void BedDeformLC::step(const double dt_seconds, const double seconds_from_start)
   //         frhs = right.*fft2(uun) + fft2(dt*sszz);
   //         uun1 = real(ifft2(frhs./left));
   {
-    VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny),
-      u_hat(fftw_output, Nx, Ny), load_hat(loadhat, Nx, Ny);
-    for (int i = 0; i < Nx; i++) {
-      for (int j = 0; j < Ny; j++) {
+    VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
+      u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
         input(i, j)[0] = (right(i, j) * u_hat(i, j)[0] + load_hat(i, j)[0]) / left(i, j);
         input(i, j)[1] = (right(i, j) * u_hat(i, j)[1] + load_hat(i, j)[1]) / left(i, j);
       }
     }
   }
 
-  fftw_execute(dft_inverse);
-  get_fftw_output(U, 1.0 / (Nx * Ny), Nx, Ny, 0, 0);
+  fftw_execute(m_dft_inverse);
+  get_fftw_output(m_U, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
   // now tweak
   tweak(seconds_from_start);
 
   // now compute elastic response if desired; bed = ue at end of this block
-  if (include_elastic == true) {
+  if (m_include_elastic == true) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
-    conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);
+    conv2_same(m_Hdiff, m_Mx, m_My, m_lrmE, m_Nxge, m_Nyge, m_dbedElastic);
 
-    ierr = VecScale(dbedElastic, icerho);
+    ierr = VecScale(m_dbedElastic, m_icerho);
     PISM_CHK(ierr, "VecScale");
   } else {
-    ierr = VecSet(dbedElastic, 0.0);
+    ierr = VecSet(m_dbedElastic, 0.0);
     PISM_CHK(ierr, "VecSet");
   }
 
@@ -346,11 +355,11 @@ void BedDeformLC::step(const double dt_seconds, const double seconds_from_start)
   //    (new bed) = ue + (bed start) + plate
   // (but use only central part of plate if Z>1)
   {
-    petsc::VecArray2D b(bed, Mx, My), b_start(bed_start, Mx, My), db_elastic(dbedElastic, Mx, My),
-      u(U, Nx, Ny, i0_plate, j0_plate), u_start(U_start, Nx, Ny, i0_plate, j0_plate);
+    petsc::VecArray2D b(m_bed, m_Mx, m_My), b_start(m_bed_start, m_Mx, m_My), db_elastic(m_dbedElastic, m_Mx, m_My),
+      u(m_U, m_Nx, m_Ny, m_i0_plate, m_j0_plate), u_start(m_U_start, m_Nx, m_Ny, m_i0_plate, m_j0_plate);
 
-    for (int i = 0; i < Mx; i++) {
-      for (int j = 0; j < My; j++) {
+    for (int i = 0; i < m_Mx; i++) {
+      for (int j = 0; j < m_My; j++) {
         b(i, j) = b_start(i, j) + db_elastic(i, j) + (u(i, j) - u_start(i, j));
       }
     }
@@ -358,46 +367,46 @@ void BedDeformLC::step(const double dt_seconds, const double seconds_from_start)
 }
 
 void BedDeformLC::tweak(double seconds_from_start) {
-  petsc::VecArray2D u(U, Nx, Ny);
+  petsc::VecArray2D u(m_U, m_Nx, m_Ny);
 
   // find average value along "distant" boundary of [-Lx_fat, Lx_fat]X[-Ly_fat, Ly_fat]
   // note domain is periodic, so think of cut locus of torus (!)
   // (will remove it:   uun1=uun1-(sum(uun1(1, :))+sum(uun1(:, 1)))/(2*N);)
   double av = 0.0;
-  for (int i = 0; i < Nx; i++) {
+  for (int i = 0; i < m_Nx; i++) {
     av += u(i, 0);
   }
 
-  for (int j = 0; j < Ny; j++) {
+  for (int j = 0; j < m_Ny; j++) {
     av += u(0, j);
   }
 
-  av = av / ((double) (Nx + Ny));
+  av = av / ((double) (m_Nx + m_Ny));
 
   // tweak continued: replace far field with value for an equivalent disc load which has R0=Lx*(2/3)=L/3
   // (instead of 1000km in Matlab code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2);  % trapezoid rule)
-  const double Lav = (Lx_fat + Ly_fat) / 2.0;
+  const double Lav = (m_Lx_fat + m_Ly_fat) / 2.0;
   const double Requiv = Lav * (2.0 / 3.0);
 
   double delvolume;
-  PetscErrorCode ierr = VecSum(Hdiff, &delvolume);
+  PetscErrorCode ierr = VecSum(m_Hdiff, &delvolume);
   PISM_CHK(ierr, "VecSum");
 
-  delvolume = delvolume * dx * dy;  // make into a volume
+  delvolume = delvolume * m_dx * m_dy;  // make into a volume
   const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
   const double discshift = viscDisc(seconds_from_start,
-                                         Hequiv, Requiv, Lav, rho, standard_gravity, D, eta) - av;
+                                         Hequiv, Requiv, Lav, m_rho, m_standard_gravity, m_D, m_eta) - av;
 
-  ierr = VecShift(U, discshift);
+  ierr = VecShift(m_U, discshift);
   PISM_CHK(ierr, "VecShift");
 }
 
 //! \brief Fill fftw_input with zeros.
 void BedDeformLC::clear_fftw_input() {
-  VecAccessor2D<fftw_complex> fftw_in(fftw_input, Nx, Ny);
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
+  VecAccessor2D<fftw_complex> fftw_in(m_fftw_input, m_Nx, m_Ny);
+  for (int i = 0; i < m_Nx; ++i) {
+    for (int j = 0; j < m_Ny; ++j) {
       fftw_in(i, j)[0] = 0;
       fftw_in(i, j)[1] = 0;
     }
@@ -406,9 +415,9 @@ void BedDeformLC::clear_fftw_input() {
 
 //! \brief Copy fftw_output to `output`.
 void BedDeformLC::copy_fftw_output(fftw_complex *output) {
-  VecAccessor2D<fftw_complex> fftw_out(fftw_output, Nx, Ny), out(output, Nx, Ny);
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
+  VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny), out(output, m_Nx, m_Ny);
+  for (int i = 0; i < m_Nx; ++i) {
+    for (int j = 0; j < m_Ny; ++j) {
       out(i, j)[0] = fftw_out(i, j)[0];
       out(i, j)[1] = fftw_out(i, j)[1];
     }
@@ -421,7 +430,7 @@ void BedDeformLC::copy_fftw_output(fftw_complex *output) {
  */
 void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int N, int i0, int j0) {
   petsc::VecArray2D in(vec_input, M, N);
-  VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny, i0, j0);
+  VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {
       input(i, j)[0] = in(i, j) * normalization;
@@ -433,7 +442,7 @@ void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int
 //! \brief Get the real part of fftw_output and put it in output.
 void BedDeformLC::get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0) {
   petsc::VecArray2D out(output, M, N);
-  VecAccessor2D<fftw_complex> fftw_out(fftw_output, Nx, Ny, i0, j0);
+  VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {
       out(i, j) = fftw_out(i, j)[0] * normalization;
