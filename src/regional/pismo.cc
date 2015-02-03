@@ -57,7 +57,7 @@ the gradient of a saved surface elevation, and
 
 Also options `-force_to_thickness_file` and variable `ftt_mask` play a role in isolating
 the modeled outlet glacier.  But there is no code here for that purpose. 
-Instead see the PSForceThickness surface model modifier class.
+Instead see the ForceThickness surface model modifier class.
  */
 
 //! \brief A version of the PISM core class (IceModel) which knows about the

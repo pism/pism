@@ -20,11 +20,12 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace surface {
 
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
-PS_delta_T::PS_delta_T(const IceGrid &g, SurfaceModel* in)
-  : PScalarForcing<SurfaceModel,PSModifier>(g, in),
+Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
+  : PScalarForcing<SurfaceModel,SurfaceModifier>(g, in),
     climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
@@ -51,11 +52,11 @@ PS_delta_T::PS_delta_T(const IceGrid &g, SurfaceModel* in)
   ice_surface_temp.set_units("K");
 }
 
-PS_delta_T::~PS_delta_T() {
+Delta_T::~Delta_T() {
   // empty
 }
 
-void PS_delta_T::init() {
+void Delta_T::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -67,17 +68,17 @@ void PS_delta_T::init() {
   init_internal();
 }
 
-MaxTimestep PS_delta_T::max_timestep_impl(double t) {
+MaxTimestep Delta_T::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
+void Delta_T::ice_surface_temperature(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   offset_data(result);
 }
 
-void PS_delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -86,7 +87,7 @@ void PS_delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<st
   }
 }
 
-void PS_delta_T::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void Delta_T::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);
@@ -99,7 +100,7 @@ void PS_delta_T::define_variables_impl(const std::set<std::string> &vars, const 
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PS_delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -129,4 +130,5 @@ void PS_delta_T::write_variables_impl(const std::set<std::string> &vars_input, c
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

@@ -22,9 +22,10 @@
 #include <stdexcept>
 
 namespace pism {
+namespace surface {
 
-PSStuffAsAnomaly::PSStuffAsAnomaly(const IceGrid &g, SurfaceModel *input)
-    : PSModifier(g, input) {
+StuffAsAnomaly::StuffAsAnomaly(const IceGrid &g, SurfaceModel *input)
+    : SurfaceModifier(g, input) {
 
   mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   mass_flux.set_attrs("climate_state",
@@ -56,11 +57,11 @@ PSStuffAsAnomaly::PSStuffAsAnomaly(const IceGrid &g, SurfaceModel *input)
                        "K", "");
 }
 
-PSStuffAsAnomaly::~PSStuffAsAnomaly() {
+StuffAsAnomaly::~StuffAsAnomaly() {
   // empty
 }
 
-void PSStuffAsAnomaly::init() {
+void StuffAsAnomaly::init() {
   std::string input_file;
   bool do_regrid = false;
   int start = 0;
@@ -87,12 +88,12 @@ void PSStuffAsAnomaly::init() {
   }
 }
 
-MaxTimestep PSStuffAsAnomaly::max_timestep_impl(double t) {
+MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PSStuffAsAnomaly::update_impl(double my_t, double my_dt) {
+void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
     return;
@@ -132,15 +133,15 @@ void PSStuffAsAnomaly::update_impl(double my_t, double my_dt) {
   }
 }
 
-void PSStuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   mass_flux.copy_to(result);
 }
 
-void PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
   temp.copy_to(result);
 }
 
-void PSStuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void StuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }
@@ -149,7 +150,7 @@ void PSStuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::
   result.insert("climatic_mass_balance");
 }
 
-void PSStuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_input,
+void StuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_input,
                                                   const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -170,7 +171,7 @@ void PSStuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_i
   }
 }
 
-void PSStuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void StuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -191,4 +192,5 @@ void PSStuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_in
 }
 
 
+} // end of namespace surface
 } // end of namespace pism

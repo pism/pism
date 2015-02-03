@@ -24,6 +24,7 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a primitive surface model.
 /*! 
@@ -38,9 +39,9 @@ namespace pism {
   The second choice means that the upper boundary condition of the conservation of
   energy scheme for the ice fluid is exactly the 2m air temperature.
 */
-class PSSimple : public SurfaceModel {
+class Simple : public SurfaceModel {
 public:
-  PSSimple(const IceGrid &g);
+  Simple(const IceGrid &g);
 
   virtual void init();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -57,6 +58,7 @@ protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSSIMPLE_H_ */

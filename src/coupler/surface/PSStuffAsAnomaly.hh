@@ -24,13 +24,14 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A surface modifier class applying its input as anomalies.
-class PSStuffAsAnomaly : public PSModifier
+class StuffAsAnomaly : public SurfaceModifier
 {
 public:
-  PSStuffAsAnomaly(const IceGrid &g, SurfaceModel *input);
-  virtual ~PSStuffAsAnomaly();
+  StuffAsAnomaly(const IceGrid &g, SurfaceModel *input);
+  virtual ~StuffAsAnomaly();
 
   virtual void init();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -48,6 +49,7 @@ protected:
     temp, temp_0, temp_input;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSSTUFFASANOMALY_H_ */

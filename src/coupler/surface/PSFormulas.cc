@@ -22,6 +22,7 @@
 #include "pism_const.hh"
 
 namespace pism {
+namespace surface {
 
 PSFormulas::PSFormulas(const IceGrid &g)
   : SurfaceModel(g) {
@@ -89,4 +90,5 @@ void PSFormulas::write_variables_impl(const std::set<std::string> &vars, const P
   }
 }
 
+} // end of namespace surface
 } // end of namespace pism

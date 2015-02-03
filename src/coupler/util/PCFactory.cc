@@ -117,23 +117,23 @@ POFactory::~POFactory() {
 
 // Surface
 PSFactory::PSFactory(const IceGrid& g)
-  : PCFactory<SurfaceModel,PSModifier>(g) {
+  : PCFactory<surface::SurfaceModel,surface::SurfaceModifier>(g) {
   m_option = "surface";
 
-  add_model<PSElevation>("elevation");
-  add_model<PSGivenClimate>("given");
-  add_model<PSTemperatureIndex>("pdd");
-  add_model<PSTemperatureIndex_Old>("pdd_old");
-  add_model<PSPIK>("pik");
-  add_model<PSSimple>("simple");
+  add_model<surface::Elevation>("elevation");
+  add_model<surface::Given>("given");
+  add_model<surface::TemperatureIndex>("pdd");
+  add_model<surface::TemperatureIndex_Old>("pdd_old");
+  add_model<surface::PIK>("pik");
+  add_model<surface::Simple>("simple");
   set_default("given");
 
-  add_modifier<PSAnomaly>("anomaly");
-  add_modifier<PSCache>("cache");
-  add_modifier<PS_delta_T>("delta_T");
-  add_modifier<PSForceThickness>("forcing");
-  add_modifier<PSLapseRates>("lapse_rate");
-  add_modifier<PSStuffAsAnomaly>("turn_into_anomaly");
+  add_modifier<surface::Anomaly>("anomaly");
+  add_modifier<surface::Cache>("cache");
+  add_modifier<surface::Delta_T>("delta_T");
+  add_modifier<surface::ForceThickness>("forcing");
+  add_modifier<surface::LapseRates>("lapse_rate");
+  add_modifier<surface::StuffAsAnomaly>("turn_into_anomaly");
 }
 
 PSFactory::~PSFactory() {

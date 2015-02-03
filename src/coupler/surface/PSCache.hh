@@ -24,11 +24,12 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace surface {
 
-class PSCache : public PSModifier {
+class Cache : public SurfaceModifier {
 public:
-  PSCache(const IceGrid &g, SurfaceModel* in);
-  virtual ~PSCache();
+  Cache(const IceGrid &g, SurfaceModel* in);
+  virtual ~Cache();
 
   virtual void init();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -49,6 +50,7 @@ protected:
   unsigned int m_update_interval_years;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSCACHE_H_ */

@@ -25,12 +25,13 @@
 #include "PISMAtmosphere.hh"
 
 namespace pism {
+namespace surface {
 
-class PSGivenClimate : public PGivenClimate<PSModifier,SurfaceModel>
+class Given : public PGivenClimate<SurfaceModifier,SurfaceModel>
 {
 public:
-  PSGivenClimate(const IceGrid &g);
-  virtual ~PSGivenClimate();
+  Given(const IceGrid &g);
+  virtual ~Given();
 
   virtual void attach_atmosphere_model(AtmosphereModel *input);
 
@@ -43,6 +44,7 @@ protected:
   IceModelVec2T *climatic_mass_balance, *ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSGIVEN_H_ */

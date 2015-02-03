@@ -48,6 +48,10 @@ namespace ocean {
 class OceanModel;
 }
 
+namespace surface {
+class SurfaceModel;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
@@ -55,7 +59,6 @@ class EnthalpyConverter;
 class Hydrology;
 class YieldStress;
 class StressBalance;
-class SurfaceModel;
 class BedDef;
 class BedThermalUnit;
 class Diagnostic;
@@ -220,7 +223,7 @@ protected:
   CalvingAtThickness *thickness_threshold_calving;
   EigenCalving       *eigen_calving;
 
-  SurfaceModel *surface;
+  surface::SurfaceModel *surface;
   ocean::OceanModel   *ocean;
   BedDef       *beddef;
   bool external_surface_model, external_ocean_model;

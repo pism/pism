@@ -26,17 +26,18 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace surface {
 
-PS_EISMINTII::PS_EISMINTII(const IceGrid &g, int experiment)
+EISMINTII::EISMINTII(const IceGrid &g, int experiment)
   : PSFormulas(g), m_experiment(experiment) {
   // empty
 }
 
-PS_EISMINTII::~PS_EISMINTII() {
+EISMINTII::~EISMINTII() {
   // empty
 }
 
-void PS_EISMINTII::init() {
+void EISMINTII::init() {
 
   verbPrintf(2, m_grid.com, 
              "setting parameters for surface mass balance"
@@ -101,12 +102,12 @@ void PS_EISMINTII::init() {
   initialize_using_formulas();
 }
 
-MaxTimestep PS_EISMINTII::max_timestep_impl(double t) {
+MaxTimestep EISMINTII::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PS_EISMINTII::initialize_using_formulas() {
+void EISMINTII::initialize_using_formulas() {
 
   PetscScalar cx = m_grid.Lx(), cy = m_grid.Ly();
   if (m_experiment == 'E') {
@@ -136,11 +137,12 @@ void PS_EISMINTII::initialize_using_formulas() {
   m_climatic_mass_balance.scale(m_config.get("ice_density"));
 }
 
-void PS_EISMINTII::update_impl(PetscReal t, PetscReal dt) {
+void EISMINTII::update_impl(PetscReal t, PetscReal dt) {
   (void) t;
   (void) dt;
 
   // do nothing (but an implementation is required)
 }
 
+} // end of namespace surface
 } // end of namespace pism

@@ -28,9 +28,10 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace surface {
 
-PSCache::PSCache(const IceGrid &g, SurfaceModel* in)
-  : PSModifier(g, in) {
+Cache::Cache(const IceGrid &g, SurfaceModel* in)
+  : SurfaceModifier(g, in) {
 
   m_next_update_time = m_grid.time->current();
   m_update_interval_years = 10;
@@ -61,12 +62,12 @@ PSCache::PSCache(const IceGrid &g, SurfaceModel* in)
                                       "surface layer thickness", "1", "");
 }
 
-PSCache::~PSCache() {
+Cache::~Cache() {
   // empty
 }
 
 
-void PSCache::init() {
+void Cache::init() {
   int update_interval = m_update_interval_years;
 
   input_model->init();
@@ -86,7 +87,7 @@ void PSCache::init() {
   m_next_update_time = m_grid.time->current();
 }
 
-void PSCache::update_impl(double my_t, double my_dt) {
+void Cache::update_impl(double my_t, double my_dt) {
   // ignore my_dt and always use 1 year long time-steps when updating
   // an input model
   (void) my_dt;
@@ -113,7 +114,7 @@ void PSCache::update_impl(double my_t, double my_dt) {
   }
 }
 
-MaxTimestep PSCache::max_timestep_impl(double t) {
+MaxTimestep Cache::max_timestep_impl(double t) {
   double dt = m_next_update_time - t;
 
   // if we got very close to the next update time, set time step
@@ -136,28 +137,28 @@ MaxTimestep PSCache::max_timestep_impl(double t) {
   }
 }
 
-void PSCache::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Cache::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_mass_flux.copy_to(result);
 }
 
-void PSCache::ice_surface_temperature(IceModelVec2S &result) {
+void Cache::ice_surface_temperature(IceModelVec2S &result) {
   m_temperature.copy_to(result);
 }
 
-void PSCache::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+void Cache::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
   m_liquid_water_fraction.copy_to(result);
 }
 
-void PSCache::mass_held_in_surface_layer(IceModelVec2S &result) {
+void Cache::mass_held_in_surface_layer(IceModelVec2S &result) {
   m_mass_held_in_surface_layer.copy_to(result);
 }
 
-void PSCache::surface_layer_thickness(IceModelVec2S &result) {
+void Cache::surface_layer_thickness(IceModelVec2S &result) {
   m_surface_layer_thickness.copy_to(result);
 }
 
 
-void PSCache::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
+void Cache::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
@@ -188,7 +189,7 @@ void PSCache::define_variables_impl(const std::set<std::string> &vars_input, con
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PSCache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Cache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
@@ -219,4 +220,5 @@ void PSCache::write_variables_impl(const std::set<std::string> &vars_input, cons
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

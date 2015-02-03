@@ -25,9 +25,10 @@
 #include "pism_options.hh"
 
 namespace pism {
+namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-PSElevation::PSElevation(const IceGrid &g)
+Elevation::Elevation(const IceGrid &g)
   : SurfaceModel(g),
     m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid)
@@ -35,13 +36,13 @@ PSElevation::PSElevation(const IceGrid &g)
   // empty
 }
 
-void PSElevation::init() {
+void Elevation::init() {
   bool m_limits_set = false;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
-             "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n");
+             "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
 
   // options
   {
@@ -173,29 +174,29 @@ void PSElevation::init() {
              m_grid.convert(m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
 }
 
-MaxTimestep PSElevation::max_timestep_impl(double t) {
+MaxTimestep Elevation::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PSElevation::attach_atmosphere_model(AtmosphereModel *input)
+void Elevation::attach_atmosphere_model(AtmosphereModel *input)
 {
   delete input;
 }
 
-void PSElevation::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
+void Elevation::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
                                   std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // empty
 }
 
-void PSElevation::update_impl(double my_t, double my_dt)
+void Elevation::update_impl(double my_t, double my_dt)
 {
   m_t = my_t;
   m_dt = my_dt;
 }
 
 
-void PSElevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
@@ -222,7 +223,7 @@ void PSElevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
       result(i, j) = m_M_limit_max;
     }
     else {
-      throw RuntimeError("PSElevation::ice_surface_mass_flux: HOW DID I GET HERE?");
+      throw RuntimeError("Elevation::ice_surface_mass_flux: HOW DID I GET HERE?");
     }
   }
 
@@ -230,7 +231,7 @@ void PSElevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.scale(m_config.get("ice_density"));
 }
 
-void PSElevation::ice_surface_temperature(IceModelVec2S &result) {
+void Elevation::ice_surface_temperature(IceModelVec2S &result) {
 
   const IceModelVec2S *usurf = m_grid.variables().get_2d_scalar("surface_altitude");
 
@@ -252,19 +253,19 @@ void PSElevation::ice_surface_temperature(IceModelVec2S &result) {
       result(i, j) = m_T_max;
     }
     else {
-      throw RuntimeError("PSElevation::ice_surface_temperature: HOW DID I GET HERE?");
+      throw RuntimeError("Elevation::ice_surface_temperature: HOW DID I GET HERE?");
     }
   }
 }
 
-void PSElevation::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
-void PSElevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -276,7 +277,7 @@ void PSElevation::define_variables_impl(const std::set<std::string> &vars, const
   }
 }
 
-void PSElevation::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void Elevation::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
@@ -298,4 +299,5 @@ void PSElevation::write_variables_impl(const std::set<std::string> &vars, const 
   }
 }
 
+} // end of namespace surface
 } // end of namespace pism

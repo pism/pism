@@ -27,10 +27,11 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex_Old::PSTemperatureIndex_Old(const IceGrid &g)
+TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
     ice_surface_temp(g.config.get_unit_system(), temperature_name, g) {
   mbscheme = NULL;
@@ -81,12 +82,12 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(const IceGrid &g)
   runoff_rate.write_in_glaciological_units = true;
 }
 
-PSTemperatureIndex_Old::~PSTemperatureIndex_Old() {
+TemperatureIndex_Old::~TemperatureIndex_Old() {
   delete mbscheme;
   delete faustogreve;
 }
 
-void PSTemperatureIndex_Old::init() {
+void TemperatureIndex_Old::init() {
   bool pdd_rand, pdd_rand_repeatable, fausto_params;
 
   SurfaceModel::init();
@@ -161,12 +162,12 @@ void PSTemperatureIndex_Old::init() {
   ice_surface_temp.set_units("K");
 }
 
-MaxTimestep PSTemperatureIndex_Old::max_timestep_impl(double t) {
+MaxTimestep TemperatureIndex_Old::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-MaxTimestep PSTemperatureIndex_Old::max_timestep(PetscReal my_t) {
+MaxTimestep TemperatureIndex_Old::max_timestep(PetscReal my_t) {
 
   MaxTimestep max_dt;
   if (pdd_annualize) {
@@ -182,7 +183,7 @@ MaxTimestep PSTemperatureIndex_Old::max_timestep(PetscReal my_t) {
   return std::min(max_dt, dt_atmosphere);
 }
 
-void PSTemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
+void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
 
   PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
 
@@ -207,7 +208,7 @@ void PSTemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
   }
 }
 
-void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
+void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
   const double ice_density = m_config.get("ice_density");
 
@@ -308,17 +309,17 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 }
 
 
-void PSTemperatureIndex_Old::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void TemperatureIndex_Old::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   climatic_mass_balance.copy_to(result);
 }
 
 
-void PSTemperatureIndex_Old::ice_surface_temperature(IceModelVec2S &result) {
+void TemperatureIndex_Old::ice_surface_temperature(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 
-void PSTemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void TemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert(mass_balance_name);
     result.insert(temperature_name);
@@ -333,7 +334,7 @@ void PSTemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword,
   atmosphere->add_vars_to_output(keyword, result);
 }
 
-void PSTemperatureIndex_Old::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
@@ -358,7 +359,7 @@ void PSTemperatureIndex_Old::define_variables_impl(const std::set<std::string> &
   }
 }
 
-void PSTemperatureIndex_Old::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void TemperatureIndex_Old::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, temperature_name)) {
@@ -395,4 +396,5 @@ void PSTemperatureIndex_Old::write_variables_impl(const std::set<std::string> &v
   SurfaceModel::write_variables_impl(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

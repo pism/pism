@@ -24,17 +24,18 @@
 #include "PSModifier.hh"
 
 namespace pism {
+namespace surface {
 
 /** @brief Implements the scalar temperature offsets for the ice
  * surface temperature.
  *
  * Other fields are passed through without change.
  */
-class PS_delta_T : public PScalarForcing<SurfaceModel,PSModifier>
+class Delta_T : public PScalarForcing<SurfaceModel,SurfaceModifier>
 {
 public:
-  PS_delta_T(const IceGrid &g, SurfaceModel* in);
-  virtual ~PS_delta_T();
+  Delta_T(const IceGrid &g, SurfaceModel* in);
+  virtual ~Delta_T();
 
   virtual void init();
 
@@ -51,6 +52,7 @@ protected:
     ice_surface_temp;                      //!< ice surface temperature attributes
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PS_DELTA_T_H_ */

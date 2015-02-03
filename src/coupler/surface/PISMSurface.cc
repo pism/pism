@@ -28,6 +28,7 @@
 #include <assert.h>
 
 namespace pism {
+namespace surface {
 
 ///// PISMSurfaceModel base class:
 
@@ -119,5 +120,6 @@ void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<
   }
 }
 
+} // end of namespace surface
 } // end of namespace pism
 

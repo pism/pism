@@ -31,10 +31,11 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex::PSTemperatureIndex(const IceGrid &g)
+TemperatureIndex::TemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
@@ -172,12 +173,12 @@ PSTemperatureIndex::PSTemperatureIndex(const IceGrid &g)
   ice_surface_temp.set_units("K");
 }
 
-PSTemperatureIndex::~PSTemperatureIndex() {
+TemperatureIndex::~TemperatureIndex() {
   delete m_mbscheme;
   delete m_faustogreve;
 }
 
-void PSTemperatureIndex::init() {
+void TemperatureIndex::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   SurfaceModel::init();
@@ -234,16 +235,16 @@ void PSTemperatureIndex::init() {
   m_next_balance_year_start = compute_next_balance_year_start(m_grid.time->current());
 }
 
-MaxTimestep PSTemperatureIndex::max_timestep_impl(double t) {
+MaxTimestep TemperatureIndex::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-MaxTimestep PSTemperatureIndex::max_timestep(double my_t) {
+MaxTimestep TemperatureIndex::max_timestep(double my_t) {
   return atmosphere->max_timestep(my_t);
 }
 
-double PSTemperatureIndex::compute_next_balance_year_start(double time) {
+double TemperatureIndex::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
   double
     balance_year_start_day = m_config.get("pdd_balance_year_start_day"),
@@ -258,7 +259,7 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
 }
 
 
-void PSTemperatureIndex::update_impl(double my_t, double my_dt) {
+void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
@@ -424,17 +425,17 @@ void PSTemperatureIndex::update_impl(double my_t, double my_dt) {
 }
 
 
-void PSTemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_climatic_mass_balance.copy_to(result);
 }
 
 
-void PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
+void TemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
 
   atmosphere->mean_annual_temp(result);
 }
 
-void PSTemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
   SurfaceModel::add_vars_to_output_impl(keyword, result);
 
@@ -453,7 +454,7 @@ void PSTemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std
   }
 }
 
-void PSTemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);
@@ -486,7 +487,7 @@ void PSTemperatureIndex::define_variables_impl(const std::set<std::string> &vars
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 }
 
-void PSTemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -534,4 +535,5 @@ void PSTemperatureIndex::write_variables_impl(const std::set<std::string> &vars_
   SurfaceModel::write_variables_impl(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

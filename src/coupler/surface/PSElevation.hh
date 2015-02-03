@@ -24,11 +24,12 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
-class PSElevation : public SurfaceModel {
+class Elevation : public SurfaceModel {
 public:
-  PSElevation(const IceGrid &g);
+  Elevation(const IceGrid &g);
 
   virtual void init();
   virtual void attach_atmosphere_model(AtmosphereModel *input);
@@ -50,6 +51,7 @@ protected:
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSELEVATION_H_ */

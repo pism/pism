@@ -23,7 +23,7 @@
 
 namespace pism {
 
-class PSFactory : public PCFactory<SurfaceModel,PSModifier> {
+class PSFactory : public PCFactory<surface::SurfaceModel,surface::SurfaceModifier> {
 public:
   PSFactory(const IceGrid& g);
   ~PSFactory();

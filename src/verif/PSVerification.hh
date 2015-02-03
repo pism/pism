@@ -23,14 +23,14 @@
 #include "PSFormulas.hh"
 
 namespace pism {
-
 class EnthalpyConverter;
+namespace surface {
 
 //! Climate inputs for verification tests.
-class PSVerification : public PSFormulas {
+class Verification : public PSFormulas {
 public:
-  PSVerification(const IceGrid &g, EnthalpyConverter *EC, int test);
-  ~PSVerification();
+  Verification(const IceGrid &g, EnthalpyConverter *EC, int test);
+  ~Verification();
 
   // the interface:
   void init();
@@ -56,6 +56,7 @@ private:
 
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSVERIFICATION_H_ */

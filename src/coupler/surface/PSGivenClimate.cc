@@ -20,9 +20,10 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace surface {
 
-PSGivenClimate::PSGivenClimate(const IceGrid &g)
-  : PGivenClimate<PSModifier,SurfaceModel>(g, NULL)
+Given::Given(const IceGrid &g)
+  : PGivenClimate<SurfaceModifier,SurfaceModel>(g, NULL)
 {
   option_prefix = "-surface_given";
 
@@ -51,16 +52,16 @@ PSGivenClimate::PSGivenClimate(const IceGrid &g)
   climatic_mass_balance->write_in_glaciological_units = true;
 }
 
-PSGivenClimate::~PSGivenClimate() {
+Given::~Given() {
   // empty
 }
 
-void PSGivenClimate::attach_atmosphere_model(AtmosphereModel *input) {
+void Given::attach_atmosphere_model(AtmosphereModel *input) {
   delete input;
   input = NULL;
 }
 
-void PSGivenClimate::init() {
+void Given::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -77,19 +78,20 @@ void PSGivenClimate::init() {
   }
 }
 
-void PSGivenClimate::update_impl(double my_t, double my_dt) {
+void Given::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   climatic_mass_balance->average(m_t, m_dt);
   ice_surface_temp->average(m_t, m_dt);
 }
 
-void PSGivenClimate::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Given::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   climatic_mass_balance->copy_to(result);
 }
 
-void PSGivenClimate::ice_surface_temperature(IceModelVec2S &result) {
+void Given::ice_surface_temperature(IceModelVec2S &result) {
   ice_surface_temp->copy_to(result);
 }
 
+} // end of namespace surface
 } // end of namespace pism

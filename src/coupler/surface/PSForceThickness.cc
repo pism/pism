@@ -28,10 +28,11 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace surface {
 
 ///// "Force-to-thickness" mechanism
-PSForceThickness::PSForceThickness(const IceGrid &g, SurfaceModel *input)
-  : PSModifier(g, input),
+ForceThickness::ForceThickness(const IceGrid &g, SurfaceModel *input)
+  : SurfaceModifier(g, input),
     m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     m_climatic_mass_balance_original(g.config.get_unit_system(), "climatic_mass_balance_original", m_grid),
     m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
@@ -70,15 +71,15 @@ PSForceThickness::PSForceThickness(const IceGrid &g, SurfaceModel *input)
   m_ice_surface_temp.set_units("K");
 }
 
-PSForceThickness::~PSForceThickness() {
+ForceThickness::~ForceThickness() {
   // empty
 }
 
-void PSForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
+void ForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
   input_model->attach_atmosphere_model(input);
 }
 
-void PSForceThickness::init() {
+void ForceThickness::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -271,7 +272,7 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
-void PSForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   // get the surface mass balance result from the next level up
   input_model->ice_surface_mass_flux(result);
@@ -308,7 +309,7 @@ void PSForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 }
 
 //! Does not modify ice surface temperature.
-void PSForceThickness::ice_surface_temperature(IceModelVec2S &result) {
+void ForceThickness::ice_surface_temperature(IceModelVec2S &result) {
   return input_model->ice_surface_temperature(result);
 }
 
@@ -323,7 +324,7 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-MaxTimestep PSForceThickness::max_timestep_impl(double my_t) {
+MaxTimestep ForceThickness::max_timestep_impl(double my_t) {
   double max_dt = m_grid.convert(2.0 / m_alpha, "years", "seconds");
   MaxTimestep input_max_dt = input_model->max_timestep(my_t);
 
@@ -331,7 +332,7 @@ MaxTimestep PSForceThickness::max_timestep_impl(double my_t) {
 }
 
 //! Adds variables to output files.
-void PSForceThickness::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }
@@ -346,7 +347,7 @@ void PSForceThickness::add_vars_to_output_impl(const std::string &keyword, std::
   result.insert("ftt_target_thk");
 }
 
-void PSForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);
@@ -371,7 +372,7 @@ void PSForceThickness::define_variables_impl(const std::set<std::string> &vars, 
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PSForceThickness::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void ForceThickness::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ftt_mask")) {
@@ -421,4 +422,5 @@ void PSForceThickness::write_variables_impl(const std::set<std::string> &vars_in
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

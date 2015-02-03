@@ -24,14 +24,15 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! A class implementing a modified surface mass balance which forces
 //! ice thickness to a given target by the end of the run.
-class PSForceThickness : public PSModifier {
+class ForceThickness : public SurfaceModifier {
 public:
-  PSForceThickness(const IceGrid &g, SurfaceModel *input);
+  ForceThickness(const IceGrid &g, SurfaceModel *input);
 
-  virtual ~PSForceThickness();
+  virtual ~ForceThickness();
   virtual void init();
   virtual void attach_atmosphere_model(AtmosphereModel *input);
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -49,6 +50,7 @@ private:
   NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSFORCETHICKNESS_H_ */

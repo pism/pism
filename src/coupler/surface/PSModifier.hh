@@ -23,6 +23,7 @@
 #include "Modifier.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A base class for mechanisms which modify the results of a surface
 //! processes model (an instance of SurfaceModel) before they reach the ice.
@@ -32,15 +33,15 @@ namespace pism {
   results of the surface processes model.  That is, if the atmospheric inputs 
   are already dealt-with, and a basic surface processes model is in use which 
   generates surface mass balance and ice upper surface temperature, then instances
-  of this PSModifier class can be used to modify the surface mass balance and ice
+  of this SurfaceModifier class can be used to modify the surface mass balance and ice
   upper surface temperature "just before" it gets to the ice itself.
 */
-class PSModifier : public Modifier<SurfaceModel>
+class SurfaceModifier : public Modifier<SurfaceModel>
 {
 public:
-  PSModifier(const IceGrid &g, SurfaceModel* in)
+  SurfaceModifier(const IceGrid &g, SurfaceModel* in)
     : Modifier<SurfaceModel>(g, in) {}
-  virtual ~PSModifier() {}
+  virtual ~SurfaceModifier() {}
 
   virtual void attach_atmosphere_model(AtmosphereModel *in) {
     if (input_model != NULL) {
@@ -84,6 +85,7 @@ public:
   }
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSMODIFIER_H_ */

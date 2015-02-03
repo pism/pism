@@ -19,9 +19,10 @@
 #include "PSLapseRates.hh"
 
 namespace pism {
+namespace surface {
 
-PSLapseRates::PSLapseRates(const IceGrid &g, SurfaceModel* in)
-  : PLapseRates<SurfaceModel,PSModifier>(g, in),
+LapseRates::LapseRates(const IceGrid &g, SurfaceModel* in)
+  : PLapseRates<SurfaceModel,SurfaceModifier>(g, in),
     m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
   m_smb_lapse_rate = 0;
@@ -41,11 +42,11 @@ PSLapseRates::PSLapseRates(const IceGrid &g, SurfaceModel* in)
   m_ice_surface_temp.set_units("K");
 }
 
-PSLapseRates::~PSLapseRates() {
+LapseRates::~LapseRates() {
   // empty
 }
 
-void PSLapseRates::init() {
+void LapseRates::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -74,17 +75,17 @@ void PSLapseRates::init() {
                                     "(kg m-2) / year / km", "(kg m-2) / s / m");
 }
 
-void PSLapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void LapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   input_model->ice_surface_mass_flux(result);
   lapse_rate_correction(result, m_smb_lapse_rate);
 }
 
-void PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
+void LapseRates::ice_surface_temperature(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
-void PSLapseRates::add_vars_to_output_impl(const std::string &keyword,
+void LapseRates::add_vars_to_output_impl(const std::string &keyword,
                                            std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
@@ -94,7 +95,7 @@ void PSLapseRates::add_vars_to_output_impl(const std::string &keyword,
   input_model->add_vars_to_output(keyword, result);
 }
 
-void PSLapseRates::define_variables_impl(const std::set<std::string> &vars,
+void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -108,7 +109,7 @@ void PSLapseRates::define_variables_impl(const std::set<std::string> &vars,
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PSLapseRates::write_variables_impl(const std::set<std::string> &vars_input,
+void LapseRates::write_variables_impl(const std::set<std::string> &vars_input,
                                         const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
@@ -139,4 +140,5 @@ void PSLapseRates::write_variables_impl(const std::set<std::string> &vars_input,
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

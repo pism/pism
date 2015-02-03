@@ -161,7 +161,7 @@ protected:
         // If the variable was not found we allocate storage for one
         // record. This is needed to be able to allocate and then
         // discard an "-atmosphere given" model (PAGivenClimate) when
-        // "-surface given" (PSGivenClimate) is selected.
+        // "-surface given" (Given) is selected.
         n_records = 1;
       }
 

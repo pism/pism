@@ -36,33 +36,34 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace surface {
 
-const double PSVerification::ablationRateOutside = 0.02; // m/year
-const double PSVerification::secpera = 3.15569259747e7;
+const double Verification::ablationRateOutside = 0.02; // m/year
+const double Verification::secpera = 3.15569259747e7;
 
-const double PSVerification::ST = 1.67e-5;
-const double PSVerification::Tmin = 223.15;  // K
-const double PSVerification::LforFG = 750000; // m
-const double PSVerification::ApforG = 200; // m
+const double Verification::ST = 1.67e-5;
+const double Verification::Tmin = 223.15;  // K
+const double Verification::LforFG = 750000; // m
+const double Verification::ApforG = 200; // m
 
-PSVerification::PSVerification(const IceGrid &g,
+Verification::Verification(const IceGrid &g,
                                EnthalpyConverter *EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
 }
 
-PSVerification::~PSVerification() {
+Verification::~Verification() {
   // empty
 }
 
-void PSVerification::init() {
+void Verification::init() {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
   update(m_grid.time->current(), 0);
 }
 
-MaxTimestep PSVerification::max_timestep_impl(double t) {
+MaxTimestep Verification::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
@@ -71,7 +72,7 @@ MaxTimestep PSVerification::max_timestep_impl(double t) {
  * 
  * @return 0 on success
  */
-void PSVerification::update_KO() {
+void Verification::update_KO() {
 
   m_climatic_mass_balance.set(0.0);
   m_ice_surface_temp.set(223.15);
@@ -84,7 +85,7 @@ void PSVerification::update_KO() {
  *
  * @return 0 on success
  */
-void PSVerification::update_L() {
+void Verification::update_L() {
   double     A0, T0;
 
   ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
@@ -113,7 +114,7 @@ void PSVerification::update_L() {
   }
 }
 
-void PSVerification::update_V() {
+void Verification::update_V() {
 
   // initialize temperature; the value used does not matter
   m_ice_surface_temp.set(273.15);
@@ -122,7 +123,7 @@ void PSVerification::update_V() {
   m_climatic_mass_balance.set(0.0);
 }
 
-void PSVerification::update_impl(PetscReal t, PetscReal dt) {
+void Verification::update_impl(PetscReal t, PetscReal dt) {
 
   (void) dt;
 
@@ -164,7 +165,7 @@ void PSVerification::update_impl(PetscReal t, PetscReal dt) {
  *
  * @return 0 on success
  */
-void PSVerification::update_ABCDEH(double time) {
+void Verification::update_ABCDEH(double time) {
   double         A0, T0, H, accum, dummy1, dummy2, dummy3;
 
   double f = m_config.get("ice_density") / m_config.get("lithosphere_density");
@@ -211,7 +212,7 @@ void PSVerification::update_ABCDEH(double time) {
   }
 }
 
-void PSVerification::update_FG(double time) {
+void Verification::update_FG(double time) {
   unsigned int   Mz = m_grid.Mz();
   double         H, accum;
 
@@ -243,4 +244,5 @@ void PSVerification::update_FG(double time) {
   }
 }
 
+} // end of namespace surface
 } // end of namespace pism

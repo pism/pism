@@ -180,10 +180,10 @@ public:
    * SurfaceModel::ice_surface_temperature() might be called
    * multiple times per time-step.
    *
-   * PSTemperatureIndex is an example of a component that does a
-   * fairly expensive computation in PSTemperatureIndex::update() and
+   * TemperatureIndex is an example of a component that does a
+   * fairly expensive computation in TemperatureIndex::update() and
    * uses cached values in
-   * PSTemperatureIndex::ice_surface_mass_flux_impl().
+   * TemperatureIndex::ice_surface_mass_flux_impl().
    *
    * *Who* calls this depends on the kind of the component in
    * question, but all calls originate from IceModel::step() and the

@@ -24,11 +24,12 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace surface {
 
 /** Base class for surface models that compute climate inputs using
  * formulas.
  *
- * Used by PS_EISMINTII and PSVerification. 
+ * Used by EISMINTII and Verification. 
  */
 class PSFormulas : public SurfaceModel {
 public:
@@ -49,6 +50,7 @@ protected:
 };
 
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSFORMULAS_H_ */

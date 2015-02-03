@@ -24,6 +24,7 @@
 #include "PISMAtmosphere.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a constant-in-time surface model for the surface mass balance.
 //!
@@ -32,9 +33,9 @@ namespace pism {
 //! Ice surface temperature is parameterized as in PISM-PIK, using a latitude
 //! and surface elevation-dependent formula.
 
-class PSPIK : public SurfaceModel {
+class PIK : public SurfaceModel {
 public:
-  PSPIK(const IceGrid &g);
+  PIK(const IceGrid &g);
 
   virtual void init();
 
@@ -56,6 +57,7 @@ protected:
   IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSCONSTANTPIK_H_ */

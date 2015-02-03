@@ -25,6 +25,7 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -41,10 +42,10 @@ namespace pism {
   precipitation during the ice sheet model time step, plus a variable temperature
   over that time step, to compute melt, refreeze, and surface balance.
 */
-class PSTemperatureIndex : public SurfaceModel {
+class TemperatureIndex : public SurfaceModel {
 public:
-  PSTemperatureIndex(const IceGrid &g);
-  virtual ~PSTemperatureIndex();
+  TemperatureIndex(const IceGrid &g);
+  virtual ~TemperatureIndex();
   virtual void init();
   virtual MaxTimestep max_timestep(double my_t);
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -83,6 +84,7 @@ protected:
   double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSTEMPERATUREINDEX_H_ */

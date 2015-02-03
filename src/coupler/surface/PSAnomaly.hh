@@ -23,13 +23,14 @@
 #include "PSModifier.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief Reads and uses climatic_mass_balance and ice_surface_temp \b anomalies from a file.
-class PSAnomaly : public PGivenClimate<PSModifier,SurfaceModel>
+class Anomaly : public PGivenClimate<SurfaceModifier,SurfaceModel>
 {
 public:
-  PSAnomaly(const IceGrid &g, SurfaceModel* in);
-  virtual ~PSAnomaly();
+  Anomaly(const IceGrid &g, SurfaceModel* in);
+  virtual ~Anomaly();
 
   virtual void init();
 
@@ -47,6 +48,7 @@ protected:
   IceModelVec2T *climatic_mass_balance_anomaly, *ice_surface_temp_anomaly;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSANOMALY_H_ */

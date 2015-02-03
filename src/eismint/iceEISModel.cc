@@ -116,7 +116,7 @@ void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (surface == NULL) {
-    surface = new PS_EISMINTII(grid, m_experiment);
+    surface = new surface::EISMINTII(grid, m_experiment);
   }
 
   if (ocean == NULL) {

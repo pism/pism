@@ -26,9 +26,10 @@
 #include <stdexcept>
 
 namespace pism {
+namespace surface {
 
 ///// Simple PISM surface model.
-PSSimple::PSSimple(const IceGrid &g)
+Simple::Simple(const IceGrid &g)
   : SurfaceModel(g),
     climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
@@ -48,7 +49,7 @@ PSSimple::PSSimple(const IceGrid &g)
 }
 
 
-void PSSimple::init() {
+void Simple::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -56,18 +57,18 @@ void PSSimple::init() {
   atmosphere->init();
 
   verbPrintf(2, m_grid.com,
-             "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
+             "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
              "  It passes atmospheric state directly to upper ice fluid surface:\n"
              "    surface mass balance          := precipitation,\n"
              "    ice upper surface temperature := 2m air temperature.\n");
 }
 
-MaxTimestep PSSimple::max_timestep_impl(double t) {
+MaxTimestep Simple::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PSSimple::update_impl(double my_t, double my_dt) {
+void Simple::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
   if (atmosphere) {
@@ -76,16 +77,16 @@ void PSSimple::update_impl(double my_t, double my_dt) {
 }
 
 
-void PSSimple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   atmosphere->mean_precipitation(result);
   result.scale(m_config.get("ice_density"));
 }
 
-void PSSimple::ice_surface_temperature(IceModelVec2S &result) {
+void Simple::ice_surface_temperature(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 
-void PSSimple::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Simple::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   SurfaceModel::add_vars_to_output_impl(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -94,7 +95,7 @@ void PSSimple::add_vars_to_output_impl(const std::string &keyword, std::set<std:
   }
 }
 
-void PSSimple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void Simple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);
@@ -107,7 +108,7 @@ void PSSimple::define_variables_impl(const std::set<std::string> &vars, const PI
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 }
 
-void PSSimple::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Simple::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -137,4 +138,5 @@ void PSSimple::write_variables_impl(const std::set<std::string> &vars_input, con
   SurfaceModel::write_variables_impl(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

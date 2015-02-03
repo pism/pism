@@ -24,6 +24,7 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -45,10 +46,10 @@ namespace pism {
   the factors are independent of location.  If option <tt>-pdd_fausto</tt> is used
   then an object is called which updates these values based on the location.
 */
-class PSTemperatureIndex_Old : public SurfaceModel {
+class TemperatureIndex_Old : public SurfaceModel {
 public:
-  PSTemperatureIndex_Old(const IceGrid &g);
-  virtual ~PSTemperatureIndex_Old();
+  TemperatureIndex_Old(const IceGrid &g);
+  virtual ~TemperatureIndex_Old();
   virtual void init();
   virtual MaxTimestep max_timestep(double my_t);
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -84,6 +85,7 @@ private:
   NCSpatialVariable ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSTEMPERATUREINDEX_OLD_H_ */

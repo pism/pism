@@ -24,12 +24,13 @@
 #include "PSModifier.hh"
 
 namespace pism {
+namespace surface {
 
-class PSLapseRates : public PLapseRates<SurfaceModel,PSModifier>
+class LapseRates : public PLapseRates<SurfaceModel,SurfaceModifier>
 {
 public:
-  PSLapseRates(const IceGrid &g, SurfaceModel* in);
-  virtual ~PSLapseRates();
+  LapseRates(const IceGrid &g, SurfaceModel* in);
+  virtual ~LapseRates();
 
   virtual void init();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
@@ -45,6 +46,7 @@ protected:
   NCSpatialVariable m_climatic_mass_balance, m_ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSLAPSERATES_H_ */

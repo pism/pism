@@ -20,9 +20,10 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace surface {
 
-PSAnomaly::PSAnomaly(const IceGrid &g, SurfaceModel* in)
-  : PGivenClimate<PSModifier,SurfaceModel>(g, in),
+Anomaly::Anomaly(const IceGrid &g, SurfaceModel* in)
+  : PGivenClimate<SurfaceModifier,SurfaceModel>(g, in),
     climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
     ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
 
@@ -67,11 +68,11 @@ PSAnomaly::PSAnomaly(const IceGrid &g, SurfaceModel* in)
   ice_surface_temp.set_units("K");
 }
 
-PSAnomaly::~PSAnomaly() {
+Anomaly::~Anomaly() {
   // empty
 }
 
-void PSAnomaly::init() {
+void Anomaly::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -89,24 +90,24 @@ void PSAnomaly::init() {
   climatic_mass_balance_anomaly->init(filename, bc_period, bc_reference_time);
 }
 
-void PSAnomaly::update_impl(double my_t, double my_dt) {
+void Anomaly::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   climatic_mass_balance_anomaly->average(m_t, m_dt);
   ice_surface_temp_anomaly->average(m_t, m_dt);
 }
 
-void PSAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Anomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   input_model->ice_surface_mass_flux(result);
   result.add(1.0, *climatic_mass_balance_anomaly);
 }
 
-void PSAnomaly::ice_surface_temperature(IceModelVec2S &result) {
+void Anomaly::ice_surface_temperature(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   result.add(1.0, *ice_surface_temp_anomaly);
 }
 
-void PSAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -115,7 +116,7 @@ void PSAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std
   }
 }
 
-void PSAnomaly::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void Anomaly::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
     ice_surface_temp.define(nc, nctype, true);
@@ -128,7 +129,7 @@ void PSAnomaly::define_variables_impl(const std::set<std::string> &vars, const P
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PSAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -158,4 +159,5 @@ void PSAnomaly::write_variables_impl(const std::set<std::string> &vars_input, co
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

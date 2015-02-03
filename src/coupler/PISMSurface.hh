@@ -31,7 +31,7 @@ namespace pism {
 
 class AtmosphereModel;
 class IceModelVec2S;
-
+namespace surface {
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component_TS {
 public:
@@ -63,6 +63,7 @@ protected:
   AtmosphereModel *atmosphere;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif  // __PISMSurfaceModel_hh
