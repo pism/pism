@@ -20,6 +20,7 @@
 #include "IP_SSAHardavTaoTikhonovProblem.hh"
 
 namespace pism {
+namespace inverse {
 
 void IP_SSAHardavTaoTikhonovProblem::connect(Tao tao) {
   PetscErrorCode ierr;
@@ -55,4 +56,5 @@ void IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec 
 }
 
 
+} // end of namespace inverse
 } // end of namespace pism

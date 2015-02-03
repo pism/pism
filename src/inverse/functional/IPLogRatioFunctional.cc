@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Determine the normalization constant for the functional.
 /*! Sets the normalization constant \f$c_N\f$ so that
@@ -131,4 +132,5 @@ void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)
   }
 }
 
+} // end of namespace inverse
 } // end of namespace pism

@@ -24,6 +24,7 @@
 #include "basal_resistance.hh"
 
 namespace pism {
+namespace inverse {
 
 
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, const EnthalpyConverter &e,
@@ -645,4 +646,5 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   }
 }
 
+} // end of namespace inverse
 } // end of namespace pism

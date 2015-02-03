@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a scalar valued function.
 /*! The functional is, in continuous terms 
@@ -67,6 +68,7 @@ private:
   IP_L2NormFunctional2V & operator=(IP_L2NormFunctional2V const &);  
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ */

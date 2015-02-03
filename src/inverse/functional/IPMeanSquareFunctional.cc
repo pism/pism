@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implicitly set the normalization constant for the functional.
 /*! The normalization constant is selected so that if an input
@@ -244,4 +245,5 @@ void IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradi
   }
 }
 
+} // end of namespace inverse
 } // end of namespace pism

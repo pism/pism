@@ -24,6 +24,7 @@
 #include "Mask.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function over a region with only grounded ice.
 /*! The functional is, in continuous terms 
@@ -63,6 +64,7 @@ private:
   IPGroundedIceH1NormFunctional2S & operator=(IPGroundedIceH1NormFunctional2S const &);  
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR */

@@ -27,6 +27,7 @@
 #include "functional/IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 class IP_SSATaucTaoTikhonovProblemLCL;
 
@@ -167,6 +168,7 @@ protected:
   static PetscErrorCode jacobian_design_transpose_callback(Mat A, Vec x, Vec y);
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2 */

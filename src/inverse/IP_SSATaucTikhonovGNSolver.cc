@@ -22,6 +22,7 @@
 #include "pism_options.hh"
 
 namespace pism {
+namespace inverse {
 
 IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward,
                                                        DesignVec &d0, StateVec &u_obs, double eta,
@@ -499,4 +500,5 @@ void IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha,
   reason = GenericTerminationReason::success();
 }
 
+} // end of namespace inverse
 } // end of namespace pism

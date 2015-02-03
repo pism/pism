@@ -26,6 +26,7 @@
 #include "KSP.hh"
 
 namespace pism {
+namespace inverse {
 
 template<class C, void (C::*MultiplyCallback)(Vec,Vec) >
 class MatrixMultiplyCallback {
@@ -163,6 +164,7 @@ protected:
 
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVGN_HH_SIU7F33G */

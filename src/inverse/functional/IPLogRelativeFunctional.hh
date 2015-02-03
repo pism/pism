@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional for log-relative errors.
 /*!  Specifically, given a reference function \f$u_{obs}=[U_i]\f$,
@@ -52,6 +53,7 @@ protected:
 };
 
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG */

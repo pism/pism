@@ -24,6 +24,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Initializes the scale parameters of the parameterization.
 /*! Every IPDesignVariableParameterization has an associated scale for the design variable
@@ -193,4 +194,5 @@ void IPDesignVariableParamTruncatedIdent::fromDesignVariable(double d, double *O
   *OUTPUT = d_dimensionless - m_d0_sq / d_dimensionless;
 }
 
+} // end of namespace inverse
 } // end of namespace pism

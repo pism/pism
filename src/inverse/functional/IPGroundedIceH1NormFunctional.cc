@@ -21,6 +21,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
@@ -289,4 +290,5 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   PISM_CHK(ierr, "MatAssemblyEnd");
 }
 
+} // end of namespace inverse
 } // end of namespace pism

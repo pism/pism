@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(const IceGrid &grid,
                                                            double c, double exponent, double eps,
@@ -131,4 +132,5 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   dirichletBC.finish();
 }
 
+} // end of namespace inverse
 } // end of namespace pism

@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   const IceGrid &grid = *x.get_grid();
@@ -101,4 +102,5 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
 
 // PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
 
+} // end of namespace inverse
 } // end of namespace pism

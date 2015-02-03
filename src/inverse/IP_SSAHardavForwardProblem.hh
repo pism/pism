@@ -25,6 +25,7 @@
 #include "Mat.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements the forward problem of the map taking \f$\tau_c\f$ to the corresponding solution of the %SSA.
 /*! The class SSAFEM solves the %SSA, and the solution depends on a large number of parameters.  Considering
@@ -190,6 +191,7 @@ protected:
   bool m_rebuild_J_state;                    ///< Flag indicating that the state jacobian matrix needs rebuilding.
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSAHARDAVFORWARDPROBLEM_HH_HAD68BK7 */

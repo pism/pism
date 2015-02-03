@@ -29,6 +29,8 @@ namespace pism {
 
 class Config;
 
+namespace inverse {
+
 //! Encapsulates a parameterization of a design variable (e.g. \f$\tau_c\f$ for SSA inversions)
 //! as a function of a different parameter \f$\zeta\f$.
 /*!
@@ -155,6 +157,7 @@ private:
   double m_d_eps;
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPTAUCPARAMETERIZATION_HH_7ZRETI1S */

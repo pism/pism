@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Pseduo total variation functional
 /*! \f[
@@ -50,6 +51,7 @@ private:
   IPTotalVariationFunctional2S & operator=(IPTotalVariationFunctional2S const &);
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I */

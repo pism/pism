@@ -20,6 +20,7 @@
 #include <assert.h>
 
 namespace pism {
+namespace inverse {
 
 typedef IceModelVec2S  DesignVec;
 typedef IceModelVec2V  StateVec;
@@ -302,4 +303,5 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::jacobian_design_transpose_callba
   return 0;
 }
 
+} // end of namespace inverse
 } // end of namespace pism

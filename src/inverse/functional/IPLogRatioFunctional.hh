@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional for log-ratio errors.
 /*!  This type of functional appears in [\ref Morlighemetal2010].
@@ -58,6 +59,7 @@ protected:
 
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8 */

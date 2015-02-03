@@ -28,6 +28,7 @@
 #include "functional/IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Defines an IPTaoTikhonovProblem for inversion of basal yeild stresses \f$\tau_c\f$ from %SSA velocities.
 /*! The forward problem for the inversion is defined by an IP_SSATaucForwardProblem.  The problem itself
@@ -60,6 +61,7 @@ public:
 
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX */

@@ -28,6 +28,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 template<class ForwardProblem> class IPTaoTikhonovProblem;
 
@@ -426,6 +427,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
   *value = valDesign / m_eta + valState;
 }
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPTAOTIKHONOVPROBLEM_HH_4NMM724B */

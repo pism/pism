@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
@@ -260,4 +261,5 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   } // i
 }
 
+} // end of namespace inverse
 } // end of namespace pism

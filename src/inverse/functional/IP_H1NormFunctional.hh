@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function.
@@ -60,6 +61,7 @@ private:
   IP_H1NormFunctional2S & operator=(IP_H1NormFunctional2S const &);  
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: H1NORMFUNCTIONAL_HH_TF8AKRNQ */

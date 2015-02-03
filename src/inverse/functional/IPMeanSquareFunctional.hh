@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
 /*! If the vector has components \f$x_i\f$ the functional is
@@ -84,6 +85,7 @@ private:
 };
 
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C */
