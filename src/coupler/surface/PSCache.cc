@@ -136,7 +136,7 @@ MaxTimestep PSCache::max_timestep_impl(double t) {
   }
 }
 
-void PSCache::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSCache::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_mass_flux.copy_to(result);
 }
 

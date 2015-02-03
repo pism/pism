@@ -74,7 +74,7 @@ void PSLapseRates::init() {
                                     "(kg m-2) / year / km", "(kg m-2) / s / m");
 }
 
-void PSLapseRates::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSLapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   input_model->ice_surface_mass_flux(result);
   lapse_rate_correction(result, m_smb_lapse_rate);
 }

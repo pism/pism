@@ -36,7 +36,7 @@ public:
 
   virtual void init();
 
-  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
   virtual void update_impl(double my_t, double my_dt);

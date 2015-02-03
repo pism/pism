@@ -76,7 +76,7 @@ void PSSimple::update_impl(double my_t, double my_dt) {
 }
 
 
-void PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSSimple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   atmosphere->mean_precipitation(result);
   result.scale(m_config.get("ice_density"));
 }

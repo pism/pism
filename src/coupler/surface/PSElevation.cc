@@ -195,7 +195,7 @@ void PSElevation::update_impl(double my_t, double my_dt)
 }
 
 
-void PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSElevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 

@@ -132,7 +132,7 @@ void PSStuffAsAnomaly::update_impl(double my_t, double my_dt) {
   }
 }
 
-void PSStuffAsAnomaly::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSStuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   mass_flux.copy_to(result);
 }
 

@@ -40,6 +40,10 @@ SurfaceModel::~SurfaceModel() {
   delete atmosphere;
 }
 
+void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
+  this->ice_surface_mass_flux_impl(result);
+}
+
 void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
   if (atmosphere) {

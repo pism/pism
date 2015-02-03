@@ -51,7 +51,7 @@ public:
   virtual ~PSTemperatureIndex_Old();
   virtual void init();
   virtual MaxTimestep max_timestep(double my_t);
-  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
   virtual MaxTimestep max_timestep_impl(double t);

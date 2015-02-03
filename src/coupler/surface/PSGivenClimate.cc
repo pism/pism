@@ -84,7 +84,7 @@ void PSGivenClimate::update_impl(double my_t, double my_dt) {
   ice_surface_temp->average(m_t, m_dt);
 }
 
-void PSGivenClimate::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSGivenClimate::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   climatic_mass_balance->copy_to(result);
 }
 

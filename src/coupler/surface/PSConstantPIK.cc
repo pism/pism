@@ -116,7 +116,7 @@ void PSConstantPIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*d
   // empty (does not have an atmosphere model)
 }
 
-void PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSConstantPIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_climatic_mass_balance.copy_to(result);
 }
 

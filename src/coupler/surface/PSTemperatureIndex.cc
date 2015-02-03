@@ -424,7 +424,7 @@ void PSTemperatureIndex::update_impl(double my_t, double my_dt) {
 }
 
 
-void PSTemperatureIndex::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSTemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_climatic_mass_balance.copy_to(result);
 }
 

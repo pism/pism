@@ -48,7 +48,7 @@ public:
     }
   }
 
-  virtual void ice_surface_mass_flux(IceModelVec2S &result)
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result)
   {
     if (input_model != NULL) {
       input_model->ice_surface_mass_flux(result);

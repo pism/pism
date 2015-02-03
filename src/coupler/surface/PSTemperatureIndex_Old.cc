@@ -308,7 +308,7 @@ void PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 }
 
 
-void PSTemperatureIndex_Old::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSTemperatureIndex_Old::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   climatic_mass_balance.copy_to(result);
 }

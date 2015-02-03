@@ -96,7 +96,7 @@ void PSAnomaly::update_impl(double my_t, double my_dt) {
   ice_surface_temp_anomaly->average(m_t, m_dt);
 }
 
-void PSAnomaly::ice_surface_mass_flux(IceModelVec2S &result) {
+void PSAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   input_model->ice_surface_mass_flux(result);
   result.add(1.0, *climatic_mass_balance_anomaly);
 }

@@ -39,8 +39,9 @@ public:
   virtual ~SurfaceModel();
 
   // the interface:
+  void ice_surface_mass_flux(IceModelVec2S &result);
+
   virtual void attach_atmosphere_model(AtmosphereModel *input);
-  virtual void ice_surface_mass_flux(IceModelVec2S &result) = 0;
   virtual void ice_surface_temperature(IceModelVec2S &result) = 0;
   virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result);
   virtual void mass_held_in_surface_layer(IceModelVec2S &result);
@@ -50,6 +51,8 @@ public:
   virtual void init();
   virtual MaxTimestep max_timestep(double my_t);
 protected:
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) = 0;
+
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
