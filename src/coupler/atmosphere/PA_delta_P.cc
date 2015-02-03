@@ -22,7 +22,7 @@
 namespace pism {
 namespace atmosphere {
 
-PA_delta_P::PA_delta_P(const IceGrid &g, AtmosphereModel* in)
+Delta_P::Delta_P(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", m_grid),
     precipitation(g.config.get_unit_system(), "precipitation", m_grid)
@@ -49,12 +49,12 @@ PA_delta_P::PA_delta_P(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_glaciological_units("m / year");
 }
 
-PA_delta_P::~PA_delta_P()
+Delta_P::~Delta_P()
 {
   // empty
 }
 
-void PA_delta_P::init() {
+void Delta_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -66,12 +66,12 @@ void PA_delta_P::init() {
   init_internal();
 }
 
-MaxTimestep PA_delta_P::max_timestep_impl(double t) {
+MaxTimestep Delta_P::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PA_delta_P::init_timeseries(const std::vector<double> &ts) {
+void Delta_P::init_timeseries(const std::vector<double> &ts) {
   PAModifier::init_timeseries(ts);
 
   m_offset_values.resize(m_ts_times.size());
@@ -82,12 +82,12 @@ void PA_delta_P::init_timeseries(const std::vector<double> &ts) {
 
 
 
-void PA_delta_P::mean_precipitation(IceModelVec2S &result) {
+void Delta_P::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
   offset_data(result);
 }
 
-void PA_delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
+void Delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
   input_model->precip_time_series(i, j, result);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
@@ -95,7 +95,7 @@ void PA_delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PA_delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -105,7 +105,7 @@ void PA_delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<st
 }
 
 
-void PA_delta_P::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -123,7 +123,7 @@ void PA_delta_P::define_variables_impl(const std::set<std::string> &vars_input, 
 }
 
 
-void PA_delta_P::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Delta_P::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

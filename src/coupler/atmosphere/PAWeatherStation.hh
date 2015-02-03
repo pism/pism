@@ -35,10 +35,10 @@ namespace atmosphere {
  * This model should be used with a modifier such as `lapse_rate` to
  * create spatial variability.
  */
-class PAWeatherStation : public AtmosphereModel {
+class WeatherStation : public AtmosphereModel {
 public:
-  PAWeatherStation(const IceGrid &g);
-  virtual ~PAWeatherStation();
+  WeatherStation(const IceGrid &g);
+  virtual ~WeatherStation();
 
   virtual void init();
 

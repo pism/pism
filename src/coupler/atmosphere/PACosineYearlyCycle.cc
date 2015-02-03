@@ -28,17 +28,17 @@
 namespace pism {
 namespace atmosphere {
 
-PACosineYearlyCycle::PACosineYearlyCycle(const IceGrid &g)
-  : PAYearlyCycle(g), A(NULL) {
+CosineYearlyCycle::CosineYearlyCycle(const IceGrid &g)
+  : YearlyCycle(g), A(NULL) {
 }
 
-PACosineYearlyCycle::~PACosineYearlyCycle() {
+CosineYearlyCycle::~CosineYearlyCycle() {
   if (A != NULL) {
     delete A;
   }
 }
 
-void PACosineYearlyCycle::init() {
+void CosineYearlyCycle::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -47,9 +47,9 @@ void PACosineYearlyCycle::init() {
 
 
   options::String input_file("-atmosphere_yearly_cycle_file",
-                             "PACosineYearlyCycle input file name");
+                             "CosineYearlyCycle input file name");
   options::String scaling_file("-atmosphere_yearly_cycle_scaling_file",
-                               "PACosineYearlyCycle amplitude scaling input file name");
+                               "CosineYearlyCycle amplitude scaling input file name");
 
   if (not input_file.is_set()) {
     throw RuntimeError("Please specify an '-atmosphere yearly_cycle' input file\n"
@@ -93,17 +93,17 @@ void PACosineYearlyCycle::init() {
   }
 }
 
-MaxTimestep PACosineYearlyCycle::max_timestep_impl(double t) {
+MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PACosineYearlyCycle::update_impl(double my_t, double my_dt) {
+void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
 }
 
-void PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
+void CosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
     julyday_fraction = m_grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
     T                = m_grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
@@ -125,9 +125,9 @@ void PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   }
 }
 
-void PACosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
+void CosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
 
-  PAYearlyCycle::init_timeseries(ts);
+  YearlyCycle::init_timeseries(ts);
 
   if (A != NULL) {
     for (unsigned int k = 0; k < ts.size(); ++k) {

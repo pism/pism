@@ -25,11 +25,11 @@
 namespace pism {
 namespace atmosphere {
 
-class PAGivenClimate : public PGivenClimate<PAModifier,AtmosphereModel>
+class Given : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  PAGivenClimate(const IceGrid &g);
-  virtual ~PAGivenClimate();
+  Given(const IceGrid &g);
+  virtual ~Given();
 
   virtual void init();
 

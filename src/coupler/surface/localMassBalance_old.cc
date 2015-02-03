@@ -371,7 +371,7 @@ void FaustoGrevePDDObject_Old::setDegreeDayFactors(int i, int j,
 
 //! Updates mean July near-surface air temperature.
 /*!
-  Unfortunately this duplicates code in PA_SeaRISE_Greenland::update();
+  Unfortunately this duplicates code in SeaRISEGreenland::update();
 */
 void FaustoGrevePDDObject_Old::update_temp_mj(const IceModelVec2S &surfelev,
                                               const IceModelVec2S &lat,

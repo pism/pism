@@ -26,13 +26,13 @@
 namespace pism {
 namespace atmosphere {
 
-//! \brief A modification of PAYearlyCycle tailored for the
+//! \brief A modification of YearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
 //! present-day temperature parameterization and stored precipitation data.
-class PA_SeaRISE_Greenland : public PAYearlyCycle {
+class SeaRISEGreenland : public YearlyCycle {
 public:
-  PA_SeaRISE_Greenland(const IceGrid &g);
-  virtual ~PA_SeaRISE_Greenland();
+  SeaRISEGreenland(const IceGrid &g);
+  virtual ~SeaRISEGreenland();
 
   virtual void init();
   virtual void precip_time_series(int i, int j, std::vector<double> &values);

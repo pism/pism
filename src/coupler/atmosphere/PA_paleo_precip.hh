@@ -50,11 +50,11 @@ namespace atmosphere {
  * belonging to the set of uncertainties related to the conversion
  * between isotopic and temperature signals.
  */
-class PA_paleo_precip : public PScalarForcing<AtmosphereModel,PAModifier>
+class PaleoPrecip : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_paleo_precip(const IceGrid &g, AtmosphereModel* in);
-  virtual ~PA_paleo_precip();
+  PaleoPrecip(const IceGrid &g, AtmosphereModel* in);
+  virtual ~PaleoPrecip();
 
   virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);

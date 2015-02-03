@@ -26,10 +26,10 @@ class Timeseries;
 
 namespace atmosphere {
 
-class PACosineYearlyCycle : public PAYearlyCycle {
+class CosineYearlyCycle : public YearlyCycle {
 public:
-  PACosineYearlyCycle(const IceGrid &g);
-  virtual ~PACosineYearlyCycle();
+  CosineYearlyCycle(const IceGrid &g);
+  virtual ~CosineYearlyCycle();
 
   virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);

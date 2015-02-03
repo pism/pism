@@ -26,11 +26,11 @@ namespace pism {
 namespace atmosphere {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
-class PAAnomaly : public PGivenClimate<PAModifier,AtmosphereModel>
+class Anomaly : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  PAAnomaly(const IceGrid &g, AtmosphereModel* in);
-  virtual ~PAAnomaly();
+  Anomaly(const IceGrid &g, AtmosphereModel* in);
+  virtual ~Anomaly();
 
   virtual void init();
 

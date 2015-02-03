@@ -25,11 +25,11 @@
 namespace pism {
 namespace atmosphere {
 
-class PA_frac_P : public PScalarForcing<AtmosphereModel,PAModifier>
+class Frac_P : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_frac_P(const IceGrid &g, AtmosphereModel* in);
-  virtual ~PA_frac_P();
+  Frac_P(const IceGrid &g, AtmosphereModel* in);
+  virtual ~Frac_P();
 
   virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);

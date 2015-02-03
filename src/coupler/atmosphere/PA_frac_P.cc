@@ -22,7 +22,7 @@
 namespace pism {
 namespace atmosphere {
 
-PA_frac_P::PA_frac_P(const IceGrid &g, AtmosphereModel* in)
+Frac_P::Frac_P(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", m_grid),
     precipitation(g.config.get_unit_system(), "precipitation", m_grid)
@@ -46,12 +46,12 @@ PA_frac_P::PA_frac_P(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_glaciological_units("m / year");
 }
 
-PA_frac_P::~PA_frac_P()
+Frac_P::~Frac_P()
 {
   // empty; "offset" is deleted by ~PScalarForcing().
 }
 
-void PA_frac_P::init() {
+void Frac_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -63,12 +63,12 @@ void PA_frac_P::init() {
   init_internal();
 }
 
-MaxTimestep PA_frac_P::max_timestep_impl(double t) {
+MaxTimestep Frac_P::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PA_frac_P::init_timeseries(const std::vector<double> &ts) {
+void Frac_P::init_timeseries(const std::vector<double> &ts) {
 
   PAModifier::init_timeseries(ts);
 
@@ -78,12 +78,12 @@ void PA_frac_P::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void PA_frac_P::mean_precipitation(IceModelVec2S &result) {
+void Frac_P::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
   scale_data(result);
 }
 
-void PA_frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
+void Frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
   input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
@@ -91,7 +91,7 @@ void PA_frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PA_frac_P::add_vars_to_output_impl(const std::string &keyword,
+void Frac_P::add_vars_to_output_impl(const std::string &keyword,
                                    std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
@@ -101,7 +101,7 @@ void PA_frac_P::add_vars_to_output_impl(const std::string &keyword,
   }
 }
 
-void PA_frac_P::define_variables_impl(const std::set<std::string> &vars_input,
+void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
                                            const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -118,7 +118,7 @@ void PA_frac_P::define_variables_impl(const std::set<std::string> &vars_input,
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PA_frac_P::write_variables_impl(const std::set<std::string> &vars_input,
+void Frac_P::write_variables_impl(const std::set<std::string> &vars_input,
                                           const PIO &nc) {
   std::set<std::string> vars = vars_input;
 

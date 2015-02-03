@@ -25,7 +25,7 @@ namespace atmosphere {
 
 /// delta_T forcing of near-surface air temperatures
 
-PA_delta_T::PA_delta_T(const IceGrid &g, AtmosphereModel* in)
+Delta_T::Delta_T(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", m_grid),
     precipitation(g.config.get_unit_system(), "precipitation", m_grid)
@@ -49,7 +49,7 @@ PA_delta_T::PA_delta_T(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_glaciological_units("m / year");
 }
 
-void PA_delta_T::init() {
+void Delta_T::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -61,12 +61,12 @@ void PA_delta_T::init() {
   init_internal();
 }
 
-MaxTimestep PA_delta_T::max_timestep_impl(double t) {
+MaxTimestep Delta_T::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PA_delta_T::init_timeseries(const std::vector<double> &ts) {
+void Delta_T::init_timeseries(const std::vector<double> &ts) {
 
   PAModifier::init_timeseries(ts);
 
@@ -76,13 +76,13 @@ void PA_delta_T::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
+void Delta_T::mean_annual_temp(IceModelVec2S &result) {
 
   input_model->mean_annual_temp(result);
   offset_data(result);
 }
 
-void PA_delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
+void Delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
   input_model->temp_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
@@ -90,12 +90,12 @@ void PA_delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PA_delta_T::temp_snapshot(IceModelVec2S &result) {
+void Delta_T::temp_snapshot(IceModelVec2S &result) {
   input_model->temp_snapshot(result);
   offset_data(result);
 }
 
-void PA_delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -105,7 +105,7 @@ void PA_delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<st
 }
 
 
-void PA_delta_T::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void Delta_T::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -123,7 +123,7 @@ void PA_delta_T::define_variables_impl(const std::set<std::string> &vars_input, 
 }
 
 
-void PA_delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

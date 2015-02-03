@@ -29,7 +29,7 @@
 namespace pism {
 namespace atmosphere {
 
-PAYearlyCycle::PAYearlyCycle(const IceGrid &g)
+YearlyCycle::YearlyCycle(const IceGrid &g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
@@ -65,12 +65,12 @@ PAYearlyCycle::PAYearlyCycle(const IceGrid &g)
   m_air_temp_snapshot.set_units("K");
 }
 
-PAYearlyCycle::~PAYearlyCycle() {
+YearlyCycle::~YearlyCycle() {
   // empty
 }
 
 //! Allocates memory and reads in the precipitaion data.
-void PAYearlyCycle::init() {
+void YearlyCycle::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   bool do_regrid = false;
@@ -81,7 +81,7 @@ void PAYearlyCycle::init() {
 }
 
 //! Read precipitation data from a given file.
-void PAYearlyCycle::init_internal(const std::string &input_filename, bool do_regrid,
+void YearlyCycle::init_internal(const std::string &input_filename, bool do_regrid,
                                             unsigned int start) {
   // read precipitation rate from file
   verbPrintf(2, m_grid.com,
@@ -95,7 +95,7 @@ void PAYearlyCycle::init_internal(const std::string &input_filename, bool do_reg
   }
 }
 
-void PAYearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
 
   if (keyword == "big") {
@@ -106,7 +106,7 @@ void PAYearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set
 }
 
 
-void PAYearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp_snapshot")) {
     m_air_temp_snapshot.define(nc, nctype, false);
@@ -126,7 +126,7 @@ void PAYearlyCycle::define_variables_impl(const std::set<std::string> &vars, con
 }
 
 
-void PAYearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
@@ -152,16 +152,16 @@ void PAYearlyCycle::write_variables_impl(const std::set<std::string> &vars, cons
 }
 
 //! Copies the stored precipitation field into result.
-void PAYearlyCycle::mean_precipitation(IceModelVec2S &result) {
+void YearlyCycle::mean_precipitation(IceModelVec2S &result) {
   m_precipitation.copy_to(result);
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-void PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
+void YearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   m_air_temp_mean_annual.copy_to(result);
 }
 
-void PAYearlyCycle::init_timeseries(const std::vector<double> &ts) {
+void YearlyCycle::init_timeseries(const std::vector<double> &ts) {
   // constants related to the standard yearly cycle
   const double
     julyday_fraction = m_grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
@@ -178,20 +178,20 @@ void PAYearlyCycle::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void PAYearlyCycle::precip_time_series(int i, int j, std::vector<double> &result) {
+void YearlyCycle::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-void PAYearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) {
+void YearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
   }
 }
 
-void PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
+void YearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
     julyday_fraction = m_grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
     T                = m_grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
@@ -208,13 +208,13 @@ void PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   }
 }
 
-void PAYearlyCycle::begin_pointwise_access() {
+void YearlyCycle::begin_pointwise_access() {
   m_air_temp_mean_annual.begin_access();
   m_air_temp_mean_july.begin_access();
   m_precipitation.begin_access();
 }
 
-void PAYearlyCycle::end_pointwise_access() {
+void YearlyCycle::end_pointwise_access() {
   m_air_temp_mean_annual.end_access();
   m_air_temp_mean_july.end_access();
   m_precipitation.end_access();

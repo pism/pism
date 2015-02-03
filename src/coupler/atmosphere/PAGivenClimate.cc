@@ -23,7 +23,7 @@
 namespace pism {
 namespace atmosphere {
 
-PAGivenClimate::PAGivenClimate(const IceGrid &g)
+Given::Given(const IceGrid &g)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
 {
   option_prefix = "-atmosphere_given";
@@ -53,11 +53,11 @@ PAGivenClimate::PAGivenClimate(const IceGrid &g)
   precipitation->write_in_glaciological_units = true;
 }
 
-PAGivenClimate::~PAGivenClimate() {
+Given::~Given() {
   // empty
 }
 
-void PAGivenClimate::init() {
+void Given::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
@@ -73,7 +73,7 @@ void PAGivenClimate::init() {
   }
 }
 
-void PAGivenClimate::update_impl(double my_t, double my_dt) {
+void Given::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   // compute mean precipitation
@@ -84,41 +84,41 @@ void PAGivenClimate::update_impl(double my_t, double my_dt) {
   air_temp->average(m_t, m_dt);
 }
 
-void PAGivenClimate::mean_precipitation(IceModelVec2S &result) {
+void Given::mean_precipitation(IceModelVec2S &result) {
   precipitation->copy_to(result);
 }
 
-void PAGivenClimate::mean_annual_temp(IceModelVec2S &result) {
+void Given::mean_annual_temp(IceModelVec2S &result) {
   air_temp->copy_to(result);
 }
 
-void PAGivenClimate::temp_snapshot(IceModelVec2S &result) {
+void Given::temp_snapshot(IceModelVec2S &result) {
   air_temp->copy_to(result);
 }
 
-void PAGivenClimate::begin_pointwise_access() {
+void Given::begin_pointwise_access() {
 
   air_temp->begin_access();
   precipitation->begin_access();
 }
 
-void PAGivenClimate::end_pointwise_access() {
+void Given::end_pointwise_access() {
 
   air_temp->end_access();
   precipitation->end_access();
 }
 
-void PAGivenClimate::temp_time_series(int i, int j, std::vector<double> &result) {
+void Given::temp_time_series(int i, int j, std::vector<double> &result) {
 
   air_temp->interp(i, j, result);
 }
 
-void PAGivenClimate::precip_time_series(int i, int j, std::vector<double> &result) {
+void Given::precip_time_series(int i, int j, std::vector<double> &result) {
 
   precipitation->interp(i, j, result);
 }
 
-void PAGivenClimate::init_timeseries(const std::vector<double> &ts) {
+void Given::init_timeseries(const std::vector<double> &ts) {
 
   air_temp->init_interpolation(ts);
 

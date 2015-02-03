@@ -21,7 +21,7 @@
 namespace pism {
 namespace atmosphere {
 
-PALapseRates::PALapseRates(const IceGrid &g, AtmosphereModel* in)
+LapseRates::LapseRates(const IceGrid &g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
     m_precipitation(g.config.get_unit_system(), "precipitation", g),
     m_air_temp(g.config.get_unit_system(), "air_temp", g) {
@@ -42,11 +42,11 @@ PALapseRates::PALapseRates(const IceGrid &g, AtmosphereModel* in)
   m_surface = NULL;
 }
 
-PALapseRates::~PALapseRates() {
+LapseRates::~LapseRates() {
   // empty
 }
 
-void PALapseRates::init() {
+void LapseRates::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -72,29 +72,29 @@ void PALapseRates::init() {
   m_precip_lapse_rate = m_grid.convert(m_precip_lapse_rate, "m/year / km", "m/s / m");
 }
 
-void PALapseRates::mean_precipitation(IceModelVec2S &result) {
+void LapseRates::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
   lapse_rate_correction(result, m_precip_lapse_rate);
 }
 
-void PALapseRates::mean_annual_temp(IceModelVec2S &result) {
+void LapseRates::mean_annual_temp(IceModelVec2S &result) {
   input_model->mean_annual_temp(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
-void PALapseRates::begin_pointwise_access() {
+void LapseRates::begin_pointwise_access() {
   input_model->begin_pointwise_access();
   m_reference_surface.begin_access();
   m_surface->begin_access();
 }
 
-void PALapseRates::end_pointwise_access() {
+void LapseRates::end_pointwise_access() {
   input_model->end_pointwise_access();
   m_reference_surface.end_access();
   m_surface->end_access();
 }
 
-void PALapseRates::init_timeseries(const std::vector<double> &ts) {
+void LapseRates::init_timeseries(const std::vector<double> &ts) {
   input_model->init_timeseries(ts);
 
   m_ts_times = ts;
@@ -104,7 +104,7 @@ void PALapseRates::init_timeseries(const std::vector<double> &ts) {
   m_surface = m_grid.variables().get_2d_scalar("surface_altitude");
 }
 
-void PALapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
+void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
   input_model->temp_time_series(i, j, result);
@@ -116,7 +116,7 @@ void PALapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PALapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
+void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
   input_model->precip_time_series(i, j, result);
@@ -128,12 +128,12 @@ void PALapseRates::precip_time_series(int i, int j, std::vector<double> &result)
   }
 }
 
-void PALapseRates::temp_snapshot(IceModelVec2S &result) {
+void LapseRates::temp_snapshot(IceModelVec2S &result) {
   input_model->temp_snapshot(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
-void PALapseRates::define_variables_impl(const std::set<std::string> &vars,
+void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp")) {
@@ -147,7 +147,7 @@ void PALapseRates::define_variables_impl(const std::set<std::string> &vars,
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PALapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {
@@ -177,7 +177,7 @@ void PALapseRates::write_variables_impl(const std::set<std::string> &vars_input,
   input_model->write_variables(vars, nc);
 }
 
-void PALapseRates::add_vars_to_output_impl(const std::string &keyword,
+void LapseRates::add_vars_to_output_impl(const std::string &keyword,
                                            std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 

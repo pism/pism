@@ -29,10 +29,10 @@ namespace atmosphere {
 //! based on a temperature parameterization using mean annual and mean July
 //! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
 //! (constant in time) precipitation field.
-class PAYearlyCycle : public AtmosphereModel {
+class YearlyCycle : public AtmosphereModel {
 public:
-  PAYearlyCycle(const IceGrid &g);
-  virtual ~PAYearlyCycle();
+  YearlyCycle(const IceGrid &g);
+  virtual ~YearlyCycle();
 
   virtual void init();
   //! This method implements the parameterization.

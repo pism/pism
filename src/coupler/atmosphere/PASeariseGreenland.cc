@@ -35,17 +35,17 @@
 namespace pism {
 namespace atmosphere {
 
-///// PA_SeaRISE_Greenland
+///// SeaRISEGreenland
 
-PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(const IceGrid &g)
-  : PAYearlyCycle(g) {
+SeaRISEGreenland::SeaRISEGreenland(const IceGrid &g)
+  : YearlyCycle(g) {
   // empty
 }
 
-PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
+SeaRISEGreenland::~SeaRISEGreenland() {
 }
 
-void PA_SeaRISE_Greenland::init() {
+void SeaRISEGreenland::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -67,22 +67,22 @@ void PA_SeaRISE_Greenland::init() {
                "  * Option '-atmosphere_searise_greenland %s' is set...\n",
                m_precip_filename.c_str());
 
-    PAYearlyCycle::init_internal(m_precip_filename,
+    YearlyCycle::init_internal(m_precip_filename,
                                  true, /* do regrid */
                                  0 /* start (irrelevant) */);
   } else {
-    PAYearlyCycle::init();
+    YearlyCycle::init();
   }
 }
 
-void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> &result) {
+void SeaRISEGreenland::precip_time_series(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-MaxTimestep PA_SeaRISE_Greenland::max_timestep_impl(double t) {
+MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
@@ -90,7 +90,7 @@ MaxTimestep PA_SeaRISE_Greenland::max_timestep_impl(double t) {
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
-void PA_SeaRISE_Greenland::update_impl(double my_t, double my_dt) {
+void SeaRISEGreenland::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {

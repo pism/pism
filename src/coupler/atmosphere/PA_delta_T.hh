@@ -25,11 +25,11 @@
 namespace pism {
 namespace atmosphere {
 
-class PA_delta_T : public PScalarForcing<AtmosphereModel,PAModifier>
+class Delta_T : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_delta_T(const IceGrid &g, AtmosphereModel* in);
-  virtual ~PA_delta_T() {}
+  Delta_T(const IceGrid &g, AtmosphereModel* in);
+  virtual ~Delta_T() {}
 
   virtual void init();
   virtual void init_timeseries(const std::vector<double> &ts);

@@ -30,7 +30,7 @@
 namespace pism {
 namespace atmosphere {
 
-PAWeatherStation::PAWeatherStation(const IceGrid &g)
+WeatherStation::WeatherStation(const IceGrid &g)
   : AtmosphereModel(g),
     m_precipitation(&g, "precipitation", g.config.get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", g.config.get_string("time_dimension_name")),
@@ -57,11 +57,11 @@ PAWeatherStation::PAWeatherStation(const IceGrid &g)
   m_precip_metadata.set_glaciological_units("m / year");
 }
 
-PAWeatherStation::~PAWeatherStation() {
+WeatherStation::~WeatherStation() {
   // empty
 }
 
-void PAWeatherStation::init() {
+void WeatherStation::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -93,17 +93,17 @@ void PAWeatherStation::init() {
   nc.close();
 }
 
-MaxTimestep PAWeatherStation::max_timestep_impl(double t) {
+MaxTimestep WeatherStation::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PAWeatherStation::update_impl(double t, double dt) {
+void WeatherStation::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
 }
 
-void PAWeatherStation::mean_precipitation(IceModelVec2S &result) {
+void WeatherStation::mean_precipitation(IceModelVec2S &result) {
   const double one_week = 7 * 24 * 60 * 60;
 
   unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
@@ -111,7 +111,7 @@ void PAWeatherStation::mean_precipitation(IceModelVec2S &result) {
   result.set(m_precipitation.average(m_t, m_dt, N));
 }
 
-void PAWeatherStation::mean_annual_temp(IceModelVec2S &result) {
+void WeatherStation::mean_annual_temp(IceModelVec2S &result) {
   const double one_week = 7 * 24 * 60 * 60;
 
   unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
@@ -119,15 +119,15 @@ void PAWeatherStation::mean_annual_temp(IceModelVec2S &result) {
   result.set(m_air_temperature.average(m_t, m_dt, N));
 }
 
-void PAWeatherStation::begin_pointwise_access() {
+void WeatherStation::begin_pointwise_access() {
   // empty
 }
 
-void PAWeatherStation::end_pointwise_access() {
+void WeatherStation::end_pointwise_access() {
   // empty
 }
 
-void PAWeatherStation::init_timeseries(const std::vector<double> &ts) {
+void WeatherStation::init_timeseries(const std::vector<double> &ts) {
   size_t N = ts.size();
 
   m_precip_values.resize(N);
@@ -139,7 +139,7 @@ void PAWeatherStation::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void PAWeatherStation::precip_time_series(int i, int j,
+void WeatherStation::precip_time_series(int i, int j,
                                                     std::vector<double> &result) {
   (void)i;
   (void)j;
@@ -147,7 +147,7 @@ void PAWeatherStation::precip_time_series(int i, int j,
   result = m_precip_values;
 }
 
-void PAWeatherStation::temp_time_series(int i, int j,
+void WeatherStation::temp_time_series(int i, int j,
                                                   std::vector<double> &result) {
   (void)i;
   (void)j;
@@ -155,11 +155,11 @@ void PAWeatherStation::temp_time_series(int i, int j,
   result = m_air_temp_values;
 }
 
-void PAWeatherStation::temp_snapshot(IceModelVec2S &result) {
+void WeatherStation::temp_snapshot(IceModelVec2S &result) {
   result.set(m_air_temperature(m_t + 0.5*m_dt));
 }
 
-void PAWeatherStation::add_vars_to_output_impl(const std::string &keyword,
+void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
                                                std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("air_temp");
@@ -167,7 +167,7 @@ void PAWeatherStation::add_vars_to_output_impl(const std::string &keyword,
   }
 }
 
-void PAWeatherStation::define_variables_impl(const std::set<std::string> &vars,
+void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units
@@ -180,7 +180,7 @@ void PAWeatherStation::define_variables_impl(const std::set<std::string> &vars,
   }
 }
 
-void PAWeatherStation::write_variables_impl(const std::set<std::string> &vars,
+void WeatherStation::write_variables_impl(const std::set<std::string> &vars,
                                        const PIO &nc) {
 
   if (set_contains(vars, "air_temp")) {

@@ -24,7 +24,7 @@
 namespace pism {
 namespace atmosphere {
 
-PAAnomaly::PAAnomaly(const IceGrid &g, AtmosphereModel* in)
+Anomaly::Anomaly(const IceGrid &g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", m_grid),
     precipitation(g.config.get_unit_system(), "precipitation", m_grid)
@@ -65,12 +65,12 @@ PAAnomaly::PAAnomaly(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_glaciological_units("m / year");
 }
 
-PAAnomaly::~PAAnomaly()
+Anomaly::~Anomaly()
 {
   // empty
 }
 
-void PAAnomaly::init() {
+void Anomaly::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(input_model != NULL);
@@ -87,7 +87,7 @@ void PAAnomaly::init() {
   precipitation_anomaly->init(filename, bc_period, bc_reference_time);
 }
 
-void PAAnomaly::update_impl(double my_t, double my_dt) {
+void Anomaly::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   precipitation_anomaly->average(m_t, m_dt);
@@ -95,38 +95,38 @@ void PAAnomaly::update_impl(double my_t, double my_dt) {
 }
 
 
-void PAAnomaly::mean_precipitation(IceModelVec2S &result) {
+void Anomaly::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
 
   result.add(1.0, *precipitation_anomaly);
 }
 
-void PAAnomaly::mean_annual_temp(IceModelVec2S &result) {
+void Anomaly::mean_annual_temp(IceModelVec2S &result) {
   input_model->mean_annual_temp(result);
 
   result.add(1.0, *air_temp_anomaly);
 }
 
-void PAAnomaly::temp_snapshot(IceModelVec2S &result) {
+void Anomaly::temp_snapshot(IceModelVec2S &result) {
   input_model->temp_snapshot(result);
 
   result.add(1.0, *air_temp_anomaly);
 }
 
 
-void PAAnomaly::begin_pointwise_access() {
+void Anomaly::begin_pointwise_access() {
   input_model->begin_pointwise_access();
   air_temp_anomaly->begin_access();
   precipitation_anomaly->begin_access();
 }
 
-void PAAnomaly::end_pointwise_access() {
+void Anomaly::end_pointwise_access() {
   input_model->end_pointwise_access();
   precipitation_anomaly->end_access();
   air_temp_anomaly->end_access();
 }
 
-void PAAnomaly::init_timeseries(const std::vector<double> &ts) {
+void Anomaly::init_timeseries(const std::vector<double> &ts) {
   input_model->init_timeseries(ts);
 
   air_temp_anomaly->init_interpolation(ts);
@@ -136,7 +136,7 @@ void PAAnomaly::init_timeseries(const std::vector<double> &ts) {
   m_ts_times = ts;
 }
 
-void PAAnomaly::temp_time_series(int i, int j, std::vector<double> &result) {
+void Anomaly::temp_time_series(int i, int j, std::vector<double> &result) {
   input_model->temp_time_series(i, j, result);
 
   m_temp_anomaly.reserve(m_ts_times.size());
@@ -147,7 +147,7 @@ void PAAnomaly::temp_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PAAnomaly::precip_time_series(int i, int j, std::vector<double> &result) {
+void Anomaly::precip_time_series(int i, int j, std::vector<double> &result) {
   input_model->precip_time_series(i, j, result);
 
   m_mass_flux_anomaly.reserve(m_ts_times.size());
@@ -158,7 +158,7 @@ void PAAnomaly::precip_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PAAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -167,7 +167,7 @@ void PAAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std
   }
 }
 
-void PAAnomaly::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void Anomaly::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                            IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -185,7 +185,7 @@ void PAAnomaly::define_variables_impl(const std::set<std::string> &vars_input, c
 }
 
 
-void PAAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {

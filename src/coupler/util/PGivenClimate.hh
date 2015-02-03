@@ -160,7 +160,7 @@ protected:
       if (n_records < 1) {
         // If the variable was not found we allocate storage for one
         // record. This is needed to be able to allocate and then
-        // discard an "-atmosphere given" model (PAGivenClimate) when
+        // discard an "-atmosphere given" model (atmosphere::Given) when
         // "-surface given" (Given) is selected.
         n_records = 1;
       }

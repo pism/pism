@@ -22,7 +22,7 @@
 namespace pism {
 namespace atmosphere {
 
-PA_paleo_precip::PA_paleo_precip(const IceGrid &g, AtmosphereModel* in)
+PaleoPrecip::PaleoPrecip(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(g.config.get_unit_system(), "air_temp", m_grid),
     precipitation(g.config.get_unit_system(), "precipitation", m_grid)
@@ -47,12 +47,12 @@ PA_paleo_precip::PA_paleo_precip(const IceGrid &g, AtmosphereModel* in)
   m_precipexpfactor = m_config.get("precip_exponential_factor_for_temperature");
 }
 
-PA_paleo_precip::~PA_paleo_precip()
+PaleoPrecip::~PaleoPrecip()
 {
   // empty
 }
 
-void PA_paleo_precip::init() {
+void PaleoPrecip::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -64,12 +64,12 @@ void PA_paleo_precip::init() {
   init_internal();
 }
 
-MaxTimestep PA_paleo_precip::max_timestep_impl(double t) {
+MaxTimestep PaleoPrecip::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
+void PaleoPrecip::init_timeseries(const std::vector<double> &ts) {
 
   PAModifier::init_timeseries(ts);
 
@@ -81,12 +81,12 @@ void PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
+void PaleoPrecip::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
   result.scale(exp(m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt)));
 }
 
-void PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &result) {
+void PaleoPrecip::precip_time_series(int i, int j, std::vector<double> &result) {
   input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
@@ -94,7 +94,7 @@ void PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &resu
   }
 }
 
-void PA_paleo_precip::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void PaleoPrecip::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -104,7 +104,7 @@ void PA_paleo_precip::add_vars_to_output_impl(const std::string &keyword, std::s
 }
 
 
-void PA_paleo_precip::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void PaleoPrecip::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -122,7 +122,7 @@ void PA_paleo_precip::define_variables_impl(const std::set<std::string> &vars_in
 }
 
 
-void PA_paleo_precip::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void PaleoPrecip::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "air_temp")) {
