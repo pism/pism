@@ -28,6 +28,8 @@ class Vars;
 class IceFlowLaw;
 class EnthalpyConverter;
 
+namespace stressbalance {
+
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
@@ -79,6 +81,7 @@ protected:
                                 IO_Type nctype);
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSB_MODIFIER_H_ */

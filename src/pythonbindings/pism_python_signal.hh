@@ -1,6 +1,8 @@
 #ifndef _PISM_SIGNAL_H
 #define _PISM_SIGNAL_H
 
+namespace pism {
+
 int pism_check_signal();
 void pism_sigint_handler(int sig);
 
@@ -20,5 +22,7 @@ private:
   void (*m_old_handler)(int);
   int m_sig;
 };
+
+} // end of namespace pism
 
 #endif

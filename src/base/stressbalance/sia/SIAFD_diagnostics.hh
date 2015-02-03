@@ -23,6 +23,7 @@
 #include "SIAFD.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the
 //! effect of bed roughness on the diffusivity of the SIA.
@@ -94,6 +95,7 @@ public:
   virtual IceModelVec::Ptr compute();
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SIAFD_DIAGNOSTICS_H_ */

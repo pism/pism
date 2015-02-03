@@ -22,6 +22,7 @@
 #include "ShallowStressBalance.hh"
 
 namespace pism {
+namespace stressbalance {
 
 /*!
  * This class implements an SIA sliding law.
@@ -64,6 +65,7 @@ protected:
   std::string m_eisII_experiment;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SIA_SLIDING_H_ */

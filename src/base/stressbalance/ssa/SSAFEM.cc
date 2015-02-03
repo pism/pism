@@ -25,6 +25,7 @@
 #include <stdexcept>
 
 namespace pism {
+namespace stressbalance {
 
 /** The Q1 finite element SSA solver.
  *
@@ -815,4 +816,5 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **ve
   return 0;
 }
 #endif
+} // end of namespace stressbalance
 } // end of namespace pism

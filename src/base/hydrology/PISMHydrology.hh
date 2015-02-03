@@ -22,11 +22,12 @@
 #include <cassert>
 
 #include "iceModelVec.hh"
-#include "iceModelVec2T.hh"
 #include "PISMComponent.hh"
-#include "PISMStressBalance.hh"
 
 namespace pism {
+
+class IceModelVec2T;
+
 //! \brief The PISM subglacial hydrology model interface.
 /*!
   This is a virtual base class.
@@ -307,6 +308,9 @@ protected:
   void raw_update_Wtil(double hdt);
 };
 
+namespace stressbalance {
+class StressBalance;
+}
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
@@ -325,7 +329,7 @@ protected:
 */
 class DistributedHydrology : public RoutingHydrology {
 public:
-  DistributedHydrology(const IceGrid &g, StressBalance *sb);
+  DistributedHydrology(const IceGrid &g, stressbalance::StressBalance *sb);
   virtual ~DistributedHydrology();
 
   virtual void init();
@@ -364,7 +368,7 @@ protected:
   bool m_hold_velbase_mag;
 
   // need to get basal sliding velocity (thus speed):
-  StressBalance* m_stressbalance;
+  stressbalance::StressBalance* m_stressbalance;
 };
 
 } // end of namespace pism

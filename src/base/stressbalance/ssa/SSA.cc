@@ -29,6 +29,7 @@
 #include "SSA_diagnostics.hh"
 
 namespace pism {
+namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
   m_min_thickness = config.get("min_thickness_strength_extension_ssa");
@@ -460,4 +461,5 @@ IceModelVec::Ptr SSA_taud_mag::compute() {
 }
 
 
+} // end of namespace stressbalance
 } // end of namespace pism

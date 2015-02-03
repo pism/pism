@@ -24,6 +24,8 @@ namespace pism {
 
 class Vars;
 
+namespace stressbalance {
+
 class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
@@ -65,6 +67,7 @@ public:
   virtual IceModelVec::Ptr compute();
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSB_DIAGNOSTICS_H_ */

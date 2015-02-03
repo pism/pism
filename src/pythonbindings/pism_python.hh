@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 David Maxwell
+// Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,9 @@
 
 #ifndef _PISM_PYTHON_
 #define _PISM_PYTHON_
-#include "petsc.h"
 
-#include <string>
-
+namespace pism {
 void set_abort_on_sigint(bool abort);
+} // end of namespace pism
 
 #endif

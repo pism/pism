@@ -27,6 +27,7 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace stressbalance {
 
 StressBalance::StressBalance(const IceGrid &g,
                              ShallowStressBalance *sb,
@@ -520,4 +521,5 @@ void StressBalance::add_vars_to_output_impl(const std::string &keyword, std::set
   m_modifier->add_vars_to_output(keyword, result);
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

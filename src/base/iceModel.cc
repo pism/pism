@@ -960,7 +960,7 @@ IceModelVec2S* IceModel::get_geothermal_flux() {
 }
 
 // FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
-StressBalance* IceModel::get_stress_balance() {
+stressbalance::StressBalance* IceModel::get_stress_balance() {
   return this->stress_balance;
 }
 

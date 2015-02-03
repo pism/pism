@@ -25,6 +25,7 @@
 #include "TerminationReason.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(const IceGrid &, const EnthalpyConverter &);
@@ -121,6 +122,7 @@ private:
 };
 
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSAFEM_H_ */

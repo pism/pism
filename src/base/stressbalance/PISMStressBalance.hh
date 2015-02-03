@@ -23,11 +23,11 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+class Diagnostic;
+namespace stressbalance {
 
 class ShallowStressBalance;
 class SSB_Modifier;
-class Diagnostic;
-class OceanModel;
 
 //! The class defining PISM's interface to the shallow stress balance code.
 /*!
@@ -126,6 +126,7 @@ protected:
   SSB_Modifier *m_modifier;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_H_ */

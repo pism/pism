@@ -93,7 +93,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
     set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps}) # has to be set *before* calling SWIG_ADD_MODULE
     
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc pism_python_signal.cpp)
+    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc pism_python_signal.cc)
     SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES} )
 
     # Disable compiler warnings:

@@ -27,8 +27,9 @@
 #include <stdexcept>
 
 namespace pism {
+namespace stressbalance {
 
-using namespace mask;
+using namespace pism::mask;
 
 SSAFD::ZeroPivot::ZeroPivot()
   : RuntimeError("SSAFD solver failure: zero pivot detected") {
@@ -1810,4 +1811,5 @@ void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
   dict["nuH"] = new SSAFD_nuH(this);
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

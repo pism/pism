@@ -25,6 +25,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace stressbalance {
 
 SIA_Sliding::SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e)
   : ShallowStressBalance(g, e)
@@ -527,4 +528,5 @@ void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2St
   }
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

@@ -270,6 +270,8 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
 void IceCompModel::allocate_stressbalance() {
 
+  using namespace pism::stressbalance;
+
   if (stress_balance != NULL) {
     return;
   }

@@ -27,6 +27,8 @@ namespace pism {
 class IceGrid;
 class Config;
 
+namespace stressbalance {
+
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!
   This class both smooths the bed and computes coefficients for an approximation
@@ -119,6 +121,7 @@ protected:
   void compute_coefficients_on_proc0();
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif  // __BedSmoother_hh

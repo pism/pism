@@ -41,14 +41,14 @@ static char help[] =
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 
-using namespace pism;
+namespace pism {
 
-void compute_strain_heating_errors(const Config &config,
-                                   const IceModelVec3 &strain_heating,
-                                   const IceModelVec2S &thickness,
-                                   const IceGrid &grid,
-                                   double &gmax_strain_heating_err,
-                                   double &gav_strain_heating_err) {
+static void compute_strain_heating_errors(const Config &config,
+                                          const IceModelVec3 &strain_heating,
+                                          const IceModelVec2S &thickness,
+                                          const IceGrid &grid,
+                                          double &gmax_strain_heating_err,
+                                          double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
   const int Mz = grid.Mz();
 
@@ -105,15 +105,15 @@ void compute_strain_heating_errors(const Config &config,
 }
 
 
-PetscErrorCode computeSurfaceVelocityErrors(const IceGrid &grid,
-                                            const IceModelVec2S &ice_thickness,
-                                            const IceModelVec3 &u3,
-                                            const IceModelVec3 &v3,
-                                            const IceModelVec3 &w3,
-                                            double &gmaxUerr,
-                                            double &gavUerr,
-                                            double &gmaxWerr,
-                                            double &gavWerr) {
+static void computeSurfaceVelocityErrors(const IceGrid &grid,
+                                         const IceModelVec2S &ice_thickness,
+                                         const IceModelVec3 &u3,
+                                         const IceModelVec3 &v3,
+                                         const IceModelVec3 &w3,
+                                         double &gmaxUerr,
+                                         double &gavUerr,
+                                         double &gmaxWerr,
+                                         double &gavWerr) {
   double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
   const double LforFG = 750000; // m
@@ -156,15 +156,14 @@ PetscErrorCode computeSurfaceVelocityErrors(const IceGrid &grid,
   gavUerr = gavUerr/(grid.Mx()*grid.My());
   gavWerr = GlobalSum(grid.com, avWerr);
   gavWerr = gavWerr/(grid.Mx()*grid.My());
-  return 0;
 }
 
 
-PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
-                                              IceGrid &grid,
-                                              IceModelVec2S &thickness,
-                                              IceModelVec3 &temperature,
-                                              IceModelVec3 &enthalpy) {
+static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
+                                           IceGrid &grid,
+                                           IceModelVec2S &thickness,
+                                           IceModelVec3 &temperature,
+                                           IceModelVec3 &enthalpy) {
 
   IceModelVec::AccessList list;
   list.add(temperature);
@@ -186,20 +185,18 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
   }
 
-
   enthalpy.update_ghosts();
-  return 0;
 }
 
 
 //! \brief Set the test F initial state.
-PetscErrorCode setInitStateF(IceGrid &grid,
-                             EnthalpyConverter &EC,
-                             IceModelVec2S *bed,
-                             IceModelVec2Int *mask,
-                             IceModelVec2S *surface,
-                             IceModelVec2S *thickness,
-                             IceModelVec3 *enthalpy) {
+static void setInitStateF(IceGrid &grid,
+                          EnthalpyConverter &EC,
+                          IceModelVec2S *bed,
+                          IceModelVec2Int *mask,
+                          IceModelVec2S *surface,
+                          IceModelVec2S *thickness,
+                          IceModelVec3 *enthalpy) {
   int        Mz=grid.Mz();
   double     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
 
@@ -250,17 +247,15 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   enthalpy_from_temperature_cold(EC, grid, *thickness,
                                  *enthalpy,
                                  *enthalpy);
-
-  return 0;
 }
 
-void reportErrors(const Config &config,
-                  const IceGrid &grid,
-                  const IceModelVec2S &thickness,
-                  const IceModelVec3 &u_sia,
-                  const IceModelVec3 &v_sia,
-                  const IceModelVec3 &w_sia,
-                  const IceModelVec3 &strain_heating) {
+static void reportErrors(const Config &config,
+                         const IceGrid &grid,
+                         const IceModelVec2S &thickness,
+                         const IceModelVec3 &u_sia,
+                         const IceModelVec3 &v_sia,
+                         const IceModelVec3 &w_sia,
+                         const IceModelVec3 &strain_heating) {
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   double max_strain_heating_error, av_strain_heating_error;
@@ -291,8 +286,12 @@ void reportErrors(const Config &config,
              grid.convert(avWerr,  "m/s", "m/year"));
 }
 
+} // end of namespace pism
 
 int main(int argc, char *argv[]) {
+
+  using namespace pism;
+  using namespace pism::stressbalance;
 
   MPI_Comm com = MPI_COMM_WORLD;
   PetscInitializer petsc(argc, argv, help);

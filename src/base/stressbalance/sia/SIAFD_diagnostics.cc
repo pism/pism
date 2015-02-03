@@ -20,6 +20,7 @@
 #include "PISMBedSmoother.hh"
 
 namespace pism {
+namespace stressbalance {
 
 void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                             std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
@@ -214,4 +215,5 @@ IceModelVec::Ptr SIAFD_h_y::compute() {
   return result;
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

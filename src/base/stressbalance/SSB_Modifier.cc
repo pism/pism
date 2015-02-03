@@ -24,6 +24,7 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace stressbalance {
 
 SSB_Modifier::SSB_Modifier(const IceGrid &g, const EnthalpyConverter &e)
   : Component(g), m_EC(e) {
@@ -174,4 +175,5 @@ void ConstantInColumn::write_variables_impl(const std::set<std::string> &vars,
 }
 
 
+} // end of namespace stressbalance
 } // end of namespace pism

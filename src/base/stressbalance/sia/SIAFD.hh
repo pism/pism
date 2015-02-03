@@ -23,6 +23,7 @@
 #include "PISMDiagnostic.hh"    // derives from Diag
 
 namespace pism {
+namespace stressbalance {
 
 class BedSmoother;
 
@@ -112,6 +113,7 @@ protected:
 };
 
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SIAFD_H_ */

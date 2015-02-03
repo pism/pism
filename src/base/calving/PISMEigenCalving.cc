@@ -27,7 +27,7 @@
 namespace pism {
 
 EigenCalving::EigenCalving(const IceGrid &g,
-                           StressBalance *stress_balance)
+                           stressbalance::StressBalance *stress_balance)
   : Component(g), m_stencil_width(2),
     m_stress_balance(stress_balance) {
   m_strain_rates.create(m_grid, "edot", WITH_GHOSTS,

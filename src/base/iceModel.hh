@@ -52,13 +52,16 @@ namespace surface {
 class SurfaceModel;
 }
 
+namespace stressbalance {
+class StressBalance;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
 class EnthalpyConverter;
 class Hydrology;
 class YieldStress;
-class StressBalance;
 class BedDef;
 class BedThermalUnit;
 class Diagnostic;
@@ -437,10 +440,10 @@ protected:
   // 3D working space
   IceModelVec3 vWork3d;
 
-  StressBalance *stress_balance;
+  stressbalance::StressBalance *stress_balance;
 
 public:
-  StressBalance* get_stress_balance();
+  stressbalance::StressBalance* get_stress_balance();
 protected:
 
   std::map<std::string,Diagnostic*> diagnostics;

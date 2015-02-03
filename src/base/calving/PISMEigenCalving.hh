@@ -23,13 +23,14 @@
 #include "PISMComponent.hh"
 
 namespace pism {
-
+namespace stressbalance {
 class StressBalance;
+}
 
 class EigenCalving : public Component
 {
 public:
-  EigenCalving(const IceGrid &g, StressBalance *stress_balance);
+  EigenCalving(const IceGrid &g, stressbalance::StressBalance *stress_balance);
   virtual ~EigenCalving();
 
   virtual void init();
@@ -52,7 +53,7 @@ protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
   const int m_stencil_width;
-  StressBalance *m_stress_balance;
+  stressbalance::StressBalance *m_stress_balance;
   double m_K;
   bool m_restrict_timestep;
 };

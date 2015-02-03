@@ -248,7 +248,7 @@
  * requires a hydrology model.
  */
 %{
-using pism::StressBalance;
+using pism::stressbalance::StressBalance;
 %}
 %include "PISMHydrology.hh"
 

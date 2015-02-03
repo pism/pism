@@ -25,6 +25,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! Gives an extension coefficient to maintain ellipticity of SSA where ice is thin.
 /*!
@@ -156,6 +157,7 @@ protected:
   int m_event_ssa;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSA_H_ */

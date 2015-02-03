@@ -26,6 +26,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace stressbalance {
 
 void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                         std::map<std::string, TSDiagnostic*> &ts_dict) {
@@ -1074,4 +1075,5 @@ IceModelVec::Ptr PSB_tauyz::compute() {
 }
 
 
+} // end of namespace stressbalance
 } // end of namespace pism

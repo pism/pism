@@ -26,6 +26,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace stressbalance {
 
 SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
   : SSB_Modifier(g, e) {
@@ -992,4 +993,5 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

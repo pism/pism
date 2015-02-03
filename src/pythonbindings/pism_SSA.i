@@ -6,12 +6,12 @@
 %include "stressbalance/ShallowStressBalance.hh"
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
-%template(Diag_SSA) pism::Diag<pism::SSA>;
+%template(Diag_SSA) pism::Diag<pism::stressbalance::SSA>;
 %include "stressbalance/ssa/SSA.hh"
 %ignore pism::SSAFEFunction;
 %ignore pism::SSAFEJacobian;
 %include "stressbalance/ssa/SSAFEM.hh"
-%template(Diag_SSAFD) pism::Diag<pism::SSAFD>;
+%template(Diag_SSAFD) pism::Diag<pism::stressbalance::SSAFD>;
 %include "stressbalance/ssa/SSAFD.hh"
 
 /* Wrap C code implementing exact solutions for SSA verification

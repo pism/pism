@@ -27,10 +27,11 @@
 #include <PISMDiagnostic.hh>
 
 namespace pism {
-
 class IceFlowLaw;
 class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
+
+namespace stressbalance {
 
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
@@ -126,6 +127,7 @@ public:
   virtual void init();
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SHALLOWSTRESSBALANCE_H_ */

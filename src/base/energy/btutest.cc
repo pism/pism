@@ -33,10 +33,9 @@ static char help[] =
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 
-using namespace pism;
+namespace pism {
 
-class BTU_Test : public BedThermalUnit
-{
+class BTU_Test : public BedThermalUnit {
 public:
   BTU_Test(IceGrid &g)
     : BedThermalUnit(g) {}
@@ -66,7 +65,11 @@ void BTU_Test::bootstrap() {
   }
 }
 
+} // end of namespace pism
+
 int main(int argc, char *argv[]) {
+
+  using namespace pism;
 
   MPI_Comm com = MPI_COMM_WORLD;
   PetscInitializer petsc(argc, argv, help);

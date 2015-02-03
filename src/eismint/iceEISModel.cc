@@ -93,6 +93,8 @@ void IceEISModel::setFromOptions() {
 //! \brief Decide which stress balance model to use.
 void IceEISModel::allocate_stressbalance() {
 
+  using namespace pism::stressbalance;
+
   if (stress_balance != NULL) {
     return;
   }

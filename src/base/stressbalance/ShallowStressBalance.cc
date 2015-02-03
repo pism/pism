@@ -29,8 +29,9 @@
 #include "SSB_diagnostics.hh"
 
 namespace pism {
+namespace stressbalance {
 
-using mask::ice_free;
+using pism::mask::ice_free;
 
 ShallowStressBalance::ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e)
   : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
@@ -627,4 +628,5 @@ IceModelVec::Ptr SSB_beta::compute() {
   return result;
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

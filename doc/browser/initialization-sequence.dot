@@ -15,7 +15,7 @@ digraph pism_init {
 
     is_i_set1 [label = "Is -i set?"];
 
-    grid_from_file [label = "Get ALL grid settings from file" URL="@ref PIO::inq_grid()"];
+    grid_from_file [label = "Get ALL grid settings from file" URL="@ref IceGrid::FromFile()"];
 
     subgraph cluster_set_grid_defaults {
       label = "Set default grid parameters\nIceModel::set_grid_defaults()";
@@ -24,7 +24,7 @@ digraph pism_init {
 
       is_boot_file_set1 [label = "Is -boot_file set?"];
       
-      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="@ref PIO::inq_grid()"];
+      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="@ref IceGrid::FromFile()"];
       
       fail_in_IceModel1 [label = "ERROR in base class IceModel"]
       

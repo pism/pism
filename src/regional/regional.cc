@@ -21,6 +21,7 @@
 #include "enthalpyConverter.hh"
 
 namespace pism {
+namespace stressbalance {
 
 SIAFD_Regional::SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e)
   : SIAFD(g, e) {
@@ -166,6 +167,8 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   }
 }
 
+} // end of namespace stressbalance
+
 void RegionalDefaultYieldStress::init() {
   int v = getVerbosityLevel(); // turn off second, redundant init message
   setVerbosityLevel(1);
@@ -200,6 +203,5 @@ const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
   }
   return m_tauc;
 }
-
 
 } // end of namespace pism

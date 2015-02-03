@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMVars.hh"
+#include "iceModelVec2T.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
 #include "PISMHydrology.hh"
@@ -26,8 +27,7 @@
 namespace pism {
 
 Hydrology::Hydrology(const IceGrid &g)
-  : Component_TS(g)
-{
+  : Component_TS(g) {
   m_inputtobed = NULL;
   m_hold_bmelt = false;
 

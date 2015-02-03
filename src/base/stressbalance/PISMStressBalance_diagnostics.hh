@@ -23,6 +23,7 @@
 #include "PISMDiagnostic.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! \brief Computes the vertically-averaged ice velocity.
 class PSB_velbar : public Diag<StressBalance>
@@ -210,6 +211,7 @@ public:
 };
 
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

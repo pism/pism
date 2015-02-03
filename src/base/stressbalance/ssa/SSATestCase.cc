@@ -25,6 +25,7 @@
 #include "Mask.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! Initialize the storage for the various coefficients used as input to the SSA
 //! (ice elevation, thickness, etc.)
@@ -390,4 +391,5 @@ void SSATestCase::write(const std::string &filename) {
   pio.close();
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

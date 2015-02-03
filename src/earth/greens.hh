@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2014 Ed Bueler
+// Copyright (C) 2007--2009, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #ifndef __greens_hh
 #define __greens_hh
+
+namespace pism {
 
 //! Parameters used to access elastic Green's function from the \ref Farrell earth model.
 struct ge_params {
@@ -48,6 +50,6 @@ double vd_integrand (double kap, void * paramsIN);
 //! Actually compute the response of the viscous half-space model in \ref LingleClark, to a disc load.
 double viscDisc(double t, double H0, double R0, double r, 
                 double rho, double grav, double D, double eta);
-
+}      // end of namespace pism
 #endif  /* __greens_hh */
 

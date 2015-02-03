@@ -37,7 +37,8 @@ static char help[] =
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 
-using namespace pism;
+namespace pism {
+namespace stressbalance {
 
 // thickness profile in the van der Veen solution
 static double H_exact(double V0, double H0, double C, double x) {
@@ -180,8 +181,13 @@ void SSATestCaseCFBC::exactSolution(int i, int /*j*/,
   *v = 0;
 }
 
+} // end of namespace stressbalance
+} // end of namespace pism
 
 int main(int argc, char *argv[]) {
+
+  using namespace pism;
+  using namespace pism::stressbalance;
 
   MPI_Comm com = MPI_COMM_WORLD;
   PetscInitializer petsc(argc, argv, help);

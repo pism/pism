@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 David Maxwell
+// Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,11 @@
 #include "pism_python_signal.hh"
 #include "pism_const.hh"
 
+namespace pism {
+
 void set_abort_on_sigint(bool abort)
 {
   gSIGINT_is_fatal = abort;
 }
+
+} // end of namespace pism

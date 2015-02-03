@@ -586,6 +586,8 @@ void IceModel::allocate_enthalpy_converter() {
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
 
+  using namespace pism::stressbalance;
+
   if (stress_balance != NULL) {
     return;
   }

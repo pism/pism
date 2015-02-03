@@ -27,7 +27,7 @@
 namespace pism {
 
 DistributedHydrology::DistributedHydrology(const IceGrid &g,
-                                           StressBalance *sb)
+                                           stressbalance::StressBalance *sb)
   : RoutingHydrology(g)
 {
   m_stressbalance = sb;

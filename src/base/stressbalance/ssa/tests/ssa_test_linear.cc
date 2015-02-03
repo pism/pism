@@ -48,7 +48,8 @@ static char help[] =
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 
-using namespace pism;
+namespace pism {
+namespace stressbalance {
 
 class SSATestCaseExp: public SSATestCase
 {
@@ -154,8 +155,13 @@ void SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, double x, double /*y*/,
   *v = 0;
 }
 
+} // end of namespace stressbalance
+} // end of namespace pism
 
 int main(int argc, char *argv[]) {
+
+  using namespace pism;
+  using namespace pism::stressbalance;
 
   MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
   PetscInitializer petsc(argc, argv, help);

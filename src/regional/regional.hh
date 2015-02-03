@@ -28,11 +28,11 @@
 #include "PISMHydrology.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! \brief A version of the SIA stress balance with tweaks for outlet glacier
 //! simulations.
-class SIAFD_Regional : public SIAFD
-{
+class SIAFD_Regional : public SIAFD {
 public:
   SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SIAFD_Regional();
@@ -51,8 +51,9 @@ public:
   virtual void compute_driving_stress(IceModelVec2V &taud);
 };
 
-class RegionalDefaultYieldStress : public MohrCoulombYieldStress
-{
+} // end of namespace stressbalance
+
+class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
 public:
   RegionalDefaultYieldStress(const IceGrid &g, Hydrology *hydro)
     : MohrCoulombYieldStress(g, hydro) {}

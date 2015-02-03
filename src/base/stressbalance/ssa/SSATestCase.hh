@@ -25,6 +25,7 @@
 #include "PISMVars.hh"
 
 namespace pism {
+namespace stressbalance {
 
 /*! An SSATestCase manages running an SSA instance against a particular
   test.  Subclasses must implement the following abstract methods to define
@@ -105,6 +106,7 @@ protected:
   SSA *m_ssa;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSATESTCASE_H_ */

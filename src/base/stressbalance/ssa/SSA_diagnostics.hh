@@ -23,6 +23,7 @@
 #include "SSA.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! \brief Computes the magnitude of the driving shear stress at the base of
 //! ice (diagnostically).
@@ -46,6 +47,7 @@ public:
 };
 
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSA_DIAGNOSTICS_H_ */

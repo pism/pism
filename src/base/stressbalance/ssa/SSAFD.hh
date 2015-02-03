@@ -28,6 +28,7 @@
 #include "Mat.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSA
@@ -140,6 +141,7 @@ public:
   virtual IceModelVec::Ptr compute();
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSAFD_H_ */

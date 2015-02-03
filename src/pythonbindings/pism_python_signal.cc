@@ -7,7 +7,7 @@
 
 #include "error_handling.hh"
 
-using namespace pism;
+namespace pism {
 
 SigInstaller::SigInstaller(int sig, void (*new_handler)(int) )
 {
@@ -52,3 +52,5 @@ void pism_sigint_handler(int sig)
     }
   }
 }
+
+} // end of namespace pism

@@ -24,6 +24,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace stressbalance {
 
 BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
     : grid(g), config(g.config) {
@@ -382,4 +383,5 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
 }
 
 
+} // end of namespace stressbalance
 } // end of namespace pism

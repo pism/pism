@@ -38,7 +38,7 @@ static char help[] =
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 
-using namespace pism;
+namespace pism {
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 
@@ -193,6 +193,8 @@ void IceRegionalModel::model_state_setup() {
 }
 
 void IceRegionalModel::allocate_stressbalance() {
+
+  using namespace pism::stressbalance;
 
   if (stress_balance != NULL) {
     return;
@@ -408,8 +410,12 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   }
 }
 
+} // end of namespace pism
 
 int main(int argc, char *argv[]) {
+
+  using namespace pism;
+
   PetscErrorCode  ierr;
   MPI_Comm com = MPI_COMM_WORLD;
 
