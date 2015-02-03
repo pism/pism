@@ -74,7 +74,7 @@ PAFactory::PAFactory(const IceGrid& g)
   : PCFactory<AtmosphereModel,PAModifier>(g) {
   m_option = "atmosphere";
 
-  add_model<PAConstantPIK>("pik");
+  add_model<PAPIK>("pik");
   add_model<PAGivenClimate>("given");
   add_model<PA_SeaRISE_Greenland>("searise_greenland");
   add_model<PACosineYearlyCycle>("yearly_cycle");
@@ -99,7 +99,7 @@ POFactory::POFactory(const IceGrid& g)
   m_option = "ocean";
 
   add_model<ocean::GivenTH>("th");
-  add_model<ocean::ConstantPIK>("pik");
+  add_model<ocean::PIK>("pik");
   add_model<ocean::Constant>("constant");
   add_model<ocean::Given>("given");
   set_default("constant");
@@ -124,7 +124,7 @@ PSFactory::PSFactory(const IceGrid& g)
   add_model<PSGivenClimate>("given");
   add_model<PSTemperatureIndex>("pdd");
   add_model<PSTemperatureIndex_Old>("pdd_old");
-  add_model<PSConstantPIK>("pik");
+  add_model<PSPIK>("pik");
   add_model<PSSimple>("simple");
   set_default("given");
 

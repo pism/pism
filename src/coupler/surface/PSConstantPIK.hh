@@ -32,9 +32,9 @@ namespace pism {
 //! Ice surface temperature is parameterized as in PISM-PIK, using a latitude
 //! and surface elevation-dependent formula.
 
-class PSConstantPIK : public SurfaceModel {
+class PSPIK : public SurfaceModel {
 public:
-  PSConstantPIK(const IceGrid &g);
+  PSPIK(const IceGrid &g);
 
   virtual void init();
 

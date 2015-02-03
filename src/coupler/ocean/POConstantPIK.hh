@@ -37,10 +37,10 @@ namespace ocean {
 //! @f$T_{o}@f$ are the heat capacity and temperature of the ocean mixed
 //! layer, @f$T_{f}@f$ is the freezing temperature of ocean water at the
 //! shelf bottom.
-class ConstantPIK : public OceanModel {
+class PIK : public OceanModel {
 public:
-  ConstantPIK(const IceGrid &g);
-  virtual ~ConstantPIK();
+  PIK(const IceGrid &g);
+  virtual ~PIK();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);

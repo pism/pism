@@ -28,7 +28,7 @@ namespace pism {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PSConstantPIK::PSConstantPIK(const IceGrid &g)
+PSPIK::PSPIK(const IceGrid &g)
   : SurfaceModel(g) {
 
   m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
@@ -45,19 +45,19 @@ PSConstantPIK::PSConstantPIK(const IceGrid &g)
                              "K", "");
 }
 
-void PSConstantPIK::attach_atmosphere_model(AtmosphereModel *input)
+void PSPIK::attach_atmosphere_model(AtmosphereModel *input)
 {
   delete input;
 }
 
-void PSConstantPIK::init() {
+void PSPIK::init() {
   bool do_regrid = false;
   int start = -1;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
-             "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
+             "* Initializing the constant-in-time surface processes model PSPIK.\n"
              "  It reads surface mass balance directly from the file and holds it constant.\n"
              "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
              "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
@@ -80,12 +80,12 @@ void PSConstantPIK::init() {
              "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 
-MaxTimestep PSConstantPIK::max_timestep_impl(double t) {
+MaxTimestep PSPIK::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PSConstantPIK::update_impl(double my_t, double my_dt)
+void PSPIK::update_impl(double my_t, double my_dt)
 {
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
@@ -110,27 +110,27 @@ void PSConstantPIK::update_impl(double my_t, double my_dt)
   }
 }
 
-void PSConstantPIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
+void PSPIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/)
 {
   // empty (does not have an atmosphere model)
 }
 
-void PSConstantPIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void PSPIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_climatic_mass_balance.copy_to(result);
 }
 
-void PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
+void PSPIK::ice_surface_temperature(IceModelVec2S &result) {
   m_ice_surface_temp.copy_to(result);
 }
 
-void PSConstantPIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
+void PSPIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("climatic_mass_balance");
   result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().
 }
 
-void PSConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void PSPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -142,7 +142,7 @@ void PSConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void PSConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void PSPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
     m_ice_surface_temp.write(nc);
   }

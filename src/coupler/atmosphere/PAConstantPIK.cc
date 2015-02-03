@@ -25,7 +25,7 @@
 
 namespace pism {
 
-PAConstantPIK::PAConstantPIK(const IceGrid &g)
+PAPIK::PAPIK(const IceGrid &g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
@@ -56,41 +56,41 @@ PAConstantPIK::PAConstantPIK(const IceGrid &g)
   m_air_temp_snapshot.set_units("K");
 }
 
-void PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
+void PAPIK::mean_precipitation(IceModelVec2S &result) {
   m_precipitation.copy_to(result);
 }
 
-void PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
+void PAPIK::mean_annual_temp(IceModelVec2S &result) {
   m_air_temp.copy_to(result);
 }
 
-void PAConstantPIK::begin_pointwise_access() {
+void PAPIK::begin_pointwise_access() {
   m_precipitation.begin_access();
   m_air_temp.begin_access();
 }
 
-void PAConstantPIK::end_pointwise_access() {
+void PAPIK::end_pointwise_access() {
   m_precipitation.end_access();
   m_air_temp.end_access();
 }
 
-void PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
+void PAPIK::temp_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_air_temp(i,j);
   }
 }
 
-void PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
+void PAPIK::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-void PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
+void PAPIK::temp_snapshot(IceModelVec2S &result) {
   mean_annual_temp(result);
 }
 
-void PAConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void PAPIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
   result.insert("air_temp");
 
@@ -99,7 +99,7 @@ void PAConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set
   }
 }
 
-void PAConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+void PAPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   if (set_contains(vars, "air_temp_snapshot")) {
     m_air_temp_snapshot.define(nc, nctype, false);
@@ -114,7 +114,7 @@ void PAConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void PAConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void PAPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
@@ -134,14 +134,14 @@ void PAConstantPIK::write_variables_impl(const std::set<std::string> &vars, cons
   }
 }
 
-void PAConstantPIK::init() {
+void PAPIK::init() {
   bool do_regrid = false;
   int start = -1;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   verbPrintf(2, m_grid.com,
-             "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"
+             "* Initializing the constant-in-time atmosphere model PAPIK.\n"
              "  It reads a precipitation field directly from the file and holds it constant.\n"
              "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
@@ -160,12 +160,12 @@ void PAConstantPIK::init() {
   }
 }
 
-MaxTimestep PAConstantPIK::max_timestep_impl(double t) {
+MaxTimestep PAPIK::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PAConstantPIK::update_impl(double, double) {
+void PAPIK::update_impl(double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
@@ -184,7 +184,7 @@ void PAConstantPIK::update_impl(double, double) {
   }
 }
 
-void PAConstantPIK::init_timeseries(const std::vector<double> &ts) {
+void PAPIK::init_timeseries(const std::vector<double> &ts) {
   m_ts_times = ts;
 }
 
