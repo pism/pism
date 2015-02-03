@@ -29,9 +29,8 @@ class IceModelVec2S;
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component_TS {
 public:
-  OceanModel(const IceGrid &g)
-    : Component_TS(g), sea_level(0) {}
-  virtual ~OceanModel() {};
+  OceanModel(const IceGrid &g);
+  virtual ~OceanModel();
 
   void init();
 
@@ -46,7 +45,7 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) = 0;
   virtual void sea_level_elevation_impl(double &result) = 0;
 protected:
-  double sea_level;
+  double m_sea_level;
 };
 
 } // end of namespace pism

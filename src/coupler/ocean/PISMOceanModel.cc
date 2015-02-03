@@ -22,6 +22,15 @@
 
 namespace pism {
 
+OceanModel::OceanModel(const IceGrid &g)
+  : Component_TS(g), m_sea_level(0) {
+  // empty
+}
+
+OceanModel::~OceanModel() {
+  // empty
+}
+
 void OceanModel::init() {
   this->init_impl();
 }

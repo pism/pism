@@ -84,7 +84,7 @@ MaxTimestep POConstant::max_timestep_impl(double t) {
 }
 
 void POConstant::sea_level_elevation_impl(double &result) {
-  result = sea_level;
+  result = m_sea_level;
 }
 
 void POConstant::shelf_base_temperature_impl(IceModelVec2S &result) {

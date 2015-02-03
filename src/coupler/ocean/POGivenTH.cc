@@ -161,7 +161,7 @@ void POGivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 }
 
 void POGivenTH::sea_level_elevation_impl(double &result) {
-  result = sea_level;
+  result = m_sea_level;
 }
 
 void POGivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) {

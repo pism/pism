@@ -74,7 +74,7 @@ void POConstantPIK::update_impl(double my_t, double my_dt) {
 }
 
 void POConstantPIK::sea_level_elevation_impl(double &result) {
-  result = sea_level;
+  result = m_sea_level;
 }
 
 void POConstantPIK::shelf_base_temperature_impl(IceModelVec2S &result) {

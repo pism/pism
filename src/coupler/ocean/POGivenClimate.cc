@@ -80,7 +80,7 @@ void POGiven::update_impl(double my_t, double my_dt) {
 }
 
 void POGiven::sea_level_elevation_impl(double &result) {
-  result = sea_level;
+  result = m_sea_level;
 }
 
 void POGiven::shelf_base_temperature_impl(IceModelVec2S &result) {
