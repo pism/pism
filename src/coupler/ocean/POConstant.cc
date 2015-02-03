@@ -26,8 +26,8 @@
 #include "error_handling.hh"
 
 namespace pism {
-
-POConstant::POConstant(const IceGrid &g)
+namespace ocean {
+Constant::Constant(const IceGrid &g)
   : OceanModel(g),
     m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
     m_shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
@@ -47,17 +47,17 @@ POConstant::POConstant(const IceGrid &g)
   m_shelfbtemp.set_units("Kelvin");
 }
 
-POConstant::~POConstant() {
+Constant::~Constant() {
   // empty
 }
 
-void POConstant::update_impl(double my_t, double my_dt) {
+void Constant::update_impl(double my_t, double my_dt) {
   // do nothing
   m_t = my_t;
   m_dt = my_dt;
 }
 
-void POConstant::init_impl() {
+void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -78,16 +78,16 @@ void POConstant::init_impl() {
   }
 }
 
-MaxTimestep POConstant::max_timestep_impl(double t) {
+MaxTimestep Constant::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void POConstant::sea_level_elevation_impl(double &result) {
+void Constant::sea_level_elevation_impl(double &result) {
   result = m_sea_level;
 }
 
-void POConstant::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double T0 = m_config.get("water_melting_point_temperature"), // K
     beta_CC       = m_config.get("beta_CC"),
     g             = m_config.get("standard_gravity"),
@@ -108,7 +108,7 @@ void POConstant::shelf_base_temperature_impl(IceModelVec2S &result) {
 
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
-void POConstant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   double
     L           = m_config.get("water_latent_heat_fusion"),
     ice_density = m_config.get("ice_density"),
@@ -131,12 +131,12 @@ void POConstant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   result.set(meltrate);
 }
 
-void POConstant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {
+void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-void POConstant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
 
   if (set_contains(vars, "shelfbtemp")) {
@@ -148,7 +148,7 @@ void POConstant::define_variables_impl(const std::set<std::string> &vars, const 
   }
 }
 
-void POConstant::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void Constant::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
@@ -172,5 +172,5 @@ void POConstant::write_variables_impl(const std::set<std::string> &vars, const P
     tmp.write(nc);
   }
 }
-
+} // end of namespape ocean
 } // end of namespace pism

@@ -186,7 +186,7 @@ protected:
   because the water pressure is set to the overburden pressure, a simplified but
   well-established model [\ref Shreve1972].  However, the water layer thickness
   is also a part of the hydraulic potential because it is actually the potential
-  of the \i top of the water layer.
+  of the *top* of the water layer.
 
   This (essential) model has been used for finding locations of subglacial lakes
   [\ref Siegertetal2009, \ref Livingstoneetal2013TCD].  Subglacial lakes occur

@@ -23,14 +23,14 @@
 #include "NCVariable.hh"
 
 namespace pism {
-
+namespace ocean {
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
-class POConstant : public OceanModel {
+class Constant : public OceanModel {
 public:
-  POConstant(const IceGrid &g);
-  virtual ~POConstant();
+  Constant(const IceGrid &g);
+  virtual ~Constant();
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
@@ -48,6 +48,6 @@ protected:
   double m_mymeltrate;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POCONSTANT_H_ */

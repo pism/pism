@@ -24,13 +24,13 @@
 #include "POModifier.hh"
 
 namespace pism {
-
+namespace ocean {
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class PO_delta_T : public PScalarForcing<OceanModel,POModifier>
+class Delta_T : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  PO_delta_T(const IceGrid &g, OceanModel* in);
-  virtual ~PO_delta_T();
+  Delta_T(const IceGrid &g, OceanModel* in);
+  virtual ~Delta_T();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -44,6 +44,6 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _PODTFORCING_H_ */

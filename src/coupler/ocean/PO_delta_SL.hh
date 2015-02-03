@@ -23,12 +23,12 @@
 #include "POModifier.hh"
 
 namespace pism {
-
-class PO_delta_SL : public PScalarForcing<OceanModel,POModifier>
+namespace ocean {
+class Delta_SL : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  PO_delta_SL(const IceGrid &g, OceanModel* in);
-  virtual ~PO_delta_SL();
+  Delta_SL(const IceGrid &g, OceanModel* in);
+  virtual ~Delta_SL();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -42,6 +42,6 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _PODSLFORCING_H_ */

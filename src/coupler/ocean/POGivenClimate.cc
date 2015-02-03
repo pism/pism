@@ -20,9 +20,9 @@
 #include "IceGrid.hh"
 
 namespace pism {
-
-POGiven::POGiven(const IceGrid &g)
-  : PGivenClimate<POModifier,OceanModel>(g, NULL) {
+namespace ocean {
+Given::Given(const IceGrid &g)
+  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
 
   option_prefix   = "-ocean_given";
 
@@ -51,11 +51,11 @@ POGiven::POGiven(const IceGrid &g)
   shelfbmassflux->write_in_glaciological_units = true;
 }
 
-POGiven::~POGiven() {
+Given::~Given() {
   // empty
 }
 
-void POGiven::init_impl() {
+void Given::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -72,28 +72,28 @@ void POGiven::init_impl() {
   }
 }
 
-void POGiven::update_impl(double my_t, double my_dt) {
+void Given::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   shelfbmassflux->average(m_t, m_dt);
   shelfbtemp->average(m_t, m_dt);
 }
 
-void POGiven::sea_level_elevation_impl(double &result) {
+void Given::sea_level_elevation_impl(double &result) {
   result = m_sea_level;
 }
 
-void POGiven::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Given::shelf_base_temperature_impl(IceModelVec2S &result) {
   shelfbtemp->copy_to(result);
 }
 
 
-void POGiven::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   shelfbmassflux->copy_to(result);
 }
 
-void POGiven::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
-
+} // end of namespace ocean
 } // end of namespace pism

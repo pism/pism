@@ -23,16 +23,16 @@
 #include "POModifier.hh"
 
 namespace pism {
-
-class POGivenTH : public PGivenClimate<POModifier,OceanModel>
+namespace ocean {
+class GivenTH : public PGivenClimate<OceanModifier,OceanModel>
 {
 public:
-  POGivenTH(const IceGrid &g);
-  virtual ~POGivenTH();
+  GivenTH(const IceGrid &g);
+  virtual ~GivenTH();
 
-  class POGivenTHConstants {
+  class Constants {
   public:
-    POGivenTHConstants(const Config &config);
+    Constants(const Config &config);
     //! Coefficients for linearized freezing point equation for in situ
     //! temperature:
     //!
@@ -73,38 +73,39 @@ private:
   IceModelVec2S m_shelfbtemp, m_shelfbmassflux;
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
-  void pointwise_update(const POGivenTHConstants &constants,
+  void pointwise_update(const Constants &constants,
                         double sea_water_salinity,
                         double sea_water_potential_temperature,
                         double ice_thickness,
                         double *shelf_base_temperature_out,
                         double *shelf_base_melt_rate_out);
 
-  void subshelf_salinity(const POGivenTHConstants &constants,
+  void subshelf_salinity(const Constants &constants,
                          double sea_water_salinity,
                          double sea_water_potential_temperature,
                          double ice_thickness,
                          double *shelf_base_salinity);
 
-  void subshelf_salinity_melt(const POGivenTHConstants &constants,
+  void subshelf_salinity_melt(const Constants &constants,
                               double sea_water_salinity,
                               double sea_water_potential_temperature,
                               double ice_thickness,
                               double *shelf_base_salinity);
 
-  void subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
+  void subshelf_salinity_freeze_on(const Constants &constants,
                                    double sea_water_salinity,
                                    double sea_water_potential_temperature,
                                    double ice_thickness,
                                    double *shelf_base_salinity);
 
-  void subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
+  void subshelf_salinity_diffusion_only(const Constants &constants,
                                         double sea_water_salinity,
                                         double sea_water_potential_temperature,
                                         double ice_thickness,
                                         double *shelf_base_salinity);
 };
 
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _POGIVENTH_H_ */

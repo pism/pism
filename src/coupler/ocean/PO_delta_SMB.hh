@@ -24,13 +24,14 @@
 #include "POModifier.hh"
 
 namespace pism {
+namespace ocean {
 
 //! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
-class PO_delta_SMB : public PScalarForcing<OceanModel,POModifier>
+class Delta_SMB : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  PO_delta_SMB(const IceGrid &g, OceanModel* in);
-  virtual ~PO_delta_SMB();
+  Delta_SMB(const IceGrid &g, OceanModel* in);
+  virtual ~Delta_SMB();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -44,6 +45,7 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _PODSBMFFORCING_H_ */

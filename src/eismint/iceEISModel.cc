@@ -120,7 +120,7 @@ void IceEISModel::allocate_couplers() {
   }
 
   if (ocean == NULL) {
-    ocean = new POConstant(grid);
+    ocean = new ocean::Constant(grid);
   }
 }
 

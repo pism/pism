@@ -28,9 +28,10 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace ocean {
 
-POCache::POCache(const IceGrid &g, OceanModel* in)
-  : POModifier(g, in) {
+Cache::Cache(const IceGrid &g, OceanModel* in)
+  : OceanModifier(g, in) {
 
   m_next_update_time = m_grid.time->current();
   m_update_interval_years = 10;
@@ -54,12 +55,12 @@ POCache::POCache(const IceGrid &g, OceanModel* in)
                                              "1", "");
 }
 
-POCache::~POCache() {
+Cache::~Cache() {
   // empty
 }
 
 
-void POCache::init_impl() {
+void Cache::init_impl() {
   int update_interval = m_update_interval_years;
 
   input_model->init();
@@ -79,7 +80,7 @@ void POCache::init_impl() {
   m_next_update_time = m_grid.time->current();
 }
 
-void POCache::update_impl(double my_t, double my_dt) {
+void Cache::update_impl(double my_t, double my_dt) {
   // ignore my_dt and always use 1 year long time-steps when updating
   // an input model
   (void) my_dt;
@@ -106,24 +107,24 @@ void POCache::update_impl(double my_t, double my_dt) {
 }
 
 
-void POCache::sea_level_elevation_impl(double &result) {
+void Cache::sea_level_elevation_impl(double &result) {
   result = m_sea_level;
 }
 
-void POCache::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Cache::shelf_base_temperature_impl(IceModelVec2S &result) {
   m_shelf_base_temperature.copy_to(result);
 }
 
-void POCache::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   m_shelf_base_mass_flux.copy_to(result);
 }
 
-void POCache::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void Cache::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   m_melange_back_pressure_fraction.copy_to(result);
 }
 
 
-void POCache::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void Cache::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                          IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -145,7 +146,7 @@ void POCache::define_variables_impl(const std::set<std::string> &vars_input, con
   input_model->define_variables(vars, nc, nctype);
 }
 
-void POCache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Cache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
@@ -166,7 +167,7 @@ void POCache::write_variables_impl(const std::set<std::string> &vars_input, cons
   input_model->write_variables(vars, nc);
 }
 
-MaxTimestep POCache::max_timestep_impl(double t) {
+MaxTimestep Cache::max_timestep_impl(double t) {
   double dt = m_next_update_time - t;
 
   // if we got very close to the next update time, set time step
@@ -189,4 +190,5 @@ MaxTimestep POCache::max_timestep_impl(double t) {
   }
 }
 
+} // end of namespace ocean
 } // end of namespace pism

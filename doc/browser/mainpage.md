@@ -35,7 +35,7 @@ a summary.)
 
 - pism::SurfaceModel ("surface" models, i.e. melt and snow processes)
 - pism::AtmosphereModel ("atmosphere", provides inputs to a pism::SurfaceModel)
-- pism::OceanModel ("ocean" model, provides sub-shelf boundary
+- pism::ocean::OceanModel ("ocean" model, provides sub-shelf boundary
   conditions, melange back-pressure, and sea level elevation)
 
 ### Infrastructure (utility) classes

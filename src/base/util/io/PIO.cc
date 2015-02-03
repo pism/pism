@@ -1127,7 +1127,7 @@ void PIO::regrid_vec(const IceGrid &grid, const string &var_name,
  * @param zlevels_out vertical levels of the resulting grid
  * @param t_start time index of the record to regrid
  * @param default_value default value to replace `_FillValue` with
- * @param[out] result resulting interpolated field
+ * @param[out] output resulting interpolated field
  */
 void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
                                   const vector<double> &zlevels_out,

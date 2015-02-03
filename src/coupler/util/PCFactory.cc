@@ -95,20 +95,20 @@ PAFactory::~PAFactory() {
 
 // Ocean
 POFactory::POFactory(const IceGrid& g)
-  : PCFactory<OceanModel,POModifier>(g) {
+  : PCFactory<ocean::OceanModel,ocean::OceanModifier>(g) {
   m_option = "ocean";
 
-  add_model<POGivenTH>("th");
-  add_model<POConstantPIK>("pik");
-  add_model<POConstant>("constant");
-  add_model<POGiven>("given");
+  add_model<ocean::GivenTH>("th");
+  add_model<ocean::ConstantPIK>("pik");
+  add_model<ocean::Constant>("constant");
+  add_model<ocean::Given>("given");
   set_default("constant");
 
-  add_modifier<POCache>("cache");
-  add_modifier<PO_delta_SMB>("delta_SMB");
-  add_modifier<PO_delta_T>("delta_T");
-  add_modifier<PO_delta_MBP>("delta_MBP");
-  add_modifier<PO_delta_SL>("delta_SL");
+  add_modifier<ocean::Cache>("cache");
+  add_modifier<ocean::Delta_SMB>("delta_SMB");
+  add_modifier<ocean::Delta_T>("delta_T");
+  add_modifier<ocean::Delta_MBP>("delta_MBP");
+  add_modifier<ocean::Delta_SL>("delta_SL");
 }
 
 POFactory::~POFactory() {

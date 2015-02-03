@@ -20,9 +20,10 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace ocean {
 
-PO_delta_T::PO_delta_T(const IceGrid &g, OceanModel* in)
-  : PScalarForcing<OceanModel,POModifier>(g, in),
+Delta_T::Delta_T(const IceGrid &g, OceanModel* in)
+  : PScalarForcing<OceanModel,OceanModifier>(g, in),
     shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
     shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
 
@@ -47,11 +48,11 @@ PO_delta_T::PO_delta_T(const IceGrid &g, OceanModel* in)
   shelfbtemp.set_units("Kelvin");
 }
 
-PO_delta_T::~PO_delta_T() {
+Delta_T::~Delta_T() {
   // empty
 }
 
-void PO_delta_T::init_impl() {
+void Delta_T::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   input_model->init();
@@ -62,24 +63,24 @@ void PO_delta_T::init_impl() {
   init_internal();
 }
 
-MaxTimestep PO_delta_T::max_timestep_impl(double t) {
+MaxTimestep Delta_T::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PO_delta_T::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) {
   input_model->shelf_base_temperature(result);
   offset_data(result);
 }
 
-void PO_delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-void PO_delta_T::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void Delta_T::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -96,7 +97,7 @@ void PO_delta_T::define_variables_impl(const std::set<std::string> &vars_input, 
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PO_delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
   IceModelVec2S tmp;
 
@@ -126,4 +127,5 @@ void PO_delta_T::write_variables_impl(const std::set<std::string> &vars_input, c
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace ocean
 } // end of namespace pism

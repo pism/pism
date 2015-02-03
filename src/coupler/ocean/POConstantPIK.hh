@@ -23,7 +23,7 @@
 #include "NCVariable.hh"
 
 namespace pism {
-
+namespace ocean {
 //! \brief Implements the ocean model used in [@ref Martinetal2011].
 //!
 //! Uses a parameterization of sub-shelf melting with respect to
@@ -37,10 +37,10 @@ namespace pism {
 //! @f$T_{o}@f$ are the heat capacity and temperature of the ocean mixed
 //! layer, @f$T_{f}@f$ is the freezing temperature of ocean water at the
 //! shelf bottom.
-class POConstantPIK : public OceanModel {
+class ConstantPIK : public OceanModel {
 public:
-  POConstantPIK(const IceGrid &g);
-  virtual ~POConstantPIK();
+  ConstantPIK(const IceGrid &g);
+  virtual ~ConstantPIK();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -60,6 +60,6 @@ private:
   double m_meltfactor;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POCONSTANTPIK_H_ */

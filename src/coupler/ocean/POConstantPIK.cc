@@ -26,8 +26,8 @@
 #include <stdexcept>
 
 namespace pism {
-
-POConstantPIK::POConstantPIK(const IceGrid &g)
+namespace ocean {
+ConstantPIK::ConstantPIK(const IceGrid &g)
   : OceanModel(g),
     m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
     m_shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)
@@ -46,11 +46,11 @@ POConstantPIK::POConstantPIK(const IceGrid &g)
   m_meltfactor = m_config.get("ocean_pik_melt_factor");
 }
 
-POConstantPIK::~POConstantPIK() {
+ConstantPIK::~ConstantPIK() {
   // empty
 }
 
-void POConstantPIK::init_impl() {
+void ConstantPIK::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -63,21 +63,21 @@ void POConstantPIK::init_impl() {
                              m_meltfactor);
 }
 
-MaxTimestep POConstantPIK::max_timestep_impl(double t) {
+MaxTimestep ConstantPIK::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void POConstantPIK::update_impl(double my_t, double my_dt) {
+void ConstantPIK::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
 }
 
-void POConstantPIK::sea_level_elevation_impl(double &result) {
+void ConstantPIK::sea_level_elevation_impl(double &result) {
   result = m_sea_level;
 }
 
-void POConstantPIK::shelf_base_temperature_impl(IceModelVec2S &result) {
+void ConstantPIK::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double
     T0          = m_config.get("water_melting_point_temperature"), // K
     beta_CC     = m_config.get("beta_CC"),
@@ -101,7 +101,7 @@ void POConstantPIK::shelf_base_temperature_impl(IceModelVec2S &result) {
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void POConstantPIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void ConstantPIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   const double
     L                 = m_config.get("water_latent_heat_fusion"),
     sea_water_density = m_config.get("sea_water_density"),
@@ -146,14 +146,14 @@ void POConstantPIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   }
 }
 
-void POConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void ConstantPIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("shelfbtemp");
     result.insert("shelfbmassflux");
   }
 }
 
-void POConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+void ConstantPIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) {
   if (set_contains(vars, "shelfbtemp")) {
     m_shelfbtemp.define(nc, nctype, true);
@@ -164,7 +164,7 @@ void POConstantPIK::define_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void POConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void ConstantPIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
@@ -189,4 +189,5 @@ void POConstantPIK::write_variables_impl(const std::set<std::string> &vars, cons
   }
 }
 
+} // end of namespace ocean
 } // end of namespace pism

@@ -44,6 +44,10 @@
 
 namespace pism {
 
+namespace ocean {
+class OceanModel;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
@@ -52,7 +56,6 @@ class Hydrology;
 class YieldStress;
 class StressBalance;
 class SurfaceModel;
-class OceanModel;
 class BedDef;
 class BedThermalUnit;
 class Diagnostic;
@@ -218,7 +221,7 @@ protected:
   EigenCalving       *eigen_calving;
 
   SurfaceModel *surface;
-  OceanModel   *ocean;
+  ocean::OceanModel   *ocean;
   BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
 

@@ -316,7 +316,7 @@ void IceCompModel::allocate_bed_deformation() {
 void IceCompModel::allocate_couplers() {
   // Climate will always come from verification test formulas.
   surface = new PSVerification(grid, EC, testname);
-  ocean   = new POConstant(grid);
+  ocean   = new ocean::Constant(grid);
 }
 
 void IceCompModel::set_vars_from_options() {

@@ -24,11 +24,11 @@
 #include "iceModelVec.hh"
 
 namespace pism {
-
-class POCache : public POModifier {
+namespace ocean {
+class Cache : public OceanModifier {
 public:
-  POCache(const IceGrid &g, OceanModel* in);
-  virtual ~POCache();
+  Cache(const IceGrid &g, OceanModel* in);
+  virtual ~Cache();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -49,6 +49,6 @@ protected:
   unsigned int m_update_interval_years;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POCACHE_H_ */

@@ -24,16 +24,17 @@
 #include "POModifier.hh"
 
 namespace pism {
+namespace ocean {
 
 /**
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class PO_delta_MBP : public PScalarForcing<OceanModel,POModifier>
+class Delta_MBP : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  PO_delta_MBP(const IceGrid &g, OceanModel* in);
-  virtual ~PO_delta_MBP();
+  Delta_MBP(const IceGrid &g, OceanModel* in);
+  virtual ~Delta_MBP();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -47,6 +48,7 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _PO_DELTA_MBP_H_ */

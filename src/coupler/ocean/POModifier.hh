@@ -23,13 +23,13 @@
 #include "Modifier.hh"
 
 namespace pism {
-
-class POModifier : public Modifier<OceanModel>
+namespace ocean {
+class OceanModifier : public Modifier<OceanModel>
 {
 public:
-  POModifier(const IceGrid &g, OceanModel* in)
+  OceanModifier(const IceGrid &g, OceanModel* in)
     : Modifier<OceanModel>(g, in) {}
-  virtual ~POModifier() {}
+  virtual ~OceanModifier() {}
 
 protected:
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result)
@@ -51,6 +51,6 @@ protected:
   }
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POMODIFIER_H_ */

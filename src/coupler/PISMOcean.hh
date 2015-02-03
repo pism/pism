@@ -23,9 +23,8 @@
 #include "PISMComponent.hh"
 
 namespace pism {
-
 class IceModelVec2S;
-
+namespace ocean {
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component_TS {
 public:
@@ -47,7 +46,7 @@ protected:
 protected:
   double m_sea_level;
 };
-
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif  // __PISMOceanModel_hh

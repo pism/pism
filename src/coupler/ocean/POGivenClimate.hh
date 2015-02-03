@@ -23,12 +23,12 @@
 #include "POModifier.hh"
 
 namespace pism {
-
-class POGiven : public PGivenClimate<POModifier,OceanModel>
+namespace ocean {
+class Given : public PGivenClimate<OceanModifier,OceanModel>
 {
 public:
-  POGiven(const IceGrid &g);
-  virtual ~POGiven();
+  Given(const IceGrid &g);
+  virtual ~Given();
 
 protected:
   virtual void update_impl(double my_t, double my_dt);
@@ -41,7 +41,6 @@ protected:
   IceModelVec2T *shelfbtemp, *shelfbmassflux;
 };
 
-
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _PODIRECTFORCING_H_ */

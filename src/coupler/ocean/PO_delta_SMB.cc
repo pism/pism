@@ -20,9 +20,10 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace ocean {
 
-PO_delta_SMB::PO_delta_SMB(const IceGrid &g, OceanModel* in)
-  : PScalarForcing<OceanModel,POModifier>(g, in),
+Delta_SMB::Delta_SMB(const IceGrid &g, OceanModel* in)
+  : PScalarForcing<OceanModel,OceanModifier>(g, in),
     shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
     shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
 
@@ -48,11 +49,11 @@ PO_delta_SMB::PO_delta_SMB(const IceGrid &g, OceanModel* in)
   shelfbtemp.set_units("Kelvin");
 }
 
-PO_delta_SMB::~PO_delta_SMB() {
+Delta_SMB::~Delta_SMB() {
   // empty
 }
 
-void PO_delta_SMB::init_impl() {
+void Delta_SMB::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   input_model->init();
@@ -66,24 +67,24 @@ void PO_delta_SMB::init_impl() {
   offset->scale(m_config.get("ice_density"));
 }
 
-MaxTimestep PO_delta_SMB::max_timestep_impl(double t) {
+MaxTimestep Delta_SMB::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
-void PO_delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   input_model->shelf_base_mass_flux(result);
   offset_data(result);
 }
 
-void PO_delta_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Delta_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-void PO_delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
+void Delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                               IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
@@ -100,7 +101,7 @@ void PO_delta_SMB::define_variables_impl(const std::set<std::string> &vars_input
   input_model->define_variables(vars, nc, nctype);
 }
 
-void PO_delta_SMB::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
+void Delta_SMB::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
   IceModelVec2S tmp;
 
@@ -130,4 +131,5 @@ void PO_delta_SMB::write_variables_impl(const std::set<std::string> &vars_input,
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace ocean
 } // end of namespace pism

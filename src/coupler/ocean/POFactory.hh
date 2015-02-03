@@ -24,7 +24,7 @@
 
 namespace pism {
 
-class POFactory : public PCFactory<OceanModel,POModifier> {
+class POFactory : public PCFactory<ocean::OceanModel,ocean::OceanModifier> {
 public:
   POFactory(const IceGrid& g);
   ~POFactory();

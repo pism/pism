@@ -21,7 +21,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
-
+namespace ocean {
 OceanModel::OceanModel(const IceGrid &g)
   : Component_TS(g), m_sea_level(0) {
   // empty
@@ -65,4 +65,5 @@ void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 
+} // end of namespace ocean
 } // end of namespace pism

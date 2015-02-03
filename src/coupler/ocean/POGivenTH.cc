@@ -25,8 +25,9 @@
 #include <cassert>
 
 namespace pism {
+namespace ocean {
 
-POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
+GivenTH::Constants::Constants(const Config &config) {
   // coefficients of the in situ melting point temperature
   // parameterization:
   a[0] = -0.0575;
@@ -56,8 +57,8 @@ POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
   limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
 }
 
-POGivenTH::POGivenTH(const IceGrid &g)
-  : PGivenClimate<POModifier,OceanModel>(g, NULL) {
+GivenTH::GivenTH(const IceGrid &g)
+  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
 
   option_prefix   = "-ocean_th";
 
@@ -95,11 +96,11 @@ POGivenTH::POGivenTH(const IceGrid &g)
   m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 }
 
-POGivenTH::~POGivenTH() {
+GivenTH::~GivenTH() {
   // empty
 }
 
-void POGivenTH::init_impl() {
+void GivenTH::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -116,8 +117,8 @@ void POGivenTH::init_impl() {
   }
 }
 
-void POGivenTH::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  PGivenClimate<POModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
+void GivenTH::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  PGivenClimate<OceanModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
 
   if (keyword != "none" && keyword != "small") {
     result.insert("shelfbtemp");
@@ -125,10 +126,10 @@ void POGivenTH::add_vars_to_output_impl(const std::string &keyword, std::set<std
   }
 }
 
-void POGivenTH::define_variables_impl(const std::set<std::string> &vars,
+void GivenTH::define_variables_impl(const std::set<std::string> &vars,
                                            const PIO &nc, IO_Type nctype) {
 
-  PGivenClimate<POModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
+  PGivenClimate<OceanModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "shelfbtemp")) {
     m_shelfbtemp.define(nc, nctype);
@@ -139,9 +140,9 @@ void POGivenTH::define_variables_impl(const std::set<std::string> &vars,
   }
 }
 
-void POGivenTH::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
+void GivenTH::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
 
-  PGivenClimate<POModifier,OceanModel>::write_variables_impl(vars, nc);
+  PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
 
   if (set_contains(vars, "shelfbtemp")) {
     m_shelfbtemp.write(nc);
@@ -152,23 +153,23 @@ void POGivenTH::write_variables_impl(const std::set<std::string> &vars, const PI
   }
 }
 
-void POGivenTH::shelf_base_temperature_impl(IceModelVec2S &result) {
+void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) {
   m_shelfbtemp.copy_to(result);
 }
 
-void POGivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   m_shelfbmassflux.copy_to(result);
 }
 
-void POGivenTH::sea_level_elevation_impl(double &result) {
+void GivenTH::sea_level_elevation_impl(double &result) {
   result = m_sea_level;
 }
 
-void POGivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void GivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 
-void POGivenTH::update_impl(double my_t, double my_dt) {
+void GivenTH::update_impl(double my_t, double my_dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
@@ -177,7 +178,7 @@ void POGivenTH::update_impl(double my_t, double my_dt) {
   m_theta_ocean->average(m_t, m_dt);
   m_salinity_ocean->average(m_t, m_dt);
 
-  POGivenTHConstants c(m_config);
+  Constants c(m_config);
 
   const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -217,7 +218,7 @@ void POGivenTH::update_impl(double my_t, double my_dt) {
 //* Evaluate the parameterization of the melting point temperature.
 /** The value returned is in degrees Celsius.
  */
-static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
+static double melting_point_temperature(GivenTH::Constants c,
                                         double salinity, double ice_thickness) {
   return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;
 }
@@ -230,7 +231,7 @@ static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
  *
  * @return shelf base melt rate, in [m/s]
  */
-static double shelf_base_melt_rate(POGivenTH::POGivenTHConstants c,
+static double shelf_base_melt_rate(GivenTH::Constants c,
                                    double sea_water_salinity, double basal_salinity) {
 
   return c.gamma_S * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
@@ -383,7 +384,7 @@ static double shelf_base_melt_rate(POGivenTH::POGivenTHConstants c,
  *
  * @return 0 on success
  */
-void POGivenTH::pointwise_update(const POGivenTHConstants &constants,
+void GivenTH::pointwise_update(const Constants &constants,
                                  double sea_water_salinity,
                                  double sea_water_potential_temperature,
                                  double thickness,
@@ -442,7 +443,7 @@ void POGivenTH::pointwise_update(const POGivenTHConstants &constants,
  *
  * @return 0 on success
  */
-void POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity(const Constants &c,
                                             double sea_water_salinity,
                                             double sea_water_potential_temperature,
                                             double thickness,
@@ -522,7 +523,7 @@ void POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
  *
  * @return 0 on success
  */
-void POGivenTH::subshelf_salinity_melt(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity_melt(const Constants &c,
                                                  double sea_water_salinity,
                                                  double sea_water_potential_temperature,
                                                  double thickness,
@@ -579,7 +580,7 @@ void POGivenTH::subshelf_salinity_melt(const POGivenTHConstants &c,
  *
  * @return 0 on success
  */
-void POGivenTH::subshelf_salinity_freeze_on(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity_freeze_on(const Constants &c,
                                                       double sea_water_salinity,
                                                       double sea_water_potential_temperature,
                                                       double thickness,
@@ -639,7 +640,7 @@ void POGivenTH::subshelf_salinity_freeze_on(const POGivenTHConstants &c,
  *
  * @return 0 on success
  */
-void POGivenTH::subshelf_salinity_diffusion_only(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity_diffusion_only(const Constants &c,
                                                            double sea_water_salinity,
                                                            double sea_water_potential_temperature,
                                                            double thickness,
@@ -674,4 +675,5 @@ void POGivenTH::subshelf_salinity_diffusion_only(const POGivenTHConstants &c,
   *shelf_base_salinity = S2;
 }
 
+} // end of namespace ocean
 } // end of namespace pism
