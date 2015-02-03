@@ -129,7 +129,7 @@ MaxTimestep PSCache::max_timestep_impl(double t) {
   assert(input_model != NULL);
 
   MaxTimestep input_max_timestep = input_model->max_timestep(t);
-  if (input_max_timestep) {
+  if (input_max_timestep.is_finite()) {
     return std::min(input_max_timestep, MaxTimestep(dt));
   } else {
     return MaxTimestep(dt);

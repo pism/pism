@@ -40,6 +40,7 @@
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "iceModelVec.hh"
+#include "MaxTimestep.hh"
 
 namespace pism {
 
@@ -460,7 +461,7 @@ protected:
   void init_timeseries();
   void flush_timeseries();
   void write_timeseries();
-  void ts_max_timestep(double my_t, double& my_dt, bool &restrict);
+  MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
@@ -473,7 +474,7 @@ protected:
   NCTimeseries timestamp;
   void init_extras();
   void write_extras();
-  void extras_max_timestep(double my_t, double& my_dt, bool &restrict);
+  MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups
   double backup_interval;

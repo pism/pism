@@ -52,7 +52,7 @@ protected:
     MaxTimestep input_max_dt = Mod::input_model->max_timestep(t);
     MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
 
-    if (input_max_dt) {
+    if (input_max_dt.is_finite()) {
       return std::min(surface_max_dt, input_max_dt);
     } else {
       return surface_max_dt;

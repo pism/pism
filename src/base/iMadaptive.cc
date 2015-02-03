@@ -205,12 +205,11 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
  */
 void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
-  const bool updateAtDepth = (skipCountDown == 0);
+  const bool update_3d = (skipCountDown == 0);
   const double time_to_end = grid.time->end() - grid.time->current();
 
   // FIXME: we should probably create a std::vector<const Component_TS*>
   // (or similar) and iterate over that instead.
-  bool restrict_dt = false;
   const double current_time = grid.time->current();
   std::map<std::string, double> dt_restrictions;
 
@@ -234,18 +233,16 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   //! Always apply the time-step restriction from the
   //! -ts_{times,file,vars} mechanism (the user asked for it).
-  double ts_dt = 0.0;
-  ts_max_timestep(current_time, ts_dt, restrict_dt);
-  if (restrict_dt) {
-    dt_restrictions["-ts_... reporting"] = ts_dt;
+  MaxTimestep ts_dt = ts_max_timestep(current_time);
+  if (ts_dt.is_finite()) {
+    dt_restrictions["-ts_... reporting"] = ts_dt.value();
   }
 
   //! Always apply the time-step restriction from the
   //! -extra_{times,file,vars} mechanism (the user asked for it).
-  double extras_dt = 0.0;
-  extras_max_timestep(current_time, extras_dt, restrict_dt);
-  if (restrict_dt) {
-    dt_restrictions["-extra_... reporting"] = extras_dt;
+  MaxTimestep extras_dt = extras_max_timestep(current_time);
+  if (extras_dt.is_finite()) {
+    dt_restrictions["-extra_... reporting"] = extras_dt.value();
   }
 
   if (dt_force > 0.0) {
@@ -258,36 +255,36 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     // restrictions.
 
     MaxTimestep surface_dt = surface->max_timestep(current_time);
-    if (surface_dt)  {
+    if (surface_dt.is_finite())  {
       dt_restrictions["surface"] = surface_dt.value();
     }
 
     MaxTimestep ocean_dt = ocean->max_timestep(current_time);
-    if (ocean_dt) {
+    if (ocean_dt.is_finite()) {
       dt_restrictions["ocean"] = ocean_dt.value();
     }
 
     MaxTimestep hydrology_dt = subglacial_hydrology->max_timestep(current_time);
-    if (restrict_dt) {
-      dt_restrictions["hydrology"] = hydrology_dt;
+    if (hydrology_dt.is_finite()) {
+      dt_restrictions["hydrology"] = hydrology_dt.value();
     }
 
     if (btu != NULL) {
       MaxTimestep btu_dt = btu->max_timestep(current_time);
-      if (btu_dt) {
+      if (btu_dt.is_finite()) {
         dt_restrictions["BTU"] = btu_dt.value();
       }
     }
 
     if (eigen_calving != NULL) {
       MaxTimestep eigencalving_dt = eigen_calving->max_timestep();
-      if (eigencalving_dt) {
+      if (eigencalving_dt.is_finite()) {
         dt_restrictions["eigencalving"] = eigencalving_dt.value();
       }
     }
 
-    if (config.get_flag("do_energy") == true) {
-      if (updateAtDepth == true) {
+    if (config.get_flag("do_energy")) {
+      if (update_3d) {
         CFLmaxdt = max_timestep_cfl_3d();
       }
       dt_restrictions["3D CFL"] = CFLmaxdt;

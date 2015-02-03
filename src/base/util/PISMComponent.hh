@@ -149,8 +149,7 @@ public:
   Component_TS(const IceGrid &g);
   virtual ~Component_TS();
 
-  //! \brief Reports the maximum time-step the model can take at t. Sets
-  //! dt to -1 if any time-step is OK.
+  //! @brief Reports the maximum time-step the model can take at t.
   MaxTimestep max_timestep(double t);
 
   //! Update the *state* of a component, if necessary.

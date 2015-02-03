@@ -794,7 +794,7 @@ void IceModel::init_step_couplers() {
     max_dt = MaxTimestep(1.0);
   }
 
-  assert((bool)max_dt == true);
+  assert(max_dt.is_finite() == true);
 
   surface->update(now, max_dt.value());
   ocean->update(now, max_dt.value());

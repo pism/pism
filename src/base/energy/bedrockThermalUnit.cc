@@ -297,7 +297,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
   }
   // CHECK: is desired time-step too long?
   MaxTimestep my_max_dt = max_timestep(my_t);
-  if (my_max_dt and my_max_dt.value() < my_dt) {
+  if (my_max_dt.is_finite() and my_max_dt.value() < my_dt) {
      throw RuntimeError("BedThermalUnit::update() thinks you asked for too big a timestep.");
   }
 

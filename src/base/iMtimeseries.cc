@@ -480,84 +480,56 @@ void IceModel::write_extras() {
 /*!
   Sets restrict to 'false' if any time-step is OK.
  */
-void IceModel::extras_max_timestep(double my_t, double& my_dt, bool &restrict) {
+MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
-  if (!save_extra) {
-    my_dt = -1;
-    restrict = false;
-    return;
-  }
-
-  if (config.get_flag("extras_force_output_times") == false) {
-    my_dt = -1;
-    restrict = false;
-    return;
+  if ((not save_extra) or
+      (not config.get_flag("extras_force_output_times"))) {
+    return MaxTimestep();
   }
 
   std::vector<double>::iterator j;
   j = upper_bound(extra_times.begin(), extra_times.end(), my_t);
 
   if (j == extra_times.end()) {
-    my_dt = -1;
-    restrict = false;
-    return;
+    return MaxTimestep();
   }
 
-  my_dt = *j - my_t;
-  restrict = true;
+  double my_dt = *j - my_t;
 
   // now make sure that we don't end up taking a time-step of less than 1
   // second long
-  if (my_dt < 1) {
+  if (my_dt < 1.0) {
     if ((j + 1) != extra_times.end()) {
-      my_dt = *(j + 1) - my_t;
-      restrict = true;
+      return MaxTimestep(*(j + 1) - my_t);
     } else {
-      my_dt = -1;
-      restrict = false;
+      return MaxTimestep();
     }
+  } else {
+    return MaxTimestep(my_dt);
   }
 }
 
 //! Computes the maximum time-step we can take and still hit all the requested years.
-/*!
-  Sets restrict to 'false' if any time-step is OK.
- */
-void IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restrict) {
+MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
-  if (!save_ts) {
-    my_dt = -1;
-    restrict = false;
-    return;
+  if ((not save_ts) or
+      (not config.get_flag("ts_force_output_times"))) {
+    return MaxTimestep();
   }
 
   // make sure that we hit the left endpoint of the first report interval
   if (my_t < ts_times[0]) {
-    my_dt = ts_times[0] - my_t;
-    restrict = true;
-    return;
-  }
-
-  bool force_times;
-  force_times = config.get_flag("ts_force_output_times");
-
-  if (!force_times) {
-    my_dt = -1;
-    restrict = false;
-    return;
+    return MaxTimestep(ts_times[0] - my_t);
   }
 
   std::vector<double>::iterator j;
   j = upper_bound(ts_times.begin(), ts_times.end(), my_t);
 
   if (j == ts_times.end()) {
-    my_dt = -1;
-    restrict = false;
-    return;
+    return MaxTimestep();
   }
 
-  my_dt = *j - my_t;
-  restrict = true;
+  return MaxTimestep(*j - my_t);
 }
 
 //! Flush scalar time-series.
