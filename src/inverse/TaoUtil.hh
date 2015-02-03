@@ -28,6 +28,7 @@
 #include "Tao.hh"
 
 namespace pism {
+namespace taoutil {
 
 //! Encapsulate TAO's TaoSolverTerminationReason codes as a PISM TerminationReason.
 class TAOTerminationReason: public TerminationReason {
@@ -506,6 +507,7 @@ protected:
   }
 };
 
+} // end of namespace taoutil
 } // end of namespace pism
 
 #endif /* end of include guard: TAOUTIL_HH_W42GJNRO */

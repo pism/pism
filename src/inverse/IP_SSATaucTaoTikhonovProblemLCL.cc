@@ -125,14 +125,14 @@ void IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
                              m_x->blockAIndexSet() /*design*/);
   PISM_CHK(ierr, "TaoSetStateDesignIS");
 
-  TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,
-                     &IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao, *this);
+  taoutil::TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,
+                              &IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao, *this);
 
-  TaoLCLCallbacks<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao, *this,
+  taoutil::TaoLCLCallbacks<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao, *this,
                                                             m_constraints.get_vec(),
                                                             m_Jstate, m_Jdesign);
 
-  TaoMonitorCallback<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this);
+  taoutil::TaoMonitorCallback<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this);
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {

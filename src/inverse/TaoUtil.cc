@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "TaoUtil.hh"
 
 namespace pism {
+namespace taoutil {
 
 TAOTerminationReason::TAOTerminationReason(TaoConvergedReason r)  {
   m_reason = r;
@@ -31,4 +32,5 @@ void TAOTerminationReason::get_description(std::ostream &desc, int indent_level)
   desc << TaoConvergedReasons[m_reason];
 }
 
+} // end of namespace taoutil
 } // end of namespace pism

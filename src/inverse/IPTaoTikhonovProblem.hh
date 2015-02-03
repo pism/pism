@@ -325,14 +325,14 @@ IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikhonovProblem() {
 
 template<class ForwardProblem>
 void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
-  typedef TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,
+  typedef taoutil::TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,
                              &IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
 
   ObjGradCallback::connect(tao,*this);
 
-  TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
+  taoutil::TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
 
-  TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
+  taoutil::TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
 
   double fatol = 1e-10, frtol = 1e-20;
   double

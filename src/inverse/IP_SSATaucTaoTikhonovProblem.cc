@@ -32,7 +32,7 @@ void IP_SSATaucTaoTikhonovProblem::connect(Tao tao) {
   PISM_CHK(ierr, "TaoGetType");
 
   if (strcmp(type,"blmvm") == 0) {
-    TaoGetVariableBoundsCallback<IP_SSATaucTaoTikhonovProblem>::connect(tao,*this);
+    taoutil::TaoGetVariableBoundsCallback<IP_SSATaucTaoTikhonovProblem>::connect(tao,*this);
   }  
 }
 

@@ -74,7 +74,7 @@
 
 #ifdef PISM_USE_TAO
 %ignore TaoConvergedReasons;
-%shared_ptr(pism::TAOTerminationReason)
+%shared_ptr(pism::taoutil::TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
 
 %include "inverse/IPTaoTikhonovProblem.hh"
@@ -93,13 +93,13 @@
 
 %include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 
-%template(IP_SSATaucTaoTikhonovSolver) pism::TaoBasicSolver<pism::inverse::IP_SSATaucTaoTikhonovProblem>;
+%template(IP_SSATaucTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_SSATaucTaoTikhonovProblem>;
 
 
 %shared_ptr(pism::inverse::IP_SSATaucTaoTikhonovProblemLCLListener)
 %feature("director") pism::inverse::IP_SSATaucTaoTikhonovProblemLCLListener;
 %include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
-%template(IP_SSATaucTaoTikhonovProblemLCLSolver) pism::TaoBasicSolver< pism::inverse::IP_SSATaucTaoTikhonovProblemLCL >;
+%template(IP_SSATaucTaoTikhonovProblemLCLSolver) pism::taoutil::TaoBasicSolver< pism::inverse::IP_SSATaucTaoTikhonovProblemLCL >;
 
 
 //################### IP_SSAHardav... #############################
@@ -114,6 +114,6 @@
 
 %include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 
-%template(IP_SSAHardavTaoTikhonovSolver) pism::TaoBasicSolver<pism::inverse::IP_SSAHardavTaoTikhonovProblem>;
+%template(IP_SSAHardavTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_SSAHardavTaoTikhonovProblem>;
 
 #endif  /* end of ifdef PISM_USE_TAO */
