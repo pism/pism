@@ -20,6 +20,7 @@
 #include "hydrology_diagnostics.hh"
 
 namespace pism {
+namespace hydrology {
 
 Hydrology_bwat::Hydrology_bwat(Hydrology *m)
   : Diag<Hydrology>(m) {
@@ -287,4 +288,5 @@ void MCHydrology_null_strip_loss::update(double a, double b) {
   m_ts->append(model->m_null_strip_loss_cumulative, a, b);
 }
 
+} // end of namespace hydrology
 } // end of namespace pism

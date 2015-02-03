@@ -656,6 +656,9 @@ void IceModel::allocate_bedrock_thermal_unit() {
 
 //! \brief Decide which subglacial hydrology model to use.
 void IceModel::allocate_subglacial_hydrology() {
+
+  using namespace pism::hydrology;
+
   std::string hydrology_model = config.get_string("hydrology_model");
 
   if (subglacial_hydrology != NULL) { // indicates it has already been allocated

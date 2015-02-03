@@ -22,6 +22,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace hydrology {
 
 NullTransportHydrology::NullTransportHydrology(const IceGrid &g)
   : Hydrology(g) {
@@ -108,4 +109,5 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
 }
 
 
+} // end of namespace hydrology
 } // end of namespace pism

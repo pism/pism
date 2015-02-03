@@ -24,6 +24,7 @@
 #include "PISMHydrology.hh"
 
 namespace pism {
+namespace hydrology {
 /*! \file
   Interfaces for the following diagnostics which are handled by Hydrology
   instances; some of these may be replaced by state variables; listed by short
@@ -189,6 +190,7 @@ public:
   virtual void update(double a, double b);
 };
 
+} // end of namespace hydrology
 } // end of namespace pism
 
 #endif /* _HYDROLOGY_DIAGNOSTICS_H_ */

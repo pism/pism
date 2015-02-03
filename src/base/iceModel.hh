@@ -56,11 +56,14 @@ namespace stressbalance {
 class StressBalance;
 }
 
+namespace hydrology {
+class Hydrology;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
 class EnthalpyConverter;
-class Hydrology;
 class YieldStress;
 class BedDef;
 class BedThermalUnit;
@@ -214,7 +217,7 @@ protected:
     mapping,                    //!< grid projection (mapping) parameters
     run_stats;                  //!< run statistics
 
-  Hydrology   *subglacial_hydrology;
+  hydrology::Hydrology   *subglacial_hydrology;
   YieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;

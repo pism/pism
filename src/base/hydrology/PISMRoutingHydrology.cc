@@ -24,6 +24,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace hydrology {
 
 RoutingHydrology::RoutingHydrology(const IceGrid &g)
     : Hydrology(g)
@@ -848,4 +849,5 @@ IceModelVec::Ptr RoutingHydrology_bwatvel::compute() {
   return result;
 }
 
+} // end of namespace hydrology
 } // end of namespace pism

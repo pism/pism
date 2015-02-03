@@ -25,6 +25,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace hydrology {
 
 Hydrology::Hydrology(const IceGrid &g)
   : Component_TS(g) {
@@ -289,4 +290,5 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
 }
 
 
+} // end of namespace hydrology
 } // end of namespace pism

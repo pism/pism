@@ -26,11 +26,14 @@
 
 namespace pism {
 
+namespace hydrology {
+class Hydrology;
+}
 
 //! \brief PISM's default basal yield stress model which applies the Mohr-Coulomb model of deformable, pressurized till.
 class MohrCoulombYieldStress : public YieldStress {
 public:
-  MohrCoulombYieldStress(const IceGrid &g, Hydrology *hydro);
+  MohrCoulombYieldStress(const IceGrid &g, hydrology::Hydrology *hydro);
 
   virtual ~MohrCoulombYieldStress();
 
@@ -54,7 +57,7 @@ protected:
   bool m_topg_to_phi, m_tauc_to_phi;
   IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
   IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
-  Hydrology *m_hydrology;
+  hydrology::Hydrology *m_hydrology;
 };
 
 } // end of namespace pism

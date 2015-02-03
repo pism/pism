@@ -55,7 +55,7 @@ public:
 
 class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
 public:
-  RegionalDefaultYieldStress(const IceGrid &g, Hydrology *hydro)
+  RegionalDefaultYieldStress(const IceGrid &g, hydrology::Hydrology *hydro)
     : MohrCoulombYieldStress(g, hydro) {}
   virtual ~RegionalDefaultYieldStress() {}
   virtual void init();

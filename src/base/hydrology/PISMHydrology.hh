@@ -28,6 +28,12 @@ namespace pism {
 
 class IceModelVec2T;
 
+namespace stressbalance {
+class StressBalance;
+}
+
+namespace hydrology {
+
 //! \brief The PISM subglacial hydrology model interface.
 /*!
   This is a virtual base class.
@@ -308,10 +314,6 @@ protected:
   void raw_update_Wtil(double hdt);
 };
 
-namespace stressbalance {
-class StressBalance;
-}
-
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
   This class implements the model documented in [\ref BuelervanPeltDRAFT].
@@ -371,6 +373,7 @@ protected:
   stressbalance::StressBalance* m_stressbalance;
 };
 
+} // end of namespace hydrology
 } // end of namespace pism
 
 #endif /* _PISMHYDROLOGY_H_ */

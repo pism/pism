@@ -25,6 +25,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace hydrology {
 
 DistributedHydrology::DistributedHydrology(const IceGrid &g,
                                            stressbalance::StressBalance *sb)
@@ -526,4 +527,5 @@ IceModelVec::Ptr DistributedHydrology_hydrovelbase_mag::compute() {
 }
 
 
+} // end of namespace hydrology
 } // end of namespace pism

@@ -51,7 +51,7 @@ This submodel is inactive in floating areas.
 
 
 MohrCoulombYieldStress::MohrCoulombYieldStress(const IceGrid &g,
-                                               Hydrology *hydro)
+                                               hydrology::Hydrology *hydro)
   : YieldStress(g) {
 
   m_topg_to_phi = false;
@@ -145,7 +145,7 @@ void MohrCoulombYieldStress::init() {
 
   {
     const std::string flag_name = "tauc_add_transportable_water";
-    RoutingHydrology *hydrology_routing = dynamic_cast<RoutingHydrology*>(m_hydrology);
+    hydrology::RoutingHydrology *hydrology_routing = dynamic_cast<hydrology::RoutingHydrology*>(m_hydrology);
     if (m_config.get_flag(flag_name) == true && hydrology_routing == NULL) {
       throw RuntimeError::formatted("Flag %s is set.\n"
                                     "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
@@ -370,7 +370,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
                delta       = m_config.get("till_effective_fraction_overburden"),
                tlftw       = m_config.get("till_log_factor_transportable_water");
 
-  RoutingHydrology* hydrowithtransport = dynamic_cast<RoutingHydrology*>(m_hydrology);
+  hydrology::RoutingHydrology* hydrowithtransport = dynamic_cast<hydrology::RoutingHydrology*>(m_hydrology);
   if (m_hydrology) {
     m_hydrology->till_water_thickness(m_tillwat);
     m_hydrology->overburden_pressure(m_Po);
