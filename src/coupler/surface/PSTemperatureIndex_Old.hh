@@ -67,7 +67,8 @@ protected:
 
   FaustoGrevePDDObject_Old *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
-  DegreeDayFactors_Old base_ddf;          //!< holds degree-day factors in location-independent case
+  //! holds degree-day factors in location-independent case
+  LocalMassBalance_Old::DegreeDayFactors base_ddf;
   PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
     base_pddThresholdTemp; //!< K; temps are positive above this
   IceModelVec2S

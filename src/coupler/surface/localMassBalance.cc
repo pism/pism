@@ -29,6 +29,7 @@
 #include <algorithm>
 
 namespace pism {
+namespace surface {
 
 LocalMassBalance::LocalMassBalance(const Config &myconfig)
   : config(myconfig), m_unit_system(config.get_unit_system()),
@@ -307,7 +308,7 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(const IceGrid &g)
 void FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
                                                double /* usurf */,
                                                double lat, double /* lon */,
-                                               DegreeDayFactors &ddf) {
+                                               LocalMassBalance::DegreeDayFactors &ddf) {
 
   IceModelVec::AccessList list(m_temp_mj);
   const double T_mj = m_temp_mj(i,j);
@@ -370,4 +371,5 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
   }
 }
 
+} // end of namespace surface
 } // end of namespace pism

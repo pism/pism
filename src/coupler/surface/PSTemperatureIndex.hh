@@ -63,7 +63,9 @@ protected:
 
   FaustoGrevePDDObject *m_faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
-  DegreeDayFactors m_base_ddf;          //!< holds degree-day factors in location-independent case
+  //! holds degree-day factors in location-independent case
+  LocalMassBalance::DegreeDayFactors m_base_ddf;
+
   double  m_base_pddStdDev,        //!< K; daily amount of randomness
     m_base_pddThresholdTemp, //!< K; temps are positive above this
     m_next_balance_year_start;

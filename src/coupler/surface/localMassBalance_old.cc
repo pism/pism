@@ -29,6 +29,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace surface {
 
 PDDMassBalance_Old::PDDMassBalance_Old(const Config& myconfig) : LocalMassBalance_Old(myconfig) {
   precip_as_snow = config.get_flag("interpret_precip_as_snow");
@@ -190,7 +191,7 @@ double PDDMassBalance_Old::getSnowFromPrecipAndTemperatureTimeSeries(double prec
 
   in all cases.
 */
-void PDDMassBalance_Old::getMassFluxesFromPDDs(const DegreeDayFactors_Old &ddf,
+void PDDMassBalance_Old::getMassFluxesFromPDDs(const LocalMassBalance_Old::DegreeDayFactors &ddf,
                                                double dt, double pddsum,
                                                double accumulation,
                                                double &accumulation_rate,
@@ -335,7 +336,7 @@ FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(const IceGrid &g)
 void FaustoGrevePDDObject_Old::setDegreeDayFactors(int i, int j,
                                                    double /* usurf */,
                                                    double lat, double /* lon */,
-                                                   DegreeDayFactors_Old &ddf) {
+                                                   LocalMassBalance_Old::DegreeDayFactors &ddf) {
 
   IceModelVec::AccessList list(temp_mj);
   const double T_mj = temp_mj(i,j);
@@ -395,4 +396,5 @@ void FaustoGrevePDDObject_Old::update_temp_mj(const IceModelVec2S &surfelev,
 }
 
 
+} // end of namespace surface
 } // end of namespace pism

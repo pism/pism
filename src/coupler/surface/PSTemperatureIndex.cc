@@ -314,7 +314,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     list.add(*latitude);
   }
 
-  DegreeDayFactors  ddf = m_base_ddf;
+  LocalMassBalance::DegreeDayFactors  ddf = m_base_ddf;
 
   atmosphere->begin_pointwise_access();
   list.add(m_air_temp_sd);

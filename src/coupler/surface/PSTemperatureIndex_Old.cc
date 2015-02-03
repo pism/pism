@@ -255,7 +255,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
     list.add(*lat);
   }
 
-  DegreeDayFactors_Old  ddf = base_ddf;
+  LocalMassBalance_Old::DegreeDayFactors  ddf = base_ddf;
 
   atmosphere->begin_pointwise_access();
   list.add(climatic_mass_balance);

@@ -25,18 +25,10 @@
 #include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
-//! A struct which holds degree day factors.
-/*!
-  Degree day factors convert positive degree days (=PDDs) into amount of melt.
-*/
-struct DegreeDayFactors_Old {
-  double  snow, //!< m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
-    ice,  //!< m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
-    refreezeFrac;  //!< fraction of melted snow which refreezes as ice
-};
 
 class Config;
 
+namespace surface {
 //! \brief Base class for a model which computes surface mass flux rate (ice
 //! thickness per time) from precipitation and temperature.
 /*!
@@ -65,6 +57,17 @@ class Config;
 */
 class LocalMassBalance_Old {
 public:
+
+  //! A struct which holds degree day factors.
+  /*!
+    Degree day factors convert positive degree days (=PDDs) into amount of melt.
+  */
+  struct DegreeDayFactors {
+    double  snow, //!< m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
+      ice,  //!< m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
+      refreezeFrac;  //!< fraction of melted snow which refreezes as ice
+  };
+
   LocalMassBalance_Old(const Config &myconfig)
     : config(myconfig) {}
   virtual ~LocalMassBalance_Old() {}
@@ -94,7 +97,7 @@ public:
     Returned mass fluxes, including \c accumulation_rate, \c melt_rate,
     \c runoff_rate, and \c smb (= surface mass balance), are in 
     ice-equivalent thickness per time (m s-1).  */
-  virtual void getMassFluxesFromPDDs(const DegreeDayFactors_Old &ddf,
+  virtual void getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
                                      double dt, double pddsum,
                                      double snow,
                                      double &accumulation_rate,
@@ -127,7 +130,7 @@ public:
   virtual double getSnowFromPrecipAndTemperatureTimeSeries(double precip_rate,
                                                            double t, double dt_series, double *T, int N);
 
-  virtual void getMassFluxesFromPDDs(const DegreeDayFactors_Old &ddf,
+  virtual void getMassFluxesFromPDDs(const LocalMassBalance_Old::DegreeDayFactors &ddf,
                                      double dt, double pddsum,
                                      double snow,
                                      double &accumulation_rate,
@@ -204,7 +207,7 @@ public:
                                    double /* usurf */,
                                    double lat,
                                    double /* lon */,
-                                   DegreeDayFactors_Old &ddf);
+                                   LocalMassBalance_Old::DegreeDayFactors &ddf);
 
 protected:
   const IceGrid &grid;
@@ -214,6 +217,7 @@ protected:
   IceModelVec2S temp_mj;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif

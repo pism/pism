@@ -25,16 +25,7 @@
 #include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
-//! A struct which holds degree day factors.
-/*!
-  Degree day factors convert positive degree days (=PDDs) into amount of melt.
-*/
-struct DegreeDayFactors {
-  double  snow, //!< m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
-    ice,  //!< m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
-    refreezeFrac;  //!< fraction of melted snow which refreezes as ice
-};
-
+namespace surface {
 
 //! \brief Base class for a model which computes surface mass flux rate (ice
 //! thickness per time) from precipitation and temperature.
@@ -64,6 +55,17 @@ struct DegreeDayFactors {
 */
 class LocalMassBalance {
 public:
+
+  //! A struct which holds degree day factors.
+  /*!
+    Degree day factors convert positive degree days (=PDDs) into amount of melt.
+  */
+  struct DegreeDayFactors {
+    double  snow, //!< m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
+      ice,  //!< m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
+      refreezeFrac;  //!< fraction of melted snow which refreezes as ice
+  };
+
   LocalMassBalance(const Config &myconfig);
   virtual ~LocalMassBalance() {}
 
@@ -199,7 +201,7 @@ public:
     for IceModelVec2S temp_mj. */
   virtual void setDegreeDayFactors(int i, int j,
                                    double /* usurf */, double lat, double /* lon */,
-                                   DegreeDayFactors &ddf);
+                                   LocalMassBalance::DegreeDayFactors &ddf);
 
 protected:
   const IceGrid &m_grid;
@@ -209,6 +211,7 @@ protected:
   IceModelVec2S m_temp_mj;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif
