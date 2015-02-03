@@ -26,7 +26,7 @@
 namespace pism {
 namespace hydrology {
 
-RoutingHydrology::RoutingHydrology(const IceGrid &g)
+Routing::Routing(const IceGrid &g)
     : Hydrology(g)
 {
   m_stripwidth = m_config.get("hydrology_null_strip_width");
@@ -88,12 +88,12 @@ RoutingHydrology::RoutingHydrology(const IceGrid &g)
   m_Wtilnew.metadata().set_double("valid_min", 0.0);
 }
 
-RoutingHydrology::~RoutingHydrology() {
+Routing::~Routing() {
   // empty
 }
 
 
-void RoutingHydrology::init() {
+void Routing::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
@@ -115,13 +115,13 @@ void RoutingHydrology::init() {
   m_null_strip_loss_cumulative         = 0.0;
 }
 
-MaxTimestep RoutingHydrology::max_timestep_impl(double t) {
+MaxTimestep Routing::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
 
-void RoutingHydrology::init_bwat() {
+void Routing::init_bwat() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
@@ -157,17 +157,17 @@ void RoutingHydrology::init_bwat() {
   }
 
   // however we initialized it, we could be asked to regrid from file
-  regrid("RoutingHydrology", m_W);
+  regrid("hydrology::Routing", m_W);
 }
 
 
-void RoutingHydrology::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+void Routing::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   Hydrology::add_vars_to_output_impl(keyword, result);
   result.insert("bwat");
 }
 
 
-void RoutingHydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+void Routing::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   Hydrology::define_variables_impl(vars, nc, nctype);
   if (set_contains(vars, "bwat")) {
@@ -176,7 +176,7 @@ void RoutingHydrology::define_variables_impl(const std::set<std::string> &vars, 
 }
 
 
-void RoutingHydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void Routing::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   Hydrology::write_variables_impl(vars, nc);
   if (set_contains(vars, "bwat")) {
     m_W.write(nc);
@@ -184,7 +184,7 @@ void RoutingHydrology::write_variables_impl(const std::set<std::string> &vars, c
 }
 
 
-void RoutingHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+void Routing::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                             std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   dict["bwp"]        = new Hydrology_bwp(this);
@@ -194,7 +194,7 @@ void RoutingHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &
   dict["hydroinput"] = new Hydrology_hydroinput(this);
   dict["wallmelt"]   = new Hydrology_wallmelt(this);
   // add diagnostic that only makes sense if transport is modeled
-  dict["bwatvel"]    = new RoutingHydrology_bwatvel(this);
+  dict["bwatvel"]    = new Routing_bwatvel(this);
 
   // add mass-conservation time-series diagnostics
   ts_dict["hydro_ice_free_land_loss_cumulative"]      = new MCHydrology_ice_free_land_loss_cumulative(this);
@@ -209,7 +209,7 @@ void RoutingHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &
 
 
 //! Check thk >= 0 and fails with message if not satisfied.
-void RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
+void Routing::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   IceModelVec::AccessList list;
   list.add(waterthk);
 
@@ -217,7 +217,7 @@ void RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk
     const int i = p.i(), j = p.j();
 
     if (waterthk(i,j) < 0.0) {
-      throw RuntimeError::formatted("RoutingHydrology: disallowed negative water layer thickness\n"
+      throw RuntimeError::formatted("hydrology::Routing: disallowed negative water layer thickness\n"
                                     "waterthk(i,j) = %.6f m at (i,j)=(%d,%d)",
                                     waterthk(i,j),i,j);
     }
@@ -239,7 +239,7 @@ the boundary removals.
 
 This method does no reporting at stdout; the calling routine can do that.
  */
-void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
+void Routing::boundary_mass_changes(IceModelVec2S &newthk,
                                              double &icefreelost, double &oceanlost,
                                              double &negativegain, double &nullstriplost) {
   double fresh_water_density = m_config.get("fresh_water_density");
@@ -299,13 +299,13 @@ void RoutingHydrology::boundary_mass_changes(IceModelVec2S &newthk,
 
 
 //! Copies the W variable, the modeled transportable water layer thickness.
-void RoutingHydrology::subglacial_water_thickness(IceModelVec2S &result) {
+void Routing::subglacial_water_thickness(IceModelVec2S &result) {
   m_W.copy_to(result);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water, because this is the model.
-void RoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+void Routing::subglacial_water_pressure(IceModelVec2S &result) {
   overburden_pressure(result);
 }
 
@@ -315,7 +315,7 @@ void RoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
 Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
 Calls subglacial_water_pressure() method to get water pressure.
  */
-void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
+void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
 
   const double
     rg = m_config.get("fresh_water_density") * m_config.get("standard_gravity");
@@ -349,7 +349,7 @@ void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
 //! Average the regular grid water thickness to values at the center of cell edges.
 /*! Uses mask values to avoid averaging using water thickness values from
 either ice-free or floating areas. */
-void RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
+void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
 
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
   MaskQuery M(*mask);
@@ -405,7 +405,7 @@ stencil of width 1.
 
 Also returns the maximum over all staggered points of \f$ K W \f$.
  */
-void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
+void Routing::conductivity_staggered(IceModelVec2Stag &result,
                                                         double &maxKW) {
   const double
     k     = m_config.get("hydrology_hydraulic_conductivity"),
@@ -481,7 +481,7 @@ staggered-versus-regular change.
 
 At the current state of the code, this is a diagnostic calculation only.
  */
-void RoutingHydrology::wall_melt(IceModelVec2S &result) {
+void Routing::wall_melt(IceModelVec2S &result) {
 
   const double
     k     = m_config.get("hydrology_hydraulic_conductivity"),
@@ -556,7 +556,7 @@ have valid ghosts.
 
 Calls subglacial_water_pressure() method to get water pressure.
  */
-void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
+void Routing::velocity_staggered(IceModelVec2Stag &result) {
   const double  rg = m_config.get("standard_gravity") * m_config.get("fresh_water_density");
   double dbdx, dbdy, dPdx, dPdy;
 
@@ -607,7 +607,7 @@ The field W must have valid ghost values, but V does not need them.
 
 FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
  */
-void RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
+void Routing::advective_fluxes(IceModelVec2Stag &result) {
   IceModelVec::AccessList list;
   list.add(m_W);
   list.add(m_V);
@@ -625,7 +625,7 @@ void RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
 
 
 //! Compute the adaptive time step for evolution of W.
-void RoutingHydrology::adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
+void Routing::adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
                                                 double &dt_result,
                                                 double &maxV_result, double &maxD_result,
                                                 double &dtCFL_result, double &dtDIFFW_result) {
@@ -656,14 +656,14 @@ where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
 \f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
-Compare NullTransportHydrology::update().  The current code is not quite "code
+Compare hydrology::NullTransport::update().  The current code is not quite "code
 duplication" because the code here: (1) computes `Wtilnew` instead of updating
 `Wtil` in place; (2) uses time steps determined by the rest of the
-RoutingHydrology model; (3) does not check mask because the boundary_mass_changes()
+hydrology::Routing model; (3) does not check mask because the boundary_mass_changes()
 call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
-void RoutingHydrology::raw_update_Wtil(double hdt) {
+void Routing::raw_update_Wtil(double hdt) {
   const double tillwat_max = m_config.get("hydrology_tillwat_max"),
                C           = m_config.get("hydrology_tillwat_decay_rate");
 
@@ -682,7 +682,7 @@ void RoutingHydrology::raw_update_Wtil(double hdt) {
 
 
 //! The computation of Wnew, called by update().
-void RoutingHydrology::raw_update_W(double hdt) {
+void Routing::raw_update_W(double hdt) {
   const double
     wux  = 1.0 / (m_grid.dx() * m_grid.dx()),
     wuy  = 1.0 / (m_grid.dy() * m_grid.dy()),
@@ -725,7 +725,7 @@ own shorter time steps, perhaps hours to weeks.
 To update W = `bwat` we call raw_update_W(), and to update Wtil = `tillwat` we
 call raw_update_Wtil().
  */
-void RoutingHydrology::update_impl(double icet, double icedt) {
+void Routing::update_impl(double icet, double icedt) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
@@ -738,7 +738,7 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
   m_dt = icedt;
 
   if (m_config.get("hydrology_tillwat_max") < 0.0) {
-    throw RuntimeError("RoutingHydrology: hydrology_tillwat_max is negative.\n"
+    throw RuntimeError("hydrology::Routing: hydrology_tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 
@@ -821,8 +821,8 @@ void RoutingHydrology::update_impl(double icet, double icedt) {
 }
 
 
-RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m)
-  : Diag<RoutingHydrology>(m) {
+Routing_bwatvel::Routing_bwatvel(Routing *m)
+  : Diag<Routing>(m) {
 
   // set metadata:
   m_dof = 2;
@@ -836,7 +836,7 @@ RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m)
 }
 
 
-IceModelVec::Ptr RoutingHydrology_bwatvel::compute() {
+IceModelVec::Ptr Routing_bwatvel::compute() {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);

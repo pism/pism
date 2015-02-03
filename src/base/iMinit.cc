@@ -666,11 +666,11 @@ void IceModel::allocate_subglacial_hydrology() {
   }
 
   if (hydrology_model == "null") {
-    subglacial_hydrology = new NullTransportHydrology(grid);
+    subglacial_hydrology = new NullTransport(grid);
   } else if (hydrology_model == "routing") {
-    subglacial_hydrology = new RoutingHydrology(grid);
+    subglacial_hydrology = new Routing(grid);
   } else if (hydrology_model == "distributed") {
-    subglacial_hydrology = new DistributedHydrology(grid, stress_balance);
+    subglacial_hydrology = new Distributed(grid, stress_balance);
   } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
                                   "has value '%s'", hydrology_model.c_str());

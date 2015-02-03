@@ -212,7 +212,7 @@ void set_config_from_options(Config &config) {
                             "hydrology_thickness_power_in_flux");
   config.scalar_from_option("hydrology_gradient_power_in_flux",
                             "hydrology_gradient_power_in_flux");
-  // additional to RoutingHydrology, these apply to DistributedHydrology:
+  // additional to hydrology::Routing, these apply to hydrology::Distributed:
   config.scalar_from_option("hydrology_roughness_scale",
                             "hydrology_roughness_scale");
   config.scalar_from_option("hydrology_cavitation_opening_coefficient",

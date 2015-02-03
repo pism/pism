@@ -247,10 +247,7 @@
 /* SSAForwardRunFromInputFile sets up a yield stress model, which
  * requires a hydrology model.
  */
-%{
-using pism::stressbalance::StressBalance;
-%}
-%include "PISMHydrology.hh"
+%include pism_Hydrology.i
 
 %include "Mask.hh"
 %include "pism_python.hh"

@@ -162,10 +162,10 @@ protected:
   This talk illustrates a "till-can" metaphor applicable to this model:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 */
-class NullTransportHydrology : public Hydrology {
+class NullTransport : public Hydrology {
 public:
-  NullTransportHydrology(const IceGrid &g);
-  virtual ~NullTransportHydrology();
+  NullTransport(const IceGrid &g);
+  virtual ~NullTransport();
 
   virtual void init();
 
@@ -211,7 +211,7 @@ protected:
 
   For more complete modeling where the water pressure is determined by a
   physical model for the opening and closing of cavities, and where the state
-  space includes a nontrivial pressure variable, see DistributedHydrology.
+  space includes a nontrivial pressure variable, see hydrology::Distributed.
 
   There is an option `-hydrology_null_strip` `X` which produces a strip of
   `X` km around the edge of the computational domain.  In that strip the water flow
@@ -235,10 +235,10 @@ protected:
   ice.)  See wall_melt().  At this time the wall melt is diagnostic only and does
   not add to the water amount W; such an addition is generally unstable.
 */
-class RoutingHydrology : public Hydrology {
+class Routing : public Hydrology {
 public:
-  RoutingHydrology(const IceGrid &g);
-  virtual ~RoutingHydrology();
+  Routing(const IceGrid &g);
+  virtual ~Routing();
 
   virtual void init();
 
@@ -302,7 +302,7 @@ protected:
 
   virtual void conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
   virtual void velocity_staggered(IceModelVec2Stag &result);
-  friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
+  friend class Routing_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual void advective_fluxes(IceModelVec2Stag &result);
 
   virtual void adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
@@ -318,25 +318,25 @@ protected:
 /*!
   This class implements the model documented in [\ref BuelervanPeltDRAFT].
 
-  Unlike RoutingHydrology, the water pressure \f$P\f$ is a state variable, and there
+  Unlike hydrology::Routing, the water pressure \f$P\f$ is a state variable, and there
   are modeled mechanisms for cavity geometry evolution, including creep closure
   and opening through sliding ("cavitation").  Because of cavitation, this model
   needs access to a StressBalance object.   Background references for this kind of
   model includes especially [\ref Kamb1987, \ref Schoofetal2012], but see also
   [\ref Hewit2011, \ref Hewittetal2012, \ref Hewitt2013].
 
-  In addition to the actions within the null strip taken by RoutingHydrology,
+  In addition to the actions within the null strip taken by hydrology::Routing,
   this model also sets the staggered grid values of the gradient of the hydraulic
   potential to zero if either regular grid neighbor is in the null strip.
 */
-class DistributedHydrology : public RoutingHydrology {
+class Distributed : public Routing {
 public:
-  DistributedHydrology(const IceGrid &g, stressbalance::StressBalance *sb);
-  virtual ~DistributedHydrology();
+  Distributed(const IceGrid &g, stressbalance::StressBalance *sb);
+  virtual ~Distributed();
 
   virtual void init();
 
-  friend class DistributedHydrology_hydrovelbase_mag;
+  friend class Distributed_hydrovelbase_mag;
 
   virtual void subglacial_water_pressure(IceModelVec2S &result);
 
@@ -361,7 +361,7 @@ protected:
                                             double &maxV_result, double &maxD_result,
                                             double &PtoCFLratio);
 protected:
-  // this model's state, in addition to what is in RoutingHydrology
+  // this model's state, in addition to what is in hydrology::Routing
   IceModelVec2S m_P;      //!< water pressure
   // this model's auxiliary variables, in addition ...
   IceModelVec2S m_psi,    //!< hydraulic potential

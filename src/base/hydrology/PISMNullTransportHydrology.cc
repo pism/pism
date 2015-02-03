@@ -24,32 +24,32 @@
 namespace pism {
 namespace hydrology {
 
-NullTransportHydrology::NullTransportHydrology(const IceGrid &g)
+NullTransport::NullTransport(const IceGrid &g)
   : Hydrology(g) {
 }
 
-NullTransportHydrology::~NullTransportHydrology() {
+NullTransport::~NullTransport() {
 }
 
-void NullTransportHydrology::init() {
+void NullTransport::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
   Hydrology::init();
 }
 
-MaxTimestep NullTransportHydrology::max_timestep_impl(double t) {
+MaxTimestep NullTransport::max_timestep_impl(double t) {
   (void) t;
   return MaxTimestep();
 }
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
-void NullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
+void NullTransport::subglacial_water_thickness(IceModelVec2S &result) {
   result.set(0.0);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
-void NullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+void NullTransport::subglacial_water_pressure(IceModelVec2S &result) {
   overburden_pressure(result);
 }
 
@@ -63,15 +63,15 @@ where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
 Uses the current mass-continuity timestep `icedt`.  (Compare
-RoutingHydrology::raw_update_Wtil() which will generally be taking time steps
+hydrology::Routing::raw_update_Wtil() which will generally be taking time steps
 determined by the evolving transportable water layer in that model.)
 
 There is no attempt to report on conservation errors because this
-NullTransportHydrology model does not conserve water.
+hydrology::NullTransport model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-void NullTransportHydrology::update_impl(double icet, double icedt) {
+void NullTransport::update_impl(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
     return;
@@ -85,7 +85,7 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
                C           = m_config.get("hydrology_tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
-    throw RuntimeError("NullTransportHydrology: hydrology_tillwat_max is negative.\n"
+    throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 

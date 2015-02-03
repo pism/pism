@@ -145,11 +145,11 @@ void MohrCoulombYieldStress::init() {
 
   {
     const std::string flag_name = "tauc_add_transportable_water";
-    hydrology::RoutingHydrology *hydrology_routing = dynamic_cast<hydrology::RoutingHydrology*>(m_hydrology);
+    hydrology::Routing *hydrology_routing = dynamic_cast<hydrology::Routing*>(m_hydrology);
     if (m_config.get_flag(flag_name) == true && hydrology_routing == NULL) {
       throw RuntimeError::formatted("Flag %s is set.\n"
-                                    "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
-                                    "(or derived like DistributedHydrology) object with transportable water.\n"
+                                    "Thus the Mohr-Coulomb yield stress model needs a hydrology::Routing\n"
+                                    "(or derived like hydrology::Distributed) object with transportable water.\n"
                                     "The current Hydrology instance is not suitable.  Set flag\n"
                                     "%s to 'no' or choose a different yield stress model.",
                                     flag_name.c_str(), flag_name.c_str());
@@ -335,7 +335,7 @@ If `tauc_add_transportable_water` is yes then @f$ s @f$ in the above formula
 becomes @f$ s = (W + W_{til}) / W_{til}^{max} @f$,
 that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
-RoutingHydrology (or derived class thereof).
+hydrology::Routing (or derived class thereof).
  */
 void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
 
@@ -370,7 +370,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
                delta       = m_config.get("till_effective_fraction_overburden"),
                tlftw       = m_config.get("till_log_factor_transportable_water");
 
-  hydrology::RoutingHydrology* hydrowithtransport = dynamic_cast<hydrology::RoutingHydrology*>(m_hydrology);
+  hydrology::Routing* hydrowithtransport = dynamic_cast<hydrology::Routing*>(m_hydrology);
   if (m_hydrology) {
     m_hydrology->till_water_thickness(m_tillwat);
     m_hydrology->overburden_pressure(m_Po);

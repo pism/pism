@@ -29,14 +29,14 @@ namespace hydrology {
   Interfaces for the following diagnostics which are handled by Hydrology
   instances; some of these may be replaced by state variables; listed by short
   name:
-  * bwat [replace by state var in RoutingHydrology and DistributedHydrology]
-  * bwp [replace by state var in DistributedHydrology]
+  * bwat [replace by state var in hydrology::Routing and hydrology::Distributed]
+  * bwp [replace by state var in hydrology::Distributed]
   * bwprel
   * effbwp
   * hydroinput
   * wallmelt
   Interfaces for the following diagnostics which are handled by
-  RoutingHydrology instances:
+  hydrology::Routing instances:
   * bwatvel
   */
 
@@ -105,88 +105,88 @@ public:
 
 
 //! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for RoutingHydrology and its derived classes. */
-class RoutingHydrology_bwatvel : public Diag<RoutingHydrology>
+/*! Only available for hydrology::Routing and its derived classes. */
+class Routing_bwatvel : public Diag<Routing>
 {
 public:
-  RoutingHydrology_bwatvel(RoutingHydrology *m);
+  Routing_bwatvel(Routing *m);
   virtual IceModelVec::Ptr compute();
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
-/*! Only available for DistributedHydrology. */
-class DistributedHydrology_hydrovelbase_mag : public Diag<DistributedHydrology>
+/*! Only available for hydrology::Distributed. */
+class Distributed_hydrovelbase_mag : public Diag<Distributed>
 {
 public:
-  DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m);
+  Distributed_hydrovelbase_mag(Distributed *m);
   virtual IceModelVec::Ptr compute();
 };
 
 
 // Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
-// These eight report the quantities computed in RoutingHydrology::boundary_mass_changes()
+// These eight report the quantities computed in hydrology::Routing::boundary_mass_changes()
 
 //! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ice_free_land()==true".
-class MCHydrology_ice_free_land_loss_cumulative : public TSDiag<RoutingHydrology>
+class MCHydrology_ice_free_land_loss_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ice_free_land_loss_cumulative(RoutingHydrology *m);
+  MCHydrology_ice_free_land_loss_cumulative(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ice_free_land()==true".
-class MCHydrology_ice_free_land_loss : public TSDiag<RoutingHydrology>
+class MCHydrology_ice_free_land_loss : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ice_free_land_loss(RoutingHydrology *m);
+  MCHydrology_ice_free_land_loss(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ocean()==true".
-class MCHydrology_ocean_loss_cumulative : public TSDiag<RoutingHydrology>
+class MCHydrology_ocean_loss_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ocean_loss_cumulative(RoutingHydrology *m);
+  MCHydrology_ocean_loss_cumulative(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ocean()==true".
-class MCHydrology_ocean_loss : public TSDiag<RoutingHydrology>
+class MCHydrology_ocean_loss : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ocean_loss(RoutingHydrology *m);
+  MCHydrology_ocean_loss(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the cumulative non-conserving gain of liquid water, in kg, from water thickness coming out negative during a time step, and being projected up to zero.
-class MCHydrology_negative_thickness_gain_cumulative : public TSDiag<RoutingHydrology>
+class MCHydrology_negative_thickness_gain_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_negative_thickness_gain_cumulative(RoutingHydrology *m);
+  MCHydrology_negative_thickness_gain_cumulative(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the rate of non-conserving gain of liquid water, in kg/s, from water thickness coming out negative during a time step, and being projected up to zero.
-class MCHydrology_negative_thickness_gain : public TSDiag<RoutingHydrology>
+class MCHydrology_negative_thickness_gain : public TSDiag<Routing>
 {
 public:
-  MCHydrology_negative_thickness_gain(RoutingHydrology *m);
+  MCHydrology_negative_thickness_gain(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the cumulative loss of liquid water, in kg, to locations in the null strip, if that strip has positive width.
-class MCHydrology_null_strip_loss_cumulative : public TSDiag<RoutingHydrology>
+class MCHydrology_null_strip_loss_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_null_strip_loss_cumulative(RoutingHydrology *m);
+  MCHydrology_null_strip_loss_cumulative(Routing *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations in the null strip, if that strip has positive width.
-class MCHydrology_null_strip_loss : public TSDiag<RoutingHydrology>
+class MCHydrology_null_strip_loss : public TSDiag<Routing>
 {
 public:
-  MCHydrology_null_strip_loss(RoutingHydrology *m);
+  MCHydrology_null_strip_loss(Routing *m);
   virtual void update(double a, double b);
 };
 

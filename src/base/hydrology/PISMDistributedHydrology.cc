@@ -27,14 +27,12 @@
 namespace pism {
 namespace hydrology {
 
-DistributedHydrology::DistributedHydrology(const IceGrid &g,
-                                           stressbalance::StressBalance *sb)
-  : RoutingHydrology(g)
-{
+Distributed::Distributed(const IceGrid &g, stressbalance::StressBalance *sb)
+  : Routing(g) {
   m_stressbalance = sb;
   m_hold_velbase_mag = false;
 
-  // additional variables beyond RoutingHydrology::allocate()
+  // additional variables beyond hydrology::Routing::allocate()
   m_P.create(m_grid, "bwp", WITH_GHOSTS, 1);
   m_P.set_attrs("model_state",
               "pressure of transportable water in subglacial layer",
@@ -56,11 +54,11 @@ DistributedHydrology::DistributedHydrology(const IceGrid &g,
                 "Pa", "");
 }
 
-DistributedHydrology::~DistributedHydrology() {
+Distributed::~Distributed() {
   // empty
 }
 
-void DistributedHydrology::init() {
+void Distributed::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
@@ -83,7 +81,7 @@ void DistributedHydrology::init() {
 
   Hydrology::init();
 
-  RoutingHydrology::init_bwat();
+  Routing::init_bwat();
 
   init_bwp();
 
@@ -109,7 +107,7 @@ void DistributedHydrology::init() {
 }
 
 
-void DistributedHydrology::init_bwp() {
+void Distributed::init_bwp() {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
@@ -146,36 +144,36 @@ void DistributedHydrology::init_bwp() {
     m_P.set(bwp_default);
   }
 
-  regrid("DistributedHydrology", m_P); //  we could be asked to regrid from file
+  regrid("hydrology::Distributed", m_P); //  we could be asked to regrid from file
 }
 
 
-void DistributedHydrology::add_vars_to_output_impl(const std::string &keyword,
+void Distributed::add_vars_to_output_impl(const std::string &keyword,
                                                    std::set<std::string> &result) {
-  RoutingHydrology::add_vars_to_output_impl(keyword, result);
+  Routing::add_vars_to_output_impl(keyword, result);
   result.insert("bwp");
 }
 
 
-void DistributedHydrology::define_variables_impl(const std::set<std::string> &vars,
+void Distributed::define_variables_impl(const std::set<std::string> &vars,
                                                  const PIO &nc, IO_Type nctype) {
-  RoutingHydrology::define_variables_impl(vars, nc, nctype);
+  Routing::define_variables_impl(vars, nc, nctype);
   if (set_contains(vars, "bwp")) {
     m_P.define(nc, nctype);
   }
 }
 
 
-void DistributedHydrology::write_variables_impl(const std::set<std::string> &vars,
+void Distributed::write_variables_impl(const std::set<std::string> &vars,
                                                 const PIO &nc) {
-  RoutingHydrology::write_variables_impl(vars, nc);
+  Routing::write_variables_impl(vars, nc);
   if (set_contains(vars, "bwp")) {
     m_P.write(nc);
   }
 }
 
 
-void DistributedHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                                 std::map<std::string, TSDiagnostic*> &ts_dict) {
   // bwat is state
   // bwp is state
@@ -184,8 +182,8 @@ void DistributedHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic
   dict["hydrobmelt"]       = new Hydrology_hydrobmelt(this);
   dict["hydroinput"]       = new Hydrology_hydroinput(this);
   dict["wallmelt"]         = new Hydrology_wallmelt(this);
-  dict["bwatvel"]          = new RoutingHydrology_bwatvel(this);
-  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this);
+  dict["bwatvel"]          = new Routing_bwatvel(this);
+  dict["hydrovelbase_mag"] = new Distributed_hydrovelbase_mag(this);
 
   // add mass-conservation time-series diagnostics
   ts_dict["hydro_ice_free_land_loss_cumulative"]      = new MCHydrology_ice_free_land_loss_cumulative(this);
@@ -200,7 +198,7 @@ void DistributedHydrology::get_diagnostics_impl(std::map<std::string, Diagnostic
 
 
 //! Copies the P state variable which is the modeled water pressure.
-void DistributedHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+void Distributed::subglacial_water_pressure(IceModelVec2S &result) {
   m_P.copy_to(result);
 }
 
@@ -209,7 +207,7 @@ void DistributedHydrology::subglacial_water_pressure(IceModelVec2S &result) {
 /*!
 The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
  */
-void DistributedHydrology::check_P_bounds(bool enforce_upper) {
+void Distributed::check_P_bounds(bool enforce_upper) {
 
   overburden_pressure(m_Pover);
 
@@ -246,7 +244,7 @@ This will be used in initialization when P is otherwise unknown, and
 in verification and/or reporting.  It is not used during time-dependent
 model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
-void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
+void Distributed::P_from_W_steady(IceModelVec2S &result) {
   double CC = m_config.get("hydrology_cavitation_opening_coefficient") /
                     (m_config.get("hydrology_creep_closure_coefficient") * m_config.get("ice_softness")),
     powglen = 1.0 / m_config.get("sia_Glen_exponent"), // choice is SIA; see #285
@@ -288,14 +286,14 @@ void DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
 Calls a StressBalance method to get the vector basal velocity of the ice,
 and then computes the magnitude of that.
  */
-void DistributedHydrology::update_velbase_mag(IceModelVec2S &result) {
+void Distributed::update_velbase_mag(IceModelVec2S &result) {
   // velbase_mag = |v_b|
   result.set_to_magnitude(m_stressbalance->advective_velocity());
 }
 
 
 //! Computes the adaptive time step for this (W,P) state space model.
-void DistributedHydrology::adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
                                                         double &dt_result,
                                                         double &maxV_result, double &maxD_result,
                                                         double &PtoCFLratio) {
@@ -333,7 +331,7 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
  */
-void DistributedHydrology::update_impl(double icet, double icedt) {
+void Distributed::update_impl(double icet, double icedt) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
@@ -505,8 +503,8 @@ void DistributedHydrology::update_impl(double icet, double icedt) {
 }
 
 
-DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m)
-  : Diag<DistributedHydrology>(m) {
+Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
+  : Diag<Distributed>(m) {
   m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(),
                                      "hydrovelbase_mag", m_grid));
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
@@ -514,7 +512,7 @@ DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(Dis
 }
 
 
-IceModelVec::Ptr DistributedHydrology_hydrovelbase_mag::compute() {
+IceModelVec::Ptr Distributed_hydrovelbase_mag::compute() {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
