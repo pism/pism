@@ -28,6 +28,8 @@ namespace pism {
 
 class Config;
 
+namespace bed {
+
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!
   This class implements the [\ref LingleClark] bed deformation model by a Fourier 
@@ -103,24 +105,7 @@ private:
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
 
-template <class T>
-class VecAccessor2D {
-public:
-  VecAccessor2D(T* a, int my_Mx, int my_My, int my_i_offset, int my_j_offset)
-    : m_Mx(my_Mx), m_My(my_My), m_i_offset(my_i_offset), m_j_offset(my_j_offset), m_array(a) {}
-
-  VecAccessor2D(T* a, int my_Mx, int my_My)
-    : m_Mx(my_Mx), m_My(my_My), m_i_offset(0), m_j_offset(0), m_array(a) {}
-
-  inline T& operator()(int i, int j) {
-    return m_array[(m_j_offset + j) + m_My * (m_i_offset + i)];
-  }
-
-private:
-  int m_Mx, m_My, m_i_offset, m_j_offset;
-  T* m_array;
-};
-
+} // end of namespace bed
 } // end of namespace pism
 
 #endif  /* __deformation_hh */

@@ -25,6 +25,7 @@
 #include "deformation.hh"
 
 namespace pism {
+namespace bed {
 
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public BedDef {
@@ -47,6 +48,7 @@ protected:
   BedDeformLC *m_bdLC;
 };
 
+} // end of namespace bed
 } // end of namespace pism
 
 #endif /* _PBLINGLECLARK_H_ */

@@ -21,6 +21,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace bed {
 
 PBNull::PBNull(const IceGrid &g)
   : BedDef(g) {
@@ -46,4 +47,5 @@ void PBNull::update_impl(double t, double dt) {
   // This model does not update bed topography or bed uplift.
 }
 
+} // end of namespace bed
 } // end of namespace pism

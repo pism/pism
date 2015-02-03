@@ -72,12 +72,15 @@ namespace energy {
 class BedThermalUnit;
 }
 
+namespace bed {
+class BedDef;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
 class EnthalpyConverter;
 class YieldStress;
-class BedDef;
 class Diagnostic;
 class TSDiagnostic;
 
@@ -233,7 +236,7 @@ protected:
 
   surface::SurfaceModel *surface;
   ocean::OceanModel   *ocean;
-  BedDef       *beddef;
+  bed::BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
 
   // state variables and some diagnostics/internals

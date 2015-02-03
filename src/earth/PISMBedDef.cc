@@ -25,6 +25,7 @@
 #include <stdexcept>
 
 namespace pism {
+namespace bed {
 
 BedDef::BedDef(const IceGrid &g)
   : Component_TS(g) {
@@ -155,4 +156,5 @@ void BedDef::compute_uplift(double dt_beddef) {
   m_uplift.scale(1.0 / dt_beddef);
 }
 
+} // end of namespace bed
 } // end of namespace pism

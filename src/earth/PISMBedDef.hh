@@ -23,6 +23,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace bed {
 
 //! PISM bed deformation model (base class).
 /*! Unlike other Component_TS derived classes, the update() method of
@@ -89,6 +90,7 @@ protected:
   IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 
+} // end of namespace bed
 } // end of namespace pism
 
 #endif  // __BedDef_hh

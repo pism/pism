@@ -27,6 +27,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace bed {
 
 PBLingleClark::PBLingleClark(const IceGrid &g)
   : BedDef(g) {
@@ -199,4 +200,5 @@ void PBLingleClark::update_impl(double my_t, double my_dt) {
   m_topg.inc_state_counter();
 }
 
+} // end of namespace bed
 } // end of namespace pism

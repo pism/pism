@@ -24,6 +24,7 @@
 #include <stdexcept>
 
 namespace pism {
+namespace bed {
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(const IceGrid &g)
   : BedDef(g) {
@@ -93,4 +94,5 @@ void PBPointwiseIsostasy::update_impl(double my_t, double my_dt) {
   m_topg.inc_state_counter();
 }
 
+} // end of namespace bed
 } // end of namespace pism

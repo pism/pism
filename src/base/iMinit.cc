@@ -931,17 +931,17 @@ void IceModel::allocate_bed_deformation() {
 
   if (beddef == NULL) {
     if (model == "none") {
-      beddef = new PBNull(grid);
+      beddef = new bed::PBNull(grid);
       return;
     }
 
     if (model == "iso") {
-      beddef = new PBPointwiseIsostasy(grid);
+      beddef = new bed::PBPointwiseIsostasy(grid);
       return;
     }
 
     if (model == "lc") {
-      beddef = new PBLingleClark(grid);
+      beddef = new bed::PBLingleClark(grid);
       return;
     }
   }

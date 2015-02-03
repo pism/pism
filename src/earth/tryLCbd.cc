@@ -235,9 +235,9 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
 
-      BedDeformLC bdlc(config,
-                       include_elastic, Mx, My, dx, dy, Z,
-                       Hstart, bedstart, uplift, H, bed);
+      pism::bed::BedDeformLC bdlc(config,
+                                  include_elastic, Mx, My, dx, dy, Z,
+                                  Hstart, bedstart, uplift, H, bed);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
