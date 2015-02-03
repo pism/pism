@@ -151,7 +151,8 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
                    "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
                    "", "");
 
-  double *CTSij, *Enthij; // columns of these values
+  double *CTSij;
+  const double *Enthij; // columns of these values
 
   IceModelVec::AccessList list;
   list.add(result);

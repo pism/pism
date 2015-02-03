@@ -86,13 +86,9 @@ class IceModel {
   friend class IceModel_bwp;
   friend class IceModel_cts;
   friend class IceModel_dhdt;
-  friend class IceModel_temp;
-  friend class IceModel_temp_pa;
-  friend class IceModel_temppabase;
   friend class IceModel_enthalpybase;
   friend class IceModel_enthalpysurf;
   friend class IceModel_tempbase;
-  friend class IceModel_tempsurf;
   friend class IceModel_liqfrac;
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
@@ -144,7 +140,8 @@ public:
   // see iMinit.cc
   virtual void grid_setup();
 
-  const IceGrid& get_grid() const;
+  const IceGrid& get_grid() const; // FIXME: rename grid to m_grid and this to grid().
+  const EnthalpyConverter& enthalpy_converter() const;
 
   virtual void allocate_submodels();
   virtual void allocate_enthalpy_converter();
@@ -267,6 +264,7 @@ protected:
 
 public:
   IceModelVec2S* get_geothermal_flux();
+  void setCTSFromEnthalpy(IceModelVec3 &result);
 protected:
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
@@ -345,8 +343,6 @@ protected:
                                 IceModelVec3 &result);
   virtual void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                                              IceModelVec3 &result);
-
-  virtual void setCTSFromEnthalpy(IceModelVec3 &result);
 
   virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                        double* liquifiedVol,
