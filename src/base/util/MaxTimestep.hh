@@ -22,21 +22,35 @@
 
 namespace pism {
 
+//! @brief Combines the max. time step with the flag indicating if a
+//! restriction is active. Makes is possible to use the less-than
+//! operator (and `std::min`, etc) to choose the stricter of two
+//! restrictions.
 class MaxTimestep {
 public:
+  //! @brief Create an instance corresponding to an "inactive"
+  //! time-step restriction (in other words, @f$ \Delta t = \infty
+  //! @f$).
   MaxTimestep();
+  //! Create an instance corresponding to a max time step of `value`.
   MaxTimestep(double value);
-  operator bool() const;
+  //! Convert to `bool` to check if a time step restriction is "active".
+  bool is_finite() const;
+  //! Get the value of the maximum time step.
   double value() const;
 private:
-  bool m_active;
+  bool m_is_finite;
   double m_value;
 };
 
-// Comparison operators.
-
+//! Greater than operator for MaxTimestep.
 bool operator>(const MaxTimestep &a, const MaxTimestep &b);
+
+//! Less than operator for MaxTimestep.
 bool operator<(const MaxTimestep &a, const MaxTimestep &b);
+
+//! Equality operator for MaxTimestep.
+bool operator==(const MaxTimestep &a, const MaxTimestep &b);
 
 } // end of namespace pism
 

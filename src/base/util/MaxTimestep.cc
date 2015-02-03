@@ -23,29 +23,33 @@ namespace pism {
 
 // Time step restrictions
 MaxTimestep::MaxTimestep()
-  : m_active(false), m_value(0.0) {
+  : m_is_finite(false), m_value(0.0) {
   // empty
 }
 
 MaxTimestep::MaxTimestep(double my_value)
-  : m_active(true), m_value(my_value) {
+  : m_is_finite(true), m_value(my_value) {
   // empty
 }
 
-MaxTimestep::operator bool() const {
-  return m_active;
+bool MaxTimestep::is_finite() const {
+  return m_is_finite;
 }
 
 double MaxTimestep::value() const {
   return m_value;
 }
 
+bool operator==(const MaxTimestep &a, const MaxTimestep &b) {
+  return (a.is_finite() == b.is_finite()) and (a.value() == b.value());
+}
+
 bool operator<(const MaxTimestep &a, const MaxTimestep &b) {
-  if (a and b) {
+  if (a.is_finite() and b.is_finite()) {
     return a.value() < b.value();
-  } else if (a) {
+  } else if (a.is_finite()) {
     return true;
-  } else if (b) {
+  } else if (b.is_finite()) {
     return false;
   } else {
     return false;
