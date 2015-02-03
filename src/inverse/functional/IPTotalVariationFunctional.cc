@@ -30,6 +30,8 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(const IceGrid &grid,
 
 void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -41,7 +43,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
@@ -71,6 +73,8 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
+  using fem::FEQuadrature;
+
   // Clear the gradient before doing anything with it.
   gradient.set(0);
 
@@ -83,12 +87,12 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.

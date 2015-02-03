@@ -26,6 +26,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace fem {
 
 const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] =
   {FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};
@@ -766,4 +767,5 @@ void DirichletData_Vector::finish() {
   m_values = NULL;
 }
 
+} // end of namespace fem
 } // end of namespace pism

@@ -93,6 +93,9 @@ The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
 kept.
 */
 void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
+
+  using fem::FEQuadrature;
+
   m_zeta = &new_zeta;
 
   // Convert zeta to hardav.
@@ -223,6 +226,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                        IceModelVec2S &dzeta,
                                                        Vector2 **du_a) {
+  using fem::FEQuadrature;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -264,12 +268,12 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double dB_q[FEQuadrature::Nq];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
-  DirichletData_Vector dirichletBC;
+  fem::DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                    m_dirichletWeight);
-  DirichletData_Scalar fixedZeta;
+  fem::DirichletData_Scalar fixedZeta;
   fixedZeta.init(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
@@ -332,7 +336,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         }
 
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
-          const FEFunctionGerm &testqk = test[q][k];
+          const fem::FEFunctionGerm &testqk = test[q][k];
           du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
           du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
         }
@@ -396,6 +400,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                  IceModelVec2V &du,
                                                                  double **dzeta_a) {
+  using fem::FEQuadrature;
+
   IceModelVec::AccessList list;
   list.add(*m_zeta);
   list.add(u);
@@ -421,9 +427,9 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   double dzeta_e[FEQuadrature::Nk];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
-  DirichletData_Vector dirichletBC;
+  fem::DirichletData_Vector dirichletBC;
   // Aliases to help with notation consistency.
   const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
   const IceModelVec2V   *m_dirichletValues = m_bc_values;
@@ -505,7 +511,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   }
 
   if (m_fixed_design_locations) {
-    DirichletData_Scalar fixedZeta;
+    fem::DirichletData_Scalar fixedZeta;
     fixedZeta.init(m_fixed_design_locations, NULL);
     fixedZeta.fix_residual_homogeneous(dzeta_a);
     fixedZeta.finish();
@@ -600,7 +606,7 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  DirichletData_Vector dirichletBC;
+  fem::DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);

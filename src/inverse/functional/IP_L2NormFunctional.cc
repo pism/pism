@@ -23,6 +23,8 @@ namespace pism {
 
 void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -55,6 +57,8 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 }
 
 void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
+
+  using fem::FEQuadrature;
 
   // The value of the objective
   double value = 0;
@@ -90,6 +94,8 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
+  using fem::FEQuadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -100,7 +106,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -135,6 +141,8 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 
 void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -167,6 +175,8 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 }
 
 void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT) {
+
+  using fem::FEQuadrature;
 
   // The value of the objective
   double value = 0;
@@ -202,6 +212,8 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
 
 void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
 
+  using fem::FEQuadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -212,7 +224,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();

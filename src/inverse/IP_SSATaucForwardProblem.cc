@@ -113,6 +113,8 @@ kept.
 */
 void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
+  using fem::FEQuadrature;
+
   IceModelVec2S &tauc = m_tauc_copy;
 
   m_zeta = &new_zeta;
@@ -239,6 +241,7 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                      IceModelVec2S &dzeta,
                                                      Vector2 **du_a) {
+  using fem::FEQuadrature;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -279,12 +282,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double dtauc_q[FEQuadrature::Nq];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
-  DirichletData_Vector dirichletBC;
+  fem::DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                    m_dirichletWeight);
-  DirichletData_Scalar fixedZeta;
+  fem::DirichletData_Scalar fixedZeta;
   fixedZeta.init(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
@@ -397,6 +400,8 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                double **dzeta_a) {
+  using fem::FEQuadrature;
+
   IceModelVec::AccessList list;
   list.add(*m_zeta);
   list.add(u);
@@ -419,9 +424,9 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   double dzeta_e[FEQuadrature::Nk];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
-  DirichletData_Vector  dirichletBC;
+  fem::DirichletData_Vector  dirichletBC;
   // Aliases to help with notation consistency.
   const IceModelVec2Int      *m_dirichletLocations = m_bc_mask;
   const IceModelVec2V        *m_dirichletValues    = m_bc_values;
@@ -500,7 +505,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   }
 
   if (m_fixed_tauc_locations) {
-    DirichletData_Scalar fixedTauc;
+    fem::DirichletData_Scalar fixedTauc;
     fixedTauc.init(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
     fixedTauc.finish();
@@ -595,7 +600,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  DirichletData_Vector dirichletBC;
+  fem::DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
 
   if (dirichletBC) {

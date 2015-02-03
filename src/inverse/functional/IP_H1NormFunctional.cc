@@ -24,6 +24,8 @@ namespace pism {
 
 void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -34,7 +36,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
@@ -64,6 +66,8 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -79,7 +83,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
@@ -116,6 +120,8 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
+  using fem::FEQuadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -128,12 +134,12 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
@@ -174,6 +180,9 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 }
 
 void IP_H1NormFunctional2S::assemble_form(Mat form) {
+
+  using fem::FEQuadrature;
+
   PetscErrorCode ierr;
 
   // Zero out the Jacobian in preparation for updating it.
@@ -183,12 +192,12 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar zeroLocs;
+  fem::DirichletData_Scalar zeroLocs;
   zeroLocs.init(m_dirichletIndices, NULL);
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int xs = m_element_index.xs,
@@ -217,8 +226,8 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
       for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
           for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
-            const FEFunctionGerm &test_qk=test[q][k];
-            const FEFunctionGerm &test_ql=test[q][l];
+            const fem::FEFunctionGerm &test_qk=test[q][k];
+            const fem::FEFunctionGerm &test_ql=test[q][l];
             K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
                                m_cH1*(test_qk.dx*test_ql.dx +
                                       test_qk.dy*test_ql.dy));

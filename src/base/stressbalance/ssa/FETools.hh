@@ -27,7 +27,7 @@
 #include "iceModelVec.hh"       // to get Vector2
 
 namespace pism {
-
+namespace fem {
 //! \file 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
 /*! \file
@@ -38,15 +38,15 @@ namespace pism {
 
   The IceGrid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed by indices (i,j):
 
-  \verbatim
-  (0,1)   (1,1)
-  ---------
-  |   |   |
-  ---------
-  |   |   |
-  ---------
-  (0,0) (1,0)   
-  \endverbatim
+  ~~~
+  (0,1)       (1,1)
+      ---------
+      |   |   |
+      ---------
+      |   |   |
+      ---------
+  (0,0)       (1,0)
+  ~~~
 
   The index of an element corresponds with the index of its lower-left vertex in the grid.
 
@@ -57,13 +57,13 @@ namespace pism {
 
   On the reference element, vertices are ordered as follows:
 
-  \verbatim
-  3 o---------o  2
-  |         |
-  |         |
-  |         |
-  0  o---------o  1
-  \endverbatim
+  ~~~
+  3 o---------o 2
+    |         |
+    |         |
+    |         |
+  0 o---------o 1
+  ~~~
 
   For each vertex \f$k\f$ there is an element basis function \f$\phi_k\f$ that is bilinear, equals 1 at
   vertex \f$k\f$, and equals 0 at the remaining vertices.  
@@ -512,6 +512,7 @@ protected:
   const IceModelVec2V *m_values;
 };
 
+} // end of namespace fem
 } // end of namespace pism
 
 #endif/* _FETOOLS_H_*/

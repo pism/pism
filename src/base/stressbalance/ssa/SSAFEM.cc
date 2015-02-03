@@ -98,7 +98,7 @@ SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
   // quadrature points of all the elements. There are nElement
   // elements, and FEQuadrature::Nq quadrature points.
   int nElements = m_element_index.element_count();
-  m_coefficients.resize(FEQuadrature::Nq * nElements);
+  m_coefficients.resize(fem::FEQuadrature::Nq * nElements);
 }
 
 SSA* SSAFEMFactory(const IceGrid &g, const EnthalpyConverter &ec) {
@@ -241,6 +241,10 @@ stores the values of the coefficients at the quadrature points of each
 element so that these interpolated values do not need to be computed
 during each outer iteration of the nonlinear solve.*/
 void SSAFEM::cacheQuadPtValues() {
+
+  using fem::FEQuadrature;
+  using fem::FEFunctionGerm;
+
   const double
     *Enth_e[4];
   double
@@ -416,6 +420,7 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
 void SSAFEM::compute_local_function(DMDALocalInfo *info,
                                     const Vector2 **velocity_global,
                                     Vector2 **residual_global) {
+  using namespace fem;
 
   (void) info; // Avoid compiler warning.
 
@@ -570,6 +575,9 @@ approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 */
 void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
                                     const Vector2 **velocity_global, Mat Jac) {
+
+  using fem::FEQuadrature;
+
   PetscErrorCode ierr;
 
   // Avoid compiler warning.
@@ -580,7 +588,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   PISM_CHK(ierr, "MatZeroEntries");
 
   // Start access to Dirichlet data if present.
-  DirichletData_Vector dirichlet_data;
+  fem::DirichletData_Vector dirichlet_data;
   dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
@@ -592,7 +600,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int

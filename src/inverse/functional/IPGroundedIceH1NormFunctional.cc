@@ -24,6 +24,8 @@ namespace pism {
 
 void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -36,7 +38,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
@@ -75,6 +77,8 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
 void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
+  using fem::FEQuadrature;
+
   // The value of the objective
   double value = 0;
 
@@ -91,7 +95,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
@@ -137,6 +141,8 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
 void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
+  using fem::FEQuadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -150,12 +156,12 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar dirichletBC;
+  fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
@@ -204,6 +210,9 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 }
 
 void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
+
+  using fem::FEQuadrature;
+
   PetscErrorCode ierr;
   int         i, j;
 
@@ -214,7 +223,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  DirichletData_Scalar zeroLocs;
+  fem::DirichletData_Scalar zeroLocs;
   zeroLocs.init(m_dirichletIndices, NULL);
 
   IceModelVec::AccessList list;
@@ -223,7 +232,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -239,8 +248,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
       // entries in the local Jacobian.
-      double      K[FEQuadrature::Nk][FEQuadrature::Nk];
-
+      double K[FEQuadrature::Nk][FEQuadrature::Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -257,8 +265,8 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
           for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
-            const FEFunctionGerm &test_qk=test[q][k];
-            const FEFunctionGerm &test_ql=test[q][l];
+            const fem::FEFunctionGerm &test_qk=test[q][k];
+            const fem::FEFunctionGerm &test_ql=test[q][l];
             K[k][l]     += JxW[q]*(m_cL2*test_qk.val*test_ql.val
               +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy));
           } // l
