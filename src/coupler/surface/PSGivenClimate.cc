@@ -56,7 +56,7 @@ Given::~Given() {
   // empty
 }
 
-void Given::attach_atmosphere_model(AtmosphereModel *input) {
+void Given::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
   delete input;
   input = NULL;
 }

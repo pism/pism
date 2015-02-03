@@ -23,6 +23,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace atmosphere {
 
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July
@@ -60,6 +61,7 @@ protected:
   std::vector<double> m_ts_times, m_cosine_cycle;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAYEARLYCYCLE_H_ */

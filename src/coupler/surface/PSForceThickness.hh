@@ -34,7 +34,7 @@ public:
 
   virtual ~ForceThickness();
   virtual void init();
-  virtual void attach_atmosphere_model(AtmosphereModel *input);
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:

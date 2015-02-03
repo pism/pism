@@ -33,7 +33,7 @@ public:
   Given(const IceGrid &g);
   virtual ~Given();
 
-  virtual void attach_atmosphere_model(AtmosphereModel *input);
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
 
   virtual void init();
 

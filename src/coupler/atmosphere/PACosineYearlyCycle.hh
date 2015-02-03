@@ -22,8 +22,9 @@
 #include "PAYearlyCycle.hh"
 
 namespace pism {
-
 class Timeseries;
+
+namespace atmosphere {
 
 class PACosineYearlyCycle : public PAYearlyCycle {
 public:
@@ -39,6 +40,7 @@ protected:
   Timeseries *A;                 // amplitude scaling
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAGENERICYEARLYCYCLE_H_ */

@@ -71,22 +71,22 @@ namespace pism {
 // Atmosphere
 
 PAFactory::PAFactory(const IceGrid& g)
-  : PCFactory<AtmosphereModel,PAModifier>(g) {
+  : PCFactory<atmosphere::AtmosphereModel,atmosphere::PAModifier>(g) {
   m_option = "atmosphere";
 
-  add_model<PAPIK>("pik");
-  add_model<PAGivenClimate>("given");
-  add_model<PA_SeaRISE_Greenland>("searise_greenland");
-  add_model<PACosineYearlyCycle>("yearly_cycle");
-  add_model<PAWeatherStation>("one_station");
+  add_model<atmosphere::PAPIK>("pik");
+  add_model<atmosphere::PAGivenClimate>("given");
+  add_model<atmosphere::PA_SeaRISE_Greenland>("searise_greenland");
+  add_model<atmosphere::PACosineYearlyCycle>("yearly_cycle");
+  add_model<atmosphere::PAWeatherStation>("one_station");
   set_default("given");
 
-  add_modifier<PAAnomaly>("anomaly");
-  add_modifier<PA_paleo_precip>("paleo_precip");
-  add_modifier<PA_frac_P>("frac_P");
-  add_modifier<PA_delta_P>("delta_P");
-  add_modifier<PA_delta_T>("delta_T");
-  add_modifier<PALapseRates>("lapse_rate");
+  add_modifier<atmosphere::PAAnomaly>("anomaly");
+  add_modifier<atmosphere::PA_paleo_precip>("paleo_precip");
+  add_modifier<atmosphere::PA_frac_P>("frac_P");
+  add_modifier<atmosphere::PA_delta_P>("delta_P");
+  add_modifier<atmosphere::PA_delta_T>("delta_T");
+  add_modifier<atmosphere::PALapseRates>("lapse_rate");
 }
 
 PAFactory::~PAFactory() {

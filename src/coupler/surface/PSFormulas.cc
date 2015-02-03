@@ -48,7 +48,7 @@ PSFormulas::~PSFormulas() {
 }
 
 
-void PSFormulas::attach_atmosphere_model(AtmosphereModel *input) {
+void PSFormulas::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
   delete input;
 }
 

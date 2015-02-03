@@ -28,6 +28,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace atmosphere {
 
 PAWeatherStation::PAWeatherStation(const IceGrid &g)
   : AtmosphereModel(g),
@@ -204,4 +205,5 @@ void PAWeatherStation::write_variables_impl(const std::set<std::string> &vars,
   }
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

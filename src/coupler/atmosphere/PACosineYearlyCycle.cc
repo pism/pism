@@ -26,6 +26,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace atmosphere {
 
 PACosineYearlyCycle::PACosineYearlyCycle(const IceGrid &g)
   : PAYearlyCycle(g), A(NULL) {
@@ -135,4 +136,5 @@ void PACosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

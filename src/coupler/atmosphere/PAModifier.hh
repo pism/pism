@@ -23,6 +23,7 @@
 #include "Modifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 class PAModifier : public Modifier<AtmosphereModel>
 {
@@ -90,6 +91,7 @@ public:
   }
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAMODIFIER_H_ */

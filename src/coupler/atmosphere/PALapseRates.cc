@@ -19,6 +19,7 @@
 #include "PALapseRates.hh"
 
 namespace pism {
+namespace atmosphere {
 
 PALapseRates::PALapseRates(const IceGrid &g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
@@ -186,4 +187,5 @@ void PALapseRates::add_vars_to_output_impl(const std::string &keyword,
   }
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

@@ -23,6 +23,7 @@
 #include "PAModifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
 class PAAnomaly : public PGivenClimate<PAModifier,AtmosphereModel>
@@ -56,6 +57,7 @@ protected:
   std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAANOMALY_H_ */

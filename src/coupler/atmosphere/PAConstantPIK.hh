@@ -23,6 +23,7 @@
 #include "PISMAtmosphere.hh"
 
 namespace pism {
+namespace atmosphere {
 
 class PAPIK : public AtmosphereModel {
 public:
@@ -49,6 +50,7 @@ protected:
   NCSpatialVariable m_air_temp_snapshot;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PACONSTANTPIK_H_ */

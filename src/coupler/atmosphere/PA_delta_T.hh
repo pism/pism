@@ -23,6 +23,7 @@
 #include "PAModifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 class PA_delta_T : public PScalarForcing<AtmosphereModel,PAModifier>
 {
@@ -51,6 +52,7 @@ protected:
 };
 
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PADTFORCING_H_ */

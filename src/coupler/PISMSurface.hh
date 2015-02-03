@@ -29,8 +29,12 @@
 
 namespace pism {
 
+namespace atmosphere {
 class AtmosphereModel;
+}
+
 class IceModelVec2S;
+
 namespace surface {
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component_TS {
@@ -41,7 +45,7 @@ public:
   // the interface:
   void ice_surface_mass_flux(IceModelVec2S &result);
 
-  virtual void attach_atmosphere_model(AtmosphereModel *input);
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
   virtual void ice_surface_temperature(IceModelVec2S &result) = 0;
   virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result);
   virtual void mass_held_in_surface_layer(IceModelVec2S &result);
@@ -60,7 +64,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  AtmosphereModel *atmosphere;
+  atmosphere::AtmosphereModel *atmosphere;
 };
 
 } // end of namespace surface

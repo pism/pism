@@ -27,6 +27,7 @@
 #include <stdexcept>
 
 namespace pism {
+namespace atmosphere {
 
 PAYearlyCycle::PAYearlyCycle(const IceGrid &g)
   : AtmosphereModel(g),
@@ -220,4 +221,5 @@ void PAYearlyCycle::end_pointwise_access() {
 }
 
 
+} // end of namespace atmosphere
 } // end of namespace pism

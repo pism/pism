@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -24,7 +24,7 @@
 
 namespace pism {
 class IceModelVec2S;
-
+namespace atmosphere {
 ///// AtmosphereModel: models which provide precipitation and temperature
 /////                      to the SurfaceModel below
 
@@ -64,6 +64,7 @@ protected:
   std::vector<double> m_ts_times;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif  // __PISMAtmosphere_hh

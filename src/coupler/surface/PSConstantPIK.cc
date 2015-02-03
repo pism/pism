@@ -46,7 +46,7 @@ PIK::PIK(const IceGrid &g)
                              "K", "");
 }
 
-void PIK::attach_atmosphere_model(AtmosphereModel *input)
+void PIK::attach_atmosphere_model(atmosphere::AtmosphereModel *input)
 {
   delete input;
 }

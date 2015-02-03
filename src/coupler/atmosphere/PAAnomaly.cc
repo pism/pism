@@ -22,6 +22,7 @@
 #include <assert.h>
 
 namespace pism {
+namespace atmosphere {
 
 PAAnomaly::PAAnomaly(const IceGrid &g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
@@ -216,4 +217,5 @@ void PAAnomaly::write_variables_impl(const std::set<std::string> &vars_input, co
 }
 
 
+} // end of namespace atmosphere
 } // end of namespace pism

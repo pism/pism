@@ -741,7 +741,7 @@ void IceModel::allocate_couplers() {
   PAFactory pa(grid);
   PSFactory ps(grid);
   POFactory po(grid);
-  AtmosphereModel *atmosphere;
+  atmosphere::AtmosphereModel *atmosphere;
 
   if (surface == NULL) {
     surface = ps.create();

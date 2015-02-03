@@ -20,6 +20,7 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace atmosphere {
 
 PA_paleo_precip::PA_paleo_precip(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
@@ -152,4 +153,5 @@ void PA_paleo_precip::write_variables_impl(const std::set<std::string> &vars_inp
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

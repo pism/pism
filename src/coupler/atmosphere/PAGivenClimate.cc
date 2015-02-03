@@ -21,6 +21,7 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace atmosphere {
 
 PAGivenClimate::PAGivenClimate(const IceGrid &g)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
@@ -127,4 +128,5 @@ void PAGivenClimate::init_timeseries(const std::vector<double> &ts) {
 }
 
 
+} // end of namespace atmosphere
 } // end of namespace pism

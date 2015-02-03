@@ -23,6 +23,7 @@
 #include "PAModifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 class PA_delta_P : public PScalarForcing<AtmosphereModel,PAModifier>
 {
@@ -48,6 +49,7 @@ protected:
   std::vector<double> m_offset_values;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PADPFORCING_H_ */

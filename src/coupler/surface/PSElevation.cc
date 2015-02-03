@@ -179,7 +179,7 @@ MaxTimestep Elevation::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Elevation::attach_atmosphere_model(AtmosphereModel *input)
+void Elevation::attach_atmosphere_model(atmosphere::AtmosphereModel *input)
 {
   delete input;
 }

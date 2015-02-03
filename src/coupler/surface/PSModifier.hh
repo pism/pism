@@ -43,7 +43,7 @@ public:
     : Modifier<SurfaceModel>(g, in) {}
   virtual ~SurfaceModifier() {}
 
-  virtual void attach_atmosphere_model(AtmosphereModel *in) {
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *in) {
     if (input_model != NULL) {
       input_model->attach_atmosphere_model(in);
     }

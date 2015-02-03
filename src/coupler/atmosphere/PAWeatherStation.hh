@@ -24,6 +24,7 @@
 #include "Timeseries.hh"
 
 namespace pism {
+namespace atmosphere {
 
 /** This class implements an atmosphere model corresponding to *one* weather station.
  *
@@ -65,6 +66,7 @@ protected:
   NCSpatialVariable m_precip_metadata, m_air_temp_metadata;
 };
 
+} // end of namespace atmosphere
 }      // end of namespace pism
 
 #endif /* _PAWEATHERSTATION_H_ */

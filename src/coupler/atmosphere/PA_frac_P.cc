@@ -20,6 +20,7 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace atmosphere {
 
 PA_frac_P::PA_frac_P(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
@@ -149,4 +150,5 @@ void PA_frac_P::write_variables_impl(const std::set<std::string> &vars_input,
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

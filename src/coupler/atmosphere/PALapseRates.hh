@@ -23,6 +23,7 @@
 #include "PAModifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 class PALapseRates : public PLapseRates<AtmosphereModel,PAModifier>
 {
@@ -55,6 +56,7 @@ protected:
   const IceModelVec2S *m_surface;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PALAPSERATES_H_ */

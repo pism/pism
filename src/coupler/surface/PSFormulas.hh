@@ -37,7 +37,7 @@ public:
   ~PSFormulas();
 
   // the interface:
-  void attach_atmosphere_model(AtmosphereModel *input);
+  void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
   void ice_surface_mass_flux_impl(IceModelVec2S &result);
   void ice_surface_temperature(IceModelVec2S &result);
 protected:

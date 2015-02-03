@@ -23,6 +23,7 @@
 #include "PAModifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 /** "Paleo-precipitation correction"
  *
@@ -74,6 +75,7 @@ protected:
   std::vector<double> m_scaling_values;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PA_PALEO_PRECIP_H_ */

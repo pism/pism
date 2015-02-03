@@ -23,6 +23,7 @@
 #include "PGivenClimate.hh"
 
 namespace pism {
+namespace atmosphere {
 
 class PAGivenClimate : public PGivenClimate<PAModifier,AtmosphereModel>
 {
@@ -47,6 +48,7 @@ protected:
   IceModelVec2T *precipitation, *air_temp;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAGIVEN_H_ */

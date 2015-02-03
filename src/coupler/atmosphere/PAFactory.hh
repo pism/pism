@@ -25,7 +25,7 @@
 
 namespace pism {
 
-class PAFactory : public PCFactory<AtmosphereModel,PAModifier> {
+class PAFactory : public PCFactory<atmosphere::AtmosphereModel,atmosphere::PAModifier> {
 public:
   PAFactory(const IceGrid& g);
   ~PAFactory();

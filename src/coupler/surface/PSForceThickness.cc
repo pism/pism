@@ -75,7 +75,7 @@ ForceThickness::~ForceThickness() {
   // empty
 }
 
-void ForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
+void ForceThickness::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
   input_model->attach_atmosphere_model(input);
 }
 

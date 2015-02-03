@@ -21,6 +21,7 @@
 #include <stdexcept>
 
 namespace pism {
+namespace atmosphere {
 
 /// delta_T forcing of near-surface air temperatures
 
@@ -153,4 +154,5 @@ void PA_delta_T::write_variables_impl(const std::set<std::string> &vars_input, c
   input_model->write_variables(vars, nc);
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

@@ -24,6 +24,7 @@
 #include <stdexcept>
 
 namespace pism {
+namespace atmosphere {
 
 PAPIK::PAPIK(const IceGrid &g)
   : AtmosphereModel(g),
@@ -189,4 +190,5 @@ void PAPIK::init_timeseries(const std::vector<double> &ts) {
 }
 
 
+} // end of namespace atmosphere
 } // end of namespace pism

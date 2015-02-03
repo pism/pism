@@ -24,6 +24,7 @@
 #include "Timeseries.hh"
 
 namespace pism {
+namespace atmosphere {
 
 //! \brief A modification of PAYearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
@@ -41,6 +42,7 @@ protected:
 };
 
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif  // __PASeariseGreenland_hh

@@ -52,7 +52,7 @@ void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict
   }
 }
 
-void SurfaceModel::attach_atmosphere_model(AtmosphereModel *input) {
+void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
   if (atmosphere != NULL) {
     delete atmosphere;
   }

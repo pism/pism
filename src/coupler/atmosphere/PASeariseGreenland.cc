@@ -33,6 +33,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace atmosphere {
 
 ///// PA_SeaRISE_Greenland
 
@@ -140,4 +141,5 @@ void PA_SeaRISE_Greenland::update_impl(double my_t, double my_dt) {
   }
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism
