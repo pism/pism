@@ -48,7 +48,7 @@ static inline char pism_toupper(char c)
 int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
 
-  PetscInitializer petsc(argc, argv, help);
+  petsc::Initializer petsc(argc, argv, help);
   com = PETSC_COMM_WORLD;
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */

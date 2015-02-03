@@ -19,15 +19,16 @@
 
 #include "PetscInitializer.hh"
 
-#include <petsc.h>
+#include <petscsys.h>
 #include <mpi.h>
 #include <cstdio>
 
 #include "error_handling.hh"
 
 namespace pism {
+namespace petsc {
 
-PetscInitializer::PetscInitializer(int argc, char **argv, const char *help) {
+Initializer::Initializer(int argc, char **argv, const char *help) {
 
   PetscErrorCode ierr = 0;
   PetscBool initialized = PETSC_FALSE;
@@ -46,7 +47,7 @@ PetscInitializer::PetscInitializer(int argc, char **argv, const char *help) {
   }
 }
 
-PetscInitializer::~PetscInitializer() {
+Initializer::~Initializer() {
   PetscErrorCode ierr = 0;
   PetscBool initialized = PETSC_FALSE;
   ierr = PetscInitialized(&initialized); CHKERRCONTINUE(ierr);
@@ -57,4 +58,5 @@ PetscInitializer::~PetscInitializer() {
   }
 }
 
+} // end of namespace petsc
 } // end of namespace pism

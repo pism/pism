@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
   using namespace pism::stressbalance;
 
   MPI_Comm com = MPI_COMM_WORLD;
-  PetscInitializer petsc(argc, argv, help);
+  petsc::Initializer petsc(argc, argv, help);
   PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;

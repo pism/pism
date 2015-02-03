@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,15 +21,17 @@
 #define _PETSCINITIALIZER_H_
 
 namespace pism {
+namespace petsc {
 
 /** Ensures that PETSc is properly finalized at the end of a PISM run.
  */
-class PetscInitializer {
+class Initializer {
 public:
-  PetscInitializer(int argc, char **argv, const char *help);
-  ~PetscInitializer();
+  Initializer(int argc, char **argv, const char *help);
+  ~Initializer();
 };
 
+} // end of namespace petsc
 } // end of namespace pism
 
 #endif /* _PETSCINITIALIZER_H_ */

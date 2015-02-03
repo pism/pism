@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm    com = MPI_COMM_WORLD;
   int rank;
 
-  PetscInitializer petsc(argc, argv, help);
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);

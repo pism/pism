@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank
   int rank;
 
-  PetscInitializer petsc(argc, argv, help);
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
   MPI_Comm_rank(com, &rank);
