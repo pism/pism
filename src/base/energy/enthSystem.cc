@@ -26,6 +26,7 @@
 #include "ColumnInterpolation.hh"
 
 namespace pism {
+namespace energy {
 
 enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
@@ -454,4 +455,5 @@ void enthSystemCtx::save_system(std::ostream &output, unsigned int system_size) 
   m_solver->save_vector(output, m_R, system_size, m_solver->prefix() + "_R");
 }
 
+} // end of namespace energy
 } // end of namespace pism

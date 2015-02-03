@@ -27,6 +27,7 @@ namespace pism {
 
 class IceModelVec3;
 
+namespace energy {
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
 /*!
   Call sequence like this:
@@ -97,6 +98,7 @@ private:
   double compute_lambda();
 };
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif  /* __tempSystem_hh */

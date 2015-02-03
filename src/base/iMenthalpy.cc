@@ -201,7 +201,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to a file");
 
-  DrainageCalculator dc(config);
+  energy::DrainageCalculator dc(config);
 
   const IceModelVec2S &Rb = stress_balance->basal_frictional_heating();
   const IceModelVec3
@@ -211,8 +211,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
 
-  enthSystemCtx system(grid.z(), "enth", grid.dx(), grid.dy(), dt_TempAge,
-                       config, Enth3, u3, v3, w3, strain_heating3, *EC);
+  energy::enthSystemCtx system(grid.z(), "enth", grid.dx(), grid.dy(), dt_TempAge,
+                               config, Enth3, u3, v3, w3, strain_heating3, *EC);
 
   size_t Mz_fine = system.z().size();
   double dz = system.dz();

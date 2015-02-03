@@ -29,6 +29,8 @@ class Config;
 class IceModelVec3;
 class EnthalpyConverter;
 
+namespace energy {
+
 //! Tridiagonal linear system for conservation of energy in vertical column of ice enthalpy.
 /*!
   See the page documenting \ref bombproofenth.  The top of
@@ -108,6 +110,7 @@ protected:
   void checkReadyToSolve();
 };
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif   //  ifndef __enthSystem_hh

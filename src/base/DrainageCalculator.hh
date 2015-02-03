@@ -23,6 +23,7 @@
 #include "PISMConfig.hh"
 
 namespace pism {
+namespace energy {
 
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {
@@ -59,6 +60,7 @@ private:
 };
 
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif // __DrainageCalculator_hh

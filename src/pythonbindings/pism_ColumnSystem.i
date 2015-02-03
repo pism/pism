@@ -11,7 +11,7 @@
 
 /* wrap the enthalpy solver to make testing easier */
 %include "columnSystem.hh"
-%rename(get_lambda) pism::enthSystemCtx::lambda;
+%rename(get_lambda) pism::energy::enthSystemCtx::lambda;
 %include "enthSystem.hh"
 
 %include "ColumnInterpolation.hh"

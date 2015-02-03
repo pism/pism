@@ -187,10 +187,10 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
     &v3 = stress_balance->velocity_v(),
     &w3 = stress_balance->velocity_w();
 
-  tempSystemCtx system(grid.z(), "temperature",
-                       grid.dx(), grid.dy(), dt_TempAge,
-                       config,
-                       T3, u3, v3, w3, strain_heating3);
+  energy::tempSystemCtx system(grid.z(), "temperature",
+                               grid.dx(), grid.dy(), dt_TempAge,
+                               config,
+                               T3, u3, v3, w3, strain_heating3);
 
   double dz = system.dz();
   const std::vector<double>& z_fine = system.z();

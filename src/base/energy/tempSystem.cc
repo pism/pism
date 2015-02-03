@@ -25,6 +25,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace energy {
 
 tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
@@ -224,4 +225,5 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
 }
 
 
+} // end of namespace energy
 } // end of namespace pism
