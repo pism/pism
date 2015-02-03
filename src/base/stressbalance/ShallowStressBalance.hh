@@ -27,7 +27,10 @@
 #include <PISMDiagnostic.hh>
 
 namespace pism {
+namespace rheology {
 class IceFlowLaw;
+}
+
 class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
 
@@ -74,7 +77,7 @@ public:
   //! \brief Produce a report string for the standard output.
   virtual std::string stdout_report();
 
-  const IceFlowLaw* flow_law();
+  const rheology::IceFlowLaw* flow_law();
 
   const EnthalpyConverter& enthalpy_converter();
 
@@ -87,7 +90,7 @@ protected:
 
   double sea_level;
   IceBasalResistancePlasticLaw *basal_sliding_law;
-  IceFlowLaw *m_flow_law;
+  rheology::IceFlowLaw *m_flow_law;
   const EnthalpyConverter &m_EC;
 
   IceModelVec2V m_velocity;

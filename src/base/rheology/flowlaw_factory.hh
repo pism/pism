@@ -24,6 +24,7 @@
 #include <string>
 
 namespace pism {
+namespace rheology {
 
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
@@ -58,6 +59,7 @@ private:
 };
 
 
+} // end of namespace rheology
 } // end of namespace pism
 
 #endif  // __flowlaw_factory

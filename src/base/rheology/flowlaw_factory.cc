@@ -26,6 +26,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace rheology {
 
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
                                      const std::string &pre,
@@ -150,4 +151,5 @@ IceFlowLaw* IceFlowLawFactory::create()
   return (*r)(com, prefix, config, EC);
 }
 
+} // end of namespace rheology
 } // end of namespace pism

@@ -322,7 +322,7 @@ IceModelVec::Ptr IceModel_hardav::compute() {
   const double fillval = m_grid.config.get("fill_value");
   double *Eij; // columns of enthalpy values
 
-  const IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->flow_law();
+  const rheology::IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->flow_law();
   if (flow_law == NULL) {
     flow_law = model->stress_balance->get_ssb_modifier()->flow_law();
     if (flow_law == NULL) {

@@ -42,6 +42,7 @@ static inline double secondInvariantDu_2D(const double Du[]) {
   return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2]));
 }
 
+namespace rheology {
 
 //! Abstract class containing the constitutive relation for the flow of ice (of
 //! the Paterson-Budd type).
@@ -404,6 +405,7 @@ protected:
   double d_grain_size_stripped;
 };
 
+} // end of namespace rheology
 } // end of namespace pism
 
 #endif // __flowlaws_hh

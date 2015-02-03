@@ -82,7 +82,7 @@ std::string ShallowStressBalance::stdout_report() {
   return "";
 }
 
-const IceFlowLaw* ShallowStressBalance::flow_law() {
+const rheology::IceFlowLaw* ShallowStressBalance::flow_law() {
   return m_flow_law;
 }
 
@@ -132,7 +132,7 @@ ZeroSliding::ZeroSliding(const IceGrid &g, const EnthalpyConverter &e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
+  rheology::IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
   ice_factory.setType(m_config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();

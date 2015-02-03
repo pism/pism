@@ -25,8 +25,11 @@
 namespace pism {
 
 class Vars;
-class IceFlowLaw;
 class EnthalpyConverter;
+
+namespace rheology {
+class IceFlowLaw;
+}
 
 namespace stressbalance {
 
@@ -54,9 +57,9 @@ public:
 
   virtual std::string stdout_report();
 
-  IceFlowLaw* flow_law();
+  rheology::IceFlowLaw* flow_law();
 protected:
-  IceFlowLaw *m_flow_law;
+  rheology::IceFlowLaw *m_flow_law;
   const EnthalpyConverter &m_EC;
   double m_D_max;
   IceModelVec2Stag m_diffusive_flux;

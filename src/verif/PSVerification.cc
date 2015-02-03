@@ -88,7 +88,7 @@ void Verification::update_KO() {
 void Verification::update_L() {
   double     A0, T0;
 
-  ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
+  rheology::ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -170,7 +170,7 @@ void Verification::update_ABCDEH(double time) {
 
   double f = m_config.get("ice_density") / m_config.get("lithosphere_density");
 
-  ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
+  rheology::ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant

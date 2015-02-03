@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
     setVerbosityLevel(5);
 
     ICMEnthalpyConverter EC(config);
-    ThermoGlenArrIce ice(grid.com, "sia_", config, &EC);
+    rheology::ThermoGlenArrIce ice(grid.com, "sia_", config, &EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;

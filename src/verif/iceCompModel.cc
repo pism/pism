@@ -291,7 +291,7 @@ void IceCompModel::allocate_stressbalance() {
     // IceFlowLaw for verification (we need to have the right flow law for
     // errors to make sense)
 
-    IceFlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
+    rheology::IceFlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
     if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == false) {
       verbPrintf(1, grid.com,
@@ -375,7 +375,7 @@ void IceCompModel::set_vars_from_options() {
 void IceCompModel::initTestABCDEH() {
   double     A0, T0, H, accum, dummy1, dummy2, dummy3;
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
+  rheology::ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
 
   const double time = grid.time->current();
 
@@ -461,7 +461,7 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
+  rheology::ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -951,7 +951,7 @@ void IceCompModel::reportErrors() {
     return;
   }
 
-  IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
+  rheology::IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
       not IceFlowLawIsPatersonBuddCold(flow_law, config, EC)) {
