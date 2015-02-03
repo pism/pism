@@ -96,9 +96,9 @@ SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
 
   // Allocate m_coefficients, which contains coefficient data at the
   // quadrature points of all the elements. There are nElement
-  // elements, and FEQuadrature::Nq quadrature points.
+  // elements, and Quadrature::Nq quadrature points.
   int nElements = m_element_index.element_count();
-  m_coefficients.resize(fem::FEQuadrature::Nq * nElements);
+  m_coefficients.resize(fem::Quadrature::Nq * nElements);
 }
 
 SSA* SSAFEMFactory(const IceGrid &g, const EnthalpyConverter &ec) {
@@ -242,8 +242,8 @@ element so that these interpolated values do not need to be computed
 during each outer iteration of the nonlinear solve.*/
 void SSAFEM::cacheQuadPtValues() {
 
-  using fem::FEQuadrature;
-  using fem::FEFunctionGerm;
+  using fem::Quadrature;
+  using fem::FunctionGerm;
 
   const double
     *Enth_e[4];
@@ -252,7 +252,7 @@ void SSAFEM::cacheQuadPtValues() {
 
   double ice_density = m_config.get("ice_density");
 
-  for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
+  for (unsigned int q=0; q<Quadrature::Nq; q++) {
     Enth_q[q] = new double[m_grid.Mz()];
   }
 
@@ -280,8 +280,8 @@ void SSAFEM::cacheQuadPtValues() {
 
   for (int i=xs; i<xs+xm; i++) {
     for (int j=ys; j<ys+ym; j++) {
-      double hq[FEQuadrature::Nq], hxq[FEQuadrature::Nq], hyq[FEQuadrature::Nq];
-      double ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
+      double hq[Quadrature::Nq], hxq[Quadrature::Nq], hyq[Quadrature::Nq];
+      double ds_xq[Quadrature::Nq], ds_yq[Quadrature::Nq];
       if (driving_stress_explicit) {
         m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_x, ds_xq);
         m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_y, ds_yq);
@@ -289,14 +289,14 @@ void SSAFEM::cacheQuadPtValues() {
         m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_surface, hq, hxq, hyq);
       }
 
-      double Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
+      double Hq[Quadrature::Nq], bq[Quadrature::Nq], taucq[Quadrature::Nq];
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_thickness, Hq);
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_bed, bq);
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, taucq);
 
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[4*ij];
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
         coefficients[q].H  = Hq[q];
         coefficients[q].b  = bq[q];
         coefficients[q].tauc = taucq[q];
@@ -329,18 +329,18 @@ void SSAFEM::cacheQuadPtValues() {
       // but the way we have just obtained the values at the element vertices
       // using getInternalColumn doesn't make this straightforward.  So we compute the values
       // by hand.
-      const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+      const FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
       for (unsigned int k = 0; k < m_grid.Mz(); k++) {
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
-        for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
-          for (unsigned int p = 0; p < FEQuadrature::Nk; p++) {
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+          for (unsigned int p = 0; p < Quadrature::Nk; p++) {
             Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
           }
         }
       }
 
       // Now, for each column over a quadrature point, find the averaged_hardness.
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
                                                           m_grid.kBelowHeight(coefficients[q].H),
@@ -350,7 +350,7 @@ void SSAFEM::cacheQuadPtValues() {
     } // j-loop
   } // i-loop
 
-  for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+  for (unsigned int q = 0; q < Quadrature::Nq; q++) {
     delete [] Enth_q[q];
   }
 }
@@ -440,11 +440,11 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Storage for the current solution at quadrature points.
-  Vector2 u[FEQuadrature::Nq];
-  double Du[FEQuadrature::Nq][3];
+  Vector2 u[Quadrature::Nq];
+  double Du[Quadrature::Nq][3];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Iterate over the elements.
   int xs = m_element_index.xs,
@@ -455,13 +455,13 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
-      Vector2 velocity_local[FEQuadrature::Nk], residual[FEQuadrature::Nk];
+      Vector2 velocity_local[Quadrature::Nk], residual[Quadrature::Nk];
 
       // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
       // Coefficients and weights for this quadrature point.
-      const Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -477,7 +477,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       }
 
       // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
+      for (unsigned int k = 0; k < Quadrature::Nk; k++) {
         residual[k].u = 0;
         residual[k].v = 0;
       }
@@ -486,7 +486,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
 
       // loop over quadrature points on this element:
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
 
         // Symmetric gradient at the quadrature point.
         const double *Duq = Du[q];
@@ -506,8 +506,8 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
           U_y_plus_V_x = 2.0 * Duq[2];
 
         // Loop over test functions.
-        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
-          const FEFunctionGerm &psi = test[q][k];
+        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+          const FunctionGerm &psi = test[q][k];
           residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
                                      - psi.val * (tau_b.u + tau_d.u));
           residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
@@ -576,7 +576,7 @@ approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
                                     const Vector2 **velocity_global, Mat Jac) {
 
-  using fem::FEQuadrature;
+  using fem::Quadrature;
 
   PetscErrorCode ierr;
 
@@ -595,12 +595,12 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Storage for the current solution at quadrature points.
-  Vector2 u[FEQuadrature::Nq];
-  double Du[FEQuadrature::Nq][3];
+  Vector2 u[Quadrature::Nq];
+  double Du[Quadrature::Nq][3];
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int
@@ -612,18 +612,18 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       // Values of the solution at the nodes of the current element.
-      Vector2 velocity_local[FEQuadrature::Nk];
+      Vector2 velocity_local[Quadrature::Nk];
 
-      // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
-      // of freedom per element, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
+      // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
+      // of freedom per element, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
       // entries in the local Jacobian.
-      double K[2*FEQuadrature::Nk][2*FEQuadrature::Nk];
+      double K[2*Quadrature::Nk][2*Quadrature::Nk];
 
       // Index into the coefficient storage array.
       const int ij = m_element_index.flatten(i, j);
 
       // Coefficients at quadrature points in the current element:
-      const Coefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -645,7 +645,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       ierr = PetscMemzero(K, sizeof(K));
       PISM_CHK(ierr, "PetscMemzero");
 
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
         const double
           jw           = JxW[q],
           U            = u[q].u,
@@ -658,7 +658,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
                             &eta, &deta, &beta, &dbeta);
 
-        for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+        for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
 
           // Current trial function and its derivatives:
           const double
@@ -683,7 +683,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
             taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
             taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
 
-          for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+          for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
 
             // Current test function and its derivatives:
             const double

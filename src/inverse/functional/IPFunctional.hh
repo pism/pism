@@ -66,10 +66,10 @@ public:
 protected:
   const IceGrid &m_grid;
 
-  fem::FEElementMap m_element_index;
-  fem::FEQuadrature_Scalar m_quadrature;
-  fem::FEQuadrature_Vector m_quadrature_vector;
-  fem::FEDOFMap     m_dofmap;
+  fem::ElementMap m_element_index;
+  fem::Quadrature_Scalar m_quadrature;
+  fem::Quadrature_Vector m_quadrature_vector;
+  fem::DOFMap     m_dofmap;
 
 private:
   // Hide copy/assignment operations

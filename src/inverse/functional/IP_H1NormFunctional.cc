@@ -24,13 +24,13 @@ namespace pism {
 
 void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::FEQuadrature;
+  using fem::Quadrature;
 
   // The value of the objective
   double value = 0;
 
-  double x_e[FEQuadrature::Nk];
-  double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
+  double x_e[Quadrature::Nk];
+  double x_q[Quadrature::Nq], dxdx_q[Quadrature::Nq], dxdy_q[Quadrature::Nq];
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
@@ -53,7 +53,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<Quadrature::Nq; q++) {
         value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
@@ -66,16 +66,16 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  using fem::FEQuadrature;
+  using fem::Quadrature;
 
   // The value of the objective
   double value = 0;
 
-  double a_e[FEQuadrature::Nk];
-  double a_q[FEQuadrature::Nq], dadx_q[FEQuadrature::Nq], dady_q[FEQuadrature::Nq];
+  double a_e[Quadrature::Nk];
+  double a_q[Quadrature::Nq], dadx_q[Quadrature::Nq], dady_q[Quadrature::Nq];
 
-  double b_e[FEQuadrature::Nk];
-  double b_q[FEQuadrature::Nq], dbdx_q[FEQuadrature::Nq], dbdy_q[FEQuadrature::Nq];
+  double b_e[Quadrature::Nk];
+  double b_q[Quadrature::Nq], dbdx_q[Quadrature::Nq], dbdy_q[Quadrature::Nq];
 
   IceModelVec::AccessList list(a);
   list.add(b);
@@ -106,7 +106,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
       }
       m_quadrature.computeTrialFunctionValues(b_e, b_q, dbdx_q, dbdy_q);
 
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<Quadrature::Nq; q++) {
         value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
@@ -120,21 +120,21 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::FEQuadrature;
+  using fem::Quadrature;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  double x_e[FEQuadrature::Nk];
-  double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
+  double x_e[Quadrature::Nk];
+  double x_q[Quadrature::Nq], dxdx_q[Quadrature::Nq], dxdy_q[Quadrature::Nq];
 
-  double gradient_e[FEQuadrature::Nk];
+  double gradient_e[Quadrature::Nk];
 
   IceModelVec::AccessList list(x);
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -160,14 +160,14 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
+      for (unsigned int k=0; k<Quadrature::Nk; k++) {
         gradient_e[k] = 0;
       }
 
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<Quadrature::Nq; q++) {
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
-        for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
+        for (unsigned int k=0; k<Quadrature::Nk; k++) {
           gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
             m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
@@ -181,7 +181,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 
 void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
-  using fem::FEQuadrature;
+  using fem::Quadrature;
 
   PetscErrorCode ierr;
 
@@ -197,7 +197,7 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int xs = m_element_index.xs,
@@ -206,10 +206,10 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
     ym   = m_element_index.ym;
   for (int i=xs; i<xs+xm; i++) {
     for (int j=ys; j<ys+ym; j++) {
-      // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
-      // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
+      // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
+      // of freedom per elment, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
       // entries in the local Jacobian.
-      double K[FEQuadrature::Nk][FEQuadrature::Nk];
+      double K[Quadrature::Nk][Quadrature::Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -223,11 +223,11 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
       ierr = PetscMemzero(K, sizeof(K));
       PISM_CHK(ierr, "PetscMemzero");
 
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
-        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
-          for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
-            const fem::FEFunctionGerm &test_qk=test[q][k];
-            const fem::FEFunctionGerm &test_ql=test[q][l];
+      for (unsigned int q=0; q<Quadrature::Nq; q++) {
+        for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
+          for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
+            const fem::FunctionGerm &test_qk=test[q][k];
+            const fem::FunctionGerm &test_ql=test[q][l];
             K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
                                m_cH1*(test_qk.dx*test_ql.dx +
                                       test_qk.dy*test_ql.dy));

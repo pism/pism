@@ -93,10 +93,10 @@ protected:
   double m_beta_ice_free_bedrock;
   double m_epsilon_ssa;
 
-  fem::FEElementMap m_element_index;
-  fem::FEQuadrature_Scalar m_quadrature;
-  fem::FEQuadrature_Vector m_quadrature_vector;
-  fem::FEDOFMap m_dofmap;
+  fem::ElementMap m_element_index;
+  fem::Quadrature_Scalar m_quadrature;
+  fem::Quadrature_Vector m_quadrature_vector;
+  fem::DOFMap m_dofmap;
 
 private:
   void monitor_jacobian(Mat Jac);
