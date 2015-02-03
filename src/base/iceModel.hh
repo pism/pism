@@ -60,6 +60,14 @@ namespace hydrology {
 class Hydrology;
 }
 
+namespace calving {
+class EigenCalving;
+class OceanKill;
+class FloatKill;
+class CalvingAtThickness;
+class IcebergRemover;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
@@ -69,12 +77,6 @@ class BedDef;
 class BedThermalUnit;
 class Diagnostic;
 class TSDiagnostic;
-class IcebergRemover;
-class OceanKill;
-class FloatKill;
-class CalvingAtThickness;
-class EigenCalving;
-
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -179,7 +181,7 @@ public:
   virtual void setExecName(const std::string &my_executable_short_name);
   void reset_counters();
 
-  // see iMbootstrap.cc 
+  // see iMbootstrap.cc
   virtual void bootstrapFromFile(const std::string &fname);
   virtual void bootstrap_2d(const std::string &fname);
   virtual void putTempAtDepth();
@@ -223,11 +225,11 @@ protected:
   EnthalpyConverter *EC;
   BedThermalUnit *btu;
 
-  IcebergRemover     *iceberg_remover;
-  OceanKill          *ocean_kill_calving;
-  FloatKill          *float_kill_calving;
-  CalvingAtThickness *thickness_threshold_calving;
-  EigenCalving       *eigen_calving;
+  calving::IcebergRemover     *iceberg_remover;
+  calving::OceanKill          *ocean_kill_calving;
+  calving::FloatKill          *float_kill_calving;
+  calving::CalvingAtThickness *thickness_threshold_calving;
+  calving::EigenCalving       *eigen_calving;
 
   surface::SurfaceModel *surface;
   ocean::OceanModel   *ocean;

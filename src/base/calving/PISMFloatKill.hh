@@ -27,6 +27,8 @@ namespace pism {
 class IceModelVec2Int;
 class IceModelVec2S;
 
+namespace calving {
+
 /*! \brief Calving mechanism removing floating ice. */
 class FloatKill : public Component
 {
@@ -45,6 +47,7 @@ protected:
 };
 
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMFLOATKILL_H_ */

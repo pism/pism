@@ -23,6 +23,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(const IceGrid &g)
   : Component(g) {
@@ -97,4 +98,5 @@ void CalvingAtThickness::write_variables_impl(const std::set<std::string> &/*var
 }
 
 
+} // end of namespace calving
 } // end of namespace pism

@@ -25,6 +25,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace calving {
 
 IcebergRemover::IcebergRemover(const IceGrid &g)
   : Component(g) {
@@ -154,4 +155,5 @@ void IcebergRemover::write_variables_impl(const std::set<std::string> &, const P
   // empty
 }
 
+} // end of namespace calving
 } // end of namespace pism

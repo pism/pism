@@ -25,6 +25,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace calving {
 
 EigenCalving::EigenCalving(const IceGrid &g,
                            stressbalance::StressBalance *stress_balance)
@@ -489,4 +490,5 @@ void EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
   }
 }
 
+} // end of namespace calving
 } // end of namespace pism

@@ -24,6 +24,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace calving {
 
 /**
  * This class implements the "ocean_kill" mechanism: calving at a
@@ -50,6 +51,7 @@ protected:
   IceModelVec2Int m_ocean_kill_mask;
 };
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMOCEANKILL_H_ */

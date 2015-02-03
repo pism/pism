@@ -27,6 +27,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace calving {
 
 OceanKill::OceanKill(const IceGrid &g)
   : Component(g) {
@@ -140,4 +141,5 @@ void OceanKill::write_variables_impl(const std::set<std::string> &vars, const PI
   }
 }
 
+} // end of namespace calving
 } // end of namespace pism

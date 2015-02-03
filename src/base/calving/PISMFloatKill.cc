@@ -23,6 +23,7 @@
 #include "IceGrid.hh"
 
 namespace pism {
+namespace calving {
 
 FloatKill::FloatKill(const IceGrid &g)
   : Component(g) {
@@ -80,4 +81,5 @@ void FloatKill::write_variables_impl(const std::set<std::string> &/*vars*/, cons
   // empty
 }
 
+} // end of namespace calving
 } // end of namespace pism

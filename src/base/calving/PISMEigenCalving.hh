@@ -27,6 +27,8 @@ namespace stressbalance {
 class StressBalance;
 }
 
+namespace calving {
+
 class EigenCalving : public Component
 {
 public:
@@ -58,7 +60,7 @@ protected:
   bool m_restrict_timestep;
 };
 
-
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMEIGENCALVING_H_ */

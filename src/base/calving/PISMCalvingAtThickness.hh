@@ -24,6 +24,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front that
   has thickness below a given threshold. */
@@ -46,6 +47,7 @@ protected:
   IceModelVec2Int m_old_mask;
 };
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMCALVINGATTHICKNESS_H_ */

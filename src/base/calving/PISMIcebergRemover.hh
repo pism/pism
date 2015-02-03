@@ -24,6 +24,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace calving {
 
 /*! \brief PISM iceberg remover */
 /*!
@@ -61,6 +62,7 @@ protected:
   petsc::Vec::Ptr m_mask_p0;
 };
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMICEBERGREMOVER_H_ */

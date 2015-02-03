@@ -636,7 +636,7 @@ void IceModel::allocate_iceberg_remover() {
   if (config.get_flag("kill_icebergs")) {
 
     // this will throw an exception on failure
-    iceberg_remover = new IcebergRemover(grid);
+    iceberg_remover = new calving::IcebergRemover(grid);
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
@@ -875,7 +875,7 @@ void IceModel::init_calving() {
   if (methods.find("ocean_kill") != methods.end()) {
 
     if (ocean_kill_calving == NULL) {
-      ocean_kill_calving = new OceanKill(grid);
+      ocean_kill_calving = new calving::OceanKill(grid);
     }
 
     ocean_kill_calving->init();
@@ -885,7 +885,7 @@ void IceModel::init_calving() {
   if (methods.find("thickness_calving") != methods.end()) {
 
     if (thickness_threshold_calving == NULL) {
-      thickness_threshold_calving = new CalvingAtThickness(grid);
+      thickness_threshold_calving = new calving::CalvingAtThickness(grid);
     }
 
     thickness_threshold_calving->init();
@@ -896,7 +896,7 @@ void IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (eigen_calving == NULL) {
-      eigen_calving = new EigenCalving(grid, stress_balance);
+      eigen_calving = new calving::EigenCalving(grid, stress_balance);
     }
 
     eigen_calving->init();
@@ -905,7 +905,7 @@ void IceModel::init_calving() {
 
   if (methods.find("float_kill") != methods.end()) {
     if (float_kill_calving == NULL) {
-      float_kill_calving = new FloatKill(grid);
+      float_kill_calving = new calving::FloatKill(grid);
     }
 
     float_kill_calving->init();
