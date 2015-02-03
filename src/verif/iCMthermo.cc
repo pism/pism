@@ -315,7 +315,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   double    FF;
   std::vector<double> Tex(grid.Mz());
 
-  BTU_Verification *my_btu = dynamic_cast<BTU_Verification*>(btu);
+  energy::BTU_Verification *my_btu = dynamic_cast<energy::BTU_Verification*>(btu);
   if (my_btu == NULL) {
     throw RuntimeError("my_btu == NULL");
   }
@@ -666,6 +666,8 @@ void IceCompModel::initTestsKO() {
   fillTemperatureSolnTestsKO();
 }
 
+namespace energy {
+
 BTU_Verification::BTU_Verification(const IceGrid &g, int test, bool bii)
   : BedThermalUnit(g) {
   m_testname = test;
@@ -721,4 +723,5 @@ void BTU_Verification::bootstrap() {
   }
 }
 
+} // end of namespace energy
 } // end of namespace pism

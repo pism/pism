@@ -265,7 +265,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
   }
 
-  btu = new BTU_Verification(grid, testname, bedrock_is_ice_forK);
+  btu = new energy::BTU_Verification(grid, testname, bedrock_is_ice_forK);
 }
 
 void IceCompModel::allocate_stressbalance() {

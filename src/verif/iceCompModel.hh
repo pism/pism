@@ -23,6 +23,7 @@
 #include "bedrockThermalUnit.hh"
 
 namespace pism {
+namespace energy {
 
 class BTU_Verification : public BedThermalUnit
 {
@@ -36,6 +37,7 @@ protected:
   int m_testname;
   bool m_bedrock_is_ice;
 };
+} // end of namespace energy
 
 class IceCompModel : public IceModel {
 

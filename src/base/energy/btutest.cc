@@ -34,6 +34,7 @@ static char help[] =
 #include "error_handling.hh"
 
 namespace pism {
+namespace energy {
 
 class BTU_Test : public BedThermalUnit {
 public:
@@ -65,6 +66,7 @@ void BTU_Test::bootstrap() {
   }
 }
 
+} // end of namespace energy
 } // end of namespace pism
 
 int main(int argc, char *argv[]) {
@@ -174,7 +176,7 @@ int main(int argc, char *argv[]) {
     }
 
     // initialize BTU object:
-    BTU_Test btu(grid);
+    energy::BTU_Test btu(grid);
 
     bool bootstrapping_needed = true; // we know it's true
     btu.init(bootstrapping_needed);

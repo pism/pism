@@ -651,7 +651,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
     return;
   }
 
-  btu = new BedThermalUnit(grid);
+  btu = new energy::BedThermalUnit(grid);
 }
 
 //! \brief Decide which subglacial hydrology model to use.

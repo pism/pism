@@ -68,13 +68,16 @@ class CalvingAtThickness;
 class IcebergRemover;
 }
 
+namespace energy {
+class BedThermalUnit;
+}
+
 // forward declarations
 class Config;
 class IceGrid;
 class EnthalpyConverter;
 class YieldStress;
 class BedDef;
-class BedThermalUnit;
 class Diagnostic;
 class TSDiagnostic;
 
@@ -220,7 +223,7 @@ protected:
   YieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;
-  BedThermalUnit *btu;
+  energy::BedThermalUnit *btu;
 
   calving::IcebergRemover     *iceberg_remover;
   calving::OceanKill          *ocean_kill_calving;

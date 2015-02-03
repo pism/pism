@@ -26,6 +26,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace energy {
 
 BedThermalUnit::BedThermalUnit(const IceGrid &g)
     : Component_TS(g) {
@@ -423,4 +424,5 @@ void BedThermalUnit::bootstrap() {
 }
 
 
+} // end of namespace energy
 } // end of namespace pism

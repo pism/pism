@@ -26,6 +26,8 @@ namespace pism {
 
 class Vars;
 
+namespace energy {
+
 //! Given the temperature of the top of the bedrock, for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
 /*!
   The geothermal flux actually applied to the base of an ice sheet is dependent, over time,
@@ -124,6 +126,7 @@ protected:
   std::string m_input_file;             //!< non-empty if "-i" was set
 };
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif /* _PISMBEDTHERMALUNIT_H_ */
