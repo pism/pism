@@ -20,20 +20,21 @@
 #define _PISMYIELDSTRESS_H_
 
 #include "PISMComponent.hh"
+#include "iceModelVec.hh"
 
 namespace pism {
-class IceModelVec2S;
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
 class YieldStress : public Component_TS {
 public:
-  YieldStress(const IceGrid &g)
-    : Component_TS(g) {}
-  virtual ~YieldStress() {}
+  YieldStress(const IceGrid &g);
+  virtual ~YieldStress();
 
-  virtual void init() = 0;
-
-  virtual const IceModelVec2S& basal_material_yield_stress() = 0;
+  void init();
+  const IceModelVec2S& basal_material_yield_stress();
+protected:
+  virtual void init_impl() = 0;
+  IceModelVec2S m_tauc;
 };
 
 } // end of namespace pism

@@ -154,6 +154,7 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
+  base/basalstrength/PISMYieldStress.cc
   base/basalstrength/PISMMohrCoulombYieldStress.cc
   base/basalstrength/PISMConstantYieldStress.cc
   base/hydrology/PISMHydrology.cc

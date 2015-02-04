@@ -25,18 +25,14 @@ namespace pism {
 
 ConstantYieldStress::ConstantYieldStress(const IceGrid &g)
   : YieldStress(g) {
-  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
-  // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  m_tauc.set_attrs("model_state",
-                 "yield stress for basal till (plastic or pseudo-plastic model)",
-                 "Pa", "");
+  // empty
 }
 
 ConstantYieldStress::~ConstantYieldStress () {
   // empty
 }
 
-void ConstantYieldStress::init() {
+void ConstantYieldStress::init_impl() {
   verbPrintf(2, m_grid.com, "* Initializing the constant basal yield stress model...\n");
 
   options::String i("-i", "PISM input file"),
@@ -74,20 +70,22 @@ MaxTimestep ConstantYieldStress::max_timestep_impl(double t) {
 }
 
 
-void ConstantYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
+void ConstantYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/,
+                                                  std::set<std::string> &result) {
   result.insert("tauc");
 }
 
 
-void ConstantYieldStress::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                                         IO_Type nctype) {
+void ConstantYieldStress::define_variables_impl(const std::set<std::string> &vars,
+                                                const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
     m_tauc.define(nc, nctype);
   }
 }
 
 
-void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars,
+                                               const PIO &nc) {
   if (set_contains(vars, "tauc")) {
     m_tauc.write(nc);
   }
@@ -95,12 +93,8 @@ void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars
 
 
 void ConstantYieldStress::update_impl(double my_t, double my_dt) {
-  m_t = my_t; m_dt = my_dt;
-}
-
-
-const IceModelVec2S& ConstantYieldStress::basal_material_yield_stress() {
-  return m_tauc;
+  m_t = my_t;
+  m_dt = my_dt;
 }
 
 } // end of namespace pism

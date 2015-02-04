@@ -66,11 +66,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(const IceGrid &g,
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
-  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config.get("grid_max_stencil_width"));
-  m_tauc.set_attrs("diagnostic",
-                   "yield stress for basal till (plastic or pseudo-plastic model)",
-                   "Pa", "");
-
   // internal working space; stencil width needed because redundant computation
   // on overlaps
   m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb",
@@ -129,7 +124,7 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-void MohrCoulombYieldStress::init() {
+void MohrCoulombYieldStress::init_impl() {
   std::string filename;
 
   {
@@ -423,11 +418,6 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
   }
 
   m_tauc.update_ghosts();
-}
-
-
-const IceModelVec2S& MohrCoulombYieldStress::basal_material_yield_stress() {
-  return m_tauc;
 }
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
