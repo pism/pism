@@ -16,7 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // gsl_isnan()
 #include <cassert>
 
 #include "pism_const.hh"
@@ -25,7 +24,6 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
-
 
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
@@ -456,10 +454,10 @@ void IceModelVec::reset_attrs(unsigned int N) {
   internal units.
  */
 void IceModelVec::set_attrs(const std::string &my_pism_intent,
-                                      const std::string &my_long_name,
-                                      const std::string &my_units,
-                                      const std::string &my_standard_name,
-                                      int N) {
+                            const std::string &my_long_name,
+                            const std::string &my_units,
+                            const std::string &my_standard_name,
+                            int N) {
 
   metadata(N).set_string("long_name", my_long_name);
 
@@ -470,19 +468,12 @@ void IceModelVec::set_attrs(const std::string &my_pism_intent,
   metadata(N).set_string("standard_name", my_standard_name);
 }
 
-
 //! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
 void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
                               double default_value) {
-  PetscErrorCode ierr;
-  Vec tmp;
-
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(m_grid->com, "  Regridding %s...\n", m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
-  }
+  verbPrintf(3, m_grid->com, "  Regridding %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
     throw RuntimeError("This method (IceModelVec::regrid_impl)"
@@ -490,57 +481,38 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   }
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(*m_da, &tmp);
-    PISM_CHK(ierr, "DMGetGlobalVector");
-  } else {
-    tmp = m_v;
-  }
-
-  {
+    petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
+
     metadata(0).regrid(nc, flag, m_report_range, default_value, tmp_array.get());
-  }
 
-  if (m_has_ghosts) {
     global_to_local(m_da, tmp, m_v);
-
-    ierr = DMRestoreGlobalVector(*m_da, &tmp);
-    PISM_CHK(ierr, "DMRestoreGlobalVector");
+  } else {
+    petsc::VecArray v_array(m_v);
+    metadata(0).regrid(nc, flag, m_report_range, default_value, v_array.get());
   }
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
 void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
-  PetscErrorCode ierr;
-  Vec tmp;
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(m_grid->com, "  Reading %s...\n", m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
-  }
+  verbPrintf(3, m_grid->com, "  Reading %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
-    throw RuntimeError("This method (IceModelVec::read_impl) only supports IceModelVecs with dof == 1.");
+    throw RuntimeError("This method (IceModelVec::read_impl) only supports"
+                       " IceModelVecs with dof == 1.");
   }
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(*m_da, &tmp);
-    PISM_CHK(ierr, "DMGetGlobalVector");
-  } else {
-    tmp = m_v;
-  }
-
-  {
+    petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
+
     metadata(0).read(nc, time, tmp_array.get());
-  }
 
-
-  if (m_has_ghosts) {
     global_to_local(m_da, tmp, m_v);
-
-    ierr = DMRestoreGlobalVector(*m_da, &tmp);
-    PISM_CHK(ierr, "DMRestoreGlobalVector");
+  } else {
+    petsc::VecArray v_array(m_v);
+    metadata(0).read(nc, time, v_array.get());
   }
 }
 
@@ -579,35 +551,25 @@ const NCSpatialVariable& IceModelVec::metadata(unsigned int N) const {
 
 //! Writes an IceModelVec to a NetCDF file.
 void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
-  PetscErrorCode ierr;
-  Vec tmp;
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(m_grid->com, "  Writing %s...\n", m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
-  }
+  verbPrintf(3, m_grid->com, "  Writing %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
-    throw RuntimeError("This method (IceModelVec::write_impl) only supports IceModelVecs with dof == 1");
+    throw RuntimeError("This method (IceModelVec::write_impl) only supports"
+                       " IceModelVecs with dof == 1");
   }
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(*m_da, &tmp);
-    PISM_CHK(ierr, "DMGetGlobalVector");
+    petsc::TemporaryGlobalVec tmp(m_da);
 
     this->copy_to_vec(m_da, tmp);
-  } else {
-    tmp = m_v;
-  }
 
-  {
     petsc::VecArray tmp_array(tmp);
-    metadata(0).write(nc, nctype, write_in_glaciological_units, tmp_array.get());
-  }
 
-  if (m_has_ghosts) {
-    ierr = DMRestoreGlobalVector(*m_da, &tmp);
-    PISM_CHK(ierr, "DMRestoreGlobalVector");
+    metadata(0).write(nc, nctype, write_in_glaciological_units, tmp_array.get());
+  } else {
+    petsc::VecArray v_array(m_v);
+    metadata(0).write(nc, nctype, write_in_glaciological_units, v_array.get());
   }
 }
 

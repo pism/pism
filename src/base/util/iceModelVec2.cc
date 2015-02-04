@@ -144,11 +144,8 @@ petsc::Vec::Ptr IceModelVec2S::allocate_proc0_copy() const {
   return petsc::Vec::Ptr(new petsc::Vec(result));
 }
 
-//! Puts a local IceModelVec2S on processor 0.
-void IceModelVec2S::put_on_proc0(Vec onp0) const {
-  PetscErrorCode ierr;
-  assert(m_v != NULL);
-
+void IceModelVec2S::put_on_proc0(Vec parallel, Vec onp0) const {
+  PetscErrorCode ierr = 0;
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
 
@@ -164,27 +161,11 @@ void IceModelVec2S::put_on_proc0(Vec onp0) const {
     throw RuntimeError("call allocate_proc0_copy() before calling put_on_proc0");
   }
 
-  Vec global = NULL;
-
-  if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(*m_da, &global);
-    PISM_CHK(ierr, "DMGetGlobalVector");
-
-    this->copy_to_vec(m_da, global);
-  } else {
-    global = m_v;
-  }
-
-  ierr = DMDAGlobalToNaturalBegin(*m_da, global, INSERT_VALUES, natural_work);
+  ierr = DMDAGlobalToNaturalBegin(*m_da, parallel, INSERT_VALUES, natural_work);
   PISM_CHK(ierr, "DMDAGlobalToNaturalBegin");
 
-  ierr = DMDAGlobalToNaturalEnd(*m_da, global, INSERT_VALUES, natural_work);
+  ierr = DMDAGlobalToNaturalEnd(*m_da, parallel, INSERT_VALUES, natural_work);
   PISM_CHK(ierr, "DMDAGlobalToNaturalEnd");
-
-  if (m_has_ghosts) {
-    ierr = DMRestoreGlobalVector(*m_da, &global);
-    PISM_CHK(ierr, "DMRestoreGlobalVector");
-  }
 
   ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
                          INSERT_VALUES, SCATTER_FORWARD);
@@ -195,10 +176,20 @@ void IceModelVec2S::put_on_proc0(Vec onp0) const {
   PISM_CHK(ierr, "VecScatterEnd");
 }
 
-//! Gets a local IceModelVec2 from processor 0.
-void IceModelVec2S::get_from_proc0(Vec onp0) {
+
+//! Puts a local IceModelVec2S on processor 0.
+void IceModelVec2S::put_on_proc0(Vec onp0) const {
+  if (m_has_ghosts) {
+    petsc::TemporaryGlobalVec tmp(m_da);
+    this->copy_to_vec(m_da, tmp);
+    put_on_proc0(tmp, onp0);
+  } else {
+    put_on_proc0(m_v, onp0);
+  }
+}
+
+void IceModelVec2S::get_from_proc0(Vec onp0, Vec parallel) {
   PetscErrorCode ierr;
-  assert(m_v != NULL);
 
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
@@ -222,27 +213,22 @@ void IceModelVec2S::get_from_proc0(Vec onp0) {
                        INSERT_VALUES, SCATTER_REVERSE);
   PISM_CHK(ierr, "VecScatterEnd");
 
-  Vec global = NULL;
-
-  if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(*m_da, &global);
-    PISM_CHK(ierr, "DMGetGlobalVector");
-  } else {
-    global = m_v;
-  }
-
-  ierr = DMDANaturalToGlobalBegin(*m_da, natural_work, INSERT_VALUES, global);
+  ierr = DMDANaturalToGlobalBegin(*m_da, natural_work, INSERT_VALUES, parallel);
   PISM_CHK(ierr, "DMDANaturalToGlobalBegin");
 
-  ierr = DMDANaturalToGlobalEnd(*m_da, natural_work, INSERT_VALUES, global);
+  ierr = DMDANaturalToGlobalEnd(*m_da, natural_work, INSERT_VALUES, parallel);
   PISM_CHK(ierr, "DMDANaturalToGlobalEnd");
+}
 
+//! Gets a local IceModelVec2 from processor 0.
+void IceModelVec2S::get_from_proc0(Vec onp0) {
   if (m_has_ghosts) {
-    this->copy_from_vec(global);
-    ierr = DMRestoreGlobalVector(*m_da, &global);
-    PISM_CHK(ierr, "DMRestoreGlobalVector");
+    petsc::TemporaryGlobalVec tmp(m_da);
+    get_from_proc0(onp0, tmp);
+    this->copy_from_vec(tmp);
+  } else {
+    get_from_proc0(onp0, m_v);
   }
-
   inc_state_counter();          // mark as modified
 }
 
@@ -370,17 +356,12 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
 void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
                                          double default_value) {
-  PetscErrorCode ierr;
-
   if ((m_dof == 1) && (m_has_ghosts == false)) {
     IceModelVec::regrid_impl(nc, flag, default_value);
     return;
   }
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(m_grid->com, "  Regridding %s...\n", m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
-  }
+  verbPrintf(3, m_grid->com, "  Regridding %s...\n", m_name.c_str());
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):

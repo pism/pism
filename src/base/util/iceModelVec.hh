@@ -398,6 +398,9 @@ public:
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
   inline StarStencil<double> star(int i, int j) const;
+protected:
+  void put_on_proc0(Vec parallel, Vec onp0) const;
+  void get_from_proc0(Vec onp0, Vec parallel);
 };
 
 
