@@ -29,6 +29,7 @@
 #include <netcdf.h>
 
 namespace pism {
+namespace io {
 
 #include "pism_type_conversion.hh"
 
@@ -601,4 +602,5 @@ std::string NC4File::get_format_impl() const {
   }
 }
 
+} // end of namespace io
 } // end of namespace pism

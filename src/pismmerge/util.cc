@@ -20,6 +20,8 @@
 
 #include "error_handling.hh"
 
+using pism::io::NC4_Serial;
+
 //! \brief Computes the file name corresponding to a patch written by mpi_rank.
 std::string patch_filename(const std::string &input, int mpi_rank) {
   char tmp[pism::TEMPORARY_STRING_LENGTH];
@@ -52,7 +54,7 @@ std::string output_filename(const std::string &input, const std::string &var_nam
 }
 
 //! \brief Gets the total number of patches.
-int get_quilt_size(const pism::NC4_Serial &input) {
+int get_quilt_size(const NC4_Serial &input) {
   std::vector<double> tmp;
   input.get_att_double("x_patch", "mpi_size", tmp);
   if (tmp.size() != 1) {
@@ -64,7 +66,7 @@ int get_quilt_size(const pism::NC4_Serial &input) {
 //! \brief Checks if all input files are present. (We do this before creating
 //! the output file to make sure we don't end up bailing in the middle of it.)
 void check_input_files(const std::string &filename) {
-  pism::NC4_Serial nc(MPI_COMM_SELF, 0);
+  NC4_Serial nc(MPI_COMM_SELF, 0);
 
   nc.open(patch_filename(filename, 0), pism::PISM_READONLY);
 
@@ -80,7 +82,7 @@ void check_input_files(const std::string &filename) {
 
 //! \brief Reads the size of the local patch and its location within the
 //! dataset from an input file.
-void patch_geometry(const pism::NC4_Serial &input, int &xs, int &ys,
+void patch_geometry(const NC4_Serial &input, int &xs, int &ys,
                     unsigned int &xm, unsigned int &ym) {
   std::vector<double> tmp;
 

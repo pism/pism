@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@
 #include <cstdio>               // stderr, fprintf
 
 namespace pism {
+namespace io {
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
@@ -1003,4 +1004,5 @@ std::string NC3File::get_format_impl() const {
   }
 }
 
+} // end of namespace io
 } // end of namespace pism

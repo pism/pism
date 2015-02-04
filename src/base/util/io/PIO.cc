@@ -56,9 +56,9 @@ namespace pism {
 using std::string;
 using std::vector;
 
-static NCFile::Ptr create_backend(MPI_Comm com, string mode) {
+static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3") {
-    return NCFile::Ptr(new NC3File(com));
+    return io::NCFile::Ptr(new io::NC3File(com));
   } else if (mode.find("quilt") == 0) {
     size_t n = mode.find(":");
     int compression_level = 0;
@@ -77,25 +77,25 @@ static NCFile::Ptr create_backend(MPI_Comm com, string mode) {
       }
     }
 
-    return NCFile::Ptr(new NC4_Quilt(com, compression_level));
+    return io::NCFile::Ptr(new io::NC4_Quilt(com, compression_level));
   }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
-    return NCFile::Ptr(new NC4_Par(com));
+    return io::NCFile::Ptr(new io::NC4_Par(com));
   }
 #endif
 #if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
-    return NCFile::Ptr(new PNCFile(com));
+    return io::NCFile::Ptr(new io::PNCFile(com));
   }
 #endif
 #if (PISM_USE_HDF5==1)
   else if (mode == "hdf5") {
-    return NCFile::Ptr(new NC4_HDF5(com));
+    return io::NCFile::Ptr(new io::NC4_HDF5(com));
   }
 #endif
   else {
-    return NCFile::Ptr();       // a "NULL" pointer
+    return io::NCFile::Ptr();       // a "NULL" pointer
   }
 }
 
@@ -267,7 +267,7 @@ void PIO::detect_mode(const string &filename) {
 
   string format;
   {
-    NC3File nc3(m_com);
+    io::NC3File nc3(m_com);
 
     // detect_mode is private, so the caller will handle the failure
     // of open and add context

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@ extern "C" {
 }
 
 namespace pism {
+namespace io {
 
 int NC4_Par::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
@@ -84,4 +85,5 @@ int NC4_Par::set_access_mode(int varid, bool mapped) const {
 
 
 
+} // end of namespace io
 } // end of namespace pism

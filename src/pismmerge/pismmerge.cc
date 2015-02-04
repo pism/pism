@@ -28,6 +28,8 @@ using namespace pism;
 static char help[] =
   "Tool for merging PISM output files produced using '-o_format quilt'.\n";
 
+using pism::io::NC4_Serial;
+
 int process_one_variable(std::string var_name, std::string input_file, std::string output_file,
                          unsigned int compression_level) {
   NC4_Serial input(MPI_COMM_SELF, 0),

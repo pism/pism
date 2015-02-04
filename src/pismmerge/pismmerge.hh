@@ -36,26 +36,26 @@
 
 
 // metadata.cc
-void define_dimension(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+void define_dimension(const pism::io::NC4_Serial &input, const pism::io::NC4_Serial &output,
                       const std::string &dim_name);
-void define_variable(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+void define_variable(const pism::io::NC4_Serial &input, const pism::io::NC4_Serial &output,
                      const std::string &variable_name);
-void copy_attributes(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+void copy_attributes(const pism::io::NC4_Serial &input, const pism::io::NC4_Serial &output,
                      const std::string &var_name);
 
 // variables.cc
-void copy_coordinate_variable(const pism::NC4_Serial &input, const std::string &var_name,
-                              const pism::NC4_Serial &output);
+void copy_coordinate_variable(const pism::io::NC4_Serial &input, const std::string &var_name,
+                              const pism::io::NC4_Serial &output);
 void copy_spatial_variable(const std::string &filename, const std::string &var_name,
-                           const pism::NC4_Serial &output);
-void copy_all_variables(const std::string &filename, const pism::NC4_Serial &output);
+                           const pism::io::NC4_Serial &output);
+void copy_all_variables(const std::string &filename, const pism::io::NC4_Serial &output);
 
 // util.cc
 std::string patch_filename(const std::string &input, int mpi_rank);
 std::string output_filename(const std::string &input, const std::string &var_name);
-int get_quilt_size(const pism::NC4_Serial &input);
+int get_quilt_size(const pism::io::NC4_Serial &input);
 void check_input_files(const std::string &filename);
-void patch_geometry(const pism::NC4_Serial &input, int &xs, int &ys,
+void patch_geometry(const pism::io::NC4_Serial &input, int &xs, int &ys,
                     unsigned int &xm, unsigned int &ym);
 
 #endif /* _PISMMERGE_H_ */

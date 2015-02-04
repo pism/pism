@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@
 #include <netcdf.h>
 
 namespace pism {
+namespace io {
 
 static std::string patch_filename(std::string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
@@ -264,4 +265,5 @@ int NC4_Quilt::move_if_exists_impl(const std::string &file, int /*rank_to_use*/)
   return global_stat(stat);
 }
 
+} // end of namespace io
 } // end of namespace pism

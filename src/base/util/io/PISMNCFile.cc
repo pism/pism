@@ -30,6 +30,7 @@
 #include <netcdf.h>
 
 namespace pism {
+namespace io {
 
 NCFile::NCFile(MPI_Comm c)
   : m_com(c) {
@@ -299,4 +300,5 @@ void NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
   int stat = this->remove_if_exists_impl(filename, rank_to_use); check(stat);
 }
 
+} // end of namespace io
 } // end of namespace pism

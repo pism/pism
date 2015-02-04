@@ -18,6 +18,8 @@
 
 #include "pismmerge.hh"
 
+using pism::io::NC4_Serial;
+
 //! \brief Defines a dimension in an output file.
 /*!
  * We assume that the time dimension is always unlimited (this is true about
@@ -26,7 +28,7 @@
  * Ignores dimensions that already exist in the output file or don't exist in
  * the input file.
  */
-void define_dimension(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+void define_dimension(const NC4_Serial &input, const NC4_Serial &output,
                       const std::string &dim_name) {
   bool exists;
 
@@ -56,7 +58,7 @@ void define_dimension(const pism::NC4_Serial &input, const pism::NC4_Serial &out
  * The `extra_vars` output argument will contain names of coordinate variables
  * corresponding to dimensions used by this variable.
  */
-void define_variable(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+void define_variable(const NC4_Serial &input, const NC4_Serial &output,
                      const std::string &variable_name) {
   bool exists;
   std::vector<std::string> dimensions;
@@ -103,7 +105,7 @@ void define_variable(const pism::NC4_Serial &input, const pism::NC4_Serial &outp
 }
 
 //! \brief Copies variable attributes.
-void copy_attributes(const pism::NC4_Serial &input, const pism::NC4_Serial &output,
+void copy_attributes(const NC4_Serial &input, const NC4_Serial &output,
                      const std::string &var_name) {
   int n_attrs;
 

@@ -21,13 +21,15 @@
 
 #include "pismmerge.hh"
 
+using pism::io::NC4_Serial;
+
 //! \brief Copies 1D variables.
 /*!
  * This function processes coordinate variables and time bounds.
  */
-void copy_coordinate_variable(const pism::NC4_Serial &input,
+void copy_coordinate_variable(const NC4_Serial &input,
                               const std::string &var_name,
-                              const pism::NC4_Serial &output) {
+                              const NC4_Serial &output) {
   unsigned int dim1_len = 0, dim2_len = 0;
   std::vector<unsigned int> start, count;
   std::vector<std::string> dims;
@@ -84,9 +86,9 @@ void copy_coordinate_variable(const pism::NC4_Serial &input,
  */
 void copy_spatial_variable(const std::string &filename,
                            const std::string &var_name,
-                           const pism::NC4_Serial &output) {
+                           const NC4_Serial &output) {
   std::map<std::string, int> dim_lengths;
-  pism::NC4_Serial input(MPI_COMM_SELF, 0);
+  NC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dims;
   std::vector<unsigned int> in_start, out_start, count;
 
@@ -182,9 +184,9 @@ void copy_spatial_variable(const std::string &filename,
  * Loops over variables present in an output file. This allows us to process
  * both cases ("-v foo" and without "-v").
  */
-void copy_all_variables(const std::string &filename, const pism::NC4_Serial &output) {
+void copy_all_variables(const std::string &filename, const NC4_Serial &output) {
   int n_vars;
-  pism::NC4_Serial input(MPI_COMM_SELF, 0);
+  NC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
   input.open(patch_filename(filename, 0), pism::PISM_READONLY);

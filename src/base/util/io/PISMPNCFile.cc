@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace io {
 
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
@@ -687,4 +688,5 @@ std::string PNCFile::get_format_impl() const {
   return "netcdf3";
 }
 
+} // end of namespace io
 } // end of namespace pism

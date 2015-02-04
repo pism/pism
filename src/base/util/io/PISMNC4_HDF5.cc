@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace io {
 
 // Convert from a PISM I/O data type to a HDF5 type.
 static hid_t pism_type_to_hdf5_type(IO_Type xtype) {
@@ -1222,4 +1223,5 @@ std::string NC4_HDF5::get_format_impl() const {
   return "netcdf4";
 }
 
+} // end of namespace io
 } // end of namespace pism

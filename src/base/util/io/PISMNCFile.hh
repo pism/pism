@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,6 +32,7 @@
 #include "IO_Flags.hh"
 
 namespace pism {
+namespace io {
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.
 /*!
@@ -266,6 +267,7 @@ protected:                      // data members
   mutable unsigned int m_xs, m_xm, m_ys, m_ym;
 };
 
+} // end of namespace io
 } // end of namespace pism
 
 #endif /* _PISMNCWRAPPER_H_ */
