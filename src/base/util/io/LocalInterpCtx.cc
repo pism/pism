@@ -128,9 +128,9 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
-  int proc0_buffer_size = buffer_size;
-  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_INT, MPI_MAX, 0, com);
+  unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
+  unsigned int proc0_buffer_size = buffer_size;
+  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
   if (rank == 0) {
     buffer.resize(proc0_buffer_size);
   } else {

@@ -707,9 +707,9 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
     return 0;
   }
 
-  int max_xm = 0, max_ym = 0;
-  MPI_Allreduce(&m_xm, &max_xm, 1, MPI_INT, MPI_MAX, m_com);
-  MPI_Allreduce(&m_ym, &max_ym, 1, MPI_INT, MPI_MAX, m_com);
+  unsigned int max_xm = 0, max_ym = 0;
+  MPI_Allreduce(&m_xm, &max_xm, 1, MPI_UNSIGNED, MPI_MAX, m_com);
+  MPI_Allreduce(&m_ym, &max_ym, 1, MPI_UNSIGNED, MPI_MAX, m_com);
 
   std::vector<hsize_t> extent, max_extent, chunk;
 

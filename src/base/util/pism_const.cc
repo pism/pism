@@ -172,8 +172,8 @@ std::string pism_username_prefix(MPI_Comm com) {
   message << username << "@" << hostname << " " << pism_timestamp() << ": ";
 
   std::string result = message.str();
-  int length = result.size();
-  MPI_Bcast(&length, 1, MPI_INT, 0, com);
+  unsigned int length = result.size();
+  MPI_Bcast(&length, 1, MPI_UNSIGNED, 0, com);
 
   result.resize(length);
   MPI_Bcast(&result[0], length, MPI_CHAR, 0, com);
