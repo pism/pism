@@ -20,15 +20,16 @@
 #define _PSFACTORY_H_
 
 #include "PSModifier.hh"
+#include "PCFactory.hh"
 
 namespace pism {
-
-class PSFactory : public PCFactory<surface::SurfaceModel,surface::SurfaceModifier> {
+namespace surface {
+class Factory : public PCFactory<SurfaceModel,SurfaceModifier> {
 public:
-  PSFactory(const IceGrid& g);
-  ~PSFactory();
+  Factory(const IceGrid& g);
+  ~Factory();
 };
-
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSFACTORY_H_ */

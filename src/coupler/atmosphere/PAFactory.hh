@@ -24,13 +24,13 @@
 #include "PCFactory.hh"
 
 namespace pism {
-
-class PAFactory : public PCFactory<atmosphere::AtmosphereModel,atmosphere::PAModifier> {
+namespace atmosphere {
+class Factory : public PCFactory<AtmosphereModel,PAModifier> {
 public:
-  PAFactory(const IceGrid& g);
-  ~PAFactory();
+  Factory(const IceGrid& g);
+  ~Factory();
 };
-
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAFACTORY_H_ */

@@ -14,6 +14,7 @@ add_library (pismboundary
   ./atmosphere/PA_paleo_precip.cc
   ./atmosphere/PAAnomaly.cc
   ./atmosphere/PAWeatherStation.cc
+  ./atmosphere/PAFactory.cc
   ./ocean/PISMOceanModel.cc
   ./ocean/POCache.cc
   ./ocean/POConstantPIK.cc
@@ -24,6 +25,7 @@ add_library (pismboundary
   ./ocean/PO_delta_T.cc
   ./ocean/PO_delta_SMB.cc
   ./ocean/PO_delta_MBP.cc
+  ./ocean/POFactory.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSCache.cc
@@ -37,7 +39,7 @@ add_library (pismboundary
   ./surface/PSTemperatureIndex.cc
   ./surface/PSForceThickness.cc
   ./surface/PSAnomaly.cc
-  ./util/PCFactory.cc
+  ./surface/PSFactory.cc
   ./surface/PSTemperatureIndex_Old.cc
   ./surface/localMassBalance_old.cc
   ./surface/PSFormulas.cc

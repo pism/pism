@@ -743,9 +743,9 @@ void IceModel::allocate_submodels() {
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
-  PAFactory pa(grid);
-  PSFactory ps(grid);
-  POFactory po(grid);
+  atmosphere::Factory pa(grid);
+  surface::Factory ps(grid);
+  ocean::Factory po(grid);
   atmosphere::AtmosphereModel *atmosphere;
 
   if (surface == NULL) {

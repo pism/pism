@@ -23,13 +23,13 @@
 #include "POModifier.hh"
 
 namespace pism {
-
-class POFactory : public PCFactory<ocean::OceanModel,ocean::OceanModifier> {
+namespace ocean {
+class Factory : public PCFactory<ocean::OceanModel,ocean::OceanModifier> {
 public:
-  POFactory(const IceGrid& g);
-  ~POFactory();
+  Factory(const IceGrid& g);
+  ~Factory();
 };
-
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _POFACTORY_H_ */
