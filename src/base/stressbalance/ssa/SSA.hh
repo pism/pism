@@ -107,9 +107,6 @@ typedef SSA * (*SSAFactory)(const IceGrid &, const EnthalpyConverter &);
   provides the basic fields.
 */
 class SSA : public ShallowStressBalance {
-  friend class SSA_taud;
-  friend class SSA_taub;
-  friend class SSA_beta;
 public:
   SSA(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSA();
