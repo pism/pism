@@ -288,12 +288,12 @@ void IceCompModel::allocate_stressbalance() {
 
   if (testname != 'V') {
     // check on whether the options (already checked) chose the right
-    // IceFlowLaw for verification (we need to have the right flow law for
+    // FlowLaw for verification (we need to have the right flow law for
     // errors to make sense)
 
-    rheology::IceFlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
+    rheology::FlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
-    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == false) {
+    if (FlowLawIsPatersonBuddCold(ice, config, EC) == false) {
       verbPrintf(1, grid.com,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
     }
@@ -375,11 +375,11 @@ void IceCompModel::set_vars_from_options() {
 void IceCompModel::initTestABCDEH() {
   double     A0, T0, H, accum, dummy1, dummy2, dummy3;
 
-  rheology::ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
+  rheology::PatersonBuddCold tgaIce(grid.com, "sia_", config, EC);
 
   const double time = grid.time->current();
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
@@ -461,9 +461,9 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  rheology::ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
+  rheology::PatersonBuddCold tgaIce(grid.com, "sia_", config, EC);
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
@@ -951,10 +951,10 @@ void IceCompModel::reportErrors() {
     return;
   }
 
-  rheology::IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
+  rheology::FlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
-      not IceFlowLawIsPatersonBuddCold(flow_law, config, EC)) {
+      not FlowLawIsPatersonBuddCold(flow_law, config, EC)) {
     verbPrintf(1, grid.com,
                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                "   for reported errors in test %c to be meaningful!\n",

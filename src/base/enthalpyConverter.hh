@@ -85,7 +85,7 @@ protected:
 
   The pressure dependence of the pressure-melting temperature is neglected.
 
-  Note: Any instance of IceFlowLaw uses an EnthalpyConverter; this is
+  Note: Any instance of FlowLaw uses an EnthalpyConverter; this is
   the one used in verification mode.
 */
 class ICMEnthalpyConverter : public EnthalpyConverter {

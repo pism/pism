@@ -29,8 +29,7 @@ namespace pism {
 class MaxTimestep {
 public:
   //! @brief Create an instance corresponding to an "inactive"
-  //! time-step restriction (in other words, @f$ \Delta t = \infty
-  //! @f$).
+  //! time-step restriction (in other words, @f$ \Delta t = \infty @f$).
   MaxTimestep();
   //! Create an instance corresponding to a max time step of `value`.
   MaxTimestep(double value);

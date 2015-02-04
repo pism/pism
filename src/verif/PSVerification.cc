@@ -88,9 +88,9 @@ void Verification::update_KO() {
 void Verification::update_L() {
   double     A0, T0;
 
-  rheology::ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
+  rheology::PatersonBuddCold tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
@@ -170,9 +170,9 @@ void Verification::update_ABCDEH(double time) {
 
   double f = m_config.get("ice_density") / m_config.get("lithosphere_density");
 
-  rheology::ThermoGlenArrIce tgaIce(m_grid.com, "sia_", m_config, m_EC);
+  rheology::PatersonBuddCold tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);

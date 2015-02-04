@@ -59,17 +59,16 @@ namespace rheology {
 
   \li can be represented in the viscosity form
 
-  \note IceFlowLaw derived classes should implement hardness_parameter... in
+  \note FlowLaw derived classes should implement hardness_parameter... in
   terms of softness_parameter... That way in many cases we only need to
   re-implement softness_parameter... to turn one flow law into another.
 */
-class IceFlowLaw {
+class FlowLaw {
 public:
-  IceFlowLaw(MPI_Comm c, const std::string &prefix,
+  FlowLaw(MPI_Comm c, const std::string &prefix,
              const Config &config,
              const EnthalpyConverter *EC);
-  virtual ~IceFlowLaw() {}
-  virtual void setFromOptions();
+  virtual ~FlowLaw() {}
 
   //! \brief Computes the regularized effective viscosity and its derivative with respect to the
   //! second invariant \f$ \gamma \f$.
@@ -155,21 +154,21 @@ protected:
 };
 
 // Helper functions:
-bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const Config &,
+bool FlowLawIsPatersonBuddCold(FlowLaw *, const Config &,
                                   const EnthalpyConverter*);
-bool IceFlowLawUsesGrainSize(IceFlowLaw *);
+bool FlowLawUsesGrainSize(FlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
 /*!
   See [\ref AschwandenBlatter]. The basic references are [\ref Glen] and [\ref
   PatersonBudd] and [\ref LliboutryDuval1985].
 */
-class GPBLDIce : public IceFlowLaw {
+class GPBLD : public FlowLaw {
 public:
-  GPBLDIce(MPI_Comm c, const std::string &prefix,
+  GPBLD(MPI_Comm c, const std::string &prefix,
            const Config &config,
            const EnthalpyConverter *EC);
-  virtual ~GPBLDIce() {}
+  virtual ~GPBLD() {}
 
   virtual double softness_parameter(double enthalpy,
                                     double pressure) const;
@@ -180,15 +179,15 @@ protected:
   double T_0, water_frac_coeff, water_frac_observed_limit;
 };
 
-//! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.
-class ThermoGlenIce : public IceFlowLaw {
+//! Derived class of FlowLaw for Paterson-Budd (1982)-Glen ice.
+class PatersonBudd : public FlowLaw {
 public:
-  ThermoGlenIce(MPI_Comm c, const std::string &prefix,
+  PatersonBudd(MPI_Comm c, const std::string &prefix,
                 const Config &config,
                 const EnthalpyConverter *my_EC)
-    : IceFlowLaw(c, prefix, config, my_EC) {
+    : FlowLaw(c, prefix, config, my_EC) {
   }
-  virtual ~ThermoGlenIce() {}
+  virtual ~PatersonBudd() {}
 
   // This also takes care of hardness_parameter
   virtual double softness_parameter(double enthalpy, double pressure) const;
@@ -214,12 +213,12 @@ protected:
 };
 
 //! Isothermal Glen ice allowing extra customization.
-class IsothermalGlenIce : public ThermoGlenIce {
+class IsothermalGlen : public PatersonBudd {
 public:
-  IsothermalGlenIce(MPI_Comm c, const std::string &prefix,
+  IsothermalGlen(MPI_Comm c, const std::string &prefix,
                     const Config &config,
                     const EnthalpyConverter *my_EC);
-  virtual ~IsothermalGlenIce() {}
+  virtual ~IsothermalGlen() {}
 
   virtual double averaged_hardness(double, int,
                                    const double*, const double*) const {
@@ -252,12 +251,12 @@ protected:
 };
 
 //! The Hooke flow law.
-class HookeIce : public ThermoGlenIce {
+class Hooke : public PatersonBudd {
 public:
-  HookeIce(MPI_Comm c, const std::string &prefix,
+  Hooke(MPI_Comm c, const std::string &prefix,
            const Config &config,
            const EnthalpyConverter *EC);
-  virtual ~HookeIce() {}
+  virtual ~Hooke() {}
   virtual std::string name() const {
     return "Hooke";
   }
@@ -269,13 +268,13 @@ protected:
 };
 
 //! Cold case of Paterson-Budd
-class ThermoGlenArrIce : public ThermoGlenIce {
+class PatersonBuddCold : public PatersonBudd {
 public:
-  ThermoGlenArrIce(MPI_Comm c, const std::string &prefix,
+  PatersonBuddCold(MPI_Comm c, const std::string &prefix,
                    const Config &config,
                    const EnthalpyConverter *my_EC)
-    : ThermoGlenIce(c, prefix, config, my_EC) {}
-  virtual ~ThermoGlenArrIce() {}
+    : PatersonBudd(c, prefix, config, my_EC) {}
+  virtual ~PatersonBuddCold() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
   double tempFromSoftness(double myA) const {
@@ -308,12 +307,12 @@ protected:
 };
 
 //! Warm case of Paterson-Budd
-class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
+class PatersonBuddWarm : public PatersonBuddCold {
 public:
-  ThermoGlenArrIceWarm(MPI_Comm c, const std::string &prefix,
+  PatersonBuddWarm(MPI_Comm c, const std::string &prefix,
                        const Config &config, const EnthalpyConverter *my_EC)
-    : ThermoGlenArrIce(c, prefix, config, my_EC) {}
-  virtual ~ThermoGlenArrIceWarm() {}
+    : PatersonBuddCold(c, prefix, config, my_EC) {}
+  virtual ~PatersonBuddWarm() {}
 
   virtual std::string name() const {
     return "Paterson-Budd (warm case)";
@@ -337,15 +336,15 @@ struct GKparts {
 
 //! A hybrid of Goldsby-Kohlstedt (2001) ice (constitutive form) and Paterson-Budd (1982)-Glen (viscosity form).
 /*!
-  Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow_from_temp()") and an
+  Each FlowLaw has both a forward flow law in "constitutive law" form ("flow_from_temp()") and an
   inverted-and-vertically-integrated flow law ("effective_viscosity()").  Only the
   former form of the flow law is known for Goldsby-Kohlstedt.  If one can
   invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
   derived class.
 */
-class GoldsbyKohlstedtIce : public IceFlowLaw {
+class GoldsbyKohlstedt : public FlowLaw {
 public:
-  GoldsbyKohlstedtIce(MPI_Comm c, const std::string &prefix,
+  GoldsbyKohlstedt(MPI_Comm c, const std::string &prefix,
                       const Config &config,
                       const EnthalpyConverter *my_EC);
 
@@ -385,14 +384,14 @@ protected:
     p_grain_sz_exp, gbs_Q_warm;
 };
 
-//! Derived class of GoldsbyKohlstedtIce for testing purposes only.
+//! Derived class of GoldsbyKohlstedt for testing purposes only.
 /*!
-  GoldsbyKohlstedtIceStripped is a simplification of Goldsby-Kohlstedt. Compare to that
+  GoldsbyKohlstedtStripped is a simplification of Goldsby-Kohlstedt. Compare to that
   used in Peltier et al 2000, which is even simpler.
 */
-class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
+class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
-  GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &prefix,
+  GoldsbyKohlstedtStripped(MPI_Comm c, const std::string &prefix,
                               const Config &config, const EnthalpyConverter *my_EC);
   virtual std::string name() const {
     return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";

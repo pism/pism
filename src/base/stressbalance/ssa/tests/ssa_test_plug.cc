@@ -32,7 +32,7 @@ static char help[] =
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
-#include "flowlaws.hh" // IceFlowLaw
+#include "flowlaws.hh" // FlowLaw
 #include "basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "PIO.hh"
 #include "NCVariable.hh"

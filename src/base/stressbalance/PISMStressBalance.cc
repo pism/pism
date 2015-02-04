@@ -365,7 +365,7 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
 void StressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
 
-  const rheology::IceFlowLaw *flow_law = m_shallow_stress_balance->flow_law();
+  const rheology::FlowLaw *flow_law = m_shallow_stress_balance->flow_law();
   const EnthalpyConverter &EC = m_shallow_stress_balance->enthalpy_converter();
 
   const IceModelVec3

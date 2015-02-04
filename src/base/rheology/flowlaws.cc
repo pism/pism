@@ -30,7 +30,7 @@
 namespace pism {
 namespace rheology {
 
-bool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
+bool FlowLawUsesGrainSize(FlowLaw *flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
   double ref = flow_law->flow(s, E, p, gs[0]);
   for (int i=1; i<4; i++) {
@@ -42,11 +42,11 @@ bool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
-bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
+bool FlowLawIsPatersonBuddCold(FlowLaw *flow_law, const Config &config,
                                   const EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
-  ThermoGlenArrIce cpb(PETSC_COMM_SELF, "sia_", config, EC); // This is unmodified cold Paterson-Budd
+  PatersonBuddCold cpb(PETSC_COMM_SELF, "sia_", config, EC); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
     const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
@@ -57,13 +57,13 @@ bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
   return true;
 }
 
-IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
+FlowLaw::FlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
                        const EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
 
   m_prefix = pre;
 
   if (EC == NULL) {
-    throw RuntimeError("EC is NULL in IceFlowLaw::IceFlowLaw()");
+    throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
   }
 
   standard_gravity   = config.get("standard_gravity");
@@ -87,13 +87,9 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
   schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
-void IceFlowLaw::setFromOptions() {
-  // empty
-}
-
 //! Return the softness parameter A(T) for a given temperature T.
-/*! This is not a natural part of all IceFlowLaw instances.   */
-double IceFlowLaw::softness_parameter_paterson_budd(double T_pa) const {
+/*! This is not a natural part of all FlowLaw instances.   */
+double FlowLaw::softness_parameter_paterson_budd(double T_pa) const {
   if (T_pa < crit_temp) {
     return A_cold * exp(-Q_cold/(ideal_gas_constant * T_pa));
   }
@@ -101,16 +97,16 @@ double IceFlowLaw::softness_parameter_paterson_budd(double T_pa) const {
 }
 
 //! The flow law itself.
-double IceFlowLaw::flow(double stress, double enthalpy,
+double FlowLaw::flow(double stress, double enthalpy,
                            double pressure, double /* gs */) const {
   return softness_parameter(enthalpy, pressure) * pow(stress, n-1);
 }
 
-double IceFlowLaw::hardness_parameter(double E, double p) const {
+double FlowLaw::hardness_parameter(double E, double p) const {
   return pow(softness_parameter(E, p), hardness_power);
 }
 
-void IceFlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
+void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
                                        const IceModelVec3  &enthalpy,
                                        IceModelVec2S &result) const {
 
@@ -138,7 +134,7 @@ void IceFlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
 //! Computes vertical average of B(E, pressure) ice hardness, namely \f$\bar
 //! B(E, p)\f$. See comment for hardness_parameter().
 /*! Note E[0], ..., E[kbelowH] must be valid.  */
-double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
+double FlowLaw::averaged_hardness(double thickness, int kbelowH,
                                      const double *zlevels,
                                      const double *enthalpy) const {
   double B = 0;
@@ -189,9 +185,9 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
 This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter and \ref LliboutryDuval1985.
  */
-GPBLDIce::GPBLDIce(MPI_Comm c, const std::string &pre,
+GPBLD::GPBLD(MPI_Comm c, const std::string &pre,
                    const Config &config, const EnthalpyConverter *my_EC)
-  : IceFlowLaw(c, pre, config, my_EC) {
+  : FlowLaw(c, pre, config, my_EC) {
   T_0              = config.get("water_melting_point_temperature");    // K
   water_frac_coeff = config.get("gpbld_water_frac_coeff");
   water_frac_observed_limit
@@ -200,13 +196,13 @@ GPBLDIce::GPBLDIce(MPI_Comm c, const std::string &pre,
 
 //! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
 /*!
-This is a modification of Glen-Paterson-Budd ice, which is ThermoGlenIce.  In particular, if
-\f$A()\f$ is the softness factor for ThermoGlenIce, if \f$E\f$ is the enthalpy, and \f$p\f$ is
+This is a modification of Glen-Paterson-Budd ice, which is PatersonBudd.  In particular, if
+\f$A()\f$ is the softness factor for PatersonBudd, if \f$E\f$ is the enthalpy, and \f$p\f$ is
 the pressure then the softness we compute is
    \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
 The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by getPATemp().
  */
-double GPBLDIce::softness_parameter(double enthalpy, double pressure) const {
+double GPBLD::softness_parameter(double enthalpy, double pressure) const {
   double E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
   if (enthalpy < E_s) {       // cold ice
@@ -221,43 +217,43 @@ double GPBLDIce::softness_parameter(double enthalpy, double pressure) const {
   }
 }
 
-// ThermoGlenIce
+// PatersonBudd
 
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
-double ThermoGlenIce::softness_parameter(double E, double pressure) const {
+double PatersonBudd::softness_parameter(double E, double pressure) const {
   double T_pa = EC->getPATemp(E, pressure);
   return softness_parameter_from_temp(T_pa);
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
-double ThermoGlenIce::flow(double stress, double E,
+double PatersonBudd::flow(double stress, double E,
                            double pressure, double gs) const {
   double temp = EC->getAbsTemp(E, pressure);
   return flow_from_temp(stress, temp, pressure, gs);
 }
 
 //! The flow law (temperature-dependent version).
-double ThermoGlenIce::flow_from_temp(double stress, double temp,
+double PatersonBudd::flow_from_temp(double stress, double temp,
                                         double pressure, double /*gs*/) const {
   // pressure-adjusted temperature:
   const double T_pa = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
   return softness_parameter_from_temp(T_pa) * pow(stress, n-1);
 }
 
-// IsothermalGlenIce
+// IsothermalGlen
 
-IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const std::string &pre,
+IsothermalGlen::IsothermalGlen(MPI_Comm c, const std::string &pre,
                                      const Config &config, const EnthalpyConverter *my_EC)
-  : ThermoGlenIce(c, pre, config, my_EC) {
+  : PatersonBudd(c, pre, config, my_EC) {
   softness_A = config.get("ice_softness");
   hardness_B = pow(softness_A, hardness_power);
 }
 
-// HookeIce
+// Hooke
 
-HookeIce::HookeIce(MPI_Comm c, const std::string &pre,
+Hooke::Hooke(MPI_Comm c, const std::string &pre,
                    const Config &config, const EnthalpyConverter *my_EC)
-  : ThermoGlenIce(c, pre, config, my_EC) {
+  : PatersonBudd(c, pre, config, my_EC) {
   Q_Hooke  = config.get("Hooke_Q");
   A_Hooke  = config.get("Hooke_A");
   C_Hooke  = config.get("Hooke_C");
@@ -265,16 +261,16 @@ HookeIce::HookeIce(MPI_Comm c, const std::string &pre,
   Tr_Hooke = config.get("Hooke_Tr");
 }
 
-double HookeIce::softness_parameter_from_temp(double T_pa) const {
+double Hooke::softness_parameter_from_temp(double T_pa) const {
   return A_Hooke * exp(-Q_Hooke/(ideal_gas_constant * T_pa)
                         + 3.0 * C_Hooke * pow(Tr_Hooke - T_pa, -K_Hooke));
 }
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
+GoldsbyKohlstedt::GoldsbyKohlstedt(MPI_Comm c, const std::string &pre,
                      const Config &config, const EnthalpyConverter *my_EC)
-  : IceFlowLaw(c, pre, config, my_EC) {
+  : FlowLaw(c, pre, config, my_EC) {
 
   V_act_vol    = -13.e-6;  // m^3/mol
   d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
@@ -312,29 +308,29 @@ GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
   diff_delta=9.04e-10;     // grain boundary width (m)
 }
 
-double GoldsbyKohlstedtIce::flow(double stress, double E,
+double GoldsbyKohlstedt::flow(double stress, double E,
                                  double pressure, double grainsize) const {
   double temp = EC->getAbsTemp(E, pressure);
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
 
-void GoldsbyKohlstedtIce::effective_viscosity(double, double,
+void GoldsbyKohlstedt::effective_viscosity(double, double,
                                               double *, double *) const {
-  throw std::runtime_error("GoldsbyKohlstedtIce::effective_viscosity is not implemented");
+  throw std::runtime_error("GoldsbyKohlstedt::effective_viscosity is not implemented");
 }
 
-double GoldsbyKohlstedtIce::averaged_hardness(double, int,
+double GoldsbyKohlstedt::averaged_hardness(double, int,
                                               const double *,
                                               const double *) const {
 
-  throw std::runtime_error("double GoldsbyKohlstedtIce::averaged_hardness is not implemented");
+  throw std::runtime_error("double GoldsbyKohlstedt::averaged_hardness is not implemented");
 
 #ifndef __GNUC__
   return 0;
 #endif
 }
 
-double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure) const {
+double GoldsbyKohlstedt::hardness_parameter(double enthalpy, double pressure) const {
   double softness, T_pa;
 
   // FIXME: The following is a re-implementation of the Paterson-Budd relation
@@ -351,8 +347,8 @@ double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure)
   return pow(softness, hardness_power);
 }
 
-double GoldsbyKohlstedtIce::softness_parameter(double , double) const {
-  throw std::runtime_error("double GoldsbyKohlstedtIce::softness_parameter is not implemented");
+double GoldsbyKohlstedt::softness_parameter(double , double) const {
+  throw std::runtime_error("double GoldsbyKohlstedt::softness_parameter is not implemented");
 
 #ifndef __GNUC__
   return 0;
@@ -364,7 +360,7 @@ double GoldsbyKohlstedtIce::softness_parameter(double , double) const {
   D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
   of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
 */
-double GoldsbyKohlstedtIce::flow_from_temp(double stress, double temp,
+double GoldsbyKohlstedt::flow_from_temp(double stress, double temp,
                                     double pressure, double gs) const {
   double eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
@@ -406,7 +402,7 @@ double GoldsbyKohlstedtIce::flow_from_temp(double stress, double temp,
 /*****************
 THE NEXT PROCEDURE REPEATS CODE; INTENDED ONLY FOR DEBUGGING
 *****************/
-GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressure) const {
+GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure) const {
   double gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
   GKparts p;
 
@@ -453,15 +449,15 @@ GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressu
 }
 /*****************/
 
-GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &pre,
+GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(MPI_Comm c, const std::string &pre,
                                                          const Config &config,
                                                          const EnthalpyConverter *my_EC)
-  : GoldsbyKohlstedtIce(c, pre, config, my_EC) {
+  : GoldsbyKohlstedt(c, pre, config, my_EC) {
   d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
 }
 
 
-double GoldsbyKohlstedtIceStripped::flow_from_temp(double stress, double temp, double pressure, double) const {
+double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, double pressure, double) const {
   // note value of gs is ignored
   // note pressure only effects the temperature; the "P V" term is dropped
   // note no diffusional flow

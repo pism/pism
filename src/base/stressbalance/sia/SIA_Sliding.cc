@@ -47,7 +47,7 @@ SIA_Sliding::SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e)
   m_work_2d.create(m_grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);
 
   {
-    rheology::IceFlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
+    rheology::FlowLawFactory ice_factory(m_grid.com, "sia_", m_config, &m_EC);
 
     ice_factory.setType(m_config.get_string("sia_flow_law"));
 

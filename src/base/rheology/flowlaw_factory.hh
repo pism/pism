@@ -27,33 +27,33 @@ namespace pism {
 namespace rheology {
 
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
-#define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
-#define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
-#define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */
+#define ICE_PB      "pb"            /* Paterson-Budd (PatersonBudd) */
+#define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) */
+#define ICE_HOOKE   "hooke"         /* Hooke (Hooke) */
 #define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
-typedef IceFlowLaw*(*IceFlowLawCreator)(MPI_Comm, const std::string &,
+typedef FlowLaw*(*FlowLawCreator)(MPI_Comm, const std::string &,
                                         const Config &, const EnthalpyConverter*);
 
-class IceFlowLawFactory {
+class FlowLawFactory {
 public:
-  IceFlowLawFactory(MPI_Comm, const std::string &prefix,
+  FlowLawFactory(MPI_Comm, const std::string &prefix,
                     const Config &conf,
                     const EnthalpyConverter *my_EC);
-  ~IceFlowLawFactory();
+  ~FlowLawFactory();
   void setType(const std::string &name);
   void setFromOptions();
-  void registerType(const std::string &name, IceFlowLawCreator);
+  void registerType(const std::string &name, FlowLawCreator);
   void removeType(const std::string &name);
-  IceFlowLaw* create();
+  FlowLaw* create();
 private:
   void registerAll();
 private:
   MPI_Comm com;
   std::string type_name, prefix;
-  std::map<std::string, IceFlowLawCreator> flow_laws;
+  std::map<std::string, FlowLawCreator> flow_laws;
   const Config &config;
   const EnthalpyConverter *EC;
 };

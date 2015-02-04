@@ -25,7 +25,7 @@ static char help[] =
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
-#include "flowlaws.hh" // IceFlowLaw
+#include "flowlaws.hh" // FlowLaw
 #include "PIO.hh"
 #include "NCVariable.hh"
 #include "PISMStressBalance.hh"
@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
     setVerbosityLevel(5);
 
     ICMEnthalpyConverter EC(config);
-    rheology::ThermoGlenArrIce ice(grid.com, "sia_", config, &EC);
+    rheology::PatersonBuddCold ice(grid.com, "sia_", config, &EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;

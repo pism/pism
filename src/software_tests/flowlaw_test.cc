@@ -29,7 +29,7 @@
 using namespace pism;
 
 static char help[] =
-  "Calls IceFlowLaw with various values of arguments and prints results.\n"
+  "Calls FlowLaw with various values of arguments and prints results.\n"
   "Used for software tests.  Tests the flow() method but prints\n"
   "temperature and liquid fraction as inputs and flow coefficient as output.\n"
   "Thus also tests methods getPressureFromDepth(), getMeltingTemp(), and\n"
@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter EC(config);
 
-    rheology::IceFlowLaw *flow_law = NULL;
-    rheology::IceFlowLawFactory ice_factory(com, "sia_", config, &EC);
+    rheology::FlowLaw *flow_law = NULL;
+    rheology::FlowLawFactory ice_factory(com, "sia_", config, &EC);
 
     std::string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type

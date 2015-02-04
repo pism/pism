@@ -28,7 +28,7 @@ class Vars;
 class EnthalpyConverter;
 
 namespace rheology {
-class IceFlowLaw;
+class FlowLaw;
 }
 
 namespace stressbalance {
@@ -57,9 +57,9 @@ public:
 
   virtual std::string stdout_report();
 
-  rheology::IceFlowLaw* flow_law();
+  rheology::FlowLaw* flow_law();
 protected:
-  rheology::IceFlowLaw *m_flow_law;
+  rheology::FlowLaw *m_flow_law;
   const EnthalpyConverter &m_EC;
   double m_D_max;
   IceModelVec2Stag m_diffusive_flux;

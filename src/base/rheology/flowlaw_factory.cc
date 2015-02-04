@@ -28,7 +28,7 @@
 namespace pism {
 namespace rheology {
 
-IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
+FlowLawFactory::FlowLawFactory(MPI_Comm c,
                                      const std::string &pre,
                                      const Config &conf,
                                      const EnthalpyConverter *my_EC)
@@ -43,56 +43,56 @@ IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
   setType(ICE_PB);    
 }
 
-IceFlowLawFactory::~IceFlowLawFactory()
+FlowLawFactory::~FlowLawFactory()
 {
 }
 
-void IceFlowLawFactory::registerType(const std::string &name, IceFlowLawCreator icreate)
+void FlowLawFactory::registerType(const std::string &name, FlowLawCreator icreate)
 {
   flow_laws[name] = icreate;
 }
 
-void IceFlowLawFactory::removeType(const std::string &name) {
+void FlowLawFactory::removeType(const std::string &name) {
   flow_laws.erase(name);
 }
 
 
-IceFlowLaw* create_isothermal_glen(MPI_Comm com,const std::string &pre,
+FlowLaw* create_isothermal_glen(MPI_Comm com,const std::string &pre,
                                              const Config &config, const EnthalpyConverter *EC) {
-  return new (IsothermalGlenIce)(com, pre, config, EC);
+  return new (IsothermalGlen)(com, pre, config, EC);
 }
 
-IceFlowLaw* create_pb(MPI_Comm com,const std::string &pre,
+FlowLaw* create_pb(MPI_Comm com,const std::string &pre,
                                 const Config &config, const EnthalpyConverter *EC) {
-  return new (ThermoGlenIce)(com, pre, config, EC);
+  return new (PatersonBudd)(com, pre, config, EC);
 }
 
-IceFlowLaw* create_gpbld(MPI_Comm com,const std::string &pre,
+FlowLaw* create_gpbld(MPI_Comm com,const std::string &pre,
                                    const Config &config, const EnthalpyConverter *EC) {
-  return new (GPBLDIce)(com, pre, config, EC);
+  return new (GPBLD)(com, pre, config, EC);
 }
 
-IceFlowLaw* create_hooke(MPI_Comm com,const std::string &pre,
+FlowLaw* create_hooke(MPI_Comm com,const std::string &pre,
                                    const Config &config, const EnthalpyConverter *EC) {
-  return new (HookeIce)(com, pre, config, EC);
+  return new (Hooke)(com, pre, config, EC);
 }
 
-IceFlowLaw* create_arr(MPI_Comm com,const std::string &pre,
+FlowLaw* create_arr(MPI_Comm com,const std::string &pre,
                                  const Config &config, const EnthalpyConverter *EC) {
-  return new (ThermoGlenArrIce)(com, pre, config, EC);
+  return new (PatersonBuddCold)(com, pre, config, EC);
 }
 
-IceFlowLaw* create_arrwarm(MPI_Comm com,const std::string &pre,
+FlowLaw* create_arrwarm(MPI_Comm com,const std::string &pre,
                                      const Config &config, const EnthalpyConverter *EC) {
-  return new (ThermoGlenArrIceWarm)(com, pre, config, EC);
+  return new (PatersonBuddWarm)(com, pre, config, EC);
 }
 
-IceFlowLaw* create_goldsby_kohlstedt(MPI_Comm com,const std::string &pre,
+FlowLaw* create_goldsby_kohlstedt(MPI_Comm com,const std::string &pre,
                                                const Config &config, const EnthalpyConverter *EC) {
-  return new (GoldsbyKohlstedtIce)(com, pre, config, EC);
+  return new (GoldsbyKohlstedt)(com, pre, config, EC);
 }
 
-void IceFlowLawFactory::registerAll()
+void FlowLawFactory::registerAll()
 {
   flow_laws.clear();
   registerType(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
@@ -105,9 +105,9 @@ void IceFlowLawFactory::registerAll()
 
 }
 
-void IceFlowLawFactory::setType(const std::string &type)
+void FlowLawFactory::setType(const std::string &type)
 {
-  IceFlowLawCreator r = flow_laws[type];
+  FlowLawCreator r = flow_laws[type];
   if (not r) {
     throw RuntimeError::formatted("Selected ice type \"%s\" is not available.\n",
                                   type.c_str());
@@ -117,11 +117,11 @@ void IceFlowLawFactory::setType(const std::string &type)
 
 }
 
-void IceFlowLawFactory::setFromOptions()
+void FlowLawFactory::setFromOptions()
 {
   {
     // build the list of choices
-    std::map<std::string,IceFlowLawCreator>::iterator j = flow_laws.begin();
+    std::map<std::string,FlowLawCreator>::iterator j = flow_laws.begin();
     std::vector<std::string> choices;
     while (j != flow_laws.end()) {
       choices.push_back(j->first);
@@ -137,17 +137,17 @@ void IceFlowLawFactory::setFromOptions()
   }
 }
 
-IceFlowLaw* IceFlowLawFactory::create()
+FlowLaw* FlowLawFactory::create()
 {
   // find the function that can create selected ice type:
-  IceFlowLawCreator r = flow_laws[type_name];
+  FlowLawCreator r = flow_laws[type_name];
   if (r == NULL) {
     throw RuntimeError::formatted("Selected ice type %s is not available,\n"
                                   "but we shouldn't be able to get here anyway",
                                   type_name.c_str());
   }
 
-  // create an IceFlowLaw instance:
+  // create an FlowLaw instance:
   return (*r)(com, prefix, config, EC);
 }
 
