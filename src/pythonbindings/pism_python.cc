@@ -49,7 +49,7 @@ SigInstaller::~SigInstaller() {
 int gSignalSet = 0;
 bool gSIGINT_is_fatal;
 
-int pism_check_signal() {
+int check_signal() {
   int rv = gSignalSet;
   if (rv) {
     gSignalSet = 0;
@@ -57,7 +57,7 @@ int pism_check_signal() {
   return 0;
 }
 
-void pism_sigint_handler(int sig) {
+void sigint_handler(int sig) {
   if (sig == SIGINT) {
     if (gSIGINT_is_fatal) {
       throw pism::RuntimeError("caught signal SIGTERM.");

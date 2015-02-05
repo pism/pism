@@ -27,8 +27,8 @@ namespace python {
 
 void set_abort_on_sigint(bool abort);
 
-int pism_check_signal();
-void pism_sigint_handler(int sig);
+int check_signal();
+void sigint_handler(int sig);
 
 extern bool gSIGINT_is_fatal;
 

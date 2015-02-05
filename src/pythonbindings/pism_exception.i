@@ -6,10 +6,10 @@
 %exception {
   try {
     {
-      SigInstaller handler(SIGINT, pism_sigint_handler); 
+      pism::python::SigInstaller handler(SIGINT, pism::python::sigint_handler);
       $action
     }
-    int sig = pism_check_signal();
+    int sig = pism::python::check_signal();
     if (sig == SIGINT) {
       PyErr_SetString(PyExc_KeyboardInterrupt, "");
       return NULL;
@@ -26,6 +26,8 @@
   }
  }
 
+/* FIXME: this completely overrides the %exception block above. I need
+   to fix this. -- CK */
 %include exception.i
 %exception {
   try {
@@ -36,3 +38,4 @@
     SWIG_exception(SWIG_UnknownError, "unknown C++ exception");
   }
 }
+
