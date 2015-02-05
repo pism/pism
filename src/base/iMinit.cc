@@ -103,7 +103,9 @@ void IceModel::set_grid_defaults() {
     for (unsigned int i = 0; i < names.size(); ++i) {
 
       grid_info_found = nc.inq_var(names[i]);
-      if (grid_info_found == false) {
+      if (not grid_info_found) {
+        // Failed to find using a short name. Try using names[i] as a
+        // standard name...
         std::string dummy1;
         bool dummy2;
         nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);

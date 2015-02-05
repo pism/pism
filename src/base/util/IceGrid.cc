@@ -1040,15 +1040,16 @@ void grid_info::report(MPI_Comm com, const UnitSystem &s, int threshold) const {
 
 grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p) {
   try {
-    bool exists, found_by_standard_name;
+    bool variable_exists, found_by_standard_name;
     std::string name_found;
 
     reset();
 
     // try "variable" as the standard_name first, then as the short name:
-    file.inq_var(variable, variable, exists, name_found, found_by_standard_name);
+    file.inq_var(variable, variable, variable_exists,
+                 name_found, found_by_standard_name);
 
-    if (exists == false) {
+    if (not variable_exists) {
       throw RuntimeError::formatted("variable \"%s\" is missing", variable.c_str());
     }
 
