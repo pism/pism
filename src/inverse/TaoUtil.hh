@@ -28,6 +28,8 @@
 #include "Tao.hh"
 
 namespace pism {
+
+//! TAO (inverse modeling) utilities.
 namespace taoutil {
 
 //! Encapsulate TAO's TaoSolverTerminationReason codes as a PISM TerminationReason.

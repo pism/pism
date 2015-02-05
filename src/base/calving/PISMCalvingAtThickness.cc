@@ -23,6 +23,8 @@
 #include "IceGrid.hh"
 
 namespace pism {
+
+//! @brief Calving and iceberg removal code.
 namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(const IceGrid &g)

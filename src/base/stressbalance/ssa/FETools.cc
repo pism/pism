@@ -26,6 +26,8 @@
 #include "error_handling.hh"
 
 namespace pism {
+
+//! FEM (Finite Element Method) utilities
 namespace fem {
 
 const ShapeQ1::ShapeFunctionSpec ShapeQ1::shapeFunction[ShapeQ1::Nk] =

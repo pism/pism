@@ -27,6 +27,7 @@
 #include "VecScatter.hh"
 
 namespace pism {
+namespace inverse {
 
 class IPTwoBlockVec {
 public:
@@ -69,6 +70,7 @@ protected:
   petsc::VecScatter m_scatter_b;
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPTWOBLOCKVEC_HH */

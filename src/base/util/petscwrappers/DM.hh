@@ -25,6 +25,8 @@
 #include "Wrapper.hh"
 
 namespace pism {
+
+//! Wrappers for some PETSc objects (these wrappers simplify memory management).
 namespace petsc {
 /** Wrapper around PETSc's DM. Simplifies memory management.
  *

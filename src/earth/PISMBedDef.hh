@@ -23,6 +23,9 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+
+//! @brief Bed-related models: bed deformation (provide bed elevation
+//! and uplift) and (soon) bed erosion.
 namespace bed {
 
 //! PISM bed deformation model (base class).

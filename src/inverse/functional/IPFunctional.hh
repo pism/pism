@@ -23,6 +23,8 @@
 #include "FETools.hh"
 
 namespace pism {
+
+//! Inverse modeling code.
 namespace inverse {
 //! Abstract base class for functions from ice model vectors to \f$\mathbb{R}\f$.
 /*! Inverse problems frequently involve minimizing a functional,

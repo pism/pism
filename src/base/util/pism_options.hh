@@ -27,6 +27,7 @@ namespace pism {
 
 class Config;
 
+//! Utilities for processing command-line options.
 namespace options {
 
 typedef enum {ALLOW_EMPTY, DONT_ALLOW_EMPTY} ArgumentFlag;

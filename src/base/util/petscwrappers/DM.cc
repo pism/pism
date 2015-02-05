@@ -20,6 +20,7 @@
 #include "DM.hh"
 
 namespace pism {
+
 namespace petsc {
 DM::DM(::DM dm) {
   m_value = dm;

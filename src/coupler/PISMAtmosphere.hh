@@ -24,10 +24,9 @@
 
 namespace pism {
 class IceModelVec2S;
+//! @brief Atmosphere models and modifiers: provide precipitation and
+//! temperature to a surface::SurfaceModel below
 namespace atmosphere {
-///// AtmosphereModel: models which provide precipitation and temperature
-/////                      to the SurfaceModel below
-
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component_TS {
 public:

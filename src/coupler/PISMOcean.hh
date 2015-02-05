@@ -24,6 +24,10 @@
 
 namespace pism {
 class IceModelVec2S;
+
+//! @brief Ocean models and modifiers: provide sea level elevation,
+//! melange back pressure, shelf base mass flux and shelf base
+//! temperature.
 namespace ocean {
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component_TS {

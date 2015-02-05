@@ -19,8 +19,6 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include <cassert>
-
 #include "iceModelVec.hh"
 #include "PISMComponent.hh"
 
@@ -32,6 +30,7 @@ namespace stressbalance {
 class StressBalance;
 }
 
+//! @brief Sub-glacial hydrology models and related diagnostics.
 namespace hydrology {
 
 //! \brief The PISM subglacial hydrology model interface.

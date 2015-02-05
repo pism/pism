@@ -22,6 +22,7 @@
 #include "error_handling.hh"
 
 namespace pism {
+namespace inverse {
 
 IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
   PetscErrorCode ierr;
@@ -141,4 +142,5 @@ void IPTwoBlockVec::gatherFromB(Vec b, Vec ab) {
   scatter_begin_end(m_scatter_b, b, ab, SCATTER_REVERSE);
 }
 
+} // end of namespace inverse
 } // end of namespace pism

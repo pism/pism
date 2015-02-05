@@ -32,6 +32,8 @@
 #include "IO_Flags.hh"
 
 namespace pism {
+
+//! Input and output code (NetCDF wrappers, etc)
 namespace io {
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.

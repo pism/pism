@@ -16,16 +16,57 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <signal.h>
+#include <errno.h>
+#include <petscsys.h>
+
 #include "pism_python.hh"
-#include "petsc.h"
-#include "pism_python_signal.hh"
 #include "pism_const.hh"
 
 namespace pism {
+namespace python {
 
-void set_abort_on_sigint(bool abort)
-{
+void set_abort_on_sigint(bool abort) {
   gSIGINT_is_fatal = abort;
 }
 
+SigInstaller::SigInstaller(int sig, void (*new_handler)(int) ) {
+  m_old_handler = signal(sig, new_handler);
+  m_sig = sig;
+}
+
+void SigInstaller::release() {
+  if (m_old_handler) {
+    signal(m_sig, m_old_handler);
+  }
+  m_old_handler = NULL;
+}
+
+SigInstaller::~SigInstaller() {
+  release();
+}
+
+int gSignalSet = 0;
+bool gSIGINT_is_fatal;
+
+int pism_check_signal() {
+  int rv = gSignalSet;
+  if (rv) {
+    gSignalSet = 0;
+  }
+  return 0;
+}
+
+void pism_sigint_handler(int sig) {
+  if (sig == SIGINT) {
+    if (gSIGINT_is_fatal) {
+      throw pism::RuntimeError("caught signal SIGTERM.");
+    } else {
+      PetscPrintf(PETSC_COMM_WORLD, "\nCaught signal SIGTERM, waiting to exit.\n");
+      gSignalSet = SIGINT;
+    }
+  }
+}
+
+} // end of namespace python
 } // end of namespace pism

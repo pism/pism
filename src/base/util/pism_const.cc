@@ -103,7 +103,7 @@ void verbPrintf(const int threshold,
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(std::string str, std::string suffix) {
-  if (str.empty() == true && suffix.empty() == false) {
+  if (str.empty() and (not suffix.empty())) {
     return false;
   }
 
@@ -114,7 +114,7 @@ bool ends_with(std::string str, std::string suffix) {
   return false;
 }
 
-//* Concatenate `strings`, inserting `separator` between elements.
+//! Concatenate `strings`, inserting `separator` between elements.
 std::string join(const std::vector<std::string> &strings, const std::string &separator) {
   std::vector<std::string>::const_iterator j = strings.begin();
   std::string result = *j;

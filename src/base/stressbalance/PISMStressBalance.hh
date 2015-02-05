@@ -24,6 +24,8 @@
 
 namespace pism {
 class Diagnostic;
+
+//! Stress balance models and related diagnostics.
 namespace stressbalance {
 
 class ShallowStressBalance;

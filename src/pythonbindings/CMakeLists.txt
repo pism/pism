@@ -91,10 +91,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       CPLUSPLUS ON
       SWIG_MODULE_NAME cpp)
 
-    set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps}) # has to be set *before* calling SWIG_ADD_MODULE
+    # has to be set *before* calling SWIG_ADD_MODULE
+    set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})
     
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc pism_python_signal.cc)
-    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES} )
+    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
+    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES})
 
     # Disable compiler warnings:
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}

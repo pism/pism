@@ -35,7 +35,11 @@ class AtmosphereModel;
 
 class IceModelVec2S;
 
+//! @brief Surface models and modifiers: provide top-surface
+//! temperature, mass flux, liquid water fraction, mass and thickness of the surface
+//! layer.
 namespace surface {
+
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component_TS {
 public:

@@ -26,6 +26,7 @@ namespace pism {
 
 class Vars;
 
+//! @brief Energy balance models and utilities.
 namespace energy {
 
 //! Given the temperature of the top of the bedrock, for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
