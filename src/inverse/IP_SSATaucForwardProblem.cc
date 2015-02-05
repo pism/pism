@@ -297,63 +297,69 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i = xs; i < xs + xm; i++) {
+      for (int j = ys; j < ys + ym; j++) {
 
-      // Zero out the element - local residual in prep for updating it.
-      for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-        du_e[k].u = 0;
-        du_e[k].v = 0;
-      }
-
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
-
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
-
-      // Obtain the value of the solution at the nodes adjacent to the element,
-      // fix dirichlet values, and compute values at quad pts.
-      m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) {
-        dirichletBC.constrain(m_dofmap);
-        dirichletBC.update(m_dofmap, u_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
-
-      // Compute dzeta at the nodes
-      m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
-      if (fixedZeta) {
-        fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
-      }
-
-      // Compute the change in tau_c with respect to zeta at the quad points.
-      m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-      for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-        m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
-        dtauc_e[k] *= dzeta_e[k];
-      }
-      m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
-
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-        Vector2 u_qq = u_q[q];
-
-        const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
-
-        // Determine "dbeta / dzeta" at the quadrature point
-        double dbeta = 0;
-        if (mask::grounded_ice(coefficients->mask)) {
-          dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
-        }
-
+        // Zero out the element - local residual in prep for updating it.
         for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-          du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
-          du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
+          du_e[k].u = 0;
+          du_e[k].v = 0;
         }
-      } // q
-      m_dofmap.addLocalResidualBlock(du_e, du_a);
-    } // j
-  } // i
+
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
+
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, m_grid);
+
+        // Obtain the value of the solution at the nodes adjacent to the element,
+        // fix dirichlet values, and compute values at quad pts.
+        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        if (dirichletBC) {
+          dirichletBC.constrain(m_dofmap);
+          dirichletBC.update(m_dofmap, u_e);
+        }
+        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+
+        // Compute dzeta at the nodes
+        m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
+        if (fixedZeta) {
+          fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+        }
+
+        // Compute the change in tau_c with respect to zeta at the quad points.
+        m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
+        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+          m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
+          dtauc_e[k] *= dzeta_e[k];
+        }
+        m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
+
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+          Vector2 u_qq = u_q[q];
+
+          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+
+          // Determine "dbeta / dzeta" at the quadrature point
+          double dbeta = 0;
+          if (mask::grounded_ice(coefficients->mask)) {
+            dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
+          }
+
+          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+            du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
+            du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
+          }
+        } // q
+        m_dofmap.addLocalResidualBlock(du_e, du_a);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
@@ -448,53 +454,60 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i=xs; i<xs+xm; i++) {
+      for (int j=ys; j<ys+ym; j++) {
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
 
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, m_grid);
 
-      // Obtain the value of the solution at the nodes adjacent to the element.
-      // Compute the solution values and symmetric gradient at the quadrature points.
-      m_dofmap.extractLocalDOFs(i, j, *du_local, du_e);
-      if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, du_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
-
-      m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) {
-        dirichletBC.update(m_dofmap, u_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
-
-      // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<Quadrature::Nk; k++) {
-        dzeta_e[k] = 0;
-      }
-
-      for (unsigned int q=0; q<Quadrature::Nq; q++) {
-        Vector2 du_qq = du_q[q];
-        Vector2 u_qq = u_q[q];
-
-        const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq+q];
-
-        // Determine "dbeta/dtauc" at the quadrature point
-        double dbeta_dtauc = 0;
-        if (mask::grounded_ice(coefficients->mask)) {
-          dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
+        // Obtain the value of the solution at the nodes adjacent to the element.
+        // Compute the solution values and symmetric gradient at the quadrature points.
+        m_dofmap.extractLocalDOFs(i, j, *du_local, du_e);
+        if (dirichletBC) {
+          dirichletBC.update_homogeneous(m_dofmap, du_e);
         }
+        m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
 
+        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        if (dirichletBC) {
+          dirichletBC.update(m_dofmap, u_e);
+        }
+        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+
+        // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Quadrature::Nk; k++) {
-          dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
+          dzeta_e[k] = 0;
         }
-      } // q
 
-      m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
-    } // j
-  } // i
+        for (unsigned int q=0; q<Quadrature::Nq; q++) {
+          Vector2 du_qq = du_q[q];
+          Vector2 u_qq = u_q[q];
+
+          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq+q];
+
+          // Determine "dbeta/dtauc" at the quadrature point
+          double dbeta_dtauc = 0;
+          if (mask::grounded_ice(coefficients->mask)) {
+            dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
+          }
+
+          for (unsigned int k=0; k<Quadrature::Nk; k++) {
+            dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
+          }
+        } // q
+
+        m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
   dirichletBC.finish();
 
   for (Points p(m_grid); p; p.next()) {

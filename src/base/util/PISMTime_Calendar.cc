@@ -164,7 +164,6 @@ void Time_Calendar::init() {
  * This allows running PISM for the duration of the available forcing.
  */
 void Time_Calendar::init_from_file(const std::string &filename) {
-  int rank = 0;
   std::vector<double> time, time_bounds;
   std::string time_units, time_bounds_name, new_calendar,
     time_name = m_config.get_string("time_dimension_name");
@@ -173,7 +172,6 @@ void Time_Calendar::init_from_file(const std::string &filename) {
   NCTimeseries time_axis(time_name, time_name, m_unit_system);
   time_axis.set_units(m_time_units.format());
 
-  MPI_Comm_rank(m_com, &rank);
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);

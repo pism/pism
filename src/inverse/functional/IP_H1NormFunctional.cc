@@ -205,39 +205,46 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
     xm   = m_element_index.xm,
     ys   = m_element_index.ys,
     ym   = m_element_index.ym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
-      // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
-      // of freedom per elment, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
-      // entries in the local Jacobian.
-      double K[Quadrature::Nk][Quadrature::Nk];
 
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i=xs; i<xs+xm; i++) {
+      for (int j=ys; j<ys+ym; j++) {
+        // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
+        // of freedom per elment, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
+        // entries in the local Jacobian.
+        double K[Quadrature::Nk][Quadrature::Nk];
 
-      // Don't update rows/cols where we project to zero.
-      if (zeroLocs) {
-        zeroLocs.constrain(m_dofmap);
-      }
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, m_grid);
 
-      // Build the element-local Jacobian.
-      ierr = PetscMemzero(K, sizeof(K));
-      PISM_CHK(ierr, "PetscMemzero");
+        // Don't update rows/cols where we project to zero.
+        if (zeroLocs) {
+          zeroLocs.constrain(m_dofmap);
+        }
 
-      for (unsigned int q=0; q<Quadrature::Nq; q++) {
-        for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
-          for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
-            const fem::FunctionGerm &test_qk=test[q][k];
-            const fem::FunctionGerm &test_ql=test[q][l];
-            K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
-                               m_cH1*(test_qk.dx*test_ql.dx +
-                                      test_qk.dy*test_ql.dy));
-          } // l
-        } // k
-      } // q
-      m_dofmap.addLocalJacobianBlock(&K[0][0], form);
-    } // j
-  } // i
+        // Build the element-local Jacobian.
+        ierr = PetscMemzero(K, sizeof(K));
+        PISM_CHK(ierr, "PetscMemzero");
+
+        for (unsigned int q=0; q<Quadrature::Nq; q++) {
+          for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
+            for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
+              const fem::FunctionGerm &test_qk=test[q][k];
+              const fem::FunctionGerm &test_ql=test[q][l];
+              K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
+                                 m_cH1*(test_qk.dx*test_ql.dx +
+                                        test_qk.dy*test_ql.dy));
+            } // l
+          } // k
+        } // q
+        m_dofmap.addLocalJacobianBlock(&K[0][0], form);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   if (zeroLocs) {
     zeroLocs.fix_jacobian(form);

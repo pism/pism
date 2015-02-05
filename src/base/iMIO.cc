@@ -739,9 +739,15 @@ void IceModel::write_snapshot() {
   {
     // find out how much time passed since the beginning of the run
     double wall_clock_hours;
-    if (grid.rank() == 0) {
-      wall_clock_hours = (GetTime() - start_time) / 3600.0;
+    ParallelSection rank0(grid.com);
+    try {
+      if (grid.rank() == 0) {
+        wall_clock_hours = (GetTime() - start_time) / 3600.0;
+      }
+    } catch (...) {
+      rank0.failed();
     }
+    rank0.check();
 
     MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
@@ -777,9 +783,15 @@ void IceModel::init_backups() {
 void IceModel::write_backup() {
   double wall_clock_hours;
 
-  if (grid.rank() == 0) {
-    wall_clock_hours = (GetTime() - start_time) / 3600.0;
+  ParallelSection rank0(grid.com);
+  try {
+    if (grid.rank() == 0) {
+      wall_clock_hours = (GetTime() - start_time) / 3600.0;
+    }
+  } catch (...) {
+    rank0.failed();
   }
+  rank0.check();
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 

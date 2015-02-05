@@ -615,112 +615,119 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
 
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
-      // Values of the solution at the nodes of the current element.
-      Vector2 velocity_local[Quadrature::Nk];
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i = xs; i < xs + xm; i++) {
+      for (int j = ys; j < ys + ym; j++) {
+        // Values of the solution at the nodes of the current element.
+        Vector2 velocity_local[Quadrature::Nk];
 
-      // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
-      // of freedom per element, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
-      // entries in the local Jacobian.
-      double K[2*Quadrature::Nk][2*Quadrature::Nk];
+        // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
+        // of freedom per element, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
+        // entries in the local Jacobian.
+        double K[2*Quadrature::Nk][2*Quadrature::Nk];
 
-      // Index into the coefficient storage array.
-      const int ij = m_element_index.flatten(i, j);
+        // Index into the coefficient storage array.
+        const int ij = m_element_index.flatten(i, j);
 
-      // Coefficients at quadrature points in the current element:
-      const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
+        // Coefficients at quadrature points in the current element:
+        const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
 
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, m_grid);
 
-      // Obtain the value of the solution at the adjacent nodes to the element.
-      m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
+        // Obtain the value of the solution at the adjacent nodes to the element.
+        m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
 
-      // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data.
-      if (dirichlet_data) {
-        dirichlet_data.update(m_dofmap, velocity_local);
-        dirichlet_data.constrain(m_dofmap);
-      }
+        // These values now need to be adjusted if some nodes in the element have
+        // Dirichlet data.
+        if (dirichlet_data) {
+          dirichlet_data.update(m_dofmap, velocity_local);
+          dirichlet_data.constrain(m_dofmap);
+        }
 
-      // Compute the values of the solution at the quadrature points.
-      m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
+        // Compute the values of the solution at the quadrature points.
+        m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
 
-      // Build the element-local Jacobian.
-      ierr = PetscMemzero(K, sizeof(K));
-      PISM_CHK(ierr, "PetscMemzero");
+        // Build the element-local Jacobian.
+        ierr = PetscMemzero(K, sizeof(K));
+        PISM_CHK(ierr, "PetscMemzero");
 
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-        const double
-          jw           = JxW[q],
-          U            = u[q].u,
-          V            = u[q].v,
-          U_x          = Du[q][0],
-          V_y          = Du[q][1],
-          U_y_plus_V_x = 2.0 * Du[q][2]; // u_y + v_x is twice the symmetric gradient
-
-        double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-        PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
-                            &eta, &deta, &beta, &dbeta);
-
-        for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
-
-          // Current trial function and its derivatives:
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
           const double
-            phi   = test[q][l].val,
-            phi_x = test[q][l].dx,
-            phi_y = test[q][l].dy;
+            jw           = JxW[q],
+            U            = u[q].u,
+            V            = u[q].v,
+            U_x          = Du[q][0],
+            V_y          = Du[q][1],
+            U_y_plus_V_x = 2.0 * Du[q][2]; // u_y + v_x is twice the symmetric gradient
 
-          // Derivatives of \gamma with respect to u_l and v_l:
-          const double
-            gamma_u = (2.0 * U_x + V_y) * phi_x + Du[q][2] * phi_y,
-            gamma_v = Du[q][2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
+          double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
+          PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
+                              &eta, &deta, &beta, &dbeta);
 
-          // Derivatives if \eta (\nu*H) with respect to u_l and v_l:
-          const double
-            eta_u = deta * gamma_u,
-            eta_v = deta * gamma_v;
+          for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
 
-          // Derivatives of the basal shear stress term (\tau_b):
-          const double
-            taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_l
-            taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_l
-            taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
-            taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
-
-          for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
-
-            // Current test function and its derivatives:
+            // Current trial function and its derivatives:
             const double
-              psi   = test[q][k].val,
-              psi_x = test[q][k].dx,
-              psi_y = test[q][k].dy;
+              phi   = test[q][l].val,
+              phi_x = test[q][l].dx,
+              phi_y = test[q][l].dy;
 
-            if (eta == 0) {
-              ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
-              PISM_CHK(ierr, "PetscPrintf");
-            }
+            // Derivatives of \gamma with respect to u_l and v_l:
+            const double
+              gamma_u = (2.0 * U_x + V_y) * phi_x + Du[q][2] * phi_y,
+              gamma_v = Du[q][2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
 
-            // u-u coupling
-            K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
-                                         + eta * (4 * psi_x * phi_x + psi_y * phi_y) - psi * taub_xu);
-            // u-v coupling
-            K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
-                                         + eta * (2 * psi_x * phi_y + psi_y * phi_x) - psi * taub_xv);
-            // v-u coupling
-            K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
-                                         + eta * (psi_x * phi_y + 2 * psi_y * phi_x) - psi * taub_yu);
-            // v-v coupling
-            K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
-                                         + eta * (psi_x * phi_x + 4 * psi_y * phi_y) - psi * taub_yv);
+            // Derivatives if \eta (\nu*H) with respect to u_l and v_l:
+            const double
+              eta_u = deta * gamma_u,
+              eta_v = deta * gamma_v;
 
-          } // l
-        } // k
-      } // q
-      m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
-    } // j
-  } // i
+            // Derivatives of the basal shear stress term (\tau_b):
+            const double
+              taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_l
+              taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_l
+              taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
+              taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
+
+            for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
+
+              // Current test function and its derivatives:
+              const double
+                psi   = test[q][k].val,
+                psi_x = test[q][k].dx,
+                psi_y = test[q][k].dy;
+
+              if (eta == 0) {
+                ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
+                PISM_CHK(ierr, "PetscPrintf");
+              }
+
+              // u-u coupling
+              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
+                                           + eta * (4 * psi_x * phi_x + psi_y * phi_y) - psi * taub_xu);
+              // u-v coupling
+              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
+                                           + eta * (2 * psi_x * phi_y + psi_y * phi_x) - psi * taub_xv);
+              // v-u coupling
+              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
+                                           + eta * (psi_x * phi_y + 2 * psi_y * phi_x) - psi * taub_yu);
+              // v-v coupling
+              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
+                                           + eta * (psi_x * phi_x + 4 * psi_y * phi_y) - psi * taub_yv);
+
+            } // l
+          } // k
+        } // q
+        m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these

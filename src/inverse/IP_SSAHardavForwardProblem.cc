@@ -286,65 +286,72 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     ys   = m_element_index.ys,
     ym   = m_element_index.ym;
 
-  for (int i =xs; i<xs+xm; i++) {
-    for (int j =ys; j<ys+ym; j++) {
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i =xs; i<xs+xm; i++) {
+      for (int j =ys; j<ys+ym; j++) {
 
-      // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<Quadrature::Nk; k++) {
-        du_e[k].u = 0;
-        du_e[k].v = 0;
-      }
-
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
-
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
-
-      // Obtain the value of the solution at the nodes adjacent to the element,
-      // fix dirichlet values, and compute values at quad pts.
-      m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) {
-        dirichletBC.constrain(m_dofmap);
-        dirichletBC.update(m_dofmap, u_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
-
-      // Compute dzeta at the nodes
-      m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
-      if (fixedZeta) {
-        fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
-      }
-
-      // Compute the change in hardav with respect to zeta at the quad points.
-      m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-      for (unsigned int k=0; k<Quadrature::Nk; k++) {
-        m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
-        dB_e[k]*=dzeta_e[k];
-      }
-      m_quadrature.computeTrialFunctionValues(dB_e, dB_q);
-
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-        // Symmetric gradient at the quadrature point.
-        double *Duqq = Du_q[q];
-
-        const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
-
-        double d_nuH = 0;
-        if (coefficients->H >= strength_extension->get_min_thickness()) {
-          m_flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
-          d_nuH *= (2*coefficients->H);
+        // Zero out the element-local residual in prep for updating it.
+        for (unsigned int k=0; k<Quadrature::Nk; k++) {
+          du_e[k].u = 0;
+          du_e[k].v = 0;
         }
 
-        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-          const fem::FunctionGerm &testqk = test[q][k];
-          du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
-          du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
+
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, m_grid);
+
+        // Obtain the value of the solution at the nodes adjacent to the element,
+        // fix dirichlet values, and compute values at quad pts.
+        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        if (dirichletBC) {
+          dirichletBC.constrain(m_dofmap);
+          dirichletBC.update(m_dofmap, u_e);
         }
-      } // q
-      m_dofmap.addLocalResidualBlock(du_e, du_a);
-    } // j
-  } // i
+        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
+
+        // Compute dzeta at the nodes
+        m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
+        if (fixedZeta) {
+          fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+        }
+
+        // Compute the change in hardav with respect to zeta at the quad points.
+        m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
+        for (unsigned int k=0; k<Quadrature::Nk; k++) {
+          m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
+          dB_e[k]*=dzeta_e[k];
+        }
+        m_quadrature.computeTrialFunctionValues(dB_e, dB_q);
+
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+          // Symmetric gradient at the quadrature point.
+          double *Duqq = Du_q[q];
+
+          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+
+          double d_nuH = 0;
+          if (coefficients->H >= strength_extension->get_min_thickness()) {
+            m_flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
+            d_nuH *= (2*coefficients->H);
+          }
+
+          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+            const fem::FunctionGerm &testqk = test[q][k];
+            du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
+            du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
+          }
+        } // q
+        m_dofmap.addLocalResidualBlock(du_e, du_a);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
 
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
@@ -450,57 +457,64 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i = xs; i < xs + xm; i++) {
+      for (int j = ys; j < ys + ym; j++) {
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
 
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, m_grid);
 
-      // Obtain the value of the solution at the nodes adjacent to the element.
-      // Compute the solution values and symmetric gradient at the quadrature points.
-      m_dofmap.extractLocalDOFs(i, j, du, du_e);
-      if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, du_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(du_e, du_q, du_dx_q, du_dy_q);
-
-      m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) {
-        dirichletBC.update(m_dofmap, u_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
-
-      // Zero out the element - local residual in prep for updating it.
-      for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-        dzeta_e[k] = 0;
-      }
-
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-        // Symmetric gradient at the quadrature point.
-        double *Duqq = Du_q[q];
-
-        const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
-
-        // Determine "d_nuH / dB" at the quadrature point
-        double d_nuH_dB = 0;
-        if (coefficients->H >= strength_extension->get_min_thickness()) {
-          m_flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
-          d_nuH_dB *= (2*coefficients->H);
+        // Obtain the value of the solution at the nodes adjacent to the element.
+        // Compute the solution values and symmetric gradient at the quadrature points.
+        m_dofmap.extractLocalDOFs(i, j, du, du_e);
+        if (dirichletBC) {
+          dirichletBC.update_homogeneous(m_dofmap, du_e);
         }
+        m_quadrature_vector.computeTrialFunctionValues(du_e, du_q, du_dx_q, du_dy_q);
 
+        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        if (dirichletBC) {
+          dirichletBC.update(m_dofmap, u_e);
+        }
+        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
+
+        // Zero out the element - local residual in prep for updating it.
         for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-          dzeta_e[k] += JxW[q]*d_nuH_dB*test[q][k].val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
-                                                         du_dy_q[q].u*Duqq[2]) +
-                                                        (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
-                                                         du_dx_q[q].v*Duqq[2]));
+          dzeta_e[k] = 0;
         }
-      } // q
 
-      m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
-    } // j
-  } // i
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+          // Symmetric gradient at the quadrature point.
+          double *Duqq = Du_q[q];
+
+          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+
+          // Determine "d_nuH / dB" at the quadrature point
+          double d_nuH_dB = 0;
+          if (coefficients->H >= strength_extension->get_min_thickness()) {
+            m_flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
+            d_nuH_dB *= (2*coefficients->H);
+          }
+
+          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+            dzeta_e[k] += JxW[q]*d_nuH_dB*test[q][k].val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
+                                                           du_dy_q[q].u*Duqq[2]) +
+                                                          (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
+                                                           du_dx_q[q].v*Duqq[2]));
+          }
+        } // q
+
+        m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
   dirichletBC.finish();
 
   for (Points p(m_grid); p; p.next()) {

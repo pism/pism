@@ -93,10 +93,16 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   {
     m_iceberg_mask.put_on_proc0(*m_mask_p0);
 
-    if (m_grid.rank() == 0) {
-      petsc::VecArray mask(*m_mask_p0);
-      cc(mask.get(), m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
+    ParallelSection rank0(m_grid.com);
+    try {
+      if (m_grid.rank() == 0) {
+        petsc::VecArray mask(*m_mask_p0);
+        cc(mask.get(), m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
+      }
+    } catch (...) {
+      rank0.failed();
     }
+    rank0.check();
 
     m_iceberg_mask.get_from_proc0(*m_mask_p0);
   }

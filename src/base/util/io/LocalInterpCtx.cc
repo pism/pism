@@ -131,11 +131,18 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
   unsigned int proc0_buffer_size = buffer_size;
   MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
-  if (rank == 0) {
-    buffer.resize(proc0_buffer_size);
-  } else {
-    buffer.resize(buffer_size);
+
+  ParallelSection allocation(grid.com);
+  try {
+    if (rank == 0) {
+      buffer.resize(proc0_buffer_size);
+    } else {
+      buffer.resize(buffer_size);
+    }
+  } catch (...) {
+    allocation.failed();
   }
+  allocation.check();
 
   // Compute indices of neighbors and map-plane interpolation coefficients.
   x_left.resize(grid.xm());
