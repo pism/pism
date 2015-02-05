@@ -61,8 +61,45 @@ void RuntimeError::add_context(const char format[], ...) {
   this->add_context(std::string(buffer));
 }
 
-std::vector<std::string> RuntimeError::get_context() const {
-  return m_context;
+void RuntimeError::print(MPI_Comm com) {
+  PetscErrorCode ierr = 0;
+  std::string error = "PISM ERROR: ",
+    message = this->what();
+
+  std::string padding = std::string(error.size(), ' ');
+
+  // replace newlines with newlines plus padding
+  size_t k = message.find("\n", 0);
+  while (k != std::string::npos) {
+    message.insert(k+1, padding);
+    k = message.find("\n", k+1);
+  }
+
+  // print the error message with "PISM ERROR:" in front:
+  ierr = PetscPrintf(com,
+                     "%s%s\n", error.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
+
+  // compute how much padding we need to align things:
+  std::string while_str = std::string(error.size(), ' ') + "while ";
+  padding = std::string(while_str.size() + 1, ' '); // 1 extra space
+
+  // loop over "context" messages
+  std::vector<std::string>::const_iterator j = m_context.begin();
+  while (j != m_context.end()) {
+    message = *j;
+
+    // replace newlines with newlines plus padding
+    k = message.find("\n", 0);
+    while (k != std::string::npos) {
+      message.insert(k+1, padding);
+      k = message.find("\n", k+1);
+    }
+
+    // print a "context" message
+    ierr = PetscPrintf(com,
+                       "%s%s\n", while_str.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
+    ++j;
+  }
 }
 
 /** Handle fatal PISM errors by printing an informative error message.
@@ -77,44 +114,7 @@ void handle_fatal_errors(MPI_Comm com) {
     throw;                      // re-throw the current exception
   }
   catch (RuntimeError &e) {
-    std::vector<std::string> context = e.get_context();
-    std::string error = "PISM ERROR: ",
-      message = e.what();
-
-    std::string padding = std::string(error.size(), ' ');
-
-    // replace newlines with newlines plus padding
-    size_t k = message.find("\n", 0);
-    while (k != std::string::npos) {
-      message.insert(k+1, padding);
-      k = message.find("\n", k+1);
-    }
-
-    // print the error message with "PISM ERROR:" in front:
-    ierr = PetscPrintf(com,
-                       "%s%s\n", error.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
-
-    // compute how much padding we need to align things:
-    std::string while_str = std::string(error.size(), ' ') + "while ";
-    padding = std::string(while_str.size() + 1, ' '); // 1 extra space
-
-    // loop over "context" messages
-    std::vector<std::string>::const_iterator j = context.begin();
-    while (j != context.end()) {
-      message = *j;
-
-      // replace newlines with newlines plus padding
-      k = message.find("\n", 0);
-      while (k != std::string::npos) {
-        message.insert(k+1, padding);
-        k = message.find("\n", k+1);
-      }
-
-      // print a "context" message
-      ierr = PetscPrintf(com,
-                         "%s%s\n", while_str.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
-      ++j;
-    }
+    e.print(com);
   }
   catch (std::exception &e) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
@@ -144,6 +144,47 @@ void check_petsc_call(int errcode,
   // tell PETSc to print the error message
   CHKERRCONTINUE(errcode);
   check_c_call(errcode, 0, function_name, file, line);
+}
+
+ParallelSection::ParallelSection(MPI_Comm com)
+  : m_failed(false), m_com(com) {
+  // empty
+}
+
+ParallelSection::~ParallelSection() {
+  // empty
+}
+
+//! @brief Indicates a failure of a parallel section.
+/*!
+ * This should be called from a `catch (...) { ... }` block **only**.
+ */
+void ParallelSection::failed() {
+  int rank = 0;
+  MPI_Comm_rank(m_com, &rank);
+
+  PetscPrintf(MPI_COMM_SELF, "PISM ERROR: ### Rank %d message:\n", rank);
+
+  handle_fatal_errors(MPI_COMM_SELF);
+
+  PetscPrintf(MPI_COMM_SELF, "PISM ERROR: ### Rank %d message ends here.\n", rank);
+
+  m_failed = true;
+}
+
+void ParallelSection::reset() {
+  m_failed = false;
+}
+
+void ParallelSection::check() {
+  int success_flag = m_failed ? 0 : 1;
+  int success_flag_global = 0;
+
+  MPI_Allreduce(&success_flag, &success_flag_global, 1, MPI_INT, MPI_LAND, m_com);
+
+  if (success_flag_global == 0) {
+    throw RuntimeError("Failure in a parallel section. See error messages above for more.");
+  }
 }
 
 } // end of namespace pism

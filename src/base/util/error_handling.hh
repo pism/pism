@@ -39,12 +39,26 @@ public:
   //! get a stack trace even though C++ exceptions do not provide one.
   void add_context(const std::string &message);
   void add_context(const char format[], ...) __attribute__((format(printf, 2, 3)));
-  std::vector<std::string> get_context() const;
-protected:
+  void print(MPI_Comm com);
+  protected:
   std::vector<std::string> m_context;
 };
 
+class ParallelSection {
+public:
+  ParallelSection(MPI_Comm com);
+  ~ParallelSection();
+  void check();
+  void failed();
+  void reset();
+private:
+  bool m_failed;
+  MPI_Comm m_com;
+};
+
 void handle_fatal_errors(MPI_Comm com);
+
+void parallel_loop_error_handler(MPI_Comm com, bool success);
 
 void check_c_call(int errcode, int success, const char* function_name,
                   const char *file, int line);
