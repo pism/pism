@@ -1,5 +1,5 @@
 %header%{
-#include "pism_python_signal.hh"
+#include "pism_python.hh"
 #include "pism_const.hh"
 %}
 
@@ -8,7 +8,7 @@
     {
       SigInstaller handler(SIGINT, pism_sigint_handler); 
       $action
-        }
+    }
     int sig = pism_check_signal();
     if (sig == SIGINT) {
       PyErr_SetString(PyExc_KeyboardInterrupt, "");
