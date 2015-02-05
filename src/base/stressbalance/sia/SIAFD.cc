@@ -614,98 +614,104 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
-    for (PointsWithGhosts p(m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+    ParallelSection loop(m_grid.com);
+    try {
+      for (PointsWithGhosts p(m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-      // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
-      //   are regular grid neighbors of a staggered point:
-      const int oi = 1 - o, oj = o;
+        // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
+        //   are regular grid neighbors of a staggered point:
+        const int oi = 1 - o, oj = o;
 
-      const double
-        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+        const double
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-      // zero thickness case:
-      if (thk == 0.0) {
-        result(i,j,o) = 0.0;
-        if (full_update) {
-          m_delta[o].set_column(i, j, 0.0);
+        // zero thickness case:
+        if (thk == 0.0) {
+          result(i,j,o) = 0.0;
+          if (full_update) {
+            m_delta[o].set_column(i, j, 0.0);
+          }
+          continue;
         }
-        continue;
-      }
 
-      const double *age_ij = NULL, *age_offset = NULL;
-      if (use_age) {
-        age_ij     = age->get_column(i, j);
-        age_offset = age->get_column(i+oi, j+oj);
-      }
-
-      const double
-        *E_ij     = enthalpy.get_column(i, j),
-        *E_offset = enthalpy.get_column(i+oi, j+oj);
-
-      const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-      const int      ks = m_grid.kBelowHeight(thk);
-      const double   alpha =
-        sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-      const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
-
-      double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
-      for (int k = 0; k <= ks; ++k) {
-        double depth = thk - m_grid.z(k); // FIXME issue #15
-        // pressure added by the ice (i.e. pressure difference between the
-        // current level and the top of the column)
-        const double pressure = m_EC.getPressureFromDepth(depth);
-
-        double flow;
+        const double *age_ij = NULL, *age_offset = NULL;
         if (use_age) {
-          ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
+          age_ij     = age->get_column(i, j);
+          age_offset = age->get_column(i+oi, j+oj);
         }
-        // If the flow law does not use grain size, it will just ignore it,
-        // no harm there
-        double E = 0.5 * (E_ij[k] + E_offset[k]);
-        flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
-        delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
+        const double
+          *E_ij     = enthalpy.get_column(i, j),
+          *E_offset = enthalpy.get_column(i+oi, j+oj);
 
-        if (k > 0) { // trapezoidal rule
-          const double dz = m_grid.z(k) - m_grid.z(k-1);
-          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+        const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
+        const int      ks = m_grid.kBelowHeight(thk);
+        const double   alpha =
+          sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
+        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
+
+        double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
+        for (int k = 0; k <= ks; ++k) {
+          double depth = thk - m_grid.z(k); // FIXME issue #15
+          // pressure added by the ice (i.e. pressure difference between the
+          // current level and the top of the column)
+          const double pressure = m_EC.getPressureFromDepth(depth);
+
+          double flow;
+          if (use_age) {
+            ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
+          }
+          // If the flow law does not use grain size, it will just ignore it,
+          // no harm there
+          double E = 0.5 * (E_ij[k] + E_offset[k]);
+          flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
+
+          delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
+
+          if (k > 0) { // trapezoidal rule
+            const double dz = m_grid.z(k) - m_grid.z(k-1);
+            Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+          }
         }
-      }
-      // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - m_grid.z(ks);
-      Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+        const double dz = thk - m_grid.z(ks);
+        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
-      // Override diffusivity at the edges of the domain. (At these
-      // locations PISM uses ghost cells *beyond* the boundary of
-      // the computational domain. This does not matter if the ice
-      // does not extend all the way to the domain boundary, as in
-      // whole-ice-sheet simulations. In a regional setup, though,
-      // this adjustment lets us avoid taking very small time-steps
-      // because of the possible thickness and bed elevation
-      // "discontinuities" at the boundary.)
-      if (i < 0 || i >= (int)m_grid.Mx() - 1 ||
-          j < 0 || j >= (int)m_grid.My() - 1) {
-        Dfoffset = 0.0;
-      }
-
-      my_D_max = std::max(my_D_max, Dfoffset);
-
-      // vertically-averaged SIA-only flux, sans sliding; note
-      //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
-      //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
-      result(i,j,o) = - Dfoffset * slope;
-
-      // if doing the full update, fill the delta column above the ice and
-      // store it:
-      if (full_update) {
-        for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
-          delta_ij[k] = 0.0;
+        // Override diffusivity at the edges of the domain. (At these
+        // locations PISM uses ghost cells *beyond* the boundary of
+        // the computational domain. This does not matter if the ice
+        // does not extend all the way to the domain boundary, as in
+        // whole-ice-sheet simulations. In a regional setup, though,
+        // this adjustment lets us avoid taking very small time-steps
+        // because of the possible thickness and bed elevation
+        // "discontinuities" at the boundary.)
+        if (i < 0 || i >= (int)m_grid.Mx() - 1 ||
+            j < 0 || j >= (int)m_grid.My() - 1) {
+          Dfoffset = 0.0;
         }
-        m_delta[o].set_column(i,j,&delta_ij[0]);
-      }
+
+        my_D_max = std::max(my_D_max, Dfoffset);
+
+        // vertically-averaged SIA-only flux, sans sliding; note
+        //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
+        //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
+        result(i,j,o) = - Dfoffset * slope;
+
+        // if doing the full update, fill the delta column above the ice and
+        // store it:
+        if (full_update) {
+          for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+            delta_ij[k] = 0.0;
+          }
+          m_delta[o].set_column(i,j,&delta_ij[0]);
+        }
+      } // i,j-loop
+    } catch (...) {
+      loop.failed();
     }
-  } // i
+    loop.check();
+  } // o-loop
 
   m_D_max = GlobalMax(m_grid.com, my_D_max);
 }
@@ -951,6 +957,8 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
   300 ka) were estimated in a necessarily ad hoc way. The age value of 10000 ka
   was added simply to give interpolation for very old ice; ages beyond that get
   constant extrapolation. Linear interpolation is done between the samples.
+
+  FIXME: Use GSL's interpolation code.
  */
 double SIAFD::grainSizeVostok(double age_seconds) const {
   const int numPoints = 22;
@@ -986,8 +994,7 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
     }
   }
   if ((r == l) || (fabs(r - l) > 1)) {
-    PetscErrorCode ierr = PetscPrintf(m_grid.com, "binary search in grainSizeVostok: oops.\n");
-    PISM_CHK(ierr, "PetscPrintf");
+    throw RuntimeError("binary search in grainSizeVostok: oops");
   }
   // Linear interpolation on the interval
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);

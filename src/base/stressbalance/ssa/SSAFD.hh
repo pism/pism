@@ -113,11 +113,6 @@ protected:
 
   bool dump_system_matlab;
 
-  class ZeroPivot : public RuntimeError {
-  public:
-    ZeroPivot();
-  };
-  
   class KSPFailure : public RuntimeError {
   public:
     KSPFailure(const char* reason);

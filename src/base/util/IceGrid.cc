@@ -303,6 +303,7 @@ void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) const {
   PetscErrorCode ierr;
+  // FIXME: throw an exception instead.
   if (height < 0.0 - 1.0e-6) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice"

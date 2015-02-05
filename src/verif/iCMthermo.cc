@@ -263,36 +263,42 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   list.add(ice_thickness);
   list.add(T3);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double r = radius(grid, i, j);
-    double *T;
-    T = T3.get_column(i, j);
-    if ((r >= 1.0) and (r <= LforFG - 1.0)) {
-      // only evaluate error if inside sheet and not at central
-      // singularity
-      switch (testname) {
-      case 'F':
-        bothexact(0.0, r, &(grid.z()[0]), grid.Mz(), 0.0,
-                  &junk0, &junk1, &Tex[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-        break;
-      case 'G':
-        bothexact(grid.time->current(), r, &(grid.z()[0]), grid.Mz(), ApforG,
-                  &junk0, &junk1, &Tex[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-        break;
-      default:
-        throw RuntimeError("temperature errors only computable for tests F and G");
-      }
-      const int ks = grid.kBelowHeight(ice_thickness(i, j));
-      for (int k = 0; k < ks; k++) {  // only eval error if below num surface
-        const double Terr = fabs(T[k] - Tex[k]);
-        maxTerr = std::max(maxTerr, Terr);
-        avcount += 1.0;
-        avTerr += Terr;
+      double r = radius(grid, i, j);
+      double *T;
+      T = T3.get_column(i, j);
+      if ((r >= 1.0) and (r <= LforFG - 1.0)) {
+        // only evaluate error if inside sheet and not at central
+        // singularity
+        switch (testname) {
+        case 'F':
+          bothexact(0.0, r, &(grid.z()[0]), grid.Mz(), 0.0,
+                    &junk0, &junk1, &Tex[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
+          break;
+        case 'G':
+          bothexact(grid.time->current(), r, &(grid.z()[0]), grid.Mz(), ApforG,
+                    &junk0, &junk1, &Tex[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
+          break;
+        default:
+          throw RuntimeError("temperature errors only computable for tests F and G");
+        }
+        const int ks = grid.kBelowHeight(ice_thickness(i, j));
+        for (int k = 0; k < ks; k++) {  // only eval error if below num surface
+          const double Terr = fabs(T[k] - Tex[k]);
+          maxTerr = std::max(maxTerr, Terr);
+          avcount += 1.0;
+          avTerr += Terr;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   gmaxTerr = GlobalMax(grid.com, maxTerr);
   gavTerr = GlobalSum(grid.com, avTerr);
@@ -395,46 +401,52 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
 
   domeT=0; domeTexact = 0; Terr=0; avTerr=0;
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double r = radius(grid, i, j);
-    switch (testname) {
-    case 'F':
-      if (r > LforFG - 1.0) {  // outside of sheet
-        Texact=Tmin + ST * r;  // = Ts
-      } else {
-        r=std::max(r, 1.0);
-        z=0.0;
-        bothexact(0.0, r, &z, 1, 0.0,
-                  &dummy5, &dummy, &Texact, &dummy1, &dummy2, &dummy3, &dummy4);
+      double r = radius(grid, i, j);
+      switch (testname) {
+      case 'F':
+        if (r > LforFG - 1.0) {  // outside of sheet
+          Texact=Tmin + ST * r;  // = Ts
+        } else {
+          r=std::max(r, 1.0);
+          z=0.0;
+          bothexact(0.0, r, &z, 1, 0.0,
+                    &dummy5, &dummy, &Texact, &dummy1, &dummy2, &dummy3, &dummy4);
+        }
+        break;
+      case 'G':
+        if (r > LforFG -1.0) {  // outside of sheet
+          Texact=Tmin + ST * r;  // = Ts
+        } else {
+          r=std::max(r, 1.0);
+          z=0.0;
+          bothexact(grid.time->current(), r, &z, 1, ApforG,
+                    &dummy5, &dummy, &Texact, &dummy1, &dummy2, &dummy3, &dummy4);
+        }
+        break;
+      default:
+        throw RuntimeError("temperature errors only computable for tests F and G");
       }
-      break;
-    case 'G':
-      if (r > LforFG -1.0) {  // outside of sheet
-        Texact=Tmin + ST * r;  // = Ts
-      } else {
-        r=std::max(r, 1.0);
-        z=0.0;
-        bothexact(grid.time->current(), r, &z, 1, ApforG,
-                  &dummy5, &dummy, &Texact, &dummy1, &dummy2, &dummy3, &dummy4);
-      }
-      break;
-    default:
-      throw RuntimeError("temperature errors only computable for tests F and G");
-    }
 
-    const double Tbase = T3.get_column(i,j)[0];
-    if (i == ((int)grid.Mx() - 1) / 2 and
-        j == ((int)grid.My() - 1) / 2) {
-      domeT = Tbase;
-      domeTexact = Texact;
+      const double Tbase = T3.get_column(i,j)[0];
+      if (i == ((int)grid.Mx() - 1) / 2 and
+          j == ((int)grid.My() - 1) / 2) {
+        domeT = Tbase;
+        domeTexact = Texact;
+      }
+      // compute maximum errors
+      Terr = std::max(Terr, fabs(Tbase - Texact));
+      // add to sums for average errors
+      avTerr += fabs(Tbase - Texact);
     }
-    // compute maximum errors
-    Terr = std::max(Terr, fabs(Tbase - Texact));
-    // add to sums for average errors
-    avTerr += fabs(Tbase - Texact);
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   double gdomeT, gdomeTexact;
 
@@ -469,38 +481,44 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   list.add(ice_thickness);
   list.add(strain_heating3);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double r = radius(grid, i, j);
-    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-      // and not at central singularity
-      switch (testname) {
-      case 'F':
-        bothexact(0.0, r, &(grid.z()[0]), grid.Mz(), 0.0,
-                  &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0], &strain_heating_exact[0], &dummy4[0]);
-        break;
-      case 'G':
-        bothexact(grid.time->current(), r, &(grid.z()[0]), grid.Mz(), ApforG,
-                  &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0], &strain_heating_exact[0], &dummy4[0]);
-        break;
-      default:
-        throw RuntimeError("strain-heating (strain_heating) errors only computable for tests F and G");
-      }
-      for (unsigned int k = 0; k < grid.Mz(); k++) {
-        // scale exact strain_heating to J/(s m^3)
-        strain_heating_exact[k] *= ice_rho * ice_c;
-      }
-      const unsigned int ks = grid.kBelowHeight(ice_thickness(i, j));
-      strain_heating = strain_heating3.get_column(i, j);
-      for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
-        const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
-        max_strain_heating_err = std::max(max_strain_heating_err, strain_heating_err);
-        avcount += 1.0;
-        av_strain_heating_err += strain_heating_err;
+      double r = radius(grid, i, j);
+      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
+        // and not at central singularity
+        switch (testname) {
+        case 'F':
+          bothexact(0.0, r, &(grid.z()[0]), grid.Mz(), 0.0,
+                    &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0], &strain_heating_exact[0], &dummy4[0]);
+          break;
+        case 'G':
+          bothexact(grid.time->current(), r, &(grid.z()[0]), grid.Mz(), ApforG,
+                    &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0], &strain_heating_exact[0], &dummy4[0]);
+          break;
+        default:
+          throw RuntimeError("strain-heating (strain_heating) errors only computable for tests F and G");
+        }
+        for (unsigned int k = 0; k < grid.Mz(); k++) {
+          // scale exact strain_heating to J/(s m^3)
+          strain_heating_exact[k] *= ice_rho * ice_c;
+        }
+        const unsigned int ks = grid.kBelowHeight(ice_thickness(i, j));
+        strain_heating = strain_heating3.get_column(i, j);
+        for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
+          const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
+          max_strain_heating_err = std::max(max_strain_heating_err, strain_heating_err);
+          avcount += 1.0;
+          av_strain_heating_err += strain_heating_err;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   gmax_strain_heating_err = GlobalMax(grid.com, max_strain_heating_err);
   gav_strain_heating_err = GlobalSum(grid.com, av_strain_heating_err);
@@ -525,39 +543,45 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   list.add(v3);
   list.add(w3);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double xx = grid.x(i), yy = grid.y(j), r = radius(grid, i, j);
-    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-      // and not at central singularity
-      double radialUex, wex;
-      double dummy0, dummy1, dummy2, dummy3, dummy4;
-      switch (testname) {
-      case 'F':
-        bothexact(0.0, r, &ice_thickness(i, j), 1, 0.0,
-                  &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
-        break;
-      case 'G':
-        bothexact(grid.time->current(), r, &ice_thickness(i, j), 1, ApforG,
-                  &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
-        break;
-      default:
-        throw RuntimeError("surface velocity errors only computed for tests F and G");
+      double xx = grid.x(i), yy = grid.y(j), r = radius(grid, i, j);
+      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
+        // and not at central singularity
+        double radialUex, wex;
+        double dummy0, dummy1, dummy2, dummy3, dummy4;
+        switch (testname) {
+        case 'F':
+          bothexact(0.0, r, &ice_thickness(i, j), 1, 0.0,
+                    &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
+          break;
+        case 'G':
+          bothexact(grid.time->current(), r, &ice_thickness(i, j), 1, ApforG,
+                    &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
+          break;
+        default:
+          throw RuntimeError("surface velocity errors only computed for tests F and G");
+        }
+        const double uex = (xx/r) * radialUex;
+        const double vex = (yy/r) * radialUex;
+        // note that because getValZ does linear interpolation and H[i][j] is not exactly at
+        // a grid point, this causes nonzero errors even with option -eo
+        const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, ice_thickness(i, j)) - uex)
+                                 + PetscSqr(v3.getValZ(i, j, ice_thickness(i, j)) - vex));
+        maxUerr = std::max(maxUerr, Uerr);
+        avUerr += Uerr;
+        const double Werr = fabs(w3.getValZ(i, j, ice_thickness(i, j)) - wex);
+        maxWerr = std::max(maxWerr, Werr);
+        avWerr += Werr;
       }
-      const double uex = (xx/r) * radialUex;
-      const double vex = (yy/r) * radialUex;
-      // note that because getValZ does linear interpolation and H[i][j] is not exactly at
-      // a grid point, this causes nonzero errors even with option -eo
-      const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, ice_thickness(i, j)) - uex)
-                               + PetscSqr(v3.getValZ(i, j, ice_thickness(i, j)) - vex));
-      maxUerr = std::max(maxUerr, Uerr);
-      avUerr += Uerr;
-      const double Werr = fabs(w3.getValZ(i, j, ice_thickness(i, j)) - wex);
-      maxWerr = std::max(maxWerr, Werr);
-      avWerr += Werr;
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   gmaxUerr = GlobalMax(grid.com, maxUerr);
   gmaxWerr = GlobalMax(grid.com, maxWerr);
@@ -620,11 +644,17 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
   // copy column values into 3D arrays
   IceModelVec::AccessList list(T3);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    T3.set_column(i, j, &Tcol[0]);
+      T3.set_column(i, j, &Tcol[0]);
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   // communicate T
   T3.update_ghosts();
@@ -718,9 +748,15 @@ void BTU_Verification::bootstrap() {
   // copy column values into 3D arrays
   IceModelVec::AccessList list(m_temp);
 
-  for (Points p(m_grid); p; p.next()) {
-    m_temp.set_column(p.i(), p.j(), &Tbcol[0]);
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      m_temp.set_column(p.i(), p.j(), &Tbcol[0]);
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 } // end of namespace energy

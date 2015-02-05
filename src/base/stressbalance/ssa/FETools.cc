@@ -651,18 +651,24 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
   // preserved.
 
   const double identity = m_weight;
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if ((*m_indices)(i, j) > 0.5) {
-      MatStencil row;
-      // Transpose shows up here!
-      row.j = i; row.i = j;
-      PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
-                                                       ADD_VALUES);
-      PISM_CHK(ierr, "MatSetValuesBlockedStencil");
+      if ((*m_indices)(i, j) > 0.5) {
+        MatStencil row;
+        // Transpose shows up here!
+        row.j = i; row.i = j;
+        PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
+                                                         ADD_VALUES);
+        PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 void DirichletData_Scalar::finish() {
@@ -750,18 +756,24 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 
   const double identity[4] = {m_weight, 0,
                               0, m_weight};
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if ((*m_indices)(i, j) > 0.5) {
-      MatStencil row;
-      // Transpose shows up here!
-      row.j = i; row.i = j;
-      PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
-                                                       ADD_VALUES);
-      PISM_CHK(ierr, "MatSetValuesBlockedStencil");
+      if ((*m_indices)(i, j) > 0.5) {
+        MatStencil row;
+        // Transpose shows up here!
+        row.j = i; row.i = j;
+        PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
+                                                         ADD_VALUES);
+        PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 void DirichletData_Vector::finish() {

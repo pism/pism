@@ -171,10 +171,16 @@ void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
   petsc::DMDAVecArray slice(da2, gslice);
   double **slice_val = (double**)slice.get();
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    slice_val[i][j] = getValZ(i,j,z);
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      slice_val[i][j] = getValZ(i,j,z);
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
@@ -186,10 +192,16 @@ void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
   IceModelVec::AccessList list(*this);
   list.add(gslice);
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    gslice(i, j) = getValZ(i, j, z);
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      gslice(i, j) = getValZ(i, j, z);
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 
@@ -200,10 +212,16 @@ void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
   list.add(surface_values);
   list.add(H);
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    surface_values(i, j) = getValZ(i, j, H(i, j));
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      surface_values(i, j) = getValZ(i, j, H(i, j));
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 double* IceModelVec3D::get_column(int i, int j) {

@@ -221,20 +221,27 @@ void Hydrology::check_Wtil_bounds() {
   double tillwat_max = m_config.get("hydrology_tillwat_max");
 
   IceModelVec::AccessList list(m_Wtil);
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (m_Wtil(i,j) < 0.0) {
-      throw RuntimeError::formatted("Hydrology: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
-                                    "at (i,j)=(%d,%d)", m_Wtil(i,j), i, j);
-    }
+      if (m_Wtil(i,j) < 0.0) {
+        throw RuntimeError::formatted("Hydrology: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
+                                      "at (i,j)=(%d,%d)", m_Wtil(i,j), i, j);
+      }
 
-    if (m_Wtil(i,j) > tillwat_max) {
-      throw RuntimeError::formatted("Hydrology: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
-                                    "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)",
-                                    m_Wtil(i,j), tillwat_max, i, j);
+      if (m_Wtil(i,j) > tillwat_max) {
+        throw RuntimeError::formatted("Hydrology: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
+                                      "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)",
+                                      m_Wtil(i,j), tillwat_max, i, j);
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 }
 
 

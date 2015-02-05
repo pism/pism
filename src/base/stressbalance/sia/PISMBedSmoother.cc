@@ -279,29 +279,35 @@ void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
   assert(topgsmooth.get_stencil_width() >= GHOSTS);
   assert(usurf.get_stencil_width()      >= GHOSTS);
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (thk(i, j) < 0.0) {
-      throw RuntimeError::formatted("BedSmoother detects negative original thickness\n"
-                                    "at location (i, j) = (%d, %d) ... ending", i, j);
-    } else if (thk(i, j) == 0.0) {
-      result(i, j) = 0.0;
-    } else if (maxtl(i, j) >= thk(i, j)) {
-      result(i, j) = thk(i, j);
-    } else {
-      if (M.grounded(i, j)) {
-        // if grounded, compute smoothed thickness as the difference of ice
-        // surface elevation and smoothed bed elevation
-        const double thks_try = usurf(i, j) - topgsmooth(i, j);
-        result(i, j) = (thks_try > 0.0) ? thks_try : 0.0;
-      } else {
-        // if floating, use original thickness (note: surface elevation was
-        // computed using this thickness and the sea level elevation)
+      if (thk(i, j) < 0.0) {
+        throw RuntimeError::formatted("BedSmoother detects negative original thickness\n"
+                                      "at location (i, j) = (%d, %d) ... ending", i, j);
+      } else if (thk(i, j) == 0.0) {
+        result(i, j) = 0.0;
+      } else if (maxtl(i, j) >= thk(i, j)) {
         result(i, j) = thk(i, j);
+      } else {
+        if (M.grounded(i, j)) {
+          // if grounded, compute smoothed thickness as the difference of ice
+          // surface elevation and smoothed bed elevation
+          const double thks_try = usurf(i, j) - topgsmooth(i, j);
+          result(i, j) = (thks_try > 0.0) ? thks_try : 0.0;
+        } else {
+          // if floating, use original thickness (note: surface elevation was
+          // computed using this thickness and the sea level elevation)
+          result(i, j) = thk(i, j);
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 
@@ -350,36 +356,42 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
   assert(topgsmooth.get_stencil_width() >= GHOSTS);
   assert(usurf.get_stencil_width()      >= GHOSTS);
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    const double H = usurf(i, j) - topgsmooth(i, j);
-    if (H > maxtl(i, j)) { 
-      // thickness exceeds maximum variation in patch of local topography,
-      // so ice buries local topography; note maxtl >= 0 always
-      const double Hinv = 1.0 / std::max(H, 1.0);
-      double omega = 1.0 + Hinv*Hinv * (C2(i, j) + Hinv * (C3(i, j) + Hinv*C4(i, j)));
-      if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
-        throw RuntimeError::formatted("omega is negative for i=%d, j=%d\n"
-                                      "in BedSmoother.get_theta() ... ending", i, j);
-      }
+      const double H = usurf(i, j) - topgsmooth(i, j);
+      if (H > maxtl(i, j)) { 
+        // thickness exceeds maximum variation in patch of local topography,
+        // so ice buries local topography; note maxtl >= 0 always
+        const double Hinv = 1.0 / std::max(H, 1.0);
+        double omega = 1.0 + Hinv*Hinv * (C2(i, j) + Hinv * (C3(i, j) + Hinv*C4(i, j)));
+        if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
+          throw RuntimeError::formatted("omega is negative for i=%d, j=%d\n"
+                                        "in BedSmoother.get_theta() ... ending", i, j);
+        }
 
-      if (omega < 0.001) {      // this check *should not* be necessary
-        omega = 0.001;
-      }
+        if (omega < 0.001) {      // this check *should not* be necessary
+          omega = 0.001;
+        }
 
-      result(i, j) = pow(omega,-m_Glen_exponent);
-      // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
-      if (result(i, j) > 1.0) {
-        result(i, j) = 1.0;
+        result(i, j) = pow(omega,-m_Glen_exponent);
+        // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
+        if (result(i, j) > 1.0) {
+          result(i, j) = 1.0;
+        }
+        if (result(i, j) < 0.0) {
+          result(i, j) = 0.0;
+        }
+      } else {
+        result(i, j) = 0.00;  // FIXME = min_theta; make configurable
       }
-      if (result(i, j) < 0.0) {
-        result(i, j) = 0.0;
-      }
-    } else {
-      result(i, j) = 0.00;  // FIXME = min_theta; make configurable
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 

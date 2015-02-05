@@ -206,26 +206,32 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   IceModelVec::AccessList list;
   list.add(result);
   list.add(*usurf);
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double z = (*usurf)(i, j);
-    if (z < m_z_M_min) {
-      result(i, j) = m_M_limit_min;
+      double z = (*usurf)(i, j);
+      if (z < m_z_M_min) {
+        result(i, j) = m_M_limit_min;
+      }
+      else if ((z >= m_z_M_min) && (z < m_z_ELA)) {
+        result(i, j) = dabdz * (z - m_z_ELA);
+      }
+      else if ((z >= m_z_ELA) && (z <= m_z_M_max)) {
+        result(i, j) = dacdz * (z - m_z_ELA);
+      }
+      else if (z > m_z_M_max) {
+        result(i, j) = m_M_limit_max;
+      }
+      else {
+        throw RuntimeError("Elevation::ice_surface_mass_flux: HOW DID I GET HERE?");
+      }
     }
-    else if ((z >= m_z_M_min) && (z < m_z_ELA)) {
-      result(i, j) = dabdz * (z - m_z_ELA);
-    }
-    else if ((z >= m_z_ELA) && (z <= m_z_M_max)) {
-      result(i, j) = dacdz * (z - m_z_ELA);
-    }
-    else if (z > m_z_M_max) {
-      result(i, j) = m_M_limit_max;
-    }
-    else {
-      throw RuntimeError("Elevation::ice_surface_mass_flux: HOW DID I GET HERE?");
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   // convert from m/s ice equivalent to kg m-2 s-1:
   result.scale(m_config.get("ice_density"));
@@ -239,23 +245,29 @@ void Elevation::ice_surface_temperature(IceModelVec2S &result) {
   list.add(result);
   list.add(*usurf);
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double z = (*usurf)(i, j);
-    if (z <= m_z_T_min) {
-      result(i, j) = m_T_min;
+      double z = (*usurf)(i, j);
+      if (z <= m_z_T_min) {
+        result(i, j) = m_T_min;
+      }
+      else if ((z > m_z_T_min) && (z < m_z_T_max)) {
+        result(i, j) = m_T_min + dTdz * (z - m_z_T_min);
+      }
+      else if (z >= m_z_T_max) {
+        result(i, j) = m_T_max;
+      }
+      else {
+        throw RuntimeError("Elevation::ice_surface_temperature: HOW DID I GET HERE?");
+      }
     }
-    else if ((z > m_z_T_min) && (z < m_z_T_max)) {
-      result(i, j) = m_T_min + dTdz * (z - m_z_T_min);
-    }
-    else if (z >= m_z_T_max) {
-      result(i, j) = m_T_max;
-    }
-    else {
-      throw RuntimeError("Elevation::ice_surface_temperature: HOW DID I GET HERE?");
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {

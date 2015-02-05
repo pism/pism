@@ -392,101 +392,106 @@ void StressBalance::compute_volumetric_strain_heating() {
   list.add(u);
   list.add(v);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double H = (*thickness)(i,j);
-    int ks = m_grid.kBelowHeight(H);
-    const double
-      *u_ij, *u_w, *u_n, *u_e, *u_s,
-      *v_ij, *v_w, *v_n, *v_e, *v_s;
-    double *Sigma;
-    const double *E_ij;
+      double H = (*thickness)(i,j);
+      int ks = m_grid.kBelowHeight(H);
+      const double
+        *u_ij, *u_w, *u_n, *u_e, *u_s,
+        *v_ij, *v_w, *v_n, *v_e, *v_s;
+      double *Sigma;
+      const double *E_ij;
 
-    double west = 1, east = 1, south = 1, north = 1,
-      D_x = 0,                // 1/(dx), 1/(2dx), or 0
-      D_y = 0;                // 1/(dy), 1/(2dy), or 0
+      double west = 1, east = 1, south = 1, north = 1,
+        D_x = 0,                // 1/(dx), 1/(2dx), or 0
+        D_y = 0;                // 1/(dy), 1/(2dy), or 0
 
-    // x-derivative
-    {
-      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j))) {
-        east = 0;
+      // x-derivative
+      {
+        if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j))) {
+          east = 0;
+        }
+        if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j))) {
+          west = 0;
+        }
+
+        if (east + west > 0) {
+          D_x = 1.0 / (m_grid.dx() * (east + west));
+        } else {
+          D_x = 0.0;
+        }
       }
-      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j))) {
-        west = 0;
+
+      // y-derivative
+      {
+        if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1))) {
+          north = 0;
+        }
+        if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1))) {
+          south = 0;
+        }
+
+        if (north + south > 0) {
+          D_y = 1.0 / (m_grid.dy() * (north + south));
+        } else {
+          D_y = 0.0;
+        }
       }
 
-      if (east + west > 0) {
-        D_x = 1.0 / (m_grid.dx() * (east + west));
-      } else {
-        D_x = 0.0;
+      u_ij = u.get_column(i,     j);
+      u_w  = u.get_column(i - 1, j);
+      u_e  = u.get_column(i + 1, j);
+      u_s  = u.get_column(i,     j - 1);
+      u_n  = u.get_column(i,     j + 1);
+
+      v_ij = v.get_column(i,     j);
+      v_w  = v.get_column(i - 1, j);
+      v_e  = v.get_column(i + 1, j);
+      v_s  = v.get_column(i,     j - 1);
+      v_n  = v.get_column(i,     j + 1);
+
+      E_ij = enthalpy->get_column(i, j);
+      Sigma = m_strain_heating.get_column(i, j);
+
+      for (int k = 0; k <= ks; ++k) {
+        double dz,
+          pressure = EC.getPressureFromDepth(H - m_grid.z(k)),
+          B        = flow_law->hardness_parameter(E_ij[k], pressure);
+
+        double u_z = 0.0, v_z = 0.0,
+          u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
+          u_y = D_y * (south * (u_ij[k] - u_s[k]) + north * (u_n[k] - u_ij[k])),
+          v_x = D_x * (west  * (v_ij[k] - v_w[k]) + east  * (v_e[k] - v_ij[k])),
+          v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+
+        if (k > 0) {
+          dz = m_grid.z(k+1) - m_grid.z(k-1);
+          u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
+          v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
+        } else {
+          // use one-sided differences for u_z and v_z on the bottom level
+          dz = m_grid.z(1) - m_grid.z(0);
+          u_z = (u_ij[1] - u_ij[0]) / dz;
+          v_z = (v_ij[1] - v_ij[0]) / dz;
+        }
+
+        Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+      } // k-loop
+
+      int remaining_levels = m_grid.Mz() - (ks + 1);
+      if (remaining_levels > 0) {
+        ierr = PetscMemzero(&Sigma[ks+1],
+                            remaining_levels*sizeof(double));
+        PISM_CHK(ierr, "PetscMemzero");
       }
     }
-
-    // y-derivative
-    {
-      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1))) {
-        north = 0;
-      }
-      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1))) {
-        south = 0;
-      }
-
-      if (north + south > 0) {
-        D_y = 1.0 / (m_grid.dy() * (north + south));
-      } else {
-        D_y = 0.0;
-      }
-    }
-
-    u_ij = u.get_column(i,     j);
-    u_w  = u.get_column(i - 1, j);
-    u_e  = u.get_column(i + 1, j);
-    u_s  = u.get_column(i,     j - 1);
-    u_n  = u.get_column(i,     j + 1);
-
-    v_ij = v.get_column(i,     j);
-    v_w  = v.get_column(i - 1, j);
-    v_e  = v.get_column(i + 1, j);
-    v_s  = v.get_column(i,     j - 1);
-    v_n  = v.get_column(i,     j + 1);
-
-    E_ij = enthalpy->get_column(i, j);
-    Sigma = m_strain_heating.get_column(i, j);
-
-    for (int k = 0; k <= ks; ++k) {
-      double dz,
-        pressure = EC.getPressureFromDepth(H - m_grid.z(k)),
-        B        = flow_law->hardness_parameter(E_ij[k], pressure);
-
-      double u_z = 0.0, v_z = 0.0,
-        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
-        u_y = D_y * (south * (u_ij[k] - u_s[k]) + north * (u_n[k] - u_ij[k])),
-        v_x = D_x * (west  * (v_ij[k] - v_w[k]) + east  * (v_e[k] - v_ij[k])),
-        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
-
-      if (k > 0) {
-        dz = m_grid.z(k+1) - m_grid.z(k-1);
-        u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
-        v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
-      } else {
-        // use one-sided differences for u_z and v_z on the bottom level
-        dz = m_grid.z(1) - m_grid.z(0);
-        u_z = (u_ij[1] - u_ij[0]) / dz;
-        v_z = (v_ij[1] - v_ij[0]) / dz;
-      }
-
-      Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
-    } // k-loop
-
-    int remaining_levels = m_grid.Mz() - (ks + 1);
-    if (remaining_levels > 0) {
-      ierr = PetscMemzero(&Sigma[ks+1],
-                          remaining_levels*sizeof(double));
-      PISM_CHK(ierr, "PetscMemzero");
-    }
+  } catch (...) {
+    loop.failed();
   }
-
+  loop.check();
 }
 
 std::string StressBalance::stdout_report() {

@@ -142,42 +142,48 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
   list.add(m_velocity);
   list.add(m_basal_frictional_heating);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (m.ocean(i,j)) {
-      m_velocity(i,j).u = 0.0;
-      m_velocity(i,j).v = 0.0;
-      m_basal_frictional_heating(i,j) = 0.0;
-    } else {
-      // basal velocity from SIA-type sliding law: not recommended!
-      const double
-        myx = m_grid.x(i),
-        myy = m_grid.y(j),
-        myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
-                       + h_x(i,j,1) + h_x(i,j-1,1)),
-        myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
-                       + h_y(i,j,1) + h_y(i,j-1,1)),
-        alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
+      if (m.ocean(i,j)) {
+        m_velocity(i,j).u = 0.0;
+        m_velocity(i,j).v = 0.0;
+        m_basal_frictional_heating(i,j) = 0.0;
+      } else {
+        // basal velocity from SIA-type sliding law: not recommended!
+        const double
+          myx = m_grid.x(i),
+          myy = m_grid.y(j),
+          myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
+                         + h_x(i,j,1) + h_x(i,j-1,1)),
+          myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
+                         + h_y(i,j,1) + h_y(i,j-1,1)),
+          alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
 
-      // change r1200: new meaning of H
-      const double H = surface(i,j) - bed(i,j);
-      const double base_enthalpy = enthalpy.get_column(i,j)[0];
+        // change r1200: new meaning of H
+        const double H = surface(i,j) - bed(i,j);
+        const double base_enthalpy = enthalpy.get_column(i,j)[0];
 
-      double T = m_EC.getAbsTemp(base_enthalpy, m_EC.getPressureFromDepth(H));
+        double T = m_EC.getAbsTemp(base_enthalpy, m_EC.getPressureFromDepth(H));
 
-      double basalC = basalVelocitySIA(myx, myy, H, T,
-                                       alpha, mu_sliding,
-                                       minimum_temperature_for_sliding);
-      m_velocity(i,j).u = - basalC * myhx;
-      m_velocity(i,j).v = - basalC * myhy;
-      // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
-      // in ice streams this result will be *overwritten* by
-      //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-      const double P = ice_rho * m_standard_gravity * H;
-      m_basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
+        double basalC = basalVelocitySIA(myx, myy, H, T,
+                                         alpha, mu_sliding,
+                                         minimum_temperature_for_sliding);
+        m_velocity(i,j).u = - basalC * myhx;
+        m_velocity(i,j).v = - basalC * myhy;
+        // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
+        // in ice streams this result will be *overwritten* by
+        //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
+        const double P = ice_rho * m_standard_gravity * H;
+        m_basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   m_velocity.update_ghosts();
 }

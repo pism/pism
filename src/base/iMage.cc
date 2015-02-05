@@ -271,34 +271,40 @@ void IceModel::ageStep() {
   list.add(w3);
   list.add(vWork3d);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    system.initThisColumn(i, j, ice_thickness(i, j));
+      system.initThisColumn(i, j, ice_thickness(i, j));
 
-    if (system.ks() == 0) {
-      // if no ice, set the entire column to zero age
-      vWork3d.set_column(i, j, 0.0);
-    } else {
-      // general case: solve advection PDE
+      if (system.ks() == 0) {
+        // if no ice, set the entire column to zero age
+        vWork3d.set_column(i, j, 0.0);
+      } else {
+        // general case: solve advection PDE
 
-      // solve the system for this column; call checks that params set
-      system.solveThisColumn(x);
+        // solve the system for this column; call checks that params set
+        system.solveThisColumn(x);
 
-      if (viewOneColumn && (i == id && j == jd)) {
-        ierr = PetscPrintf(PETSC_COMM_SELF,
-                           "\n"
-                           "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
-                           i, j);
-        PISM_CHK(ierr, "PetscPrintf");
+        if (viewOneColumn && (i == id && j == jd)) {
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+                             "\n"
+                             "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
+                             i, j);
+          PISM_CHK(ierr, "PetscPrintf");
 
-        system.viewColumnInfoMFile(x);
+          system.viewColumnInfoMFile(x);
+        }
+
+        // put solution in IceModelVec3
+        system.fine_to_coarse(x, i, j, vWork3d);
       }
-
-      // put solution in IceModelVec3
-      system.fine_to_coarse(x, i, j, vWork3d);
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   vWork3d.update_ghosts(age3);
 }

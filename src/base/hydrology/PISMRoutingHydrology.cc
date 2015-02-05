@@ -213,15 +213,22 @@ void Routing::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   IceModelVec::AccessList list;
   list.add(waterthk);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (waterthk(i,j) < 0.0) {
-      throw RuntimeError::formatted("hydrology::Routing: disallowed negative water layer thickness\n"
-                                    "waterthk(i,j) = %.6f m at (i,j)=(%d,%d)",
-                                    waterthk(i,j),i,j);
+      if (waterthk(i,j) < 0.0) {
+        throw RuntimeError::formatted("hydrology::Routing: disallowed negative water layer thickness\n"
+                                      "waterthk(i,j) = %.6f m at (i,j)=(%d,%d)",
+                                      waterthk(i,j),i,j);
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 }
 
 

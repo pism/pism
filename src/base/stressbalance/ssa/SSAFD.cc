@@ -31,11 +31,6 @@ namespace stressbalance {
 
 using namespace pism::mask;
 
-SSAFD::ZeroPivot::ZeroPivot()
-  : RuntimeError("SSAFD solver failure: zero pivot detected") {
-  // empty
-}
-
 SSAFD::KSPFailure::KSPFailure(const char* reason)
   : RuntimeError(std::string("SSAFD KSP (linear solver) failed: ") + reason){
   // empty
@@ -497,7 +492,6 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 */
 void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
-  int zero_pivot_flag = 0;
 
   const double   dx=m_grid.dx(), dy=m_grid.dy();
   const double   beta_ice_free_bedrock = m_config.get("beta_ice_free_bedrock");
@@ -538,258 +532,269 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   double HminFrozen=0.0;
 
   /* matrix assembly loop */
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // Handle the easy case: provided Dirichlet boundary conditions
-    if (m_bc_values && m_bc_mask && m_bc_mask->as_int(i,j) == 1) {
-      // set diagonal entry to one (scaled); RHS entry will be known velocity;
-      set_diagonal_matrix_entry(A, i, j, m_scaling);
-      continue;
-    }
-
-    /* Provide shorthand for the following staggered coefficients  nu H:
-     *      c_n
-     *  c_w     c_e
-     *      c_s
-     */
-    // const
-    double c_w = nuH(i-1,j,0);
-    double c_e = nuH(i,j,0);
-    double c_s = nuH(i,j-1,1);
-    double c_n = nuH(i,j,1);
-
-    if (nu_bedrock_set) {
-      // if option is set, the viscosity at ice-bedrock boundary layer will
-      // be prescribed and is a temperature-independent free (user determined) parameter
-
-      // direct neighbors
-      int  M_e = m_mask->as_int(i + 1,j),
-        M_w = m_mask->as_int(i - 1,j),
-        M_n = m_mask->as_int(i,j + 1),
-        M_s = m_mask->as_int(i,j - 1);
-
-      if ((*m_thickness)(i,j) > HminFrozen) {
-        if ((*m_bed)(i-1,j) > (*m_surface)(i,j) && ice_free_land(M_w)) {
-          c_w = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i-1,j));
-        }
-        if ((*m_bed)(i+1,j) > (*m_surface)(i,j) && ice_free_land(M_e)) {
-          c_e = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
-        }
-        if ((*m_bed)(i,j+1) > (*m_surface)(i,j) && ice_free_land(M_n)) {
-          c_n = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i,j+1));
-        }
-        if ((*m_bed)(i,j-1) > (*m_surface)(i,j) && ice_free_land(M_s)) {
-          c_s = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
-        }
-      }
-    }
-
-    // We use DAGetMatrix to obtain the SSA matrix, which means that all 18
-    // non-zeros get allocated, even though we use only 13 (or 14). The
-    // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
-    // because this makes the code easier to understand.
-    const int sten = 18;
-    MatStencil row, col[sten];
-
-    int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
-    int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
-
-    int M_ij = m_mask->as_int(i,j);
-
-    if (use_cfbc) {
-      int
-        // direct neighbors
-        M_e = m_mask->as_int(i + 1,j),
-        M_w = m_mask->as_int(i - 1,j),
-        M_n = m_mask->as_int(i,j + 1),
-        M_s = m_mask->as_int(i,j - 1),
-        // "diagonal" neighbors
-        M_ne = m_mask->as_int(i + 1,j + 1),
-        M_se = m_mask->as_int(i + 1,j - 1),
-        M_nw = m_mask->as_int(i - 1,j + 1),
-        M_sw = m_mask->as_int(i - 1,j - 1);
-
-      // Note: this sets velocities at both ice-free ocean and ice-free
-      // bedrock to zero. This means that we need to set boundary conditions
-      // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
-      // to be consistent.
-      if (ice_free(M_ij)) {
+      // Handle the easy case: provided Dirichlet boundary conditions
+      if (m_bc_values && m_bc_mask && m_bc_mask->as_int(i,j) == 1) {
+        // set diagonal entry to one (scaled); RHS entry will be known velocity;
         set_diagonal_matrix_entry(A, i, j, m_scaling);
         continue;
       }
 
-      if (is_marginal(i, j, bedrock_boundary)) {
-        // If at least one of the following four conditions is "true", we're
-        // at a CFBC location.
-        if (bedrock_boundary) {
+      /* Provide shorthand for the following staggered coefficients  nu H:
+       *      c_n
+       *  c_w     c_e
+       *      c_s
+       */
+      // const
+      double c_w = nuH(i-1,j,0);
+      double c_e = nuH(i,j,0);
+      double c_s = nuH(i,j-1,1);
+      double c_n = nuH(i,j,1);
 
-          if (ice_free_ocean(M_e))
-            aPP = 0;
-          if (ice_free_ocean(M_w))
-            aMM = 0;
-          if (ice_free_ocean(M_n))
-            bPP = 0;
-          if (ice_free_ocean(M_s))
-            bMM = 0;
+      if (nu_bedrock_set) {
+        // if option is set, the viscosity at ice-bedrock boundary layer will
+        // be prescribed and is a temperature-independent free (user determined) parameter
 
-          // decide whether to use centered or one-sided differences
-          if (ice_free_ocean(M_n) || ice_free_ocean(M_ne))
-            aPn = 0;
-          if (ice_free_ocean(M_e) || ice_free_ocean(M_ne))
-            bPe = 0;
-          if (ice_free_ocean(M_e) || ice_free_ocean(M_se))
-            bMe = 0;
-          if (ice_free_ocean(M_s) || ice_free_ocean(M_se))
-            aPs = 0;
-          if (ice_free_ocean(M_s) || ice_free_ocean(M_sw))
-            aMs = 0;
-          if (ice_free_ocean(M_w) || ice_free_ocean(M_sw))
-            bMw = 0;
-          if (ice_free_ocean(M_w) || ice_free_ocean(M_nw))
-            bPw = 0;
-          if (ice_free_ocean(M_n) || ice_free_ocean(M_nw))
-            aMn = 0;
+        // direct neighbors
+        int  M_e = m_mask->as_int(i + 1,j),
+          M_w = m_mask->as_int(i - 1,j),
+          M_n = m_mask->as_int(i,j + 1),
+          M_s = m_mask->as_int(i,j - 1);
 
-        } else {                // if (not bedrock_boundary)
-
-          if (ice_free(M_e))
-            aPP = 0;
-          if (ice_free(M_w))
-            aMM = 0;
-          if (ice_free(M_n))
-            bPP = 0;
-          if (ice_free(M_s))
-            bMM = 0;
-
-          // decide whether to use centered or one-sided differences
-          if (ice_free(M_n) || ice_free(M_ne))
-            aPn = 0;
-          if (ice_free(M_e) || ice_free(M_ne))
-            bPe = 0;
-          if (ice_free(M_e) || ice_free(M_se))
-            bMe = 0;
-          if (ice_free(M_s) || ice_free(M_se))
-            aPs = 0;
-          if (ice_free(M_s) || ice_free(M_sw))
-            aMs = 0;
-          if (ice_free(M_w) || ice_free(M_sw))
-            bMw = 0;
-          if (ice_free(M_w) || ice_free(M_nw))
-            bPw = 0;
-          if (ice_free(M_n) || ice_free(M_nw))
-            aMn = 0;
-
-        } // end of the else clause following "if (bedrock_boundary)"
-      }   // end of "if (is_marginal(i, j, bedrock_boundary))"
-    }     // end of "if (use_cfbc)"
-
-      /* begin Maxima-generated code */
-    const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
-
-    /* Coefficients of the discretization of the first equation; u first, then v. */
-    double eq1[] = {
-      0,  -c_n*bPP/dy2,  0,
-      -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
-      0,  -c_s*bMM/dy2,  0,
-      c_w*aMM*bPw/d2+c_n*aMn*bPP/d4,  (c_n*aPn*bPP-c_n*aMn*bPP)/d4+(c_w*aMM*bPP-c_e*aPP*bPP)/d2,  -c_e*aPP*bPe/d2-c_n*aPn*bPP/d4,
-      (c_w*aMM*bMw-c_w*aMM*bPw)/d2+(c_n*aMM*bPP-c_s*aMM*bMM)/d4,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d4+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d2,  (c_e*aPP*bPe-c_e*aPP*bMe)/d2+(c_s*aPP*bMM-c_n*aPP*bPP)/d4,
-      -c_w*aMM*bMw/d2-c_s*aMs*bMM/d4,  (c_s*aMs*bMM-c_s*aPs*bMM)/d4+(c_e*aPP*bMM-c_w*aMM*bMM)/d2,  c_e*aPP*bMe/d2+c_s*aPs*bMM/d4,
-    };
-
-    /* Coefficients of the discretization of the second equation; u first, then v. */
-    double eq2[] = {
-      c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
-      (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
-      -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
-      0,  -4*c_n*bPP/dy2,  0,
-      -c_w*aMM/dx2,  (4*c_n*bPP+4*c_s*bMM)/dy2+(c_e*aPP+c_w*aMM)/dx2,  -c_e*aPP/dx2,
-      0,  -4*c_s*bMM/dy2,  0,
-    };
-
-    /* i indices */
-    const int I[] = {
-      i-1,  i,  i+1,
-      i-1,  i,  i+1,
-      i-1,  i,  i+1,
-      i-1,  i,  i+1,
-      i-1,  i,  i+1,
-      i-1,  i,  i+1,
-    };
-
-    /* j indices */
-    const int J[] = {
-      j+1,  j+1,  j+1,
-      j,  j,  j,
-      j-1,  j-1,  j-1,
-      j+1,  j+1,  j+1,
-      j,  j,  j,
-      j-1,  j-1,  j-1,
-    };
-
-    /* component indices */
-    const int C[] = {
-      0,  0,  0,
-      0,  0,  0,
-      0,  0,  0,
-      1,  1,  1,
-      1,  1,  1,
-      1,  1,  1,
-    };
-    /* end Maxima-generated code */
-
-    /* Dragging ice experiences friction at the bed determined by the
-     *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
-     *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
-     *    (i.e. on left side of SSA eqns).  */
-    double beta = 0.0;
-    if (include_basal_shear) {
-      if (grounded_ice(M_ij)) {
-        beta = basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
-      } else if (ice_free_land(M_ij)) {
-        // apply drag even in this case, to help with margins; note ice free
-        // areas already have a strength extension
-        beta = beta_ice_free_bedrock;
-      }
-      if (sub_gl) {
-        // reduce the basal drag at grid cells that are partially grounded:
-        if (icy(M_ij)) {
-          beta = (*m_gl_mask)(i,j) * basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        if ((*m_thickness)(i,j) > HminFrozen) {
+          if ((*m_bed)(i-1,j) > (*m_surface)(i,j) && ice_free_land(M_w)) {
+            c_w = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i-1,j));
+          }
+          if ((*m_bed)(i+1,j) > (*m_surface)(i,j) && ice_free_land(M_e)) {
+            c_e = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
+          }
+          if ((*m_bed)(i,j+1) > (*m_surface)(i,j) && ice_free_land(M_n)) {
+            c_n = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i,j+1));
+          }
+          if ((*m_bed)(i,j-1) > (*m_surface)(i,j) && ice_free_land(M_s)) {
+            c_s = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
+          }
         }
       }
-    }
 
-    // add beta to diagonal entries
-    eq1[4]  += beta;
-    eq2[13] += beta;
+      // We use DAGetMatrix to obtain the SSA matrix, which means that all 18
+      // non-zeros get allocated, even though we use only 13 (or 14). The
+      // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
+      // because this makes the code easier to understand.
+      const int sten = 18;
+      MatStencil row, col[sten];
 
-    // check diagonal entries:
-    const double eps = 1e-16;
-    if (fabs(eq1[4]) < eps) {
-      fprintf(stderr, "PISM ERROR: first  (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
-      zero_pivot_flag = 1;
-    }
-    if (fabs(eq2[13]) < eps) {
-      fprintf(stderr, "PISM ERROR: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
-      zero_pivot_flag = 1;
-    }
+      int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
+      int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
-    // build equations: NOTE TRANSPOSE
-    row.j = i; row.i = j;
-    for (int m = 0; m < sten; m++) {
-      col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
-    }
+      int M_ij = m_mask->as_int(i,j);
 
-    // set coefficients of the first equation:
-    row.c = 0;
-    ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES);
-    PISM_CHK(ierr, "MatSetValuesStencil");
+      if (use_cfbc) {
+        int
+          // direct neighbors
+          M_e = m_mask->as_int(i + 1,j),
+          M_w = m_mask->as_int(i - 1,j),
+          M_n = m_mask->as_int(i,j + 1),
+          M_s = m_mask->as_int(i,j - 1),
+          // "diagonal" neighbors
+          M_ne = m_mask->as_int(i + 1,j + 1),
+          M_se = m_mask->as_int(i + 1,j - 1),
+          M_nw = m_mask->as_int(i - 1,j + 1),
+          M_sw = m_mask->as_int(i - 1,j - 1);
 
-    // set coefficients of the second equation:
-    row.c = 1;
-    ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES);
-    PISM_CHK(ierr, "MatSetValuesStencil");
-  } // loop over points
+        // Note: this sets velocities at both ice-free ocean and ice-free
+        // bedrock to zero. This means that we need to set boundary conditions
+        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
+        // to be consistent.
+        if (ice_free(M_ij)) {
+          set_diagonal_matrix_entry(A, i, j, m_scaling);
+          continue;
+        }
+
+        if (is_marginal(i, j, bedrock_boundary)) {
+          // If at least one of the following four conditions is "true", we're
+          // at a CFBC location.
+          if (bedrock_boundary) {
+
+            if (ice_free_ocean(M_e))
+              aPP = 0;
+            if (ice_free_ocean(M_w))
+              aMM = 0;
+            if (ice_free_ocean(M_n))
+              bPP = 0;
+            if (ice_free_ocean(M_s))
+              bMM = 0;
+
+            // decide whether to use centered or one-sided differences
+            if (ice_free_ocean(M_n) || ice_free_ocean(M_ne))
+              aPn = 0;
+            if (ice_free_ocean(M_e) || ice_free_ocean(M_ne))
+              bPe = 0;
+            if (ice_free_ocean(M_e) || ice_free_ocean(M_se))
+              bMe = 0;
+            if (ice_free_ocean(M_s) || ice_free_ocean(M_se))
+              aPs = 0;
+            if (ice_free_ocean(M_s) || ice_free_ocean(M_sw))
+              aMs = 0;
+            if (ice_free_ocean(M_w) || ice_free_ocean(M_sw))
+              bMw = 0;
+            if (ice_free_ocean(M_w) || ice_free_ocean(M_nw))
+              bPw = 0;
+            if (ice_free_ocean(M_n) || ice_free_ocean(M_nw))
+              aMn = 0;
+
+          } else {                // if (not bedrock_boundary)
+
+            if (ice_free(M_e))
+              aPP = 0;
+            if (ice_free(M_w))
+              aMM = 0;
+            if (ice_free(M_n))
+              bPP = 0;
+            if (ice_free(M_s))
+              bMM = 0;
+
+            // decide whether to use centered or one-sided differences
+            if (ice_free(M_n) || ice_free(M_ne))
+              aPn = 0;
+            if (ice_free(M_e) || ice_free(M_ne))
+              bPe = 0;
+            if (ice_free(M_e) || ice_free(M_se))
+              bMe = 0;
+            if (ice_free(M_s) || ice_free(M_se))
+              aPs = 0;
+            if (ice_free(M_s) || ice_free(M_sw))
+              aMs = 0;
+            if (ice_free(M_w) || ice_free(M_sw))
+              bMw = 0;
+            if (ice_free(M_w) || ice_free(M_nw))
+              bPw = 0;
+            if (ice_free(M_n) || ice_free(M_nw))
+              aMn = 0;
+
+          } // end of the else clause following "if (bedrock_boundary)"
+        }   // end of "if (is_marginal(i, j, bedrock_boundary))"
+      }     // end of "if (use_cfbc)"
+
+      /* begin Maxima-generated code */
+      const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+
+      /* Coefficients of the discretization of the first equation; u first, then v. */
+      double eq1[] = {
+        0,  -c_n*bPP/dy2,  0,
+        -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
+        0,  -c_s*bMM/dy2,  0,
+        c_w*aMM*bPw/d2+c_n*aMn*bPP/d4,  (c_n*aPn*bPP-c_n*aMn*bPP)/d4+(c_w*aMM*bPP-c_e*aPP*bPP)/d2,  -c_e*aPP*bPe/d2-c_n*aPn*bPP/d4,
+        (c_w*aMM*bMw-c_w*aMM*bPw)/d2+(c_n*aMM*bPP-c_s*aMM*bMM)/d4,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d4+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d2,  (c_e*aPP*bPe-c_e*aPP*bMe)/d2+(c_s*aPP*bMM-c_n*aPP*bPP)/d4,
+        -c_w*aMM*bMw/d2-c_s*aMs*bMM/d4,  (c_s*aMs*bMM-c_s*aPs*bMM)/d4+(c_e*aPP*bMM-c_w*aMM*bMM)/d2,  c_e*aPP*bMe/d2+c_s*aPs*bMM/d4,
+      };
+
+      /* Coefficients of the discretization of the second equation; u first, then v. */
+      double eq2[] = {
+        c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
+        (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
+        -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
+        0,  -4*c_n*bPP/dy2,  0,
+        -c_w*aMM/dx2,  (4*c_n*bPP+4*c_s*bMM)/dy2+(c_e*aPP+c_w*aMM)/dx2,  -c_e*aPP/dx2,
+        0,  -4*c_s*bMM/dy2,  0,
+      };
+
+      /* i indices */
+      const int I[] = {
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+      };
+
+      /* j indices */
+      const int J[] = {
+        j+1,  j+1,  j+1,
+        j,  j,  j,
+        j-1,  j-1,  j-1,
+        j+1,  j+1,  j+1,
+        j,  j,  j,
+        j-1,  j-1,  j-1,
+      };
+
+      /* component indices */
+      const int C[] = {
+        0,  0,  0,
+        0,  0,  0,
+        0,  0,  0,
+        1,  1,  1,
+        1,  1,  1,
+        1,  1,  1,
+      };
+      /* end Maxima-generated code */
+
+      /* Dragging ice experiences friction at the bed determined by the
+       *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
+       *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
+       *    (i.e. on left side of SSA eqns).  */
+      double beta = 0.0;
+      if (include_basal_shear) {
+        if (grounded_ice(M_ij)) {
+          beta = basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        } else if (ice_free_land(M_ij)) {
+          // apply drag even in this case, to help with margins; note ice free
+          // areas already have a strength extension
+          beta = beta_ice_free_bedrock;
+        }
+        if (sub_gl) {
+          // reduce the basal drag at grid cells that are partially grounded:
+          if (icy(M_ij)) {
+            beta = (*m_gl_mask)(i,j) * basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          }
+        }
+      }
+
+      // add beta to diagonal entries
+      eq1[4]  += beta;
+      eq2[13] += beta;
+
+      // check diagonal entries:
+      const double eps = 1e-16;
+      if (fabs(eq1[4]) < eps) {
+        throw RuntimeError::formatted("first  (X) equation in the SSAFD system:"
+                                      " zero diagonal entry at a regular (not Dirichlet B.C.)"
+                                      " location: i = %d, j = %d\n", i, j);
+      }
+      if (fabs(eq2[13]) < eps) {
+        throw RuntimeError::formatted("second (Y) equation in the SSAFD system:"
+                                      " zero diagonal entry at a regular (not Dirichlet B.C.)"
+                                      " location: i = %d, j = %d\n", i, j);
+      }
+
+      // build equations: NOTE TRANSPOSE
+      row.j = i;
+      row.i = j;
+      for (int m = 0; m < sten; m++) {
+        col[m].j = I[m];
+        col[m].i = J[m];
+        col[m].c = C[m];
+      }
+
+      // set coefficients of the first equation:
+      row.c = 0;
+      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES);
+      PISM_CHK(ierr, "MatSetValuesStencil");
+
+      // set coefficients of the second equation:
+      row.c = 1;
+      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES);
+      PISM_CHK(ierr, "MatSetValuesStencil");
+    } // i,j-loop
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyBegin");
@@ -800,12 +805,6 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);
   PISM_CHK(ierr, "MatSetOption");
 #endif
-
-  int zero_pivot_flag_global = 0;
-  MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, m_grid.com);
-  if (zero_pivot_flag_global != 0) {
-    throw ZeroPivot();
-  }
 }
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
@@ -1198,37 +1197,44 @@ void SSAFD::compute_hardav_staggered() {
 
   MaskQuery m(*m_mask);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    E_ij = m_enthalpy->get_column(i,j);
-    for (int o=0; o<2; o++) {
-      const int oi = 1-o, oj=o;
-      double H;
+      E_ij = m_enthalpy->get_column(i,j);
+      for (int o=0; o<2; o++) {
+        const int oi = 1-o, oj=o;
+        double H;
 
-      if (m.icy(i,j) && m.icy(i+oi,j+oj)) {
-        H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+oi,j+oj));
-      } else if (m.icy(i,j)) {
-        H = (*m_thickness)(i,j);
-      }  else {
-        H = (*m_thickness)(i+oi,j+oj);
-      }
+        if (m.icy(i,j) && m.icy(i+oi,j+oj)) {
+          H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+oi,j+oj));
+        } else if (m.icy(i,j)) {
+          H = (*m_thickness)(i,j);
+        }  else {
+          H = (*m_thickness)(i+oi,j+oj);
+        }
 
-      if (H == 0) {
-        hardness(i,j,o) = -1e6; // an obviously impossible value
-        continue;
-      }
+        if (H == 0) {
+          hardness(i,j,o) = -1e6; // an obviously impossible value
+          continue;
+        }
 
-      E_offset = m_enthalpy->get_column(i+oi,j+oj);
-      // build a column of enthalpy values a the current location:
-      for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
-        E[k] = 0.5 * (E_ij[k] + E_offset[k]);
-      }
+        E_offset = m_enthalpy->get_column(i+oi,j+oj);
+        // build a column of enthalpy values a the current location:
+        for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
+          E[k] = 0.5 * (E_ij[k] + E_offset[k]);
+        }
 
-      hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
-                                                      &(m_grid.z()[0]), &E[0]);
-    } // o
-  }     // loop over points
+        hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
+                                                        &(m_grid.z()[0]), &E[0]);
+      } // o
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+     // loop over points
 
 
   fracture_induced_softening();
@@ -1401,8 +1407,8 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
       // We ensure that nuH is bounded below by a positive constant.
       result(i,j,o) += nuH_regularization;
 
-    }
-  } // o
+    } // i,j-loop
+  } // o-loop
 
 
   // Some communication
@@ -1600,7 +1606,7 @@ void SSAFD::update_nuH_viewers() {
 
   if (not nuh_viewer) {
     nuh_viewer.reset(new petsc::Viewer(m_grid.com, "nuH", nuh_viewer_size,
-                                m_grid.Lx(), m_grid.Ly()));
+                                       m_grid.Lx(), m_grid.Ly()));
   }
 
   tmp.view(nuh_viewer, petsc::Viewer::Ptr());

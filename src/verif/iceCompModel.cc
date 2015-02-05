@@ -390,40 +390,46 @@ void IceCompModel::initTestABCDEH() {
 
   IceModelVec::AccessList list(ice_thickness);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double xx = grid.x(i), yy = grid.y(j),
-      r = radius(grid, i, j);
-    switch (testname) {
-    case 'A':
-      exactA(r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'B':
-      exactB(time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'C':
-      exactC(time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'D':
-      exactD(time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'E':
-      exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'H':
-      exactH(f, time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    default:
-      throw RuntimeError("test must be A, B, C, D, E, or H");
+      double xx = grid.x(i), yy = grid.y(j),
+        r = radius(grid, i, j);
+      switch (testname) {
+      case 'A':
+        exactA(r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'B':
+        exactB(time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'C':
+        exactC(time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'D':
+        exactD(time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'E':
+        exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'H':
+        exactH(f, time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      default:
+        throw RuntimeError("test must be A, B, C, D, E, or H");
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   ice_thickness.update_ghosts();
 
@@ -568,35 +574,41 @@ void IceCompModel::fillSolnTestABCDH() {
 
   IceModelVec::AccessList list(ice_thickness);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double r = radius(grid, i, j);
-    switch (testname) {
-    case 'A':
-      exactA(r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'B':
-      exactB(time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'C':
-      exactC(time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'D':
-      exactD(time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    case 'H':
-      exactH(f, time, r, &H, &accum);
-      ice_thickness(i, j)   = H;
-      break;
-    default:
-      throw RuntimeError("test must be A, B, C, D, or H");
+      double r = radius(grid, i, j);
+      switch (testname) {
+      case 'A':
+        exactA(r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'B':
+        exactB(time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'C':
+        exactC(time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'D':
+        exactD(time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      case 'H':
+        exactH(f, time, r, &H, &accum);
+        ice_thickness(i, j)   = H;
+        break;
+      default:
+        throw RuntimeError("test must be A, B, C, D, or H");
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   ice_thickness.update_ghosts();
 
@@ -686,92 +698,99 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   // area of grid square in square km:
   const double   a = grid.dx() * grid.dy() * 1e-3 * 1e-3;
   const double   m = (2.0 * Glen_n + 2.0) / Glen_n;
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
 
-    if (ice_thickness(i,j) > 0) {
-      area += a;
-      vol += a * ice_thickness(i,j) * 1e-3;
-    }
-    double xx = grid.x(i), yy = grid.y(j),
-      r = radius(grid, i,j);
-    switch (testname) {
-    case 'A':
-      exactA(r,&Hexact,&dummy);
-      break;
-    case 'B':
-      exactB(time,r,&Hexact,&dummy);
-      break;
-    case 'C':
-      exactC(time,r,&Hexact,&dummy);
-      break;
-    case 'D':
-      exactD(time,r,&Hexact,&dummy);
-      break;
-    case 'E':
-      exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
-      break;
-    case 'F':
-      if (r > LforFG - 1.0) {  // outside of sheet
-        Hexact=0.0;
-      } else {
-        r=std::max(r,1.0);
-        z=0.0;
-        bothexact(0.0,r,&z,1,0.0,
-                  &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
-      }
-      break;
-    case 'G':
-      if (r > LforFG -1.0) {  // outside of sheet
-        Hexact=0.0;
-      } else {
-        r=std::max(r,1.0);
-        z=0.0;
-        bothexact(time,r,&z,1,ApforG,
-                  &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
-      }
-      break;
-    case 'H':
-      exactH(f,time,r,&Hexact,&dummy);
-      break;
-    case 'K':
-    case 'O':
-      Hexact = 3000.0;
-      break;
-    case 'L':
-      Hexact = vHexactL(i,j);
-      break;
-    case 'V':
-      {
-        double
-          H0 = 600.0,
-          v0 = grid.convert(300.0, "m/year", "m/second"),
-          Q0 = H0 * v0,
-          B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
-          C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-        Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
+      if (ice_thickness(i,j) > 0) {
+        area += a;
+        vol += a * ice_thickness(i,j) * 1e-3;
       }
-      break;
-    default:
-      throw RuntimeError("test must be A, B, C, D, E, F, G, H, K, L, or O");
-    }
+      double xx = grid.x(i), yy = grid.y(j),
+        r = radius(grid, i,j);
+      switch (testname) {
+      case 'A':
+        exactA(r,&Hexact,&dummy);
+        break;
+      case 'B':
+        exactB(time,r,&Hexact,&dummy);
+        break;
+      case 'C':
+        exactC(time,r,&Hexact,&dummy);
+        break;
+      case 'D':
+        exactD(time,r,&Hexact,&dummy);
+        break;
+      case 'E':
+        exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
+        break;
+      case 'F':
+        if (r > LforFG - 1.0) {  // outside of sheet
+          Hexact=0.0;
+        } else {
+          r=std::max(r,1.0);
+          z=0.0;
+          bothexact(0.0,r,&z,1,0.0,
+                    &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
+        }
+        break;
+      case 'G':
+        if (r > LforFG -1.0) {  // outside of sheet
+          Hexact=0.0;
+        } else {
+          r=std::max(r,1.0);
+          z=0.0;
+          bothexact(time,r,&z,1,ApforG,
+                    &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
+        }
+        break;
+      case 'H':
+        exactH(f,time,r,&Hexact,&dummy);
+        break;
+      case 'K':
+      case 'O':
+        Hexact = 3000.0;
+        break;
+      case 'L':
+        Hexact = vHexactL(i,j);
+        break;
+      case 'V':
+        {
+          double
+            H0 = 600.0,
+            v0 = grid.convert(300.0, "m/year", "m/second"),
+            Q0 = H0 * v0,
+            B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
+            C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
-    if (Hexact > 0) {
-      areaexact += a;
-      volexact += a * Hexact * 1e-3;
+          Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
+        }
+        break;
+      default:
+        throw RuntimeError("test must be A, B, C, D, E, F, G, H, K, L, or O");
+      }
+
+      if (Hexact > 0) {
+        areaexact += a;
+        volexact += a * Hexact * 1e-3;
+      }
+      if (i == ((int)grid.Mx() - 1)/2 and
+          j == ((int)grid.My() - 1)/2) {
+        domeH = ice_thickness(i,j);
+        domeHexact = Hexact;
+      }
+      // compute maximum errors
+      Herr = std::max(Herr,fabs(ice_thickness(i,j) - Hexact));
+      etaerr = std::max(etaerr,fabs(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
+      // add to sums for average errors
+      avHerr += fabs(ice_thickness(i,j) - Hexact);
     }
-    if (i == ((int)grid.Mx() - 1)/2 and
-        j == ((int)grid.My() - 1)/2) {
-      domeH = ice_thickness(i,j);
-      domeHexact = Hexact;
-    }
-    // compute maximum errors
-    Herr = std::max(Herr,fabs(ice_thickness(i,j) - Hexact));
-    etaerr = std::max(etaerr,fabs(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
-    // add to sums for average errors
-    avHerr += fabs(ice_thickness(i,j) - Hexact);
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;

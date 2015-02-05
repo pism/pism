@@ -460,12 +460,11 @@ IceModelVec::Ptr PSB_wvel::compute() {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *u, *v, *w;
-    double *result;
-    u = u3.get_column(i, j);
-    v = v3.get_column(i, j);
-    w = w3.get_column(i, j);
-    result = result3->get_column(i, j);
+    const double
+      *u = u3.get_column(i, j),
+      *v = v3.get_column(i, j),
+      *w = w3.get_column(i, j);
+    double *result = result3->get_column(i, j);
 
     int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
@@ -697,25 +696,31 @@ IceModelVec::Ptr PSB_uvel::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
-    const double *u_ij;
-    u_ij = u3.get_column(i,j);
-    double *u_out_ij;
-    u_out_ij = result->get_column(i,j);
+      const double *u_ij;
+      u_ij = u3.get_column(i,j);
+      double *u_out_ij;
+      u_out_ij = result->get_column(i,j);
 
-    // in the ice:
-    for (int k = 0; k <= ks ; k++) {
-      u_out_ij[k] = u_ij[k];
+      // in the ice:
+      for (int k = 0; k <= ks ; k++) {
+        u_out_ij[k] = u_ij[k];
+      }
+      // above the ice:
+      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+        u_out_ij[k] = 0.0;
+      }
     }
-    // above the ice:
-    for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
-      u_out_ij[k] = 0.0;
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }
@@ -746,25 +751,31 @@ IceModelVec::Ptr PSB_vvel::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
-    const double *v_ij;
-    double *v_out_ij;
-    v_ij = v3.get_column(i,j);
-    v_out_ij = result->get_column(i,j);
+      const double *v_ij;
+      double *v_out_ij;
+      v_ij = v3.get_column(i,j);
+      v_out_ij = result->get_column(i,j);
 
-    // in the ice:
-    for (int k = 0; k <= ks ; k++) {
-      v_out_ij[k] = v_ij[k];
+      // in the ice:
+      for (int k = 0; k <= ks ; k++) {
+        v_out_ij[k] = v_ij[k];
+      }
+      // above the ice:
+      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+        v_out_ij[k] = 0.0;
+      }
     }
-    // above the ice:
-    for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
-      v_out_ij[k] = 0.0;
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }
@@ -795,25 +806,30 @@ IceModelVec::Ptr PSB_wvel_rel::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
-    const double *w_ij;
-    w_ij = w3.get_column(i,j);
-    double *w_out_ij;
-    w_out_ij = result->get_column(i,j);
+      const double *w_ij = w3.get_column(i,j);
+      double *w_out_ij = result->get_column(i,j);
 
-    // in the ice:
-    for (int k = 0; k <= ks ; k++) {
-      w_out_ij[k] = w_ij[k];
+      // in the ice:
+      for (int k = 0; k <= ks ; k++) {
+        w_out_ij[k] = w_ij[k];
+      }
+      // above the ice:
+      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+        w_out_ij[k] = 0.0;
+      }
     }
-    // above the ice:
-    for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
-      w_out_ij[k] = 0.0;
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   return result;
 }
@@ -936,24 +952,29 @@ IceModelVec::Ptr PSB_pressure::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  double *P_out_ij;
   const double rg = m_grid.config.get("ice_density") * m_grid.config.get("standard_gravity");
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
-    P_out_ij = result->get_column(i,j);
-    const double H = (*thickness)(i,j);
-    // within the ice:
-    for (unsigned int k = 0; k <= ks; ++k) {
-      P_out_ij[k] = rg * (H - m_grid.z(k));  // FIXME: add atmospheric pressure?
+      unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      double *P_out_ij = result->get_column(i,j);
+      const double H = (*thickness)(i,j);
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        P_out_ij[k] = rg * (H - m_grid.z(k));  // FIXME: add atmospheric pressure?
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+        P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
+      }
     }
-    // above the ice:
-    for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
-      P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }
@@ -992,27 +1013,32 @@ IceModelVec::Ptr PSB_tauxz::compute() {
   list.add(*surface);
   list.add(*thickness);
 
-  double *tauxz_out_ij;
   const double rg = m_grid.config.get("ice_density") * m_grid.config.get("standard_gravity");
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
-    tauxz_out_ij = result->get_column(i, j);
-    const double
-      H    = (*thickness)(i,j),
-      dhdx = surface->diff_x_p(i,j);
+      unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      double *tauxz_out_ij = result->get_column(i, j);
+      const double
+        H    = (*thickness)(i,j),
+        dhdx = surface->diff_x_p(i,j);
 
-    // within the ice:
-    for (unsigned int k = 0; k <= ks; ++k) {
-      tauxz_out_ij[k] = - rg * (H - m_grid.z(k)) * dhdx;
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        tauxz_out_ij[k] = - rg * (H - m_grid.z(k)) * dhdx;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+        tauxz_out_ij[k] = 0.0;
+      }
     }
-    // above the ice:
-    for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
-      tauxz_out_ij[k] = 0.0;
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }
@@ -1049,27 +1075,32 @@ IceModelVec::Ptr PSB_tauyz::compute() {
   list.add(*surface);
   list.add(*thickness);
 
-  double *tauyz_out_ij = NULL;
   const double rg = m_grid.config.get("ice_density") * m_grid.config.get("standard_gravity");
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
-    tauyz_out_ij = result->get_column(i, j);
-    const double
-      H    = (*thickness)(i,j),
-      dhdy = surface->diff_y_p(i,j);
+      unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      double *tauyz_out_ij = result->get_column(i, j);
+      const double
+        H    = (*thickness)(i,j),
+        dhdy = surface->diff_y_p(i,j);
 
-    // within the ice:
-    for (unsigned int k = 0; k <= ks; ++k) {
-      tauyz_out_ij[k] = - rg * (H - m_grid.z(k)) * dhdy;
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        tauyz_out_ij[k] = - rg * (H - m_grid.z(k)) * dhdy;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+        tauyz_out_ij[k] = 0.0;
+      }
     }
-    // above the ice:
-    for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
-      tauyz_out_ij[k] = 0.0;
-    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }

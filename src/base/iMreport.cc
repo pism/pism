@@ -55,16 +55,23 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
   list.add(vMask);
   list.add(ice_thickness);
   list.add(Enthbase);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j)) {
-      // accumulate area of base which is at melt point
-      if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-        meltarea += a;
+      if (mask.icy(i, j)) {
+        // accumulate area of base which is at melt point
+        if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          meltarea += a;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   // communication
   result = GlobalSum(grid.com, meltarea);
@@ -107,21 +114,28 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
   double original_ice_volume = 0.0;
 
   // compute local original volume
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j)) {
-      // accumulate volume of ice which is original
-      double *age = age3.get_column(i, j);
-      const int  ks = grid.kBelowHeight(ice_thickness(i,j));
-      for (int k = 1; k <= ks; k++) {
-        // ice in segment is original if it is as old as one year less than current time
-        if (0.5 * (age[k - 1] + age[k]) > currtime - one_year) {
-          original_ice_volume += a * 1.0e-3 * (grid.z(k) - grid.z(k - 1));
+      if (mask.icy(i, j)) {
+        // accumulate volume of ice which is original
+        double *age = age3.get_column(i, j);
+        const int  ks = grid.kBelowHeight(ice_thickness(i,j));
+        for (int k = 1; k <= ks; k++) {
+          // ice in segment is original if it is as old as one year less than current time
+          if (0.5 * (age[k - 1] + age[k]) > currtime - one_year) {
+            original_ice_volume += a * 1.0e-3 * (grid.z(k) - grid.z(k - 1));
+          }
         }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   // communicate to turn into global original fraction
   result = GlobalSum(grid.com, original_ice_volume);
@@ -369,27 +383,34 @@ double  IceModel::compute_ice_volume_temperate() {
   list.add(Enth3);
   list.add(cell_area);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // count all ice, including cells which have so little they are
-    // considered "ice-free"
-    if (ice_thickness(i,j) > 0) {
-      const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      const double *Enth = Enth3.get_column(i,j);
-      const double A = cell_area(i, j);
+      // count all ice, including cells which have so little they are
+      // considered "ice-free"
+      if (ice_thickness(i,j) > 0) {
+        const int ks = grid.kBelowHeight(ice_thickness(i,j));
+        const double *Enth = Enth3.get_column(i,j);
+        const double A = cell_area(i, j);
 
-      for (int k = 0; k < ks; ++k) {
-        if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (grid.z(k + 1) - grid.z(k)) * A;
+        for (int k = 0; k < ks; ++k) {
+          if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+            volume += (grid.z(k + 1) - grid.z(k)) * A;
+          }
+        }
+
+        if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          volume += (ice_thickness(i,j) - grid.z(ks)) * A;
         }
       }
-
-      if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-        volume += (ice_thickness(i,j) - grid.z(ks)) * A;
-      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   return GlobalSum(grid.com, volume);
 }
@@ -403,27 +424,34 @@ double IceModel::compute_ice_volume_cold() {
   list.add(Enth3);
   list.add(cell_area);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // count all ice, including cells which have so little they
-    // are considered "ice-free"
-    if (ice_thickness(i,j) > 0) {
-      const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      const double *Enth = Enth3.get_column(i,j);
-      const double A = cell_area(i, j);
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
+      if (ice_thickness(i,j) > 0) {
+        const int ks = grid.kBelowHeight(ice_thickness(i,j));
+        const double *Enth = Enth3.get_column(i,j);
+        const double A = cell_area(i, j);
 
-      for (int k=0; k<ks; ++k) {
-        if (not EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (grid.z(k+1) - grid.z(k)) * A;
+        for (int k=0; k<ks; ++k) {
+          if (not EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+            volume += (grid.z(k+1) - grid.z(k)) * A;
+          }
+        }
+
+        if (not EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          volume += (ice_thickness(i,j) - grid.z(ks)) * A;
         }
       }
-
-      if (not EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-        volume += (ice_thickness(i,j) - grid.z(ks)) * A;
-      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   return GlobalSum(grid.com, volume);
 }
@@ -463,14 +491,21 @@ double IceModel::compute_ice_area_temperate() {
   list.add(Enthbase);
   list.add(ice_thickness);
   list.add(cell_area);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j) and
-        EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-      area += cell_area(i,j);
+      if (mask.icy(i, j) and
+          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+        area += cell_area(i,j);
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   return GlobalSum(grid.com, area);
 }
@@ -489,14 +524,21 @@ double IceModel::compute_ice_area_cold() {
   list.add(Enthbase);
   list.add(ice_thickness);
   list.add(cell_area);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j) and
-        EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j))) == false) { // FIXME issue #15
-      area += cell_area(i,j);
+      if (mask.icy(i, j) and
+          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j))) == false) { // FIXME issue #15
+        area += cell_area(i,j);
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 
   return GlobalSum(grid.com, area);
 }

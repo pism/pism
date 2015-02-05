@@ -478,7 +478,7 @@ void IceModelVec2T::average(double my_t, double my_dt) {
   double **a2 = get_array();         // calls begin_access()
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    a2[i][j] = average(i, j); // NB! i,j order
+    a2[i][j] = average(i, j); // NB! i,j order (transpose)
   }
   end_access();
 }

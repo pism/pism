@@ -216,132 +216,138 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // if isMarginal then only do vertical conduction for ice; ignore advection
-    //   and strain heating if isMarginal
-    const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-    MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
+      // if isMarginal then only do vertical conduction for ice; ignore advection
+      //   and strain heating if isMarginal
+      const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
+      MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
 
-    system.initThisColumn(i, j, isMarginal, mask_value, ice_thickness(i,j));
+      system.initThisColumn(i, j, isMarginal, mask_value, ice_thickness(i,j));
 
-    const int ks = system.ks();
+      const int ks = system.ks();
 
-    if (ks > 0) { // if there are enough points in ice to bother ...
+      if (ks > 0) { // if there are enough points in ice to bother ...
 
-      if (system.lambda() < 1.0) {
-        *vertSacrCount += 1; // count columns with lambda < 1
-      }
+        if (system.lambda() < 1.0) {
+          *vertSacrCount += 1; // count columns with lambda < 1
+        }
 
-      // set boundary values for tridiagonal system
-      system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j));
-      system.setBasalBoundaryValuesThisColumn(G0(i,j), shelfbtemp(i,j), Rb(i,j));
+        // set boundary values for tridiagonal system
+        system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j));
+        system.setBasalBoundaryValuesThisColumn(G0(i,j), shelfbtemp(i,j), Rb(i,j));
 
-      // solve the system for this column; melting not addressed yet
-      system.solveThisColumn(x);
+        // solve the system for this column; melting not addressed yet
+        system.solveThisColumn(x);
 
-      if (viewOneColumn && (i == id && j == jd)) {
-        ierr = PetscPrintf(grid.com,
-                           "\n"
-                           "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
-                           i, j);
-        PISM_CHK(ierr, "PetscPrintf");
+        if (viewOneColumn && (i == id && j == jd)) {
+          ierr = PetscPrintf(grid.com,
+                             "\n"
+                             "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
+                             i, j);
+          PISM_CHK(ierr, "PetscPrintf");
 
-        system.viewColumnInfoMFile(x);
-      }
+          system.viewColumnInfoMFile(x);
+        }
 
-    }       // end of "if there are enough points in ice to bother ..."
+      }       // end of "if there are enough points in ice to bother ..."
 
-    // prepare for melting/refreezing
-    double bwatnew = bwatcurr(i,j);
+      // prepare for melting/refreezing
+      double bwatnew = bwatcurr(i,j);
 
-    // insert solution for generic ice segments
-    for (int k=1; k <= ks; k++) {
-      if (allow_above_melting == true) { // in the ice
-        Tnew[k] = x[k];
-      } else {
-        const double
-          Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - z_fine[k]); // FIXME issue #15
-        if (x[k] > Tpmp) {
-          Tnew[k] = Tpmp;
-          double Texcess = x[k] - Tpmp; // always positive
-          excessToFromBasalMeltLayer(ice_density, ice_c, L, z_fine[k], dz, &Texcess, &bwatnew);
-          // Texcess  will always come back zero here; ignore it
-        } else {
+      // insert solution for generic ice segments
+      for (int k=1; k <= ks; k++) {
+        if (allow_above_melting == true) { // in the ice
           Tnew[k] = x[k];
-        }
-      }
-      if (Tnew[k] < globalMinAllowedTemp) {
-        ierr = PetscPrintf(PETSC_COMM_SELF,
-                           "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
-                           " proc %d; mask=%d; w=%f m/year]]\n",
-                           Tnew[k], i, j, k, grid.rank(), vMask.as_int(i, j),
-                           grid.convert(system.w(k), "m/s", "m/year"));
-        PISM_CHK(ierr, "PetscPrintf");
-
-        myLowTempCount++;
-      }
-      if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
-        Tnew[k] = ice_surface_temp(i,j) - bulgeMax;
-        *bulgeCount += 1;
-      }
-    }
-
-    // insert solution for ice base segment
-    if (ks > 0) {
-      if (allow_above_melting == true) { // ice/rock interface
-        Tnew[0] = x[0];
-      } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-        const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
-        double Texcess = x[0] - Tpmp; // positive or negative
-        if (mask.ocean(i,j)) {
-          // when floating, only half a segment has had its temperature raised
-          // above Tpmp
-          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
         } else {
-          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz, &Texcess, &bwatnew);
+          const double
+            Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - z_fine[k]); // FIXME issue #15
+          if (x[k] > Tpmp) {
+            Tnew[k] = Tpmp;
+            double Texcess = x[k] - Tpmp; // always positive
+            excessToFromBasalMeltLayer(ice_density, ice_c, L, z_fine[k], dz, &Texcess, &bwatnew);
+            // Texcess  will always come back zero here; ignore it
+          } else {
+            Tnew[k] = x[k];
+          }
         }
-        Tnew[0] = Tpmp + Texcess;
-        if (Tnew[0] > (Tpmp + 0.00001)) {
-          throw RuntimeError("updated temperature came out above Tpmp");
+        if (Tnew[k] < globalMinAllowedTemp) {
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+                             "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
+                             " proc %d; mask=%d; w=%f m/year]]\n",
+                             Tnew[k], i, j, k, grid.rank(), vMask.as_int(i, j),
+                             grid.convert(system.w(k), "m/s", "m/year"));
+          PISM_CHK(ierr, "PetscPrintf");
+
+          myLowTempCount++;
+        }
+        if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
+          Tnew[k] = ice_surface_temp(i,j) - bulgeMax;
+          *bulgeCount += 1;
         }
       }
-      if (Tnew[0] < globalMinAllowedTemp) {
-        ierr = PetscPrintf(PETSC_COMM_SELF,
-                           "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
-                           " proc %d; mask=%d; w=%f]]\n",
-                           Tnew[0],i,j,grid.rank(),vMask.as_int(i,j),
-                           grid.convert(system.w(0), "m/s", "m/year"));
-        PISM_CHK(ierr, "PetscPrintf");
 
-        myLowTempCount++;
+      // insert solution for ice base segment
+      if (ks > 0) {
+        if (allow_above_melting == true) { // ice/rock interface
+          Tnew[0] = x[0];
+        } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
+          const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
+          double Texcess = x[0] - Tpmp; // positive or negative
+          if (mask.ocean(i,j)) {
+            // when floating, only half a segment has had its temperature raised
+            // above Tpmp
+            excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
+          } else {
+            excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz, &Texcess, &bwatnew);
+          }
+          Tnew[0] = Tpmp + Texcess;
+          if (Tnew[0] > (Tpmp + 0.00001)) {
+            throw RuntimeError("updated temperature came out above Tpmp");
+          }
+        }
+        if (Tnew[0] < globalMinAllowedTemp) {
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+                             "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
+                             " proc %d; mask=%d; w=%f]]\n",
+                             Tnew[0],i,j,grid.rank(),vMask.as_int(i,j),
+                             grid.convert(system.w(0), "m/s", "m/year"));
+          PISM_CHK(ierr, "PetscPrintf");
+
+          myLowTempCount++;
+        }
+        if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
+          Tnew[0] = ice_surface_temp(i,j) - bulgeMax;
+          *bulgeCount += 1;
+        }
       }
-      if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
-        Tnew[0] = ice_surface_temp(i,j) - bulgeMax;
-        *bulgeCount += 1;
+
+      // set to air temp above ice
+      for (unsigned int k = ks; k < Mz_fine; k++) {
+        Tnew[k] = ice_surface_temp(i,j);
       }
+
+      // transfer column into vWork3d; communication later
+      system.fine_to_coarse(Tnew, i, j, vWork3d);
+
+      // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
+      if (mask.ocean(i,j)) {
+        basal_melt_rate(i,j) = 0.0;
+      } else {
+        // basalMeltRate is rate of change of bwat;  can be negative
+        //   (subglacial water freezes-on); note this rate is calculated
+        //   *before* limiting or other nontrivial modelling of bwat,
+        //   which is Hydrology's job
+        basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
+      } // end of the grounded case
     }
-
-    // set to air temp above ice
-    for (unsigned int k = ks; k < Mz_fine; k++) {
-      Tnew[k] = ice_surface_temp(i,j);
-    }
-
-    // transfer column into vWork3d; communication later
-    system.fine_to_coarse(Tnew, i, j, vWork3d);
-
-    // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-    if (mask.ocean(i,j)) {
-      basal_melt_rate(i,j) = 0.0;
-    } else {
-      // basalMeltRate is rate of change of bwat;  can be negative
-      //   (subglacial water freezes-on); note this rate is calculated
-      //   *before* limiting or other nontrivial modelling of bwat,
-      //   which is Hydrology's job
-      basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
-    } // end of the grounded case
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   if (myLowTempCount > maxLowTempCount) {
     throw RuntimeError::formatted("too many low temps: %d", myLowTempCount);

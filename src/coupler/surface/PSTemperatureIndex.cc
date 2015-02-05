@@ -329,95 +329,101 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   const double ice_density = m_config.get("ice_density");
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // the temperature time series from the AtmosphereModel and its modifiers
-    atmosphere->temp_time_series(i, j, T);
+      // the temperature time series from the AtmosphereModel and its modifiers
+      atmosphere->temp_time_series(i, j, T);
 
-    // the precipitation time series from AtmosphereModel and its modifiers
-    atmosphere->precip_time_series(i, j, P);
+      // the precipitation time series from AtmosphereModel and its modifiers
+      atmosphere->precip_time_series(i, j, P);
 
-    // interpolate temperature standard deviation time series
-    if (m_sd_file_set == true) {
-      m_air_temp_sd.interp(i, j, S);
-    } else {
-      for (int k = 0; k < Nseries; ++k) {
-        S[k] = m_air_temp_sd(i, j);
-      }
-    }
-
-    if (m_faustogreve != NULL) {
-      // we have been asked to set mass balance parameters according to
-      //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-      m_faustogreve->setDegreeDayFactors(i, j, (*surface_altitude)(i, j),
-                                         (*latitude)(i, j), (*longitude)(i, j), ddf);
-    }
-
-    // apply standard deviation lapse rate on top of prescribed values
-    if (sigmalapserate != 0.0) {
-      for (int k = 0; k < Nseries; ++k) {
-        S[k] += sigmalapserate * ((*latitude)(i,j) - sigmabaselat);
-      }
-      m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
-    }
-
-    // apply standard deviation param over ice if in use
-    if (m_sd_use_param && m.icy(i,j)) {
-      for (int k = 0; k < Nseries; ++k) {
-        S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
-        if (S[k] < 0.0) {
-          S[k] = 0.0 ;
+      // interpolate temperature standard deviation time series
+      if (m_sd_file_set == true) {
+        m_air_temp_sd.interp(i, j, S);
+      } else {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] = m_air_temp_sd(i, j);
         }
       }
-      m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
-    }
 
-    // Use temperature time series, the "positive" threshhold, and
-    // the standard deviation of the daily variability to get the
-    // number of positive degree days (PDDs)
-    m_mbscheme->get_PDDs(&S[0], dtseries, &T[0], Nseries, &PDDs[0]);
+      if (m_faustogreve != NULL) {
+        // we have been asked to set mass balance parameters according to
+        //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
+        m_faustogreve->setDegreeDayFactors(i, j, (*surface_altitude)(i, j),
+                                           (*latitude)(i, j), (*longitude)(i, j), ddf);
+      }
 
-    // Use temperature time series to remove rainfall from precipitation
-    m_mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
-                                      &T[0], // air temperature (input)
-                                      Nseries);
+      // apply standard deviation lapse rate on top of prescribed values
+      if (sigmalapserate != 0.0) {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] += sigmalapserate * ((*latitude)(i,j) - sigmabaselat);
+        }
+        m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
+      }
 
-    // Use degree-day factors, and number of PDDs, and the snow
-    // precipitation, to get surface mass balance (and diagnostics:
-    // accumulation, melt, runoff)
-    {
-      double next_snow_depth_reset = m_next_balance_year_start;
-      m_accumulation_rate(i,j)     = 0.0;
-      m_melt_rate(i,j)             = 0.0;
-      m_runoff_rate(i,j)           = 0.0;
-      m_climatic_mass_balance(i,j) = 0.0;
-      for (int k = 0; k < Nseries; ++k) {
-        if (ts[k] >= next_snow_depth_reset) {
-          m_snow_depth(i,j)       = 0.0;
-          while (next_snow_depth_reset <= ts[k]) {
-            next_snow_depth_reset = m_grid.time->increment_date(next_snow_depth_reset, 1);
+      // apply standard deviation param over ice if in use
+      if (m_sd_use_param && m.icy(i,j)) {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
+          if (S[k] < 0.0) {
+            S[k] = 0.0 ;
           }
         }
-
-        double accumulation     = P[k] * dtseries;
-        m_accumulation_rate(i,j) += accumulation;
-
-        m_mbscheme->step(ddf, PDDs[k], accumulation,
-                         m_snow_depth(i,j), m_melt_rate(i,j), m_runoff_rate(i,j),
-                         m_climatic_mass_balance(i,j));
+        m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
       }
-      // convert from [m during the current time-step] to kg m-2 s-1
-      m_accumulation_rate(i,j)     *= (ice_density/m_dt);
-      m_melt_rate(i,j)             *= (ice_density/m_dt);
-      m_runoff_rate(i,j)           *= (ice_density/m_dt);
-      m_climatic_mass_balance(i,j) *= (ice_density/m_dt);
-    }
 
-    if (m.ocean(i,j)) {
-      m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      // Use temperature time series, the "positive" threshhold, and
+      // the standard deviation of the daily variability to get the
+      // number of positive degree days (PDDs)
+      m_mbscheme->get_PDDs(&S[0], dtseries, &T[0], Nseries, &PDDs[0]);
+
+      // Use temperature time series to remove rainfall from precipitation
+      m_mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
+                                        &T[0], // air temperature (input)
+                                        Nseries);
+
+      // Use degree-day factors, and number of PDDs, and the snow
+      // precipitation, to get surface mass balance (and diagnostics:
+      // accumulation, melt, runoff)
+      {
+        double next_snow_depth_reset = m_next_balance_year_start;
+        m_accumulation_rate(i,j)     = 0.0;
+        m_melt_rate(i,j)             = 0.0;
+        m_runoff_rate(i,j)           = 0.0;
+        m_climatic_mass_balance(i,j) = 0.0;
+        for (int k = 0; k < Nseries; ++k) {
+          if (ts[k] >= next_snow_depth_reset) {
+            m_snow_depth(i,j)       = 0.0;
+            while (next_snow_depth_reset <= ts[k]) {
+              next_snow_depth_reset = m_grid.time->increment_date(next_snow_depth_reset, 1);
+            }
+          }
+
+          double accumulation     = P[k] * dtseries;
+          m_accumulation_rate(i,j) += accumulation;
+
+          m_mbscheme->step(ddf, PDDs[k], accumulation,
+                           m_snow_depth(i,j), m_melt_rate(i,j), m_runoff_rate(i,j),
+                           m_climatic_mass_balance(i,j));
+        }
+        // convert from [m during the current time-step] to kg m-2 s-1
+        m_accumulation_rate(i,j)     *= (ice_density/m_dt);
+        m_melt_rate(i,j)             *= (ice_density/m_dt);
+        m_runoff_rate(i,j)           *= (ice_density/m_dt);
+        m_climatic_mass_balance(i,j) *= (ice_density/m_dt);
+      }
+
+      if (m.ocean(i,j)) {
+        m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   atmosphere->end_pointwise_access();
 

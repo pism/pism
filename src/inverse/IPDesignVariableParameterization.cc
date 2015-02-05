@@ -53,17 +53,26 @@ void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &ze
   list.add(zeta);
   list.add(d);
 
-  for (Points p(*zeta.get_grid()); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  const IceGrid &grid = *zeta.get_grid();
 
-    this->toDesignVariable(zeta(i, j), &d(i, j), NULL);
-    if (std::isnan(d(i, j))) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,
-                         "made a d nan zeta = %g d = %g\n",
-                         zeta(i, j), d(i, j));
-      PISM_CHK(ierr, "PetscPrintf");
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      this->toDesignVariable(zeta(i, j), &d(i, j), NULL);
+      if (std::isnan(d(i, j))) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+                           "made a d nan zeta = %g d = %g\n",
+                           zeta(i, j), d(i, j));
+        PISM_CHK(ierr, "PetscPrintf");
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
   if (communicate) {
     d.update_ghosts();
   }
@@ -78,17 +87,25 @@ void IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &
   list.add(zeta);
   list.add(d);
 
-  for (Points p(*zeta.get_grid()); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  const IceGrid &grid = *zeta.get_grid();
 
-    this->fromDesignVariable(d(i, j), &zeta(i, j));
-    if (std::isnan(zeta(i, j))) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,
-                         "made a zeta nan d = %g zeta = %g\n",
-                         d(i, j), zeta(i, j));
-      PISM_CHK(ierr, "PetscPrintf");
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      this->fromDesignVariable(d(i, j), &zeta(i, j));
+      if (std::isnan(zeta(i, j))) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+                           "made a zeta nan d = %g zeta = %g\n",
+                           d(i, j), zeta(i, j));
+        PISM_CHK(ierr, "PetscPrintf");
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   if (communicate) {
     zeta.update_ghosts();

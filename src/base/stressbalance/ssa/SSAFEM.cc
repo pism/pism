@@ -542,16 +542,22 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
                      "SSA Solution and Function values (pointwise residuals)\n");
   PISM_CHK(ierr, "PetscPrintf");
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    ierr = PetscSynchronizedPrintf(m_grid.com,
-                                   "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
-                                   i, j,
-                                   velocity_global[i][j].u, velocity_global[i][j].v,
-                                   residual_global[i][j].u, residual_global[i][j].v);
-    PISM_CHK(ierr, "PetscSynchronizedPrintf");
+      ierr = PetscSynchronizedPrintf(m_grid.com,
+                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
+                                     i, j,
+                                     velocity_global[i][j].u, velocity_global[i][j].v,
+                                     residual_global[i][j].u, residual_global[i][j].v);
+      PISM_CHK(ierr, "PetscSynchronizedPrintf");
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
 #if PETSC_VERSION_LT(3,5,0)
   ierr = PetscSynchronizedFlush(grid.com);

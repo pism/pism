@@ -180,36 +180,42 @@ void Verification::update_ABCDEH(double time) {
   m_ice_surface_temp.set(T0);
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double xx = m_grid.x(i), yy = m_grid.y(j),
-      r = radius(m_grid, i, j);
-    switch (m_testname) {
-    case 'A':
-      exactA(r, &H, &accum);
-      break;
-    case 'B':
-      exactB(time, r, &H, &accum);
-      break;
-    case 'C':
-      exactC(time, r, &H, &accum);
-      break;
-    case 'D':
-      exactD(time, r, &H, &accum);
-      break;
-    case 'E':
-      exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-      break;
-    case 'H':
-      exactH(f, time, r, &H, &accum);
-      break;
-    default:
-      throw RuntimeError::formatted("test must be A, B, C, D, E, or H, got %c",
-                                    m_testname);
+      double xx = m_grid.x(i), yy = m_grid.y(j),
+        r = radius(m_grid, i, j);
+      switch (m_testname) {
+      case 'A':
+        exactA(r, &H, &accum);
+        break;
+      case 'B':
+        exactB(time, r, &H, &accum);
+        break;
+      case 'C':
+        exactC(time, r, &H, &accum);
+        break;
+      case 'D':
+        exactD(time, r, &H, &accum);
+        break;
+      case 'E':
+        exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
+        break;
+      case 'H':
+        exactH(f, time, r, &H, &accum);
+        break;
+      default:
+        throw RuntimeError::formatted("test must be A, B, C, D, E, or H, got %c",
+                                      m_testname);
+      }
+      m_climatic_mass_balance(i, j) = accum;
     }
-    m_climatic_mass_balance(i, j) = accum;
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 void Verification::update_FG(double time) {

@@ -318,12 +318,18 @@ void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
     ***result_a = static_cast<double***>(tmp_res.get()),
     ***source_a = static_cast<double***>(tmp_v.get());
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    PetscErrorCode ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
-                                      count*sizeof(PetscScalar));
-    PISM_CHK(ierr, "PetscMemcpy");
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      PetscErrorCode ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
+                                        count*sizeof(PetscScalar));
+      PISM_CHK(ierr, "PetscMemcpy");
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
@@ -338,12 +344,18 @@ void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
     ***source_a = static_cast<double***>(tmp_src.get()),
     ***result_a = static_cast<double***>(tmp_v.get());
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    PetscErrorCode ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
-                                      count*sizeof(PetscScalar));
-    PISM_CHK(ierr, "PetscMemcpy");
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      PetscErrorCode ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
+                                        count*sizeof(PetscScalar));
+      PISM_CHK(ierr, "PetscMemcpy");
+    }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   inc_state_counter();          // mark as modified
 }

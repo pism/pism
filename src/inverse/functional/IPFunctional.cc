@@ -32,25 +32,31 @@ void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S 
   
   IceModelVec::AccessList list(gradient);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j) += h;
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j) += h;
+      }
+      x.update_ghosts();
+
+      f.valueAt(x,&Fh);
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j) -= h;
+      }
+      x.update_ghosts();
+
+      gradient(i,j) = (Fh-F0)/h;
     }
-    x.update_ghosts();
-
-    f.valueAt(x,&Fh);
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j) -= h;
-    }
-    x.update_ghosts();
-
-    gradient(i,j) = (Fh-F0)/h;
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
@@ -63,41 +69,47 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
   
   IceModelVec::AccessList access_gradient(gradient);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).u += h;
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).u += h;
+      }
+      x.update_ghosts();
+
+      f.valueAt(x,&Fh);
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).u -= h;
+      }
+      x.update_ghosts();
+
+      gradient(i,j).u = (Fh-F0)/h;
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).v += h;
+      }
+      x.update_ghosts();
+
+      f.valueAt(x,&Fh);
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).v -= h;
+      }
+      x.update_ghosts();
+
+      gradient(i,j).v = (Fh-F0)/h;
     }
-    x.update_ghosts();
-
-    f.valueAt(x,&Fh);
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).u -= h;
-    }
-    x.update_ghosts();
-
-    gradient(i,j).u = (Fh-F0)/h;
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).v += h;
-    }
-    x.update_ghosts();
-
-    f.valueAt(x,&Fh);
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).v -= h;
-    }
-    x.update_ghosts();
-
-    gradient(i,j).v = (Fh-F0)/h;
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 // PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);

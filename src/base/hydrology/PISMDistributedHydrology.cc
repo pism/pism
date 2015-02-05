@@ -215,23 +215,30 @@ void Distributed::check_P_bounds(bool enforce_upper) {
   list.add(m_P);
   list.add(m_Pover);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (m_P(i,j) < 0.0) {
-      throw RuntimeError::formatted("disallowed negative subglacial water pressure\n"
-                                    "P = %.6f Pa at (i,j)=(%d,%d)",
-                                    m_P(i, j), i, j);
-    }
+      if (m_P(i,j) < 0.0) {
+        throw RuntimeError::formatted("disallowed negative subglacial water pressure\n"
+                                      "P = %.6f Pa at (i,j)=(%d,%d)",
+                                      m_P(i, j), i, j);
+      }
 
-    if (enforce_upper) {
-      m_P(i,j) = std::min(m_P(i,j), m_Pover(i,j));
-    } else if (m_P(i,j) > m_Pover(i,j) + 0.001) {
-      throw RuntimeError::formatted("subglacial water pressure P = %.16f Pa exceeds\n"
-                                    "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
-                                    m_P(i, j), m_Pover(i, j), i, j);
+      if (enforce_upper) {
+        m_P(i,j) = std::min(m_P(i,j), m_Pover(i,j));
+      } else if (m_P(i,j) > m_Pover(i,j) + 0.001) {
+        throw RuntimeError::formatted("subglacial water pressure P = %.16f Pa exceeds\n"
+                                      "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
+                                      m_P(i, j), m_Pover(i, j), i, j);
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
 }
 
 
