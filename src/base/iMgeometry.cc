@@ -129,15 +129,21 @@ void IceModel::update_surface_elevation(const IceModelVec2S &bed,
   assert(bed.get_stencil_width() >= result.get_stencil_width());
   assert(thickness.get_stencil_width() >= result.get_stencil_width());
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // take this opportunity to check that thickness(i, j) >= 0
-    if (thickness(i, j) < 0) {
-      throw RuntimeError::formatted("Thickness negative at point i=%d, j=%d", i, j);
+      // take this opportunity to check that thickness(i, j) >= 0
+      if (thickness(i, j) < 0) {
+        throw RuntimeError::formatted("Thickness negative at point i=%d, j=%d", i, j);
+      }
+      result(i, j) = gc.surface(bed(i, j), thickness(i, j));
     }
-    result(i, j) = gc.surface(bed(i, j), thickness(i, j));
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 //! \brief Adjust ice flow through interfaces of the cell i,j.
