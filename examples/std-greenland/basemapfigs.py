@@ -148,18 +148,19 @@ if field == 'bwprel':
 else:
     myvar = np.squeeze(nc.variables[field][:])
 
-# mask out ice free etc.
-if field == 'surfvelmag':
+# mask out ice free etc.; note 'mask' does not get masked
+if (field == 'surfvelmag'):
     myvar = myvar.transpose()
     thkvar = np.squeeze(nc.variables['thk'][:]).transpose()
     myvar = np.ma.array(myvar, mask=(thkvar == 0.0))
-elif (field == 'bmelt') | (field == 'bwat'):
-    myvar[myvar < myvmin] = myvmin
+elif (field != 'mask'):
     maskvar = np.squeeze(nc.variables['mask'][:])
-    myvar = np.ma.array(myvar, mask=(maskvar != 2))
-else:
-    maskvar = np.squeeze(nc.variables['mask'][:])
-    myvar = np.ma.array(myvar, mask=(maskvar != 2))
+    if (field == 'bmelt') | (field == 'bwat'):
+        myvar[myvar < myvmin] = myvmin
+    if (field == 'usurf'):
+        myvar = np.ma.array(myvar, mask=(maskvar == 4))
+    else:
+        myvar = np.ma.array(myvar, mask=(maskvar != 2))
 
 m = Basemap(width=1.1*width,    # width in projection coordinates, in meters
             height=1.05*height,      # height
