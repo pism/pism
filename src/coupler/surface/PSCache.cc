@@ -138,23 +138,23 @@ MaxTimestep Cache::max_timestep_impl(double t) {
 }
 
 void Cache::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  m_mass_flux.copy_to(result);
+  result.copy_from(m_mass_flux);
 }
 
 void Cache::ice_surface_temperature(IceModelVec2S &result) {
-  m_temperature.copy_to(result);
+  result.copy_from(m_temperature);
 }
 
 void Cache::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
-  m_liquid_water_fraction.copy_to(result);
+  result.copy_from(m_liquid_water_fraction);
 }
 
 void Cache::mass_held_in_surface_layer(IceModelVec2S &result) {
-  m_mass_held_in_surface_layer.copy_to(result);
+  result.copy_from(m_mass_held_in_surface_layer);
 }
 
 void Cache::surface_layer_thickness(IceModelVec2S &result) {
-  m_surface_layer_thickness.copy_to(result);
+  result.copy_from(m_surface_layer_thickness);
 }
 
 

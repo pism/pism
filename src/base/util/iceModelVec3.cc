@@ -79,10 +79,9 @@ void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
   m_grid = &my_grid;
 
   zlevels = levels;
-  m_n_levels = (unsigned int)zlevels.size();
   m_da_stencil_width = stencil_width;
 
-  m_da = m_grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->zlevels.size(), this->m_da_stencil_width);
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
@@ -120,10 +119,11 @@ void IceModelVec3D::set_column(int i, int j, double c) {
   double ***arr = (double***) array;
 
   if (c == 0.0) {
-    ierr = PetscMemzero(arr[i][j], m_n_levels * sizeof(double));
+    ierr = PetscMemzero(arr[i][j], zlevels.size() * sizeof(double));
     PISM_CHK(ierr, "PetscMemzero");
   } else {
-    for (unsigned int k=0; k < m_n_levels; k++) {
+    unsigned int nlevels = zlevels.size();
+    for (unsigned int k=0; k < nlevels; k++) {
       arr[i][j][k] = c;
     }
   }
@@ -143,7 +143,8 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
 
   double ***arr = (double***) array;
   if (z >= zlevels.back()) {
-    return arr[i][j][m_n_levels - 1];
+    unsigned int nlevels = zlevels.size();
+    return arr[i][j][nlevels - 1];
   } else if (z <= zlevels.front()) {
     return arr[i][j][0];
   }
@@ -243,7 +244,7 @@ void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
   check_array_indices(i, j, 0);
 #endif
   double ***arr = (double***) array;
-  PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, m_n_levels*sizeof(double));
+  PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, zlevels.size()*sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 

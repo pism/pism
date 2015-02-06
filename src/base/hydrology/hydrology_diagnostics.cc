@@ -133,7 +133,7 @@ IceModelVec::Ptr Hydrology_hydrobmelt::compute() {
   result->write_in_glaciological_units = true;
 
   // the value reported diagnostically is merely the last value filled
-  (model->m_bmelt_local).copy_to(*result);
+  result->copy_from(model->m_bmelt_local);
 
   return result;
 }
@@ -154,7 +154,7 @@ IceModelVec::Ptr Hydrology_hydroinput::compute() {
   result->write_in_glaciological_units = true;
 
   // the value reported diagnostically is merely the last value filled
-  (model->m_total_input).copy_to(*result);
+  result->copy_from(model->m_total_input);
 
   return result;
 }

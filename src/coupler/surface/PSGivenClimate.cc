@@ -86,11 +86,11 @@ void Given::update_impl(double my_t, double my_dt) {
 }
 
 void Given::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  climatic_mass_balance->copy_to(result);
+  result.copy_from(*climatic_mass_balance);
 }
 
 void Given::ice_surface_temperature(IceModelVec2S &result) {
-  ice_surface_temp->copy_to(result);
+  result.copy_from(*ice_surface_temp);
 }
 
 } // end of namespace surface

@@ -111,8 +111,8 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
     if (m_t < m_grid.time->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
-      temp.copy_to(temp_0);
-      mass_flux.copy_to(mass_flux_0);
+      temp_0.copy_from(temp);
+      mass_flux_0.copy_from(mass_flux);
     }
   }
 
@@ -134,11 +134,11 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
 }
 
 void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  mass_flux.copy_to(result);
+  result.copy_from(mass_flux);
 }
 
 void StuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
-  temp.copy_to(result);
+  result.copy_from(temp);
 }
 
 void StuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {

@@ -112,15 +112,15 @@ void Cache::sea_level_elevation_impl(double &result) {
 }
 
 void Cache::shelf_base_temperature_impl(IceModelVec2S &result) {
-  m_shelf_base_temperature.copy_to(result);
+  result.copy_from(m_shelf_base_temperature);
 }
 
 void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) {
-  m_shelf_base_mass_flux.copy_to(result);
+  result.copy_from(m_shelf_base_mass_flux);
 }
 
 void Cache::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
-  m_melange_back_pressure_fraction.copy_to(result);
+  result.copy_from(m_melange_back_pressure_fraction);
 }
 
 

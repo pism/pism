@@ -43,7 +43,6 @@ IceModelVec::IceModelVec() {
 
   m_has_ghosts = true;
 
-  m_n_levels = 1;
   m_name = "unintialized variable";
 
   // would resize "vars", but "grid" is not initialized, and so we
@@ -78,10 +77,6 @@ const IceGrid* IceModelVec::get_grid() const {
 
 unsigned int IceModelVec::get_ndof() const {
   return m_dof;
-}
-
-int IceModelVec::nlevels() const {
-  return m_n_levels;
 }
 
 std::vector<double> IceModelVec::get_levels() const {
@@ -277,10 +272,10 @@ void  IceModelVec::copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) c
   assert(m_v != NULL);
 
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // m_n_levels == 1. For 3D fields, m_dof == 1 (all 3D fields are
-  // scalar) and m_n_levels corresponds to dof of the underlying PETSc
+  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max(m_dof, m_n_levels);
+  unsigned int N = std::max((size_t)m_dof, zlevels.size());
 
   this->get_dof(destination_da, destination, 0, N);
 }
@@ -360,22 +355,17 @@ void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
   inc_state_counter();          // mark as modified
 }
 
-//! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
-void IceModelVec::copy_to(IceModelVec &destination) const {
-  PetscErrorCode ierr;
-  assert(m_v != NULL && destination.m_v != NULL);
-
-  checkCompatibility("copy_to", destination);
-
-  ierr = VecCopy(m_v, destination.m_v);
-  PISM_CHK(ierr, "VecCopy");
-
-  destination.inc_state_counter();          // mark as modified
-}
-
 //! Result: v <- source.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 void  IceModelVec::copy_from(const IceModelVec &source) {
-  source.copy_to(*this);
+  PetscErrorCode ierr;
+  assert(m_v != NULL && source.m_v != NULL);
+
+  checkCompatibility("copy_from", source);
+
+  ierr = VecCopy(source.m_v, m_v);
+  PISM_CHK(ierr, "VecCopy");
+
+  this->inc_state_counter();          // mark as modified
 }
 
 //! @brief Get the stencil width of the current IceModelVec. Returns 0
@@ -756,10 +746,10 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
     ghost_width = m_da_stencil_width;
   }
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // m_n_levels == 1. For 3D fields, m_dof == 1 (all 3D fields are
-  // scalar) and m_n_levels corresponds to dof of the underlying PETSc
+  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max(m_dof, m_n_levels);
+  unsigned int N = std::max((size_t)m_dof, zlevels.size());
 
   bool out_of_range = (i < m_grid->xs() - ghost_width) ||
     (i > m_grid->xs() + m_grid->xm() + ghost_width) ||

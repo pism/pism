@@ -307,7 +307,7 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
 
 //! Copies the W variable, the modeled transportable water layer thickness.
 void Routing::subglacial_water_thickness(IceModelVec2S &result) {
-  m_W.copy_to(result);
+  result.copy_from(m_W);
 }
 
 
@@ -808,7 +808,7 @@ void Routing::update_impl(double icet, double icedt) {
 
     // transfer new into old
     m_Wnew.update_ghosts(m_W);
-    m_Wtilnew.copy_to(m_Wtil);
+    m_Wtil.copy_from(m_Wtilnew);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

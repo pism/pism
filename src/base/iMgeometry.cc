@@ -532,7 +532,7 @@ void IceModel::massContExplicitStep() {
   surface->ice_surface_mass_flux(climatic_mass_balance);
 
   IceModelVec2S &vHnew = vWork2d[0];
-  ice_thickness.copy_to(vHnew);
+  vHnew.copy_from(ice_thickness);
 
   IceModelVec2S &H_residual = vWork2d[1];
 

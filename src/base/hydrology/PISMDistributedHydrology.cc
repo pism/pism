@@ -199,7 +199,7 @@ void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
 
 //! Copies the P state variable which is the modeled water pressure.
 void Distributed::subglacial_water_pressure(IceModelVec2S &result) {
-  m_P.copy_to(result);
+  result.copy_from(m_P);
 }
 
 
@@ -488,7 +488,7 @@ void Distributed::update_impl(double icet, double icedt) {
 
     // transfer new into old
     m_Wnew.update_ghosts(m_W);
-    m_Wtilnew.copy_to(m_Wtil);
+    m_Wtil.copy_from(m_Wtilnew);
     m_Pnew.update_ghosts(m_P);
 
     ht += hdt;

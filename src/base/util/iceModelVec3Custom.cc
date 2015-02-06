@@ -59,11 +59,10 @@ void IceModelVec3Custom::create(const IceGrid &mygrid,
   m_grid         = &mygrid;
   m_name       = short_name;
   zlevels      = my_zlevels;
-  m_n_levels   = zlevels.size();
 
   m_da_stencil_width = 1;
 
-  m_da = m_grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->zlevels.size(), this->m_da_stencil_width);
 
   ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");

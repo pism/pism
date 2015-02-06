@@ -136,8 +136,8 @@ void IceModelVec2V::add(double alpha, const IceModelVec &x, IceModelVec &result)
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
-void IceModelVec2V::copy_to(IceModelVec &destination) const {
-  return copy_2d<IceModelVec2V>(this, &destination);
+void IceModelVec2V::copy_from(const IceModelVec &source) {
+  return copy_2d<IceModelVec2V>(&source, this);
 }
 
 } // end of namespace pism

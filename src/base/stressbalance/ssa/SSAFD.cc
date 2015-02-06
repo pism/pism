@@ -867,7 +867,7 @@ void SSAFD::solve() {
 
   // Store away old SSA velocity (it might be needed in case a solver
   // fails).
-  m_velocity.copy_to(m_velocity_old);
+  m_velocity_old.copy_from(m_velocity);
 
   // These computations do not depend on the solution, so they need to
   // be done once.
@@ -970,7 +970,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     very_verbose = getVerbosityLevel() > 2;
 
   // set the initial guess:
-  m_velocity.copy_to(m_velocity_global);
+  m_velocity_global.copy_from(m_velocity);
 
   m_stdout_ssa.clear();
 
@@ -992,7 +992,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     }
 
     // in preparation of measuring change of effective viscosity:
-    nuH.copy_to(nuH_old);
+    nuH_old.copy_from(nuH);
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
     assemble_matrix(true, m_A);
@@ -1044,7 +1044,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.
-    m_velocity_global.copy_to(m_velocity);
+    m_velocity.copy_from(m_velocity_global);
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc == true) {
@@ -1805,7 +1805,7 @@ IceModelVec::Ptr SSAFD_nuH::compute() {
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  model->nuH.copy_to(*result);
+  result->copy_from(model->nuH);
 
   return result;
 }

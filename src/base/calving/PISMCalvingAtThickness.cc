@@ -60,7 +60,7 @@ void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
   MaskQuery M(m_old_mask);
 
   // this call fills ghosts of m_old_mask
-  pism_mask.copy_to(m_old_mask);
+  m_old_mask.copy_from(pism_mask);
 
   IceModelVec::AccessList list;
   list.add(pism_mask);

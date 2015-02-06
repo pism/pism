@@ -182,7 +182,6 @@ public:
   //! \brief Returns the number of degrees of freedom per grid point.
   unsigned int get_ndof() const;
   unsigned int get_stencil_width() const;
-  int nlevels() const;
   std::vector<double> get_levels() const;
 
   virtual Range range() const;
@@ -192,10 +191,11 @@ public:
   virtual void  squareroot();
   virtual void  shift(double alpha);
   virtual void  scale(double alpha);
+  // This is used in Python code (as a local-to-global replacement),
+  // but we should be able to get rid of it.
   void copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) const;
   void copy_from_vec(Vec source);
-  virtual void copy_to(IceModelVec &destination) const;
-  void copy_from(const IceModelVec &source);
+  virtual void copy_from(const IceModelVec &source);
   Vec get_vec();
   petsc::DM::Ptr get_dm() const;
   virtual void  set_name(const std::string &name, int component = 0);
@@ -247,7 +247,6 @@ protected:
                                      double default_value = 0.0);
   virtual void write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
   std::vector<double> zlevels;
-  unsigned int m_n_levels;                 //!< number of vertical levels
 
   petsc::Vec  m_v;                       //!< Internal storage
   std::string m_name;
@@ -371,7 +370,7 @@ public:
   petsc::Vec::Ptr allocate_proc0_copy() const;
   void put_on_proc0(Vec onp0) const;
   void get_from_proc0(Vec onp0);
-  virtual void  copy_to(IceModelVec &destination) const;
+  virtual void copy_from(const IceModelVec &source);
   double** get_array();
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
   virtual void set_to_magnitude(const IceModelVec2V &input);
@@ -441,7 +440,7 @@ public:
 
   void create(const IceGrid &my_grid, const std::string &my_short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  virtual void copy_to(IceModelVec &destination) const;
+  virtual void copy_from(const IceModelVec &source);
   virtual void add(double alpha, const IceModelVec &x);
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
 

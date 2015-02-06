@@ -42,9 +42,9 @@ void IceModel::do_calving() {
     &old_Href = vWork2d[1];
 
   if (compute_cumulative_discharge) {
-    ice_thickness.copy_to(old_H);
+    old_H.copy_from(ice_thickness);
     if (vHref.was_created()) {
-      vHref.copy_to(old_Href);
+      old_Href.copy_from(vHref);
     }
   }
 

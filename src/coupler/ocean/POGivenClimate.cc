@@ -84,12 +84,12 @@ void Given::sea_level_elevation_impl(double &result) {
 }
 
 void Given::shelf_base_temperature_impl(IceModelVec2S &result) {
-  shelfbtemp->copy_to(result);
+  result.copy_from(*shelfbtemp);
 }
 
 
 void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) {
-  shelfbmassflux->copy_to(result);
+  result.copy_from(*shelfbmassflux);
 }
 
 void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) {

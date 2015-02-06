@@ -438,7 +438,7 @@ void IceCompModel::initTestABCDEH() {
     bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
 
     if (testname == 'H') {
-      ice_thickness.copy_to(bed_topography);
+      bed_topography.copy_from(ice_thickness);
       bed_topography.scale(-f);
     } else {  // flat bed case otherwise
       bed_topography.set(0.0);
@@ -545,7 +545,7 @@ void IceCompModel::initTestL() {
   }
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
-  ice_thickness.copy_to(vHexactL);
+  vHexactL.copy_from(ice_thickness);
 }
 
 //! \brief Tests A and E have a thickness B.C. (ice_thickness == 0 outside a circle of radius 750km).
@@ -617,7 +617,7 @@ void IceCompModel::fillSolnTestABCDH() {
     bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
 
     if (testname == 'H') {
-      ice_thickness.copy_to(bed_topography);
+      bed_topography.copy_from(ice_thickness);
       bed_topography.scale(-f);
     } else {
       bed_topography.set(0.0);

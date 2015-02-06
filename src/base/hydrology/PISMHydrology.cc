@@ -204,7 +204,7 @@ void Hydrology::overburden_pressure(IceModelVec2S &result) {
 
 //! Return the effective thickness of the water stored in till.
 void Hydrology::till_water_thickness(IceModelVec2S &result) {
-  m_Wtil.copy_to(result);
+  result.copy_from(m_Wtil);
 }
 
 

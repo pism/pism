@@ -239,7 +239,7 @@ static void setInitStateF(IceGrid &grid,
 
   thickness->update_ghosts();
 
-  thickness->copy_to(*surface);
+  surface->copy_from(*thickness);
 
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   delete [] T; delete [] dummy5;

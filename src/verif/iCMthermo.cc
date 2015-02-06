@@ -110,7 +110,7 @@ void IceCompModel::initTestFG() {
 
   T3.update_ghosts();
 
-  ice_thickness.copy_to(ice_surface_elevation);
+  ice_surface_elevation.copy_from(ice_thickness);
 }
 
 
@@ -238,7 +238,7 @@ void IceCompModel::fillSolnTestFG() {
   }
 
   ice_thickness.update_ghosts();
-  ice_thickness.copy_to(ice_surface_elevation);
+  ice_surface_elevation.copy_from(ice_thickness);
 
   T3.update_ghosts();
 
@@ -691,7 +691,7 @@ void IceCompModel::initTestsKO() {
 
   geothermal_flux.set(0.042);
   ice_thickness.set(3000.0);
-  ice_thickness.copy_to(ice_surface_elevation);
+  ice_surface_elevation.copy_from(ice_thickness);
 
   fillTemperatureSolnTestsKO();
 }

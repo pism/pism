@@ -652,8 +652,8 @@ void IceModelVec2S::add(double alpha, const IceModelVec &x, IceModelVec &result)
   add_2d<IceModelVec2S>(this, alpha, &x, &result);
 }
 
-void IceModelVec2S::copy_to(IceModelVec &destination) const {
-  copy_2d<IceModelVec2S>(this, &destination);
+void IceModelVec2S::copy_from(const IceModelVec &source) {
+  copy_2d<IceModelVec2S>(&source, this);
 }
 
 // IceModelVec2Stag

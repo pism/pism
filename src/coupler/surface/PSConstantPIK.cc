@@ -118,11 +118,11 @@ void PIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
 }
 
 void PIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  m_climatic_mass_balance.copy_to(result);
+  result.copy_from(m_climatic_mass_balance);
 }
 
 void PIK::ice_surface_temperature(IceModelVec2S &result) {
-  m_ice_surface_temp.copy_to(result);
+  result.copy_from(m_ice_surface_temp);
 }
 
 void PIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {

@@ -131,7 +131,7 @@ void SSAFEM::init_impl() {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  m_velocity.copy_to(m_velocity_global);
+  m_velocity_global.copy_from(m_velocity);
 
   // Store coefficient data at the quadrature points.
   cacheQuadPtValues();
@@ -217,7 +217,7 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  m_velocity_global.copy_to(m_velocity);
+  m_velocity.copy_from(m_velocity_global);
   m_velocity.update_ghosts();
 
   bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");

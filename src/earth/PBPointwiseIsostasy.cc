@@ -42,7 +42,7 @@ void PBPointwiseIsostasy::init_impl() {
   verbPrintf(2, m_grid.com,
              "* Initializing the pointwise isostasy bed deformation model...\n");
 
-  m_thk->copy_to(m_thk_last);
+  m_thk_last.copy_from(*m_thk);
 }
 
 MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) {
@@ -87,8 +87,8 @@ void PBPointwiseIsostasy::update_impl(double my_t, double my_dt) {
   //! Finally, we need to update bed uplift, topg_last and thk_last.
   compute_uplift(dt_beddef);
 
-  m_thk->copy_to(m_thk_last);
-  m_topg.copy_to(m_topg_last);
+  m_thk_last.copy_from(*m_thk);
+  m_topg_last.copy_from(m_topg);
 
   //! Increment the topg state counter. SIAFD relies on this!
   m_topg.inc_state_counter();

@@ -153,12 +153,12 @@ void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const 
 
 //! Copies the stored precipitation field into result.
 void YearlyCycle::mean_precipitation(IceModelVec2S &result) {
-  m_precipitation.copy_to(result);
+  result.copy_from(m_precipitation);
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
 void YearlyCycle::mean_annual_temp(IceModelVec2S &result) {
-  m_air_temp_mean_annual.copy_to(result);
+  result.copy_from(m_air_temp_mean_annual);
 }
 
 void YearlyCycle::init_timeseries(const std::vector<double> &ts) {

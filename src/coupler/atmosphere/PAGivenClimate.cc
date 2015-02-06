@@ -85,15 +85,15 @@ void Given::update_impl(double my_t, double my_dt) {
 }
 
 void Given::mean_precipitation(IceModelVec2S &result) {
-  precipitation->copy_to(result);
+  result.copy_from(*precipitation);
 }
 
 void Given::mean_annual_temp(IceModelVec2S &result) {
-  air_temp->copy_to(result);
+  result.copy_from(*air_temp);
 }
 
 void Given::temp_snapshot(IceModelVec2S &result) {
-  air_temp->copy_to(result);
+  result.copy_from(*air_temp);
 }
 
 void Given::begin_pointwise_access() {

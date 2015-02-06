@@ -51,7 +51,7 @@ void IceModel::calculateFractureDensity() {
 
   list.add(ice_thickness);
   list.add(vFD);
-  vFD.copy_to(vFDnew);
+  vFDnew.copy_from(vFD);
   list.add(vFDnew);
   list.add(vMask);
 
@@ -68,7 +68,7 @@ void IceModel::calculateFractureDensity() {
     list.add(vFE);
     list.add(vFT);
     list.add(vFA);
-    vFA.copy_to(vFAnew);
+    vFAnew.copy_from(vFA);
     list.add(vFAnew);
   }
 

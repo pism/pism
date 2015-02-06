@@ -432,7 +432,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
 
 void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  m_climatic_mass_balance.copy_to(result);
+  result.copy_from(m_climatic_mass_balance);
 }
 
 

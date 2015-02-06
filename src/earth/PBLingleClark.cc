@@ -163,7 +163,7 @@ void PBLingleClark::correct_topg() {
   m_topg.add(1.0, topg_tmp);
 
   // Store the corrected topg as the new "topg_initial".
-  m_topg.copy_to(m_topg_initial);
+  m_topg_initial.copy_from(m_topg);
 
   return;
 }
@@ -210,7 +210,7 @@ void PBLingleClark::update_impl(double my_t, double my_dt) {
 
   //! Finally, we need to update bed uplift and topg_last.
   compute_uplift(dt_beddef);
-  m_topg.copy_to(m_topg_last);
+  m_topg_last.copy_from(m_topg);
 
   //! Increment the topg state counter. SIAFD relies on this!
   m_topg.inc_state_counter();

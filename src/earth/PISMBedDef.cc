@@ -145,8 +145,8 @@ void BedDef::init_impl() {
   regrid("BedDef", m_uplift);
 
   // this should be the last thing we do here
-  m_topg.copy_to(m_topg_initial);
-  m_topg.copy_to(m_topg_last);
+  m_topg_initial.copy_from(m_topg);
+  m_topg_last.copy_from(m_topg);
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).

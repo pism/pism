@@ -58,11 +58,11 @@ PIK::PIK(const IceGrid &g)
 }
 
 void PIK::mean_precipitation(IceModelVec2S &result) {
-  m_precipitation.copy_to(result);
+  result.copy_from(m_precipitation);
 }
 
 void PIK::mean_annual_temp(IceModelVec2S &result) {
-  m_air_temp.copy_to(result);
+  result.copy_from(m_air_temp);
 }
 
 void PIK::begin_pointwise_access() {
