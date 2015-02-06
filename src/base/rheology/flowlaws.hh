@@ -99,14 +99,14 @@ public:
   inline void effective_viscosity(double hardness, double gamma,
                                   double *nu, double *dnu) const {
     const double
-      my_nu = 0.5 * hardness * pow(schoofReg + gamma, viscosity_power);
+      my_nu = 0.5 * hardness * pow(m_schoofReg + gamma, m_viscosity_power);
 
     if (PetscLikely(nu != NULL)) {
       *nu = my_nu;
     }
 
     if (PetscLikely(dnu != NULL)) {
-      *dnu = viscosity_power * my_nu / (schoofReg + gamma);
+      *dnu = m_viscosity_power * my_nu / (m_schoofReg + gamma);
     }
   }
 
@@ -121,10 +121,10 @@ public:
 
   virtual std::string name() const = 0;
   virtual double exponent() const {
-    return n;
+    return m_n;
   }
   virtual double enhancement_factor() const {
-    return e;
+    return m_e;
   }
 
   virtual double hardness_parameter(double E, double p) const;
@@ -133,24 +133,24 @@ public:
                       double pressure, double grainsize) const;
 
 protected:
-  double rho,          //!< ice density
-    beta_CC_grad, //!< Clausius-Clapeyron gradient
-    melting_point_temp;  //!< for water, 273.15 K
-  const EnthalpyConverter *EC;
+  double m_rho,          //!< ice density
+    m_beta_CC_grad, //!< Clausius-Clapeyron gradient
+    m_melting_point_temp;  //!< for water, 273.15 K
+  const EnthalpyConverter *m_EC;
 
   double softness_parameter_paterson_budd(double T_pa) const;
 
-  double schoofLen,schoofVel,schoofReg, viscosity_power,
-    hardness_power,
-    A_cold, A_warm, Q_cold, Q_warm,  // see Paterson & Budd (1982)
-    crit_temp;
+  double m_schoofLen, m_schoofVel, m_schoofReg, m_viscosity_power,
+    m_hardness_power,
+    m_A_cold, m_A_warm, m_Q_cold, m_Q_warm,  // see Paterson & Budd (1982)
+    m_crit_temp;
 
-  double standard_gravity,
-    ideal_gas_constant,
-    e,                          // flow enhancement factor
-    n;                          // power law exponent
+  double m_standard_gravity,
+    m_ideal_gas_constant,
+    m_e,                          // flow enhancement factor
+    m_n;                          // power law exponent
 
-  MPI_Comm com;
+  MPI_Comm m_com;
   std::string m_prefix;           // option (parameter) prefix
 };
 
@@ -205,7 +205,7 @@ protected:
   }
 
   virtual double hardness_parameter_from_temp(double T_pa) const {
-    return pow(softness_parameter_from_temp(T_pa), hardness_power);
+    return pow(softness_parameter_from_temp(T_pa), m_hardness_power);
   }
 
   // special temperature-dependent method
@@ -223,19 +223,19 @@ public:
 
   virtual double averaged_hardness(double, int,
                                    const double*, const double*) const {
-    return hardness_B;
+    return m_hardness_B;
   }
 
   virtual double flow(double stress, double, double, double) const {
-    return softness_A * pow(stress, n-1);
+    return m_softness_A * pow(stress, m_n-1);
   }
 
   virtual double softness_parameter(double, double) const {
-    return softness_A;
+    return m_softness_A;
   }
 
   virtual double hardness_parameter(double, double) const {
-    return hardness_B;
+    return m_hardness_B;
   }
 
   virtual std::string name() const {
@@ -244,11 +244,11 @@ public:
 
 protected:
   virtual double flow_from_temp(double stress, double, double, double) const {
-    return softness_A * pow(stress,n-1);
+    return m_softness_A * pow(stress,m_n-1);
   }
 
 protected:
-  double softness_A, hardness_B;
+  double m_softness_A, m_hardness_B;
 };
 
 //! The Hooke flow law.
@@ -264,7 +264,7 @@ public:
 protected:
   virtual double softness_parameter_from_temp(double T_pa) const;
 
-  double A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke; // constants from Hooke (1981)
+  double m_A_Hooke, m_Q_Hooke, m_C_Hooke, m_K_Hooke, m_Tr_Hooke; // constants from Hooke (1981)
   // R_Hooke is the ideal_gas_constant.
 };
 
@@ -279,7 +279,7 @@ public:
 
   //! Return the temperature T corresponding to a given value A=A(T).
   double tempFromSoftness(double myA) const {
-    return - Q() / (ideal_gas_constant * (log(myA) - log(A())));
+    return - Q() / (m_ideal_gas_constant * (log(myA) - log(A())));
   }
 
   virtual std::string name() const {
@@ -288,22 +288,22 @@ public:
 
 protected:
   virtual double A() const {
-    return A_cold;
+    return m_A_cold;
   }
   virtual double Q() const {
-    return Q_cold;
+    return m_Q_cold;
   }
 
   // takes care of hardness_parameter...
   virtual double softness_parameter_from_temp(double T_pa) const {
-    return A() * exp(-Q()/(ideal_gas_constant * T_pa));
+    return A() * exp(-Q()/(m_ideal_gas_constant * T_pa));
   }
 
 
   // ignores pressure and uses non-pressure-adjusted temperature
   virtual double flow_from_temp(double stress, double temp,
                                 double , double) const {
-    return softness_parameter_from_temp(temp) * pow(stress,n-1);
+    return softness_parameter_from_temp(temp) * pow(stress,m_n-1);
   }
 };
 
@@ -321,10 +321,10 @@ public:
 
 protected:
   virtual double A() const {
-    return A_warm;
+    return m_A_warm;
   }
   virtual double Q() const {
-    return Q_warm;
+    return m_Q_warm;
   }
 };
 
@@ -373,16 +373,16 @@ protected:
                                 double pressure, double gs) const;
   GKparts flowParts(double stress, double temp, double pressure) const;
 
-  double  V_act_vol,  d_grain_size,
+  double  m_V_act_vol,  m_d_grain_size,
   //--- diffusional flow ---
-    diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
+    m_diff_crit_temp, m_diff_V_m, m_diff_D_0v, m_diff_Q_v, m_diff_D_0b, m_diff_Q_b, m_diff_delta,
   //--- dislocation creep ---
-    disl_crit_temp, disl_A_cold, disl_A_warm, disl_n, disl_Q_cold, disl_Q_warm,
+    m_disl_crit_temp, m_disl_A_cold, m_disl_A_warm, m_disl_n, m_disl_Q_cold, m_disl_Q_warm,
   //--- easy slip (basal) ---
-    basal_A, basal_n, basal_Q,
+    m_basal_A, m_basal_n, m_basal_Q,
   //--- grain boundary sliding ---
-    gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold,
-    p_grain_sz_exp, gbs_Q_warm;
+    m_gbs_crit_temp, m_gbs_A_cold, m_gbs_A_warm, m_gbs_n, m_gbs_Q_cold,
+    m_p_grain_sz_exp, m_gbs_Q_warm;
 };
 
 //! Derived class of GoldsbyKohlstedt for testing purposes only.
@@ -402,7 +402,7 @@ protected:
   virtual double flow_from_temp(double stress, double temp,
                                 double pressure, double gs) const;
 
-  double d_grain_size_stripped;
+  double m_d_grain_size_stripped;
 };
 
 } // end of namespace rheology
