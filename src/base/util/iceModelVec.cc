@@ -170,7 +170,7 @@ NormType IceModelVec::int_to_normtype(int input) const {
   }
 }
 
-//! Computes the norm of an IceModelVec by calling PETSc VecNorm.
+//! Computes the norm of an dof==1 IceModelVec by calling PETSc VecNorm.
 /*!
 See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
 See src/trypetsc/localVecMax.c.
@@ -180,41 +180,7 @@ dof > 1. You might want to use norm_all() for IceModelVec2Stag,
 though.
  */
 double IceModelVec::norm(int n) const {
-  PetscErrorCode ierr;
-  double result;
-  assert(m_v != NULL);
-
-  NormType type = int_to_normtype(n);
-
-  ierr = VecNorm(m_v, type, &result);
-  PISM_CHK(ierr, "VecNorm");
-
-  if (m_has_ghosts == true) {
-    // needs a reduce operation; use GlobalMax if NORM_INFINITY,
-    // otherwise GlobalSum; carefully in NORM_2 case
-
-    switch(type) {
-    case NORM_1: {
-      return GlobalSum(m_grid->com, result);
-    }
-    case NORM_2: {
-      // undo sqrt in VecNorm before sum, sum up, take sqrt
-      return sqrt(GlobalSum(m_grid->com, result*result));
-    }
-    case NORM_INFINITY: {
-      return GlobalMax(m_grid->com, result);
-    }
-    case NORM_1_AND_2:
-      throw RuntimeError::formatted("IceModelVec::norm(...): NORM_1_AND_2 not"
-                                    " implemented (called as %s.norm(...))",
-                                    m_name.c_str());
-    default:
-      throw RuntimeError::formatted("IceModelVec::norm(...): unknown norm type (called as %s.norm(...))",
-                                    m_name.c_str());
-    }
-  } else {
-    return result;
-  }
+  return this->norm_all(n)[0];
 }
 
 //! Result: v <- sqrt(v), elementwise.  Calls VecSqrt(v).
@@ -811,13 +777,19 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
 
 //! \brief Computes the norm of all components.
 std::vector<double> IceModelVec::norm_all(int n) const {
+  assert(m_v != NULL);
 
   std::vector<double> result(m_dof);
 
   NormType type = this->int_to_normtype(n);
 
-  PetscErrorCode ierr = VecStrideNormAll(m_v, type, &result[0]);
-  PISM_CHK(ierr, "VecStrideNormAll");
+  if (m_dof > 1) {
+    PetscErrorCode ierr = VecStrideNormAll(m_v, type, &result[0]);
+    PISM_CHK(ierr, "VecStrideNormAll");
+  } else {
+    PetscErrorCode ierr = VecNorm(m_v, type, &result[0]);
+    PISM_CHK(ierr, "VecNorm");
+  }
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
@@ -853,7 +825,7 @@ std::vector<double> IceModelVec::norm_all(int n) const {
                                     " (called as %s.norm_all(...))",
                                     m_name.c_str());
     }
-    }
+    } // switch
   } else {
     return result;
   }
