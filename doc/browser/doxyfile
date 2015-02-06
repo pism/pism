@@ -557,7 +557,7 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT = pism_config.md std_names.md mainpage.md bombproof_enth.md vertchange.md \
-        bedrough.md references.md howto.md petsc.md \
+        bedrough.md references.md howto.md petsc.md coding_style.md \
         ${Pism_SOURCE_DIR}/src/
 
 USE_MDFILE_AS_MAINPAGE = mainpage.md
