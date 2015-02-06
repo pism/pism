@@ -46,7 +46,6 @@ namespace pism {
  */
 
 class UnitSystem {
-  friend class Unit;
 public:
   UnitSystem(const std::string &path = "");
 #ifdef PISM_USE_TR1
