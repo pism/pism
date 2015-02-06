@@ -83,7 +83,7 @@ def prepare_output_file(nc, x, y, include_vel_bc=True):
     attrs = {'long_name'     : "Dirichlet boundary condition locations",
              "units"         : "1",
              "_FillValue"    : 0}
-    nc.define_2d_field("bcflag", attrs=attrs)
+    nc.define_2d_field("bc_mask", attrs=attrs)
 
     attrs = {'long_name'     : "X-component of the SSA velocity boundary conditions",
              "units"         : "m/year",

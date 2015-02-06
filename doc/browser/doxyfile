@@ -109,7 +109,7 @@ ALWAYS_DETAILED_SEC    = NO
 # members were ordinary class members. Constructors, destructors and assignment
 # operators of the base classes will not be shown.
 
-INLINE_INHERITED_MEMB  = NO
+INLINE_INHERITED_MEMB  = YES
 
 # If the FULL_PATH_NAMES tag is set to YES then Doxygen will prepend the full
 # path before files name in the file list and in the header files. If set
@@ -175,7 +175,7 @@ INHERIT_DOCS           = YES
 # a new page for each member. If set to NO, the documentation of a member will
 # be part of the file/class/namespace that contains it.
 
-SEPARATE_MEMBER_PAGES  = NO
+SEPARATE_MEMBER_PAGES  = YES
 
 # The TAB_SIZE tag can be used to set the number of spaces in a tab.
 # Doxygen uses this value to replace tabs by spaces in code fragments.
@@ -296,12 +296,12 @@ EXTRACT_ALL            = ${Pism_DOXYGEN_EXTRACT_ALL}
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class
 # will be included in the documentation.
 
-EXTRACT_PRIVATE        = YES
+EXTRACT_PRIVATE        = NO
 
 # If the EXTRACT_STATIC tag is set to YES all static members of a file
 # will be included in the documentation.
 
-EXTRACT_STATIC         = YES
+EXTRACT_STATIC         = NO
 
 # If the EXTRACT_LOCAL_CLASSES tag is set to YES classes (and structs)
 # defined locally in source files will be included in the documentation.
@@ -372,7 +372,7 @@ CASE_SENSE_NAMES       = YES
 # will show members with their full class and namespace scopes in the
 # documentation. If set to YES the scope will be hidden.
 
-HIDE_SCOPE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
 
 # If the SHOW_INCLUDE_FILES tag is set to YES (the default) then Doxygen
 # will put a list of the files that are included by a file in the documentation
@@ -557,7 +557,7 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT = pism_config.md std_names.md mainpage.md bombproof_enth.md vertchange.md \
-        bedrough.md references.md howto.md petsc.md \
+        bedrough.md references.md howto.md petsc.md coding_style.md \
         ${Pism_SOURCE_DIR}/src/
 
 USE_MDFILE_AS_MAINPAGE = mainpage.md

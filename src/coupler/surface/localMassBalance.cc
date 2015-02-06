@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@
 #include <algorithm>
 
 namespace pism {
+namespace surface {
 
 LocalMassBalance::LocalMassBalance(const Config &myconfig)
   : config(myconfig), m_unit_system(config.get_unit_system()),
@@ -200,16 +201,18 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
     melt                    = snow_melted + ice_melted,
     ice_created_by_refreeze = 0.0, runoff = 0.0;
 
-  if (refreeze_ice_melt)
+  if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreezeFrac;
-  else
+  } else {
     ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;
+  }
 
   runoff = melt - ice_created_by_refreeze;
 
   snow_depth -= snow_melted;
-  if (snow_depth < 0.0)
+  if (snow_depth < 0.0) {
     snow_depth = 0.0;
+  }
 
   cumulative_melt   += melt;
   cumulative_runoff += runoff;
@@ -250,7 +253,7 @@ PDDrandMassBalance::~PDDrandMassBalance() {
   guarantee that.
  */
 unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
-  return PetscMax(static_cast<unsigned int>(ceil(dt / seconds_per_day)), 2);
+  return std::max(static_cast<size_t>(ceil(dt / seconds_per_day)), (size_t)2);
 }
 
 /** 
@@ -273,41 +276,42 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
     // average temperature in k-th interval
     double T_k = T[k] + gsl_ran_gaussian(pddRandGen, S[k]); // add random: N(0,sigma)
 
-    if (T_k > pdd_threshold_temp)
+    if (T_k > pdd_threshold_temp) {
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);
+    }
   }
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const Config &myconfig)
-  : grid(g), config(myconfig) {
+FaustoGrevePDDObject::FaustoGrevePDDObject(const IceGrid &g)
+  : m_grid(g), m_config(g.config) {
 
-  beta_ice_w  = config.get("pdd_fausto_beta_ice_w");
-  beta_snow_w = config.get("pdd_fausto_beta_snow_w");
+  beta_ice_w  = m_config.get("pdd_fausto_beta_ice_w");
+  beta_snow_w = m_config.get("pdd_fausto_beta_snow_w");
 
-  T_c         = config.get("pdd_fausto_T_c");
-  T_w         = config.get("pdd_fausto_T_w");
-  beta_ice_c  = config.get("pdd_fausto_beta_ice_c");
-  beta_snow_c = config.get("pdd_fausto_beta_snow_c");
+  T_c         = m_config.get("pdd_fausto_T_c");
+  T_w         = m_config.get("pdd_fausto_T_w");
+  beta_ice_c  = m_config.get("pdd_fausto_beta_ice_c");
+  beta_snow_c = m_config.get("pdd_fausto_beta_snow_c");
 
-  fresh_water_density        = config.get("fresh_water_density");
-  ice_density                = config.get("ice_density");
-  pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
+  fresh_water_density        = m_config.get("fresh_water_density");
+  ice_density                = m_config.get("ice_density");
+  pdd_fausto_latitude_beta_w = m_config.get("pdd_fausto_latitude_beta_w");
 
-  temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
-  temp_mj.set_attrs("internal",
+  m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
+  m_temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
                     "K", "");
 }
 
 
-PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
-                                                         double /* usurf */,
-                                                         double lat, double /* lon */,
-                                                         DegreeDayFactors &ddf) {
+void FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
+                                               double /* usurf */,
+                                               double lat, double /* lon */,
+                                               LocalMassBalance::DegreeDayFactors &ddf) {
 
-  IceModelVec::AccessList list(temp_mj);
-  const double T_mj = temp_mj(i,j);
+  IceModelVec::AccessList list(m_temp_mj);
+  const double T_mj = m_temp_mj(i,j);
 
   if (lat < pdd_fausto_latitude_beta_w) { // case lat < 72 deg N
     ddf.ice  = beta_ice_w;
@@ -321,8 +325,8 @@ PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
       ddf.snow = beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
       const double
-         lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
-         lam_s = (T_mj - T_c) / (T_w - T_c);
+        lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
+        lam_s = (T_mj - T_c) / (T_w - T_c);
       ddf.ice  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
       ddf.snow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;
     }
@@ -334,36 +338,38 @@ PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
   const double iwfactor = fresh_water_density / ice_density;
   ddf.snow *= iwfactor;
   ddf.ice  *= iwfactor;
-  return 0;
 }
 
 
 //! Updates mean July near-surface air temperature.
 /*!
-Unfortunately this duplicates code in PA_SeaRISE_Greenland::update();
+Unfortunately this duplicates code in SeaRISEGreenland::update();
  */
-PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
-                                                    IceModelVec2S *lat, IceModelVec2S *lon) {
+void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
+                                          const IceModelVec2S &lat,
+                                          const IceModelVec2S &lon) {
   const double
-    d_mj     = config.get("snow_temp_fausto_d_mj"),      // K
-    gamma_mj = config.get("snow_temp_fausto_gamma_mj"),  // K m-1
-    c_mj     = config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
-    kappa_mj = config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
+    d_mj     = m_config.get("snow_temp_fausto_d_mj"),      // K
+    gamma_mj = m_config.get("snow_temp_fausto_gamma_mj"),  // K m-1
+    c_mj     = m_config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
+    kappa_mj = m_config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
 
-  IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
+  const IceModelVec2S
+    &h        = surfelev,
+    &lat_degN = lat,
+    &lon_degE = lon;
 
   IceModelVec::AccessList list;
   list.add(h);
   list.add(lat_degN);
   list.add(lon_degE);
-  list.add(temp_mj);
+  list.add(m_temp_mj);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
+    m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
-
-  return 0;
 }
 
+} // end of namespace surface
 } // end of namespace pism

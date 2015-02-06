@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -57,8 +57,8 @@ class testi(PISM.ssa.SSAExactTestCase):
     vecs = self.modeldata.vecs
 
     vecs.bc_mask.set(0)
-    vecs.thickness.set(H0_schoof)
-    vecs.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.thk.set(H0_schoof)
+    vecs.mask.set(PISM.MASK_GROUNDED)
 
     # The finite difference code uses the following flag to treat 
     # the non-periodic grid correctly.
@@ -72,22 +72,22 @@ class testi(PISM.ssa.SSAExactTestCase):
     grid = self.grid
     with PISM.vec.Access(comm=[vecs.tauc]):
       for (i,j) in grid.points():
-        y=grid.y[j]
+        y=grid.y(j)
         vecs.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
     bc_mask = vecs.bc_mask
     vel_bc  = vecs.vel_bc
-    surface = vecs.surface
-    bed     = vecs.bed
+    surface = vecs.surface_altitude
+    bed     = vecs.bedrock_altitude
     grid = self.grid
     with PISM.vec.Access(comm=[surface,bed,vel_bc,bc_mask]):
       for (i,j) in grid.points():
-        x=grid.x[i]; y=grid.y[j]
+        x=grid.x(i); y=grid.y(j)
         (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)
         bed[i,j] = bed_ij
         surface[i,j] = bed_ij + H0_schoof
 
-        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
+        edge = ((j == 0) or (j == grid.My() - 1)) or ((i==0) or (i==grid.Mx()-1));
         if (edge):
           bc_mask[i,j] = 1;
           vel_bc[i,j].u = u;
@@ -103,11 +103,10 @@ if __name__ == '__main__':
 
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Test J"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=11)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="testi.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=11)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="testi.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,11 +39,19 @@ public:
   IceModelVec3Custom();
   virtual ~IceModelVec3Custom();
 
-  virtual PetscErrorCode create(IceGrid &mygrid,
-                                const std::string &short_name,
-                                const std::string &z_name,
-                                const std::vector<double> &my_zlevels,
-                                const std::map<std::string, std::string> &z_attrs);
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceModelVec3Custom> Ptr;
+  typedef std::tr1::shared_ptr<const IceModelVec3Custom> ConstPtr;
+#else
+  typedef std::shared_ptr<IceModelVec3Custom> Ptr;
+  typedef std::shared_ptr<const IceModelVec3Custom> ConstPtr;
+#endif
+
+  virtual void create(const IceGrid &mygrid,
+                      const std::string &short_name,
+                      const std::string &z_name,
+                      const std::vector<double> &my_zlevels,
+                      const std::map<std::string, std::string> &z_attrs);
 };
 
 } // end of namespace pism

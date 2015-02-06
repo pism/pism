@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,37 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace ocean {
+OceanModel::OceanModel(const IceGrid &g)
+  : Component_TS(g), m_sea_level(0) {
+  // empty
+}
+
+OceanModel::~OceanModel() {
+  // empty
+}
+
+void OceanModel::init() {
+  this->init_impl();
+}
+
+double OceanModel::sea_level_elevation() {
+  double result;
+  this->sea_level_elevation_impl(result);
+  return result;
+}
+
+void OceanModel::shelf_base_temperature(IceModelVec2S &result) {
+  this->shelf_base_temperature_impl(result);
+}
+
+void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) {
+  this->shelf_base_mass_flux_impl(result);
+}
+
+void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
+  this->melange_back_pressure_fraction_impl(result);
+}
 
 /** Set `result` to the melange back pressure fraction.
  *
@@ -30,10 +61,9 @@ namespace pism {
  *
  * @return 0 on success
  */
-PetscErrorCode OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = result.set(0.0); CHKERRQ(ierr);
-  return 0;
+void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
+} // end of namespace ocean
 } // end of namespace pism

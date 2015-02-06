@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -45,25 +46,29 @@ namespace pism {
   the factors are independent of location.  If option <tt>-pdd_fausto</tt> is used
   then an object is called which updates these values based on the location.
 */
-class PSTemperatureIndex_Old : public SurfaceModel {
+class TemperatureIndex_Old : public SurfaceModel {
 public:
-  PSTemperatureIndex_Old(IceGrid &g, const Config &conf);
-  virtual ~PSTemperatureIndex_Old();
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  TemperatureIndex_Old(const IceGrid &g);
+  virtual ~TemperatureIndex_Old();
+  virtual void init();
+  virtual MaxTimestep max_timestep(double my_t);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
-  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(PetscReal my_t, PetscReal my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);  
+  virtual void update_internal(PetscReal my_t, PetscReal my_dt);
+protected:
   LocalMassBalance_Old *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject_Old *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
-  DegreeDayFactors_Old base_ddf;          //!< holds degree-day factors in location-independent case
+  //! holds degree-day factors in location-independent case
+  LocalMassBalance_Old::DegreeDayFactors base_ddf;
   PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
     base_pddThresholdTemp; //!< K; temps are positive above this
   IceModelVec2S
@@ -73,19 +78,15 @@ protected:
   //! and ice is melted, but some snow melt refreezes)
     runoff_rate;          //!< diagnostic output meltwater runoff rate
 
-  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex_Old must hold these
-  //!pointers in order to use object which
-  //!needs 3D location to determine degree
-  //!day factors.
   bool pdd_annualize;
   PetscReal next_pdd_update;
 
-  NCSpatialVariable ice_surface_temp;
 private:
-  PetscErrorCode allocate_PSTemperatureIndex_Old();
   std::string temperature_name, mass_balance_name;
+  NCSpatialVariable ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSTEMPERATUREINDEX_OLD_H_ */

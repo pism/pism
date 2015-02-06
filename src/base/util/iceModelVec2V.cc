@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,18 @@
 #include "iceModelVec.hh"
 #include "pism_const.hh"
 #include "IceGrid.hh"
+
+#include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
+#include "PISMConfig.hh"
+
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::dynamic_pointer_cast;
+#else
+#include <memory>
+using std::dynamic_pointer_cast;
+#endif
 
 namespace pism {
 
@@ -28,42 +39,35 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   begin_end_access_use_dof = false;
 }
 
-PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
-                                      unsigned int stencil_width) {
-
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, ghostedp,
-                                             stencil_width, m_dof); CHKERRQ(ierr);
-
-  m_metadata[0].init_2d("u" + my_short_name, my_grid);
-  m_metadata[1].init_2d("v" + my_short_name, my_grid);
-
-  m_name = "vel" + my_short_name;
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec2V::get_array(Vector2** &a) {
-  PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
-  a = static_cast<Vector2**>(array);
-  return 0;
-}
-
-PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) const {
-  IceModelVec::AccessList list;
-  list.add(*this);
-  list.add(result);
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i, j) = (*this)(i, j).magnitude();
+IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
+  IceModelVec2V::Ptr result = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
+  if (not (bool)result) {
+    throw RuntimeError("dynamic cast failure");
   }
-
-  return 0;
+  return result;
 }
 
-PetscErrorCode IceModelVec2V::set_name(const std::string &new_name, int component) {
+void IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name,
+                           IceModelVecKind ghostedp,
+                           unsigned int stencil_width) {
+
+  IceModelVec2::create(my_grid, short_name, ghostedp,
+                       stencil_width, m_dof);
+
+  UnitSystem sys = m_grid->config.get_unit_system();
+
+  m_metadata[0] = NCSpatialVariable(sys, "u" + short_name, *m_grid);
+  m_metadata[1] = NCSpatialVariable(sys, "v" + short_name, *m_grid);
+
+  m_name = "vel" + short_name;
+}
+
+Vector2** IceModelVec2V::get_array() {
+  begin_access();
+  return static_cast<Vector2**>(array);
+}
+
+void IceModelVec2V::set_name(const std::string &new_name, int component) {
   (void) component;
 
   std::string tmp = new_name;
@@ -74,18 +78,14 @@ PetscErrorCode IceModelVec2V::set_name(const std::string &new_name, int componen
 
   m_metadata[0].set_name("u" + tmp);
   m_metadata[1].set_name("v" + tmp);
-
-  return 0;
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
-                                     const std::string &standard_name, int component)
-{
+void IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
+                                     const std::string &standard_name, int component) {
   (void) component;
 
-  if (!short_name.empty())
-  {
+  if (!short_name.empty()) {
     std::string tmp = short_name;
     m_name = "vel" + tmp;
 
@@ -104,17 +104,13 @@ PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::s
     m_metadata[0].set_string("standard_name", standard_name);
     m_metadata[1].set_string("standard_name", standard_name);
   }
-
-  return 0;
 }  
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
+void IceModelVec2V::rename(const std::string & short_name,
                                      const std::vector<std::string> &long_names, 
-                                     const std::string & standard_name)
-{
-  if (!short_name.empty())
-  {
+                                     const std::string & standard_name) {
+  if (!short_name.empty()) {
     std::string tmp = short_name;
 
     m_name = "vel" + tmp;
@@ -130,19 +126,17 @@ PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
     m_metadata[0].set_string("standard_name", standard_name);
     m_metadata[1].set_string("standard_name", standard_name);
   }
-
-  return 0;
 }
 
-PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x) {
+void IceModelVec2V::add(double alpha, const IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) const {
+void IceModelVec2V::add(double alpha, const IceModelVec &x, IceModelVec &result) const {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
-PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) const {
+void IceModelVec2V::copy_to(IceModelVec &destination) const {
   return copy_2d<IceModelVec2V>(this, &destination);
 }
 

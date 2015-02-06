@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "ShallowStressBalance.hh"
 
 namespace pism {
+namespace stressbalance {
 
 /*!
  * This class implements an SIA sliding law.
@@ -29,54 +30,42 @@ namespace pism {
  * It is used by pismv test E \b only, hence the code duplication (the surface
  * gradient code is from SIAFD).
  */
-class SIA_Sliding : public ShallowStressBalance
-{
+class SIA_Sliding : public ShallowStressBalance {
 public:
-  SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
+  SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e);
 
   virtual ~SIA_Sliding();
 
-  virtual PetscErrorCode init(Vars &vars);
-
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
-
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
-  { }
-
-  //! Defines requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/)
-  { return 0; }
-
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/)
-  { return 0; }
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
 protected:
-  virtual PetscErrorCode allocate();
+  virtual void init_impl();
 
-  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword,
+                                       std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 
-  virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+
+  virtual void surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual double basalVelocitySIA(double /*x*/, double /*y*/,
                                   double H, double T,
                                   double /*alpha*/, double mu,
                                   double min_T) const;
-  IceModelVec2Int *mask;
-  IceModelVec2S *thickness, *surface, *bed, work_2d;
-  IceModelVec3 *enthalpy;
-  IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
-  double standard_gravity;
+  IceModelVec2S m_work_2d;
+  IceModelVec2Stag m_work_2d_stag[2]; // for the surface gradient
+  double m_standard_gravity;
 
-  bool verification_mode;
-  std::string eisII_experiment;
+  bool m_verification_mode;
+  std::string m_eisII_experiment;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SIA_SLIDING_H_ */

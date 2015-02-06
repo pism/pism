@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2014, 2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -28,46 +28,38 @@
 #include "PISMHydrology.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! \brief A version of the SIA stress balance with tweaks for outlet glacier
 //! simulations.
-class SIAFD_Regional : public SIAFD
-{
+class SIAFD_Regional : public SIAFD {
 public:
-  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c)
-    : SIAFD(g, e, c) {}
-  virtual ~SIAFD_Regional() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e);
+  virtual ~SIAFD_Regional();
+  virtual void init();
 protected:
-  IceModelVec2Int *no_model_mask;
-  IceModelVec2S   *usurfstore;   
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 };
 
 //! \brief A version of the SSA stress balance with tweaks for outlet glacier
 //! simulations.
-class SSAFD_Regional : public SSAFD
-{
+class SSAFD_Regional : public SSAFD {
 public:
-  SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c);
+  SSAFD_Regional(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~SSAFD_Regional();
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
-protected:
-  IceModelVec2Int *no_model_mask;    
-  IceModelVec2S   *usurfstore, *thkstore;
+  virtual void init();
+  virtual void compute_driving_stress(IceModelVec2V &taud);
 };
 
-class RegionalDefaultYieldStress : public MohrCoulombYieldStress
-{
+} // end of namespace stressbalance
+
+class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
 public:
-  RegionalDefaultYieldStress(IceGrid &g, const Config &conf, Hydrology *hydro)
-    : MohrCoulombYieldStress(g, conf, hydro) {}
+  RegionalDefaultYieldStress(const IceGrid &g, hydrology::Hydrology *hydro)
+    : MohrCoulombYieldStress(g, hydro) {}
   virtual ~RegionalDefaultYieldStress() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
-protected:
-  IceModelVec2Int *no_model_mask;
+  virtual void init();
+  virtual const IceModelVec2S& basal_material_yield_stress();
 };
 
 } // end of namespace pism

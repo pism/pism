@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -24,23 +24,25 @@
 #include "Timeseries.hh"
 
 namespace pism {
+namespace atmosphere {
 
-//! \brief A modification of PAYearlyCycle tailored for the
+//! \brief A modification of YearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
 //! present-day temperature parameterization and stored precipitation data.
-class PA_SeaRISE_Greenland : public PAYearlyCycle {
+class SeaRISEGreenland : public YearlyCycle {
 public:
-  PA_SeaRISE_Greenland(IceGrid &g, const Config &conf);
-  virtual ~PA_SeaRISE_Greenland();
+  SeaRISEGreenland(const IceGrid &g);
+  virtual ~SeaRISEGreenland();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void init();
+  virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
-  IceModelVec2S *m_lat, *m_lon, *m_surfelev;
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
 };
 
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif  // __PASeariseGreenland_hh

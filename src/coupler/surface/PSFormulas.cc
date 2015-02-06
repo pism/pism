@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,37 +19,28 @@
 
 #include "PSFormulas.hh"
 #include "PISMAtmosphere.hh"
+#include "pism_const.hh"
 
 namespace pism {
+namespace surface {
 
-PSFormulas::PSFormulas(IceGrid &g, const Config &conf)
-  : SurfaceModel(g, conf) {
-  PetscErrorCode ierr = allocate();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: memory allocation failed");
-    PISMEnd();
-  }
-}
-
-PetscErrorCode PSFormulas::allocate() {
-  PetscErrorCode ierr;
-
-  ierr = m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_attrs("internal",
-                                           "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                           "kg m-2 s-1",
-                                           "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+PSFormulas::PSFormulas(const IceGrid &g)
+  : SurfaceModel(g) {
+  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_climatic_mass_balance.set_attrs("internal",
+                                    "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                    "kg m-2 s-1",
+                                    "land_ice_surface_specific_mass_balance_flux");
+  m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
   m_climatic_mass_balance.write_in_glaciological_units = true;
   m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // annual mean air temperature at "ice surface", at level below all
   // firn processes (e.g. "10 m" or ice temperatures)
-  ierr = m_ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_ice_surface_temp.set_attrs("internal",
-                                      "annual average ice surface temperature, below firn processes",
-                                      "K", ""); CHKERRQ(ierr);
-  return 0;
+  m_ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_ice_surface_temp.set_attrs("internal",
+                               "annual average ice surface temperature, below firn processes",
+                               "K", "");
 }
 
 PSFormulas::~PSFormulas() {
@@ -57,54 +48,47 @@ PSFormulas::~PSFormulas() {
 }
 
 
-void PSFormulas::attach_atmosphere_model(AtmosphereModel *input) {
+void PSFormulas::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
   delete input;
 }
 
-PetscErrorCode PSFormulas::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = m_climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSFormulas::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+  m_climatic_mass_balance.copy_to(result);
 }
 
-PetscErrorCode PSFormulas::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = m_ice_surface_temp.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSFormulas::ice_surface_temperature(IceModelVec2S &result) {
+  m_ice_surface_temp.copy_to(result);
 }
 
-void PSFormulas::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PSFormulas::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
 
   result.insert(m_climatic_mass_balance.metadata().get_name());
   result.insert(m_ice_surface_temp.metadata().get_name());
 }
 
-PetscErrorCode PSFormulas::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PSFormulas::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                              IO_Type nctype) {
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
-    ierr = m_climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
+    m_climatic_mass_balance.define(nc, nctype);
   }
 
   if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
-    ierr = m_ice_surface_temp.define(nc, nctype); CHKERRQ(ierr);
+    m_ice_surface_temp.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSFormulas::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
+void PSFormulas::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
-    ierr = m_climatic_mass_balance.write(nc); CHKERRQ(ierr);
+    m_climatic_mass_balance.write(nc);
   }
 
   if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
-    ierr = m_ice_surface_temp.write(nc); CHKERRQ(ierr);
+    m_ice_surface_temp.write(nc);
   }
-
-  return 0;
 }
 
+} // end of namespace surface
 } // end of namespace pism

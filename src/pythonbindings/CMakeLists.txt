@@ -64,6 +64,21 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     # Get module dependencies:
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
+    list(APPEND PISM_Python_deps
+      petsc_version.i
+      pism_ColumnSystem.i
+      pism_IceGrid.i
+      pism_IceModelVec.i
+      pism_PIO.i
+      pism_SIA.i
+      pism_SSA.i
+      pism_Timeseries.i
+      pism_Vars.i
+      pism_exception.i
+      pism_inverse.i
+      pism_options.i
+      )
+
     if(Pism_USE_TAO)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TAO" APPEND)
     endif()
@@ -76,10 +91,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       CPLUSPLUS ON
       SWIG_MODULE_NAME cpp)
 
-    set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps}) # has to be set *before* calling SWIG_ADD_MODULE
+    # has to be set *before* calling SWIG_ADD_MODULE
+    set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})
     
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc pism_python_signal.cpp)
-    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES} )
+    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
+    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES})
 
     # Disable compiler warnings:
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}

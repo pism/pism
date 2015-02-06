@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace calving {
 
 /**
  * This class implements the "ocean_kill" mechanism: calving at a
@@ -34,21 +35,23 @@ namespace pism {
  */
 class OceanKill : public Component {
 public:
-  OceanKill(IceGrid &g, const Config &conf);
+  OceanKill(const IceGrid &g);
   virtual ~OceanKill();
 
-  virtual PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  virtual void init();
+  void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 
+protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 protected:
   IceModelVec2Int m_ocean_kill_mask;
 };
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMOCEANKILL_H_ */

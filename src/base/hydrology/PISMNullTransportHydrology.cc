@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,36 +19,38 @@
 #include "Mask.hh"
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
+#include "error_handling.hh"
 
 namespace pism {
+namespace hydrology {
 
-NullTransportHydrology::NullTransportHydrology(IceGrid &g, const Config &conf)
-  : Hydrology(g, conf) {
+NullTransport::NullTransport(const IceGrid &g)
+  : Hydrology(g) {
 }
 
-NullTransportHydrology::~NullTransportHydrology() {
+NullTransport::~NullTransport() {
 }
 
-PetscErrorCode NullTransportHydrology::init(Vars &vars) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
-    "* Initializing the null-transport (till only) subglacial hydrology model ...\n"); CHKERRQ(ierr);
-  ierr = Hydrology::init(vars); CHKERRQ(ierr);
-  return 0;
+void NullTransport::init() {
+  verbPrintf(2, m_grid.com,
+             "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
+  Hydrology::init();
 }
 
+MaxTimestep NullTransport::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
-PetscErrorCode NullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
-  return 0;
+void NullTransport::subglacial_water_thickness(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
-PetscErrorCode NullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
-  return 0;
+void NullTransport::subglacial_water_pressure(IceModelVec2S &result) {
+  overburden_pressure(result);
 }
 
 
@@ -61,52 +63,51 @@ where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
 Uses the current mass-continuity timestep `icedt`.  (Compare
-RoutingHydrology::raw_update_Wtil() which will generally be taking time steps
+hydrology::Routing::raw_update_Wtil() which will generally be taking time steps
 determined by the evolving transportable water layer in that model.)
 
 There is no attempt to report on conservation errors because this
-NullTransportHydrology model does not conserve water.
+hydrology::NullTransport model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
+void NullTransport::update_impl(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
-  if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6))
-    return 0;
+  if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
+    return;
+  }
   m_t = icet;
   m_dt = icedt;
 
-  PetscErrorCode ierr;
+  get_input_rate(icet,icedt,m_total_input);
 
-  ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
-
-  const double tillwat_max = config.get("hydrology_tillwat_max"),
-               C           = config.get("hydrology_tillwat_decay_rate");
+  const double tillwat_max = m_config.get("hydrology_tillwat_max"),
+               C           = m_config.get("hydrology_tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
-    PetscPrintf(grid.com,
-       "NullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
-       "            this is not allowed ... ENDING ... \n\n");
-    PISMEnd();
+    throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
+                       "This is not allowed.");
   }
+
+  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
   IceModelVec::AccessList list;
   list.add(*mask);
-  list.add(Wtil);
-  list.add(total_input);
-  for (Points p(grid); p; p.next()) {
+  list.add(m_Wtil);
+  list.add(m_total_input);
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ocean(i,j) || M.ice_free(i,j)) {
-      Wtil(i,j) = 0.0;
+      m_Wtil(i,j) = 0.0;
     } else {
-      Wtil(i,j) += icedt * (total_input(i,j) - C);
-      Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
+      m_Wtil(i,j) += icedt * (m_total_input(i,j) - C);
+      m_Wtil(i,j) = std::min(std::max(0.0, m_Wtil(i,j)), tillwat_max);
     }
   }
-  return 0;
 }
 
 
+} // end of namespace hydrology
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,15 @@
 #ifndef __grid_hh
 #define __grid_hh
 
-#include <petscdmda.h>
 #include <vector>
 #include <string>
 #include <map>
 #include "PISMUnits.hh"
+#include "PISMVars.hh"
 
 #include <cassert>
 
+#include "DM.hh"
 #include "pism_const.hh"
 
 namespace pism {
@@ -34,33 +35,33 @@ namespace pism {
 class Time;
 class Prof;
 class Config;
+class PIO;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
-typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
-/** Wrapper around PETSc's DM. Simplifies memory management.
- *
- * The constructor takes ownership of the dm argument passed to it.
- *
- * The destructor call DMDestroy().
- */
-class PISMDM {
+Periodicity string_to_periodicity(const std::string &keyword);
+SpacingType string_to_spacing(const std::string &keyword);
+
+//! \brief Contains parameters of an input file grid.
+class grid_info {
 public:
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<PISMDM> Ptr;
-  typedef std::tr1::weak_ptr<PISMDM> WeakPtr;
-#else
-  typedef std::shared_ptr<PISMDM> Ptr;
-  typedef std::weak_ptr<PISMDM> WeakPtr;
-#endif
-  PISMDM(DM dm);
-  ~PISMDM();
-  DM get() const;
-  operator DM() const;
+  grid_info();
+  grid_info(const PIO &file, const std::string &variable, Periodicity p);
+  void report(MPI_Comm com, const UnitSystem &s, int threshold) const;
+  // dimension lengths
+  unsigned int t_len, x_len, y_len, z_len;
+  double time,                  //!< current time (seconds)
+    x0,                         //!< x-coordinate of the domain center
+    y0,                         //!< y-coordinate of the domain center
+    Lx,                         //!< domain half-width
+    Ly,                         //!< domain half-height
+    z_min,                      //!< minimal value of the z dimension
+    z_max;                      //!< maximal value of the z dimension
+  std::vector<double> x, y, z;       //!< coordinates
 private:
-  DM m_dm;
+  void reset();
 };
-
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -140,119 +141,190 @@ public:
   IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
 
-  PetscErrorCode report_parameters();
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<IceGrid> Ptr;
+#else
+  typedef std::shared_ptr<IceGrid> Ptr;
+#endif
 
-  PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
-  PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
-  PetscErrorCode compute_vertical_levels();
-  PetscErrorCode compute_horizontal_spacing();
+  static Ptr Shallow(MPI_Comm c, const Config &config,
+                     double Lx, double Ly,
+                     double x0, double y0,
+                     unsigned int Mx, unsigned int My, Periodicity p);
+
+  static Ptr Create(MPI_Comm c, const Config &config,
+                    double Lx, double Ly,
+                    double x0, double y0,
+                    const std::vector<double> &z,
+                    unsigned int Mx, unsigned int My,
+                    Periodicity p);
+
+  static Ptr Create(MPI_Comm c, const Config &config);
+
+  static void FromFile(const PIO &file, const std::string var_name, Periodicity p,
+                       IceGrid *output);
+
+  void set_size_and_extent(double x0, double y0, double Lx, double Ly,
+                           unsigned int Mx, unsigned int My, Periodicity p);
+
+  void set_extent(double x0, double y0, double Lx, double Ly);
+  void set_size(unsigned int Mx, unsigned int My);
+  void set_periodicity(Periodicity p);
+  // only of these two should be called:
+  void set_vertical_levels(const std::vector<double> &z_levels);
+  void set_vertical_levels(double Lz, unsigned int Mz,
+                           SpacingType spacing);
+
+  // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
+  //                          const std::string &filename);
+
+  petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
+
+  void report_parameters() const;
+
+
+  void allocate();  // FIXME! allocate in the constructor!
+
   void compute_point_neighbors(double X, double Y,
                                int &i_left, int &i_right,
                                int &j_bottom, int &j_top);
   std::vector<double> compute_interp_weights(double x, double y);
 
-  void check_parameters();
+  unsigned int kBelowHeight(double height) const;
 
-  void compute_nprocs();
-  void compute_ownership_ranges();
-  PetscErrorCode compute_viewer_size(int target, int &x, int &y);
-  PetscErrorCode printInfo(int verbosity); 
-  PetscErrorCode printVertLevels(int verbosity); 
-  unsigned int kBelowHeight(double height);
-  PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
-  double radius(int i, int j);
-  PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
+  // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
-  UnitSystem get_unit_system() const;
-
+  //! The time management object (hides calendar computations).
+  Time *time;
+  const Config &config;
   Profiling profiling;
 
-  const Config &config;
-  MPI_Comm    com;
-  int rank, size;
-  int    xs,               //!< starting x-index of a processor sub-domain
-    xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
-    ys,                         //!< starting y-index of a processor sub-domain
-    ym; //!< number of grid points (in the y-direction) in a processor sub-domain
+  //! Starting x-index of a processor sub-domain
+  int xs() const;
+  //! Number of grid points (in the x-direction) in a processor sub-domain
+  int xm() const;
+  //! Starting y-index of a processor sub-domain
+  int ys() const;
+  //! Number of grid points (in the y-direction) in a processor sub-domain
+  int ym() const;
 
-  std::vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
+  const std::vector<double>& x() const;
+  double x(size_t i) const;
 
-  std::vector<double> x,             //!< x-coordinates of grid points
-    y;                          //!< y-coordinates of grid points
+  const std::vector<double>& y() const;
+  double y(size_t i) const;
 
-  // Fine vertical grid and the interpolation setup:
-  std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
-  double   dz_fine;                    //!< spacing of the fine vertical grid
-  unsigned int Mz_fine;          //!< number of levels of the fine vertical grid in the ice
+  const std::vector<double>& z() const;
+  double z(size_t i) const;
 
-  // Array ice_storage2fine contains indices of the ice storage vertical grid
-  // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
-  // the storage grid level just below fine-grid level k (zlevels_fine[k]).
-  // Similarly for other arrays below.
-  std::vector<int> ice_storage2fine, ice_fine2storage;
+  double dx() const;
+  double dy() const;
 
-  SpacingType ice_vertical_spacing;
-  Periodicity periodicity;
-  double dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
-    dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
+  unsigned int Mx() const;
+  unsigned int My() const;
+  unsigned int Mz() const;
 
-  double x0,               //!< x-coordinate of the grid center
-    y0;                         //!< y-coordinate of the grid center
+  double Lx() const;
+  double Ly() const;
+  double Lz() const;
+  double x0() const;
+  double y0() const;
 
-  double Lx, //!< half width of the ice model grid in x-direction (m)
-    Ly;           //!< half width of the ice model grid in y-direction (m)
+  double dz_min() const;
+  double dz_max() const;
 
-  int    Mx, //!< number of grid points in the x-direction
-    My;      //!< number of grid points in the y-direction
+  Periodicity periodicity() const;
 
-  int    Nx, //!< number of processors in the x-direction
-    Ny;      //!< number of processors in the y-direction
+  unsigned int size() const;
+  int rank() const;
 
-  std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
-    procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
+  const MPI_Comm com;
 
-  double dx,               //!< horizontal grid spacing
-    dy;                         //!< horizontal grid spacing
+  Vars& variables();
+  const Vars& variables() const;
 
-  double Lz;      //!< max extent of the ice in z-direction (m)
-
-  unsigned int Mz; //!< number of grid points in z-direction in the ice
-
-  Time *time;               //!< The time management object (hides calendar computations)
-
-  //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
-  //! meters around the edge of the computational domain.
-  inline bool in_null_strip(int i, int j, double strip_width) {
-    if (strip_width < 0.0) {
-      return false;
-    }
-    return (x[i] <= x[0] + strip_width || x[i] >= x[Mx-1] - strip_width ||
-            y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
-  }
 private:
-  std::map<int,PISMDM::WeakPtr> m_dms;
-  double m_lambda;         //!< quadratic vertical spacing parameter
-  UnitSystem m_unit_system;
+  // int to match types used by MPI
+  int m_rank, m_size;
+
+  unsigned int m_Nx, //!< number of processors in the x-direction
+    m_Ny;      //!< number of processors in the y-direction
+
+  //! @brief array containing lenghts (in the x-direction) of processor sub-domains
+  std::vector<int> m_procs_x;
+  //! @brief array containing lenghts (in the y-direction) of processor sub-domains
+  std::vector<int> m_procs_y;
+
+  Periodicity m_periodicity;
+
+  std::vector<double> m_x,             //!< x-coordinates of grid points
+    m_y;                          //!< y-coordinates of grid points
+
+  //! vertical grid levels in the ice; correspond to the storage grid
+  std::vector<double> m_z;
+
+  int m_xs, m_xm, m_ys, m_ym;
+  double m_dx,               //!< horizontal grid spacing
+    m_dy;                    //!< horizontal grid spacing
+  //! number of grid points in the x-direction
+  unsigned int m_Mx;
+  //! number of grid points in the y-direction
+  unsigned int m_My;
+
+  //! x-coordinate of the grid center
+  double m_x0;
+  //! y-coordinate of the grid center
+  double m_y0;
+
+  //! half width of the ice model grid in x-direction (m)
+  double m_Lx;
+  //! half width of the ice model grid in y-direction (m)
+  double m_Ly;
+
+  mutable std::map<int,petsc::DM::WeakPtr> m_dms;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.
-  PISMDM::Ptr m_dm_scalar_global;
+  petsc::DM::Ptr m_dm_scalar_global;
 
-  PetscErrorCode get_dzMIN_dzMAX_spacingtype();
-  PetscErrorCode compute_horizontal_coordinates();
-  PetscErrorCode compute_fine_vertical_grid();
-  PetscErrorCode init_interpolation();
+  //! @brief A dictionary with pointers to IceModelVecs, for passing
+  //! them from the one component to another (e.g. from IceModel to
+  //! surface and ocean models).
+  Vars m_variables;
 
-  PetscErrorCode create_dm(int da_dof, int stencil_width, DM &result);
+  void check_parameters();
 
-  int dm_key(int, int);
-  PetscErrorCode init_calendar(std::string &result);
+  void ownership_ranges_from_options();
+  void compute_nprocs();
+  void compute_ownership_ranges();
+
+  void compute_horizontal_spacing();
+  void compute_horizontal_coordinates();
+
+  petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
+
+  int dm_key(int, int) const;
+  std::string init_calendar();
+
+  bool is_equally_spaced() const;
 
   // Hide copy constructor / assignment operator.
-  IceGrid(IceGrid const &);
-  IceGrid & operator=(IceGrid const &);
+  IceGrid(const IceGrid &);
+  IceGrid & operator=(const IceGrid &);
 };
+
+double radius(const IceGrid &grid, int i, int j);
+
+//! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
+//! meters around the edge of the computational domain.
+inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width) {
+  return (strip_width >= 0.0                               &&
+          (grid.x(i)  <= grid.x(0) + strip_width           ||
+           grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
+           grid.y(j)  <= grid.y(0) + strip_width           ||
+           grid.y(j)  >= grid.y(grid.My()-1) - strip_width));
+}
 
 /** Iterator class for traversing the grid, including ghost points.
  *
@@ -262,19 +334,23 @@ private:
  */
 class PointsWithGhosts {
 public:
-  PointsWithGhosts(IceGrid &g, unsigned int stencil_width = 1) {
-    m_i_first = g.xs - stencil_width;
-    m_i_last  = g.xs + g.xm + stencil_width - 1;
-    m_j_first = g.ys - stencil_width;
-    m_j_last  = g.ys + g.ym + stencil_width - 1;
+  PointsWithGhosts(const IceGrid &g, unsigned int stencil_width = 1) {
+    m_i_first = g.xs() - stencil_width;
+    m_i_last  = g.xs() + g.xm() + stencil_width - 1;
+    m_j_first = g.ys() - stencil_width;
+    m_j_last  = g.ys() + g.ym() + stencil_width - 1;
 
     m_i = m_i_first;
     m_j = m_j_first;
     m_done = false;
   }
 
-  int i() const { return m_i; }
-  int j() const { return m_j; }
+  int i() const {
+    return m_i;
+  }
+  int j() const {
+    return m_j;
+  }
 
   void next() {
     assert(m_done == false);
@@ -289,7 +365,9 @@ public:
     }
   }
 
-  operator bool() const { return m_done == false; }
+  operator bool() const {
+    return m_done == false;
+  }
 private:
   int m_i, m_j;
   int m_i_first, m_i_last, m_j_first, m_j_last;
@@ -304,7 +382,7 @@ private:
  */
 class Points : public PointsWithGhosts {
 public:
-  Points(IceGrid &g) : PointsWithGhosts(g, 0) {}
+  Points(const IceGrid &g) : PointsWithGhosts(g, 0) {}
 };
 
 } // end of namespace pism

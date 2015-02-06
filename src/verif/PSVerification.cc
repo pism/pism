@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,46 +32,50 @@
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
+#include "error_handling.hh"
+#include "IceGrid.hh"
+
 namespace pism {
+namespace surface {
 
-const double PSVerification::ablationRateOutside = 0.02; // m/year
-const double PSVerification::secpera = 3.15569259747e7;
+const double Verification::ablationRateOutside = 0.02; // m/year
+const double Verification::secpera = 3.15569259747e7;
 
-const PetscScalar PSVerification::ST = 1.67e-5;
-const PetscScalar PSVerification::Tmin = 223.15;  // K
-const PetscScalar PSVerification::LforFG = 750000; // m
-const PetscScalar PSVerification::ApforG = 200; // m
+const double Verification::ST = 1.67e-5;
+const double Verification::Tmin = 223.15;  // K
+const double Verification::LforFG = 750000; // m
+const double Verification::ApforG = 200; // m
 
-PSVerification::PSVerification(IceGrid &g, const Config &conf,
+Verification::Verification(const IceGrid &g,
                                EnthalpyConverter *EC, int test)
-  : PSFormulas(g, conf), m_testname(test), m_EC(EC) {
+  : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
 }
 
-PSVerification::~PSVerification() {
+Verification::~Verification() {
   // empty
 }
 
-PetscErrorCode PSVerification::init(Vars &vars) {
-  (void) vars;
+void Verification::init() {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  PetscErrorCode ierr = update(grid.time->current(), 0); CHKERRQ(ierr);
-  return 0;
+  update(m_grid.time->current(), 0);
+}
+
+MaxTimestep Verification::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
 }
 
 /** Initialize climate inputs of tests K and O.
  * 
  * @return 0 on success
  */
-PetscErrorCode PSVerification::update_KO() {
-  PetscErrorCode ierr;
+void Verification::update_KO() {
 
-  ierr = m_climatic_mass_balance.set(0.0); CHKERRQ(ierr);
-  ierr = m_ice_surface_temp.set(223.15); CHKERRQ(ierr);
-
-  return 0;
+  m_climatic_mass_balance.set(0.0);
+  m_ice_surface_temp.set(223.15);
 }
 
 /** Update the test L climate input (once).
@@ -81,52 +85,45 @@ PetscErrorCode PSVerification::update_KO() {
  *
  * @return 0 on success
  */
-PetscErrorCode PSVerification::update_L() {
-  PetscErrorCode  ierr;
-  PetscScalar     A0, T0;
+void Verification::update_L() {
+  double     A0, T0;
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, m_EC);
+  rheology::PatersonBuddCold tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  ierr = m_ice_surface_temp.set(T0); CHKERRQ(ierr);
+  m_ice_surface_temp.set(T0);
 
   const double
-    ice_density = config.get("ice_density"),
-    a0          = grid.convert(0.3, "m/year", "m/s"),
+    ice_density = m_config.get("ice_density"),
+    a0          = m_grid.convert(0.3, "m/year", "m/s"),
     L           = 750e3,
     Lsqr        = L * L;
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid.radius(i, j);
+    double r = radius(m_grid, i, j);
     m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
   }
-
-  return 0;
 }
 
-PetscErrorCode PSVerification::update_V() {
-  PetscErrorCode ierr;
+void Verification::update_V() {
 
   // initialize temperature; the value used does not matter
-  ierr = m_ice_surface_temp.set(273.15); CHKERRQ(ierr);
+  m_ice_surface_temp.set(273.15);
 
   // initialize mass balance:
-  ierr = m_climatic_mass_balance.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+  m_climatic_mass_balance.set(0.0);
 }
 
-PetscErrorCode PSVerification::update(PetscReal t, PetscReal dt) {
-  PetscErrorCode  ierr;
+void Verification::update_impl(PetscReal t, PetscReal dt) {
 
   (void) dt;
 
@@ -137,90 +134,92 @@ PetscErrorCode PSVerification::update(PetscReal t, PetscReal dt) {
   case 'D':
   case 'E':
   case 'H':
-    ierr = update_ABCDEH(t); CHKERRQ(ierr);
+    update_ABCDEH(t);
     break;
   case 'F':
   case 'G':
-    ierr = update_FG(t); CHKERRQ(ierr);
+    update_FG(t);
     break;
   case 'K':
   case 'O':
-    ierr = update_KO(); CHKERRQ(ierr);
+    update_KO();
     break;
   case 'L':
     {
-      ierr = update_L(); CHKERRQ(ierr);
+      update_L();
       // return here; note update_L() uses correct units
-      return 0;
+      return;
     }
   case 'V':
-    ierr = update_V(); CHKERRQ(ierr);
+    update_V();
     break;
   default:
-    SETERRQ1(grid.com, 1, "Test %c is not implemented.\n", m_testname);
+    throw RuntimeError::formatted("Test %c is not implemented.", m_testname);
   }
 
   // convert from [m/s] to [kg m-2 s-1]
-  ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
-
-  return 0;
+  m_climatic_mass_balance.scale(m_config.get("ice_density"));
 }
 
 /** Update climate inputs for tests A, B, C, D, E, H.
  *
  * @return 0 on success
  */
-PetscErrorCode PSVerification::update_ABCDEH(double time) {
-  PetscErrorCode ierr;
+void Verification::update_ABCDEH(double time) {
   double         A0, T0, H, accum, dummy1, dummy2, dummy3;
 
-  double f = config.get("ice_density") / config.get("lithosphere_density");
+  double f = m_config.get("ice_density") / m_config.get("lithosphere_density");
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, m_EC);
+  rheology::PatersonBuddCold tgaIce(m_grid.com, "sia_", m_config, m_EC);
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
+  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  ierr = m_ice_surface_temp.set(T0); CHKERRQ(ierr);
+  m_ice_surface_temp.set(T0);
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    PetscScalar xx = grid.x[i], yy = grid.y[j],
-      r = grid.radius(i, j);
-    switch (m_testname) {
-    case 'A':
-      exactA(r, &H, &accum);
-      break;
-    case 'B':
-      exactB(time, r, &H, &accum);
-      break;
-    case 'C':
-      exactC(time, r, &H, &accum);
-      break;
-    case 'D':
-      exactD(time, r, &H, &accum);
-      break;
-    case 'E':
-      exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-      break;
-    case 'H':
-      exactH(f, time, r, &H, &accum);
-      break;
-    default:
-      SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
+      double xx = m_grid.x(i), yy = m_grid.y(j),
+        r = radius(m_grid, i, j);
+      switch (m_testname) {
+      case 'A':
+        exactA(r, &H, &accum);
+        break;
+      case 'B':
+        exactB(time, r, &H, &accum);
+        break;
+      case 'C':
+        exactC(time, r, &H, &accum);
+        break;
+      case 'D':
+        exactD(time, r, &H, &accum);
+        break;
+      case 'E':
+        exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
+        break;
+      case 'H':
+        exactH(f, time, r, &H, &accum);
+        break;
+      default:
+        throw RuntimeError::formatted("test must be A, B, C, D, E, or H, got %c",
+                                      m_testname);
+      }
+      m_climatic_mass_balance(i, j) = accum;
     }
-    m_climatic_mass_balance(i, j) = accum;
+  } catch (...) {
+    loop.failed();
   }
-
-  return 0;
+  loop.check();
 }
 
-PetscErrorCode PSVerification::update_FG(double time) {
-  unsigned int   Mz = grid.Mz;
+void Verification::update_FG(double time) {
+  unsigned int   Mz = m_grid.Mz();
   double         H, accum;
 
   std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
@@ -228,10 +227,10 @@ PetscErrorCode PSVerification::update_FG(double time) {
   IceModelVec::AccessList list(m_climatic_mass_balance);
   list.add(m_ice_surface_temp);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(grid.radius(i, j), 1.0); // avoid singularity at origin
+    double r = std::max(radius(m_grid, i, j), 1.0); // avoid singularity at origin
 
     m_ice_surface_temp(i, j) = Tmin + ST * r;
 
@@ -239,18 +238,17 @@ PetscErrorCode PSVerification::update_FG(double time) {
       accum = - ablationRateOutside / secpera;
     } else {
       if (m_testname == 'F') {
-        bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
+        bothexact(0.0, r, &(m_grid.z()[0]), Mz, 0.0,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       } else {
-        bothexact(time, r, &grid.zlevels[0], Mz, ApforG,
+        bothexact(time, r, &(m_grid.z()[0]), Mz, ApforG,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       }
     }
     m_climatic_mass_balance(i, j) = accum;
 
   }
-
-  return 0;
 }
 
+} // end of namespace surface
 } // end of namespace pism

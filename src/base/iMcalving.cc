@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2015 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 
 #include <cmath>
 #include <petscdmda.h>
-#include <assert.h>
+#include <cassert>
 
 #include "iceModel.hh"
 #include "pism_signal.h"
@@ -31,20 +31,20 @@
 #include "PISMEigenCalving.hh"
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 
-PetscErrorCode IceModel::do_calving() {
-  PetscErrorCode ierr;
+void IceModel::do_calving() {
   bool compute_cumulative_discharge = discharge_flux_2D_cumulative.was_created();
   IceModelVec2S
     &old_H    = vWork2d[0],
     &old_Href = vWork2d[1];
 
   if (compute_cumulative_discharge) {
-    ierr = ice_thickness.copy_to(old_H); CHKERRQ(ierr);
+    ice_thickness.copy_to(old_H);
     if (vHref.was_created()) {
-      ierr = vHref.copy_to(old_Href); CHKERRQ(ierr);
+      vHref.copy_to(old_Href);
     }
   }
 
@@ -52,29 +52,27 @@ PetscErrorCode IceModel::do_calving() {
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (eigen_calving != NULL) {
-    ierr = eigen_calving->update(dt, vMask, vHref, ice_thickness); CHKERRQ(ierr);
+    eigen_calving->update(dt, vMask, vHref, ice_thickness);
   }
 
   if (ocean_kill_calving != NULL) {
-    ierr = ocean_kill_calving->update(vMask, ice_thickness); CHKERRQ(ierr);
+    ocean_kill_calving->update(vMask, ice_thickness);
   }
 
   if (float_kill_calving != NULL) {
-    ierr = float_kill_calving->update(vMask, ice_thickness); CHKERRQ(ierr);
+    float_kill_calving->update(vMask, ice_thickness);
   }
 
   if (thickness_threshold_calving != NULL) {
-    ierr = thickness_threshold_calving->update(vMask, ice_thickness); CHKERRQ(ierr);
+    thickness_threshold_calving->update(vMask, ice_thickness);
   }
 
   // This call removes icebergs, too.
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+  updateSurfaceElevationAndMask();
 
-  ierr = Href_cleanup(); CHKERRQ(ierr);
+  Href_cleanup();
 
-  ierr = update_cumulative_discharge(ice_thickness, old_H, vHref, old_Href); CHKERRQ(ierr);
-
-  return 0;
+  update_cumulative_discharge(ice_thickness, old_H, vHref, old_Href);
 }
 
 /**
@@ -83,9 +81,10 @@ PetscErrorCode IceModel::do_calving() {
  * Href(i,j) > 0 is allowed only if ice_thickness(i,j) == 0 and (i,j) has a
  * floating ice neighbor.
  */
-PetscErrorCode IceModel::Href_cleanup() {
-  if (vHref.was_created() == false)
-    return 0;
+void IceModel::Href_cleanup() {
+  if (vHref.was_created() == false) {
+    return;
+  }
 
   MaskQuery mask(vMask);
 
@@ -106,8 +105,6 @@ PetscErrorCode IceModel::Href_cleanup() {
       vHref(i, j) = 0.0;
     }
   }
-
-  return 0;
 }
 
 /**
@@ -122,11 +119,10 @@ PetscErrorCode IceModel::Href_cleanup() {
  *
  * @return 0 on success
  */
-PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
-                                                     IceModelVec2S &thickness_old,
-                                                     IceModelVec2S &Href,
-                                                     IceModelVec2S &Href_old) {
-  PetscErrorCode ierr;
+void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
+                                           const IceModelVec2S &thickness_old,
+                                           const IceModelVec2S &Href,
+                                           const IceModelVec2S &Href_old) {
 
   MaskQuery mask(vMask);
 
@@ -166,26 +162,26 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
         // for several time-steps as the calving front advances. In
         // this case delta_Href is real, but does not correspond to
         // either loss or gain of mass.)
-        if (delta_Href > 0.0)
+        if (delta_Href > 0.0) {
           delta_Href = 0.0;
+        }
       } else {
         delta_Href = 0.0;
       }
 
       discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
 
-      if (update_2d_discharge)
+      if (update_2d_discharge) {
         discharge_flux_2D_cumulative(i,j) += discharge;
+      }
 
       my_total_discharge += discharge;
     }
   }
 
-  ierr = GlobalSum(grid.com, &my_total_discharge,  &total_discharge); CHKERRQ(ierr);
+  total_discharge = GlobalSum(grid.com, my_total_discharge);
 
   this->discharge_flux_cumulative += total_discharge;
-
-  return 0;
 }
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2015 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,14 +25,7 @@
 #include "PISMVars.hh"
 
 namespace pism {
-
-//! Helper function for initializing a grid with the given dimensions and periodicity.
-//! The grid is shallow (3 z-layers).
-PetscErrorCode init_shallow_grid(IceGrid &grid, 
-                                 double Lx, double Ly, 
-                                 int Mx, int My, Periodicity p);
-
-
+namespace stressbalance {
 
 /*! An SSATestCase manages running an SSA instance against a particular
   test.  Subclasses must implement the following abstract methods to define
@@ -63,56 +56,57 @@ public:
 
   virtual ~SSATestCase();
 
-  virtual PetscErrorCode init(int Mx, int My,SSAFactory ssafactory);
+  virtual void init(int Mx, int My, SSAFactory ssafactory);
 
-  virtual PetscErrorCode run();
+  virtual void run();
 
-  virtual PetscErrorCode report(const std::string &testname);
+  virtual void report(const std::string &testname);
 
-  virtual PetscErrorCode write(const std::string &filename);
+  virtual void write(const std::string &filename);
 
 protected:
 
-  virtual PetscErrorCode buildSSACoefficients();
+  virtual void buildSSACoefficients();
 
   //! Initialize the member variable grid as appropriate for the test case.
-  virtual PetscErrorCode initializeGrid(int Mx,int My) = 0;
+  virtual void initializeGrid(int Mx,int My) = 0;
 
   //! Allocate the member variables basal, ice, and enthalpyconverter as
   //! appropriate for the test case.
-  virtual PetscErrorCode initializeSSAModel() = 0;
+  virtual void initializeSSAModel() = 0;
 
   //! Set up the coefficient variables as appropriate for the test case.
-  virtual PetscErrorCode initializeSSACoefficients() = 0;
+  virtual void initializeSSACoefficients() = 0;
 
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
-  virtual PetscErrorCode exactSolution(int i, int j,
-                                       double x, double y, double *u, double *v);
+  virtual void exactSolution(int i, int j,
+                             double x, double y, double *u, double *v);
 
-  PetscErrorCode report_netcdf(const std::string &testname,
-                               double max_vector,
-                               double rel_vector,
-                               double max_u,
-                               double max_v,
-                               double avg_u,
-                               double avg_v);
-  Config &config;
-  IceGrid grid;
+  void report_netcdf(const std::string &testname,
+                     double max_vector,
+                     double rel_vector,
+                     double max_u,
+                     double max_v,
+                     double avg_u,
+                     double avg_v);
+  MPI_Comm m_com;
+  Config &m_config;
+  IceGrid::Ptr m_grid;
 
   // SSA model variables.
-  EnthalpyConverter *enthalpyconverter;
+  EnthalpyConverter *m_enthalpyconverter;
 
   // SSA coefficient variables.
-  Vars vars;
-  IceModelVec2S  surface, thickness, bed, tauc, melange_back_pressure;
-  IceModelVec3 enthalpy;
-  IceModelVec2V vel_bc;
-  IceModelVec2Int ice_mask, bc_mask;
+  IceModelVec2S  m_surface, m_thickness, m_bed, m_tauc, m_melange_back_pressure;
+  IceModelVec3 m_enthalpy;
+  IceModelVec2V m_bc_values;
+  IceModelVec2Int m_ice_mask, m_bc_mask;
 
-  SSA *ssa;
+  SSA *m_ssa;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSATESTCASE_H_ */

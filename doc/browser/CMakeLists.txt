@@ -25,6 +25,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     vertchange.md
     howto.md
     petsc.md
+    coding_style.md
     pism.sty
     )
 

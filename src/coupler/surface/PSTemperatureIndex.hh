@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -41,53 +42,51 @@ namespace pism {
   precipitation during the ice sheet model time step, plus a variable temperature
   over that time step, to compute melt, refreeze, and surface balance.
 */
-class PSTemperatureIndex : public SurfaceModel {
+class TemperatureIndex : public SurfaceModel {
 public:
-  PSTemperatureIndex(IceGrid &g, const Config &conf);
-  virtual ~PSTemperatureIndex();
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  TemperatureIndex(const IceGrid &g);
+  virtual ~TemperatureIndex();
+  virtual void init();
+  virtual MaxTimestep max_timestep(double my_t);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
-  LocalMassBalance *mbscheme;         //!< mass balance scheme to use
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);  
+  double compute_next_balance_year_start(double time);
+protected:
+  LocalMassBalance *m_mbscheme;         //!< mass balance scheme to use
 
-  FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
+  FaustoGrevePDDObject *m_faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
-  DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
-  double  base_pddStdDev,        //!< K; daily amount of randomness
-    base_pddThresholdTemp, //!< K; temps are positive above this
+  //! holds degree-day factors in location-independent case
+  LocalMassBalance::DegreeDayFactors m_base_ddf;
+
+  double  m_base_pddStdDev,        //!< K; daily amount of randomness
+    m_base_pddThresholdTemp, //!< K; temps are positive above this
     m_next_balance_year_start;
   IceModelVec2S
-  climatic_mass_balance, //!< cached surface mass balance rate
-    accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
-    melt_rate,             //!< diagnostic output melt rate (rate at which snow
+  m_climatic_mass_balance, //!< cached surface mass balance rate
+    m_accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
+    m_melt_rate,             //!< diagnostic output melt rate (rate at which snow
   //!< and ice is melted, but some snow melt refreezes)
-    runoff_rate,           //!< diagnostic output meltwater runoff rate
-    snow_depth;            //!< snow depth (reset once a year)
-  IceModelVec2T air_temp_sd;
-
-  IceModelVec2S *lat, *lon, *usurf;
-  //!< PSTemperatureIndex must hold these pointers in order to use
-  //! object which needs 3D location to determine degree day factors.
-  IceModelVec2Int *mask;
+    m_runoff_rate,           //!< diagnostic output meltwater runoff rate
+    m_snow_depth;            //!< snow depth (reset once a year)
+  IceModelVec2T m_air_temp_sd;
 
   NCSpatialVariable ice_surface_temp;
 
-  bool randomized, randomized_repeatable, fausto_params;
-  bool sd_file_set, sd_period_set, sd_ref_year_set, sd_use_param;
-  int sd_period, sd_period_years, sd_ref_year;
-  double sd_ref_time, sd_param_a, sd_param_b;
-  std::string filename;
-  double compute_next_balance_year_start(double time);
-private:
-  PetscErrorCode allocate_PSTemperatureIndex();
+  bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
+  bool m_sd_use_param, m_sd_file_set;
+  int m_sd_period, m_sd_period_years;
+  double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSTEMPERATUREINDEX_H_ */

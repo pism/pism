@@ -33,39 +33,56 @@
   file containing a complete model state, versus bootstrapping).
 */
 
-#include <signal.h>
-#include <gsl/gsl_rng.h>
-#include <petscsnes.h>
-#include <petsctime.h>          // PetscGetTime()
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
-#include "flowlaws.hh"
-
-
-#include "pism_const.hh"
+// IceModel owns a bunch of fields, so we have to include this.
 #include "iceModelVec.hh"
-#include "PISMConfig.hh"
-#include "PISMVars.hh"
+#include "MaxTimestep.hh"
 
 namespace pism {
 
-// forward declarations
-class IceGrid;
-class EnthalpyConverter;
-class Hydrology;
-class YieldStress;
-class StressBalance;
-class SurfaceModel;
+namespace ocean {
 class OceanModel;
-class BedDef;
-class BedThermalUnit;
-class Diagnostic;
-class TSDiagnostic;
-class IcebergRemover;
+}
+
+namespace surface {
+class SurfaceModel;
+}
+
+namespace stressbalance {
+class StressBalance;
+}
+
+namespace hydrology {
+class Hydrology;
+}
+
+namespace calving {
+class EigenCalving;
 class OceanKill;
 class FloatKill;
 class CalvingAtThickness;
-class EigenCalving;
+class IcebergRemover;
+}
 
+namespace energy {
+class BedThermalUnit;
+}
+
+namespace bed {
+class BedDef;
+}
+
+// forward declarations
+class Config;
+class IceGrid;
+class EnthalpyConverter;
+class YieldStress;
+class Diagnostic;
+class TSDiagnostic;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -75,13 +92,9 @@ class IceModel {
   friend class IceModel_bwp;
   friend class IceModel_cts;
   friend class IceModel_dhdt;
-  friend class IceModel_temp;
-  friend class IceModel_temp_pa;
-  friend class IceModel_temppabase;
   friend class IceModel_enthalpybase;
   friend class IceModel_enthalpysurf;
   friend class IceModel_tempbase;
-  friend class IceModel_tempsurf;
   friend class IceModel_liqfrac;
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
@@ -131,72 +144,73 @@ public:
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
-  virtual PetscErrorCode grid_setup();
+  virtual void grid_setup();
 
-  virtual PetscErrorCode allocate_submodels();
-  virtual PetscErrorCode allocate_enthalpy_converter();
-  virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode allocate_bed_deformation();
-  virtual PetscErrorCode allocate_bedrock_thermal_unit();
-  virtual PetscErrorCode allocate_subglacial_hydrology();
-  virtual PetscErrorCode allocate_basal_yield_stress();
-  virtual PetscErrorCode allocate_couplers();
-  virtual PetscErrorCode allocate_iceberg_remover();
+  const IceGrid& get_grid() const; // FIXME: rename grid to m_grid and this to grid().
+  const EnthalpyConverter& enthalpy_converter() const;
 
-  virtual PetscErrorCode init_couplers();
-  virtual PetscErrorCode init_step_couplers();
-  virtual PetscErrorCode set_grid_from_options();
-  virtual PetscErrorCode set_grid_defaults();
-  virtual PetscErrorCode model_state_setup();
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode allocate_internal_objects();
-  virtual PetscErrorCode misc_setup();
-  virtual PetscErrorCode init_diagnostics();
-  virtual PetscErrorCode init_calving();
+  virtual void allocate_submodels();
+  virtual void allocate_enthalpy_converter();
+  virtual void allocate_stressbalance();
+  virtual void allocate_bed_deformation();
+  virtual void allocate_bedrock_thermal_unit();
+  virtual void allocate_subglacial_hydrology();
+  virtual void allocate_basal_yield_stress();
+  virtual void allocate_couplers();
+  virtual void allocate_iceberg_remover();
 
-  virtual PetscErrorCode list_diagnostics();
+  virtual void init_couplers();
+  virtual void init_step_couplers();
+  virtual void set_grid_from_options();
+  virtual void set_grid_defaults();
+  virtual void model_state_setup();
+  virtual void set_vars_from_options();
+  virtual void allocate_internal_objects();
+  virtual void misc_setup();
+  virtual void init_diagnostics();
+  virtual void init_calving();
+
+  virtual void list_diagnostics();
 
   // see iceModel.cc
-  PetscErrorCode init();
+  void init();
 
 
   /** Run PISM in the "standalone" mode. */
-  virtual PetscErrorCode run();
+  virtual void run();
   /** Advance the current PISM run to a specific time */
-  virtual PetscErrorCode run_to(double time);
-  virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(const std::string &my_executable_short_name);
-  virtual void reset_counters();
+  virtual void run_to(double time);
+  virtual void step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
+  virtual void setExecName(const std::string &my_executable_short_name);
+  void reset_counters();
 
-  // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(const std::string &fname);
-  virtual PetscErrorCode bootstrap_2d(const std::string &fname);
-  virtual PetscErrorCode putTempAtDepth();
+  // see iMbootstrap.cc
+  virtual void bootstrapFromFile(const std::string &fname);
+  virtual void bootstrap_2d(const std::string &fname);
+  virtual void putTempAtDepth();
 
   // see iMoptions.cc
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode output_size_from_option(const std::string &option,
-                                                 const std::string &description,
-                                                 const std::string &default_value,
-                                                 std::set<std::string> &result);
-  virtual PetscErrorCode set_output_size(const std::string &keyword,
-                                         std::set<std::string> &result);
+  virtual void setFromOptions();
+  virtual std::set<std::string> output_size_from_option(const std::string &option,
+                                                        const std::string &description,
+                                                        const std::string &default_value);
+  virtual std::set<std::string> set_output_size(const std::string &keyword);
   virtual std::string get_output_size(const std::string &option);
 
   // see iMutil.cc
-  virtual PetscErrorCode additionalAtStartTimestep();
-  virtual PetscErrorCode additionalAtEndTimestep();
-  virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
+  virtual void additionalAtStartTimestep();
+  virtual void additionalAtEndTimestep();
+  virtual void compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(const std::string &name);
-  virtual PetscErrorCode writeFiles(const std::string &default_filename);
-  virtual PetscErrorCode write_model_state(const PIO &nc);
-  virtual PetscErrorCode write_metadata(const PIO &nc,
-                                        bool write_mapping,
-                                        bool write_run_stats);
-  virtual PetscErrorCode write_variables(const PIO &nc, const std::set<std::string> &vars,
-                                         IO_Type nctype);
+  virtual void initFromFile(const std::string &name);
+  virtual void writeFiles(const std::string &default_filename);
+  virtual void write_model_state(const PIO &nc);
+  virtual void write_metadata(const PIO &nc,
+                              bool write_mapping,
+                              bool write_run_stats);
+  virtual void write_variables(const PIO &nc, const std::set<std::string> &vars,
+                               IO_Type nctype);
 protected:
 
   IceGrid &grid;
@@ -208,26 +222,22 @@ protected:
     mapping,                    //!< grid projection (mapping) parameters
     run_stats;                  //!< run statistics
 
-  Hydrology   *subglacial_hydrology;
+  hydrology::Hydrology   *subglacial_hydrology;
   YieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;
-  BedThermalUnit *btu;
+  energy::BedThermalUnit *btu;
 
-  IcebergRemover     *iceberg_remover;
-  OceanKill          *ocean_kill_calving;
-  FloatKill          *float_kill_calving;
-  CalvingAtThickness *thickness_threshold_calving;
-  EigenCalving       *eigen_calving;
+  calving::IcebergRemover     *iceberg_remover;
+  calving::OceanKill          *ocean_kill_calving;
+  calving::FloatKill          *float_kill_calving;
+  calving::CalvingAtThickness *thickness_threshold_calving;
+  calving::EigenCalving       *eigen_calving;
 
-  SurfaceModel *surface;
-  OceanModel   *ocean;
-  BedDef       *beddef;
+  surface::SurfaceModel *surface;
+  ocean::OceanModel   *ocean;
+  bed::BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
-
-  //! \brief A dictionary with pointers to IceModelVecs below, for passing them
-  //! from the IceModel core to other components (such as surface and ocean models)
-  Vars variables;
 
   // state variables and some diagnostics/internals
   IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
@@ -236,8 +246,6 @@ protected:
     basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     vLongitude, //!< Longitude; ghosted to compute cell areas
     vLatitude,  //!< Latitude; ghosted to compute cell areas
-    bed_topography,             //!< bed topography; ghosted
-    bed_uplift_rate,    //!< bed uplift rate; no ghosts
     geothermal_flux,   //!< geothermal flux; no ghosts
     vFD,    //!< fracture density
     vFG,    //!< fracture growth rate
@@ -262,6 +270,7 @@ protected:
 
 public:
   IceModelVec2S* get_geothermal_flux();
+  void setCTSFromEnthalpy(IceModelVec3 &result);
 protected:
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
@@ -288,7 +297,6 @@ protected:
     t_TempAge,  //!< time of last update for enthalpy/temperature
     dt_TempAge,  //!< enthalpy/temperature and age time-steps
     maxdt_temporary, dt_force,
-    CFLviolcount,    //!< really is just a count, but GlobalSum requires this type
     dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
     gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
@@ -301,7 +309,8 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  unsigned int skipCountDown;
+  unsigned int skipCountDown,
+    CFLviolcount;
 
   // flags
   std::string m_adaptive_timestep_reason;
@@ -312,118 +321,122 @@ protected:
   
 protected:
   // see iceModel.cc
-  virtual PetscErrorCode createVecs();
+  virtual void createVecs();
 
   // see iMadaptive.cc
-  virtual PetscErrorCode max_timestep_cfl_3d(double &dt_result);
-  virtual PetscErrorCode max_timestep_cfl_2d(double &dt_result);
-  virtual PetscErrorCode max_timestep_diffusivity(double &dt_result);
-  virtual PetscErrorCode max_timestep(double &dt_result, unsigned int &skip_counter);
-  virtual PetscErrorCode countCFLViolations(double* CFLviol);
+  virtual double max_timestep_cfl_3d();
+  virtual double max_timestep_cfl_2d();
+  virtual double max_timestep_diffusivity();
+  virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
+  virtual unsigned int countCFLViolations();
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
-  virtual PetscErrorCode ageStep();
+  virtual void ageStep();
 
   // see iMenergy.cc
-  virtual PetscErrorCode energyStep();
-  virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
-  virtual bool checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold);
+  virtual void energyStep();
+  virtual void get_bed_top_temp(IceModelVec2S &result);
+  virtual bool checkThinNeigh(const IceModelVec2S &thickness,
+                              int i, int j, double threshold);
 
-  virtual PetscErrorCode combine_basal_melt_rate();
+  virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
-  virtual PetscErrorCode compute_enthalpy(IceModelVec3 &temperature, IceModelVec3 &liquid_water_fraction,
-                                          IceModelVec3 &result);
-  virtual PetscErrorCode compute_liquid_water_fraction(IceModelVec3 &enthalpy, IceModelVec3 &result);
+  virtual void compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVec3 &result);
+  virtual void compute_enthalpy(const IceModelVec3 &temperature,
+                                const IceModelVec3 &liquid_water_fraction,
+                                IceModelVec3 &result);
+  virtual void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+                                             IceModelVec3 &result);
 
-  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &result);
-
-  virtual PetscErrorCode enthalpyAndDrainageStep(double* vertSacrCount,
-                                                 double* liquifiedVol, double* bulgeCount);
+  virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
+                                       double* liquifiedVol,
+                                       unsigned int *bulgeCount);
 
   // see iMgeometry.cc
-  virtual PetscErrorCode updateSurfaceElevationAndMask();
-  virtual PetscErrorCode update_mask(IceModelVec2S &bed,
-                                     IceModelVec2S &ice_thickness,
-                                     IceModelVec2Int &mask);
-  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed,
-                                                  IceModelVec2S &ice_thickness,
-                                                  IceModelVec2S &result);
+  virtual void updateSurfaceElevationAndMask();
+  virtual void update_mask(const IceModelVec2S &bed,
+                           const IceModelVec2S &ice_thickness,
+                           IceModelVec2Int &mask);
+  virtual void update_surface_elevation(const IceModelVec2S &bed,
+                                        const IceModelVec2S &ice_thickness,
+                                        IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<Vector2> input_velocity,
-                                     planeStar<double> input_flux,
-                                     planeStar<double> &output_velocity,
-                                     planeStar<double> &output_flux);
-  virtual void adjust_flow(planeStar<int> mask,
-                           planeStar<double> &SSA_velocity,
-                           planeStar<double> &SIA_flux);
-  virtual PetscErrorCode massContExplicitStep();
-  virtual PetscErrorCode update_floatation_mask();
-  virtual PetscErrorCode do_calving();
-  virtual PetscErrorCode Href_cleanup();
-  virtual PetscErrorCode update_cumulative_discharge(IceModelVec2S &thickness,
-                                                     IceModelVec2S &thickness_old,
-                                                     IceModelVec2S &Href,
-                                                     IceModelVec2S &Href_old);
+                                     StarStencil<Vector2> input_velocity,
+                                     StarStencil<double> input_flux,
+                                     StarStencil<double> &output_velocity,
+                                     StarStencil<double> &output_flux);
+  virtual void adjust_flow(StarStencil<int> mask,
+                           StarStencil<double> &SSA_velocity,
+                           StarStencil<double> &SIA_flux);
+  virtual void massContExplicitStep();
+  virtual void update_floatation_mask();
+  virtual void do_calving();
+  virtual void Href_cleanup();
+  virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
+                                           const IceModelVec2S &thickness_old,
+                                           const IceModelVec2S &Href,
+                                           const IceModelVec2S &Href_old);
 
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(const std::string &filename);
-  virtual PetscErrorCode regrid(int dimensions);
-  virtual PetscErrorCode regrid_variables(const std::string &filename, const std::set<std::string> &regrid_vars, unsigned int ndims);
-  virtual PetscErrorCode init_enthalpy(const std::string &filename, bool regrid, int last_record);
+  virtual void dumpToFile(const std::string &filename);
+  virtual void regrid(int dimensions);
+  virtual void regrid_variables(const std::string &filename,
+                                const std::set<std::string> &regrid_vars,
+                                unsigned int ndims);
+  virtual void init_enthalpy(const std::string &filename, bool regrid, int last_record);
 
   // see iMfractures.cc
-  virtual PetscErrorCode calculateFractureDensity();
+  virtual void calculateFractureDensity();
 
   // see iMpartgrid.cc
-  double get_threshold_thickness(planeStar<int> Mask,
-                                 planeStar<double> thickness,
-                                 planeStar<double> surface_elevation,
+  double get_threshold_thickness(StarStencil<int> Mask,
+                                 StarStencil<double> thickness,
+                                 StarStencil<double> surface_elevation,
                                  double bed_elevation,
                                  bool reduce_frontal_thickness);
-  virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
-  virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
+  virtual void residual_redistribution(IceModelVec2S &residual);
+  virtual void residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
-  virtual PetscErrorCode energyStats(double iarea,double &gmeltfrac);
-  virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
-  virtual PetscErrorCode summary(bool tempAndAge);
-  virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
-                                          double delta_t,
-                                          double volume, double area,
-                                          double meltfrac, double max_diffusivity);
+  virtual double compute_temperate_base_fraction(double ice_area);
+  virtual double compute_original_ice_fraction(double ice_volume);
+  virtual void summary(bool tempAndAge);
+  virtual void summaryPrintLine(bool printPrototype, bool tempAndAge,
+                                double delta_t,
+                                double volume, double area,
+                                double meltfrac, double max_diffusivity);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  virtual PetscErrorCode compute_ice_volume(double &result);
-  virtual PetscErrorCode compute_sealevel_volume(double &result);
-  virtual PetscErrorCode compute_ice_volume_temperate(double &result);
-  virtual PetscErrorCode compute_ice_volume_cold(double &result);
-  virtual PetscErrorCode compute_ice_area(double &result);
-  virtual PetscErrorCode compute_ice_area_temperate(double &result);
-  virtual PetscErrorCode compute_ice_area_cold(double &result);
-  virtual PetscErrorCode compute_ice_area_grounded(double &result);
-  virtual PetscErrorCode compute_ice_area_floating(double &result);
-  virtual PetscErrorCode compute_ice_enthalpy(double &result);
+  virtual double compute_ice_volume();
+  virtual double compute_sealevel_volume();
+  virtual double compute_ice_volume_temperate();
+  virtual double compute_ice_volume_cold();
+  virtual double compute_ice_area();
+  virtual double compute_ice_area_temperate();
+  virtual double compute_ice_area_cold();
+  virtual double compute_ice_area_grounded();
+  virtual double compute_ice_area_floating();
+  virtual double compute_ice_enthalpy();
 
   // see iMtemp.cc
-  virtual PetscErrorCode excessToFromBasalMeltLayer(const double rho, const double c, const double L,
-                                                    const double z, const double dz,
-                                                    double *Texcess, double *bwat);
-  virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
+  virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
+                                          double z, double dz,
+                                          double *Texcess, double *bwat);
+  virtual void temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount);
 
   // see iMutil.cc
-  virtual int            endOfTimeStepHook();
-  virtual PetscErrorCode stampHistoryCommand();
-  virtual PetscErrorCode stampHistoryEnd();
-  virtual PetscErrorCode stampHistory(const std::string &);
-  virtual PetscErrorCode update_run_stats();
-  virtual PetscErrorCode check_maximum_thickness();
-  virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
+  virtual int endOfTimeStepHook();
+  virtual void stampHistoryCommand();
+  virtual void stampHistoryEnd();
+  virtual void stampHistory(const std::string &);
+  virtual void update_run_stats();
+  virtual void check_maximum_thickness();
+  virtual void check_maximum_thickness_hook(const int old_Mz);
 
 protected:
   // working space (a convenience)
@@ -434,10 +447,10 @@ protected:
   // 3D working space
   IceModelVec3 vWork3d;
 
-  StressBalance *stress_balance;
+  stressbalance::StressBalance *stress_balance;
 
 public:
-  StressBalance* get_stress_balance();
+  stressbalance::StressBalance* get_stress_balance();
 protected:
 
   std::map<std::string,Diagnostic*> diagnostics;
@@ -452,8 +465,8 @@ protected:
   std::vector<double> snapshot_times;
   std::set<std::string> snapshot_vars;
   unsigned int current_snapshot;
-  PetscErrorCode init_snapshots();
-  PetscErrorCode write_snapshot();
+  void init_snapshots();
+  void write_snapshot();
 
   // scalar time-series
   bool save_ts;                 //! true if the user requested time-series output
@@ -461,10 +474,10 @@ protected:
   std::vector<double> ts_times; //! times requested
   unsigned int current_ts;      //! index of the current time
   std::set<std::string> ts_vars;                //! variables requested
-  PetscErrorCode init_timeseries();
-  PetscErrorCode flush_timeseries();
-  PetscErrorCode write_timeseries();
-  PetscErrorCode ts_max_timestep(double my_t, double& my_dt, bool &restrict);
+  void init_timeseries();
+  void flush_timeseries();
+  void write_timeseries();
+  MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
@@ -475,31 +488,32 @@ protected:
   std::set<std::string> extra_vars;
   NCTimeBounds extra_bounds;
   NCTimeseries timestamp;
-  PetscErrorCode init_extras();
-  PetscErrorCode write_extras();
-  PetscErrorCode extras_max_timestep(double my_t, double& my_dt, bool &restrict);
+  void init_extras();
+  void write_extras();
+  MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups
   double backup_interval;
   std::string backup_filename;
   double last_backup_time;
   std::set<std::string> backup_vars;
-  PetscErrorCode init_backups();
-  PetscErrorCode write_backup();
+  void init_backups();
+  void write_backup();
 
   // last time at which PISM hit a multiple of X years, see the
   // timestep_hit_multiples configuration parameter
   double timestep_hit_multiples_last_time;
 
   // diagnostic viewers; see iMviewers.cc
-  virtual PetscErrorCode init_viewers();
-  virtual PetscErrorCode update_viewers();
+  virtual void init_viewers();
+  virtual void update_viewers();
+  virtual void view_field(const IceModelVec *field);
   std::set<std::string> map_viewers, slice_viewers;
   int     id, jd;            // sounding indexes
-  std::map<std::string,PetscViewer> viewers;
+  std::map<std::string,petsc::Viewer::Ptr> viewers;
 
 private:
-  PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
+  double start_time;    // this is used in the wall-clock-time backup code
 };
 
 } // end of namespace pism

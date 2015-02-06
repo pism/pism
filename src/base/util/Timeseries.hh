@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,19 +73,20 @@ class IceGrid;
 */
 class Timeseries {
 public:
-  Timeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
+  Timeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
   Timeseries(MPI_Comm com, const UnitSystem &units_system,
              const std::string &name, const std::string &dimension_name);
   
-  PetscErrorCode read(const PIO &nc, Time *time);
-  PetscErrorCode write(const PIO &nc);
+  void read(const PIO &nc, Time *time);
+  void write(const PIO &nc);
   double operator()(double time);
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N);
-  PetscErrorCode append(double value, double a, double b);
+  void append(double value, double a, double b);
   int length();
-  NCTimeseries& get_metadata();
-  NCTimeseries& get_dimension_metadata();
+
+  NCTimeseries& metadata();
+  NCTimeseries& dimension_metadata();
 
   void scale(double scaling_factor);
 
@@ -102,7 +103,7 @@ protected:
   std::vector<double> time_bounds;
 private:
   void private_constructor(MPI_Comm com, const std::string &name, const std::string &dimension_name);
-  PetscErrorCode report_range();
+  void report_range();
 };
 
 //! A class for storing and writing diagnostic time-series.
@@ -161,14 +162,14 @@ private:
 */
 class DiagnosticTimeseries : public Timeseries {
 public:
-  DiagnosticTimeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
+  DiagnosticTimeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
   ~DiagnosticTimeseries();
 
-  PetscErrorCode init(const std::string &filename);
-  PetscErrorCode append(double V, double a, double b);
-  PetscErrorCode interp(double a, double b);
+  void init(const std::string &filename);
+  void append(double V, double a, double b);
+  void interp(double a, double b);
   void reset();
-  PetscErrorCode flush();
+  void flush();
 
   size_t buffer_size;
   std::string output_filename;

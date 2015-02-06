@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,8 +25,9 @@
 #include <cassert>
 
 namespace pism {
+namespace ocean {
 
-POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
+GivenTH::Constants::Constants(const Config &config) {
   // coefficients of the in situ melting point temperature
   // parameterization:
   a[0] = -0.0575;
@@ -56,82 +57,68 @@ POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
   limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
 }
 
-POGivenTH::POGivenTH(IceGrid &g, const Config &conf)
-  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
-{
-  PetscErrorCode ierr = allocate_POGivenTH(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-}
+GivenTH::GivenTH(const IceGrid &g)
+  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
 
-POGivenTH::~POGivenTH() {
-  // empty
-}
-
-PetscErrorCode POGivenTH::allocate_POGivenTH() {
-  PetscErrorCode ierr;
   option_prefix   = "-ocean_th";
 
   // will be de-allocated by the parent's destructor
-  theta_ocean    = new IceModelVec2T;
-  salinity_ocean = new IceModelVec2T;
+  m_theta_ocean    = new IceModelVec2T;
+  m_salinity_ocean = new IceModelVec2T;
 
-  m_fields["theta_ocean"]     = theta_ocean;
-  m_fields["salinity_ocean"]  = salinity_ocean;
+  m_fields["theta_ocean"]     = m_theta_ocean;
+  m_fields["salinity_ocean"]  = m_salinity_ocean;
 
-  ierr = process_options(); CHKERRQ(ierr);
+  process_options();
 
   std::map<std::string, std::string> standard_names;
-  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
+  set_vec_parameters(standard_names);
 
-  ierr = theta_ocean->create(grid, "theta_ocean", false); CHKERRQ(ierr);
-  ierr = theta_ocean->set_attrs("climate_forcing",
-                                "absolute potential temperature of the adjacent ocean",
-                                "Kelvin", ""); CHKERRQ(ierr);
+  m_theta_ocean->create(m_grid, "theta_ocean");
+  m_theta_ocean->set_attrs("climate_forcing",
+                         "absolute potential temperature of the adjacent ocean",
+                         "Kelvin", "");
 
-  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
-  ierr = salinity_ocean->set_attrs("climate_forcing",
-                                   "salinity of the adjacent ocean",
-                                   "g/kg", ""); CHKERRQ(ierr);
+  m_salinity_ocean->create(m_grid, "salinity_ocean");
+  m_salinity_ocean->set_attrs("climate_forcing",
+                            "salinity of the adjacent ocean",
+                            "g/kg", "");
 
-  ierr = shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = shelfbtemp.set_attrs("climate_forcing",
-                              "absolute temperature at ice shelf base",
-                              "Kelvin", ""); CHKERRQ(ierr);
+  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelfbtemp.set_attrs("climate_forcing",
+                       "absolute temperature at ice shelf base",
+                       "Kelvin", "");
 
-  ierr = shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = shelfbmassflux.set_attrs("climate_forcing",
-                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  return 0;
+  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  m_shelfbmassflux.set_attrs("climate_forcing",
+                           "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                           "kg m-2 s-1", "");
+  m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 }
 
-PetscErrorCode POGivenTH::init(Vars &vars) {
-  PetscErrorCode ierr;
+GivenTH::~GivenTH() {
+  // empty
+}
+
+void GivenTH::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 3eqn melting parameterization ocean model\n"
-                    "  reading ocean temperature and salinity from a file...\n"); CHKERRQ(ierr);
+  verbPrintf(2, m_grid.com,
+             "* Initializing the 3eqn melting parameterization ocean model\n"
+             "  reading ocean temperature and salinity from a file...\n");
 
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
-
-  ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  m_theta_ocean->init(filename, bc_period, bc_reference_time);
+  m_salinity_ocean->init(filename, bc_period, bc_reference_time);
 
   // read time-independent data right away:
-  if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
-    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
+    update(m_grid.time->current(), 0); // dt is irrelevant
   }
-
-  return 0;
 }
 
-void POGivenTH::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  PGivenClimate<POModifier,OceanModel>::add_vars_to_output(keyword, result);
+void GivenTH::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  PGivenClimate<OceanModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
 
   if (keyword != "none" && keyword != "small") {
     result.insert("shelfbtemp");
@@ -139,109 +126,99 @@ void POGivenTH::add_vars_to_output(const std::string &keyword, std::set<std::str
   }
 }
 
-PetscErrorCode POGivenTH::define_variables(const std::set<std::string> &vars,
+void GivenTH::define_variables_impl(const std::set<std::string> &vars,
                                            const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
 
-  ierr = PGivenClimate<POModifier,OceanModel>::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  PGivenClimate<OceanModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, nctype); CHKERRQ(ierr);
+    m_shelfbtemp.define(nc, nctype);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, nctype); CHKERRQ(ierr);
+    m_shelfbmassflux.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode POGivenTH::write_variables(const std::set<std::string> &vars, const PIO& nc) {
-  PetscErrorCode ierr;
+void GivenTH::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
 
-  ierr = PGivenClimate<POModifier,OceanModel>::write_variables(vars, nc); CHKERRQ(ierr);
+  PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
 
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.write(nc); CHKERRQ(ierr);
+    m_shelfbtemp.write(nc);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.write(nc); CHKERRQ(ierr);
+    m_shelfbmassflux.write(nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode POGivenTH::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbtemp.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) {
+  m_shelfbtemp.copy_to(result);
 }
 
-PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbmassflux.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+  m_shelfbmassflux.copy_to(result);
 }
 
-PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
-  result = sea_level;
-  return 0;
+void GivenTH::sea_level_elevation_impl(double &result) {
+  result = m_sea_level;
 }
 
-PetscErrorCode POGivenTH::melange_back_pressure_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
-  return 0;
+void GivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
-PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
+void GivenTH::update_impl(double my_t, double my_dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
-  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
+  update_internal(my_t, my_dt);
 
-  ierr = theta_ocean->average(m_t, m_dt); CHKERRQ(ierr);
-  ierr = salinity_ocean->average(m_t, m_dt); CHKERRQ(ierr);
+  m_theta_ocean->average(m_t, m_dt);
+  m_salinity_ocean->average(m_t, m_dt);
 
-  POGivenTHConstants c(config);
+  Constants c(m_config);
+
+  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(*theta_ocean);
-  list.add(*salinity_ocean);
-  list.add(shelfbtemp);
-  list.add(shelfbmassflux);
+  list.add(*m_theta_ocean);
+  list.add(*m_salinity_ocean);
+  list.add(m_shelfbtemp);
+  list.add(m_shelfbmassflux);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
+    double potential_temperature_celsius = (*m_theta_ocean)(i,j) - 273.15;
 
     double
       shelf_base_temp_celsius = 0.0,
       shelf_base_massflux     = 0.0;
 
-    ierr = pointwise_update(c,
-                            (*salinity_ocean)(i,j),
-                            potential_temperature_celsius,
-                            (*ice_thickness)(i,j),
-                            &shelf_base_temp_celsius,
-                            &shelf_base_massflux); CHKERRQ(ierr);
+    pointwise_update(c,
+                     (*m_salinity_ocean)(i,j),
+                     potential_temperature_celsius,
+                     (*ice_thickness)(i,j),
+                     &shelf_base_temp_celsius,
+                     &shelf_base_massflux);
 
     // Convert from Celsius to Kelvin:
-    shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
-    shelfbmassflux(i,j) = shelf_base_massflux;
+    m_shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
+    m_shelfbmassflux(i,j) = shelf_base_massflux;
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
-
-  return 0;
+  m_shelfbmassflux.scale(m_config.get("ice_density"));
 }
 
 
 //* Evaluate the parameterization of the melting point temperature.
 /** The value returned is in degrees Celsius.
  */
-static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
+static double melting_point_temperature(GivenTH::Constants c,
                                         double salinity, double ice_thickness) {
   return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;
 }
@@ -254,7 +231,7 @@ static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
  *
  * @return shelf base melt rate, in [m/s]
  */
-static double shelf_base_melt_rate(POGivenTH::POGivenTHConstants c,
+static double shelf_base_melt_rate(GivenTH::Constants c,
                                    double sea_water_salinity, double basal_salinity) {
 
   return c.gamma_S * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
@@ -407,13 +384,12 @@ static double shelf_base_melt_rate(POGivenTH::POGivenTHConstants c,
  *
  * @return 0 on success
  */
-PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
-                                           double sea_water_salinity,
-                                           double sea_water_potential_temperature,
-                                           double thickness,
-                                           double *shelf_base_temperature_out,
-                                           double *shelf_base_melt_rate_out) {
-  PetscErrorCode ierr = 0;
+void GivenTH::pointwise_update(const Constants &constants,
+                                 double sea_water_salinity,
+                                 double sea_water_potential_temperature,
+                                 double thickness,
+                                 double *shelf_base_temperature_out,
+                                 double *shelf_base_melt_rate_out) {
 
   assert(thickness >= 0.0);
 
@@ -432,8 +408,8 @@ PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
   }
 
   double basal_salinity = sea_water_salinity;
-  ierr = subshelf_salinity(constants, sea_water_salinity, sea_water_potential_temperature,
-                           thickness, &basal_salinity); CHKERRQ(ierr);
+  subshelf_salinity(constants, sea_water_salinity, sea_water_potential_temperature,
+                    thickness, &basal_salinity);
 
   // Clip basal salinity so that we can use the freezing point
   // temperature parameterization to recover shelf base temperature.
@@ -453,8 +429,6 @@ PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
   if (thickness == 0.0) {
     *shelf_base_melt_rate_out = 0.0;
   }
-
-  return 0;
 }
 
 
@@ -469,19 +443,17 @@ PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
  *
  * @return 0 on success
  */
-PetscErrorCode POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity(const Constants &c,
                                             double sea_water_salinity,
                                             double sea_water_potential_temperature,
                                             double thickness,
                                             double *shelf_base_salinity) {
-  PetscErrorCode ierr;
-
   double basal_salinity = sea_water_salinity;
 
   // first, assume that there is melt at the shelf base:
   {
-    ierr = subshelf_salinity_melt(c, sea_water_salinity, sea_water_potential_temperature,
-                                  thickness, &basal_salinity); CHKERRQ(ierr);
+    subshelf_salinity_melt(c, sea_water_salinity, sea_water_potential_temperature,
+                           thickness, &basal_salinity);
 
     double basal_melt_rate = shelf_base_melt_rate(c, sea_water_salinity, basal_salinity);
 
@@ -489,15 +461,15 @@ PetscErrorCode POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
       // computed basal melt rate is consistent with the assumption used
       // to compute basal salinity
       *shelf_base_salinity = basal_salinity;
-      return 0;
+      return;
     }
   }
 
   // Assuming that there is melt resulted in an inconsistent
   // (salinity, melt_rate) pair. Assume that there is freeze-on at the base.
   {
-    ierr = subshelf_salinity_freeze_on(c, sea_water_salinity, sea_water_potential_temperature,
-                                       thickness, &basal_salinity); CHKERRQ(ierr);
+    subshelf_salinity_freeze_on(c, sea_water_salinity, sea_water_potential_temperature,
+                                thickness, &basal_salinity);
 
     double basal_melt_rate = shelf_base_melt_rate(c, sea_water_salinity, basal_salinity);
 
@@ -505,7 +477,7 @@ PetscErrorCode POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
       // computed basal melt rate is consistent with the assumption
       // used to compute basal salinity
       *shelf_base_salinity = basal_salinity;
-      return 0;
+      return;
     }
   }
 
@@ -513,13 +485,11 @@ PetscErrorCode POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
   // the "diffusion-only" case, which may be less accurate, but is
   // generic and is always consistent.
   {
-    ierr = subshelf_salinity_diffusion_only(c, sea_water_salinity, sea_water_potential_temperature,
-                                            thickness, &basal_salinity); CHKERRQ(ierr);
+    subshelf_salinity_diffusion_only(c, sea_water_salinity, sea_water_potential_temperature,
+                                     thickness, &basal_salinity);
 
     *shelf_base_salinity = basal_salinity;
   }
-
-  return 0;
 }
 
 /** Compute basal salinity in the basal melt case.
@@ -553,7 +523,7 @@ PetscErrorCode POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
  *
  * @return 0 on success
  */
-PetscErrorCode POGivenTH::subshelf_salinity_melt(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity_melt(const Constants &c,
                                                  double sea_water_salinity,
                                                  double sea_water_potential_temperature,
                                                  double thickness,
@@ -583,8 +553,6 @@ PetscErrorCode POGivenTH::subshelf_salinity_melt(const POGivenTHConstants &c,
   assert(S2 > 0.0);             // The bigger root should be positive.
 
   *shelf_base_salinity = S2;
-
-  return 0;
 }
 
 /** Compute basal salinity in the basal freeze-on case.
@@ -612,7 +580,7 @@ PetscErrorCode POGivenTH::subshelf_salinity_melt(const POGivenTHConstants &c,
  *
  * @return 0 on success
  */
-PetscErrorCode POGivenTH::subshelf_salinity_freeze_on(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity_freeze_on(const Constants &c,
                                                       double sea_water_salinity,
                                                       double sea_water_potential_temperature,
                                                       double thickness,
@@ -640,8 +608,6 @@ PetscErrorCode POGivenTH::subshelf_salinity_freeze_on(const POGivenTHConstants &
   assert(S2 > 0.0);             // The bigger root should be positive.
 
   *shelf_base_salinity = S2;
-
-  return 0;
 }
 
 /** @brief Compute basal salinity in the case of no basal melt and no
@@ -674,7 +640,7 @@ PetscErrorCode POGivenTH::subshelf_salinity_freeze_on(const POGivenTHConstants &
  *
  * @return 0 on success
  */
-PetscErrorCode POGivenTH::subshelf_salinity_diffusion_only(const POGivenTHConstants &c,
+void GivenTH::subshelf_salinity_diffusion_only(const Constants &c,
                                                            double sea_water_salinity,
                                                            double sea_water_potential_temperature,
                                                            double thickness,
@@ -707,8 +673,7 @@ PetscErrorCode POGivenTH::subshelf_salinity_diffusion_only(const POGivenTHConsta
   assert(S2 > 0.0);             // The bigger root should be positive.
 
   *shelf_base_salinity = S2;
-
-  return 0;
 }
 
+} // end of namespace ocean
 } // end of namespace pism

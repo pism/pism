@@ -29,7 +29,11 @@ sys.path.insert(0, os.path.abspath('../site-packages'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinxcontrib.bibtex']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.graphviz',
+              'sphinx.ext.inheritance_diagram',
+              'sphinx.ext.pngmath',
+              'sphinxcontrib.bibtex']
 
 
 # -- Math output --------------------------------------------------------------
@@ -53,6 +57,10 @@ rst_prolog = """
 
 .. role:: ncvar
 """
+
+# -- Inheritance graphs ----------------------------------------------------------
+
+inheritance_graph_attrs = dict(rankdir="TD")
 
 # -- breathe is a bridge to doxygen ----------------------------------------------
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,16 @@
 #ifndef __deformation_hh
 #define __deformation_hh
 
-#include "NCVariable.hh"
 #include <petscvec.h>
 #include <fftw3.h>
 
+#include "Vec.hh"
+
 namespace pism {
+
+class Config;
+
+namespace bed {
 
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!
@@ -41,55 +46,56 @@ namespace pism {
   run only on processor zero (or possibly by each processor once each processor 
   owns the entire 2D gridded ice thicknesses and bed elevations.)
 
-  This class SHOULD!
-  include the scatter structures necessary to make this work in parallel.
-
   A test program for this class is pism/src/verif/tryLCbd.cc.
 */
 class BedDeformLC {
 public:
-  BedDeformLC();
+  BedDeformLC(const Config &config,
+                bool myinclude_elastic,
+                int myMx, int myMy, double mydx, double mydy,
+                int myZ,
+                Vec myHstart, Vec mybedstart, Vec myuplift,  // initial state
+                Vec myH,     // generally gets changed by calling program
+                // before each call to step
+                Vec mybed);  // mybed gets modified by step()
   ~BedDeformLC();
-  PetscErrorCode settings(const Config &config,
-                          bool myinclude_elastic,
-                          int myMx, int myMy, double mydx, double mydy,
-                          int myZ,
-                          Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
-                          Vec* myH,     // generally gets changed by calling program
-                          // before each call to step
-                          Vec* mybed);  // mybed gets modified by step()
-  PetscErrorCode alloc();
-  PetscErrorCode init();
-  PetscErrorCode uplift_init();
-  PetscErrorCode step(const double dtyear, const double yearFromStart);
+
+  void uplift_init();
+  void step(double dtyear, double yearFromStart);
 
 protected:
-  bool        include_elastic;
-  int         Mx, My;
-  double   dx, dy;
-  int         Z;                // factor by which fat FFT domain is larger than
-  // region of physical interest
-  double icerho,           // ice density (for computing load from volume)
-    rho,                        // earth density
-    eta,                        // mantle viscosity
-    D;                          // lithosphere flexural rigidity
+  void precompute_coefficients();
+protected:
+  bool        m_include_elastic;
+  int         m_Mx, m_My;
+  double   m_dx, m_dy;
+  //! Factor by which fat FFT domain is larger than region of physical
+  //! interest.
+  int m_Z;
+  double m_icerho,           // ice density (for computing load from volume)
+    m_rho,                        // earth density
+    m_eta,                        // mantle viscosity
+    m_D;                          // lithosphere flexural rigidity
 
 private:
-  double   standard_gravity;
-  bool          settingsDone, allocDone;
-  int      Nx, Ny,         // fat sizes
-    Nxge, Nyge;     // fat with boundary sizes
-  int      i0_plate,  j0_plate; // indices into fat array for corner of thin
-  double   Lx, Ly;         // half-lengths of the physical domain
-  double   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
-  std::vector<double>  cx, cy;        // coeffs of derivatives in Fourier space
-  Vec          *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
-  Vec           Hdiff, dbedElastic, // sequential; working space
-    U, U_start,     // sequential and fat
-    vleft, vright,  // coefficients; sequential and fat
-    lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
-  fftw_complex *fftw_input, *fftw_output, *loadhat; // 2D sequential
-  fftw_plan     dft_forward, dft_inverse;
+  double m_standard_gravity;
+  int m_Nx, m_Ny,         // fat sizes
+    m_Nxge, m_Nyge;     // fat with boundary sizes
+  int      m_i0_plate,  m_j0_plate; // indices into fat array for corner of thin
+  double   m_Lx, m_Ly;         // half-lengths of the physical domain
+  double   m_Lx_fat, m_Ly_fat; // half-lengths of the FFT (spectral) computational domain
+  std::vector<double>  m_cx, m_cy;        // coeffs of derivatives in Fourier space
+
+  // point to storage owned elsewhere
+  Vec m_H, m_bed, m_H_start, m_bed_start, m_uplift;
+
+  petsc::Vec m_Hdiff, m_dbedElastic, // sequential; working space
+    m_U, m_U_start,     // sequential and fat
+    m_vleft, m_vright,  // coefficients; sequential and fat
+    m_lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
+
+  fftw_complex *m_fftw_input, *m_fftw_output, *m_loadhat; // 2D sequential
+  fftw_plan m_dft_forward, m_dft_inverse;
 
   void tweak(double seconds_from_start);
 
@@ -99,44 +105,7 @@ private:
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
 
-class PetscVecAccessor2D {
-public:
-  PetscVecAccessor2D(Vec vec, int my_Mx, int my_My)
-    : Mx(my_Mx), My(my_My), i_offset(0), j_offset(0), v(vec)
-  { VecGetArray2d(v, Mx, My, 0, 0, &array); }
-
-  PetscVecAccessor2D(Vec vec, int my_Mx, int my_My, int i0, int j0)
-    : Mx(my_Mx), My(my_My), i_offset(i0), j_offset(j0), v(vec)
-  { VecGetArray2d(v, Mx, My, 0, 0, &array); }
-
-  ~PetscVecAccessor2D()
-  { VecRestoreArray2d(v, Mx, My, 0, 0, &array); }
-
-  inline double& operator()(int i, int j)
-  { return array[i + i_offset][j + j_offset]; }
-private:
-  int Mx, My, i_offset, j_offset;
-  Vec v;
-  double **array;
-};
-
-template <class T>
-class VecAccessor2D {
-public:
-  VecAccessor2D(T* a, int my_Mx, int my_My, int my_i_offset, int my_j_offset)
-    : Mx(my_Mx), My(my_My), i_offset(my_i_offset), j_offset(my_j_offset), array(a) {}
-
-  VecAccessor2D(T* a, int my_Mx, int my_My)
-    : Mx(my_Mx), My(my_My), i_offset(0), j_offset(0), array(a) {}
-
-  inline T& operator()(int i, int j)
-  { return array[(j_offset + j) + My * (i_offset + i)]; }
-
-private:
-  int Mx, My, i_offset, j_offset;
-  T* array;
-};
-
+} // end of namespace bed
 } // end of namespace pism
 
 #endif  /* __deformation_hh */

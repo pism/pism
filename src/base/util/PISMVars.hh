@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,40 +22,61 @@
 #include <map>
 #include <set>
 #include <string>
-#include <petscsys.h>
+
+// We have to include this to get IceModelVec...::Ptr definitions.
+#include "iceModelVec.hh"
 
 namespace pism {
 
-class IceModelVec;
-class IceModelVec2S;
-class IceModelVec2V;
-class IceModelVec2Int;
-class IceModelVec3;
-
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
-// FIXME: 1) make Vars take and return "const IceModelVec*" 2) use smart pointers
+// FIXME: use smart pointers
 class Vars {
 public:
-  PetscErrorCode add(IceModelVec &);
-  void add(IceModelVec &, const std::string &name);
+  Vars();
+  void add(const IceModelVec &);
+  void add(const IceModelVec &, const std::string &name);
   void remove(const std::string &name);
-  IceModelVec* get(const std::string &name) const;
-  IceModelVec2S* get_2d_scalar(const std::string &name) const;
-  IceModelVec2V* get_2d_vector(const std::string &name) const;
-  IceModelVec2Int* get_2d_mask(const std::string &name) const;
-  IceModelVec3* get_3d_scalar(const std::string &name) const;
+  bool is_available(const std::string &name) const;
+
+  const IceModelVec* get(const std::string &name) const;
+  const IceModelVec2S* get_2d_scalar(const std::string &name) const;
+  const IceModelVec2V* get_2d_vector(const std::string &name) const;
+  const IceModelVec2Int* get_2d_mask(const std::string &name) const;
+  const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
-  PetscErrorCode check_for_nan() const;
+
+  void add_shared(IceModelVec::Ptr);
+  void add_shared(IceModelVec::Ptr, const std::string &name);
+
+  bool is_available_shared(const std::string &name) const;
+  IceModelVec::Ptr get_shared(const std::string &name) const;
+  IceModelVec2S::Ptr get_2d_scalar_shared(const std::string &name) const;
+  IceModelVec2V::Ptr get_2d_vector_shared(const std::string &name) const;
+  IceModelVec2Int::Ptr get_2d_mask_shared(const std::string &name) const;
+  IceModelVec3::Ptr get_3d_scalar_shared(const std::string &name) const;
+
+  std::set<std::string> keys_shared() const;
 private:
-  std::map<std::string, IceModelVec*> variables,
-    standard_names;             //!< stores standard names of variables that
+  const IceModelVec* get_internal(const std::string &name) const;
+  mutable std::map<std::string, const IceModelVec*> m_variables;
+  //! stores standard names of variables that
   //! have standard names, allowing looking them
   //! up using either short or standard names and
   //! preserving the one-to-one map from keys
   //! (strings) to pointers (represented by
   //! "variables").
+  mutable std::map<std::string, std::string> m_standard_names;
+
+  //! variables in *shared ownership*
+  mutable std::map<std::string, IceModelVec::Ptr> m_variables_shared;
+
+  IceModelVec::Ptr get_internal_shared(const std::string &name) const;
+
+  // Hide copy constructor / assignment operator.
+  Vars(Vars const &);
+  Vars & operator=(Vars const &);
 };
 
 } // end of namespace pism

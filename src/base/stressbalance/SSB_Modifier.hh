@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -25,81 +25,66 @@
 namespace pism {
 
 class Vars;
-class IceFlowLaw;
 class EnthalpyConverter;
 
+namespace rheology {
+class FlowLaw;
+}
+
+namespace stressbalance {
+
 //! Shallow stress balance modifier (such as the non-sliding SIA).
-class SSB_Modifier : public Component
-{
+class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const Config &c)
-    : Component(g, c), EC(e)
-  { D_max = 0.0; variables = NULL; allocate(); }
-  virtual ~SSB_Modifier() {}
+  SSB_Modifier(const IceGrid &g, const EnthalpyConverter &e);
+  virtual ~SSB_Modifier();
 
-  virtual PetscErrorCode init(Vars &vars) { variables = &vars; return 0; }
+  virtual void init();
 
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast) = 0;
+  virtual void update(const IceModelVec2V &vel_input, bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
-  { result = &diffusive_flux; return 0; }
+  virtual const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(double &result)
-  { result = D_max; return 0; }
+  virtual double max_diffusivity();
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result,
-                                                    IceModelVec3* &v_result)
-  { u_result = &u; v_result = &v; return 0; }
+  const IceModelVec3& velocity_u();
 
-  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
-  { result = &strain_heating; return 0; }
+  const IceModelVec3& velocity_v();
 
-  virtual PetscErrorCode stdout_report(std::string &result)
-  { result = ""; return 0; }
+  const IceModelVec3& volumetric_strain_heating();
 
-  IceFlowLaw* get_flow_law()
-  { return flow_law; }
+  virtual std::string stdout_report();
+
+  rheology::FlowLaw* flow_law();
 protected:
-  virtual PetscErrorCode allocate();
-
-  IceFlowLaw *flow_law;
-  EnthalpyConverter &EC;
-  double D_max;
-  IceModelVec2Stag diffusive_flux;
-  IceModelVec3 u, v, strain_heating;
-
-  Vars *variables;
+  rheology::FlowLaw *m_flow_law;
+  const EnthalpyConverter &m_EC;
+  double m_D_max;
+  IceModelVec2Stag m_diffusive_flux;
+  IceModelVec3 m_u, m_v, m_strain_heating;
 };
 
 
 //! The trivial Shallow Stress Balance modifier.
-class ConstantInColumn : public SSB_Modifier
-{
+class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c);
+  ConstantInColumn(const IceGrid &g, const EnthalpyConverter &e);
   virtual ~ConstantInColumn();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
-  { }
+  virtual void update(const IceModelVec2V &vel_input, bool fast);
 
-  //! Defines requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/)
-  { return 0; }
-
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/)
-  { return 0; }
-
+protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                IO_Type nctype);
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSB_MODIFIER_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 #include <netcdf.h>
 
 namespace pism {
+namespace io {
 
 int NC4_Serial::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
@@ -60,4 +61,5 @@ int NC4_Serial::create_impl(const std::string &fname) {
   return stat;
 }
 
+} // end of namespace io
 } // end of namespace pism

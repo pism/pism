@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPMeanSquareFunctional.hh"
+#include "IceGrid.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implicitly set the normalization constant for the functional.
 /*! The normalization constant is selected so that if an input
@@ -26,8 +28,7 @@ IceModelVec2V has component vectors all of length \a scale, then the funtional v
 \f[
 c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
 \f]*/
-PetscErrorCode IPMeanSquareFunctional2V::normalize(double scale) {
-  PetscErrorCode   ierr;
+void IPMeanSquareFunctional2V::normalize(double scale) {
 
   // The local value of the weights
   double value = 0;
@@ -46,13 +47,11 @@ PetscErrorCode IPMeanSquareFunctional2V::normalize(double scale) {
     }
   }
 
-  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
+  m_normalization = GlobalSum(m_grid.com, value);
   m_normalization *= (scale*scale);
-  return 0;
 }
 
-PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
-  PetscErrorCode   ierr;
+void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -78,13 +77,10 @@ PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPU
   }
   value /= m_normalization;
 
-  ierr = GlobalSum( m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
-
-  return 0;
+  GlobalSum( m_grid.com, &value, OUTPUT, 1);
 }
 
-PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT)  {
-  PetscErrorCode   ierr;
+void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -113,12 +109,10 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
   }
   value /= m_normalization;
 
-  ierr = GlobalSum( m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
-
-  return 0;
+  GlobalSum( m_grid.com, &value, OUTPUT, 1);
 }
 
-PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   gradient.set(0);
 
   IceModelVec::AccessList list;
@@ -141,8 +135,6 @@ PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVe
       gradient(i, j).v = 2*x(i, j).v / m_normalization;
     }
   }
-
-  return 0;
 }
 
 //! Implicitly set the normalization constant for the functional.
@@ -151,8 +143,7 @@ IceModelVec2S has entries all equal to \a scale, then the funtional value will b
 \f[
 c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
 \f]*/
-PetscErrorCode IPMeanSquareFunctional2S::normalize(double scale) {
-  PetscErrorCode   ierr;
+void IPMeanSquareFunctional2S::normalize(double scale) {
 
   // The local value of the weights
   double value = 0;
@@ -170,13 +161,11 @@ PetscErrorCode IPMeanSquareFunctional2S::normalize(double scale) {
     }
   }
 
-  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
+  m_normalization = GlobalSum(m_grid.com, value);
   m_normalization *= (scale*scale);
-  return 0;
 }
 
-PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
-  PetscErrorCode   ierr;
+void IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -201,13 +190,10 @@ PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPU
   }
   value /= m_normalization;
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
-
-  return 0;
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 }
 
-PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT)  {
-  PetscErrorCode   ierr;
+void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -232,13 +218,11 @@ PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b,
   }
   value /= m_normalization;
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
-
-  return 0;
+  GlobalSum(m_grid.com, &value, OUTPUT, 1);
 }
 
 
-PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
+void IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
   gradient.set(0);
 
   IceModelVec::AccessList list;
@@ -259,9 +243,7 @@ PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVe
       gradient(i, j) = 2*x(i, j) / m_normalization;
     }
   }
-
-
-  return 0;
 }
 
+} // end of namespace inverse
 } // end of namespace pism

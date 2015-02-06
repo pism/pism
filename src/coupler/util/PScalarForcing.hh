@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,10 @@
 #include "Timeseries.hh"
 #include "pism_options.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
+#include "PIO.hh"
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -31,89 +35,72 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid &g, const Config &conf, Model* in)
-    : Mod(g, conf, in), input(in) {}
+  PScalarForcing(const IceGrid &g, Model* in)
+    : Mod(g, in), input(in) {}
+
   virtual ~PScalarForcing()
   {
-    if (offset)
+    if (offset) {
       delete offset;
-  }
-
-  virtual PetscErrorCode update(double my_t, double my_dt)
-  {
-    Mod::m_t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
-    Mod::m_dt = my_dt;
-
-    PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
-    return 0;
+    }
   }
 
 protected:
-  virtual PetscErrorCode init_internal()
+  virtual void update_impl(double my_t, double my_dt)
   {
-    PetscErrorCode ierr;
-    bool file_set, bc_period_set, bc_ref_year_set;
+    Mod::m_t  = Mod::m_grid.time->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_dt = my_dt;
 
-    IceGrid &g = Mod::grid;
+    Mod::input_model->update(my_t, my_dt);
+  }
 
-    double bc_period_years = 0,
-      bc_reference_year = 0;
+  virtual void init_internal()
+  {
+    const IceGrid &g = Mod::m_grid;
 
-    ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
-    {
-      ierr = OptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
-                               filename, file_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
-                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
-                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    options::String file(option_prefix + "_file", "Specifies a file with scalar offsets");
+    options::Integer period(option_prefix + "_period",
+                            "Specifies the length of the climate data period", 0);
+    options::Real bc_reference_year(option_prefix + "_reference_year",
+                                    "Boundary condition reference year", 0.0);
 
-    if (file_set == false) {
-      ierr = PetscPrintf(g.com, "PISM ERROR: %s_file is not set.\n",
-                         option_prefix.c_str()); CHKERRQ(ierr);
-      PISMEnd();
+    if (not file.is_set()) {
+      throw RuntimeError::formatted("command-line option %s_file is required.",
+                                    option_prefix.c_str());
     }
 
-    if (bc_period_set) {
-      bc_period = (unsigned int)bc_period_years;
-    } else {
-      bc_period = 0;
+    if (period.value() < 0.0) {
+      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+                                    option_prefix.c_str(), period.value());
     }
+    bc_period = (unsigned int)period;
 
-    if (bc_ref_year_set) {
+    if (bc_reference_year.is_set()) {
       bc_reference_time = g.convert(bc_reference_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }
 
+    verbPrintf(2, g.com,
+               "  reading %s data from forcing file %s...\n",
+               offset->short_name.c_str(), file->c_str());
 
-    ierr = verbPrintf(2, g.com,
-                      "  reading %s data from forcing file %s...\n",
-                      offset->short_name.c_str(), filename.c_str());
-    CHKERRQ(ierr);
-    PIO nc(g.com, "netcdf3", g.get_unit_system());
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+    PIO nc(g.com, "netcdf3", g.config.get_unit_system());
+    nc.open(file, PISM_READONLY);
     {
-      ierr = offset->read(nc, g.time); CHKERRQ(ierr);
+      offset->read(nc, g.time);
     }
-    ierr = nc.close(); CHKERRQ(ierr);
-
-
-    return 0;
+    nc.close();
   }
 
   //! Apply offset as an offset
-  PetscErrorCode offset_data(IceModelVec2S &result) {
-    PetscErrorCode ierr = result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
-    return 0;
+  void offset_data(IceModelVec2S &result) {
+    result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt));
   }
 
   //! Apply offset as a scaling factor
-  PetscErrorCode scale_data(IceModelVec2S &result) {
-    PetscErrorCode ierr = result.scale((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
-    return 0;
+  void scale_data(IceModelVec2S &result) {
+    result.scale((*offset)(Mod::m_t + 0.5*Mod::m_dt));
   }
 
   Model *input;

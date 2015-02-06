@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -50,27 +50,28 @@ class test_plug(PISM.ssa.SSAExactTestCase):
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
+
     vecs = self.modeldata.vecs
 
     # Set constant coefficients.
-    vecs.thickness.set(H0)
+    vecs.land_ice_thickness.set(H0)
     vecs.tauc.set(tauc0)
-    vecs.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.mask.set(PISM.MASK_GROUNDED)
   
     bc_mask = vecs.bc_mask
     vel_bc  = vecs.vel_bc
-    bed     = vecs.bed
-    surface = vecs.surface
+    bed     = vecs.bedrock_altitude
+    surface = vecs.surface_altitude
     
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc, bed, surface]):
       for (i,j) in grid.points():
-        x=grid.x[i]; y=grid.y[j]
+        x=grid.x(i); y=grid.y(j)
         
         bed[i,j] = -x*(dhdx);
         surface[i,j] = bed[i,j] + H0;
       
-        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
+        edge = ((j == 0) or (j == grid.My() - 1)) or ((i==0) or (i==grid.Mx()-1));
         if edge:
           bc_mask[i,j] = 1;
           [u,v] = self.exactSolution(i,j,x,y);
@@ -102,11 +103,10 @@ if __name__ == '__main__':
 
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Test Plug"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="test_plug.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="test_plug.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
   
   PISM.setVerbosityLevel(verbosity)
 

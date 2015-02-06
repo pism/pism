@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -51,23 +51,22 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     vecs = self.modeldata.vecs
     
-    vecs.thickness.set(H0)
-    vecs.surface.set(H0)
-    vecs.bed.set(0.)
+    vecs.land_ice_thickness.set(H0)
+    vecs.surface_altitude.set(H0)
+    vecs.bedrock_altitude.set(0.)
     vecs.tauc.set(tauc0)
 
+    vel_bc  = vecs.vel_bc
     bc_mask = vecs.bc_mask
     bc_mask.set(0)
-
-    vel_bc  = vecs.vel_bc
     
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc]):
       for (i,j) in grid.points():
-        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
+        edge = ((j == 0) or (j == grid.My() - 1)) or ((i==0) or (i==grid.Mx()-1));
         if edge:
           bc_mask[i,j] = 1;
-          x = grid.x[i]; y=grid.y[j];
+          x = grid.x(i); y=grid.y(j);
           [u,v] = self.exactSolution(i,j,x,y);
           vel_bc[i,j].u = u;
           vel_bc[i,j].v = v;
@@ -95,11 +94,10 @@ if __name__ == '__main__':
 
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Test Lineaer"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="test_linear.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="test_linear.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
   tc = test_linear(Mx,My)

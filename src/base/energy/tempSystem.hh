@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,6 @@
 #ifndef __tempSystem_hh
 #define __tempSystem_hh
 
-#include <petscsys.h>
-
 #include "columnSystem.hh"
 #include "pism_const.hh"
 #include "Mask.hh"
@@ -29,6 +27,7 @@ namespace pism {
 
 class IceModelVec3;
 
+namespace energy {
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
 /*!
   Call sequence like this:
@@ -51,51 +50,55 @@ class IceModelVec3;
   \endcode
 */
 class tempSystemCtx : public columnSystemCtx {
-
 public:
-  tempSystemCtx(int my_Mz, const std::string &my_prefix);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode setSchemeParamsThisColumn(MaskValue my_mask, bool my_isMarginal,
-                                           double my_lambda);
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(double my_Ts);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
+  tempSystemCtx(const std::vector<double>& storage_grid,
+                const std::string &prefix,
+                double dx, double dy, double dt,
+                const Config &config,
+                const IceModelVec3 &T3,
+                const IceModelVec3 &u3,
+                const IceModelVec3 &v3,
+                const IceModelVec3 &w3,
+                const IceModelVec3 &strain_heating3);
+
+  void initThisColumn(int i, int j, bool is_marginal, MaskValue new_mask, double ice_thickness);
+
+  void setSurfaceBoundaryValuesThisColumn(double my_Ts);
+  void setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
                                                   double my_Rb);
 
-  PetscErrorCode solveThisColumn(std::vector<double> &x);
+  void solveThisColumn(std::vector<double> &x);
 
-public:
-  // constants which should be set before calling initForAllColumns()
-  double  dx,
-    dy,
-    dtTemp,
-    dzEQ,
-    ice_rho,
-    ice_c_p,
-    ice_k;
-  // pointers which should be set before calling initForAllColumns()
-  double  *T,
-    *u,
-    *v,
-    *w,
-    *strain_heating;
-  IceModelVec3 *T3;
+  double lambda() {
+    return m_lambda;
+  }
 
-protected: // used internally
-  int    Mz;
-  double lambda, Ts, G0, Tshelfbase, Rb;
-  MaskValue    mask;
-  bool        isMarginal;
-  double nuEQ,
-    rho_c_I,
-    iceK,
-    iceR;
-  bool        initAllDone,
-    indicesValid,
-    schemeParamsValid,
-    surfBCsValid,
-    basalBCsValid;
+  double w(int k) {
+    return m_w[k];
+  }
+protected:
+  double m_ice_density, m_ice_c, m_ice_k;
+  const IceModelVec3 &m_T3, &m_strain_heating3;
+
+  std::vector<double>  m_T, m_strain_heating;
+  std::vector<double> m_T_n, m_T_e, m_T_s, m_T_w;
+
+  double m_lambda, m_Ts, m_G0, m_Tshelfbase, m_Rb;
+  MaskValue    m_mask;
+  bool        m_is_marginal;
+  double m_nu,
+    m_rho_c_I,
+    m_iceK,
+    m_iceR;
+private:
+  bool
+    m_surfBCsValid,
+    m_basalBCsValid;
+
+  double compute_lambda();
 };
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif  /* __tempSystem_hh */

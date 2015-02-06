@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,174 +23,159 @@
 #include "pism_options.hh"
 #include "PISMConfig.hh"
 
+#include <stdexcept>
+#include "error_handling.hh"
+
 namespace pism {
+namespace bed {
 
-PBLingleClark::PBLingleClark(IceGrid &g, const Config &conf)
-  : BedDef(g, conf) {
+PBLingleClark::PBLingleClark(const IceGrid &g)
+  : BedDef(g) {
 
-  if (allocate() != 0) {
-    PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
-    PISMEnd();
+  m_Hp0        = m_topg_initial.allocate_proc0_copy();
+  m_bedp0      = m_topg_initial.allocate_proc0_copy();
+  m_Hstartp0   = m_topg_initial.allocate_proc0_copy();
+  m_bedstartp0 = m_topg_initial.allocate_proc0_copy();
+  m_upliftp0   = m_topg_initial.allocate_proc0_copy();
+
+  bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
+
+  m_bdLC = NULL;
+
+  ParallelSection rank0(m_grid.com);
+  try {
+    if (m_grid.rank() == 0) {
+      m_bdLC = new BedDeformLC(m_config, use_elastic_model,
+                               m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
+                               4,     // use Z = 4 for now; to reduce global drift?
+                               *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
+    }
+  } catch (...) {
+    rank0.failed();
   }
-
+  rank0.check();
 }
 
 PBLingleClark::~PBLingleClark() {
-
-  if (deallocate() != 0) {
-    PetscPrintf(grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
-    PISMEnd();
+  if (m_bdLC != NULL) {
+    delete m_bdLC;
   }
-
-}
-
-PetscErrorCode PBLingleClark::allocate() {
-  PetscErrorCode ierr;
-
-  ierr = topg_initial.allocate_proc0_copy(Hp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(bedp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(Hstartp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(bedstartp0); CHKERRQ(ierr);
-  ierr = topg_initial.allocate_proc0_copy(upliftp0); CHKERRQ(ierr);
-
-  bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
-
-  if (grid.rank == 0) {
-    ierr = bdLC.settings(config, use_elastic_model,
-                         grid.Mx, grid.My, grid.dx, grid.dy,
-                         4,     // use Z = 4 for now; to reduce global drift?
-                         &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
-    CHKERRQ(ierr);
-
-    ierr = bdLC.alloc(); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-PetscErrorCode PBLingleClark::deallocate() {
-  PetscErrorCode ierr;
-
-  ierr = VecDestroy(&Hp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&bedp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&Hstartp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&bedstartp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&upliftp0); CHKERRQ(ierr);
-
-  return 0;
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
-PetscErrorCode PBLingleClark::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PBLingleClark::init_impl() {
+  BedDef::init_impl();
 
-  ierr = BedDef::init(vars); CHKERRQ(ierr);
+  verbPrintf(2, m_grid.com,
+             "* Initializing the Lingle-Clark bed deformation model...\n");
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
+  correct_topg();
 
-  ierr = correct_topg(); CHKERRQ(ierr);
+  m_thk->put_on_proc0(*m_Hstartp0);
+  m_topg.put_on_proc0(*m_bedstartp0);
+  m_uplift.put_on_proc0(*m_upliftp0);
 
-  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
-
-  ierr = thk->put_on_proc0(Hstartp0); CHKERRQ(ierr);
-  ierr = topg->put_on_proc0(bedstartp0); CHKERRQ(ierr);
-  ierr = uplift->put_on_proc0(upliftp0); CHKERRQ(ierr);
-
-  if (grid.rank == 0) {
-    ierr = bdLC.init(); CHKERRQ(ierr);
-    ierr = bdLC.uplift_init(); CHKERRQ(ierr);
+  ParallelSection rank0(m_grid.com);
+  try {
+    if (m_grid.rank() == 0) {
+      m_bdLC->uplift_init();
+    }
+  } catch (...) {
+    rank0.failed();
   }
-
-  return 0;
+  rank0.check();
 }
 
-PetscErrorCode PBLingleClark::correct_topg() {
-  PetscErrorCode ierr;
-  bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
-    topg_exists, topg_initial_exists, regrid_vars_set;
-  std::string boot_filename, regrid_filename;
-  PIO nc(grid, "guess_mode");
+MaxTimestep PBLingleClark::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
-  ierr = OptionsIsSet("-regrid_bed_special",
-                          "Correct topg when switching to a different grid",
-                          use_special_regrid_semantics); CHKERRQ(ierr);
+void PBLingleClark::correct_topg() {
+  bool use_special_regrid_semantics, topg_exists, topg_initial_exists;
+
+  PIO nc(m_grid, "guess_mode");
+
+  use_special_regrid_semantics = options::Bool("-regrid_bed_special",
+                                               "Correct topg when switching to a different grid");
 
   // Stop if topg correction was not requiested.
-  if (!use_special_regrid_semantics) return 0;
+  if (not use_special_regrid_semantics) {
+    return;
+  }
 
-  ierr = OptionsString("-regrid_file", "Specifies the name of a file to regrid from",
-                           regrid_filename, regrid_file_set); CHKERRQ(ierr);
+  options::String regrid_file("-regrid_file",
+                              "Specifies the name of a file to regrid from");
 
-  ierr = OptionsString("-boot_file", "Specifies the name of the file to bootstrap from",
-                           boot_filename, boot_file_set); CHKERRQ(ierr);
+  options::String boot_file("-boot_file",
+                            "Specifies the name of the file to bootstrap from");
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
-  if (! (regrid_file_set && boot_file_set)) return 0;
+  if (not (regrid_file.is_set() and boot_file.is_set())) {
+    return;
+  }
 
-  ierr = nc.open(regrid_filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(regrid_file, PISM_READONLY);
 
-  ierr = nc.inq_var("topg_initial", topg_initial_exists); CHKERRQ(ierr);
-  ierr = nc.inq_var("topg", topg_exists); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  topg_initial_exists = nc.inq_var("topg_initial");
+  topg_exists = nc.inq_var("topg");
+  nc.close();
 
   // Stop if the regridding file does not have both topg and topg_initial.
-  if (!(topg_initial_exists && topg_exists)) {
-    return 0;
+  if (not (topg_initial_exists and topg_exists)) {
+    return;
   }
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
-  std::set<std::string> regrid_vars;
-  ierr = OptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
-                              regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+  options::StringSet regrid_vars("-regrid_vars", "Specifies regridding variables", "");
 
-  if (regrid_vars_set) {
+  if (regrid_vars.is_set()) {
     if (set_contains(regrid_vars, "topg")) {
-      ierr = verbPrintf(2, grid.com,
-                        "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr);
-      return 0;
+      verbPrintf(2, m_grid.com,
+                 "  Bed elevation correction requested, but -regrid_vars contains topg...\n");
+      return;
     }
   }
 
-  ierr = verbPrintf(2, grid.com,
-                    "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
-                    "  of the bed deformation from '%s'...\n",
-                    boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, m_grid.com,
+             "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
+             "  of the bed deformation from '%s'...\n",
+             boot_file->c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
-  ierr = topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
-                            "m", "bedrock_altitude"); CHKERRQ(ierr);
+  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
+  topg_tmp.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
+                     "m", "bedrock_altitude");
 
   // Get topg and topg_initial from the regridding file.
-  ierr = topg_initial.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
-  ierr =     topg_tmp.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
+  m_topg_initial.regrid(regrid_file, CRITICAL);
+  topg_tmp.regrid(regrid_file, CRITICAL);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.
 
-  ierr = topg_tmp.add(-1.0, topg_initial); CHKERRQ(ierr);
+  topg_tmp.add(-1.0, m_topg_initial);
   // Now topg_tmp contains the change in bed elevation computed during the run
   // that produced -regrid_file.
 
   // Apply this change to topg from -boot_file:
-  ierr = topg->add(1.0, topg_tmp); CHKERRQ(ierr);
+  m_topg.add(1.0, topg_tmp);
 
   // Store the corrected topg as the new "topg_initial".
-  ierr = topg->copy_to(topg_initial); CHKERRQ(ierr);
+  m_topg.copy_to(m_topg_initial);
 
-  return 0;
+  return;
 }
 
 
 //! Update the Lingle-Clark bed deformation model.
-PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void PBLingleClark::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t)   < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
-    return 0;
+      (fabs(my_dt - m_dt) < 1e-12)) {
+    return;
+  }
 
   m_t  = my_t;
   m_dt = my_dt;
@@ -198,33 +183,38 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
   double t_final = m_t + m_dt;
 
   // Check if it's time to update:
-  double dt_beddef = t_final - t_beddef_last; // in seconds
-  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
-       t_final < grid.time->end()) ||
-      dt_beddef < 1e-12)
-    return 0;
-
-  t_beddef_last = t_final;
-
-  ierr = thk->put_on_proc0(Hp0); CHKERRQ(ierr);
-  ierr = topg->put_on_proc0(bedp0); CHKERRQ(ierr);
-
-  if (grid.rank == 0) {  // only processor zero does the step
-    ierr = bdLC.step(dt_beddef, // time step, in seconds
-                     t_final - grid.time->start()); // time since the start of the run, in seconds
-    CHKERRQ(ierr);
+  double dt_beddef = t_final - m_t_beddef_last; // in seconds
+  if ((dt_beddef < m_config.get("bed_def_interval_years", "years", "seconds") &&
+       t_final < m_grid.time->end()) ||
+      dt_beddef < 1e-12) {
+    return;
   }
 
-  ierr = topg->get_from_proc0(bedp0); CHKERRQ(ierr);
+  m_t_beddef_last = t_final;
+
+  m_thk->put_on_proc0(*m_Hp0);
+  m_topg.put_on_proc0(*m_bedp0);
+
+  ParallelSection rank0(m_grid.com);
+  try {
+    if (m_grid.rank() == 0) {  // only processor zero does the step
+      m_bdLC->step(dt_beddef, // time step, in seconds
+                   t_final - m_grid.time->start()); // time since the start of the run, in seconds
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
+  m_topg.get_from_proc0(*m_bedp0);
 
   //! Finally, we need to update bed uplift and topg_last.
-  ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
-  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+  compute_uplift(dt_beddef);
+  m_topg.copy_to(m_topg_last);
 
   //! Increment the topg state counter. SIAFD relies on this!
-  topg->inc_state_counter();
-
-  return 0;
+  m_topg.inc_state_counter();
 }
 
+} // end of namespace bed
 } // end of namespace pism

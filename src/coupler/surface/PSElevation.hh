@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,36 +20,38 @@
 #define _PSELEVATION_H_
 
 #include "PISMSurface.hh"
-#include "iceModelVec2T.hh"
 #include "PISMAtmosphere.hh"
+#include "NCVariable.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
-class PSElevation : public SurfaceModel {
+class Elevation : public SurfaceModel {
 public:
-  PSElevation(IceGrid &g, const Config &conf);
+  Elevation(const IceGrid &g);
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual void attach_atmosphere_model(AtmosphereModel *input);
+  virtual void init();
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
-  IceModelVec2S *usurf;
-  double T_min, T_max, z_T_min, z_T_max,
-    m_min, m_max, m_limit_min, m_limit_max,
-    z_m_min, z_ELA, z_m_max;
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+protected:
+  NCSpatialVariable m_climatic_mass_balance, m_ice_surface_temp;
+  double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
+  double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSELEVATION_H_ */

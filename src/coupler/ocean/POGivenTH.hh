@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,33 +23,16 @@
 #include "POModifier.hh"
 
 namespace pism {
-
-class POGivenTH : public PGivenClimate<POModifier,OceanModel>
+namespace ocean {
+class GivenTH : public PGivenClimate<OceanModifier,OceanModel>
 {
 public:
-  POGivenTH(IceGrid &g, const Config &conf);
-  virtual ~POGivenTH();
+  GivenTH(const IceGrid &g);
+  virtual ~GivenTH();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars,
-                                          const PIO &nc, IO_Type nctype);
-
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
-
-  virtual PetscErrorCode sea_level_elevation(double &result);
-
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
-
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
-
-  class POGivenTHConstants {
+  class Constants {
   public:
-    POGivenTHConstants(const Config &config);
+    Constants(const Config &config);
     //! Coefficients for linearized freezing point equation for in situ
     //! temperature:
     //!
@@ -75,46 +58,54 @@ public:
     double ice_thermal_diffusivity;
     bool limit_salinity_range;
   };
+protected:
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 private:
-  IceModelVec2S shelfbtemp, shelfbmassflux;
-  IceModelVec2S *ice_thickness;
-  IceModelVec2T *theta_ocean, *salinity_ocean;
+  IceModelVec2S m_shelfbtemp, m_shelfbmassflux;
+  IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
-  PetscErrorCode pointwise_update(const POGivenTHConstants &constants,
-                                  double sea_water_salinity,
-                                  double sea_water_potential_temperature,
-                                  double ice_thickness,
-                                  double *shelf_base_temperature_out,
-                                  double *shelf_base_melt_rate_out);
+  void pointwise_update(const Constants &constants,
+                        double sea_water_salinity,
+                        double sea_water_potential_temperature,
+                        double ice_thickness,
+                        double *shelf_base_temperature_out,
+                        double *shelf_base_melt_rate_out);
 
-  PetscErrorCode subshelf_salinity(const POGivenTHConstants &constants,
+  void subshelf_salinity(const Constants &constants,
+                         double sea_water_salinity,
+                         double sea_water_potential_temperature,
+                         double ice_thickness,
+                         double *shelf_base_salinity);
+
+  void subshelf_salinity_melt(const Constants &constants,
+                              double sea_water_salinity,
+                              double sea_water_potential_temperature,
+                              double ice_thickness,
+                              double *shelf_base_salinity);
+
+  void subshelf_salinity_freeze_on(const Constants &constants,
                                    double sea_water_salinity,
                                    double sea_water_potential_temperature,
                                    double ice_thickness,
                                    double *shelf_base_salinity);
 
-  PetscErrorCode subshelf_salinity_melt(const POGivenTHConstants &constants,
+  void subshelf_salinity_diffusion_only(const Constants &constants,
                                         double sea_water_salinity,
                                         double sea_water_potential_temperature,
                                         double ice_thickness,
                                         double *shelf_base_salinity);
-
-  PetscErrorCode subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
-                                             double sea_water_salinity,
-                                             double sea_water_potential_temperature,
-                                             double ice_thickness,
-                                             double *shelf_base_salinity);
-
-  PetscErrorCode subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
-                                                  double sea_water_salinity,
-                                                  double sea_water_potential_temperature,
-                                                  double ice_thickness,
-                                                  double *shelf_base_salinity);
-
-  PetscErrorCode allocate_POGivenTH();
-
 };
 
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _POGIVENTH_H_ */

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -43,12 +43,15 @@ class testj(PISM.ssa.SSAExactTestCase):
     self._allocateBCs()
 
     vecs = self.modeldata.vecs
+
     vecs.tauc.set(0.0) # irrelevant for test J
-    vecs.bed.set(0.0) 
-    vecs.ice_mask.set(PISM.MASK_FLOATING)
+    vecs.bedrock_altitude.set(0.0)
+    vecs.mask.set(PISM.MASK_FLOATING)
     vecs.bc_mask.set(0) # No dirichlet data.
 
-    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+    EC = PISM.EnthalpyConverter(PISM.Context().config)
+    enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+    vecs.enthalpy.set(enth0)
 
     ocean_rho = self.config.get("sea_water_density");
     ice_rho = self.config.get("ice_density");
@@ -57,16 +60,19 @@ class testj(PISM.ssa.SSAExactTestCase):
     # variable in 'vars', and that endAccess is called for each one on exiting
     # the 'with' block.
     
-    with PISM.vec.Access(comm=[vecs.thickness, vecs.surface, vecs.bc_mask, vecs.vel_bc]):
+    with PISM.vec.Access(comm=[vecs.land_ice_thickness,
+                               vecs.surface_altitude,
+                               vecs.bc_mask,
+                               vecs.vel_bc]):
       grid = self.grid
       for (i,j) in grid.points():
-        x = grid.x[i]; y = grid.y[j]
+        x = grid.x(i); y = grid.y(j)
         (H,junk,u,v) = PISM.exactJ(x,y);
-        vecs.thickness[i,j] = H;
-        vecs.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
+        vecs.land_ice_thickness[i,j] = H;
+        vecs.surface_altitude[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
   
         # // special case at center point (Dirichlet BC)
-        if (i == (grid.Mx)/2) and (j == (grid.My)/2):
+        if (i == (grid.Mx())/2) and (j == (grid.My())/2):
           vecs.bc_mask[i,j] = 1;
           vecs.vel_bc[i,j] = [u,v]
 
@@ -91,11 +97,10 @@ class testj(PISM.ssa.SSAExactTestCase):
 if __name__ == '__main__':
   context = PISM.Context()
 
-  for o in PISM.OptionsGroup(context.com,"","Test J"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="testj.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="testj.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
   tc = testj(Mx,My)

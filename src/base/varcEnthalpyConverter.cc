@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 The PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,8 @@
 
 #include "pism_const.hh"
 #include "varcEnthalpyConverter.hh"
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -64,8 +66,7 @@ Of course, \f$T=T_0 + \Delta T\f$.
  */
 double varcEnthalpyConverter::TfromE(double E) const {
   if (E < 0.0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\n\nE < 0 in varcEnthalpyConverter is not allowed.  FIXME.\n\n");
-    PISMEnd();
+    throw RuntimeError("E < 0 in varcEnthalpyConverter is not allowed.");
   }
   const double
     ALPHA = 2.0 / c_gradient,
@@ -73,29 +74,6 @@ double varcEnthalpyConverter::TfromE(double E) const {
     tmp   = 2.0 * ALPHA * E,
     dT    = tmp / (sqrt(BETA*BETA + 2.0*tmp) + BETA);
   return T_0 + dT;
-}
-
-
-PetscErrorCode varcEnthalpyConverter::viewConstants(PetscViewer viewer) const {
-  PetscErrorCode ierr;
-
-  PetscBool iascii;
-  if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
-  }
-  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for EnthalpyConverter\n"); }
-
-  ierr = PetscViewerASCIIPrintf(viewer,
-    "\n<class varcEnthalpyConverter has two additional constants, so as to implement\n"
-       "  equation (4.39) from Greve & Blatter (2009):"); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   T_r   = %12.5f (K)\n",         T_r); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   c_gradient = %12.8f  >\n",    c_gradient); CHKERRQ(ierr);
-
-  ierr = EnthalpyConverter::viewConstants(viewer); CHKERRQ(ierr);
-  return 0;
 }
 
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
@@ -111,19 +89,20 @@ double varcEnthalpyConverter::getEnthalpyCTS(double p) const {
 /*!
 Calls TfromE().
  */
-PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+double varcEnthalpyConverter::getAbsTemp(double E, double p) const {
   double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
+  getEnthalpyInterval(p, E_s, E_l);
+
   if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
-    T = getMeltingTemp(p);
-    return 1;
+    throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
+                                  E, p);
   }
+
   if (E < E_s) {
-    T = TfromE(E);
+    return TfromE(E);
   } else {
-    T = getMeltingTemp(p);
+    return getMeltingTemp(p);
   }
-  return 0;
 }
 
 
@@ -131,27 +110,28 @@ PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) 
 /*!
 Calls EfromT().
  */
-PetscErrorCode varcEnthalpyConverter::getEnth(
-                  double T, double omega, double p, double &E) const {
+double varcEnthalpyConverter::getEnth(double T, double omega, double p) const {
   const double T_m = getMeltingTemp(p);
+
   if (T <= 0.0) {
-    SETERRQ1(PETSC_COMM_SELF, 1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
   }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
   if (T > T_m + 1.0e-6) {
-    SETERRQ2(PETSC_COMM_SELF, 3,"T=%f exceeds T_m=%f; not allowed\n\n",T,T_m);
+    throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    SETERRQ3(PETSC_COMM_SELF, 4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
+    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory; got T=%f, T_m=%f, omega=%f",
+                                  T, T_m, omega);
   }
+
   if (T < T_m) {
-    E = EfromT(T);
+    return EfromT(T);
   } else {
-    E = getEnthalpyCTS(p) + omega * L;
+    return getEnthalpyCTS(p) + omega * L;
   }
-  return 0;
 }
 
 

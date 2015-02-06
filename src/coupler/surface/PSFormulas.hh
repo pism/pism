@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,31 +24,33 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace surface {
 
 /** Base class for surface models that compute climate inputs using
  * formulas.
  *
- * Used by PS_EISMINTII and PSVerification. 
+ * Used by EISMINTII and Verification. 
  */
 class PSFormulas : public SurfaceModel {
 public:
-  PSFormulas(IceGrid &g, const Config &conf);
+  PSFormulas(const IceGrid &g);
   ~PSFormulas();
 
   // the interface:
-  void attach_atmosphere_model(AtmosphereModel *input);
-  PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                  IO_Type nctype);
-  PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
+  void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  void ice_surface_temperature(IceModelVec2S &result);
+protected:
+  void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                             IO_Type nctype);
 protected:
   IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
-  PetscErrorCode allocate();
 };
 
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSFORMULAS_H_ */

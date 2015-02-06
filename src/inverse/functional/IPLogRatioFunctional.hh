@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional for log-ratio errors.
 /*!  This type of functional appears in [\ref Morlighemetal2010].
@@ -39,16 +40,16 @@ namespace pism {
 */
 class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, double eps,
+  IPLogRatioFunctional(const IceGrid &grid, IceModelVec2V &u_observed, double eps,
                        IceModelVec2S *weights=NULL) :
     IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), 
     m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
-  virtual PetscErrorCode normalize(double scale);
+  virtual void normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
   IceModelVec2V &m_u_observed;
@@ -58,6 +59,7 @@ protected:
 
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8 */

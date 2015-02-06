@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,6 +44,8 @@ inline bool pism_is_valid_calendar_name(std::string name) {
   return false;
 }
 
+class Config;
+
 //! \brief Time management class.
 /*!
  * This is to make it possible to switch between different implementations.
@@ -64,6 +66,12 @@ public:
        const std::string &calendar,
        const UnitSystem &units_system);
   virtual ~Time();
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<Time> Ptr;
+#else
+  typedef std::shared_ptr<Time> Ptr;
+#endif
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
@@ -91,11 +99,11 @@ public:
   // Virtual methods:
 
   //! \brief Intialize using command-line options.
-  virtual PetscErrorCode init();
+  virtual void init();
 
   void init_calendar(const std::string &calendar);
 
-  PetscErrorCode parse_times(const std::string &spec, std::vector<double> &result);
+  void parse_times(const std::string &spec, std::vector<double> &result);
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
@@ -155,25 +163,25 @@ public:
   virtual double convert_time_interval(double T, const std::string &units);
 
 protected:
-  PetscErrorCode parse_list(const std::string &spec, std::vector<double> &result);
+  void parse_list(const std::string &spec, std::vector<double> &result);
 
-  virtual PetscErrorCode process_ys(double &result, bool &flag);
-  virtual PetscErrorCode process_y(double &result, bool &flag);
-  virtual PetscErrorCode process_ye(double &result, bool &flag);
+  virtual bool process_ys(double &result);
+  virtual bool process_y(double &result);
+  virtual bool process_ye(double &result);
 
-  virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       const std::string &keyword,
-                                       std::vector<double> &result);
+  virtual void compute_times(double time_start, double delta, double time_end,
+                             const std::string &keyword,
+                             std::vector<double> &result);
 
-  PetscErrorCode compute_times_simple(double time_start, double delta, double time_end,
-                                      std::vector<double> &result);
+  void compute_times_simple(double time_start, double delta, double time_end,
+                            std::vector<double> &result);
 
-  virtual PetscErrorCode parse_range(const std::string &spec, std::vector<double> &result);
+  virtual void parse_range(const std::string &spec, std::vector<double> &result);
 
-  virtual PetscErrorCode parse_date(const std::string &spec, double *result);
+  virtual void parse_date(const std::string &spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(const std::string &spec, std::string &keyword,
-                                               double *result);
+  virtual void parse_interval_length(const std::string &spec, std::string &keyword,
+                                     double *result);
 
   double years_to_seconds(double input);
   double seconds_to_years(double input);

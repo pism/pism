@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@
 #include "iceModelVec.hh"       // to get Vector2
 
 namespace pism {
-
+namespace fem {
 //! \file 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
 /*! \file
@@ -38,15 +38,15 @@ namespace pism {
 
   The IceGrid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed by indices (i,j):
 
-  \verbatim
-  (0,1)   (1,1)
-  ---------
-  |   |   |
-  ---------
-  |   |   |
-  ---------
-  (0,0) (1,0)   
-  \endverbatim
+  ~~~
+  (0,1)       (1,1)
+      ---------
+      |   |   |
+      ---------
+      |   |   |
+      ---------
+  (0,0)       (1,0)
+  ~~~
 
   The index of an element corresponds with the index of its lower-left vertex in the grid.
 
@@ -57,13 +57,13 @@ namespace pism {
 
   On the reference element, vertices are ordered as follows:
 
-  \verbatim
-  3 o---------o  2
-  |         |
-  |         |
-  |         |
-  0  o---------o  1
-  \endverbatim
+  ~~~
+  3 o---------o 2
+    |         |
+    |         |
+    |         |
+  0 o---------o 1
+  ~~~
 
   For each vertex \f$k\f$ there is an element basis function \f$\phi_k\f$ that is bilinear, equals 1 at
   vertex \f$k\f$, and equals 0 at the remaining vertices.  
@@ -92,7 +92,7 @@ namespace pism {
   \f[
   \int_E f dx \approx \sum_{q} f(x_q) w_q
   \f]
-  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in FEQuadrature).
+  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature).
 
   The unknown \f$w_h\f$ is represented by an IceVec, \f$w_h=\sum_{ij} c_{ij} \psi_{ij}\f$ where
   \f$c_{ij}\f$ are the coefficients of the vector.  The solution of the finite element problem
@@ -105,7 +105,7 @@ namespace pism {
   \f]
 
   Computations of these 'integrals' are done by adding up the contributions
-  from each element (an FEElementMap helps with iterating over the elements).  
+  from each element (an ElementMap helps with iterating over the elements).  
   For a fixed element, there is a locally defined trial
   function \f$\hat w_h\f$ (with 4 degrees of freedom in the scalar case)  and
   4 local test functions \f$\hat\psi_k\f$, one for each vertex.  
@@ -114,19 +114,19 @@ namespace pism {
   in the case of computing the residual):
 
   - Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$
-  the local degrees of freedom \f$d\f$ defining \f$\hat w_h\f$. (FEDOFMap)
+  the local degrees of freedom \f$d\f$ defining \f$\hat w_h\f$. (DOFMap)
   - Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed)
-  at the quadrature points \f$x_q\f$ (FEQuadrature)
+  at the quadrature points \f$x_q\f$ (Quadrature)
   - Evaluate the local test functions (again values and derivatives)
-  at the quadrature points. (FEQuadrature)
-  - Obtain the quadrature weights $j_q$ for the element (FEQuadrature)
+  at the quadrature points. (Quadrature)
+  - Obtain the quadrature weights $j_q$ for the element (Quadrature)
   - Compute the values of the integrand \f$g(\hat w_h,\psi_k)\f$
   at each quadrature point (call these \f$g_{qk}\f$) and
   form the weighted sums \f$y_k=\sum_{q} j_q g_{qk}\f$.
   - Each sum \f$y_k\f$ is the contribution of the current element to
   a residual entry \f$r_{ij}\f$, where local degree of freedom \f$k\f$
   corresponds with global degree of freedom \f$(i,j)\f$. The
-  local contibutions now need to be added to the global residual vector (FEDOFMap).
+  local contibutions now need to be added to the global residual vector (DOFMap).
 
   Computation of the Jacobian is similar, except that there are now
   multiple integrals per element (one for each local degree of freedom of
@@ -136,9 +136,9 @@ namespace pism {
   The complications below treated by the following classes, and discussed
   in their documentation:
 
-  - Ghost elements (as well as periodic boundary conditions): FEElementMap
-  - Dirichlet data: FEDOFMap
-  - Vector valued functions: (FEDOFMap, FEQuadrature)
+  - Ghost elements (as well as periodic boundary conditions): ElementMap
+  - Dirichlet data: DOFMap
+  - Vector valued functions: (DOFMap, Quadrature)
 
   The classes in this module are not intended
   to be a fancy finite element package.
@@ -149,7 +149,7 @@ namespace pism {
 
 //! Struct for gathering the value and derivative of a function at a point.
 /*! Germ in meant in the mathematical sense, sort of. */
-struct FEFunctionGerm
+struct FunctionGerm
 {
   double val,  //!< Function value.
     dx,  //!< Function deriviative with respect to x.
@@ -158,7 +158,7 @@ struct FEFunctionGerm
 
 //! Struct for gathering the value and derivative of a vector valued function at a point.
 /*! Germ in meant in the mathematical sense, sort of. */
-struct FEVector2Germ
+struct Vector2Germ
 {
   Vector2  val,  //!< Function value.
     dx,  //!< Function deriviative with respect to x.
@@ -168,38 +168,38 @@ struct FEVector2Germ
 
 //! Computation of Q1 shape function values.
 /*! The Q1 shape functions are bilinear functions.  On a rectangular
-  element, there are four (FEShapeQ1::Nk) basis functions, each equal
+  element, there are four (ShapeQ1::Nk) basis functions, each equal
   to 1 at one vertex and equal to zero at the remainder.
 
-  The FEShapeQ1 class consolodates the computation of the values and
+  The ShapeQ1 class consolodates the computation of the values and
   derivatives of these basis functions. */
-class FEShapeQ1 {
+class ShapeQ1 {
 public:
-  virtual ~FEShapeQ1() {}
+  virtual ~ShapeQ1() {}
 
   //! Compute values and derivatives of the shape function supported at node 0
-  static void shape0(double x, double y, FEFunctionGerm *value)
+  static void shape0(double x, double y, FunctionGerm *value)
   {
     value->val = (1-x)*(1-y)/4.;
     value->dx = -(1-y)/4.;
     value->dy = -(1-x)/4;
   }
   //! Compute values and derivatives of the shape function supported at node 1
-  static void shape1(double x, double y, FEFunctionGerm *value)
+  static void shape1(double x, double y, FunctionGerm *value)
   {
     value->val = (1+x)*(1-y)/4.;
     value->dx =  (1-y)/4.;
     value->dy = -(1+x)/4;
   }
   //! Compute values and derivatives of the shape function supported at node 2
-  static void shape2(double x, double y, FEFunctionGerm *value)
+  static void shape2(double x, double y, FunctionGerm *value)
   {
     value->val = (1+x)*(1+y)/4.;
     value->dx =  (1+y)/4.;
     value->dy =  (1+x)/4;
   }
   //! Compute values and derivatives of the shape function supported at node 3
-  static void shape3(double x, double y, FEFunctionGerm *value)
+  static void shape3(double x, double y, FunctionGerm *value)
   {
     value->val = (1-x)*(1+y)/4.;
     value->dx =  -(1+y)/4.;
@@ -210,11 +210,11 @@ public:
   static const int Nk = 4;
 
   //! A table of function pointers, one for each shape function.
-  typedef void (*ShapeFunctionSpec)(double,double,FEFunctionGerm*);
+  typedef void (*ShapeFunctionSpec)(double,double,FunctionGerm*);
   static const ShapeFunctionSpec shapeFunction[Nk];
   
   //! Evaluate shape function `k` at (`x`,`y`) with values returned in `germ`.
-  virtual void eval(int k, double x, double y,FEFunctionGerm*germ) {
+  virtual void eval(int k, double x, double y,FunctionGerm*germ) {
     shapeFunction[k](x,y,germ);
   }
 };
@@ -227,39 +227,39 @@ public:
   element-local degrees of freedom for the purposes of local computation, 
   (and the results added back again to the global residual and Jacobian arrays).
 
-  An FEDOFMap mediates the transfer between element-local and global degrees of freedom.
+  An DOFMap mediates the transfer between element-local and global degrees of freedom.
   In this very concrete implementation, the global degrees of freedom are either
   scalars (double's) or vectors (Vector2's), one per node in the IceGrid, 
-  and the local degrees of freedom on the element are FEDOFMap::Nk (%i.e. four) scalars or vectors, one 
+  and the local degrees of freedom on the element are DOFMap::Nk (%i.e. four) scalars or vectors, one 
   for each vertex of the element.
 
-  The FEDOFMap is also (perhaps awkwardly) overloaded to also mediate transfering locally
+  The DOFMap is also (perhaps awkwardly) overloaded to also mediate transfering locally
   computed contributions to residual and Jacobian matricies to their global
   counterparts.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class FEDOFMap
+class DOFMap
 {
 public:
-  FEDOFMap();
-  ~FEDOFMap();
+  DOFMap();
+  ~DOFMap();
 
   // scalar
-  void extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const;
+  void extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const;
   void extractLocalDOFs(double const*const*x_global, double *x_local) const;
 
-  void extractLocalDOFs(int i, int j, IceModelVec2S &x_global, double *x_local) const;
+  void extractLocalDOFs(int i, int j, const IceModelVec2S &x_global, double *x_local) const;
   void extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const;
 
   void addLocalResidualBlock(const double *y, IceModelVec2S &y_global);
   void addLocalResidualBlock(const double *y, double **yg);
 
   // vector
-  void extractLocalDOFs(IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local) const;
   void extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void extractLocalDOFs(int i, int j, IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(int i, int j, const IceModelVec2V &x_global, Vector2 *x_local) const;
   void extractLocalDOFs(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
 
   void addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global);
@@ -270,9 +270,9 @@ public:
   void markRowInvalid(int k);
   void markColInvalid(int k);
 
-  void localToGlobal(int k, int *i, int *j);
+  void localToGlobal(int k, int *i, int *j) const;
 
-  PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
+  void addLocalJacobianBlock(const double *K, Mat J);
 
   static const unsigned int Nk = 4; //<! The number of test functions defined on an element.
   
@@ -323,15 +323,15 @@ private:
   compute on all elements containg a real vertex, but only update rows corresponding to that real vertex.
 
   The calculation of what elements to index over needs to account for ghosts and the
-  presence or absense of periodic boundary conditions in the IceGrid.  The FEElementMap performs
-  that computation for you (see FEElementMap::xs and friends).
+  presence or absense of periodic boundary conditions in the IceGrid.  The ElementMap performs
+  that computation for you (see ElementMap::xs and friends).
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class FEElementMap
+class ElementMap
 {
 public:
-  FEElementMap(const IceGrid &g);
+  ElementMap(const IceGrid &g);
   
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
   int element_count()
@@ -364,7 +364,7 @@ public:
   \f[
   \int_E f(x)\; dx \approx \sum_q f(x_q) w_q
   \f]
-  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An FEQuadrature is used
+  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature is used
   to evaluate finite element functions at quadrature points, and to compute weights \f$w_q\f$
   for a given element.
 
@@ -385,26 +385,26 @@ public:
   of Gaussian integration on an interval that is exact for cubic functions on the interval.
 
   Integration on a physical element can be thought of as being done by change of variables.  The quadrature weights need
-  to be modified, and the FEQuadrature takes care of this for you.  Because all elements in an IceGrid are congruent, the
+  to be modified, and the Quadrature takes care of this for you.  Because all elements in an IceGrid are congruent, the
   quadrature weights are the same for each element, and are computed upon initialization with an IceGrid.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class FEQuadrature
+class Quadrature
 {
 public:
-  FEQuadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
+  Quadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
   static const unsigned int Nq = 4;  //!< Number of quadrature points.
   static const unsigned int Nk = 4;  //!< Number of test functions on the element.
   
-  // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
-  // FEFunctionGerms
-  typedef FEFunctionGerm FEFunctionGermArray[FEQuadrature::Nq];
+  // define FunctionGermArray, which is an array of Quadrature::Nq
+  // FunctionGerms
+  typedef FunctionGerm FunctionGermArray[Quadrature::Nq];
 
-  const FEFunctionGermArray* testFunctionValues();
-  const FEFunctionGerm* testFunctionValues(int q);
-  const FEFunctionGerm* testFunctionValues(int q, int k);
+  const FunctionGermArray* testFunctionValues();
+  const FunctionGerm* testFunctionValues(int q);
+  const FunctionGerm* testFunctionValues(int q, int k);
   
   const double* getWeightedJacobian();
 
@@ -421,45 +421,45 @@ protected:
   // multiplied by corresponding quadrature weights.
   double m_JxW[Nq];
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
-  FEFunctionGerm m_germs[Nq][Nk];
+  FunctionGerm m_germs[Nq][Nk];
 };
 
 //! This version supports 2D scalar fields.
-class FEQuadrature_Scalar : public FEQuadrature {
+class Quadrature_Scalar : public Quadrature {
 public:
-  FEQuadrature_Scalar(const IceGrid &grid, double L);
+  Quadrature_Scalar(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const double *x, double *vals);
   void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, double const*const*x_global,
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, double const*const*x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, double const*const*x_global, 
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, double const*const*x_global, 
                                   double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2S &x_global,
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2S &x_global, 
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global, 
                                   double *vals, double *dx, double *dy);
 private:
   double m_tmp[Nk];
 };
 
 //! This version supports 2D vector fields.
-class FEQuadrature_Vector : public FEQuadrature {
+class Quadrature_Vector : public Quadrature {
 public:
-  FEQuadrature_Vector(const IceGrid &grid, double L);
+  Quadrature_Vector(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);  
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);  
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, Vector2 const*const*x_global,  
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, Vector2 const*const*x_global,  
                                   Vector2 *vals, double (*Dv)[3]);
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,  
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
+  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,  
                                   Vector2 *vals, double (*Dv)[3]);
 private:
   Vector2 m_tmp[Nk];
@@ -470,48 +470,49 @@ class DirichletData {
 public:
   DirichletData();
   ~DirichletData();
-  PetscErrorCode init(IceModelVec2Int *indices, double weight = 1.0);
-  void constrain(FEDOFMap &dofmap);
+  void init(const IceModelVec2Int *indices, double weight = 1.0);
+  void constrain(DOFMap &dofmap);
   operator bool() {
     return m_indices != NULL;
   }
-  PetscErrorCode finish();
+  void finish();
 protected:
-  PetscErrorCode init_impl(IceModelVec2Int *indices, IceModelVec *values, double weight = 1.0);
-  PetscErrorCode finish_impl(IceModelVec *values);
-  double           m_indices_e[FEQuadrature::Nk];
-  IceModelVec2Int *m_indices;
+  void init_impl(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
+  void finish_impl(const IceModelVec *values);
+  double           m_indices_e[Quadrature::Nk];
+  const IceModelVec2Int *m_indices;
   double           m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
 public:
   DirichletData_Scalar();
-  PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2S *values, double weight = 1.0);
-  void update(FEDOFMap &dofmap, double* x_e);
-  void update_homogeneous(FEDOFMap &dofmap, double* x_e);
+  void init(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
+  void update(const DOFMap &dofmap, double* x_e);
+  void update_homogeneous(const DOFMap &dofmap, double* x_e);
   void fix_residual(const double **x, double **r);
   void fix_residual_homogeneous(double **r_global);
-  PetscErrorCode fix_jacobian(Mat J);
-  PetscErrorCode finish();
+  void fix_jacobian(Mat J);
+  void finish();
 protected:
-  IceModelVec2S *m_values;
+  const IceModelVec2S *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector();
-  PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
-  void update(FEDOFMap &dofmap, Vector2* x_e);
-  void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
+  void init(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
+  void update(const DOFMap &dofmap, Vector2* x_e);
+  void update_homogeneous(const DOFMap &dofmap, Vector2* x_e);
   void fix_residual(const Vector2 **x, Vector2 **r);
   void fix_residual_homogeneous(Vector2 **r);
-  PetscErrorCode fix_jacobian(Mat J);
-  PetscErrorCode finish();
+  void fix_jacobian(Mat J);
+  void finish();
 protected:
-  IceModelVec2V *m_values;
+  const IceModelVec2V *m_values;
 };
 
+} // end of namespace fem
 } // end of namespace pism
 
 #endif/* _FETOOLS_H_*/

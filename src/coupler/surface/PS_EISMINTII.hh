@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,26 +24,29 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace surface {
 
 /** EISMINT II climate inputs.
  *
  * This class should be removed together with the pisms executable
  * (once I get to that).
  */
-class PS_EISMINTII : public PSFormulas {
+class EISMINTII : public PSFormulas {
 public:
-  PS_EISMINTII(IceGrid &g, const Config &conf, int experiment);
-  ~PS_EISMINTII();
+  EISMINTII(const IceGrid &g, int experiment);
+  ~EISMINTII();
 
   // the interface:
-  PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(PetscReal t, PetscReal dt);
+  void init();
 protected:
-  PetscErrorCode initialize_using_formulas();
+  virtual MaxTimestep max_timestep_impl(double t);
+  void update_impl(PetscReal t, PetscReal dt);
+  void initialize_using_formulas();
   int m_experiment;
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PS_EISMINTII_H_ */

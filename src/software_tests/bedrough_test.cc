@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler
+// Copyright (C) 2010--2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,52 +30,47 @@ static char help[] = "\nBEDROUGH_TEST\n"
 #include "iceModelVec.hh"
 #include "PISMBedSmoother.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
+  MPI_Comm com = MPI_COMM_WORLD;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  petsc::Initializer petsc(argc, argv, help);
 
-  MPI_Comm com = PETSC_COMM_WORLD;
+  com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
+    double Lx = 1200e3;
     IceGrid grid(com, config);
-    grid.Mx = 81;
-    grid.My = 81;
-    grid.Lx = 1200e3;
-    grid.Ly = grid.Lx;
-    grid.periodicity = NOT_PERIODIC;
-    grid.compute_nprocs();
-    grid.compute_ownership_ranges();
-    ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    ierr = grid.allocate(); CHKERRQ(ierr);
+    grid.set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
+    grid.allocate();
 
-    PetscPrintf(grid.com,"BedSmoother TEST\n");
+    ierr = PetscPrintf(grid.com,"BedSmoother TEST\n");
+    PISM_CHK(ierr, "PetscPrintf");
 
-    bool show;
-    ierr = OptionsIsSet("-show", show); CHKERRQ(ierr);
+    bool show = options::Bool("-show", "turn on diagnostic viewers");
 
     IceModelVec2S topg, usurf, theta;
-    ierr = topg.create(grid, "topg", WITH_GHOSTS, 1); CHKERRQ(ierr);
-    ierr = topg.set_attrs(
-                          "trybedrough_tool", "original topography",
-                          "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = usurf.create(grid, "usurf", WITH_GHOSTS, 1); CHKERRQ(ierr);
-    ierr = usurf.set_attrs(
-                           "trybedrough_tool", "ice surface elevation",
-                           "m", "surface_altitude"); CHKERRQ(ierr);
-    ierr = theta.create(grid, "theta", WITH_GHOSTS, 1); CHKERRQ(ierr);
-    ierr = theta.set_attrs(
-                           "trybedrough_tool",
-                           "coefficient theta in Schoof (2003) bed roughness parameterization",
-                           "", ""); CHKERRQ(ierr);
+    topg.create(grid, "topg", WITH_GHOSTS, 1);
+    topg.set_attrs("trybedrough_tool", "original topography",
+                   "m", "bedrock_altitude");
+    usurf.create(grid, "usurf", WITH_GHOSTS, 1);
+    usurf.set_attrs("trybedrough_tool", "ice surface elevation",
+                    "m", "surface_altitude");
+    theta.create(grid, "theta", WITH_GHOSTS, 1);
+    theta.set_attrs("trybedrough_tool",
+                    "coefficient theta in Schoof (2003) bed roughness parameterization",
+                    "", "");
 
     // put in bed elevations, a la this Matlab:
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
@@ -84,58 +79,69 @@ int main(int argc, char *argv[]) {
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
-        100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
+      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x(i) / 600.0e3) +
+        100.0 * sin(2.0 * M_PI * (grid.x(i) + 1.5 * grid.y(j)) / 40.0e3);
     }
 
-    ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
+    usurf.set(1000.0);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
     config.set_double("Glen_exponent", 3.0);
     config.set_double("bed_smoother_range", 50.0e3);
-    BedSmoother smoother(grid, config, 1);
-    ierr = smoother.preprocess_bed(topg); CHKERRQ(ierr);
+    stressbalance::BedSmoother smoother(grid, 1);
+    smoother.preprocess_bed(topg);
     int Nx,Ny;
-    ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
-    PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    ierr = smoother.get_theta(usurf, &theta); CHKERRQ(ierr);
+    smoother.get_smoothing_domain(Nx,Ny);
+
+    ierr = PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
+    PISM_CHK(ierr, "PetscPrintf");
+
+    smoother.get_theta(usurf, theta);
 
     const IceModelVec2S &topg_smoothed = smoother.get_smoothed_bed();
     if (show) {
       const int  window = 400;
-      ierr = topg.view(window);  CHKERRQ(ierr);
-      ierr = topg_smoothed.view(window);  CHKERRQ(ierr);
-      ierr = theta.view(window);  CHKERRQ(ierr);
+      topg.view(window);
+      topg_smoothed.view(window);
+      theta.view(window);
       printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
-      ierr = PetscSleep(10); CHKERRQ(ierr);
+
+      ierr = PetscSleep(10);
+      PISM_CHK(ierr, "PetscSleep");
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
-    ierr = topg.min(topg_min); CHKERRQ(ierr);
-    ierr = topg.max(topg_max); CHKERRQ(ierr);
-    ierr = topg_smoothed.min(topgs_min); CHKERRQ(ierr);
-    ierr = topg_smoothed.max(topgs_max); CHKERRQ(ierr);
-    ierr = theta.min(theta_min); CHKERRQ(ierr);
-    ierr = theta.max(theta_max); CHKERRQ(ierr);
-    PetscPrintf(grid.com,
-                "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
-                topg_min, topg_max);
-    PetscPrintf(grid.com,
-                "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
-                topgs_min, topgs_max);
-    PetscPrintf(grid.com,
-                "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
-                theta_min, theta_max);
+    topg_min = topg.min();
+    topg_max = topg.max();
+    topgs_min = topg_smoothed.min();
+    topgs_max = topg_smoothed.max();
+    theta_min = theta.min();
+    theta_max = theta.max();
+    ierr = PetscPrintf(grid.com,
+                       "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+                       topg_min, topg_max);
+    PISM_CHK(ierr, "PetscPrintf");
 
-    bool dump = false;
-    ierr = OptionsIsSet("-dump", dump); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com,
+                       "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+                       topgs_min, topgs_max);
+    PISM_CHK(ierr, "PetscPrintf");
+
+    ierr = PetscPrintf(grid.com,
+                       "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
+                       theta_min, theta_max);
+    PISM_CHK(ierr, "PetscPrintf");
+
+    bool dump = options::Bool("-dump", "dump bed roughness data");
     if (dump) {
-      ierr = topg.dump("bedrough_test_topg.nc"); CHKERRQ(ierr);
-      ierr = topg_smoothed.dump("bedrough_test_topg_smoothed.nc"); CHKERRQ(ierr);
-      ierr = theta.dump("bedrough_test_theta.nc"); CHKERRQ(ierr);
+      topg.dump("bedrough_test_topg.nc");
+      topg_smoothed.dump("bedrough_test_topg_smoothed.nc");
+      theta.dump("bedrough_test_theta.nc");
     }
 
   }
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  catch (...) {
+    handle_fatal_errors(com);
+  }
   return 0;
 }

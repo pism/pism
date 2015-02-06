@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -29,35 +29,49 @@
 
 namespace pism {
 
+namespace atmosphere {
 class AtmosphereModel;
+}
+
 class IceModelVec2S;
+
+//! @brief Surface models and modifiers: provide top-surface
+//! temperature, mass flux, liquid water fraction, mass and thickness of the surface
+//! layer.
+namespace surface {
 
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component_TS {
 public:
-  SurfaceModel(IceGrid &g, const Config &conf);
+  SurfaceModel(const IceGrid &g);
   virtual ~SurfaceModel();
 
   // the interface:
-  virtual void attach_atmosphere_model(AtmosphereModel *input);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
-  virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
-  virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
+  void ice_surface_mass_flux(IceModelVec2S &result);
+
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
+  virtual void ice_surface_temperature(IceModelVec2S &result) = 0;
+  virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result);
+  virtual void mass_held_in_surface_layer(IceModelVec2S &result);
+  virtual void surface_layer_thickness(IceModelVec2S &result);
 
   // provide default re-implementations of these parent's methods:
-  virtual PetscErrorCode init(Vars &vars);
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
+  virtual void init();
+  virtual MaxTimestep max_timestep(double my_t);
 protected:
-  AtmosphereModel *atmosphere;
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) = 0;
+
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+protected:
+  atmosphere::AtmosphereModel *atmosphere;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif  // __PISMSurfaceModel_hh

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,9 @@
 #include "PIO.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
+#include "PISMConfig.hh"
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -49,20 +52,21 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   com = grid.com;
-  rank = grid.rank;
+  rank = grid.rank();
   report_range = true;
 
-  print_grid_info(input, grid.get_unit_system(), 3);
+  verbPrintf(3, com, "\nRegridding file grid info:\n");
+  input.report(com, grid.config.get_unit_system(), 3);
 
   // Grid spacing (assume that the grid is equally-spaced) and the
   // extent of the domain. To compute the extent of the domain, assume
   // that the grid is cell-centered, so edge of the domain is half of
   // the grid spacing away from grid points at the edge.
   const double
-    x_min = grid.x0 - grid.Lx,
-    x_max = grid.x0 + grid.Lx,
-    y_min = grid.y0 - grid.Ly,
-    y_max = grid.y0 + grid.Ly;
+    x_min = grid.x0() - grid.Lx(),
+    x_max = grid.x0() + grid.Lx(),
+    y_min = grid.y0() - grid.Ly(),
+    y_max = grid.y0() + grid.Ly();
   const double
     input_x_min = input.x0 - input.Lx,
     input_x_max = input.x0 + input.Lx,
@@ -75,26 +79,20 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
            y_min >= input_y_min - eps && y_max <= input_y_max + eps &&
            z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
 
-    PetscPrintf(com,
-                "target computational domain not a subset of source (in NetCDF file)\n"
-                "  computational domain:\n");
-    PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
-                x_min, x_max,
-                y_min, y_max,
-                z_min, z_max);
-    PetscPrintf(grid.com, "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
-                input_x_min, input_x_max,
-                input_y_min, input_y_max,
-                input.z_min, input.z_max);
-    PISMEnd();
+    throw RuntimeError::formatted("target computational domain not a subset of source (in NetCDF file)\n"
+                                  "computational domain:\n"
+                                  "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n"
+                                  "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters",
+                                  x_min, x_max, y_min, y_max, z_min, z_max,
+                                  input_x_min, input_x_max, input_y_min, input_y_max, input.z_min, input.z_max);
   }
 
   // limits of the processor's part of the target computational domain
   double
-    x_min_proc = grid.x[grid.xs],
-    x_max_proc = grid.x[grid.xs + grid.xm - 1],
-    y_min_proc = grid.y[grid.ys],
-    y_max_proc = grid.y[grid.ys + grid.ym - 1];
+    x_min_proc = grid.x(grid.xs()),
+    x_max_proc = grid.x(grid.xs() + grid.xm() - 1),
+    y_min_proc = grid.y(grid.ys()),
+    y_max_proc = grid.y(grid.ys() + grid.ym() - 1);
 
   // T
   start[T] = input.t_len - 1;       // use the latest time.
@@ -102,49 +100,60 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // X
   start[X] = 0;
-  while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min_proc)
+  while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min_proc) {
     start[X]++;
+  }
 
   count[X] = 1;
-  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X] - 1] <= x_max_proc)
+  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X] - 1] <= x_max_proc) {
     count[X]++;
+  }
 
   // Y
   start[Y] = 0;
-  while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min_proc)
+  while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min_proc) {
     start[Y]++;
+  }
 
   count[Y] = 1;
-  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y] - 1] <= y_max_proc)
+  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y] - 1] <= y_max_proc) {
     count[Y]++;
+  }
 
   // Z
   start[Z] = 0;                    // always start at the base
-  count[Z] = PetscMax(input.z_len, 1); // read at least one level
+  count[Z] = std::max(input.z_len, 1u); // read at least one level
   zlevels = input.z;
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  a_len = count[X] * count[Y] * PetscMax(count[Z], 1);
-  int my_a_len = a_len, mpi_a_len = a_len;
-  // MPI_Reduce takes a pointer to int and a_len is an unsigned int,
-  // so we create a copy with the type int.
-  MPI_Reduce(&my_a_len, &(mpi_a_len), 1, MPI_INT, MPI_MAX, 0, com);
-  a_len = (unsigned int)mpi_a_len;
-  PetscMalloc(a_len * sizeof(double), &(a));
-  // FIXME: we need error checking here
+  unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
+  unsigned int proc0_buffer_size = buffer_size;
+  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
+
+  ParallelSection allocation(grid.com);
+  try {
+    if (rank == 0) {
+      buffer.resize(proc0_buffer_size);
+    } else {
+      buffer.resize(buffer_size);
+    }
+  } catch (...) {
+    allocation.failed();
+  }
+  allocation.check();
 
   // Compute indices of neighbors and map-plane interpolation coefficients.
-  x_left.resize(grid.xm);
-  x_right.resize(grid.xm);
-  x_alpha.resize(grid.xm);
+  x_left.resize(grid.xm());
+  x_right.resize(grid.xm());
+  x_alpha.resize(grid.xm());
 
   // x-direction; loop over all grid points in this processor's sub-domain
-  for (int i = 0; i < grid.xm; ++i) {
+  for (int i = 0; i < grid.xm(); ++i) {
     // i is the index in this processor's sub-domain
     // x is the x-coordinate in the total domain
-    double x = grid.x[grid.xs + i];
+    double x = grid.x(grid.xs() + i);
 
     // This is here to make it crash and burn if something goes wrong, instead
     // of quietly doing the wrong thing.
@@ -175,11 +184,11 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // of all the coarse grid points. So, we modify x_left, x_right, and
   // x_alpha to use constant extrapolation for these fine grid points.
 
-  for (int i = 0; i < grid.xm; ++i) {
+  for (int i = 0; i < grid.xm(); ++i) {
     // for all points in the x-direction in this sub-domain
 
     // get the coordinate
-    double x = grid.x[grid.xs + i];
+    double x = grid.x(grid.xs() + i);
     if (x_left[i] == -1 && x < input.x[0]) {
       // if x_left was not assigned and the point is to the left of
       // the left-most column in the input grid
@@ -196,12 +205,12 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
 
   // y-direction
-  y_left.resize(grid.ym);
-  y_right.resize(grid.ym);
-  y_alpha.resize(grid.ym);
+  y_left.resize(grid.ym());
+  y_right.resize(grid.ym());
+  y_alpha.resize(grid.ym());
 
-  for (int j = 0; j < grid.ym; ++j) {
-    double y = grid.y[grid.ys + j];
+  for (int j = 0; j < grid.ym(); ++j) {
+    double y = grid.y(grid.ys() + j);
 
     // This is here to make it crash and burn if something goes wrong, instead
     // of quietly doing the wrong thing.
@@ -222,11 +231,11 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // Take care of the edge if the domain in the y-direction (see above
   // for details).
-  for (int i = 0; i < grid.ym; ++i) {
+  for (int i = 0; i < grid.ym(); ++i) {
     // for all points in the y-direction in this sub-domain
 
     // get the coordinate
-    double y = grid.y[grid.ys + i];
+    double y = grid.y(grid.ys() + i);
     if (y_left[i] == -1 && y < input.y[0]) {
       // if y_left was not assigned and the point is below the
       // bottom row in the input grid
@@ -243,60 +252,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
 }
 
-
-//! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
-  PetscFreeVoid(a);
-}
-
-//! Print out the actual array information stored in the local interpolation context.
-/*!
-Every processor in the communicator `com` must call this for it to work, I think.
- */
-PetscErrorCode LocalInterpCtx::printArray() {
-  PetscErrorCode ierr;
-
-  ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printArray():  rank = %d, a_len = %d\n",
-             rank, a_len); CHKERRQ(ierr);
-  for (unsigned int k = 0; k < a_len; k++) {
-    ierr = PetscSynchronizedPrintf(com," %5.4f,",a[k]); CHKERRQ(ierr);
-  }
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(com); CHKERRQ(ierr);
-#else
-  ierr = PetscSynchronizedFlush(com, NULL); CHKERRQ(ierr);
-#endif
-  return 0;
-}
-
-void LocalInterpCtx::print_grid_info(const grid_info &g, const UnitSystem &s, int threshold) {
-
-  verbPrintf(threshold, com,
-             "\nRegridding file grid info:\n");
-
-  verbPrintf(threshold, com,
-             "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-             g.x_len,
-             (g.x0 - g.Lx)/1000.0,
-             (g.x0 + g.Lx)/1000.0,
-             g.x0/1000.0,
-             g.Lx/1000.0);
-
-  verbPrintf(threshold, com,
-             "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-             g.y_len,
-             (g.y0 - g.Ly)/1000.0,
-             (g.y0 + g.Ly)/1000.0,
-             g.y0/1000.0,
-             g.Ly/1000.0);
-
-  verbPrintf(threshold, com,
-             "  z:  %5d points, [%10.3f, %10.3f] m\n",
-             g.z_len, g.z_min, g.z_max);
-
-  verbPrintf(threshold, com,
-             "  t:  %5d points, last time = %.3f years\n\n",
-             g.t_len, s.convert(g.time, "seconds", "years"));
+  // empty
 }
 
 } // end of namespace pism

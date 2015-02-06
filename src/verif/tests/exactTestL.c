@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007--2012 Ed Bueler
+   Copyright (C) 2007--2012, 2015 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -115,7 +115,9 @@ int getU(double *r, int N, double *u,
      u[count] = (count == 0) ? 0.0 : u[count-1];
      while (rr > r[count]) {
        status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(u[count]));
-       if (status != GSL_SUCCESS)   break;
+       if (status != GSL_SUCCESS){
+         break;
+       }
      }
    }
 
@@ -154,6 +156,7 @@ int exactL_list(double *r, int N, double *H, double *b, double *a) {
      believed to be predictable and accurate */
   stat = getU(r,N,u,1.0e-12,0.0,1); 
   if (stat != GSL_SUCCESS) {
+    free(u);
     return stat;
   }
   

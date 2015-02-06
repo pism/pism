@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,10 @@
 #define __DrainageCalculator_hh
 
 #include "NCVariable.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
+namespace energy {
 
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {
@@ -42,10 +44,12 @@ public:
       if (omega > OM2) {
         if (omega > OM3) {
           return DR3;
-        } else
+        } else {
           return DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
-      } else
+        }
+      } else {
         return DR2 * (omega - OM1) / OM1;
+      }
     } else {
       return 0.0;
     }
@@ -56,6 +60,7 @@ private:
 };
 
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif // __DrainageCalculator_hh

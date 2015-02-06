@@ -130,6 +130,13 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		retval->sig  = CCS_VALID_SIG;
 		retval->name = (char *)malloc( sizeof(char) * (strlen(calname)+1) );
+                /* new code by CK */
+                if ( retval->name == NULL ) {
+                  free(retval);
+                  fprintf( stderr, "Error, cannot allocate space for the calcalcs calendar. Returning NULL\n" );
+                  return( NULL );
+                }
+                /* end of new code by CK */
 		strcpy( retval->name, calname );
 
 		retval->mixed = 1;
@@ -153,6 +160,10 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 		if( set_xition_extra_info( retval ) != 0 ) {
 			fprintf( stderr, "calcalcs_init_cal: Error trying to initialize calendar \"%s\": %s. Returning NULL\n",
 				calname, error_message );
+                        /* new code by CK */
+                        free(retval->name);
+                        free(retval);
+                        /* end of new code by CK */
 			return(NULL);
 			}
 		}
@@ -170,6 +181,13 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		retval->sig  = CCS_VALID_SIG;
 		retval->name = (char *)malloc( sizeof(char) * (strlen(calname)+1) );
+                /* new code by CK */
+                if ( retval->name == NULL ) {
+                  free(retval);
+                  fprintf( stderr, "Error, cannot allocate space for the calcalcs calendar. Returning NULL\n" );
+                  return( NULL );
+                }
+                /* end of new code by CK */
 		strcpy( retval->name, calname );
 		retval->ndays_reg  = 365;
 		retval->ndays_leap = 366;
@@ -194,6 +212,13 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		retval->sig  = CCS_VALID_SIG;
 		retval->name = (char *)malloc( sizeof(char) * (strlen(calname)+1) );
+                /* new code by CK */
+                if ( retval->name == NULL ) {
+                  free(retval);
+                  fprintf( stderr, "Error, cannot allocate space for the calcalcs calendar. Returning NULL\n" );
+                  return( NULL );
+                }
+                /* end of new code by CK */
 		strcpy( retval->name, calname );
 		retval->ndays_reg  = 365;
 		retval->ndays_leap = 366;
@@ -215,6 +240,13 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		retval->sig  = CCS_VALID_SIG;
 		retval->name = (char *)malloc( sizeof(char) * (strlen(calname)+1) );
+                /* new code by CK */
+                if ( retval->name == NULL ) {
+                  free(retval);
+                  fprintf( stderr, "Error, cannot allocate space for the calcalcs calendar. Returning NULL\n" );
+                  return( NULL );
+                }
+                /* end of new code by CK */
 		strcpy( retval->name, calname );
 		retval->ndays_reg  = 365;
 		retval->ndays_leap = 366;
@@ -237,6 +269,13 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		retval->sig  = CCS_VALID_SIG;
 		retval->name = (char *)malloc( sizeof(char) * (strlen("noleap")+1) );
+                /* new code by CK */
+                if ( retval->name == NULL ) {
+                  free(retval);
+                  fprintf( stderr, "Error, cannot allocate space for the calcalcs calendar. Returning NULL\n" );
+                  return( NULL );
+                }
+                /* end of new code by CK */
 		strcpy( retval->name, "noleap" );
 		retval->ndays_reg  = 365;
 		retval->ndays_leap = 365;
@@ -257,6 +296,13 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		retval->sig  = CCS_VALID_SIG;
 		retval->name = (char *)malloc( sizeof(char) * (strlen(calname)+1) );
+                /* new code by CK */
+                if ( retval->name == NULL ) {
+                  free(retval);
+                  fprintf( stderr, "Error, cannot allocate space for the calcalcs calendar. Returning NULL\n" );
+                  return( NULL );
+                }
+                /* end of new code by CK */
 		strcpy( retval->name, calname );
 		retval->ndays_reg  = 360;
 		retval->ndays_leap = 360;

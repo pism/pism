@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,11 @@
 
 #include "SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
+#include "KSP.hh"
+#include "Mat.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements the forward problem of the map taking \f$\tau_c\f$ to the corresponding solution of the %SSA.
 /*! The class SSAFEM solves the %SSA, and the solution depends on a large number of parameters.  Considering
@@ -97,7 +100,7 @@ namespace pism {
   methods require the transpose of this map; to apply \f$DF^t\f$ to \f$du\f$ use
   \ref apply_linearization_transpose.
 */
-class IP_SSAHardavForwardProblem : public SSAFEM
+class IP_SSAHardavForwardProblem : public stressbalance::SSAFEM
 {
 public:
 
@@ -105,9 +108,8 @@ public:
   typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
-                             IPDesignVariableParameterization &tp,
-                             const Config &c);
+  IP_SSAHardavForwardProblem(const IceGrid &g, const EnthalpyConverter &e,
+                             IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSAHardavForwardProblem();
 
@@ -122,10 +124,9 @@ public:
     having the desired values in the fixed locations, and using set_tauc_fixed_locations()
     to indicated the nodes that should not be changed.
   */
-  virtual PetscErrorCode set_design_fixed_locations(IceModelVec2Int &locations)
+  virtual void set_design_fixed_locations(IceModelVec2Int &locations)
   {
     m_fixed_design_locations = &locations;
-    return 0;
   }
 
   //! Returns the last solution of the %SSA as computed by \ref linearize_at.
@@ -138,38 +139,34 @@ public:
     return m_design_param;
   }
 
-  virtual PetscErrorCode set_design(IceModelVec2S &zeta);
+  virtual void set_design(IceModelVec2S &zeta);
 
-  virtual PetscErrorCode linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason);
+  virtual void linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
-  virtual PetscErrorCode assemble_residual(IceModelVec2V &u, Vec R);
+  virtual void assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
+  virtual void assemble_residual(IceModelVec2V &u, Vec R);
 
-  virtual PetscErrorCode assemble_jacobian_state(IceModelVec2V &u, Mat J);
+  virtual void assemble_jacobian_state(IceModelVec2V &u, Mat J);
 
-  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du);
-  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du);
-  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vector2 **du_a);
+  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du);
+  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du);
+  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vector2 **du_a);
 
-  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta);
-  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);
-  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, double **dzeta);
+  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta);
+  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);
+  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, double **dzeta);
 
-  virtual PetscErrorCode apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
-  virtual PetscErrorCode apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
+  virtual void apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
+  virtual void apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
-  virtual PetscErrorCode get_da(DM *da) {
+  virtual void get_da(DM *da) {
     *da = *m_da;
-    return 0;
   }
 
 protected:
 
-  PetscErrorCode construct();
-  PetscErrorCode destruct();
-
-  IceGrid &m_grid;                           ///< Cache of the comptuation grid.
+  void construct();
 
   IceModelVec2S   *m_zeta;                   ///< Current value of zeta, provided from caller.
   IceModelVec2S   m_dzeta_local;             ///< Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
@@ -182,18 +179,19 @@ protected:
   IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
   IceModelVec2S  m_hardav;
 
-  FEElementMap m_element_index;
-  FEQuadrature_Scalar m_quadrature;
-  FEDOFMap     m_dofmap;
+  fem::ElementMap m_element_index;
+  fem::Quadrature_Scalar m_quadrature;
+  fem::DOFMap     m_dofmap;
 
-  KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
-  Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose
+  petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
+  petsc::Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose
 
   SNESConvergedReason m_reason;
 
   bool m_rebuild_J_state;                    ///< Flag indicating that the state jacobian matrix needs rebuilding.
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSAHARDAVFORWARDPROBLEM_HH_HAD68BK7 */

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,32 +23,34 @@
 #include "PISMAtmosphere.hh"
 
 namespace pism {
+namespace atmosphere {
 
-class PAConstantPIK : public AtmosphereModel {
+class PIK : public AtmosphereModel {
 public:
-  PAConstantPIK(IceGrid &g, const Config &conf);
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &values);
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
+  PIK(const IceGrid &g);
+  virtual void init();
+  virtual void mean_precipitation(IceModelVec2S &result);
+  virtual void mean_annual_temp(IceModelVec2S &result);
+  virtual void begin_pointwise_access();
+  virtual void end_pointwise_access();
+  virtual void temp_time_series(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void temp_snapshot(IceModelVec2S &result);
+  virtual void init_timeseries(const std::vector<double> &ts);
 protected:
-  IceModelVec2S *usurf, *lat;
-  std::string input_file;
-  IceModelVec2S precipitation, air_temp;
-  NCSpatialVariable air_temp_snapshot;
-private:
-  PetscErrorCode allocate_PAConstantPIK();
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+protected:
+  std::string m_input_file;
+  IceModelVec2S m_precipitation, m_air_temp;
+  NCSpatialVariable m_air_temp_snapshot;
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PACONSTANTPIK_H_ */

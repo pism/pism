@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -72,34 +72,38 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     config.set_string("ssa_flow_law", "isothermal_glen")
-    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")))
+    config.set_double("ice_softness", pow(1.9e8, -config.get("ssa_Glen_exponent")))
     
     self.modeldata.setPhysics(enthalpyconverter)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
+
     vecs = self.modeldata.vecs
 
     vecs.tauc.set(0.0)     # irrelevant
-    vecs.bed.set(-1000.0); # assures shelf is floating
-    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+    vecs.bedrock_altitude.set(-1000.0); # assures shelf is floating
+
+    EC = PISM.EnthalpyConverter(PISM.Context().config)
+    enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+    vecs.enthalpy.set(enth0)
 
     grid      = self.grid
-    thickness = vecs.thickness;
-    surface   = vecs.surface
+    thickness = vecs.land_ice_thickness;
+    surface   = vecs.surface_altitude
     bc_mask   = vecs.bc_mask
     vel_bc    = vecs.vel_bc
-    ice_mask  = vecs.ice_mask
+    ice_mask  = vecs.mask
 
     ocean_rho = self.config.get("sea_water_density");
     ice_rho   = self.config.get("ice_density")
     
     with PISM.vec.Access(comm=[thickness,surface,bc_mask,vel_bc,ice_mask]):
       for (i,j) in grid.points():
-        x = grid.x[i]
+        x = grid.x(i)
         if x <= 0:
-          thickness[i,j] = H_exact(x + self.grid.Lx)
+          thickness[i,j] = H_exact(x + self.grid.Lx())
           ice_mask[i,j]  = PISM.MASK_FLOATING
         else:
           thickness[i,j] = 0
@@ -118,7 +122,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
   def exactSolution(self,i,j,x,y):
     if x<= 0:
-      u = u_exact(x+self.grid.Lx)
+      u = u_exact(x + self.grid.Lx())
     else:
       u = 0
     return [u,0]
@@ -128,11 +132,10 @@ if __name__ == '__main__':
   #   PISM.verbPrintf(1,context.com,help)
   #   PISM.verbPrintf(1,context.com,usage)
 
-  for o in PISM.OptionsGroup(context.com,"","Test CFBC"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="ssa_test_cfbc.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="ssa_test_cfbc.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
 

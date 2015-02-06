@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,18 +30,20 @@
 #include "PISMDiagnostic.hh"
 #include "bedrockThermalUnit.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-PetscErrorCode IceModel::additionalAtStartTimestep() {
-  return 0;
+void IceModel::additionalAtStartTimestep() {
+  // empty
 }
 
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-PetscErrorCode IceModel::additionalAtEndTimestep() {
-  return 0;
+void IceModel::additionalAtEndTimestep() {
+  // empty
 }
 
 //! Catch signals -USR1, -USR2 and -TERM.
@@ -59,7 +61,6 @@ NetCDF file because there is no effect on it, but there is an indication at `std
 Signal `SIGUSR2` makes PISM flush time-series, without saving model state.
  */
 int IceModel::endOfTimeStepHook() {
-  PetscErrorCode ierr;
   
   if (pism_signal == SIGTERM) {
     verbPrintf(1, grid.com, 
@@ -69,6 +70,8 @@ int IceModel::endOfTimeStepHook() {
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
              grid.time->date().c_str());
     stampHistory(str);
+    // Tell the caller that the user requested an early termination of
+    // the run.
     return 1;
   }
   
@@ -83,7 +86,7 @@ int IceModel::endOfTimeStepHook() {
     dumpToFile(file_name);
 
     // flush all the time-series buffers:
-    ierr = flush_timeseries(); CHKERRQ(ierr); 
+    flush_timeseries();
   }
 
   if (pism_signal == SIGUSR2) {
@@ -92,7 +95,7 @@ int IceModel::endOfTimeStepHook() {
     pism_signal = 0;
 
     // flush all the time-series buffers:
-    ierr = flush_timeseries(); CHKERRQ(ierr);
+    flush_timeseries();
   }
 
   return 0;
@@ -100,36 +103,29 @@ int IceModel::endOfTimeStepHook() {
 
 
 //! Build a history string from the command which invoked PISM.
-PetscErrorCode  IceModel::stampHistoryCommand() {
-  PetscErrorCode ierr;
+void  IceModel::stampHistoryCommand() {
   
   char startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
-           "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
-  ierr = stampHistory(std::string(startstr)); CHKERRQ(ierr);
+           "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size());
+  stampHistory(std::string(startstr));
 
   global_attributes.set_string("history",
                                pism_args_string() + global_attributes.get_string("history"));
-
-  return 0;
 }
 
-PetscErrorCode IceModel::update_run_stats() {
+void IceModel::update_run_stats() {
   PetscErrorCode ierr;
 
-  MPI_Datatype mpi_type;
-  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
-
   // timing stats
-  PetscLogDouble current_time, my_current_time;
   double wall_clock_hours, proc_hours, mypph;
-  ierr = GetTime(&my_current_time); CHKERRQ(ierr);
-  MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
+  double current_time = GlobalMax(grid.com, GetTime());
+  
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
-  proc_hours = grid.size * wall_clock_hours;
+  proc_hours = grid.size() * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
   mypph = grid.convert(grid.time->current() - grid.time->start(), "seconds", "years") / proc_hours;
@@ -138,20 +134,22 @@ PetscErrorCode IceModel::update_run_stats() {
 
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
-  PetscLogDouble flops, my_flops;
-  ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
-  MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
+  PetscLogDouble my_flops = 0.0;
+  ierr = PetscGetFlops(&my_flops);
+  PISM_CHK(ierr, "PetscGetFlops");
 
+  double flops = GlobalSum(grid.com, my_flops);
+  
   run_stats.set_double("wall_clock_hours", wall_clock_hours);
   run_stats.set_double("processor_hours", proc_hours);
   run_stats.set_double("model_years_per_processor_hour", mypph);
   run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
-  run_stats.set_double("grid_dx_meters", grid.dx);
-  run_stats.set_double("grid_dy_meters", grid.dy);
-  run_stats.set_double("grid_dz_min_meters", grid.dzMIN);
-  run_stats.set_double("grid_dz_max_meters", grid.dzMAX);
+  run_stats.set_double("grid_dx_meters", grid.dx());
+  run_stats.set_double("grid_dy_meters", grid.dy());
+  run_stats.set_double("grid_dz_min_meters", grid.dz_min());
+  run_stats.set_double("grid_dz_max_meters", grid.dz_max());
   if (btu != NULL) {
-    run_stats.set_double("grid_dzb_meters", btu->get_vertical_spacing());
+    run_stats.set_double("grid_dzb_meters", btu->vertical_spacing());
   }
   run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 
@@ -164,16 +162,13 @@ PetscErrorCode IceModel::update_run_stats() {
   run_stats.set_double("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
   run_stats.set_double("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
   run_stats.set_double("discharge_flux_cumulative", discharge_flux_cumulative);
-
-  return 0;
 }
 
 //! Build the particular history string associated to the end of a PISM run,
 //! including a minimal performance assessment.
-PetscErrorCode  IceModel::stampHistoryEnd() {
-  PetscErrorCode ierr;
+void  IceModel::stampHistoryEnd() {
 
-  ierr = update_run_stats(); CHKERRQ(ierr);
+  update_run_stats();
 
   // build and put string into global attribute "history"
   char str[TEMPORARY_STRING_LENGTH];
@@ -185,47 +180,48 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
            run_stats.get_double("model_years_per_processor_hour"),
            run_stats.get_double("PETSc_MFlops"));
 
-  ierr = stampHistory(str); CHKERRQ(ierr);
-
-  return 0;
+  stampHistory(str);
 }
 
 
 //! Get time and user/host name and add it to the given string.
-PetscErrorCode  IceModel::stampHistory(const std::string &str) {
+void  IceModel::stampHistory(const std::string &str) {
 
   std::string history = pism_username_prefix(grid.com) + (str + "\n");
 
   global_attributes.set_string("history",
                                history + global_attributes.get_string("history"));
   
-  return 0;
 }
 
 //! Check if the thickness of the ice is too large and extend the grid if necessary.
 /*!
   Extends the grid such that the new one has 2 (two) levels above the ice.
  */
-PetscErrorCode IceModel::check_maximum_thickness() {
-  PetscErrorCode  ierr;
-  double H_min, H_max;
+void IceModel::check_maximum_thickness() {
+Range thk_range = ice_thickness.range();
+  if (grid.Lz() >= thk_range.max) {
+    return;
+  }
 
-  ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
-  if (grid.Lz >= H_max) return 0;
-
-  ierr = PetscPrintf(grid.com,
-                     "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m).\n",
-                     H_max, grid.Lz); CHKERRQ(ierr);
-  PISMEnd();
-
-  return 0;
+  throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height"
+                                " of the computational box (%7.4f m).",
+                                thk_range.max, grid.Lz());
 }
 
 
 //! Allows derived classes to extend their own IceModelVec3's in vertical.
 /*! Base class version does absolutely nothing. */
-PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
-  return 0;
+void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
+  // empty
+}
+
+const IceGrid& IceModel::get_grid() const {
+  return grid;
+}
+
+const EnthalpyConverter& IceModel::enthalpy_converter() const {
+  return *EC;
 }
 
 } // end of namespace pism

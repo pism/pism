@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2013, 2014 Ricarda Winkelmann, Torsten Albrecht,
+# Copyright (C) 2012, 2013, 2014, 2015 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
@@ -41,17 +41,17 @@ accum[radius > p.r_gl] = p.accumulation_rate * p.rho_ice # convert to [kg m-2 s-
 Ts = np.zeros_like(thk) + p.air_temperature
 
 # Dirichlet B.C locations
-bcflag = np.zeros_like(thk)
-bcflag[radius <= p.r_gl] = 1
+bc_mask = np.zeros_like(thk)
+bc_mask[radius <= p.r_gl] = 1
 
 # SSA velocity Dirichlet B.C.
 ubar = np.zeros_like(thk)
-ubar[bcflag == 1] = p.vel_bc * (xx[radius <= p.r_gl] / radius[radius <= p.r_gl])
-ubar[bcflag == 0] = 0
+ubar[bc_mask == 1] = p.vel_bc * (xx[radius <= p.r_gl] / radius[radius <= p.r_gl])
+ubar[bc_mask == 0] = 0
 
 vbar = np.zeros_like(thk)
-vbar[bcflag == 1] = p.vel_bc * (yy[radius <= p.r_gl] / radius[radius <= p.r_gl])
-vbar[bcflag == 0] = 0
+vbar[bc_mask == 1] = p.vel_bc * (yy[radius <= p.r_gl] / radius[radius <= p.r_gl])
+vbar[bc_mask == 0] = 0
 
 ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
 piktests_utils.prepare_output_file(ncfile, x, y)
@@ -60,7 +60,7 @@ variables = {"thk"                   : thk,
              "topg"                  : bed,
              "ice_surface_temp"      : Ts,
              "climatic_mass_balance" : accum,
-             "bcflag"                : bcflag,
+             "bc_mask"                : bc_mask,
              "u_ssa_bc"              : ubar,
              "v_ssa_bc"              : vbar}
 

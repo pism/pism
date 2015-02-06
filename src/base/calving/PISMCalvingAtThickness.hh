@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,28 +24,30 @@
 #include "iceModelVec.hh"
 
 namespace pism {
+namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front that
   has thickness below a given threshold. */
 class CalvingAtThickness : public Component
 {
 public:
-  CalvingAtThickness(IceGrid &g, const Config &conf);
+  CalvingAtThickness(const IceGrid &g);
   virtual ~CalvingAtThickness();
 
-  virtual PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  virtual void init();
+  void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 protected:
-
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+protected:
   double m_calving_threshold;
   IceModelVec2Int m_old_mask;
 };
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMCALVINGATTHICKNESS_H_ */

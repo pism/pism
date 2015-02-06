@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,39 +26,34 @@
 
 namespace pism {
 
+namespace hydrology {
+class Hydrology;
+}
 
-//! \brief PISM's default basal yield stress model which applies the Mohr-Coulomb model of deformable, pressurized till.
-class MohrCoulombYieldStress : public YieldStress
-{
+//! @brief PISM's default basal yield stress model which applies the
+//! Mohr-Coulomb model of deformable, pressurized till.
+class MohrCoulombYieldStress : public YieldStress {
 public:
-  MohrCoulombYieldStress(IceGrid &g, const Config &conf, Hydrology *hydro);
-
+  MohrCoulombYieldStress(const IceGrid &g, hydrology::Hydrology *hydro);
   virtual ~MohrCoulombYieldStress();
 
-  virtual PetscErrorCode init(Vars &vars);
-
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-
-  virtual PetscErrorCode update(double my_t, double my_dt);
-
-  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
-
+  void set_till_friction_angle(const IceModelVec2S &input);
 protected:
-  IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
-  IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
-  IceModelVec2S *m_bed_topography;
-  IceModelVec2Int *m_mask;
-  Vars *m_variables;
-  Hydrology *m_hydrology;
+  virtual void init_impl();
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 
-  PetscErrorCode allocate();
-  PetscErrorCode topg_to_phi();
-  PetscErrorCode tauc_to_phi();
+  void topg_to_phi();
+  void tauc_to_phi();
+protected:
+  bool m_topg_to_phi, m_tauc_to_phi;
+  IceModelVec2S m_till_phi, m_tillwat, m_Po;
+  IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
+  hydrology::Hydrology *m_hydrology;
 };
 
 } // end of namespace pism

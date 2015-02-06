@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,33 +24,31 @@
 #include "iceModelVec.hh"
 
 namespace pism {
-
-class POCache : public POModifier {
+namespace ocean {
+class Cache : public OceanModifier {
 public:
-  POCache(IceGrid &g, const Config &conf, OceanModel* in);
-  virtual ~POCache();
+  Cache(const IceGrid &g, OceanModel* in);
+  virtual ~Cache();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-
-  virtual PetscErrorCode sea_level_elevation(double &result);
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+protected:
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
   IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux,
     m_melange_back_pressure_fraction;
   double m_sea_level;
   double m_next_update_time;
   unsigned int m_update_interval_years;
-  PetscErrorCode allocate_POCache();
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POCACHE_H_ */

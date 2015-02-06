@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,28 +25,30 @@
 #include "deformation.hh"
 
 namespace pism {
+namespace bed {
 
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public BedDef {
 public:
-  PBLingleClark(IceGrid &g, const Config &conf);
+  PBLingleClark(const IceGrid &g);
   virtual ~PBLingleClark();
 
-  PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(double my_t, double my_dt);
 protected:
-  PetscErrorCode correct_topg();
-  PetscErrorCode allocate();
-  PetscErrorCode deallocate();
+  MaxTimestep max_timestep_impl(double t);
+  void init_impl();
+  void update_impl(double my_t, double my_dt);
+  void correct_topg();
+  void allocate();
   // Vecs on processor 0:
-  Vec Hp0,                      //!< ice thickness
-    bedp0,                      //!< bed elevation
-    Hstartp0,                   //!< initial (start-of-the-run) thickness
-    bedstartp0,                 //!< initial bed elevation
-    upliftp0;                   //!< bed uplift
-  BedDeformLC bdLC;
+  petsc::Vec::Ptr m_Hp0,                      //!< ice thickness
+    m_bedp0,                      //!< bed elevation
+    m_Hstartp0,                   //!< initial (start-of-the-run) thickness
+    m_bedstartp0,                 //!< initial bed elevation
+    m_upliftp0;                   //!< bed uplift
+  BedDeformLC *m_bdLC;
 };
 
+} // end of namespace bed
 } // end of namespace pism
 
 #endif /* _PBLINGLECLARK_H_ */

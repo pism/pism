@@ -21,8 +21,6 @@ PetscErrorCode Glint2IceModel::allocate_couplers()
 	POFactory po(grid, config);
 	PISMAtmosphereModel *atmosphere;
 
-	ierr = PetscOptionsBegin(grid.com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
-
 #if 1
 	// GLINT2-modified version
 	if (surface == NULL) {
@@ -47,7 +45,6 @@ PetscErrorCode Glint2IceModel::allocate_couplers()
 		po.create(ocean);
 		external_ocean_model = false;
 	}
-	ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
 	return 0;
 }

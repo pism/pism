@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,38 +21,24 @@
 
 #include "PISMYieldStress.hh"
 #include "iceModelVec.hh"
-#include "IceGrid.hh"
 
 namespace pism {
+
+class IceGrid;
 
 class ConstantYieldStress : public YieldStress
 {
 public:
-  ConstantYieldStress(IceGrid &g, const Config &conf)
-    : YieldStress(g, conf)
-  {
-    if (allocate() != 0) {
-      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in ConstantYieldStress constructor.\n");
-      PISMEnd();
-    }
-  }
-  virtual ~ConstantYieldStress() {}
-
-  virtual PetscErrorCode init(Vars &vars);
-
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-
-  virtual PetscErrorCode update(double my_t, double my_dt);
-
-  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
+  ConstantYieldStress(const IceGrid &g);
+  virtual ~ConstantYieldStress();
 protected:
-  IceModelVec2S tauc;
-  virtual PetscErrorCode allocate();
+  virtual void init_impl();
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,57 +26,94 @@
 #include "pism_options.hh"
 #include <assert.h>
 
+#include "error_handling.hh"
+
 namespace pism {
+
+Component::Component(const IceGrid &g)
+  : m_grid(g), m_config(g.config) {
+  // empty
+}
+
+Component::~Component() {
+  // empty
+}
+
+void Component::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                 IO_Type nctype) {
+  this->define_variables_impl(vars, nc, nctype);
+}
+
+void Component::add_vars_to_output(const std::string &keyword,
+                                   std::set<std::string> &result) {
+  this->add_vars_to_output_impl(keyword, result);
+}
+
+void Component::write_variables(const std::set<std::string> &vars, const PIO& nc) {
+  this->write_variables_impl(vars, nc);
+}
+
+void Component::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                std::map<std::string, TSDiagnostic*> &ts_dict) {
+  this->get_diagnostics_impl(dict, ts_dict);
+}
+
+void Component::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                     std::map<std::string, TSDiagnostic*> &ts_dict) {
+  (void)dict;
+  (void)ts_dict;
+}
+
+const IceGrid& Component::get_grid() const {
+  return m_grid;
+}
 
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
-PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
-  PetscErrorCode ierr;
-  PetscBool i_set, boot_file_set;
+bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
 
-  // read file names:
-  char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(NULL, "-i", i_file, 
-                               PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(NULL, "-boot_file", boot_file_file, 
-                               PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
-  if (i_set) {
-    if (boot_file_set) {
-      ierr = PetscPrintf(grid.com,
-        "ClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
-      PISMEnd();
+  // read file name options:
+  options::String
+    i("-i", "input file name"),
+    boot_file("-boot_file", "bootstrapping file name");
+
+  if (i.is_set() or boot_file.is_set()) {
+    if (i.is_set() and boot_file.is_set()) {
+      throw RuntimeError("both '-i' and '-boot_file' are used.");
     }
-    filename = i_file;
-  }
-  else if (boot_file_set) {
-    filename = boot_file_file;
-  }
 
-  PIO nc(grid, "netcdf3");      // OK to use netcdf3
-  unsigned int last_record;
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-  ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
-  last_record -= 1;
-  ierr = nc.close(); CHKERRQ(ierr);
+    filename = i.is_set() ? i : boot_file;
 
-  if (boot_file_set) {
-    do_regrid = true;
-    start = 0;
+    PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
+    unsigned int last_record;
+    nc.open(filename, PISM_READONLY);
+    last_record = nc.inq_nrecords() - 1;
+    nc.close();
+
+    if (boot_file.is_set()) {
+      do_regrid = true;
+      start     = 0;
+    } else {
+      do_regrid = false;
+      start     = last_record;
+    }
+
+    return true;
   } else {
+    filename.clear();
     do_regrid = false;
-    start = last_record;
+    start     = -1;
+    return false;
   }
-
-  return 0;
 }
 
 /**
  * Regrid a variable by processing -regrid_file and -regrid_vars.
  *
  * @param[in] module_name Module name, used to annotate options when run with -help.
-
+ *
  * @param[out] variable pointer to an IceModelVec; @c variable has to
  *             have metadata set for this to work.
  *
@@ -86,39 +123,49 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
  *            variable is only regridded if both =-regrid_file= and
  *            =-regrid_vars= are set *and* the name of the variable is
  *            found in the set of names given with =-regrid_vars=.
- *
- * @return 0 on success
  */
-PetscErrorCode Component::regrid(const std::string &module_name, IceModelVec *variable,
-                                     RegriddingFlag flag) {
-  PetscErrorCode ierr;
-  bool file_set, vars_set;
-  std::set<std::string> vars;
-  std::string file, title = module_name + std::string(" regridding options");
+void Component::regrid(const std::string &module_name, IceModelVec &variable,
+                       RegriddingFlag flag) {
 
-  assert(variable != NULL);
+  options::String regrid_file("-regrid_file", "regridding file name");
 
-  ierr = PetscOptionsBegin(grid.com, "", title.c_str(), ""); CHKERRQ(ierr);
-  {
-    ierr = OptionsString("-regrid_file", "regridding file name", file, file_set); CHKERRQ(ierr);
-    ierr = OptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                                "", vars, vars_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  options::StringSet regrid_vars("-regrid_vars",
+                                 "comma-separated list of regridding variables",
+                                 "");
 
-  if (file_set == false)
-    return 0;
-
-  NCSpatialVariable &m = variable->metadata();
-
-  if ((vars_set == true && set_contains(vars, m.get_string("short_name")) == true) ||
-      (vars_set == false && flag == REGRID_WITHOUT_REGRID_VARS)) {
-    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
-                      m.get_string("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
-    ierr = variable->regrid(file, CRITICAL); CHKERRQ(ierr);
+  if (not regrid_file.is_set()) {
+    return;
   }
 
-  return 0;
+  NCSpatialVariable &m = variable.metadata();
+
+  if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
+      (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
+
+    verbPrintf(2, m_grid.com,
+               "  %s: regridding '%s' from file '%s' ...\n",
+               module_name.c_str(),
+               m.get_string("short_name").c_str(), regrid_file->c_str());
+
+    variable.regrid(regrid_file, CRITICAL);
+  }
+}
+
+Component_TS::Component_TS(const IceGrid &g)
+  : Component(g) {
+  m_t = m_dt = GSL_NAN;
+}
+
+Component_TS::~Component_TS() {
+  // empty
+}
+
+MaxTimestep Component_TS::max_timestep(double t) {
+  return this->max_timestep_impl(t);
+}
+
+void Component_TS::update(double t, double dt) {
+  this->update_impl(t, dt);
 }
 
 } // end of namespace pism

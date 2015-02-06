@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,22 +22,25 @@
 #include "PAYearlyCycle.hh"
 
 namespace pism {
-
 class Timeseries;
 
-class PACosineYearlyCycle : public PAYearlyCycle {
-public:
-  PACosineYearlyCycle(IceGrid &g, const Config &conf);
-  virtual ~PACosineYearlyCycle();
+namespace atmosphere {
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+class CosineYearlyCycle : public YearlyCycle {
+public:
+  CosineYearlyCycle(const IceGrid &g);
+  virtual ~CosineYearlyCycle();
+
+  virtual void init();
+  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void temp_snapshot(IceModelVec2S &result);
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
   Timeseries *A;                 // amplitude scaling
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAGENERICYEARLYCYCLE_H_ */

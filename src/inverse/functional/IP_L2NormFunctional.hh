@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a scalar valued function.
 /*! The functional is, in continuous terms 
@@ -33,12 +34,12 @@ namespace pism {
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_L2NormFunctional2S(IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
+  IP_L2NormFunctional2S(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *v);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *v);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 private:
   IP_L2NormFunctional2S(IP_L2NormFunctional2S const &);
@@ -55,18 +56,19 @@ private:
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  IP_L2NormFunctional2V(IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
+  IP_L2NormFunctional2V(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *v);
-  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, double *v);
-  virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(IceModelVec2V &x, double *v);
+  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *v);
+  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 private:
   IP_L2NormFunctional2V(IP_L2NormFunctional2V const &);
   IP_L2NormFunctional2V & operator=(IP_L2NormFunctional2V const &);  
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "PISMAtmosphere.hh"
 
 namespace pism {
+namespace surface {
 
 //! \brief A class implementing a constant-in-time surface model for the surface mass balance.
 //!
@@ -32,30 +33,31 @@ namespace pism {
 //! Ice surface temperature is parameterized as in PISM-PIK, using a latitude
 //! and surface elevation-dependent formula.
 
-class PSConstantPIK : public SurfaceModel {
+class PIK : public SurfaceModel {
 public:
-  PSConstantPIK(IceGrid &g, const Config &conf);
+  PIK(const IceGrid &g);
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  virtual void attach_atmosphere_model(AtmosphereModel *input);
+  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
-  std::string input_file;
-  IceModelVec2S climatic_mass_balance, ice_surface_temp;
-  IceModelVec2S *lat, *usurf;
-private:
-  PetscErrorCode allocate_PSConstantPIK();
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+protected:
+  std::string m_input_file;
+  IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSCONSTANTPIK_H_ */

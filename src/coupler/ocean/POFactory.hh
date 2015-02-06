@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,19 +23,13 @@
 #include "POModifier.hh"
 
 namespace pism {
-
-class POFactory : public PCFactory<OceanModel,POModifier> {
+namespace ocean {
+class Factory : public PCFactory<ocean::OceanModel,ocean::OceanModifier> {
 public:
-  POFactory(IceGrid& g, const Config& conf)
-    : PCFactory<OceanModel,POModifier>(g, conf)
-  {
-    add_standard_types();
-    m_option = "ocean";
-  }
-  virtual ~POFactory() {}
-  virtual void add_standard_types();
+  Factory(const IceGrid& g);
+  ~Factory();
 };
-
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _POFACTORY_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,207 +19,166 @@
 #include "PALapseRates.hh"
 
 namespace pism {
+namespace atmosphere {
 
-PALapseRates::PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in)
-  : PLapseRates<AtmosphereModel,PAModifier>(g, conf, in),
-    precipitation(g.get_unit_system()),
-    air_temp(g.get_unit_system())
-{
-  precip_lapse_rate = 0;
-  option_prefix     = "-atmosphere_lapse_rate";
+LapseRates::LapseRates(const IceGrid &g, AtmosphereModel* in)
+  : PLapseRates<AtmosphereModel,PAModifier>(g, in),
+    m_precipitation(g.config.get_unit_system(), "precipitation", g),
+    m_air_temp(g.config.get_unit_system(), "air_temp", g) {
+  m_precip_lapse_rate = 0;
+  m_option_prefix     = "-atmosphere_lapse_rate";
 
-  PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  m_precipitation.set_string("pism_intent", "diagnostic");
+  m_precipitation.set_string("long_name",
+                           "ice-equivalent precipitation rate with a lapse-rate correction");
+  m_precipitation.set_units("m s-1");
+  m_precipitation.set_glaciological_units("m year-1");
 
+  m_air_temp.set_string("pism_intent", "diagnostic");
+  m_air_temp.set_string("long_name",
+                      "near-surface air temperature with a lapse-rate correction");
+  m_air_temp.set_units("K");
+
+  m_surface = NULL;
 }
 
-PALapseRates::~PALapseRates() {
+LapseRates::~LapseRates() {
   // empty
 }
 
-PetscErrorCode PALapseRates::allocate_PALapseRates() {
-  PetscErrorCode ierr;
-
-  precipitation.init_2d("precipitation", grid);
-  precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name",
-                           "ice-equivalent precipitation rate with a lapse-rate correction");
-  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-
-  air_temp.init_2d("air_temp", grid);
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name",
-                      "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode PALapseRates::init(Vars &vars) {
-  PetscErrorCode ierr;
-  bool precip_lapse_rate_set;
+void LapseRates::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init();
 
-  ierr = verbPrintf(2, grid.com,
-                    "  [using air temperature and precipitation lapse corrections]\n"); CHKERRQ(ierr);
+  verbPrintf(2, m_grid.com,
+             "  [using air temperature and precipitation lapse corrections]\n");
 
-  ierr = init_internal(vars); CHKERRQ(ierr);
+  init_internal();
 
-  ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
-  {
-    ierr = OptionsReal("-precip_lapse_rate",
-                           "Elevation lapse rate for the surface mass balance, in m/year per km",
-                           precip_lapse_rate, precip_lapse_rate_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  m_precip_lapse_rate = options::Real("-precip_lapse_rate",
+                                    "Elevation lapse rate for the surface mass balance,"
+                                    " in m/year per km",
+                                    m_precip_lapse_rate);
 
-  ierr = verbPrintf(2, grid.com,
-                    "   air temperature lapse rate: %3.3f K per km\n"
-                    "   precipitation lapse rate:   %3.3f m/year per km\n",
-                    temp_lapse_rate, precip_lapse_rate); CHKERRQ(ierr);
+  verbPrintf(2, m_grid.com,
+             "   air temperature lapse rate: %3.3f K per km\n"
+             "   precipitation lapse rate:   %3.3f m/year per km\n",
+             m_temp_lapse_rate, m_precip_lapse_rate);
 
-  temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
+  m_temp_lapse_rate = m_grid.convert(m_temp_lapse_rate, "K/km", "K/m");
 
-  precip_lapse_rate = grid.convert(precip_lapse_rate, "m/year / km", "m/s / m");
-
-  return 0;
+  m_precip_lapse_rate = m_grid.convert(m_precip_lapse_rate, "m/year / km", "m/s / m");
 }
 
-
-PetscErrorCode PALapseRates::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = input_model->mean_precipitation(result); CHKERRQ(ierr);
-  ierr = lapse_rate_correction(result, precip_lapse_rate); CHKERRQ(ierr);
-  return 0;
+void LapseRates::mean_precipitation(IceModelVec2S &result) {
+  input_model->mean_precipitation(result);
+  lapse_rate_correction(result, m_precip_lapse_rate);
 }
 
-PetscErrorCode PALapseRates::mean_annual_temp(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
-  ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
-  return 0;
+void LapseRates::mean_annual_temp(IceModelVec2S &result) {
+  input_model->mean_annual_temp(result);
+  lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
-
-PetscErrorCode PALapseRates::begin_pointwise_access() {
-  PetscErrorCode ierr;
-  ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
-  ierr = reference_surface.begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access(); CHKERRQ(ierr);
-  return 0;
+void LapseRates::begin_pointwise_access() {
+  input_model->begin_pointwise_access();
+  m_reference_surface.begin_access();
+  m_surface->begin_access();
 }
 
-PetscErrorCode PALapseRates::end_pointwise_access() {
-  PetscErrorCode ierr;
-  ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
-  ierr = reference_surface.end_access(); CHKERRQ(ierr);
-  ierr = surface->end_access(); CHKERRQ(ierr);
-  return 0;
+void LapseRates::end_pointwise_access() {
+  input_model->end_pointwise_access();
+  m_reference_surface.end_access();
+  m_surface->end_access();
 }
 
-PetscErrorCode PALapseRates::init_timeseries(const std::vector<double> &ts) {
-  PetscErrorCode ierr;
-  ierr = input_model->init_timeseries(ts); CHKERRQ(ierr);
+void LapseRates::init_timeseries(const std::vector<double> &ts) {
+  input_model->init_timeseries(ts);
 
   m_ts_times = ts;
 
-  ierr = reference_surface.init_interpolation(ts); CHKERRQ(ierr);
+  m_reference_surface.init_interpolation(ts);
 
-  return 0;
+  m_surface = m_grid.variables().get_2d_scalar("surface_altitude");
 }
 
-PetscErrorCode PALapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
-  PetscErrorCode ierr;
+void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
-  ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
+  input_model->temp_time_series(i, j, result);
 
-  ierr = reference_surface.interp(i, j, usurf); CHKERRQ(ierr);
+  m_reference_surface.interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= temp_lapse_rate * ((*surface)(i, j) - usurf[m]);
+    result[m] -= m_temp_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
   }
-
-  return 0;
 }
 
-PetscErrorCode PALapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
-  PetscErrorCode ierr;
+void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
-  ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
+  input_model->precip_time_series(i, j, result);
 
-  ierr = reference_surface.interp(i, j, usurf); CHKERRQ(ierr);
+  m_reference_surface.interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= precip_lapse_rate * ((*surface)(i, j) - usurf[m]);
+    result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
   }
-
-  return 0;
 }
 
-PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
-  ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
-  return 0;
+void LapseRates::temp_snapshot(IceModelVec2S &result) {
+  input_model->temp_snapshot(result);
+  lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
-PetscErrorCode PALapseRates::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
+void LapseRates::define_variables_impl(const std::set<std::string> &vars,
+                                         const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.define(nc, nctype, true); CHKERRQ(ierr);
+    m_air_temp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.define(nc, nctype, true); CHKERRQ(ierr);
+    m_precipitation.define(nc, nctype, true);
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode PALapseRates::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    tmp.metadata() = air_temp;
+    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
+    tmp.metadata() = m_air_temp;
 
-    ierr = temp_snapshot(tmp); CHKERRQ(ierr);
+    temp_snapshot(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    tmp.metadata() = precipitation;
+    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+    tmp.metadata() = m_precipitation;
 
-    ierr = mean_precipitation(tmp); CHKERRQ(ierr);
+    mean_precipitation(tmp);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("precipitation");
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
-void PALapseRates::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void LapseRates::add_vars_to_output_impl(const std::string &keyword,
+                                           std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -228,4 +187,5 @@ void PALapseRates::add_vars_to_output(const std::string &keyword, std::set<std::
   }
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

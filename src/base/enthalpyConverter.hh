@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,6 @@
 #ifndef __enthalpyConverter_hh
 #define __enthalpyConverter_hh
 
-#include <petscsys.h>
-
 namespace pism {
 
 class Config;
@@ -40,20 +38,9 @@ class Config;
   }   
   \endcode
 
-  Some methods are functions which return the computed values or a boolean.  These
-  do no error checking.  Others return PetscErrorCode and the modify pass-by-reference
-  arguments.  These check either that the enthalpy is below that of liquid water,
-  or they check that the temperature (in K) is positive.
-
-  Specifically, getAbsTemp() gives return value 1 if the input enthalpy exceeded
-  that of liquid water, but it puts the temperature of
-  temperate ice into its computed value for T.  Method getWaterFraction() gives
-  return value of 1 under the same condition, but puts the maximum-liquid-content
-  into its computed value for omega.
-
   The three methods that get the enthalpy from temperatures and liquid fractions, 
   namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict
-  about error checking.  They call SETERRQ() if their arguments are invalid.
+  about error checking.  They throw RuntimeError if their arguments are invalid.
 
   This class is documented by [\ref AschwandenBuelerKhroulevBlatter].
 */
@@ -62,28 +49,27 @@ public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter() {}
 
-  virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
+  virtual double getPressureFromDepth(double depth) const;
+  virtual double getMeltingTemp(double p) const;
+  virtual double getEnthalpyCTS(double p) const;
+  virtual void getEnthalpyInterval(double p, double &E_s, double &E_l) const;
+  virtual double getCTS(double E, double p) const;
 
-  virtual double         getPressureFromDepth(double depth) const;
-  virtual double         getMeltingTemp(double p) const;
-  virtual double         getEnthalpyCTS(double p) const;
-  virtual PetscErrorCode getEnthalpyInterval(double p, double &E_s, double &E_l) const;
-  virtual double         getCTS(double E, double p) const;
+  virtual bool isTemperate(double E, double p) const;
+  virtual bool isLiquified(double E, double p) const;
 
-  virtual bool           isTemperate(double E, double p) const;
-  virtual bool           isLiquified(double E, double p) const;
+  virtual double getAbsTemp(double E, double p) const;
+  virtual double getPATemp(double E, double p) const;
 
-  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
-  virtual PetscErrorCode getPATemp(double E, double p, double &T_pa) const;
+  virtual double getWaterFraction(double E, double p) const;
 
-  virtual PetscErrorCode getWaterFraction(double E, double p, double &omega) const;
+  virtual double getEnth(double T, double omega, double p) const;
+  virtual double getEnthPermissive(double T, double omega, double p) const;
+  virtual double getEnthAtWaterFraction(double omega, double p) const;
 
-  virtual PetscErrorCode getEnth(double T, double omega, double p, double &result) const;
-  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &result) const;
-  virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &result) const;
-
-  virtual double c_from_T(double /*T*/) const
-  { return c_i; }
+  virtual double c_from_T(double /*T*/) const {
+    return c_i;
+  }
 
 protected:
   double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
@@ -99,7 +85,7 @@ protected:
 
   The pressure dependence of the pressure-melting temperature is neglected.
 
-  Note: Any instance of IceFlowLaw uses an EnthalpyConverter; this is
+  Note: Any instance of FlowLaw uses an EnthalpyConverter; this is
   the one used in verification mode.
 */
 class ICMEnthalpyConverter : public EnthalpyConverter {
@@ -112,41 +98,38 @@ public:
 
   /*! */
   virtual double getMeltingTemp(double /*p*/) const {
-    return T_melting; }
+    return T_melting;
+  }
 
   /*! */
-  virtual PetscErrorCode getAbsTemp(double E, double /*p*/,
-                                    double &T) const {
-    T = (E / c_i) + T_0;
-    return 0; }
+  virtual double getAbsTemp(double E, double /*p*/) const {
+    return (E / c_i) + T_0;
+  }
 
   /*! */
-  virtual PetscErrorCode getWaterFraction(double /*E*/, double /*p*/,
-                                          double &omega) const {
-    omega = 0.0;
-    return 0; }
+  virtual double getWaterFraction(double /*E*/, double /*p*/) const {
+    return 0.0;
+  }
 
   /*! */
-  virtual PetscErrorCode getEnth(double T, double /*omega*/, double /*p*/, 
-                                 double &E) const {
-    E = c_i * (T - T_0);
-    return 0; }
+  virtual double getEnth(double T, double /*omega*/, double /*p*/) const {
+    return c_i * (T - T_0);
+  }
 
   /*! */
-  virtual PetscErrorCode getEnthPermissive(double T, double /*omega*/, double /*p*/,
-                                           double &E) const {
-    E = c_i * (T - T_0);
-    return 0; }
+  virtual double getEnthPermissive(double T, double /*omega*/, double /*p*/) const {
+    return c_i * (T - T_0);
+  }
 
   /*! */
-  virtual PetscErrorCode getEnthAtWaterFraction(double /*omega*/, double p,
-                                                double &E) const {
-    E = getEnthalpyCTS(p);
-    return 0; }
+  virtual double getEnthAtWaterFraction(double /*omega*/, double p) const {
+    return getEnthalpyCTS(p);
+  }
 
   /*! */
   virtual bool isTemperate(double /*E*/, double /*p*/) const {
-    return false; }
+    return false;
+  }
 };
 
 } // end of namespace pism

@@ -10,7 +10,7 @@ Run this to get a coverage report:
 nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/nosetests.py
 """
 
-import PISM
+import PISM, sys
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -72,6 +72,34 @@ def random_vec_test():
 
     vec_scalar_ghosted = PISM.vec.randVectorS(grid, 1.0, 2)
     vec_vector_ghosted = PISM.vec.randVectorV(grid, 2.0, 2)
+
+def vec_metadata_test():
+    "Test accessing IceModelVec metadata"
+    grid = create_dummy_grid()
+
+    vec_scalar = PISM.vec.randVectorS(grid, 1.0)
+
+    m = vec_scalar.metadata()
+
+    m.set_units("kg")
+
+    print m.get_string("units")
+
+def vars_ownership_test():
+    "Test passing IceModelVec ownership from Python to C++ (i.e. PISM)."
+    grid = create_dummy_grid()
+    variables = PISM.Vars()
+
+    print "Adding 'thk'..."
+    variables.add(PISM.model.createIceThicknessVec(grid))
+    print "Returned from add_thk()..."
+
+    print "Getting 'thk' from variables..."
+    thk = variables.get("thk")
+    print thk
+    thk.begin_access()
+    print "thickness at 0,0 is", thk[0,0]
+    thk.end_access()
 
 def vec_access_test():
     "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
@@ -159,6 +187,10 @@ def create_special_vecs_test():
 
     tauc = PISM.model.createYieldStressVec(grid)
 
+    strainheat = PISM.model.createStrainHeatingVec(grid)
+
+    u, v, w = PISM.model.create3DVelocityVecs(grid)
+
     hardav = PISM.model.createAveragedHardnessVec(grid)
 
     enthalpy = PISM.model.createEnthalpyVec(grid)
@@ -197,16 +229,15 @@ def create_special_vecs_test():
 
     lat = PISM.model.createLatitudeVec(grid)
 
-    # test var_cmp
-    PISM.model.var_cmp(lon, lat)
-    PISM.model.var_cmp(lat, lon)
-    PISM.model.var_cmp(lon, lon)
-
     # test ModelVecs.add()
     modeldata = PISM.model.ModelData(grid)
     vecs = modeldata.vecs
 
     vecs.add(mask)
+
+    print vecs
+    # test getattr
+    vecs.mask
 
     return True
 
@@ -214,26 +245,50 @@ def options_test():
     "Test command-line option handling"
     ctx = PISM.Context()
 
-    for o in PISM.OptionsGroup(ctx.com, "", "Testing options"):
-        M = PISM.optionsInt("-M", "description", default=100)
-        S = PISM.optionsString("-S", "description", default="string")
-        R = PISM.optionsReal("-R", "description", default=1.5)
-        B = PISM.optionsFlag("-B", "description", default=False)
-        IA = PISM.optionsIntArray("-IA", "description", default=[1,2])
-        RA = PISM.optionsRealArray("-RA", "description", default=[2,3])
-        SA = PISM.optionsStringArray("-SA", "description", default="one,two")
+    M = PISM.optionsInt("-M", "description", default=100)
+    M = PISM.optionsInt("-M", "description", default=None)
 
-    for o in PISM.OptionsGroup(None, "", "Trying None for the COMM"):
-        M = PISM.optionsList(ctx.com, "-L", "description", opt_set="one,two", default="one")
-        # without the default
-        SA = PISM.optionsStringArray("-SA", "description")
+    S = PISM.optionsString("-S", "description", default="string")
+    S = PISM.optionsString("-S", "description", default=None)
+
+    R = PISM.optionsReal("-R", "description", default=1.5)
+    R = PISM.optionsReal("-R", "description", default=None)
+
+    B = PISM.optionsFlag("-B", "description", default=False)
+    B = PISM.optionsFlag("B", "description", default=False)
+    B = PISM.optionsFlag("-B", "description", default=None)
+
+    sys.argv.extend(["-IA", "1,2,3"])
+    IA = PISM.optionsIntArray("-IA", "description", default=[1,2])
+    IA = PISM.optionsIntArray("-IA", "description", default=None)
+
+    RA = PISM.optionsRealArray("-RA", "description", default=[2,3])
+    RA = PISM.optionsRealArray("-RA", "description", default=None)
+
+    SA = PISM.optionsStringArray("-SA", "description", default="one,two")
+    SA = PISM.optionsStringArray("-SA", "description", default=None)
+
+    M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default="one")
+    M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default=None)
+
+def pism_vars_test():
+    """Test adding fields to and getting them from pism::Vars."""
+    grid = create_dummy_grid()
+
+    v = grid.variables()
+
+    v.add(PISM.model.createIceThicknessVec(grid))
+
+    # test getting by short name
+    print v.get("thk").metadata().get_string("units")
+
+    # test getting by standard name
+    print v.get("land_ice_thickness").metadata().get_string("units")
 
 def modelvecs_test():
     "Test the ModelVecs class"
 
-    ctx = PISM.Context()
-    grid = ctx.newgrid()
-    PISM.model.initGrid(grid, 1e5, 1e5, 1000.0, 100, 100, 11, PISM.NOT_PERIODIC)
+    grid = create_dummy_grid()
 
     mask = PISM.model.createIceMaskVec(grid)
     mask.set(PISM.MASK_GROUNDED)
@@ -243,6 +298,9 @@ def modelvecs_test():
 
     vecs.add(mask, "ice_mask", writing=True)
 
+    # use the default name, no writing
+    vecs.add(PISM.model.createIceThicknessVec(grid))
+
     try:
         vecs.add(mask, "ice_mask")
         return False
@@ -251,46 +309,36 @@ def modelvecs_test():
         pass
 
     # get a field:
-    vecs.get("ice_mask")
+    print "get() method: ice mask: ", vecs.get("ice_mask").metadata().get_string("long_name")
+
+    print "dot notation: ice mask: ", vecs.ice_mask.metadata().get_string("long_name")
+
+    try:
+        vecs.invalid
+        return False
+    except AttributeError:
+        # should fail
+        pass
 
     try:
         vecs.get("invalid")
         return False
-    except AttributeError:
+    except RuntimeError:
         # should fail
         pass
 
     # test __repr__
     print vecs
 
-    # test rename()
-    vecs.rename("ice_mask", "mask")
-
-    # remove() a vec not marked for writing
-    vecs.remove("mask")
-
-    vecs.add(mask, "mask")
-
-    # test setPISMVarsName
-    vecs.setPISMVarsName("mask", "pism_mask")
-
-    try:
-        vecs.setPISMVarsName("invalid", "new_name")
-        return False
-    except RuntimeError:
-        # should fail: cannot set the name of a variable that is not
-        # there
-        pass
-
-    # test asPISMVars()
-    vecs.asPISMVars()
-
     # test has()
-    vecs.has("thickness")
+    print "Has thickness?", vecs.has("thickness")
 
     # test markForWriting
-    vecs.markForWriting("mask")
+    vecs.markForWriting("ice_mask")
+
     vecs.markForWriting(mask)
+
+    vecs.markForWriting("thk")
 
     # test write()
     output_file = "test_ModelVecs.nc"
@@ -305,9 +353,6 @@ def modelvecs_test():
 
     # test writeall()
     vecs.writeall(output_file)
-
-    # test remove()
-    vecs.remove("mask")
 
 
 def sia_test():
@@ -336,16 +381,12 @@ def sia_test():
     modeldata = PISM.model.ModelData(grid)
     modeldata.setPhysics(enthalpyconverter)
 
-    vecs = modeldata.vecs;
+    vecs = grid.variables()
 
-    fields = {"thickness": thk,
-              "surface": surface,
-              "ice_mask": mask,
-              "bed": bed,
-              "enthalpy": enthalpy}
+    fields = [thk, surface, mask, bed, enthalpy]
 
-    for key in fields.keys():
-        vecs.add(fields[key], key)
+    for field in fields:
+        vecs.add(field)
 
     vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata)
 
@@ -405,3 +446,93 @@ def logging_test():
     pio.open("other_log.nc", PISM.PISM_READWRITE_MOVE)
     pio.close()
     c.write("other_log.nc", "other_log") # non-default arguments
+
+def column_interpolation_test(plot=False):
+    """Test ColumnInterpolation by interpolating from the coarse grid to the
+    fine grid and back."""
+    import numpy as np
+    import pylab as plt
+
+    Lz = 1000.0
+    Mz = 41
+
+    def z_quadratic(Mz, Lz):
+        "Compute levels of a quadratic coarse grid."
+        result = np.zeros(Mz)
+        z_lambda = 4.0
+        for k in xrange(Mz-1):
+            zeta = float(k) / (Mz - 1)
+            result[k] = Lz * ((zeta / z_lambda) * (1.0 + (z_lambda - 1.0) * zeta));
+        result[Mz-1] = Lz
+        return result
+
+    def fine_grid(z_coarse):
+        "Compute levels of the fine grid corresponding to a given coarse grid."
+        Lz = z_coarse[-1]
+        dz = np.min(np.diff(z_coarse))
+        Mz = int(np.ceil(Lz / dz) + 1)
+        dz = Lz / (Mz - 1.0)
+        result = np.zeros(Mz)
+        for k in range(1, Mz):
+            result[k] = z_coarse[0] + k * dz
+
+        return result
+
+    def test_quadratic_interp():
+        z_coarse = z_quadratic(Mz, Lz)
+        f_coarse = (z_coarse / Lz)**2
+        z_fine = fine_grid(z_coarse)
+
+        print "Testing quadratic interpolation"
+        return test_interp(z_coarse, f_coarse, z_fine, "Quadratic interpolation")
+
+    def test_linear_interp():
+        z_coarse = np.linspace(0, Lz, Mz)
+        f_coarse = (z_coarse / Lz)**2
+        z_fine = fine_grid(z_coarse)
+
+        print "Testing linear interpolation"
+        return test_interp(z_coarse, f_coarse, z_fine, "Linear interpolation")
+
+    def test_interp(z, f, z_fine, title):
+        interp = PISM.ColumnInterpolation(z, z_fine)
+
+        f_fine = interp.coarse_to_fine(f, interp.Mz_fine())
+
+        f_fine_numpy = np.interp(z_fine, z, f)
+
+        f_roundtrip = interp.fine_to_coarse(f_fine)
+
+        def plot():
+            plt.figure()
+            plt.hold(True)
+            plt.plot(z, f, 'o-', label="original coarse-grid data")
+            plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
+            plt.plot(z, f_roundtrip, 'o-', label="interpolated back onto the coarse grid")
+            plt.plot(z, f_roundtrip - f, 'o-', label="difference after the roundtrip")
+            plt.legend(loc="best")
+            plt.title(title)
+            plt.grid(True)
+
+        if plot:
+            plot()
+
+        delta = np.linalg.norm(f - f_roundtrip, ord=1)
+        delta_numpy = np.linalg.norm(f_fine - f_fine_numpy, ord=1)
+        print "norm1(fine_to_coarse(coarse_to_fine(f)) - f) = %f" % delta
+        print "norm1(PISM - NumPy) = %f" % delta_numpy
+
+        return delta,delta_numpy
+
+    linear_delta,linear_delta_numpy = test_linear_interp()
+
+    quadratic_delta,_ = test_quadratic_interp()
+
+    if plot:
+        plt.show()
+
+    if (linear_delta > 1e-12 or
+        linear_delta_numpy > 1e-12 or
+        quadratic_delta > 1e-3):
+        return False
+    return True

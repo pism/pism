@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,28 +24,26 @@
 #include "POModifier.hh"
 
 namespace pism {
-
+namespace ocean {
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class PO_delta_T : public PScalarForcing<OceanModel,POModifier>
+class Delta_T : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  PO_delta_T(IceGrid &g, const Config &conf, OceanModel* in);
-  virtual ~PO_delta_T();
+  Delta_T(const IceGrid &g, OceanModel* in);
+  virtual ~Delta_T();
 
-  virtual PetscErrorCode init(Vars &vars);
-
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+protected:
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void init_impl();
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
-private:
-  PetscErrorCode allocate_PO_delta_T();
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _PODTFORCING_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,8 @@
 #include "IceGrid.hh"
 #include <map>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 class Config;
@@ -37,7 +39,7 @@ public:
   // in the same dictionary
   class ModelCreator {
   public:
-    virtual Model* create(IceGrid &g, const Config &conf) = 0;
+    virtual Model* create(const IceGrid &g) = 0;
     virtual ~ModelCreator() {}
   };
 
@@ -45,8 +47,8 @@ public:
   template <class M>
   class SpecificModelCreator : public ModelCreator {
   public:
-    M* create(IceGrid &g, const Config &conf) {
-      return new M(g, conf);
+    M* create(const IceGrid &g) {
+      return new M(g);
     }
   };
 
@@ -54,7 +56,7 @@ public:
   // creators in the same dictionary
   class ModifierCreator {
   public:
-    virtual Modifier* create(IceGrid &g, const Config &conf, Model* input) = 0;
+    virtual Modifier* create(const IceGrid &g, Model* input) = 0;
     virtual ~ModifierCreator() {}
   };
 
@@ -62,8 +64,8 @@ public:
   template <class M>
   class SpecificModifierCreator : public ModifierCreator {
   public:
-    M* create(IceGrid &g, const Config &conf, Model* input) {
-      return new M(g, conf, input);
+    M* create(const IceGrid &g, Model* input) {
+      return new M(g, input);
     }
   };
 
@@ -75,26 +77,23 @@ public:
   typedef std::shared_ptr<ModifierCreator> ModifierCreatorPtr;
 #endif
 
-  PCFactory<Model,Modifier>(IceGrid &g, const Config &conf)
-  : m_grid(g), m_config(conf) {}
+  PCFactory<Model,Modifier>(const IceGrid &g)
+  : m_grid(g) {}
   ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
-  PetscErrorCode set_default(std::string name) {
+  void set_default(std::string name) {
     if (m_models.find(name) == m_models.end()) {
-      SETERRQ1(m_grid.com, 1,"ERROR: type %s is not registered", name.c_str());
+      throw RuntimeError::formatted("type %s is not registered", name.c_str());
     } else {
       m_default_type = name;
     }
-    return 0;
   }
 
   //! Creates a boundary model. Processes command-line options.
-  PetscErrorCode create(Model* &result) {
-    PetscErrorCode ierr;
-    std::vector<std::string> choices;
-    std::string model_list, modifier_list, descr;
-    bool flag = false;
+  Model* create() {
+    std::string model_list, modifier_list, description;
+    Model* result = NULL;
 
     // build a list of available models:
     typename std::map<std::string, ModelCreatorPtr >::iterator k;
@@ -114,54 +113,42 @@ public:
     }
     modifier_list += "]";
 
-    descr =  "Sets up the PISM " + m_option + " model. Available models: " + model_list +
+    description =  "Sets up the PISM " + m_option + " model. Available models: " + model_list +
       " Available modifiers: " + modifier_list;
 
     // Get the command-line option:
-    ierr = OptionsStringArray("-" + m_option, descr, m_default_type, choices, flag); CHKERRQ(ierr);
-
-    if (choices.empty()) {
-      if (flag == true) {
-        PetscPrintf(m_grid.com, "ERROR: option -%s requires an argument.\n", m_option.c_str());
-        PISMEnd();
-      }
-      choices.push_back(m_default_type);
-    }
+    options::StringList choices("-" + m_option, description, m_default_type);
 
     // the first element has to be an *actual* model (not a modifier), so we
     // create it:
-    std::vector<std::string>::iterator j = choices.begin();
+    std::vector<std::string>::iterator j = choices->begin();
 
     if (m_models.find(*j) == m_models.end()) {
-      PetscPrintf(m_grid.com,
-                  "ERROR: %s model \"%s\" is not available.\n"
-                  "  Available models:    %s\n"
-                  "  Available modifiers: %s\n",
-                  m_option.c_str(), j->c_str(),
-                  model_list.c_str(), modifier_list.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("%s model \"%s\" is not available.\n"
+                                    "Available models:    %s\n"
+                                    "Available modifiers: %s",
+                                    m_option.c_str(), j->c_str(),
+                                    model_list.c_str(), modifier_list.c_str());
     }
 
-    result = m_models[*j]->create(m_grid, m_config);
+    result = m_models[*j]->create(m_grid);
 
     ++j;
 
     // process remaining arguments:
-    while (j != choices.end()) {
+    while (j != choices->end()) {
       if (m_modifiers.find(*j) == m_modifiers.end()) {
-        PetscPrintf(m_grid.com,
-                    "ERROR: %s modifier \"%s\" is not available.\n"
-                    "  Available modifiers: %s\n",
-                    m_option.c_str(), j->c_str(), modifier_list.c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("%s modifier \"%s\" is not available.\n"
+                                      "Available modifiers: %s",
+                                      m_option.c_str(), j->c_str(), modifier_list.c_str());
       }
 
-      result =  m_modifiers[*j]->create(m_grid, m_config, result);
+      result =  m_modifiers[*j]->create(m_grid, result);
 
       ++j;
     }
 
-    return 0;
+    return result;
   }
 
   //! Adds a boundary model to the dictionary.
@@ -193,12 +180,10 @@ public:
     m_modifiers.clear();
   }
 protected:
-  virtual void add_standard_types() {}
   std::string m_default_type, m_option;
   std::map<std::string, ModelCreatorPtr> m_models;
   std::map<std::string, ModifierCreatorPtr> m_modifiers;
-  IceGrid &m_grid;
-  const Config &m_config;
+  const IceGrid &m_grid;
 };
 
 } // end of namespace pism

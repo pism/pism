@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,13 +23,18 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <petscsys.h>
+#include <mpi.h>
+
 #include "PISMUnits.hh"
-#include "PIO.hh"
+
+// We use PIO and IO_Type here. (I should move methods using this out
+// of NCSpatialVariable. -- CK)
+#include "IO_Flags.hh"
 
 namespace pism {
 
 class Time;
+class PIO;
 
 //! @brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
@@ -72,8 +77,8 @@ public:
   virtual ~NCVariable();
 
   // setters
-  PetscErrorCode set_units(const std::string &unit_spec);
-  PetscErrorCode set_glaciological_units(const std::string &unit_spec);
+  void set_units(const std::string &unit_spec);
+  void set_glaciological_units(const std::string &unit_spec);
 
   void set_double(const std::string &name, double value);
   void set_doubles(const std::string &name, const std::vector<double> &values);
@@ -102,21 +107,27 @@ public:
   typedef std::map<std::string,std::vector<double> > DoubleAttrs;
   const DoubleAttrs& get_all_doubles() const;
 
-  PetscErrorCode report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
+  void report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
 
 protected:
   unsigned int m_n_spatial_dims;
 
 private:
-  Unit m_units,                   //!< internal (PISM) units
-    m_glaciological_units; //!< \brief for diagnostic variables: units
-  //!< to use when writing to a NetCDF file and for standard out reports
-  std::map<std::string, std::string> m_strings;  //!< string and boolean attributes
-  std::map<std::string, std::vector<double> > m_doubles; //!< scalar and array attributes
+  //! internal (PISM) units
+  Unit m_units;
+
+  //! @brief for diagnostic variables: units to use when writing to a
+  //! NetCDF file and for standard out reports
+  Unit m_glaciological_units;
+
+  //! string and boolean attributes
+  std::map<std::string, std::string> m_strings;
+
+  //! scalar and array attributes
+  std::map<std::string, std::vector<double> > m_doubles;
   std::string m_short_name;
 };
 
-class LocalInterpCtx;
 class IceGrid;
 
 enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
@@ -124,31 +135,32 @@ enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MI
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {
 public:
-  NCSpatialVariable(const UnitSystem &system);
+  NCSpatialVariable(const UnitSystem &system, const std::string &name,
+                    const IceGrid &g);
+  NCSpatialVariable(const UnitSystem &system, const std::string &name,
+                    const IceGrid &g, const std::vector<double> &zlevels);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
-  void init_2d(const std::string &name, IceGrid &g);
-  void init_3d(const std::string &name, IceGrid &g, std::vector<double> &zlevels);
   void set_levels(const std::vector<double> &levels);
 
   void set_time_independent(bool flag);
 
-  PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
-  PetscErrorCode write(const PIO &file, IO_Type nctype,
-                       bool write_in_glaciological_units, Vec v) const;
+  void read(const PIO &file, unsigned int time, double *output);
+  void write(const PIO &file, IO_Type nctype,
+             bool write_in_glaciological_units, const double *input) const;
 
-  PetscErrorCode regrid(const PIO &file,
-                        RegriddingFlag flag,
-                        bool report_range,
-                        double default_value, Vec v);
-  PetscErrorCode regrid(const PIO &file,
-                        unsigned int t_start,
-                        RegriddingFlag flag,
-                        bool report_range,
-                        double default_value, Vec v);
+  void regrid(const PIO &file,
+              RegriddingFlag flag,
+              bool report_range,
+              double default_value, double *output);
+  void regrid(const PIO &file,
+              unsigned int t_start,
+              RegriddingFlag flag,
+              bool report_range,
+              double default_value, double *output);
 
-  PetscErrorCode define(const PIO &nc, IO_Type nctype,
-                        bool write_in_glaciological_units) const;
+  void define(const PIO &nc, IO_Type nctype,
+              bool write_in_glaciological_units) const;
 
   NCVariable& get_x();
   NCVariable& get_y();
@@ -164,10 +176,13 @@ private:
   std::string m_time_dimension_name;
   NCVariable m_x, m_y, m_z;
   std::vector<double> m_zlevels;
-  IceGrid *m_grid;
-  PetscErrorCode report_range(Vec v, bool found_by_standard_name);
-  PetscErrorCode check_range(const std::string &filename, Vec v);
-  PetscErrorCode define_dimensions(const PIO &nc) const;
+  const IceGrid *m_grid;
+  void report_range(double min, double max, bool found_by_standard_name);
+  void check_range(const std::string &filename, double min, double max);
+  void define_dimensions(const PIO &nc) const;
+
+  void init_internal(const std::string &name, const IceGrid &g,
+                     const std::vector<double> &z_levels);
 };
 
 //! An internal class for reading, writing and converting time-series.
@@ -179,7 +194,7 @@ public:
 
   std::string get_dimension_name() const;
 
-  virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
+  virtual void define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
 };
@@ -190,7 +205,7 @@ public:
   NCTimeBounds(const std::string &name, const std::string &dimension_name,
                const UnitSystem &system);
   virtual ~NCTimeBounds();
-  virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
+  virtual void define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_bounds_name;
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,44 +23,44 @@
 #include "PISMComponent.hh"
 
 namespace pism {
-
+namespace stressbalance {
 class StressBalance;
+}
+
+namespace calving {
 
 class EigenCalving : public Component
 {
 public:
-  EigenCalving(IceGrid &g, const Config &conf,
-                   StressBalance *stress_balance);
+  EigenCalving(const IceGrid &g, stressbalance::StressBalance *stress_balance);
   virtual ~EigenCalving();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double dt,
-                                IceModelVec2Int &pism_mask,
-                                IceModelVec2S &Href,
-                                IceModelVec2S &ice_thickness);
+  virtual void init();
+  void update(double dt,
+              IceModelVec2Int &pism_mask,
+              IceModelVec2S &Href,
+              IceModelVec2S &ice_thickness);
 
-  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
+  MaxTimestep max_timestep();
 
   // empty methods that we're required to implement:
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+  void update_strain_rates();
+  void remove_narrow_tongues(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
   const int m_stencil_width;
-  IceModelVec2Int *m_mask;
-  StressBalance *m_stress_balance;
+  stressbalance::StressBalance *m_stress_balance;
   double m_K;
   bool m_restrict_timestep;
-
-  PetscErrorCode update_strain_rates();
-  PetscErrorCode remove_narrow_tongues(IceModelVec2Int &pism_mask,
-                                       IceModelVec2S &ice_thickness);
 };
 
-
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMEIGENCALVING_H_ */

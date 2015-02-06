@@ -20,285 +20,273 @@
 #include "hydrology_diagnostics.hh"
 
 namespace pism {
+namespace hydrology {
 
-Hydrology_bwat::Hydrology_bwat(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("bwat", grid);
+Hydrology_bwat::Hydrology_bwat(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwat", m_grid));
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
 
-PetscErrorCode Hydrology_bwat::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwat", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+IceModelVec::Ptr Hydrology_bwat::compute() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "bwat", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
-  ierr = model->subglacial_water_thickness(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
+  model->subglacial_water_thickness(*result);
+  return result;
 }
 
-Hydrology_bwp::Hydrology_bwp(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("bwp", grid);
+Hydrology_bwp::Hydrology_bwp(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwp", m_grid));
   set_attrs("pressure of transportable water in subglacial layer", "", "Pa", "Pa", 0);
 }
 
 
-PetscErrorCode Hydrology_bwp::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+IceModelVec::Ptr Hydrology_bwp::compute() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "bwp", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
-  ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
+  model->subglacial_water_pressure(*result);
+  return result;
 }
 
 
-Hydrology_bwprel::Hydrology_bwprel(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("bwprel", grid);
+Hydrology_bwprel::Hydrology_bwprel(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "bwprel", m_grid));
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
-  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.config.get("fill_value"));
 }
 
 
-PetscErrorCode Hydrology_bwprel::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  double fill = grid.config.get("fill_value");
+IceModelVec::Ptr Hydrology_bwprel::compute() {
+  double fill_value = m_grid.config.get("fill_value");
 
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwprel", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "bwprel", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
 
-  IceModelVec2S Po;             // de-allocated at the end of scope
-  ierr = Po.create(grid, "Po_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  IceModelVec2S Po;
+  Po.create(m_grid, "Po_temporary", WITHOUT_GHOSTS);
 
-  ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
-  ierr = model->overburden_pressure(Po); CHKERRQ(ierr);
+  model->subglacial_water_pressure(*result);
+  model->overburden_pressure(Po);
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(Po);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (Po(i,j) > 0.0)
+    if (Po(i,j) > 0.0) {
       (*result)(i,j) /= Po(i,j);
-    else
-      (*result)(i,j) = fill;
+    } else {
+      (*result)(i,j) = fill_value;
+    }
   }
 
-  output = result;
-  return 0;
+  return result;
 }
 
 
-Hydrology_effbwp::Hydrology_effbwp(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("effbwp", grid);
+Hydrology_effbwp::Hydrology_effbwp(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "effbwp", m_grid));
   set_attrs("effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)",
             "", "Pa", "Pa", 0);
 }
 
 
-PetscErrorCode Hydrology_effbwp::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "effbwp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+IceModelVec::Ptr Hydrology_effbwp::compute() {
 
-  IceModelVec2S P;              // de-allocated at the end of scope
-  ierr = P.create(grid, "P_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "effbwp", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
 
-  ierr = model->subglacial_water_pressure(P); CHKERRQ(ierr);
-  ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
-  ierr = result->add(-1.0, P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
+  IceModelVec2S P;
+  P.create(m_grid, "P_temporary", WITHOUT_GHOSTS);
 
-  output = result;
-  return 0;
+  model->subglacial_water_pressure(P);
+  model->overburden_pressure(*result);
+  result->add(-1.0, P);  // result <-- result + (-1.0) P = Po - P
+
+  return result;
 }
 
 
-Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("hydrobmelt", grid);
+Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "hydrobmelt", m_grid));
   set_attrs("the version of bmelt seen by the hydrology model",
             "", "m s-1", "m/year", 0);
 }
 
 
-PetscErrorCode Hydrology_hydrobmelt::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "hydrobmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+IceModelVec::Ptr Hydrology_hydrobmelt::compute() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "hydrobmelt", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
+
   // the value reported diagnostically is merely the last value filled
-  ierr = (model->bmelt_local).copy_to(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
+  (model->m_bmelt_local).copy_to(*result);
+
+  return result;
 }
 
 
-Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("hydroinput", grid);
+Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "hydroinput", m_grid));
   set_attrs("total water input into subglacial hydrology layer",
             "", "m s-1", "m/year", 0);
 }
 
 
-PetscErrorCode Hydrology_hydroinput::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "hydroinput", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+IceModelVec::Ptr Hydrology_hydroinput::compute() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "hydroinput", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
+
   // the value reported diagnostically is merely the last value filled
-  ierr = (model->total_input).copy_to(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
+  (model->m_total_input).copy_to(*result);
+
+  return result;
 }
 
 
-Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m, IceGrid &g, Vars &my_vars)
-    : Diag<Hydrology>(m, g, my_vars) {
-  vars[0].init_2d("wallmelt", grid);
+Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m)
+  : Diag<Hydrology>(m) {
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "wallmelt", m_grid));
   set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water",
             "", "m s-1", "m/year", 0);
 }
 
 
-PetscErrorCode Hydrology_wallmelt::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "wallmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+IceModelVec::Ptr Hydrology_wallmelt::compute() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "wallmelt", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
-  ierr = model->wall_melt(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
+
+  model->wall_melt(*result);
+
+  return result;
 }
 
 
-MCHydrology_ice_free_land_loss_cumulative::MCHydrology_ice_free_land_loss_cumulative(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_ice_free_land_loss_cumulative", time_dimension_name);
-  ts->get_metadata().set_units("kg");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_ice_free_land_loss_cumulative::MCHydrology_ice_free_land_loss_cumulative(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ice_free_land_loss_cumulative", m_time_dimension_name);
+  m_ts->metadata().set_units("kg");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "cumulative liquid water loss from subglacial hydrology into cells with mask as ice free land");
 }
 
-PetscErrorCode MCHydrology_ice_free_land_loss_cumulative::update(double a, double b) {
-  return ts->append(model->ice_free_land_loss_cumulative, a, b);
+void MCHydrology_ice_free_land_loss_cumulative::update(double a, double b) {
+  m_ts->append(model->m_ice_free_land_loss_cumulative, a, b);
 }
 
-MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_ice_free_land_loss", time_dimension_name);
-  ts->get_metadata().set_units("kg s-1");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ice_free_land_loss", m_time_dimension_name);
+  m_ts->metadata().set_units("kg s-1");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "rate of liquid water loss from subglacial hydrology into cells with mask as ice free land");
-  ts->rate_of_change = true;
+  m_ts->rate_of_change = true;
 }
 
-PetscErrorCode MCHydrology_ice_free_land_loss::update(double a, double b) {
-  return ts->append(model->ice_free_land_loss_cumulative, a, b);
+void MCHydrology_ice_free_land_loss::update(double a, double b) {
+  m_ts->append(model->m_ice_free_land_loss_cumulative, a, b);
 }
 
-MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_ocean_loss_cumulative", time_dimension_name);
-  ts->get_metadata().set_units("kg");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ocean_loss_cumulative", m_time_dimension_name);
+  m_ts->metadata().set_units("kg");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "cumulative liquid water loss from subglacial hydrology into cells with mask as ocean");
 }
 
-PetscErrorCode MCHydrology_ocean_loss_cumulative::update(double a, double b) {
-  return ts->append(model->ocean_loss_cumulative, a, b);
+void MCHydrology_ocean_loss_cumulative::update(double a, double b) {
+  m_ts->append(model->m_ocean_loss_cumulative, a, b);
 }
 
-MCHydrology_ocean_loss::MCHydrology_ocean_loss(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_ocean_loss", time_dimension_name);
-  ts->get_metadata().set_units("kg s-1");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_ocean_loss::MCHydrology_ocean_loss(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ocean_loss", m_time_dimension_name);
+  m_ts->metadata().set_units("kg s-1");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "rate of liquid water loss from subglacial hydrology into cells with mask as ocean");
-  ts->rate_of_change = true;
+  m_ts->rate_of_change = true;
 }
 
-PetscErrorCode MCHydrology_ocean_loss::update(double a, double b) {
-  return ts->append(model->ocean_loss_cumulative, a, b);
+void MCHydrology_ocean_loss::update(double a, double b) {
+  m_ts->append(model->m_ocean_loss_cumulative, a, b);
 }
 
-MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_gain_cumulative(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_negative_thickness_gain_cumulative", time_dimension_name);
-  ts->get_metadata().set_units("kg");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_gain_cumulative(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_negative_thickness_gain_cumulative", m_time_dimension_name);
+  m_ts->metadata().set_units("kg");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "cumulative non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero");
 }
 
-PetscErrorCode MCHydrology_negative_thickness_gain_cumulative::update(double a, double b) {
-  return ts->append(model->negative_thickness_gain_cumulative, a, b);
+void MCHydrology_negative_thickness_gain_cumulative::update(double a, double b) {
+  m_ts->append(model->m_negative_thickness_gain_cumulative, a, b);
 }
 
-MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_negative_thickness_gain", time_dimension_name);
-  ts->get_metadata().set_units("kg s-1");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_negative_thickness_gain", m_time_dimension_name);
+  m_ts->metadata().set_units("kg s-1");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero");
-  ts->rate_of_change = true;
+  m_ts->rate_of_change = true;
 }
 
-PetscErrorCode MCHydrology_negative_thickness_gain::update(double a, double b) {
-  return ts->append(model->negative_thickness_gain_cumulative, a, b);
+void MCHydrology_negative_thickness_gain::update(double a, double b) {
+  m_ts->append(model->m_negative_thickness_gain_cumulative, a, b);
 }
 
-MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_null_strip_loss_cumulative", time_dimension_name);
-  ts->get_metadata().set_units("kg");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_null_strip_loss_cumulative", m_time_dimension_name);
+  m_ts->metadata().set_units("kg");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "cumulative liquid water loss from subglacial hydrology into cells inside the null strip");
 }
 
-PetscErrorCode MCHydrology_null_strip_loss_cumulative::update(double a, double b) {
-  return ts->append(model->null_strip_loss_cumulative, a, b);
+void MCHydrology_null_strip_loss_cumulative::update(double a, double b) {
+  m_ts->append(model->m_null_strip_loss_cumulative, a, b);
 }
 
-MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(
-          RoutingHydrology *m, IceGrid &g, Vars &my_vars)
-      : TSDiag<RoutingHydrology>(m, g, my_vars) {
-  ts = new DiagnosticTimeseries(&grid, "hydro_null_strip_loss", time_dimension_name);
-  ts->get_metadata().set_units("kg s-1");
-  ts->get_dimension_metadata().set_units(time_units);
-  ts->get_metadata().set_string("long_name",
+MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(Routing *m)
+      : TSDiag<Routing>(m) {
+  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_null_strip_loss", m_time_dimension_name);
+  m_ts->metadata().set_units("kg s-1");
+  m_ts->dimension_metadata().set_units(m_time_units);
+  m_ts->metadata().set_string("long_name",
                                 "rate of liquid water loss from subglacial hydrology into cells inside the null strip");
-  ts->rate_of_change = true;
+  m_ts->rate_of_change = true;
 }
 
-PetscErrorCode MCHydrology_null_strip_loss::update(double a, double b) {
-  return ts->append(model->null_strip_loss_cumulative, a, b);
+void MCHydrology_null_strip_loss::update(double a, double b) {
+  m_ts->append(model->m_null_strip_loss_cumulative, a, b);
 }
 
+} // end of namespace hydrology
 } // end of namespace pism

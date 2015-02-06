@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -42,22 +42,17 @@ namespace pism {
 */
 class LocalInterpCtx {
 public:
+  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
+  ~LocalInterpCtx();
   unsigned int start[4], count[4]; // Indices in netCDF file.
   std::vector<int> x_left, x_right, y_left, y_right; // neighbors
   std::vector<double> x_alpha, y_alpha;
-  double *a;                       //!< temporary buffer
-  unsigned int a_len;              //!< the size of the buffer
+  //! temporary buffer
+  std::vector<double> buffer;
   std::vector<double> zlevels;     //!< input z levels
   bool report_range;
   MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)
   int rank;             //!< MPI rank, to allocate a_raw on proc 0 only
-
-public:
-  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
-  ~LocalInterpCtx();
-  PetscErrorCode printArray();
-private:
-  void print_grid_info(const grid_info &g, const UnitSystem &s, int threshold);
 };
 
 } // end of namespace pism

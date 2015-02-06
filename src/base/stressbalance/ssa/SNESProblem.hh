@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,18 +22,19 @@
 
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
 #include "iceModelVec.hh"       // to get Vector2
+#include "SNES.hh"
 
 namespace pism {
 
-template<int DOF, class U> class SNESProblem{
+template<int DOF, class U> class SNESProblem {
 public:
-  SNESProblem(IceGrid &g);
+  SNESProblem(const IceGrid &g);
 
   virtual ~SNESProblem();
 
-  virtual PetscErrorCode solve();
+  virtual void solve();
 
-  virtual const std::string &name();
+  virtual const std::string& name();
 
   virtual Vec solution()
   {
@@ -42,179 +43,147 @@ public:
 
 protected:
 
-  typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
-  typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
+  virtual void compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
+  virtual void compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
 
-  virtual PetscErrorCode initialize();
+  const IceGrid &m_grid;
 
-  virtual PetscErrorCode setFromOptions();
-
-  virtual PetscErrorCode finalize();
-
-  virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
-
-  virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
-
-  IceGrid     &m_grid;
-
-  Vec          m_X;
-  SNES         m_snes;
-  DM           m_DA;
+  petsc::Vec m_X;
+  petsc::SNES m_snes;
+  petsc::DM::Ptr m_DA;
 
 private:
 
-  struct SNESProblemCallbackData {
-    DM           da;
+  struct CallbackData {
+    DM da;
     SNESProblem<DOF,U> *solver;
   };
 
-  SNESProblemCallbackData m_callbackData;
+  CallbackData m_callbackData;
 
-  static PetscErrorCode LocalFunction(DMDALocalInfo *info, const U **x, U **f, SNESProblemCallbackData *);
-  static PetscErrorCode LocalJacobian(DMDALocalInfo *info, const U **x, Mat B, SNESProblemCallbackData *);
-
+  static PetscErrorCode function_callback(DMDALocalInfo *info, const U **x, U **f,
+                                          CallbackData *);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const U **x, Mat B,
+                                          CallbackData *);
 };
 
 typedef SNESProblem<1,double> SNESScalarProblem;
 typedef SNESProblem<2,Vector2> SNESVectorProblem;
 
-
-
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::LocalFunction(DMDALocalInfo *info,
-                                                 const U **x, U **f,
-                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
-{
-  return cb->solver->compute_local_function(info,x,f);
-}
-
-template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DMDALocalInfo *info,
-                                                 const U **x, Mat J,
-                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
-{
-  return cb->solver->compute_local_jacobian(info,x,J);
-}
-
-
-template<int DOF, class U>
-SNESProblem<DOF,U>::SNESProblem(IceGrid &g) :
-  m_grid(g)
-{
-  PetscErrorCode ierr;
-  ierr = setFromOptions(); CHKERRABORT(m_grid.com,ierr);
-  ierr = initialize();     CHKERRABORT(m_grid.com,ierr);
-}
-template<int DOF, class U>
-SNESProblem<DOF,U>::~SNESProblem()
-{
-  PetscErrorCode ierr = finalize();
-  CHKERRABORT(m_grid.com,ierr);
-}
-
-template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::setFromOptions()
-{
+PetscErrorCode SNESProblem<DOF,U>::function_callback(DMDALocalInfo *info,
+                                                     const U **x, U **f,
+                                                     SNESProblem<DOF,U>::CallbackData *cb) {
+  try {
+    cb->solver->compute_local_function(info,x,f);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
   return 0;
 }
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::initialize()
-{
+PetscErrorCode SNESProblem<DOF,U>::jacobian_callback(DMDALocalInfo *info,
+                                                     const U **x, Mat J,
+                                                     SNESProblem<DOF,U>::CallbackData *cb) {
+  try {
+    cb->solver->compute_local_jacobian(info, x, J);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
+  return 0;
+}
+
+template<int DOF, class U>
+SNESProblem<DOF, U>::SNESProblem(const IceGrid &g)
+  : m_grid(g) {
+
   PetscErrorCode ierr;
 
-  // mimic IceGrid::createDA() with TRANSPOSE :
   int stencil_width=1;
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDACreate2d(m_grid.com,
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      m_grid.My, m_grid.Mx,
-                      m_grid.Ny, m_grid.Nx,
-                      DOF, stencil_width,
-                      &m_grid.procs_y[0], &m_grid.procs_x[0],
-                      &m_DA); CHKERRQ(ierr);
-#else
-  ierr = DMDACreate2d(m_grid.com,
-                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      m_grid.My, m_grid.Mx,
-                      m_grid.Ny, m_grid.Nx,
-                      DOF, stencil_width,
-                      &m_grid.procs_y[0], &m_grid.procs_x[0],
-                      &m_DA); CHKERRQ(ierr);
-#endif
+  m_DA = m_grid.get_dm(DOF, stencil_width);
 
-  ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr());
+  PISM_CHK(ierr, "DMCreateGlobalVector");
 
-  ierr = SNESCreate(m_grid.com, &m_snes); CHKERRQ(ierr);
+  ierr = SNESCreate(m_grid.com, m_snes.rawptr());
+  PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  m_callbackData.da = m_DA;
+  m_callbackData.da = *m_DA;
   m_callbackData.solver = this;
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES,
-                                  (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,
-                                  &m_callbackData); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,
-                                  &m_callbackData); CHKERRQ(ierr);
+
+#if PETSC_VERSION_LT(3, 5, 0)
+  typedef PetscErrorCode (*JacobianCallback)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
+  typedef PetscErrorCode (*FunctionCallback)(DMDALocalInfo*, void*, void*, void*);
+
+  ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
+                                  (FunctionCallback)SNESProblem<DOF, U>::function_callback,
+                                  &m_callbackData);
+  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
+
+  ierr = DMDASNESSetJacobianLocal(*m_DA, (JacobianCallback)SNESProblem<DOF, U>::jacobian_callback,
+                                  &m_callbackData);
+  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 #else
-  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES,
-                                  (DMDASNESFunction)SNESProblem<DOF,U>::LocalFunction,
-                                  &m_callbackData); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobian)SNESProblem<DOF,U>::LocalJacobian,
-                                  &m_callbackData); CHKERRQ(ierr);
+  ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
+                                  (DMDASNESFunction)SNESProblem<DOF, U>::function_callback,
+                                  &m_callbackData);
+  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
+
+  ierr = DMDASNESSetJacobianLocal(*m_DA, (DMDASNESJacobian)SNESProblem<DOF, U>::jacobian_callback,
+                                  &m_callbackData);
+  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 #endif
 
-  ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(m_DA, &m_callbackData); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_DA, "baij");
+  PISM_CHK(ierr, "DMSetMatType");
 
-  ierr = SNESSetDM(m_snes, m_DA); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(*m_DA, &m_callbackData);
+  PISM_CHK(ierr, "DMSetApplicationContext");
 
-  ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, *m_DA);
+  PISM_CHK(ierr, "SNESSetDM");
 
-  return 0;
-}
-
-//! Undo the allocations of SSAFEM::allocate_fem; called by the destructor.
-template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::finalize() {
-  PetscErrorCode ierr;
-
-  ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_X); CHKERRQ(ierr);
-
-  return 0;
+  ierr = SNESSetFromOptions(m_snes);
+  PISM_CHK(ierr, "SNESSetFromOptions");
 }
 
 template<int DOF, class U>
-const std::string &SNESProblem<DOF,U>::name()
-{
+SNESProblem<DOF,U>::~SNESProblem() {
+  // empty
+}
+
+template<int DOF, class U>
+const std::string& SNESProblem<DOF,U>::name() {
   return "UnnamedProblem";
 }
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::solve()
-{
+void SNESProblem<DOF,U>::solve() {
   PetscErrorCode ierr;
 
   // Solve:
-  ierr = SNESSolve(m_snes,NULL,m_X); CHKERRQ(ierr);
+  ierr = SNESSolve(m_snes,NULL,m_X); PISM_CHK(ierr, "SNESSolve");
 
   // See if it worked.
   SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(m_snes, &reason); CHKERRQ(ierr);
-  if (reason < 0)
-    {
-      SETERRQ2(m_grid.com, 1,
-               "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name().c_str(), SNESConvergedReasons[reason]);
-    }
+  ierr = SNESGetConvergedReason(m_snes, &reason); PISM_CHK(ierr, "SNESGetConvergedReason");
+  if (reason < 0) {
+    throw RuntimeError::formatted("SNESProblem %s solve failed to converge (SNES reason %s)",
+                                  name().c_str(), SNESConvergedReasons[reason]);
+  }
 
-  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n", name().c_str(), SNESConvergedReasons[reason]);
-  return 0;
+  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n",
+             name().c_str(), SNESConvergedReasons[reason]);
 }
-
 
 } // end of namespace pism
 

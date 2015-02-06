@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,19 +19,19 @@
 
 #include "PISMCalvingAtThickness.hh"
 #include "Mask.hh"
+#include "error_handling.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 
-CalvingAtThickness::CalvingAtThickness(IceGrid &g, const Config &conf)
-  : Component(g, conf) {
-  m_calving_threshold = config.get("thickness_calving_threshold");
+//! @brief Calving and iceberg removal code.
+namespace calving {
 
-  PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
-  if (ierr != 0) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: memory allocation failed (CalvingAtThickness constructor.\n");
-    PISMEnd();
-  }
+CalvingAtThickness::CalvingAtThickness(const IceGrid &g)
+  : Component(g) {
+  m_calving_threshold = m_config.get("thickness_calving_threshold");
+
+  m_old_mask.create(m_grid, "old_mask", WITH_GHOSTS, 1);
 }
 
 CalvingAtThickness::~CalvingAtThickness() {
@@ -39,13 +39,10 @@ CalvingAtThickness::~CalvingAtThickness() {
 }
 
 
-PetscErrorCode CalvingAtThickness::init(Vars &/*vars*/) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'calving at a threshold thickness' mechanism...\n"
-                    "  thickness threshold: %3.3f meters\n", m_calving_threshold); CHKERRQ(ierr);
-
-  return 0;
+void CalvingAtThickness::init() {
+  verbPrintf(2, m_grid.com,
+             "* Initializing the 'calving at a threshold thickness' mechanism...\n"
+             "  thickness threshold: %3.3f meters\n", m_calving_threshold);
 }
 
 /**
@@ -58,20 +55,19 @@ PetscErrorCode CalvingAtThickness::init(Vars &/*vars*/) {
  *
  * @return 0 on success
  */
-PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
-                                              IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
+void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
+                                IceModelVec2S &ice_thickness) {
   MaskQuery M(m_old_mask);
 
   // this call fills ghosts of m_old_mask
-  ierr = pism_mask.copy_to(m_old_mask); CHKERRQ(ierr);
+  pism_mask.copy_to(m_old_mask);
 
   IceModelVec::AccessList list;
   list.add(pism_mask);
   list.add(ice_thickness);
   list.add(m_old_mask);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.floating_ice(i, j)           &&
@@ -82,30 +78,27 @@ PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
     }
   }
 
-  ierr = pism_mask.update_ghosts();     CHKERRQ(ierr);
-  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  pism_mask.update_ghosts();
+  ice_thickness.update_ghosts();
 }
 
 
-void CalvingAtThickness::add_vars_to_output(const std::string &/*keyword*/,
+void CalvingAtThickness::add_vars_to_output_impl(const std::string &/*keyword*/,
                                                 std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode CalvingAtThickness::define_variables(const std::set<std::string> &/*vars*/,
+void CalvingAtThickness::define_variables_impl(const std::set<std::string> &/*vars*/,
                                                         const PIO &/*nc*/,
                                                         IO_Type /*nctype*/) {
   // empty
-  return 0;
 }
 
-PetscErrorCode CalvingAtThickness::write_variables(const std::set<std::string> &/*vars*/,
+void CalvingAtThickness::write_variables_impl(const std::set<std::string> &/*vars*/,
                                                        const PIO& /*nc*/) {
   // empty
-  return 0;
 }
 
 
+} // end of namespace calving
 } // end of namespace pism

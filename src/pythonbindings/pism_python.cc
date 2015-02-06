@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 David Maxwell
+// Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,50 +16,57 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <signal.h>
+#include <errno.h>
+#include <petscsys.h>
+
 #include "pism_python.hh"
-#include "petsc.h"
-#include "pism_python_signal.hh"
 #include "pism_const.hh"
 
-using namespace pism;
+namespace pism {
+namespace python {
 
-PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
-{
-  return GlobalMax(comm, &local_max,  result);
-}
-PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm)
-{
-  return GlobalMin(comm, &local_min,  result);
-}
-PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
-{
-  return GlobalSum(comm, &local_sum,  result);
-}
-
-PetscErrorCode optionsGroupBegin(MPI_Comm comm, const std::string &prefix,
-                                 const std::string &mess, const std::string &sec)
-{
-  PetscOptionsPublishCount=(PetscOptionsPublish?-1:1);
-  return PetscOptionsBegin_Private(comm, prefix.c_str(), mess.c_str(), sec.c_str());
-}
-
-void optionsGroupNext()
-{
-  PetscOptionsPublishCount++;
-}
-
-bool optionsGroupContinue()
-{
-  return PetscOptionsPublishCount<2;
-}
-
-PetscErrorCode optionsGroupEnd()
-{
-  return PetscOptionsEnd_Private();
-}
-
-
-void set_abort_on_sigint(bool abort)
-{
+void set_abort_on_sigint(bool abort) {
   gSIGINT_is_fatal = abort;
 }
+
+SigInstaller::SigInstaller(int sig, void (*new_handler)(int) ) {
+  m_old_handler = signal(sig, new_handler);
+  m_sig = sig;
+}
+
+void SigInstaller::release() {
+  if (m_old_handler) {
+    signal(m_sig, m_old_handler);
+  }
+  m_old_handler = NULL;
+}
+
+SigInstaller::~SigInstaller() {
+  release();
+}
+
+int gSignalSet = 0;
+bool gSIGINT_is_fatal;
+
+int check_signal() {
+  int rv = gSignalSet;
+  if (rv) {
+    gSignalSet = 0;
+  }
+  return 0;
+}
+
+void sigint_handler(int sig) {
+  if (sig == SIGINT) {
+    if (gSIGINT_is_fatal) {
+      throw pism::RuntimeError("caught signal SIGTERM.");
+    } else {
+      PetscPrintf(PETSC_COMM_WORLD, "\nCaught signal SIGTERM, waiting to exit.\n");
+      gSignalSet = SIGINT;
+    }
+  }
+}
+
+} // end of namespace python
+} // end of namespace pism

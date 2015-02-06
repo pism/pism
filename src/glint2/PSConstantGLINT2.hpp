@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,32 +37,32 @@ namespace glint2 {
 class PSConstantGLINT2 : public PISMSurfaceModel {
 public:
 
-	/** @param conf Not Used (Looked up all the constructors, it just
-	sets this->config, whic his not used
-	@param g glint2::IceGrid*/
-	PSConstantGLINT2(IceGrid &g, const ::PISMConfig &conf);
+  /** @param conf Not Used (Looked up all the constructors, it just
+      sets this->config, whic his not used
+      @param g glint2::IceGrid*/
+  PSConstantGLINT2(IceGrid &g);
 
-	virtual PetscErrorCode init(PISMVars &vars);
+  virtual void init(PISMVars &vars);
 
-	/** Just deletes input, no atmosphere is needed for this surface model. */
-	virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
+  /** Just deletes input, no atmosphere is needed for this surface model. */
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
 
-	virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-															 std::map<std::string, PISMTSDiagnostic*> &ts_dict);
-	virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-	virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-	virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-	virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
-	virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
-	virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void update(PetscReal my_t, PetscReal my_dt);
+  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
+  virtual void define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
+  virtual void write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:
-	std::string input_file;
+  std::string input_file;
 public:
-	IceModelVec2S climatic_mass_balance;
-	IceModelVec2S ice_surface_temp;
-	IceModelVec2S *lat, *usurf;
+  IceModelVec2S climatic_mass_balance;
+  IceModelVec2S ice_surface_temp;
+  IceModelVec2S *lat, *usurf;
 private:
-	PetscErrorCode allocate_PSConstantGLINT2();
+  void allocate_PSConstantGLINT2();
 };
 
 }}		// namespace

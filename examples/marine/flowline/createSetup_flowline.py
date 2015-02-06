@@ -117,7 +117,7 @@ xfront = 700.0  # x-position of fixed calving front in km
 distbc=50.0 #km
 igl=int(np.floor(distbc/boxWidth))
 vel_bc=300 # m/yr
-bcflag  = np.zeros((ny,nx))
+bc_mask  = np.zeros((ny,nx))
 ubar  = np.zeros((ny,nx))
 vbar  = np.zeros((ny,nx))
 
@@ -163,7 +163,7 @@ for i in range(0,nx):
      if i<=igl:
        ubar[j,i] = vel_bc/secpera
        vbar[j,i] = 0.0
-       bcflag[j,i] = 1.0
+       bc_mask[j,i] = 1.0
 
 
 ##### define dimensions in NetCDF file #####
@@ -204,11 +204,11 @@ vars = {'y':   	['m',
 		'land_ice_surface_specific_mass_balance_flux',
 		0.2 * 910.0,
 		precip],
-	'bcflag': ['',
-	  'bcflag',
-	  'bcflag',
+	'bc_mask': ['',
+	  'bc_mask',
+	  'bc_mask',
 	   0.0,
-	   bcflag],
+	   bc_mask],
    'u_ssa_bc': ['m s-1',
 	  'X-component of the SSA velocity boundary conditions',
 	  'ubar',

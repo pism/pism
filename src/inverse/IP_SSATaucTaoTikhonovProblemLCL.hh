@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "functional/IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 class IP_SSATaucTaoTikhonovProblemLCL;
 
@@ -45,45 +46,51 @@ public:
   typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
 #endif
 
-
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
   IP_SSATaucTaoTikhonovProblemLCLListener() {}
   virtual ~IP_SSATaucTaoTikhonovProblemLCLListener() {}
   
-  //!Callback called after each iteration.
-  virtual PetscErrorCode 
-  iteration(IP_SSATaucTaoTikhonovProblemLCL &problem,  ///< The class calling the callback.
-             double eta,                             ///< Tikhonov penalty parameter.
-             int iter,                             ///< Current iteration count.
-             double objectiveValue,                  ///< Value of the state functional.
-             double designValue,                     ///< Value of the design functiona.
-             DesignVec &d,                              ///< Value of the design variable.
-             DesignVec &diff_d,                         ///< Diference between design variable and a-prior estimate.
-             DesignVec &grad_d,                         ///< Gradient of design functional
-             StateVec &u,                               ///< Value of state variable
-             StateVec &diff_u,                          ///< Difference between state variable and desired value.
-             StateVec &grad_u,                          ///< Gradient of state functional
-             StateVec &constraints                      ///< Residual for state variable being a solution of the %SSA
-             ) = 0;
+  //! Callback called after each iteration.
+  //
+  // @param problem,  The class calling the callback.
+  // @param eta Tikhonov penalty parameter.
+  // @param iter Current iteration count.
+  // @param objectiveValue Value of the state functional.
+  // @param designValue Value of the design functional.
+  // @param &d Value of the design variable.
+  // @param &diff_d Diference between design variable and a priori estimate.
+  // @param &grad_d Gradient of design functional
+  // @param &u Value of state variable
+  // @param &diff_u Difference between state variable and desired value.
+  // @param &grad_u Gradient of state functional
+  // @param constraints Residual for state variable being a solution of the %SSA
+  virtual void iteration(IP_SSATaucTaoTikhonovProblemLCL &problem,
+                         double eta,
+                         int iter,
+                         double objectiveValue,
+                         double designValue,
+                         DesignVec &d,
+                         DesignVec &diff_d,
+                         DesignVec &grad_d,
+                         StateVec &u,
+                         StateVec &diff_u,
+                         StateVec &grad_u,
+                         StateVec &constraints) = 0;
 };
-
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y);
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
 
 //! \brief Defines a Tikhonov minimization problem of determining \f$\tau_c\f$ from %SSA velocities to be solved with a TaoBasicSolver using the tao_lcl algorithm.
 /*! Experimental and not particularly functional. */
 class IP_SSATaucTaoTikhonovProblemLCL {
 public:
-  
-  typedef IceModelVec2S  DesignVec;
-  typedef IceModelVec2V  StateVec;
+  typedef IceModelVec2S DesignVec;
+  typedef IceModelVec2V StateVec;
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
   IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
-                                   IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
+                                  IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
   virtual ~IP_SSATaucTaoTikhonovProblemLCL();
 
@@ -94,29 +101,29 @@ public:
   virtual StateVec &stateSolution();
   virtual DesignVec &designSolution();
 
-  virtual PetscErrorCode setInitialGuess(DesignVec &d0);
+  virtual void setInitialGuess(DesignVec &d0);
 
-  PetscErrorCode connect(Tao tao);
+  void connect(Tao tao);
 
-  PetscErrorCode monitorTao(Tao tao);
+  void monitorTao(Tao tao);
 
-  virtual PetscErrorCode evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
+  virtual void evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
   
-  virtual PetscErrorCode formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
+  virtual void formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode evaluateConstraints(Tao, Vec x, Vec r);
+  virtual void evaluateConstraints(Tao tao, Vec x, Vec r);
 
-  virtual PetscErrorCode evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv, MatStructure *s);
+  virtual void evaluateConstraintsJacobianState(Tao tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv,
+                                                MatStructure *s);
   
-  virtual PetscErrorCode evaluateConstraintsJacobianDesign(Tao, Vec x, Mat Jdesign);
+  virtual void evaluateConstraintsJacobianDesign(Tao tao, Vec x, Mat Jdesign);
 
-  virtual PetscErrorCode applyConstraintsJacobianDesign(Vec x, Vec y);
-  virtual PetscErrorCode applyConstraintsJacobianDesignTranspose(Vec x, Vec y);
+  virtual void applyConstraintsJacobianDesign(Vec x, Vec y);
+  virtual void applyConstraintsJacobianDesignTranspose(Vec x, Vec y);
 
 protected:
 
-  virtual PetscErrorCode construct();
-  virtual PetscErrorCode destruct();
+  void construct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
@@ -143,8 +150,8 @@ protected:
   double m_val_state;
 
   StateVec m_constraints;
-  Mat m_Jstate;
-  Mat m_Jdesign;
+  petsc::Mat m_Jstate;
+  petsc::Mat m_Jdesign;
 
   IceModelVec2S m_d_Jdesign;
   IceModelVec2V m_u_Jdesign;
@@ -156,8 +163,12 @@ protected:
   IPFunctional<IceModelVec2V> &m_stateFunctional;
 
   std::vector<Listener::Ptr> m_listeners;
+
+  static PetscErrorCode jacobian_design_callback(Mat A, Vec x, Vec y);
+  static PetscErrorCode jacobian_design_transpose_callback(Mat A, Vec x, Vec y);
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2 */

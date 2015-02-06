@@ -51,20 +51,22 @@ class PlotListener(PISM.invert.listener.PlotListener):
       r = self.toproczero(data.residual)
 
     if zeta is not None:
+      Mx = grid.Mx()
+      y = grid.y()
       pp.figure(self.figure())
       pp.clf()
       pp.subplot(1,3,1)
-      pp.plot(grid.y,zeta[:,grid.Mx/2])
+      pp.plot(y,zeta[:,Mx/2])
     
       mag = np.max(np.abs(u))
       pp.subplot(1,3,2)
-      pp.plot(grid.y,u[0,:,grid.Mx/2]/mag)
+      pp.plot(y,u[0,:,Mx/2]/mag)
 
       pp.subplot(1,3,3)
       if inv_solver.method.startswith('tikhonov'):
-        pp.plot(grid.y,-grad_zeta[:,grid.Mx/2]*dWeight,grid.y,grad_u[:,grid.Mx/2]*sWeight,grid.y,grad[:,grid.Mx/2])
+        pp.plot(y,-grad_zeta[:,Mx/2]*dWeight,y,grad_u[:,Mx/2]*sWeight,y,grad[:,Mx/2])
       else:
-        pp.plot(grid.y,r[0,:,grid.Mx/2])
+        pp.plot(y,r[0,:,Mx/2])
         
       pp.ion()
       pp.show()
@@ -78,11 +80,13 @@ class LinPlotListener(PISM.invert.listener.PlotListener):
     x  = self.toproczero(data.x)
 
     if x is not None:
+      Mx = grid.Mx()
+      y = grid.y()
       pp.figure(self.figure())
       pp.clf()
       mag = np.max(np.abs(x));
       if mag==0 : mag = 1
-      pp.plot(grid.y,x[:,grid.Mx/2]/mag)
+      pp.plot(y,x[:,Mx/2]/mag)
 
       pp.ion()
       pp.show()
@@ -115,7 +119,7 @@ def testi_tauc(grid, tauc):
 
   with PISM.vec.Access(comm=tauc):
     for (i,j) in grid.points():
-      y=grid.y[j]
+      y=grid.y(j)
       tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
 class testi_run(PISM.invert.ssa.SSATaucForwardRun):
@@ -172,7 +176,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
     
     with PISM.vec.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
       for (i,j) in grid.points():
-        if (j == 0) or (j==grid.My-1):
+        if (j == 0) or (j==grid.My()-1):
           vecs.bc_mask[i,j]=1
           vecs.vel_bc[i,j].u=0
           vecs.vel_bc[i,j].v=0
@@ -180,7 +184,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
     misfit_weight=vecs.vel_misfit_weight
     with PISM.vec.Access(comm=misfit_weight):
       for (i,j) in grid.points():
-        if grid.y[j] <= 0:
+        if grid.y(j) <= 0:
           misfit_weight[i,j] = 1.;
         else:
           misfit_weight[i,j] = right_side_weight;
@@ -191,18 +195,17 @@ if __name__ == "__main__":
   config = context.config
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Invert test I"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
-    output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
-    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
-    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
-    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
-    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
-    test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
+  output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+  right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
+  tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
+  tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
+  do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
+  do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
+  do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
+  test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
 
   inv_method = config.get_string("inv_ssa_method")
 
@@ -330,15 +333,17 @@ if __name__ == "__main__":
   secpera = grid.convert(1.0, "year", "seconds")
 
   if do_final_plot and (not tauc_a is None):
+    y = grid.y()
+
     from matplotlib import pyplot
     pyplot.clf()
     pyplot.subplot(1,2,1)
-    pyplot.plot(grid.y,tauc_a[:,Mx/2])
-    pyplot.plot(grid.y,tauc_true[:,Mx/2])
+    pyplot.plot(y,tauc_a[:,Mx/2])
+    pyplot.plot(y,tauc_true[:,Mx/2])
 
     pyplot.subplot(1,2,2)
-    pyplot.plot(grid.y,u_i_a[0,:,Mx/2]*secpera)
-    pyplot.plot(grid.y,u_obs_a[0,:,Mx/2]*secpera)
+    pyplot.plot(y,u_i_a[0,:,Mx/2]*secpera)
+    pyplot.plot(y,u_obs_a[0,:,Mx/2]*secpera)
 
     pyplot.ion()
     pyplot.show()

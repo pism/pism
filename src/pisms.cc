@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -20,64 +20,73 @@ static char help[] =
   "Ice sheet driver for EISMINT II, and other constant climate, simplified geometry\n"
   "intercomparison simulations.\n";
 
-#include <cstring>
-#include <petsc.h>
+#include <petscsys.h>
+
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 #include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "pism_options.hh"
 
-#include "POConstant.hh"
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
 
 using namespace pism;
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
-  MPI_Comm    com;
-
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
 
-  /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {    
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+  try {
+    verbosityLevelFromOptions();
 
-    ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
+               PISM_Revision);
+
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
+
+    std::string usage =
+      "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
+      "where major option chooses type of simplified experiment:\n"
+      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n";
 
     std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
-    ierr = show_usage_check_req_opts(com, "pisms", required,
-      "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
-      "where major option chooses type of simplified experiment:\n"
-      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"); CHKERRQ(ierr);
+
+    bool done = show_usage_check_req_opts(com, "pisms", required, usage);
+    if (done) {
+      return 0;
+    }
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    init_config(com, config, overrides, true);
 
     config.set_string("calendar", "none");
 
     IceGrid g(com, config);
     IceEISModel m(g, config, overrides);
 
-    ierr = m.setExecName("pisms"); CHKERRQ(ierr);
+    m.setExecName("pisms");
 
-    ierr = m.init(); CHKERRQ(ierr);
+    m.init();
 
-    ierr = m.run(); CHKERRQ(ierr);
+    m.run();
 
-    ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
+    verbPrintf(2,com, "... done with run \n");
 
     // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    m.writeFiles("unnamed.nc");
+  }
+  catch (...) {
+    handle_fatal_errors(com);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
-

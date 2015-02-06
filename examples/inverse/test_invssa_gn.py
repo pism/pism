@@ -50,11 +50,11 @@ if __name__ == "__main__":
 
   append_mode = False
   PISM.setVerbosityLevel(1)
-  for o in PISM.OptionsGroup(context.com,"","test_ssaforward"):
-    input_filename = PISM.optionsString("-i","input file")
-    inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
+
+  input_filename = PISM.optionsString("-i","input file")
+  inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+  use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
 
   ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename,'tauc')
   ssarun.setup()

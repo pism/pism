@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,12 +25,17 @@ static char help[] =
 #include <cctype>               // toupper
 #include <string>
 #include <algorithm>            // std::transform()
-#include <petscdmda.h>
+#include <petscsys.h>
+
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 #include "verif/iceCompModel.hh"
 
 #include "POConstant.hh"
 #include "pism_options.hh"
+
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
 
 using namespace pism;
 
@@ -41,36 +46,42 @@ static inline char pism_toupper(char c)
 }
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
-  MPI_Comm        com;
+  MPI_Comm com = MPI_COMM_WORLD;
 
-  PetscInitialize(&argc, &argv, NULL, help);
-
+  petsc::Initializer petsc(argc, argv, help);
   com = PETSC_COMM_WORLD;
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+  try {
+    verbosityLevelFromOptions();
 
-    ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    verbPrintf(2, com, "PISMV %s (verification mode)\n",
+               PISM_Revision);
+
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
+
+    std::string usage =
+      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
+      "where:\n"
+      "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
+      "  -no_report  do not give error report at end of run\n"
+      "  -eo         do not do numerical run; exact solution only\n"
+      "(see User's Manual for tests I and J).\n";
 
     std::vector<std::string> required;
     required.push_back("-test");
-    ierr = show_usage_check_req_opts(com, "pismv", required,
-        "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
-        "where:\n"
-        "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
-        "  -no_report  do not give error report at end of run\n"
-        "  -eo         do not do numerical run; exact solution only\n"
-        "(see User's Manual for tests I and J).\n"
-        ); CHKERRQ(ierr);
+
+    bool done = show_usage_check_req_opts(com, "pismv", required, usage);
+    if (done) {
+      return 0;
+    }
 
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    init_config(com, config, overrides, true);
 
     config.set_flag("use_eta_transformation", false);
     config.set_string("calendar", "none");
@@ -78,14 +89,7 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, config);
 
     // determine test (and whether to report error)
-    std::string testname = "A";
-    bool   test_chosen;
-    ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
-    {
-      ierr = OptionsString("-test", "Specifies PISM verification test",
-                               testname, test_chosen); CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    std::string testname = options::String("-test", "Specifies PISM verification test", "A");
 
     // transform to uppercase:
     transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);
@@ -94,20 +98,22 @@ int main(int argc, char *argv[]) {
     // run derived class for compensatory source SIA solutions
     // (i.e. compensatory accumulation or compensatory heating)
     IceCompModel m(g, config, overrides, testname[0]);
-    ierr = m.setExecName("pismv"); CHKERRQ(ierr);
+    m.setExecName("pismv");
 
-    ierr = m.init(); CHKERRQ(ierr);
+    m.init();
 
-    ierr = m.run(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
+    m.run();
+    verbPrintf(2,com, "done with run\n");
 
-    ierr = m.reportErrors();  CHKERRQ(ierr);
+    m.reportErrors();
 
     // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    m.writeFiles("unnamed.nc");
+  }
+  catch (...) {
+    handle_fatal_errors(com);
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011, 2013, 2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011, 2013, 2014, 2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -23,26 +23,34 @@
 #include "PISMComponent.hh"
 
 namespace pism {
-
 class IceModelVec2S;
 
+//! @brief Ocean models and modifiers: provide sea level elevation,
+//! melange back pressure, shelf base mass flux and shelf base
+//! temperature.
+namespace ocean {
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component_TS {
 public:
-  OceanModel(IceGrid &g, const Config &conf)
-    : Component_TS(g, conf), sea_level(0) {}
-  virtual ~OceanModel() {};
+  OceanModel(const IceGrid &g);
+  virtual ~OceanModel();
 
-  virtual PetscErrorCode init(Vars &vars) = 0;
+  void init();
 
-  virtual PetscErrorCode sea_level_elevation(double &result) = 0;
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
+  double sea_level_elevation();
+  void shelf_base_temperature(IceModelVec2S &result);
+  void shelf_base_mass_flux(IceModelVec2S &result);
+  void melange_back_pressure_fraction(IceModelVec2S &result);
 protected:
-  double sea_level;
+  virtual void init_impl() = 0;
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) = 0;
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result) = 0;
+  virtual void sea_level_elevation_impl(double &result) = 0;
+protected:
+  double m_sea_level;
 };
-
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif  // __PISMOceanModel_hh

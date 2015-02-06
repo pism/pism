@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2014 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -45,16 +45,15 @@ if __name__ == '__main__':
 
   PISM.show_usage_check_req_opts(com,"ssa_forward",["-i"],usage)
 
-  for o in PISM.OptionsGroup(com,"","SSA Forward"):
-    boot_file = PISM.optionsString("-i","input file with PISM model data")
-    output_file = PISM.optionsString("-o","output file",default="ssa_forward.nc")
+  boot_file = PISM.optionsString("-i","input file with PISM model data")
+  output_file = PISM.optionsString("-o","output file",default="ssa_forward.nc")
 
   ssa_run = PISM.ssa.SSAFromInputFile(boot_file)
 
   ssa_run.setup()
 
   solve_t0 = time.clock()
-  ssa_run.solve()
+  vel_ssa = ssa_run.solve()
   solve_t = time.clock()-solve_t0
 
   PISM.verbPrintf(2,context.com,"Solve time %g seconds.\n",solve_t)

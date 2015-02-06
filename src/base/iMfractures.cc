@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2014 Torsten Albrecht
+// Copyright (C) 2011-2015 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,9 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
+#include "error_handling.hh"
+#include "pism_options.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 
@@ -29,28 +32,26 @@ namespace pism {
 
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
-PetscErrorCode IceModel::calculateFractureDensity() {
-  const double dx = grid.dx, dy = grid.dy, Mx = grid.Mx, My = grid.My;
-  PetscErrorCode ierr;
+void IceModel::calculateFractureDensity() {
+  const double dx = grid.dx(), dy = grid.dy(), Mx = grid.Mx(), My = grid.My();
 
   IceModelVec2S
     &vFDnew = vWork2d[0],
     &vFAnew = vWork2d[1];
 
   // get SSA velocities and related strain rates and stresses
-  IceModelVec2V *ssa_velocity;
-  ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
-  ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates);
-  ierr = stress_balance->compute_2D_stresses(*ssa_velocity, vMask, deviatoric_stresses);
+  const IceModelVec2V &ssa_velocity = stress_balance->advective_velocity();
+  stress_balance->compute_2D_principal_strain_rates(ssa_velocity, vMask, strain_rates);
+  stress_balance->compute_2D_stresses(ssa_velocity, vMask, deviatoric_stresses);
 
   IceModelVec::AccessList list;
-  list.add(*ssa_velocity);
+  list.add(ssa_velocity);
   list.add(strain_rates);
   list.add(deviatoric_stresses);
 
   list.add(ice_thickness);
   list.add(vFD);
-  ierr = vFD.copy_to(vFDnew); CHKERRQ(ierr);
+  vFD.copy_to(vFDnew);
   list.add(vFDnew);
   list.add(vMask);
 
@@ -67,7 +68,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     list.add(vFE);
     list.add(vFT);
     list.add(vFA);
-    ierr = vFA.copy_to(vFAnew); CHKERRQ(ierr);
+    vFA.copy_to(vFAnew);
     list.add(vFAnew);
   }
 
@@ -76,9 +77,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
   //options
   /////////////////////////////////////////////////////////
-  double soft_residual = 1.0;
-  PetscBool fracture_soft;
-  ierr = PetscOptionsGetScalar(NULL, "-fracture_softening", &soft_residual, &fracture_soft);
+  double soft_residual = options::Real("-fracture_softening", "soft_residual", 1.0);
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
   // more: T. Albrecht, A. Levermann; Fracture-induced softening for
@@ -94,51 +93,46 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  PetscInt  Nparamf=4;
-  double inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
-  PetscBool  fractures_set;
-  ierr = PetscOptionsGetRealArray(NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
-  CHKERRQ(ierr);
-  if ((Nparamf > 4) || (Nparamf < 4)) {
-    ierr = verbPrintf(1, grid.com,
-                      "PISM ERROR: option -fractures requires exactly 4 arguments... ENDING...\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+  double
+    gamma         = 1.0,
+    initThreshold = 7.0e4,
+    gammaheal     = 0.0,
+    healThreshold = 2.0e-10;
+
+  options::RealList fractures("-fractures", "gamma, initThreshold, gammaheal, healThreshold");
+
+  if (fractures.is_set()) {
+    if (fractures->size() != 4) {
+      throw RuntimeError("option -fractures requires exactly 4 arguments");
+    }
+    gamma         = fractures[0];
+    initThreshold = fractures[1];
+    gammaheal     = fractures[2];
+    healThreshold = fractures[3];
   }
-  double gamma = inarrayf[0],
-    initThreshold = inarrayf[1],
-    gammaheal     = inarrayf[2],
-    healThreshold = inarrayf[3];
 
-  ierr = verbPrintf(3, grid.com,
-                    "PISM-PIK INFO: fracture density is found with parameters:\n"
-                    " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
-                    gamma, initThreshold, gammaheal, healThreshold, soft_residual); CHKERRQ(ierr);
+  verbPrintf(3, grid.com,
+             "PISM-PIK INFO: fracture density is found with parameters:\n"
+             " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
+             gamma, initThreshold, gammaheal, healThreshold, soft_residual);
 
-  PetscBool do_fracground;
-  ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground); CHKERRQ(ierr);
+  bool do_fracground = options::Bool("-do_frac_on_grounded",
+                                     "model fracture density in grounded areas");
 
-  double fdBoundaryValue = 0.0;
-  ierr = PetscOptionsGetScalar(NULL, "-phi0", &fdBoundaryValue, NULL);
+  double fdBoundaryValue = options::Real("-phi0", "phi0", 0.0);
 
-  PetscBool constant_healing;
-  ierr = PetscOptionsHasName(NULL,"-constant_healing",&constant_healing); CHKERRQ(ierr);
+  bool constant_healing = options::Bool("-constant_healing", "constant healing");
 
-  PetscBool fracture_weighted_healing;
-  ierr = PetscOptionsHasName(NULL,"-fracture_weighted_healing",
-                             &fracture_weighted_healing); CHKERRQ(ierr);
+  bool fracture_weighted_healing = options::Bool("-fracture_weighted_healing",
+                                                 "fracture weighted healing");
 
-  PetscBool max_shear_stress;
-  ierr = PetscOptionsHasName(NULL,"-max_shear",&max_shear_stress); CHKERRQ(ierr);
+  bool max_shear_stress = options::Bool("-max_shear", "max shear");
 
-  PetscBool lefm;
-  ierr = PetscOptionsHasName(NULL,"-lefm",&lefm); CHKERRQ(ierr);
+  bool lefm = options::Bool("-lefm", "lefm");
 
-  PetscBool constant_fd;
-  ierr = PetscOptionsHasName(NULL,"-constant_fd",&constant_fd); CHKERRQ(ierr);
+  bool constant_fd = options::Bool("-constant_fd", "constant fd");
 
-  PetscBool fd2d_scheme;
-  ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme); CHKERRQ(ierr);
+  bool fd2d_scheme = options::Bool("-scheme_fd2d", "scheme fd2d");
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -146,8 +140,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     tempFD=0;
     //SSA: v . grad memField
 
-    double uvel=(*ssa_velocity)(i,j).u;
-    double vvel=(*ssa_velocity)(i,j).v;
+    double uvel=ssa_velocity(i,j).u;
+    double vvel=ssa_velocity(i,j).v;
 
     if (fd2d_scheme) {
 
@@ -168,9 +162,9 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       } else if (uvel>=-dx*vvel/dy && vvel<=0.0) { //8
         tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
       } else {
-        ierr = verbPrintf(3,grid.com,
-                          "######### missing case of angle %f of %f and %f at %d, %d \n",
-                          atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
+        verbPrintf(3,grid.com,
+                   "######### missing case of angle %f of %f and %f at %d, %d \n",
+                   atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
       }
     }
     else{
@@ -193,9 +187,9 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
     ///max shear stress criterion (more stringent than von mises)
     if (max_shear_stress) {
-      double maxshear=PetscAbs(T1);
-      maxshear=PetscMax(maxshear,PetscAbs(T2));
-      maxshear=PetscMax(maxshear,PetscAbs(T1-T2));
+      double maxshear=fabs(T1);
+      maxshear=std::max(maxshear,fabs(T2));
+      maxshear=std::max(maxshear,fabs(T1-T2));
 
       sigmat=maxshear;
     }
@@ -217,13 +211,14 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         sigmatau = 0.5*(T1-T2)*sin(2*sigmabetatest);
         //shayam_wu90
         if (sigmamu*sigmanor<0.0) {//compressive case
-          if (abs(sigmatau) <= abs(sigmamu*sigmanor))
+          if (abs(sigmatau) <= abs(sigmamu*sigmanor)) {
             sigmatau=0.0;
-          else {
-            if (sigmatau>0) //coulomb friction opposing sliding
+          } else {
+            if (sigmatau>0) { //coulomb friction opposing sliding
               sigmatau+=(sigmamu*sigmanor);
-            else
+            } else {
               sigmatau-=(sigmamu*sigmanor);
+            }
           }
         }
 
@@ -231,10 +226,11 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         Kone = sigmanor*sqrt(M_PI*sigmac);//normal
         Ktwo = sigmatau*sqrt(M_PI*sigmac);//shear
 
-        if (Ktwo==0.0)
+        if (Ktwo==0.0) {
           sigmatetanull=0.0;
-        else //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
+        } else { //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
           sigmatetanull=-2.0*atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone)/(4.0*Ktwo));
+        }
 
         KSI = cos(0.5*sigmatetanull)*(Kone*cos(0.5*sigmatetanull)*cos(0.5*sigmatetanull) - 0.5*3.0*Ktwo*sin(sigmatetanull));
         // mode I stress intensity
@@ -257,16 +253,18 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     if (ice_thickness(i,j)>0.0) {
       if (constant_healing) {
         fdheal = gammaheal*(-healThreshold);
-        if (fracture_weighted_healing)
+        if (fracture_weighted_healing) {
           vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
-        else
+        } else {
           vFDnew(i,j)+= fdheal*dt;
+        }
       }
       else if (strain_rates(i,j,0) < healThreshold) {
-        if (fracture_weighted_healing)
+        if (fracture_weighted_healing) {
           vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
-        else
+        } else {
           vFDnew(i,j)+= fdheal*dt;
+        }
       }
     }
 
@@ -328,8 +326,10 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     //boundary condition
     if (dirichlet_bc && !do_fracground) {
       if (vBCMask.as_int(i,j) == 1) {
-        if (vBCvel(i,j).u != 0.0 || vBCvel(i,j).v != 0.0)
+        if (vBCvel(i,j).u != 0.0 || vBCvel(i,j).v != 0.0) {
           vFDnew(i,j)=fdBoundaryValue;
+        }
+
         if (write_fd) {
           vFAnew(i,j)=0.0;
           vFG(i,j)=0.0;
@@ -357,12 +357,10 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   }
 
   if (write_fd) {
-    ierr = vFAnew.update_ghosts(vFA); CHKERRQ(ierr);
+    vFAnew.update_ghosts(vFA);
   }
 
-  ierr = vFDnew.update_ghosts(vFD); CHKERRQ(ierr);
-
-  return 0;
+  vFDnew.update_ghosts(vFD);
 }
 
 } // end of namespace pism

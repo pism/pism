@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,58 +19,49 @@
 #include "PSStuffAsAnomaly.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
+#include <stdexcept>
 
 namespace pism {
+namespace surface {
 
-PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, const Config &conf, SurfaceModel *input)
-    : PSModifier(g, conf, input) {
-  PetscErrorCode ierr = allocate_PSStuffAsAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+StuffAsAnomaly::StuffAsAnomaly(const IceGrid &g, SurfaceModel *input)
+    : SurfaceModifier(g, input) {
 
+  mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  mass_flux.set_attrs("climate_state",
+                      "surface mass balance (accumulation/ablation) rate",
+                      "kg m-2 s-1",
+                      "land_ice_surface_specific_mass_balance_flux");
+  mass_flux.set_glaciological_units("kg m-2 year-1");
+  mass_flux.write_in_glaciological_units = true;
+
+  temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  temp.set_attrs("climate_state", "ice temperature at the ice surface",
+                 "K", "");
+
+  // create special variables
+  mass_flux_0.create(m_grid, "mass_flux_0", WITHOUT_GHOSTS);
+  mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
+                        "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+
+  mass_flux_input.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
+                            "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+
+  temp_0.create(m_grid, "ice_surface_temp_0", WITHOUT_GHOSTS);
+  temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
+                   "");
+
+  temp_input.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
+                       "K", "");
 }
 
-PSStuffAsAnomaly::~PSStuffAsAnomaly() {
+StuffAsAnomaly::~StuffAsAnomaly() {
   // empty
 }
 
-PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
-  PetscErrorCode ierr;
-
-  ierr = mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = mass_flux.set_attrs("climate_state",
-                             "surface mass balance (accumulation/ablation) rate",
-                             "kg m-2 s-1",
-                             "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-  ierr = mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  mass_flux.write_in_glaciological_units = true;
-
-  ierr = temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = temp.set_attrs("climate_state", "ice temperature at the ice surface",
-                        "K", ""); CHKERRQ(ierr);
-
-  // create special variables
-  ierr = mass_flux_0.create(grid, "mass_flux_0", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
-                               "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-
-  ierr = mass_flux_input.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
-                                   "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-
-  ierr = temp_0.create(grid, "ice_surface_temp_0", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
-                          ""); CHKERRQ(ierr);
-
-  ierr = temp_input.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
-                              "K", ""); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode PSStuffAsAnomaly::init(Vars &vars) {
-  PetscErrorCode ierr;
+void StuffAsAnomaly::init() {
   std::string input_file;
   bool do_regrid = false;
   int start = 0;
@@ -78,48 +69,50 @@ PetscErrorCode PSStuffAsAnomaly::init(Vars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (input_model != NULL) {
-    ierr = input_model->init(vars); CHKERRQ(ierr);
+    input_model->init();
   }
 
-  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
+  find_pism_input(input_file, do_regrid, start);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'turn_into_anomaly' modifier\n"
-                    "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
-                    "  read from '%s'.\n", input_file.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, m_grid.com,
+             "* Initializing the 'turn_into_anomaly' modifier\n"
+             "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
+             "  read from '%s'.\n", input_file.c_str());
 
   if (do_regrid) {
-    ierr = mass_flux_input.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
-    ierr = temp_input.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
+    mass_flux_input.regrid(input_file, CRITICAL); // fails if not found!
+    temp_input.regrid(input_file, CRITICAL); // fails if not found!
   } else {
-    ierr = mass_flux_input.read(input_file, start); CHKERRQ(ierr); // fails if not found!
-    ierr = temp_input.read(input_file, start); CHKERRQ(ierr); // fails if not found!
+    mass_flux_input.read(input_file, start); // fails if not found!
+    temp_input.read(input_file, start); // fails if not found!
   }
-
-  return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
+void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
-    return 0;
+      (fabs(my_dt - m_dt) < 1e-12)) {
+    return;
+  }
 
   m_t  = my_t;
   m_dt = my_dt;
 
   if (input_model != NULL) {
-    ierr = input_model->update(m_t, m_dt); CHKERRQ(ierr);
-    ierr = input_model->ice_surface_temperature(temp); CHKERRQ(ierr);
-    ierr = input_model->ice_surface_mass_flux(mass_flux); CHKERRQ(ierr);
+    input_model->update(m_t, m_dt);
+    input_model->ice_surface_temperature(temp);
+    input_model->ice_surface_mass_flux(mass_flux);
 
     // if we are at the beginning of the run...
-    if (m_t < grid.time->start() + 1) { // this is goofy, but time-steps are
+    if (m_t < m_grid.time->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
-      ierr = temp.copy_to(temp_0); CHKERRQ(ierr);
-      ierr = mass_flux.copy_to(mass_flux_0); CHKERRQ(ierr);
+      temp.copy_to(temp_0);
+      mass_flux.copy_to(mass_flux_0);
     }
   }
 
@@ -132,25 +125,23 @@ PetscErrorCode PSStuffAsAnomaly::update(double my_t, double my_dt) {
   list.add(temp_0);
   list.add(temp_input);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
     temp(i, j)      = temp(i, j) - temp_0(i, j) + temp_input(i, j);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::ice_surface_mass_flux(IceModelVec2S &result) {
-  return mass_flux.copy_to(result);
+void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+  mass_flux.copy_to(result);
 }
 
-PetscErrorCode PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
-  return temp.copy_to(result);
+void StuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
+  temp.copy_to(result);
 }
 
-void PSStuffAsAnomaly::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void StuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }
@@ -159,17 +150,16 @@ void PSStuffAsAnomaly::add_vars_to_output(const std::string &keyword, std::set<s
   result.insert("climatic_mass_balance");
 }
 
-PetscErrorCode PSStuffAsAnomaly::define_variables(const std::set<std::string> &vars_input,
+void StuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_input,
                                                   const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = temp.define(nc, nctype); CHKERRQ(ierr);
+    temp.define(nc, nctype);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = mass_flux.define(nc, nctype); CHKERRQ(ierr);
+    mass_flux.define(nc, nctype);
   }
 
   // ensure that no one overwrites these two
@@ -177,22 +167,19 @@ PetscErrorCode PSStuffAsAnomaly::define_variables(const std::set<std::string> &v
   vars.erase("climatic_mass_balance");
 
   if (input_model != NULL) {
-    ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    input_model->define_variables(vars, nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void StuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = temp.write(nc); CHKERRQ(ierr);
+    temp.write(nc);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = mass_flux.write(nc); CHKERRQ(ierr);
+    mass_flux.write(nc);
   }
 
   // ensure that no one overwrites these two
@@ -200,11 +187,10 @@ PetscErrorCode PSStuffAsAnomaly::write_variables(const std::set<std::string> &va
   vars.erase("climatic_mass_balance");
 
   if (input_model != NULL) {
-    ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
+    input_model->write_variables(vars, nc);
   }
-
-  return 0;
 }
 
 
+} // end of namespace surface
 } // end of namespace pism

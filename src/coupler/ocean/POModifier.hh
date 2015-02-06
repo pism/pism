@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,41 +20,37 @@
 #define _POMODIFIER_H_
 
 #include "PISMOcean.hh"
+#include "Modifier.hh"
 
 namespace pism {
-
-class POModifier : public Modifier<OceanModel>
+namespace ocean {
+class OceanModifier : public Modifier<OceanModel>
 {
 public:
-  POModifier(IceGrid &g, const Config &conf, OceanModel* in)
-    : Modifier<OceanModel>(g, conf, in) {}
-  virtual ~POModifier() {}
+  OceanModifier(const IceGrid &g, OceanModel* in)
+    : Modifier<OceanModel>(g, in) {}
+  virtual ~OceanModifier() {}
 
-  virtual PetscErrorCode sea_level_elevation(double &result)
+protected:
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
-    return 0;
+    input_model->melange_back_pressure_fraction(result);
+  }
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result)
+  {
+    input_model->shelf_base_temperature(result);
   }
 
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result)
+  virtual void sea_level_elevation_impl(double &result)
   {
-    PetscErrorCode ierr = input_model->shelf_base_temperature(result); CHKERRQ(ierr);
-    return 0;
+    result = input_model->sea_level_elevation();
   }
-
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result)
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
-    return 0;
-  }
-
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result)
-  {
-    PetscErrorCode ierr = input_model->melange_back_pressure_fraction(result); CHKERRQ(ierr);
-    return 0;
+    input_model->shelf_base_mass_flux(result);
   }
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POMODIFIER_H_ */

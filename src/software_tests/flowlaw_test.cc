@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of Pism.
 //
@@ -23,10 +23,13 @@
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 static char help[] =
-  "Calls IceFlowLaw with various values of arguments and prints results.\n"
+  "Calls FlowLaw with various values of arguments and prints results.\n"
   "Used for software tests.  Tests the flow() method but prints\n"
   "temperature and liquid fraction as inputs and flow coefficient as output.\n"
   "Thus also tests methods getPressureFromDepth(), getMeltingTemp(), and\n"
@@ -35,31 +38,30 @@ static char help[] =
   "meaningful inputs and output appear at stdout.\n";
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
-  MPI_Comm    com;
+  MPI_Comm com = MPI_COMM_WORLD;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
     EnthalpyConverter EC(config);
 
-    IceFlowLaw *flow_law = NULL;
-    IceFlowLawFactory ice_factory(com, "sia_", config, &EC);
+    rheology::FlowLaw *flow_law = NULL;
+    rheology::FlowLawFactory ice_factory(com, "sia_", config, &EC);
 
     std::string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type
 
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ice_factory.create(&flow_law);
+    ice_factory.setFromOptions();
+    flow_law = ice_factory.create();
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
                depth   = 2000.0,
@@ -82,9 +84,8 @@ int main(int argc, char *argv[]) {
         double T     = Tm + TpaC[j],
                omega = (j == 3) ? omega0 : 0.0;
 
-        double E, flowcoeff;
-        EC.getEnth(T, omega, p, E);
-        flowcoeff = flow_law->flow(sigma[i], E, p, gs);
+        double E = EC.getEnth(T, omega, p);
+        double flowcoeff = flow_law->flow(sigma[i], E, p, gs);
 
         printf("    %10.2e   %10.3f  %9.3f = %10.6e\n",
                sigma[i], T, omega, flowcoeff);
@@ -93,8 +94,10 @@ int main(int argc, char *argv[]) {
     }
 
     delete flow_law;
-  } // end explicit scope
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

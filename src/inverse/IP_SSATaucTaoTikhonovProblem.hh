@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@
 #include "functional/IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Defines an IPTaoTikhonovProblem for inversion of basal yeild stresses \f$\tau_c\f$ from %SSA velocities.
 /*! The forward problem for the inversion is defined by an IP_SSATaucForwardProblem.  The problem itself
@@ -53,13 +54,14 @@ public:
 
   virtual ~IP_SSATaucTaoTikhonovProblem() {};
 
-  virtual PetscErrorCode connect(Tao tao);
+  virtual void connect(Tao tao);
 
   //! Callback to TAO to set bounds on \f$\tau_c\f$ for constrained minimization algorithms.
-  virtual PetscErrorCode getVariableBounds(Tao tao, Vec lo, Vec hi);
+  virtual void getVariableBounds(Tao tao, Vec lo, Vec hi);
 
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX */

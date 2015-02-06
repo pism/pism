@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "PAModifier.hh"
 
 namespace pism {
+namespace atmosphere {
 
 /** "Paleo-precipitation correction"
  *
@@ -49,34 +50,32 @@ namespace pism {
  * belonging to the set of uncertainties related to the conversion
  * between isotopic and temperature signals.
  */
-class PA_paleo_precip : public PScalarForcing<AtmosphereModel,PAModifier>
+class PaleoPrecip : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel* in);
-  virtual ~PA_paleo_precip();
+  PaleoPrecip(const IceGrid &g, AtmosphereModel* in);
+  virtual ~PaleoPrecip();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
+  virtual void init();
+  virtual void init_timeseries(const std::vector<double> &ts);
 
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
+  virtual void mean_precipitation(IceModelVec2S &result);
 
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series(int i, int j, std::vector<double> &values);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+protected:
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-
 protected:
   NCSpatialVariable air_temp, precipitation;
   double m_precipexpfactor;
   std::vector<double> m_scaling_values;
-private:
-  PetscErrorCode allocate_PA_paleo_precip();
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PA_PALEO_PRECIP_H_ */

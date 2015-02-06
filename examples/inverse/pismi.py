@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014 David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -33,7 +33,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
       grid = self.grid
       vecs = self.modeldata.vecs
 
-      pio = PISM.PIO(grid.com,"netcdf3", grid.get_unit_system())
+      pio = PISM.PIO(grid.com,"netcdf3", grid.config.get_unit_system())
       pio.open(filename,PISM.PISM_READWRITE) #append mode!
 
       self.modeldata.vecs.write(filename)
@@ -67,7 +67,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
 
     secpera = grid.convert(1.0, "year", "second")
 
-    if self.grid.rank == 0:
+    if self.grid.rank() == 0:
       import matplotlib.pyplot as pp
     
       pp.figure(self.figure())
@@ -169,7 +169,7 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
     r = self.toproczero(data.r)
     d = self.toproczero(data.d)
 
-    if self.grid.rank == 0:
+    if self.grid.rank() == 0:
       import matplotlib.pyplot as pp
       pp.figure(self.figure())
       pp.clf()
@@ -261,47 +261,49 @@ if __name__ == "__main__":
 
   append_mode = False
   PISM.setVerbosityLevel(1)
-  for o in PISM.OptionsGroup(context.com,"","pismi"):
-    input_filename = PISM.optionsString("-i","input file")
-    append_filename = PISM.optionsString("-a","append file",default=None)
-    output_filename = PISM.optionsString("-o","output file",default=None)
 
-    if (input_filename is None) and (append_filename is None):
-      PISM.verbPrintf(1,com,"\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
-      PISM.PISMEndQuiet()
+  input_filename = PISM.optionsString("-i","input file")
+  append_filename = PISM.optionsString("-a","append file",default=None)
+  output_filename = PISM.optionsString("-o","output file",default=None)
 
-    if (input_filename is not None) and (append_filename is not None):
-      PISM.verbPrintf(1,com,"\nError: Only one of -i/-a is allowed.\n")
-      PISM.PISMEndQuiet()
+  if (input_filename is None) and (append_filename is None):
+    PISM.verbPrintf(1,com,"\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
+    sys.exit(0)
 
-    if (output_filename is not None) and (append_filename is not None):
-      PISM.verbPrintf(1,com,"\nError: Only one of -a/-o is allowed.\n")
-      PISM.PISMEndQuiet()
+  if (input_filename is not None) and (append_filename is not None):
+    PISM.verbPrintf(1,com,"\nError: Only one of -i/-a is allowed.\n")
+    sys.exit(0)
 
-    if append_filename is not None:
-      input_filename = append_filename
-      output_filename = append_filename
-      append_mode = True
+  if (output_filename is not None) and (append_filename is not None):
+    PISM.verbPrintf(1,com,"\nError: Only one of -a/-o is allowed.\n")
+    sys.edit(0)
 
-    inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
-    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+  if append_filename is not None:
+    input_filename = append_filename
+    output_filename = append_filename
+    append_mode = True
 
-    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
-    Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
+  inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
 
-    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
-    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
+  do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
+  do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
+  Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-    do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
+  design_var = PISM.optionsList(context.com, "-inv_ssa",
+                                "design variable for inversion",
+                                "tauc,hardav", "tauc")
+  do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
 
-    prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
+  do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
+  use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
 
-    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+  prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-      "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
+  is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+
+  using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
+    "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
   inv_method = config.get_string("inv_ssa_method")
   
@@ -351,7 +353,7 @@ if __name__ == "__main__":
         logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
         zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
         zeta_fixed_mask.set(1);
-        mask = vecs.ice_mask
+        mask = vecs.mask
         with PISM.vec.Access(comm=zeta_fixed_mask,nocomm=mask):
           mq = PISM.MaskQuery(mask)
           for (i,j) in grid.points():
@@ -359,7 +361,7 @@ if __name__ == "__main__":
               zeta_fixed_mask[i,j] = 0;
         vecs.add(zeta_fixed_mask)
 
-        adjustTauc(vecs.ice_mask,design_prior)
+        adjustTauc(vecs.mask, design_prior)
       elif design_var == 'hardav':
         PISM.logging.logPrattle("Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
         pass
@@ -431,7 +433,7 @@ if __name__ == "__main__":
   
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
-    pio = PISM.PIO(grid.com,"netcdf3", grid.get_unit_system())
+    pio = PISM.PIO(grid.com,"netcdf3", grid.config.get_unit_system())
     pio.open(output_filename,PISM.PISM_READWRITE_MOVE)
     pio.def_time(grid.config.get_string("time_dimension_name"),
                  grid.config.get_string("calendar"), grid.time.units_string())
@@ -494,14 +496,17 @@ if __name__ == "__main__":
 
   (zeta,u) = solver.inverseSolution()
 
-  # Convert back from zeta to tauc
-  design = createDesignVec(grid,design_var)
-  design_param.convertToDesignVariable(zeta,design)
 
   # It may be that a 'tauc'/'hardav' was read in earlier.  We replace it with
   # our newly generated one.
-  if vecs.has(design_var): vecs.remove(design_var)
-  vecs.add(design,writing=True)
+  if vecs.has(design_var):
+    design = vecs.get(design_var)
+    design_param.convertToDesignVariable(zeta, design)
+  else:
+    # Convert back from zeta to tauc or hardav
+    design = createDesignVec(grid,design_var)
+    design_param.convertToDesignVariable(zeta,design)
+    vecs.add(design, writing=True)
 
   vecs.add(zeta,writing=True)
 
@@ -522,8 +527,8 @@ if __name__ == "__main__":
   r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True
 
-  residual.magnitude(r_mag)
-  r_mag.mask_by(vecs.thickness)
+  r_mag.set_to_magnitude(residual)
+  r_mag.mask_by(vecs.land_ice_thickness)
   
   vecs.add(residual,writing=True)
   vecs.add(r_mag,writing=True)
