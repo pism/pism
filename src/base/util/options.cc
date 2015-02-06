@@ -214,18 +214,24 @@ const int& IntegerList::operator[](size_t index) const {
 Real::Real(const std::string& option,
            const std::string& description,
            double default_value) {
+
   std::stringstream buffer;
+  // NB! This may round default_value.
   buffer << default_value;
+
   String input(option, description, buffer.str(), DONT_ALLOW_EMPTY);
 
-  std::string str = input;
-  char *endptr = NULL;
-  double result = strtod(str.c_str(), &endptr);
-  if (*endptr != '\0') {
-    throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
-                                  option.c_str(), str.c_str(), str.c_str());
+  if (input.is_set()) {
+    char *endptr = NULL;
+    double result = strtod(input->c_str(), &endptr);
+    if (*endptr != '\0') {
+      throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
+                                    option.c_str(), input->c_str(), input->c_str());
+    }
+    this->set(result, true);
+  } else {
+    this->set(default_value, false);
   }
-  this->set(result, input.is_set());
 }
 
 
