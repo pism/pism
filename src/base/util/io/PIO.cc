@@ -1308,25 +1308,25 @@ void PIO::set_local_extent(unsigned int xs, unsigned int xm,
   m_ym = ym;
 }
 
-void PIO::read_attributes(const string &name, NCVariable &variable) const {
+void PIO::read_attributes(const string &variable_name, NCVariable &variable) const {
   try {
-    bool variable_exists = inq_var(name);
+    bool variable_exists = inq_var(variable_name);
 
-    if (variable_exists == false) {
-      throw RuntimeError("variable " + name + " is missing");
+    if (not variable_exists) {
+      throw RuntimeError::formatted("variable \"%s\" is missing", variable_name.c_str());
     }
 
     variable.clear_all_strings();
     variable.clear_all_doubles();
 
-    unsigned int nattrs = inq_nattrs(name);
+    unsigned int nattrs = inq_nattrs(variable_name);
 
     for (unsigned int j = 0; j < nattrs; ++j) {
-      string attribute_name = inq_attname(name, j);
-      IO_Type nctype = inq_atttype(name, attribute_name);
+      string attribute_name = inq_attname(variable_name, j);
+      IO_Type nctype = inq_atttype(variable_name, attribute_name);
 
       if (nctype == PISM_CHAR) {
-        string value = get_att_text(name, attribute_name);
+        string value = get_att_text(variable_name, attribute_name);
 
         if (attribute_name == "units") {
           variable.set_units(value);
@@ -1334,12 +1334,13 @@ void PIO::read_attributes(const string &name, NCVariable &variable) const {
           variable.set_string(attribute_name, value);
         }
       } else {
-        vector<double> values = get_att_double(name, attribute_name);
-        variable.set_doubles(attribute_name, values);
+        variable.set_doubles(attribute_name,
+                             get_att_double(variable_name, attribute_name));
       }
     } // end of for (int j = 0; j < nattrs; ++j)
   } catch (RuntimeError &e) {
-    e.add_context("reading attributes of variable '%s' from '%s'", name.c_str(), inq_filename().c_str());
+    e.add_context("reading attributes of variable '%s' from '%s'",
+                  variable_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
