@@ -118,16 +118,20 @@ void handle_fatal_errors(MPI_Comm com) {
   }
   catch (std::exception &e) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "PISM ERROR: caught a C++ standard library exception: %s.\n"
-                       "     This is probably a bug in PISM."
-                       " Please send a report to help@pism-docs.org\n",
+                       "\n"
+                       "PISM ERROR: Caught a C++ standard library exception: \"%s\".\n"
+                       "            This is probably a bug in PISM.\n"
+                       "            Please send a report to help@pism-docs.org\n"
+                       "\n",
                        e.what()); CHKERRCONTINUE(ierr);
-  }
-  catch (...) {
+  } catch (...) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "PISM ERROR: caught an unexpected exception.\n"
-                       "     This is probably a bug in PISM."
-                       " Please send a report to help@pism-docs.org\n"); CHKERRCONTINUE(ierr);
+                       "\n"
+                       "PISM ERROR: Caught an unexpected exception.\n"
+                       "            This is probably a bug in PISM.\n"
+                       "            Please send a report to help@pism-docs.org\n"
+                       "\n");
+    CHKERRCONTINUE(ierr);
   }
 }
 
