@@ -32,11 +32,14 @@ namespace inverse {
 class IP_SSATaucTaoTikhonovProblemLCL;
 
 //! Iteration callback class for IP_SSATaucTaoTikhonovProblemLCL
-/*! A class for objects receiving iteration callbacks from a IP_SSATaucTaoTikhonovProblemLCL.  These 
-  callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
-  IP_SSATaucTaoTikhonovProblemLCLListeners are ususally used via a reference counted pointer 
-  IP_SSATaucTaoTikhonovProblemLCLListeners::Ptr to allow for good memory management when Listeners are 
-  created as subclasses of python classes.*/
+/*! A class for objects receiving iteration callbacks from a
+  IP_SSATaucTaoTikhonovProblemLCL. These callbacks can be used to
+  monitor the solution, plot iterations, print diagnostic messages,
+  etc. IP_SSATaucTaoTikhonovProblemLCLListeners are ususally used via
+  a reference counted pointer
+  IP_SSATaucTaoTikhonovProblemLCLListeners::Ptr to allow for good
+  memory management when Listeners are created as subclasses of Python
+  classes.*/
 class IP_SSATaucTaoTikhonovProblemLCLListener {
 public:
 
