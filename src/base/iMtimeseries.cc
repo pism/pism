@@ -277,10 +277,12 @@ void IceModel::init_extras() {
     split_extra = true;
     verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
                extra_filename.c_str());
-  } else if (!ends_with(extra_filename, ".nc")) {
-    verbPrintf(2, grid.com,
-               "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
-               extra_filename.c_str());
+  } else {
+    if (!ends_with(extra_filename, ".nc")) {
+      verbPrintf(2, grid.com,
+                 "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
+                 extra_filename.c_str());
+    }
     verbPrintf(2, grid.com, "saving spatial time-series to '%s'; ",
                extra_filename.c_str());
   }
