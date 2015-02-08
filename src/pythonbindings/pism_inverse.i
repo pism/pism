@@ -69,7 +69,6 @@
 %include "inverse/functional/IPLogRelativeFunctional.hh"
 %include "inverse/IPDesignVariableParameterization.hh"
 %include "inverse/IP_SSATaucForwardProblem.hh"
-%include "inverse/IP_SSAHardavForwardProblem.hh"
 %include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
 #ifdef PISM_USE_TAO
@@ -112,6 +111,7 @@
 
 %template(IP_SSAHardavTaoTikhonovProblemListener) pism::inverse::IPTaoTikhonovProblemListener<pism::inverse::IP_SSAHardavForwardProblem>;
 
+%include "inverse/IP_SSAHardavForwardProblem.hh"
 %include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 
 %template(IP_SSAHardavTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_SSAHardavTaoTikhonovProblem>;
