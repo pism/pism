@@ -140,7 +140,7 @@ elif [ "$4" -eq "3" ]; then
   dx=3
   myMx=501
   myMy=934
-  vgrid=$FINESTVGRID
+  vgrid=$FINEVGRID
 elif [ "$4" -eq "2" ]; then
   dx=2
   myMx=750
