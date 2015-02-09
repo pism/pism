@@ -77,7 +77,7 @@ Let's briefly deconstruct this run.
 
 At the front is ``\texttt{mpiexec -n 4 pismr}''.  This means that the PISM executable \texttt{pismr} is run in parallel on four processes parallel standard (e.g.~cores) under the Message Passing Interface (``MPI''; \url{http://www.mcs.anl.gov/mpi/}).  Though we are assuming you have a workstation or laptop with at least 4 cores, this example will work with 1 to about 50 processors, with reasonably good scaling in speed.  Scaling can be good with more processors if we run at higher spatial resolution \cite{BBssasliding,DickensMorey2013}.  The executable name ``\texttt{pismr}'' stands for the standard ``run'' mode of PISM (in contrast to specialized modes described later in sections \ref{sec:verif} and \ref{sec:simp}).
 
-Next, the proposed run uses option \texttt{-boot_file} to start the run by ``bootstrapping.'' This term describes the creation, by heuristics and highly-simplified models, of the mathematical initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.  After that we see a description of the time-axis, with a start and end time given: ``\texttt{-ys -10000 -ye 0}''.
+Next, the proposed run uses option \texttt{-boot_file} to start the run by ``bootstrapping.'' This term describes the creation, by heuristics and highly-simplified models, of the mathematical initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a $76\times 141$ point grid in the horizontal, which gives 20\,km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.  After that we see a description of the time-axis, with a start and end time given: ``\texttt{-ys -10000 -ye 0}''.
 
 Then we get the instructions that tell PISM to read the upper surface boundary conditions (i.e.~climate) from a file: ``\texttt{-surface given -surface_given_file pism_Greenland_5km_v1.1.nc}''.  For more on these choices, see subsection \ref{sec:climate-inputs}, and also the PISM Climate Forcing Manual.
 
@@ -192,7 +192,7 @@ $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc &> out.g10k
 \end{verbatim}
 This run might take 4 to 6 hours.  However, supposing you have a larger parallel computer, you can change ``\texttt{mpiexec -n 4}'' to ``\texttt{mpiexec -n N}'' where \texttt{N} is a substantially larger number, up to 100 or so with an expectation of reasonable scaling on this grid \cite{BBssasliding,DickensMorey2013}.
 
-Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20 km and 10 km grids.  Model results differ even when the only change is the resolution!  Importantly for ice sheet modeling, using higher resolution ``picks up'' more detail in the bed elevation and climate data.
+Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20\,km and 10\,km grids.  Model results differ even when the only change is the resolution!  Importantly for ice sheet modeling, using higher resolution ``picks up'' more detail in the bed elevation and climate data.
 
 \begin{figure}[ht]
 \centering
@@ -201,7 +201,7 @@ Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig
 \label{fig:secondoutputfiner}
 \end{figure}
 
-As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20km and 10km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20km and 10km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20km to 10km.
+As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20\,km and 10\,km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20\,km and 10\,km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20\,km to 10\,km.
 
 Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already ``getting'' a given feature!
 
@@ -254,7 +254,7 @@ To actually start the run, which we rather arbitrarily start at year -25000, ess
 $ PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
   ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc &> out.g20km_25ka_paleo &
 \end{verbatim}
-This run should only take one or two hours, noting it is at a coarse 20 km resolution.
+This run should only take one or two hours, noting it is at a coarse 20\,km resolution.
 
 The fields \texttt{usurf}, \texttt{velsurf_mag}, and \texttt{velbase_mag} from file \texttt{g20km_25ka_paleo.nc} are sufficiently similar to those shown in Figure \ref{fig:secondoutputcoarse} that they are not shown here.  Close inspection reveals differences, but of course these runs only differ in the applied climate and run duration and not in resolution or ice dynamics parameters.
 
@@ -274,9 +274,9 @@ Another time-series comparison, of the variable \verb|ivoltemp|, the total volum
 
 The previous sections were not very ambitious.  We were just getting started!  Now we demonstrate a serious PISM capability, the ability to change, specifically to \emph{refine}, the grid resolution at runtime.
 
-One can of course do the longest model runs using a coarse grid, like the 20 km grid used first.  It is, however, only possible to pick up detail from high quality data, for instance bed elevation and/or high-resolution climate data, using high grid resolution.
+One can of course do the longest model runs using a coarse grid, like the 20\,km grid used first.  It is, however, only possible to pick up detail from high quality data, for instance bed elevation and/or high-resolution climate data, using high grid resolution.
 
-A 20 or 10 km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at Jakobshavn Isbrae in the west Greenland ice sheet \cite{Joughinetal08}, an important outlet glacier which both flows fast and drains a large fraction of the ice sheet.  One possibility is to set up an even higher-resolution PISM regional model covering only one outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.  (See section \ref{sec:jako}.)  But here we will work on high resolution for the whole ice sheet, and thus all outlet glaciers.
+A 20 or 10\,km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at Jakobshavn Isbrae in the west Greenland ice sheet \cite{Joughinetal08}, an important outlet glacier which both flows fast and drains a large fraction of the ice sheet.  One possibility is to set up an even higher-resolution PISM regional model covering only one outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.  (See section \ref{sec:jako}.)  But here we will work on high resolution for the whole ice sheet, and thus all outlet glaciers.
 
 Consider the following command; compare it to the one on page \pageref{firstcommand}:
 \begin{verbatim}
@@ -284,13 +284,13 @@ mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 301 -My 561 \
   -Mz 201 -Mbz 21 -z_spacing equal -Lz 4000 -Lbz 2000 -ys -200 -ye 0 \
   -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt ...
 \end{verbatim}
-Instead of a 20 km grid in the horizontal (\verb|-Mx 76 -My 141|) we ask for a 5 km grid (\verb|-Mx 301 -My 561|).  Instead of vertical grid resolution of 40 m (\verb|-Mz 101 -z_spacing equal -Lz 4000|) we ask for a vertical resolution of 20 m (\verb|-Mz 201 -z_spacing equal -Lz 4000|).\footnote{See subsections \ref{sec:bootstrapping}, \ref{subsect:coords}, and \ref{subsect:grid} for more about determining the computation domain and grid at bootstrapping.}  Most significantly, however, we say \verb|-regrid_file g20km_10ka_hy.nc| to regrid---specifically, to bilinearly-interpolate---fields from a model result computed on the coarser 20 km grid.  The regridded fields (\verb|-regrid_vars litho_temp,...|) are the evolving mass and energy state variables which are already approximately at equilibrium on the coarse grid.  Because we are bootstrapping (i.e.~using \verb|-boot_file|), the other variables, especially the bedrock topography \verb|topg| and the climate data, are brought in to PISM at ``full'' resolution, that is, on the original 5 km grid in the data file \texttt{pism_Greenland_5km_v1.1.nc}.
+Instead of a 20\,km grid in the horizontal (\verb|-Mx 76 -My 141|) we ask for a 5\,km grid (\verb|-Mx 301 -My 561|).  Instead of vertical grid resolution of 40\,m (\verb|-Mz 101 -z_spacing equal -Lz 4000|) we ask for a vertical resolution of 20\,m (\verb|-Mz 201 -z_spacing equal -Lz 4000|).\footnote{See subsections \ref{sec:bootstrapping}, \ref{subsect:coords}, and \ref{subsect:grid} for more about determining the computation domain and grid at bootstrapping.}  Most significantly, however, we say \verb|-regrid_file g20km_10ka_hy.nc| to regrid---specifically, to bilinearly-interpolate---fields from a model result computed on the coarser 20\,km grid.  The regridded fields (\verb|-regrid_vars litho_temp,...|) are the evolving mass and energy state variables which are already approximately at equilibrium on the coarse grid.  Because we are bootstrapping (i.e.~using \verb|-boot_file|), the other variables, especially the bedrock topography \verb|topg| and the climate data, are brought in to PISM at ``full'' resolution, that is, on the original 5\,km grid in the data file \texttt{pism_Greenland_5km_v1.1.nc}.
 
-This technique could be called ``grid sequencing''.\footnote{It is not quite ``multigrid.''  That would both involve refinement and coarsening stages in computing the fine grid solution.}  The result of the above command will be to compute the near-equilibrium result on the fine 5 km grid, taking advantage of the coarse-gridded computation of approximate equilibrium, and despite a run of only 200 model years (\verb|-ys -200 -ye 0|).  How close to equilibrium we get depends on both durations, i.e.~on both the coarse and fine grid run durations, but certainly the computational effort is reduced by doing a short run on the fine grid.  Note that in the previous subsection we also used regridding.  In that application, however, \verb|-regrid_file| only ``brings in'' fields from a run on the same resolution.
+This technique could be called ``grid sequencing''.\footnote{It is not quite ``multigrid.''  That would both involve refinement and coarsening stages in computing the fine grid solution.}  The result of the above command will be to compute the near-equilibrium result on the fine 5\,km grid, taking advantage of the coarse-gridded computation of approximate equilibrium, and despite a run of only 200 model years (\verb|-ys -200 -ye 0|).  How close to equilibrium we get depends on both durations, i.e.~on both the coarse and fine grid run durations, but certainly the computational effort is reduced by doing a short run on the fine grid.  Note that in the previous subsection we also used regridding.  In that application, however, \verb|-regrid_file| only ``brings in'' fields from a run on the same resolution.
 
-Generally the fine grid run duration in grid sequencing should be at least $t = \Delta x / v_{\text{min}}$ where $\Delta x$ is the fine grid resolution and $v_{\text{min}}$ is the lowest ice flow speed that we expect to be relevant to our modeling purposes.  That is, the duration should be such that slow ice at least has a chance to cross one grid cell.  In this case, if $\Delta x = 5$ km and $v_{\text{min}} = 25$ m/a then we get $t=200$ a.  Though we use this as the duration, it is a bit short, and the reader might compare $t=500$ results (i.e.~using $v_{\text{min}} = 10$ m/a).
+Generally the fine grid run duration in grid sequencing should be at least $t = \Delta x / v_{\text{min}}$ where $\Delta x$ is the fine grid resolution and $v_{\text{min}}$ is the lowest ice flow speed that we expect to be relevant to our modeling purposes.  That is, the duration should be such that slow ice at least has a chance to cross one grid cell.  In this case, if $\Delta x = 5$\,km and $v_{\text{min}} = 25$\,m/a then we get $t=200$\,a.  Though we use this as the duration, it is a bit short, and the reader might compare $t=500$ results (i.e.~using $v_{\text{min}} = 10$\,m/a).
 
-Actually we will demonstrate how to go from $20\,\text{km}$ to $5\,\text{km}$ in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10 ka, 2 ka, and 200 a, respectively.  The 20 km coarse grid run is already done; the result is in \texttt{g20km_10ka_hy.nc}.  So we run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls \texttt{spinup.sh} to collect all the right PISM options:
+Actually we will demonstrate how to go from $20\,\text{km}$ to $5\,\text{km}$ in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10\,ka, 2\,ka, and 200\,a, respectively.  The 20\,km coarse grid run is already done; the result is in \texttt{g20km_10ka_hy.nc}.  So we run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls \texttt{spinup.sh} to collect all the right PISM options:
 \begin{scriptvrb}
 #!/bin/bash
 NN=4
@@ -307,38 +307,38 @@ Environment variable \verb|EXSTEP| specifies the time in years between writing t
 Before you run the above script, however, an important
 
 \medskip
-\centerline{\large\underline{\emph{WARNING:} the 5km run requires 8 Gb of memory at minimum!}\normalsize}
+\centerline{\large\underline{\emph{WARNING:} the 5\,km run requires 8\,Gb of memory at minimum!}\normalsize}
 
 \medskip
-\noindent If you try it without at least 8 Gb of memory then your machine will ``bog down'' and start using the hard disk for swap space!  The run will not complete and your hard disk will get a lot of wear!  (If you have less than 8 Gb memory, comment out the last three lines of the above script---e.g.~using the ``\verb|#|'' character at the beginning of the line---so that you only do the 20 km $\to$ 10 km refinement.)
+\noindent If you try it without at least 8 Gb of memory then your machine will ``bog down'' and start using the hard disk for swap space!  The run will not complete and your hard disk will get a lot of wear!  (If you have less than 8 Gb memory, comment out the last three lines of the above script---e.g.~using the ``\verb|#|'' character at the beginning of the line---so that you only do the 20\,km $\to$ 10\,km refinement.)
 
 Run the script like this:
 \begin{verbatim}
 $ ./gridseq.sh &> out.gridseq &
 \end{verbatim}
-The 10 km run takes under two wall-clock hours (8 processor-hours) and the 5 km run takes about 6 wall-clock hours (24 processor-hours).
+The 10\,km run takes under two wall-clock hours (8 processor-hours) and the 5\,km run takes about 6 wall-clock hours (24 processor-hours).
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[width=1.65in,keepaspectratio=true]{g40km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g20km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g10km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g5km-detail} }
-\caption{Detail of field \texttt{velsurf_mag} showing the central western coast of Greenland, including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5 km (left-to-right).  Color scheme and scale, including 100 m/a contour (solid black), are all identical to \texttt{velsurf_mag} Figures \ref{fig:secondoutputcoarse}, \ref{fig:csurfvsobserved}, and \ref{fig:secondoutputfiner}.}
+\caption{Detail of field \texttt{velsurf_mag} showing the central western coast of Greenland, including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5\,km (left-to-right).  Color scheme and scale, including 100\,m/a contour (solid black), are all identical to \texttt{velsurf_mag} Figures \ref{fig:secondoutputcoarse}, \ref{fig:csurfvsobserved}, and \ref{fig:secondoutputfiner}.}
 \label{fig:gridseqdetail}
 \end{figure}
 
-Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed \texttt{velsurf_mag} from files \texttt{g10km_gridseq.nc} and \texttt{g5km_gridseq.nc} is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files \texttt{g40km_10ka_hy.nc} and \texttt{g20km_10ka_hy.nc}; the former is an added 40 km result using an obvious modification of the run in section \ref{subsect:ssarun}.
+Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed \texttt{velsurf_mag} from files \texttt{g10km_gridseq.nc} and \texttt{g5km_gridseq.nc} is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files \texttt{g40km_10ka_hy.nc} and \texttt{g20km_10ka_hy.nc}; the former is an added 40\,km result using an obvious modification of the run in section \ref{subsect:ssarun}.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-gridseq}
-\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20 km for 10 ka = \texttt{ts_g20km_10ka_hy.nc}, 10 km for 2 ka = \texttt{ts_g10km_gridseq.nc}, and 5 km for 200 a = \texttt{ts_g5km_gridseq.nc}.}
+\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20\,km for 10\,ka = \texttt{ts_g20km_10ka_hy.nc}, 10\,km for 2\,ka = \texttt{ts_g10km_gridseq.nc}, and 5\,km for 200\,a = \texttt{ts_g5km_gridseq.nc}.}
 \label{fig:ivolgridseq}
 \end{figure}
 
-Figure \ref{fig:ivolgridseq}, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200 a run on the 5 km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10 ka run on a 20 km grid.  The fact that the time series for ice volume on 10 km and 5 km grids are not very ``steady'' also suggests that these runs should actually be longer.
+Figure \ref{fig:ivolgridseq}, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200\,a run on the 5\,km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10\,ka run on a 20\,km grid.  The fact that the time series for ice volume on 10\,km and 5\,km grids are not very ``steady'' also suggests that these runs should actually be longer.
 
-In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3 km or 2 km resolutions \cite{AschwandenAdalgeirsdottirKhroulev}; these grids are already supported in the script \texttt{spinup.sh}.  Note that the vertical grid also generally gets refined as the horizontal grid is refined.
+In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3\,km or 2\,km resolutions \cite{AschwandenAdalgeirsdottirKhroulev}; these grids are already supported in the script \texttt{spinup.sh}.  Note that the vertical grid also generally gets refined as the horizontal grid is refined.
 
-Going to a 1km grid is possible, but you will start to see the limitations of distributed file systems in writing the enormous NetCDF files in question \cite{DickensMorey2013}.  Notice that a factor-of-five refinement in all three dimensions, e.g.~from 5 km to 1 km in the horizontal, and from 20 m to 4 m in the vertical, generates an output NetCDF file which is 125 times larger.  Since the already-generated 5 km result \texttt{g5km_gridseq.nc} is over 0.5 Gb, the result is a very large file at 1 km.
+Going to a 1km grid is possible, but you will start to see the limitations of distributed file systems in writing the enormous NetCDF files in question \cite{DickensMorey2013}.  Notice that a factor-of-five refinement in all three dimensions, e.g.~from 5\,km to 1\,km in the horizontal, and from 20\,m to 4\,m in the vertical, generates an output NetCDF file which is 125 times larger.  Since the already-generated 5 km result \texttt{g5km_gridseq.nc} is over 0.5\,Gb, the result is a very large file at 1\,km.
 
 On the other hand, on fine grids we observe that \emph{memory} parallelism, i.e.~spreading the stored model state over the separated memory of many nodes of supercomputers, is as important as the usual \emph{computation} (CPU) parallelism.
 
@@ -436,11 +436,11 @@ On the same old 2012-era 4 core laptop, \texttt{runsequential.sh} took a total o
 
 \mbox{\includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-1-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-3-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-6-csurf.png} \qquad \hspace{1.81in}}
 
-\caption{Surface speed \texttt{velsurf_mag} from a 10 km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
+\caption{Surface speed \texttt{velsurf_mag} from a 10\,km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
 \label{fig:paramstudy}
 \end{figure}
 
-On a supercomputer, the \texttt{runparallel.sh} script generally should be modified to submit jobs to the scheduler.  See example scripts \texttt{advanced/paramspawn.sh} and \texttt{advanced/paramsubmit.sh} for a parameter study that does this.  (But see your system administrator if you don't know what a ``job scheduler'' is!)  Of course, if you have a supercomputer then you can redo this parameter study on a 5 km grid.
+On a supercomputer, the \texttt{runparallel.sh} script generally should be modified to submit jobs to the scheduler.  See example scripts \texttt{advanced/paramspawn.sh} and \texttt{advanced/paramsubmit.sh} for a parameter study that does this.  (But see your system administrator if you don't know what a ``job scheduler'' is!)  Of course, if you have a supercomputer then you can redo this parameter study on a 5\,km grid.
 
 Results from these runs are seen in Figures \ref{fig:ivolparamstudy} and \ref{fig:paramstudy}.  In the former we see that the $(0.5,3)$ run simply continues the previous initialization run.  In some other graphs we see abrupt initial changes, caused by abrupt parameter change, e.g.~when the basal sliding becomes much more plastic ($q=0.1$).  In all cases with $e=1$ the flow slows and the sheet grows in volume as discharge decreases, while in all cases with $e=6$ the flow accelerates and the sheet shrinks in volume as discharge increases.
 
