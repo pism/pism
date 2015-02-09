@@ -51,24 +51,36 @@ void IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
   int design_stencil_width = m_d0.get_stencil_width();
   int state_stencil_width = m_u_obs.get_stencil_width();
-  m_d.create(grid, "design variable", WITH_GHOSTS, design_stencil_width);
+  m_d.reset(new DesignVec);
+  m_d->create(grid, "design variable", WITH_GHOSTS, design_stencil_width);
+
   m_d_Jdesign.create(grid, "Jdesign design variable", WITH_GHOSTS, design_stencil_width);
   m_dGlobal.create(grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
   m_dGlobal.copy_from(m_d0);
 
-  m_uGlobal.create(grid, "state variable (global)", WITHOUT_GHOSTS, state_stencil_width);
+  m_uGlobal.reset(new StateVec);
+  m_uGlobal->create(grid, "state variable (global)", WITHOUT_GHOSTS, state_stencil_width);
+
   m_u.create(grid, "state variable", WITH_GHOSTS, state_stencil_width);
   m_du.create(grid, "du", WITH_GHOSTS, state_stencil_width);
   m_u_Jdesign.create(grid, "Jdesign state variable", WITH_GHOSTS, state_stencil_width);
 
-  m_u_diff.create(grid, "state residual", WITH_GHOSTS, state_stencil_width);
-  m_d_diff.create(grid, "design residual", WITH_GHOSTS, design_stencil_width);
+  m_u_diff.reset(new StateVec);
+  m_u_diff->create(grid, "state residual", WITH_GHOSTS, state_stencil_width);
+
+  m_d_diff.reset(new DesignVec);
+  m_d_diff->create(grid, "design residual", WITH_GHOSTS, design_stencil_width);
+
   m_dzeta.create(grid,"dzeta",WITH_GHOSTS,design_stencil_width);
 
-  m_grad_state.create(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width);
-  m_grad_design.create(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_state.reset(new StateVec);
+  m_grad_state->create(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width);
 
-  m_constraints.create(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width);
+  m_grad_design.reset(new DesignVec);
+  m_grad_design->create(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+
+  m_constraints.reset(new StateVec);
+  m_constraints->create(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width);
 
   DM da;
   m_ssaforward.get_da(&da);
@@ -93,7 +105,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::construct() {
                               (void(*)(void))jacobian_design_transpose_callback);
   PISM_CHK(ierr, "MatShellSetOperation");
 
-  m_x.reset(new IPTwoBlockVec(m_dGlobal.get_vec(),m_uGlobal.get_vec()));
+  m_x.reset(new IPTwoBlockVec(m_dGlobal.get_vec(),m_uGlobal->get_vec()));
 }
 
 IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL()
@@ -105,16 +117,16 @@ void IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
   m_dGlobal.copy_from(d0);
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::StateVec &IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
+IP_SSATaucTaoTikhonovProblemLCL::StateVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
 
-  m_x->scatterToB(m_uGlobal.get_vec());
-  m_uGlobal.scale(m_velocityScale);
+  m_x->scatterToB(m_uGlobal->get_vec());
+  m_uGlobal->scale(m_velocityScale);
 
   return m_uGlobal;
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::DesignVec &IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
-  m_x->scatterToA(m_d.get_vec()); //CHKERRQ(ierr);
+IP_SSATaucTaoTikhonovProblemLCL::DesignVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
+  m_x->scatterToA(m_d->get_vec()); //CHKERRQ(ierr);
   return m_d;
 }
 
@@ -129,7 +141,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
                               &IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao, *this);
 
   taoutil::TaoLCLCallbacks<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao, *this,
-                                                            m_constraints.get_vec(),
+                                                            m_constraints->get_vec(),
                                                             m_Jstate, m_Jdesign);
 
   taoutil::TaoMonitorCallback<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this);
@@ -147,7 +159,9 @@ void IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {
     m_listeners[k]->iteration(*this, m_eta,
                               its, m_val_design, m_val_state,
                               m_d, m_d_diff, m_grad_design,
-                              m_ssaforward.solution(), m_u_diff, m_grad_state,
+                              m_ssaforward.solution(),
+                              m_u_diff,
+                              m_grad_state,
                               m_constraints);
   }
 }
@@ -155,44 +169,44 @@ void IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {
 void IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao /*tao*/, Vec x,
                                                                    double *value, Vec gradient) {
 
-  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
-  m_uGlobal.scale(m_velocityScale);
+  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal->get_vec());
+  m_uGlobal->scale(m_velocityScale);
 
   // Variable 'm_dGlobal' has no ghosts.  We need ghosts for computation with the design variable.
-  m_d.copy_from(m_dGlobal);
+  m_d->copy_from(m_dGlobal);
 
-  m_d_diff.copy_from(m_d);
-  m_d_diff.add(-1,m_d0);
-  m_designFunctional.gradientAt(m_d_diff,m_grad_design);
-  m_grad_design.scale(1/m_eta);
+  m_d_diff->copy_from(*m_d);
+  m_d_diff->add(-1,m_d0);
+  m_designFunctional.gradientAt(*m_d_diff, *m_grad_design);
+  m_grad_design->scale(1/m_eta);
 
-  m_u_diff.copy_from(m_uGlobal);
-  m_u_diff.add(-1, m_u_obs);
-  m_stateFunctional.gradientAt(m_u_diff,m_grad_state);
-  m_grad_state.scale(m_velocityScale);
+  m_u_diff->copy_from(*m_uGlobal);
+  m_u_diff->add(-1, m_u_obs);
+  m_stateFunctional.gradientAt(*m_u_diff, *m_grad_state);
+  m_grad_state->scale(m_velocityScale);
 
-  m_x->gather(m_grad_design.get_vec(),m_grad_state.get_vec(),gradient);
+  m_x->gather(m_grad_design->get_vec(), m_grad_state->get_vec(), gradient);
 
-  m_designFunctional.valueAt(m_d_diff,&m_val_design);
-  m_stateFunctional.valueAt(m_u_diff,&m_val_state);
+  m_designFunctional.valueAt(*m_d_diff, &m_val_design);
+  m_stateFunctional.valueAt(*m_u_diff, &m_val_state);
 
   *value = m_val_design / m_eta + m_val_state;
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x, TerminationReason::Ptr &reason) {
-  m_d.copy_from(m_dGlobal);
-  m_ssaforward.linearize_at(m_d, reason);
+  m_d->copy_from(m_dGlobal);
+  m_ssaforward.linearize_at(*m_d, reason);
   if (reason->failed()) {
     return;
   }
 
-  m_uGlobal.copy_from(m_ssaforward.solution());
-  m_uGlobal.scale(1.0 / m_velocityScale);
+  m_uGlobal->copy_from(*m_ssaforward.solution());
+  m_uGlobal->scale(1.0 / m_velocityScale);
 
-  m_x->gather(m_dGlobal.get_vec(), m_uGlobal.get_vec());
+  m_x->gather(m_dGlobal.get_vec(), m_uGlobal->get_vec());
 
   // This is probably irrelevant.
-  m_uGlobal.scale(m_velocityScale);
+  m_uGlobal->scale(m_velocityScale);
 
   *x =  *m_x;
   reason = GenericTerminationReason::success();
@@ -201,13 +215,13 @@ void IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x, TerminationReason
 void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, Vec r) {
   PetscErrorCode ierr;
 
-  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
-  m_uGlobal.scale(m_velocityScale);
+  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal->get_vec());
+  m_uGlobal->scale(m_velocityScale);
 
-  m_d.copy_from(m_dGlobal);
-  m_u.copy_from(m_uGlobal);
+  m_d->copy_from(m_dGlobal);
+  m_u.copy_from(*m_uGlobal);
 
-  m_ssaforward.set_design(m_d);
+  m_ssaforward.set_design(*m_d);
 
   m_ssaforward.assemble_residual(m_u, r);
 
@@ -222,13 +236,13 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec 
                                                                        MatStructure *s) {
   PetscErrorCode ierr;
 
-  m_x->scatter(x, m_dGlobal.get_vec(), m_uGlobal.get_vec());
-  m_uGlobal.scale(m_velocityScale);
+  m_x->scatter(x, m_dGlobal.get_vec(), m_uGlobal->get_vec());
+  m_uGlobal->scale(m_velocityScale);
 
-  m_d.copy_from(m_dGlobal);
-  m_u.copy_from(m_uGlobal);
+  m_d->copy_from(m_dGlobal);
+  m_u.copy_from(*m_uGlobal);
 
-  m_ssaforward.set_design(m_d);
+  m_ssaforward.set_design(*m_d);
 
   m_ssaforward.assemble_jacobian_state(m_u, Jstate);
 
@@ -242,10 +256,10 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec
   // I'm not sure if the following are necessary (i.e. will the copies that happen
   // in evaluateObjectiveAndGradient be sufficient) but we'll do them here
   // just in case.
-  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
-  m_uGlobal.scale(m_velocityScale);
+  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal->get_vec());
+  m_uGlobal->scale(m_velocityScale);
   m_d_Jdesign.copy_from(m_dGlobal);
-  m_u_Jdesign.copy_from(m_uGlobal);
+  m_u_Jdesign.copy_from(*m_uGlobal);
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {

@@ -51,8 +51,8 @@ public:
   typedef std::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
 #endif
 
-  typedef typename ForwardProblem::DesignVec DesignVec;
-  typedef typename ForwardProblem::StateVec StateVec;
+  typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
+  typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
 
   IPTaoTikhonovProblemListener() {}
   virtual ~IPTaoTikhonovProblemListener() {}
@@ -61,9 +61,13 @@ public:
   virtual void iteration(IPTaoTikhonovProblem<ForwardProblem> &problem,
                          double eta, int iter,
                          double objectiveValue, double designValue,
-                         DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
-                         StateVec &u,  StateVec &diff_u,  DesignVec &grad_u,
-                         DesignVec &gradient) = 0;
+                         const DesignVecPtr d,
+                         const DesignVecPtr diff_d,
+                         const DesignVecPtr grad_d,
+                         const StateVecPtr u,
+                         const StateVecPtr diff_u,
+                         const DesignVecPtr grad_u,
+                         const DesignVecPtr gradient) = 0;
 };
 
 
@@ -166,6 +170,9 @@ public:
   typedef typename ForwardProblem::DesignVec DesignVec;
   typedef typename ForwardProblem::StateVec StateVec;
 
+  typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
+  typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
+
   /*! Constructs a Tikhonov problem:
   
     Minimize \f$J(d) = J_S(F(d)-u_obs) + \frac{1}{\eta} J_D(d-d0)  \f$
@@ -201,12 +208,12 @@ public:
   }
 
   //! Final value of \f$F(d)\f$, where \f$d\f$ is the solution of the minimization.
-  virtual StateVec &stateSolution() {
+  virtual StateVecPtr stateSolution() {
     return m_forward.solution();
   }
 
   //! Value of \f$d\f$, the solution of the minimization problem.
-  virtual DesignVec &designSolution() {
+  virtual DesignVecPtr designSolution() {
     return m_d;
   }
 
@@ -234,30 +241,30 @@ protected:
   ForwardProblem &m_forward;
 
   /// Current iterate of design parameter
-  DesignVec m_d;
+  DesignVecPtr m_d;
   /// Initial iterate of design parameter, stored without ghosts for the benefit of TAO.
   DesignVec m_dGlobal;
   /// A-priori estimate of design parameter
   DesignVec &m_d0;
   /// Storage for (m_d-m_d0)
-  DesignVec m_d_diff;
+  DesignVecPtr m_d_diff;
 
   /// State parameter to match via F(d)=u_obs
   StateVec &m_u_obs;
   /// Storage for F(d)-u_obs
-  StateVec m_u_diff;
+  StateVecPtr m_u_diff;
 
   /// Temporary storage used in gradient computation.
   StateVec m_adjointRHS;
 
   /// Gradient of \f$J_D\f$ at the current iterate.
-  DesignVec m_grad_design;
+  DesignVecPtr m_grad_design;
   /// Gradient of \f$J_S\f$ at the current iterate.
-  DesignVec m_grad_state;
+  DesignVecPtr m_grad_state;
   /** Weighted sum of the design and state gradients corresponding to
    * the gradient of the Tikhonov functional \f$J\f$.
    */
-  DesignVec m_grad;
+  DesignVecPtr m_grad;
 
   ///  Penalty parameter/Lagrange multiplier.
   double m_eta;
@@ -304,16 +311,27 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
 
   int design_stencil_width = m_d0.get_stencil_width();
   int state_stencil_width = m_u_obs.get_stencil_width();
-  m_d.create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
+
+  m_d.reset(new DesignVec);
+  m_d->create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
+
   m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
   m_dGlobal.copy_from(m_d0);
 
-  m_u_diff.create(*m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
-  m_d_diff.create(*m_grid, "design residual", WITH_GHOSTS, design_stencil_width);
+  m_u_diff.reset(new StateVec);
+  m_u_diff->create(*m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
 
-  m_grad_state.create(*m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width);
-  m_grad_design.create(*m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
-  m_grad.create(*m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_d_diff.reset(new DesignVec);
+  m_d_diff->create(*m_grid, "design residual", WITH_GHOSTS, design_stencil_width);
+
+  m_grad_state.reset(new DesignVec);
+  m_grad_state->create(*m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width);
+
+  m_grad_design.reset(new DesignVec);
+  m_grad_design->create(*m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+
+  m_grad.reset(new DesignVec);
+  m_grad->create(*m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width);
 
   m_adjointRHS.create(*m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width);
 }
@@ -365,9 +383,9 @@ template<class ForwardProblem> void IPTaoTikhonovProblem<ForwardProblem>::conver
   dWeight = 1/m_eta;
   sWeight = 1;
   
-  designNorm = m_grad_design.norm(NORM_2);
-  stateNorm  = m_grad_state.norm(NORM_2);
-  sumNorm    = m_grad.norm(NORM_2);
+  designNorm = m_grad_design->norm(NORM_2);
+  stateNorm  = m_grad_state->norm(NORM_2);
+  sumNorm    = m_grad->norm(NORM_2);
 
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
@@ -386,10 +404,10 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
                                                                         double *value, Vec gradient) {
   PetscErrorCode ierr;
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
-  m_d.copy_from_vec(x);
+  m_d->copy_from_vec(x);
 
   TerminationReason::Ptr reason;
-  m_forward.linearize_at(m_d, reason);
+  m_forward.linearize_at(*m_d, reason);
   if (reason->failed()) {
     verbPrintf(2, m_grid->com,
                "IPTaoTikhonovProblem::evaluateObjectiveAndGradient"
@@ -399,27 +417,27 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
     return;
   }
 
-  m_d_diff.copy_from(m_d);
-  m_d_diff.add(-1, m_d0);
-  m_designFunctional.gradientAt(m_d_diff, m_grad_design);
+  m_d_diff->copy_from(*m_d);
+  m_d_diff->add(-1, m_d0);
+  m_designFunctional.gradientAt(*m_d_diff, *m_grad_design);
 
-  m_u_diff.copy_from(m_forward.solution());
-  m_u_diff.add(-1, m_u_obs);
+  m_u_diff->copy_from(*m_forward.solution());
+  m_u_diff->add(-1, m_u_obs);
 
   // The following computes the reduced gradient.
-  m_stateFunctional.gradientAt(m_u_diff, m_adjointRHS);
-  m_forward.apply_linearization_transpose(m_adjointRHS, m_grad_state);
+  m_stateFunctional.gradientAt(*m_u_diff, m_adjointRHS);
+  m_forward.apply_linearization_transpose(m_adjointRHS, *m_grad_state);
 
-  m_grad.copy_from(m_grad_design);
-  m_grad.scale(1.0 / m_eta);
-  m_grad.add(1, m_grad_state);
+  m_grad->copy_from(*m_grad_design);
+  m_grad->scale(1.0 / m_eta);
+  m_grad->add(1, *m_grad_state);
 
-  ierr = VecCopy(m_grad.get_vec(), gradient);
+  ierr = VecCopy(m_grad->get_vec(), gradient);
   PISM_CHK(ierr, "VecCopy");
 
   double valDesign, valState;
-  m_designFunctional.valueAt(m_d_diff, &valDesign);
-  m_stateFunctional.valueAt(m_u_diff, &valState);
+  m_designFunctional.valueAt(*m_d_diff, &valDesign);
+  m_stateFunctional.valueAt(*m_u_diff, &valState);
 
   m_val_design = valDesign;
   m_val_state = valState;

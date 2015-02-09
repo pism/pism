@@ -47,6 +47,11 @@ void IP_SSAHardavForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencilWidth = 1;
 
+  m_velocity_shared.reset(new IceModelVec2V);
+  m_velocity_shared->create(m_grid, "dummy", WITHOUT_GHOSTS);
+  m_velocity_shared->metadata(0) = m_velocity.metadata(0);
+  m_velocity_shared->metadata(1) = m_velocity.metadata(1);
+
   m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencilWidth);
   m_hardav.create(m_grid, "hardav", WITH_GHOSTS, stencilWidth);
 

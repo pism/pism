@@ -65,16 +65,16 @@ public:
 
   ~IP_SSATaucTikhonovGNSolver();
   
-  virtual StateVec &stateSolution() {
+  virtual StateVec::Ptr stateSolution() {
     return m_ssaforward.solution();
   }
 
-  virtual DesignVec &designSolution() {
+  virtual DesignVec::Ptr designSolution() {
     return m_d;
   }
 
   virtual void setInitialGuess(DesignVec &d) {
-    m_d.copy_from(d);
+    m_d->copy_from(d);
   }
 
   //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
@@ -123,9 +123,9 @@ protected:
 
   DesignVec  m_GN_rhs;
 
+  DesignVec::Ptr m_d;
   DesignVec &m_d0;
   DesignVec m_dGlobal;
-  DesignVec m_d;
   DesignVec m_d_diff;
   DesignVec m_d_diff_lin;
 

@@ -74,13 +74,13 @@ public:
                          int iter,
                          double objectiveValue,
                          double designValue,
-                         DesignVec &d,
-                         DesignVec &diff_d,
-                         DesignVec &grad_d,
-                         StateVec &u,
-                         StateVec &diff_u,
-                         StateVec &grad_u,
-                         StateVec &constraints) = 0;
+                         const DesignVec::Ptr &d,
+                         const DesignVec::Ptr &diff_d,
+                         const DesignVec::Ptr &grad_d,
+                         const StateVec::Ptr &u,
+                         const StateVec::Ptr &diff_u,
+                         const StateVec::Ptr &grad_u,
+                         const StateVec::Ptr &constraints) = 0;
 };
 
 //! \brief Defines a Tikhonov minimization problem of determining \f$\tau_c\f$ from %SSA velocities to be solved with a TaoBasicSolver using the tao_lcl algorithm.
@@ -101,8 +101,8 @@ public:
     m_listeners.push_back(listener);
   }
 
-  virtual StateVec &stateSolution();
-  virtual DesignVec &designSolution();
+  virtual StateVec::Ptr stateSolution();
+  virtual DesignVec::Ptr designSolution();
 
   virtual void setInitialGuess(DesignVec &d0);
 
@@ -133,26 +133,26 @@ protected:
   std::auto_ptr<IPTwoBlockVec> m_x;
 
   DesignVec m_dGlobal;
-  DesignVec m_d;
+  DesignVec::Ptr m_d;
   DesignVec &m_d0;
-  DesignVec m_d_diff;
+  DesignVec::Ptr m_d_diff;
   DesignVec m_dzeta;
 
-  StateVec m_uGlobal;
+  StateVec::Ptr m_uGlobal;
   StateVec m_u;
   StateVec m_du;
   StateVec &m_u_obs;
-  StateVec m_u_diff;
+  StateVec::Ptr m_u_diff;
 
-  DesignVec m_grad_design;
-  StateVec  m_grad_state;
+  DesignVec::Ptr m_grad_design;
+  StateVec::Ptr  m_grad_state;
 
   double m_eta;
 
   double m_val_design;
   double m_val_state;
 
-  StateVec m_constraints;
+  StateVec::Ptr m_constraints;
   petsc::Mat m_Jstate;
   petsc::Mat m_Jdesign;
 

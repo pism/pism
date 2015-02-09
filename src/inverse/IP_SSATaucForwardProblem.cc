@@ -46,6 +46,11 @@ void IP_SSATaucForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencil_width = 1;
 
+  m_velocity_shared.reset(new IceModelVec2V);
+  m_velocity_shared->create(m_grid, "dummy", WITHOUT_GHOSTS);
+  m_velocity_shared->metadata(0) = m_velocity.metadata(0);
+  m_velocity_shared->metadata(1) = m_velocity.metadata(1);
+
   m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencil_width);
 
   m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);

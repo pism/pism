@@ -62,7 +62,9 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_GN_rhs.create(grid, "GN_rhs", WITHOUT_GHOSTS, 0);
 
   m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0);
-  m_d.create(grid, "d", WITH_GHOSTS, design_stencil_width);
+
+  m_d.reset(new DesignVec);
+  m_d->create(grid, "d", WITH_GHOSTS, design_stencil_width);
   m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width);
   m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width);
   m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width);
@@ -266,15 +268,15 @@ void IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reaso
 
 void IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
 
-  m_ssaforward.linearize_at(m_d,reason);
+  m_ssaforward.linearize_at(*m_d, reason);
   if (reason->failed()) {
     return;
   }
 
-  m_d_diff.copy_from(m_d);
+  m_d_diff.copy_from(*m_d);
   m_d_diff.add(-1,m_d0);
 
-  m_u_diff.copy_from(m_ssaforward.solution());
+  m_u_diff.copy_from(*m_ssaforward.solution());
   m_u_diff.add(-1,m_u_obs);
 
   m_designFunctional.gradientAt(m_d_diff,m_grad_design);
@@ -319,9 +321,9 @@ void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
   }
 
   double alpha = 1;
-  m_tmp_D1Local.copy_from(m_d);
+  m_tmp_D1Local.copy_from(*m_d);
   while(true) {
-    m_d.add(alpha,m_h);  // Replace with line search.
+    m_d->add(alpha,m_h);  // Replace with line search.
     this->evaluate_objective_and_gradient(step_reason);
     if (step_reason->succeeded()) {
       if (m_value <= old_value + 1e-3*alpha*descent_derivative) {
@@ -337,7 +339,7 @@ void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
       reason.reset(new GenericTerminationReason(-1,"Too many step shrinks."));
       return;
     }
-    m_d.copy_from(m_tmp_D1Local);
+    m_d->copy_from(m_tmp_D1Local);
   }
   
   reason = GenericTerminationReason::success();
@@ -351,7 +353,7 @@ void IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
   }
 
   m_iter = 0;
-  m_d.copy_from(m_d0);
+  m_d->copy_from(m_d0);
 
   double dlogalpha = 0;
 

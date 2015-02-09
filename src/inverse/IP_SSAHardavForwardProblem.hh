@@ -130,8 +130,9 @@ public:
   }
 
   //! Returns the last solution of the %SSA as computed by \ref linearize_at.
-  virtual IceModelVec2V &solution() {
-    return m_velocity;
+  virtual IceModelVec2V::Ptr solution() {
+    m_velocity_shared->copy_from(m_velocity);
+    return m_velocity_shared;
   }
 
   //! Exposes the design variable parameterization being used.
@@ -174,6 +175,8 @@ protected:
   IceModelVec2Int *m_fixed_design_locations;   ///< Locations where \f$\tau_c\f$ should not be adjusted.
 
   IPDesignVariableParameterization &m_design_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+
+  IceModelVec2V::Ptr m_velocity_shared;
 
   IceModelVec2V  m_du_global;                ///< Temporary storage when state vectors need to be used without ghosts.
   IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
