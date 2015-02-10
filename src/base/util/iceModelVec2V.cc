@@ -67,67 +67,6 @@ Vector2** IceModelVec2V::get_array() {
   return static_cast<Vector2**>(array);
 }
 
-void IceModelVec2V::set_name(const std::string &new_name, int component) {
-  (void) component;
-
-  std::string tmp = new_name;
-  reset_attrs(0);
-  reset_attrs(1);
-  
-  m_name = "vel" + tmp;
-
-  m_metadata[0].set_name("u" + tmp);
-  m_metadata[1].set_name("v" + tmp);
-}
-
-//! Sets the variable's various names without changing any other metadata
-void IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
-                                     const std::string &standard_name, int component) {
-  (void) component;
-
-  if (!short_name.empty()) {
-    std::string tmp = short_name;
-    m_name = "vel" + tmp;
-
-    m_metadata[0].set_name("u" + tmp);
-    m_metadata[1].set_name("v" + tmp);
-  }
-
-  if (!long_name.empty()) {
-    std::string xprefix = "X component of ";
-    std::string yprefix = "Y component of ";
-    m_metadata[0].set_string("long_name", xprefix + long_name);
-    m_metadata[1].set_string("long_name", yprefix + long_name);
-  }
-
-  if (!standard_name.empty()) {
-    m_metadata[0].set_string("standard_name", standard_name);
-    m_metadata[1].set_string("standard_name", standard_name);
-  }
-}  
-
-//! Sets the variable's various names without changing any other metadata
-void IceModelVec2V::rename(const std::string & short_name,
-                                     const std::vector<std::string> &long_names, 
-                                     const std::string & standard_name) {
-  if (!short_name.empty()) {
-    std::string tmp = short_name;
-
-    m_name = "vel" + tmp;
-
-    m_metadata[0].set_name("u" + tmp);
-    m_metadata[1].set_name("v" + tmp);
-  }
-
-  m_metadata[0].set_string("long_name", long_names[0]);
-  m_metadata[1].set_string("long_name", long_names[1]);
-
-  if (!standard_name.empty()) {
-    m_metadata[0].set_string("standard_name", standard_name);
-    m_metadata[1].set_string("standard_name", standard_name);
-  }
-}
-
 void IceModelVec2V::add(double alpha, const IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }

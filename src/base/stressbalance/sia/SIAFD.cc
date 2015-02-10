@@ -43,9 +43,12 @@ SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
     m_work_2d[i].set_name(namestr);
 
+    snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
+    m_work_2d_stag[i].set_name(namestr);
+
     for (int j = 0; j < 2; ++j) {
       snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d_%d", i, j);
-      m_work_2d_stag[i].set_name(namestr, j);
+      m_work_2d_stag[i].metadata(j).set_name(namestr);
     }
   }
 

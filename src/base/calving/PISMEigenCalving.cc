@@ -37,12 +37,12 @@ EigenCalving::EigenCalving(const IceGrid &g,
 
   m_thk_loss.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
 
-  m_strain_rates.set_name("edot_1", 0);
+  m_strain_rates.metadata(0).set_name("edot_1");
   m_strain_rates.set_attrs("internal",
                            "major principal component of horizontal strain-rate",
                            "1/s", "", 0);
 
-  m_strain_rates.set_name("edot_2", 1);
+  m_strain_rates.metadata(1).set_name("edot_2");
   m_strain_rates.set_attrs("internal",
                            "minor principal component of horizontal strain-rate",
                            "1/s", "", 1);

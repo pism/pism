@@ -71,7 +71,7 @@ void Vars::add(const IceModelVec &v, const std::string &name) {
 void Vars::add(const IceModelVec &v) {
 
   const NCSpatialVariable &m = v.metadata();
-  std::string name = v.name();
+  std::string name = v.get_name();
 
   if (m.has_attribute("standard_name")) {
 
@@ -210,7 +210,7 @@ std::set<std::string> Vars::keys() const {
 void Vars::add_shared(IceModelVec::Ptr variable) {
 
   const NCSpatialVariable &m = variable->metadata();
-  std::string name = variable->name();
+  std::string name = variable->get_name();
 
   if (m.has_attribute("standard_name")) {
 

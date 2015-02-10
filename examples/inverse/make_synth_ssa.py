@@ -1,19 +1,19 @@
 #! /usr/bin/env python
 #
 # Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
-# 
+#
 # This file is part of PISM.
-# 
+#
 # PISM is free software; you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
 # Foundation; either version 3 of the License, or (at your option) any later
 # version.
-# 
+#
 # PISM is distributed in the hope that it will be useful, but WITHOUT ANY
 # WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -163,12 +163,12 @@ if __name__ == '__main__':
     else:
       vecs.tauc_prior.copy_from(modeldata.vecs.tauc)
       vecs.tauc_prior.scale(design_prior_scale)
-  
+
     tauc_true = modeldata.vecs.tauc
-    tauc_true.set_name('tauc_true')
+    tauc_true.metadata(0).set_name('tauc_true')
     tauc_true.set_attrs("diagnostic",
                         "value of basal yield stress used to generate synthetic SSA velocities",
-                        "Pa", ""); 
+                        "Pa", "");
     vecs.markForWriting(tauc_true)
   elif design_var == 'hardav':
     # Generate a prior guess for hardav
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     EC = PISM.EnthalpyConverter(config)
     ice_factory = PISM.IceFlowLawFactory(grid.com, "ssa_", config, EC);
     ice_factory.removeType(PISM.ICE_GOLDSBY_KOHLSTEDT);
-    ice_factory.setType(config.get_string("ssa_flow_law")); 
+    ice_factory.setType(config.get_string("ssa_flow_law"));
     ice_factory.setFromOptions();
     flow_law = ice_factory.create()
     flow_law.averaged_hardness_vec(vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)
@@ -186,16 +186,21 @@ if __name__ == '__main__':
     else:
       vecs.hardav_prior.copy_from(vecs.hardav)
       vecs.hardav_prior.scale(hardav_prior_scale)
-  
+
     hardav_true = vecs.hardav
-    hardav_true.set_name('hardav_true')
+    hardav_true.metadata(0).set_name('hardav_true')
     hardav_true.set_attrs("diagnostic",
                           "vertically averaged ice hardness used to generate synthetic SSA velocities",
                           "Pa s^0.33333", "");
     vecs.markForWriting(hardav_true)
 
   vel_ssa_observed = vel_ssa    # vel_ssa = ssa_run.solve() earlier
-  vel_ssa_observed.rename("_ssa_observed", "'observed' SSA velocities'", "")
+
+  vel_ssa_observed.metadata(0).set_name("u_ssa_observed")
+  vel_ssa_observed.metadata(0).set_string("long_name", "x-component of 'observed' SSA velocities")
+
+  vel_ssa_observed.metadata(1).set_name("v_ssa_observed")
+  vel_ssa_observed.metadata(1).set_string("long_name", "y-component of 'observed' SSA velocities")
 
   if generate_ssa_observed:
     vecs.markForWriting(vel_ssa_observed)
@@ -205,7 +210,13 @@ if __name__ == '__main__':
     if is_regional:
       sia_solver = PISM.SIAFD_Regional
     vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata, sia_solver)
-    vel_ssa_observed.rename("_sia_observed", "'observed' SIA velocities'", "")
+
+    vel_sia_observed.metadata(0).set_name('u_sia_observed')
+    vel_sia_observed.metadata(0).set_string('long_name', "x-component of the 'observed' SIA velocities")
+
+    vel_sia_observed.metadata(1).set_name('v_sia_observed')
+    vel_sia_observed.metadata(1).set_string('long_name', "y-component of the 'observed' SIA velocities")
+
     vel_surface_observed = PISM.model.create2dVelocityVec(grid, "_surface_observed",
                                                           "observed surface velocities",
                                                           stencil_width=1)
@@ -220,7 +231,7 @@ if __name__ == '__main__':
                                         grid.convert(fast_ice_speed, "m/year", "m/second"))
   else:
     misfit_weight = groundedIceMisfitWeight(modeldata)
-  modeldata.vecs.add(misfit_weight, writing=True)    
+  modeldata.vecs.add(misfit_weight, writing=True)
 
   if not noise is None:
     u_noise = PISM.vec.randVectorV(grid, noise/math.sqrt(2), final_velocity.get_stencil_width())
@@ -235,6 +246,6 @@ if __name__ == '__main__':
   pio.close()
 
   vecs.write(output_file_name)
-  
+
   # Save time & command line
   PISM.util.writeProvenance(output_file_name)

@@ -93,10 +93,11 @@ SSA::SSA(const IceGrid &g, const EnthalpyConverter &e)
 
 
   // override velocity metadata
-  std::vector<std::string> long_names;
-  long_names.push_back("SSA model ice velocity in the X direction");
-  long_names.push_back("SSA model ice velocity in the Y direction");
-  m_velocity.rename("_ssa",long_names,"");
+  m_velocity.metadata(0).set_name("u_ssa");
+  m_velocity.metadata(0).set_string("long_name", "SSA model ice velocity in the X direction");
+
+  m_velocity.metadata(1).set_name("v_ssa");
+  m_velocity.metadata(1).set_string("long_name", "SSA model ice velocity in the Y direction");
 
   m_velocity_global.create(m_grid, "bar", WITHOUT_GHOSTS);
 

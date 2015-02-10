@@ -411,7 +411,13 @@ if __name__ == "__main__":
     if is_regional:
       sia_solver=PISM.SIAFD_Regional
     vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata,sia_solver)
-    vel_sia_observed.rename('_sia_observed',"'observed' SIA velocities'","")
+
+    vel_sia_observed.metadata(0).set_name('u_sia_observed')
+    vel_sia_observed.metadata(0).set_string('long_name', "x-component of the 'observed' SIA velocities")
+
+    vel_sia_observed.metadata(1).set_name('v_sia_observed')
+    vel_sia_observed.metadata(1).set_string('long_name', "y-component of the 'observed' SIA velocities")
+
     vel_ssa_observed.copy_from(vel_surface_observed)
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
@@ -510,7 +516,12 @@ if __name__ == "__main__":
 
   vecs.add(zeta,writing=True)
 
-  u.rename("_ssa_inv","SSA velocity computed by inversion","")
+  u.metadata(0).set_name("u_ssa_inv")
+  u.metadata(0).set_string("long_name", "x-component of SSA velocity computed by inversion")
+
+  u.metadata(1).set_name("v_ssa_inv")
+  u.metadata(1).set_string("long_name", "y-component of SSA velocity computed by inversion")
+
   vecs.add(u,writing=True)
 
   residual = PISM.model.create2dVelocityVec(grid,name='_inv_ssa_residual')

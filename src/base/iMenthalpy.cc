@@ -113,9 +113,10 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                                              IceModelVec3 &result) {
 
   result.set_name("liqfrac");
+  result.metadata(0).set_name("liqfrac");
   result.set_attrs("diagnostic",
                    "liquid water fraction in ice (between 0 and 1)",
-                   "1", "");
+                   "1", "", 0);
 
   IceModelVec::AccessList list;
   list.add(result);
@@ -152,9 +153,10 @@ Does not communicate ghosts for IceModelVec3 result.
 void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
 
   result.set_name("cts");
+  result.metadata(0).set_name("cts");
   result.set_attrs("diagnostic",
                    "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
-                   "", "");
+                   "", "", 0);
 
   double *CTSij;
   const double *Enthij; // columns of these values

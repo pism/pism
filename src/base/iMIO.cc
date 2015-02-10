@@ -573,6 +573,7 @@ void IceModel::init_enthalpy(const std::string &filename,
 
     NCSpatialVariable enthalpy_metadata = Enth3.metadata();
     temp.set_name("temp");
+    temp.metadata(0).set_name("temp");
     temp.set_attrs("temporary", "ice temperature", "Kelvin",
                    "land_ice_temperature");
 
@@ -584,6 +585,7 @@ void IceModel::init_enthalpy(const std::string &filename,
 
     if (liqfrac_exists == true) {
       liqfrac.set_name("liqfrac");
+      liqfrac.metadata(0).set_name("liqfrac");
       liqfrac.set_attrs("temporary", "ice liquid water fraction",
                         "1", "");
 

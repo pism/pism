@@ -198,14 +198,12 @@ public:
   virtual void copy_from(const IceModelVec &source);
   Vec get_vec();
   petsc::DM::Ptr get_dm() const;
-  virtual void  set_name(const std::string &name, int component = 0);
-  virtual std::string name() const;
+  virtual void  set_name(const std::string &name);
+  virtual const std::string& get_name() const;
   virtual void  set_glaciological_units(const std::string &units);
   virtual void  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
                           const std::string &my_units, const std::string &my_standard_name,
                           int component = 0);
-  virtual void  rename(const std::string &short_name, const std::string &long_name,
-                       const std::string &standard_name, int component = 0);
   virtual void  read_attributes(const std::string &filename, int component = 0);
   virtual void  define(const PIO &nc, IO_Type output_datatype) const;
 
@@ -449,13 +447,6 @@ public:
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
   inline StarStencil<Vector2> star(int i, int j) const;
-  // Metadata, etc:
-  virtual void set_name(const std::string &name, int component = 0);
-  virtual void rename(const std::string &short_name, const std::string &long_name,
-                                const std::string &standard_name, int component = 0);
-  virtual void rename(const std::string &short_name,
-                                const std::vector<std::string> &long_names,
-                                const std::string &standard_name);
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.

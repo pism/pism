@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,15 +30,14 @@ public:
   // metadata
   std::string name() const;
   void set_name(const std::string &name, int component = 0);
-  void rename(const std::string &short_name, const std::string &long_name,
-              const std::string &standard_name, int component = 0);
   void set_units(const std::string &units, const std::string &external_units);
 
   NCSpatialVariable& metadata(unsigned int N = 0);
   const NCSpatialVariable& metadata(unsigned int N = 0) const;
 
   void set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
-                 const std::string &my_units, const std::string &my_standard_name, int component = 0);
+                 const std::string &my_units, const std::string &my_standard_name,
+                 int component = 0);
   void read_attrs(const std::string &filename, int component = 0);
 
   // input and output
@@ -142,7 +141,7 @@ class Scalar2DField : virtual public ScalarField {
 public:
   Scalar2DField(const IceGrid &grid,  const std::string &name);
   virtual ~Scalar2DField();
-  void copy_to(Scalar2DField &output) const;
+  void copy_from(const Scalar2DField &input);
   void scatter_to_ghosted(GhostedScalar2DField &output) const;
   inline double& operator()(int i, int j);
   inline const double& operator()(int i, int j) const;
@@ -166,7 +165,7 @@ public:
   Scalar3DField(const IceGrid &grid,  const std::string &name,
                 const std::vector<double> &levels);
   virtual ~Scalar3DField();
-  void copy_to(Scalar3DField &output) const;
+  void copy_from(const Scalar3DField &input);
   void scatter_to_ghosted(GhostedScalar3DField &output) const;
   inline double& operator()(int i, int j, unsigned int k);
   inline const double& operator()(int i, int j, unsigned int k) const;

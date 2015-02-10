@@ -365,12 +365,12 @@ void IceModel::createVecs() {
                         2, // stencil width, has to match or exceed the "offset" in eigenCalving
                         2);
 
-    strain_rates.set_name("edot_1", 0);
+    strain_rates.metadata(0).set_name("edot_1");
     strain_rates.set_attrs("internal",
                            "major principal component of horizontal strain-rate",
                            "1/s", "", 0);
 
-    strain_rates.set_name("edot_2", 1);
+    strain_rates.metadata(1).set_name("edot_2");
     strain_rates.set_attrs("internal",
                            "minor principal component of horizontal strain-rate",
                            "1/s", "", 1);
@@ -382,17 +382,17 @@ void IceModel::createVecs() {
                                2, // stencil width
                                3);
     
-    deviatoric_stresses.set_name("sigma_xx", 0);
+    deviatoric_stresses.metadata(0).set_name("sigma_xx");
     deviatoric_stresses.set_attrs("internal",
                                   "deviatoric stress in x direction",
                                   "Pa", "", 0);
                                   
-    deviatoric_stresses.set_name("sigma_yy", 1);
+    deviatoric_stresses.metadata(1).set_name("sigma_yy");
     deviatoric_stresses.set_attrs("internal",
                                   "deviatoric stress in y direction",
                                   "Pa", "", 1);   
                                          
-    deviatoric_stresses.set_name("sigma_xy", 2);
+    deviatoric_stresses.metadata(2).set_name("sigma_xy");
     deviatoric_stresses.set_attrs("internal",
                                   "deviatoric shear stress",
                                   "Pa", "", 2);

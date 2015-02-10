@@ -41,7 +41,6 @@ SIA_Sliding::SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e)
     m_work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
     snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
     m_work_2d_stag[i].set_name(namestr);
-
   }
 
   m_work_2d.create(m_grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);

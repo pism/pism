@@ -137,7 +137,7 @@ void ForceThickness::init() {
              "    (this field will appear in output file as 'ftt_target_thk')\n",
              m_input_file.c_str());
   {
-    m_target_thickness.set_name("thk"); // name to read by
+    m_target_thickness.metadata(0).set_name("thk"); // name to read by
     // set attributes for the read stage; see below for reset
     m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (hit this at end of run)",
@@ -147,7 +147,7 @@ void ForceThickness::init() {
     m_target_thickness.regrid(m_input_file, CRITICAL);
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
-    m_target_thickness.set_name("ftt_target_thk");
+    m_target_thickness.metadata(0).set_name("ftt_target_thk");
     m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
                                  "m",

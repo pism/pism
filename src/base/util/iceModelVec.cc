@@ -352,39 +352,25 @@ petsc::DM::Ptr IceModelVec::get_dm() const {
   return m_da;
 }
 
-//! Sets the variable name to `name` and resets metadata.
-void  IceModelVec::set_name(const std::string &new_name, int N) {
-  reset_attrs(N);
-
-  if (N == 0) {
-    m_name = new_name;
-  }
-
-  metadata(N).set_name(new_name);
+//! Sets the variable name to `name`.
+/**
+ * This is the "overall" name of a field. This is **not** the same as the
+ * NetCDF variable name. Use `metadata(...).set_name(...)` to set that.
+ */
+void IceModelVec::set_name(const std::string &name) {
+  m_name = name;
 }
 
-std::string IceModelVec::name() const {
+//! @brief Get the name of an IceModelVec object.
+/**
+ * This is the name used to refer to this object in PISM (e.g. via the
+ * Vars class), **not** the name of the corresponding NetCDF variable.
+ * (The problem is that one IceModelVec instance may correspond to
+ * several NetCDF variables. Use metadata(...).get_name() to get the
+ * name of NetCDF variables an IceModelVec is saved to.)
+ */
+const std::string& IceModelVec::get_name() const {
   return m_name;
-}
-
-//! Sets the variable's various names without changing any other metadata
-void IceModelVec::rename(const std::string &short_name, const std::string &long_name,
-                                   const std::string &standard_name, int N) {
-
-  if (short_name.empty() == false) {
-    if (N == 0) {
-      m_name = short_name;
-    }
-    metadata(N).set_name(short_name);
-  }
-
-  if (long_name.empty() == false) {
-    metadata(N).set_string("long_name", long_name);
-  }
-
-  if (!standard_name.empty()) {
-    metadata(N).set_string("standard_name", standard_name);
-  }
 }
 
 //! Sets the glaciological units of an IceModelVec.
