@@ -154,10 +154,6 @@ The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
  */
 double EnthalpyConverter::pressure_adjusted_temperature(double E, double pressure) const {
-  return this->pressure_adjusted_temperature_impl(E, pressure);
-}
-
-double EnthalpyConverter::pressure_adjusted_temperature_impl(double E, double pressure) const {
   return temperature(E, pressure) - melting_temperature(pressure) + T_melting;
 }
 

@@ -72,7 +72,6 @@ protected:
   virtual double c_from_T_impl(double T) const;
   virtual double enthalpy_impl(double T, double omega, double pressure) const;
   virtual double water_fraction_impl(double E, double pressure) const;
-  virtual double pressure_adjusted_temperature_impl(double E, double pressure) const;
   virtual double melting_temperature_impl(double pressure) const;
   virtual double temperature_impl(double E, double pressure) const;
   virtual bool is_temperate_impl(double E, double pressure) const;
