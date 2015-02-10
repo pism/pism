@@ -179,8 +179,8 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       double depth = thickness(i,j) - grid.z(k);
-      E_ij[k] = EC.getEnthPermissive(T_ij[k], 0.0,
-                                     EC.getPressureFromDepth(depth));
+      E_ij[k] = EC.enthalpy_permissive(T_ij[k], 0.0,
+                                     EC.pressure(depth));
     }
 
   }
@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
 
     setVerbosityLevel(5);
 
-    ICMEnthalpyConverter EC(config);
+    ColdEnthalpyConverter EC(config);
     rheology::PatersonBuddCold ice(grid.com, "sia_", config, &EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;

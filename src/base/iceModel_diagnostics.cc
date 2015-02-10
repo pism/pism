@@ -491,7 +491,7 @@ IceModelVec::Ptr IceModel_temp::compute() {
       Enthij = enthalpy->get_column(i,j);
       for (unsigned int k=0; k <m_grid.Mz(); ++k) {
         const double depth = (*thickness)(i,j) - m_grid.z(k);
-        Tij[k] = EC.getAbsTemp(Enthij[k], EC.getPressureFromDepth(depth));
+        Tij[k] = EC.temperature(Enthij[k], EC.pressure(depth));
       }
     }
   } catch (...) {
@@ -547,12 +547,12 @@ IceModelVec::Ptr IceModel_temp_pa::compute() {
       Enthij = enthalpy->get_column(i,j);
       for (unsigned int k=0; k < m_grid.Mz(); ++k) {
         const double depth = (*thickness)(i,j) - m_grid.z(k),
-          p = EC.getPressureFromDepth(depth);
-        Tij[k] = EC.getPATemp(Enthij[k], p);
+          p = EC.pressure(depth);
+        Tij[k] = EC.pressure_adjusted_temperature(Enthij[k], p);
 
         if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
           // is 273.15
-          if (EC.isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
+          if (EC.is_temperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
             Tij[k] = melting_point_temp;
           }
         }
@@ -608,12 +608,12 @@ IceModelVec::Ptr IceModel_temppabase::compute() {
       Enthij = enthalpy->get_column(i,j);
 
       const double depth = (*thickness)(i,j),
-        p = EC.getPressureFromDepth(depth);
-      (*result)(i,j) = EC.getPATemp(Enthij[0], p);
+        p = EC.pressure(depth);
+      (*result)(i,j) = EC.pressure_adjusted_temperature(Enthij[0], p);
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
         // is 273.15
-        if (EC.isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
+        if (EC.is_temperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
           (*result)(i,j) = melting_point_temp;
         }
       }
@@ -734,9 +734,9 @@ IceModelVec::Ptr IceModel_tempbase::compute() {
       const int i = p.i(), j = p.j();
 
       double depth = (*thickness)(i,j),
-        pressure = EC.getPressureFromDepth(depth);
+        pressure = EC.pressure(depth);
       if (mask.icy(i, j)) {
-        (*result)(i,j) = EC.getAbsTemp((*result)(i,j), pressure);
+        (*result)(i,j) = EC.temperature((*result)(i,j), pressure);
       } else {
         (*result)(i,j) = m_grid.config.get("fill_value");
       }
@@ -778,14 +778,14 @@ IceModelVec::Ptr IceModel_tempsurf::compute() {
   list.add(*thickness);
 
   double depth = 1.0,
-    pressure = EC.getPressureFromDepth(depth);
+    pressure = EC.pressure(depth);
   ParallelSection loop(m_grid.com);
   try {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*thickness)(i,j) > 1) {
-        (*result)(i,j) = EC.getAbsTemp((*result)(i,j), pressure);
+        (*result)(i,j) = EC.temperature((*result)(i,j), pressure);
       } else {
         (*result)(i,j) = m_grid.config.get("fill_value");
       }
@@ -869,15 +869,15 @@ IceModelVec::Ptr IceModel_tempicethk::compute() {
         const unsigned int ks = m_grid.kBelowHeight(ice_thickness);
 
         for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
-          double pressure = model->EC->getPressureFromDepth(ice_thickness - m_grid.z(k));
+          double pressure = model->EC->pressure(ice_thickness - m_grid.z(k));
 
-          if (model->EC->isTemperate(Enth[k], pressure)) {
+          if (model->EC->is_temperate(Enth[k], pressure)) {
             temperate_ice_thickness += m_grid.z(k+1) - m_grid.z(k);
           }
         }
 
-        double pressure = model->EC->getPressureFromDepth(ice_thickness - m_grid.z(ks));
-        if (model->EC->isTemperate(Enth[ks], pressure)) {
+        double pressure = model->EC->pressure(ice_thickness - m_grid.z(ks));
+        if (model->EC->is_temperate(Enth[ks], pressure)) {
           temperate_ice_thickness += ice_thickness - m_grid.z(ks);
         }
 
@@ -948,9 +948,9 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
         k = 0;
 
       while (k <= ks) {         // FIXME issue #15
-        pressure = EC->getPressureFromDepth(thk - m_grid.z(k));
+        pressure = EC->pressure(thk - m_grid.z(k));
 
-        if (EC->isTemperate(Enth[k],pressure)) {
+        if (EC->is_temperate(Enth[k],pressure)) {
           k++;
         } else {
           break;
@@ -973,14 +973,14 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
       }
 
       double
-        pressure_0 = EC->getPressureFromDepth(thk - m_grid.z(k-1)),
+        pressure_0 = EC->pressure(thk - m_grid.z(k-1)),
         dz         = m_grid.z(k) - m_grid.z(k-1),
         slope1     = (Enth[k] - Enth[k-1]) / dz,
-        slope2     = (EC->getEnthalpyCTS(pressure) - EC->getEnthalpyCTS(pressure_0)) / dz;
+        slope2     = (EC->enthalpy_cts(pressure) - EC->enthalpy_cts(pressure_0)) / dz;
 
       if (slope1 != slope2) {
         (*result)(i,j) = m_grid.z(k-1) +
-          (EC->getEnthalpyCTS(pressure_0) - Enth[k-1]) / (slope1 - slope2);
+          (EC->enthalpy_cts(pressure_0) - Enth[k-1]) / (slope1 - slope2);
 
         // check if the resulting thickness is valid:
         (*result)(i,j) = std::max((*result)(i,j), m_grid.z(k-1));

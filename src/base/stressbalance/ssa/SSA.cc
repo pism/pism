@@ -237,7 +237,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double pressure = m_EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
+    const double pressure = m_EC.pressure(thk(i,j)); // FIXME issue #15
     if (pressure <= 0.0) {
       result(i,j).u = 0.0;
       result(i,j).v = 0.0;

@@ -43,10 +43,10 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]
 Frequently \f$d\f$ is computed from the thickess minus a level in the ice,
-something like "H[i][j] - z[k]".  The input depth to this routine is allowed to
+something like `ice_thickness(i, j) - z[k]`.  The input depth to this routine is allowed to
 be negative, representing a position above the surface of the ice.
  */
-double EnthalpyConverter::getPressureFromDepth(double depth) const {
+double EnthalpyConverter::pressure(double depth) const {
   if (depth > 0.0) {
     return p_air + rho_i * g * depth;
   } else {
@@ -59,7 +59,7 @@ double EnthalpyConverter::getPressureFromDepth(double depth) const {
 /*!
      \f[ T_m(p) = T_{melting} - \beta p. \f]
  */ 
-double EnthalpyConverter::getMeltingTemp(double p) const {
+double EnthalpyConverter::melting_temperature(double p) const {
   return T_melting - beta * p;
 }
 
@@ -68,8 +68,8 @@ double EnthalpyConverter::getMeltingTemp(double p) const {
 /*! Returns 
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
  */
-double EnthalpyConverter::getEnthalpyCTS(double p) const {
-  return c_i * (getMeltingTemp(p) - T_0);
+double EnthalpyConverter::enthalpy_cts(double p) const {
+  return c_i * (melting_temperature(p) - T_0);
 }
 
 
@@ -78,32 +78,17 @@ double EnthalpyConverter::getEnthalpyCTS(double p) const {
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
      \f[ E_l(p) = E_s(p) + L. \f]
  */
-void EnthalpyConverter::getEnthalpyInterval(double p, double &E_s, double &E_l) const {
-  E_s = getEnthalpyCTS(p);
+void EnthalpyConverter::enthalpy_interval(double p, double &E_s, double &E_l) const {
+  E_s = enthalpy_cts(p);
   E_l = E_s + L;
 }
 
-
-//! Computes the ratio CTS = E / E_s(p).  The cold-temperate transition surface (CTS) is the level surface CTS = 1.
-/*!
-If \f$E\f$ and \f$E_s\f$ are the ice mixture enthalpy and the CTS enthalpy,
-respectively, then
-  \f[ CTS(E,p) = \frac{E}{E_s(p)}.\f]
-The level set CTS = 1 is the actual CTS.  The value computed here is greater
-than one for temperate ice and less than one for cold ice.  The output of this
-routine is normally only used for postprocessing.
-*/
-double EnthalpyConverter::getCTS(double E, double p) const {
-  return E / getEnthalpyCTS(p);
-}
-
-
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
-bool EnthalpyConverter::isTemperate(double E, double p) const {
+bool EnthalpyConverter::is_temperate(double E, double p) const {
   if (do_cold_ice_methods) {
-      return (getPATemp(E, p) >= T_melting - T_tol);
+    return (pressure_adjusted_temperature(E, p) >= T_melting - T_tol);
   } else {
-      return (E >= getEnthalpyCTS(p));
+    return (E >= enthalpy_cts(p));
   }
 }
 
@@ -118,9 +103,9 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
-double EnthalpyConverter::getAbsTemp(double E, double p) const {
+double EnthalpyConverter::temperature(double E, double p) const {
   double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
+  enthalpy_interval(p, E_s, E_l);
 
   if (E >= E_l) {
     throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
@@ -130,7 +115,7 @@ double EnthalpyConverter::getAbsTemp(double E, double p) const {
   if (E < E_s) {
     return (E / c_i) + T_0;
   } else {
-    return getMeltingTemp(p);
+    return melting_temperature(p);
   }
 }
 
@@ -140,8 +125,8 @@ double EnthalpyConverter::getAbsTemp(double E, double p) const {
 The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
  */
-double EnthalpyConverter::getPATemp(double E, double p) const {
-  return getAbsTemp(E, p) - getMeltingTemp(p) + T_melting;
+double EnthalpyConverter::pressure_adjusted_temperature(double E, double p) const {
+  return temperature(E, p) - melting_temperature(p) + T_melting;
 }
 
 
@@ -154,9 +139,9 @@ From \ref AschwandenBuelerKhroulevBlatter,
 
 We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$).
  */
-double EnthalpyConverter::getWaterFraction(double E, double p) const {
+double EnthalpyConverter::water_fraction(double E, double p) const {
   double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
+  enthalpy_interval(p, E_s, E_l);
   if (E >= E_l) {
     throw RuntimeError::formatted("E=%f and p=%f correspond to liquid water", E, p);
   }
@@ -166,14 +151,6 @@ double EnthalpyConverter::getWaterFraction(double E, double p) const {
     return (E - E_s) / L;
   }
   return 0;
-}
-
-
-//! Is the ice mixture actually liquid water?
-bool EnthalpyConverter::isLiquified(double E, double p) const {
-  double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
-  return (E >= E_l);
 }
 
 
@@ -192,8 +169,8 @@ Certain cases are not allowed and throw exceptions:
 - \f$T<T_m(p)\f$ and \f$\omega > 0\f$ (error code 4)
 These inequalities may be violated in the sixth digit or so, however.
  */
-double EnthalpyConverter::getEnth(double T, double omega, double p) const {
-  const double T_m = getMeltingTemp(p);
+double EnthalpyConverter::enthalpy(double T, double omega, double p) const {
+  const double T_m = melting_temperature(p);
 
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
@@ -214,14 +191,14 @@ double EnthalpyConverter::getEnth(double T, double omega, double p) const {
   if (T < T_m) {
     return c_i * (T - T_0);
   } else {
-    return getEnthalpyCTS(p) + omega * L;
+    return enthalpy_cts(p) + omega * L;
   }
 }
 
 
-//! Compute enthalpy more permissively than getEnth().
+//! Compute enthalpy more permissively than enthalpy().
 /*! Computes enthalpy from absolute temperature, liquid water fraction, and
-pressure.  Use this form of getEnth() when outside sources (e.g. information
+pressure.  Use this form of enthalpy() when outside sources (e.g. information
 from a coupler) might generate a temperature above the pressure melting point or
 generate cold ice with a positive water fraction.
 
@@ -229,47 +206,25 @@ Treats temperatures above pressure-melting point as \e at the pressure-melting
 point.  Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$
 as cold ice, ignoring the water fraction (\f$\omega\f$) value.
 
-Checks if \f$T <= 0\f$ and throws an exception if so.
+Calls enthalpy(), which validates its inputs. 
 
 Computes:
   \f[E = \begin{cases}
             E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0, \\
             E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0, 
          \end{cases} \f]
-but ensures \f$0\le \omega \le 1\f$ in second case.  Calls getEnth() for
+but ensures \f$0\le \omega \le 1\f$ in second case.  Calls enthalpy() for
 \f$E(T,\omega,p)\f$.
  */
-double EnthalpyConverter::getEnthPermissive(double T, double omega, double p) const {
-#if (PISM_DEBUG==1)
-  if (T <= 0.0) {
-    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature", T);
-  }
-#endif
+double EnthalpyConverter::enthalpy_permissive(double T, double omega, double pressure) const {
 
-  const double T_m = getMeltingTemp(p);
+  const double T_m = melting_temperature(pressure);
+
   if (T < T_m) {
-    return getEnth(T, 0.0, p);
-  } else { // T >= T_m(p) replaced with T = T_m(p)
-    return getEnth(T_m, std::max(0.0, std::min(omega, 1.0)), p);
+    return enthalpy(T, 0.0, pressure);
+  } else { // T >= T_m(pressure) replaced with T = T_m(pressure)
+    return enthalpy(T_m, std::max(0.0, std::min(omega, 1.0)), pressure);
   }
 }
-
-
-//! Returns enthalpy for temperate ice with a given liquid fraction.
-/*! Computes
-  \f[E = E_s(p) + \omega L.\f]
-Only the following case returns an error:
-- \f$\omega < 0\f$ or \f$\omega > 1\f$ (error code 2)
-These inequalities may be violated in the sixth digit or so, however.
- */
-double EnthalpyConverter::getEnthAtWaterFraction(double omega, double p) const {
-#if (PISM_DEBUG==1)
-  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
-  }
-#endif
-  return getEnthalpyCTS(p) + omega * L;
-}
-
 
 } // end of namespace pism

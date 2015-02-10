@@ -80,8 +80,8 @@ double varcEnthalpyConverter::TfromE(double E) const {
 /*!
 Calls EfromT().
  */
-double varcEnthalpyConverter::getEnthalpyCTS(double p) const {
-  return EfromT(getMeltingTemp(p));
+double varcEnthalpyConverter::enthalpy_cts(double p) const {
+  return EfromT(melting_temperature(p));
 }
 
 
@@ -89,9 +89,9 @@ double varcEnthalpyConverter::getEnthalpyCTS(double p) const {
 /*!
 Calls TfromE().
  */
-double varcEnthalpyConverter::getAbsTemp(double E, double p) const {
+double varcEnthalpyConverter::temperature(double E, double p) const {
   double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
+  enthalpy_interval(p, E_s, E_l);
 
   if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
     throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
@@ -101,7 +101,7 @@ double varcEnthalpyConverter::getAbsTemp(double E, double p) const {
   if (E < E_s) {
     return TfromE(E);
   } else {
-    return getMeltingTemp(p);
+    return melting_temperature(p);
   }
 }
 
@@ -110,8 +110,8 @@ double varcEnthalpyConverter::getAbsTemp(double E, double p) const {
 /*!
 Calls EfromT().
  */
-double varcEnthalpyConverter::getEnth(double T, double omega, double p) const {
-  const double T_m = getMeltingTemp(p);
+double varcEnthalpyConverter::enthalpy(double T, double omega, double p) const {
+  const double T_m = melting_temperature(p);
 
   if (T <= 0.0) {
     throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
@@ -130,7 +130,7 @@ double varcEnthalpyConverter::getEnth(double T, double omega, double p) const {
   if (T < T_m) {
     return EfromT(T);
   } else {
-    return getEnthalpyCTS(p) + omega * L;
+    return enthalpy_cts(p) + omega * L;
   }
 }
 

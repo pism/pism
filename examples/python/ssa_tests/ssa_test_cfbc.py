@@ -86,7 +86,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     vecs.bedrock_altitude.set(-1000.0); # assures shelf is floating
 
     EC = PISM.EnthalpyConverter(PISM.Context().config)
-    enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+    enth0  = EC.enthalpy(273.15, 0.01, 0) # 0.01 water fraction
     vecs.enthalpy.set(enth0)
 
     grid      = self.grid

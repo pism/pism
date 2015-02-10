@@ -64,8 +64,8 @@ def dirichlet_test(dt):
     """
     T = EnthalpyTest(dt=dt)
 
-    E_surface = T.EC.getEnth(270.0, 0.0, 0.0)
-    E_base = T.EC.getEnth(230.0, 0.0, T.EC.getPressureFromDepth(T.Lz))
+    E_surface = T.EC.enthalpy(270.0, 0.0, 0.0)
+    E_base = T.EC.enthalpy(230.0, 0.0, T.EC.getPressureFromDepth(T.Lz))
 
     T.enthalpy.set(E_base)
 
@@ -92,7 +92,7 @@ def neumann_bc_base_test(dt):
 
     T = EnthalpyTest(dt=dt)
 
-    E_surface = T.EC.getEnth(270.0, 0.0, 0.0)
+    E_surface = T.EC.enthalpy(270.0, 0.0, 0.0)
 
     T.enthalpy.set(0.0)
 

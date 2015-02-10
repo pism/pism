@@ -82,7 +82,7 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_bed.set(0.0); // assures shelf is floating
   m_ice_mask.set(MASK_FLOATING);
 
-  double enth0  = m_enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
+  double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */

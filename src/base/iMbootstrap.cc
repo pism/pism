@@ -386,9 +386,9 @@ void IceModel::putTempAtDepth() {
       if (do_cold == false) {
         for (unsigned int k = 0; k < grid.Mz(); ++k) {
           const double depth = HH - grid.z(k);
-          const double pressure = EC->getPressureFromDepth(depth);
+          const double pressure = EC->pressure(depth);
           // reuse T to store enthalpy; assume that the ice is cold
-          T[k]= EC->getEnthPermissive(T[k], 0.0, pressure);
+          T[k]= EC->enthalpy_permissive(T[k], 0.0, pressure);
         }
       }
     }

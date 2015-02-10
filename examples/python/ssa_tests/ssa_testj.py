@@ -50,7 +50,7 @@ class testj(PISM.ssa.SSAExactTestCase):
     vecs.bc_mask.set(0) # No dirichlet data.
 
     EC = PISM.EnthalpyConverter(PISM.Context().config)
-    enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+    enth0  = EC.enthalpy(273.15, 0.01, 0) # 0.01 water fraction
     vecs.enthalpy.set(enth0)
 
     ocean_rho = self.config.get("sea_water_density");

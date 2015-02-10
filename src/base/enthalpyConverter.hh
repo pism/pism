@@ -33,14 +33,15 @@ class Config;
   ...
   for (...) {
   ...
-  E_s = EC.getEnthalpyCTS(p);
+  E_s = EC.enthalpy_cts(p);
   ... etc ...
   }   
   \endcode
 
-  The three methods that get the enthalpy from temperatures and liquid fractions, 
-  namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict
-  about error checking.  They throw RuntimeError if their arguments are invalid.
+  The three methods that get the enthalpy from temperatures and liquid
+  fractions, namely enthalpy(), enthalpy_permissive() are more strict
+  about error checking. They throw RuntimeError if their arguments are
+  invalid.
 
   This class is documented by [\ref AschwandenBuelerKhroulevBlatter].
 */
@@ -48,30 +49,27 @@ class EnthalpyConverter {
 public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter() {}
+  
+  virtual bool is_temperate(double E, double pressure) const;
 
-  virtual double getPressureFromDepth(double depth) const;
-  virtual double getMeltingTemp(double p) const;
-  virtual double getEnthalpyCTS(double p) const;
-  virtual void getEnthalpyInterval(double p, double &E_s, double &E_l) const;
-  virtual double getCTS(double E, double p) const;
+  virtual double temperature(double E, double pressure) const;
+  virtual double melting_temperature(double pressure) const;
+  virtual double pressure_adjusted_temperature(double E, double pressure) const;
 
-  virtual bool isTemperate(double E, double p) const;
-  virtual bool isLiquified(double E, double p) const;
+  virtual double water_fraction(double E, double pressure) const;
 
-  virtual double getAbsTemp(double E, double p) const;
-  virtual double getPATemp(double E, double p) const;
-
-  virtual double getWaterFraction(double E, double p) const;
-
-  virtual double getEnth(double T, double omega, double p) const;
-  virtual double getEnthPermissive(double T, double omega, double p) const;
-  virtual double getEnthAtWaterFraction(double omega, double p) const;
+  virtual double enthalpy(double T, double omega, double pressure) const;
+  virtual double enthalpy_cts(double pressure) const;
+  virtual double enthalpy_permissive(double T, double omega, double pressure) const;
 
   virtual double c_from_T(double /*T*/) const {
     return c_i;
   }
 
+  double pressure(double depth) const;
+
 protected:
+  virtual void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
   double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
   double T_0;
   bool   do_cold_ice_methods;
@@ -88,46 +86,41 @@ protected:
   Note: Any instance of FlowLaw uses an EnthalpyConverter; this is
   the one used in verification mode.
 */
-class ICMEnthalpyConverter : public EnthalpyConverter {
+class ColdEnthalpyConverter : public EnthalpyConverter {
 public:
-  ICMEnthalpyConverter(const Config &config) : EnthalpyConverter(config) {
+  ColdEnthalpyConverter(const Config &config) : EnthalpyConverter(config) {
     do_cold_ice_methods = true;
   }
 
-  virtual ~ICMEnthalpyConverter() {}
+  virtual ~ColdEnthalpyConverter() {}
 
   /*! */
-  virtual double getMeltingTemp(double /*p*/) const {
+  virtual double melting_temperature(double /*pressure*/) const {
     return T_melting;
   }
 
   /*! */
-  virtual double getAbsTemp(double E, double /*p*/) const {
+  virtual double temperature(double E, double /*pressure*/) const {
     return (E / c_i) + T_0;
   }
 
   /*! */
-  virtual double getWaterFraction(double /*E*/, double /*p*/) const {
+  virtual double water_fraction(double /*E*/, double /*pressure*/) const {
     return 0.0;
   }
 
   /*! */
-  virtual double getEnth(double T, double /*omega*/, double /*p*/) const {
+  virtual double enthalpy(double T, double /*omega*/, double /*pressure*/) const {
     return c_i * (T - T_0);
   }
 
   /*! */
-  virtual double getEnthPermissive(double T, double /*omega*/, double /*p*/) const {
+  virtual double enthalpy_permissive(double T, double /*omega*/, double /*pressure*/) const {
     return c_i * (T - T_0);
   }
 
   /*! */
-  virtual double getEnthAtWaterFraction(double /*omega*/, double p) const {
-    return getEnthalpyCTS(p);
-  }
-
-  /*! */
-  virtual bool isTemperate(double /*E*/, double /*p*/) const {
+  virtual bool is_temperate(double /*E*/, double /*pressure*/) const {
     return false;
   }
 };

@@ -659,7 +659,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           double depth = thk - m_grid.z(k); // FIXME issue #15
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
-          const double pressure = m_EC.getPressureFromDepth(depth);
+          const double pressure = m_EC.pressure(depth);
 
           double flow;
           if (use_age) {

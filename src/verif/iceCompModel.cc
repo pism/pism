@@ -230,7 +230,7 @@ void IceCompModel::allocate_enthalpy_converter() {
   }
 
   // allocate the "special" enthalpy converter;
-  EC = new ICMEnthalpyConverter(config);
+  EC = new ColdEnthalpyConverter(config);
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {

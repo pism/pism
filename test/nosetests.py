@@ -376,7 +376,7 @@ def sia_test():
     bed.set(0.0)
 
     enthalpy = PISM.model.createEnthalpyVec(grid)
-    enthalpy.set(enthalpyconverter.getEnth(270.0, 0.0, 0.0))
+    enthalpy.set(enthalpyconverter.enthalpy(270.0, 0.0, 0.0))
 
     modeldata = PISM.model.ModelData(grid)
     modeldata.setPhysics(enthalpyconverter)

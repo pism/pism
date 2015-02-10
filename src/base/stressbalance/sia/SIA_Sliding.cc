@@ -165,7 +165,7 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
         const double H = surface(i,j) - bed(i,j);
         const double base_enthalpy = enthalpy.get_column(i,j)[0];
 
-        double T = m_EC.getAbsTemp(base_enthalpy, m_EC.getPressureFromDepth(H));
+        double T = m_EC.temperature(base_enthalpy, m_EC.pressure(H));
 
         double basalC = basalVelocitySIA(myx, myy, H, T,
                                          alpha, mu_sliding,
@@ -246,13 +246,13 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
 
   if ((m_eisII_experiment == "G") || (m_eisII_experiment == "H")) {
     const double  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
-    double pressure = m_EC.getPressureFromDepth(H);
-    double E = m_EC.getEnthPermissive(T, 0.0, pressure);
+    double pressure = m_EC.pressure(H);
+    double E = m_EC.enthalpy_permissive(T, 0.0, pressure);
 
     if (m_eisII_experiment == "G") {
       return Bfactor * ice_rho * m_standard_gravity * H;
     } else if (m_eisII_experiment == "H") {
-      if (m_EC.isTemperate(E, pressure)) {
+      if (m_EC.is_temperate(E, pressure)) {
         return Bfactor * ice_rho * m_standard_gravity * H; // ditto case G
       } else {
         return 0.0;

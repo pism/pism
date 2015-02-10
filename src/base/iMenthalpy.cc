@@ -40,7 +40,7 @@ First this method makes sure the temperatures is at most the pressure-melting
 value, before computing the enthalpy for that temperature, using zero liquid
 fraction.
 
-Because of how EnthalpyConverter::getPressureFromDepth() works, the energy
+Because of how EnthalpyConverter::pressure() works, the energy
 content in the air is set to the value that ice would have if it a chunk of it
 occupied the air; the atmosphere actually has much lower energy content.  It is
 done this way for regularity (i.e. dEnth/dz computations).
@@ -62,7 +62,7 @@ void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVe
 
     for (unsigned int k = 0; k < grid.Mz(); ++k) {
       const double depth = ice_thickness(i, j) - grid.z(k); // FIXME issue #15
-      Enthij[k] = EC->getEnthPermissive(Tij[k], 0.0, EC->getPressureFromDepth(depth));
+      Enthij[k] = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
     }
   }
 
@@ -95,8 +95,8 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
 
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
-      Enthij[k] = EC->getEnthPermissive(Tij[k], Liqfracij[k],
-                                        EC->getPressureFromDepth(depth));
+      Enthij[k] = EC->enthalpy_permissive(Tij[k], Liqfracij[k],
+                                        EC->pressure(depth));
     }
   }
 
@@ -133,7 +133,7 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
 
       for (unsigned int k=0; k<grid.Mz(); ++k) {
         const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
-        omegaij[k] = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth));
+        omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
       }
     }
   } catch (...) {
@@ -144,11 +144,12 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   result.inc_state_counter();
 }
 
-//! Compute the CTS field, CTS = E/E_s(p), from Enth3, and put in a global IceModelVec3 provided by user.
+//! @brief Compute the CTS field, CTS = E/E_s(p), from Enth3, and put
+//! in a global IceModelVec3 provided by user.
 /*!
-The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
-
-Does not communicate ghosts for IceModelVec3 result.
+ * The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
+ *
+ * Does not communicate ghosts for IceModelVec3 result.
  */
 void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
 
@@ -158,9 +159,6 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
                    "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
                    "", "", 0);
 
-  double *CTSij;
-  const double *Enthij; // columns of these values
-
   IceModelVec::AccessList list;
   list.add(result);
   list.add(Enth3);
@@ -169,11 +167,12 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    CTSij  = result.get_column(i,j);
-    Enthij = Enth3.get_column(i,j);
+    double *CTS  = result.get_column(i,j);
+    const double *enthalpy = Enth3.get_column(i,j);
+
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       const double depth = ice_thickness(i,j) - grid.z(k); // FIXME issue #15
-      CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
+      CTS[k] = enthalpy[k] / EC->enthalpy_cts(EC->pressure(depth));
     }
   }
 }
@@ -283,9 +282,9 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       // enthalpy and pressures at top of ice
       const double
         depth_ks = ice_thickness(i, j) - system.ks() * dz,
-        p_ks     = EC->getPressureFromDepth(depth_ks); // FIXME issue #15
+        p_ks     = EC->pressure(depth_ks); // FIXME issue #15
 
-      double Enth_ks = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
+      double Enth_ks = EC->enthalpy_permissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
                                              p_ks);
 
       const bool ice_free_column = (system.ks() == 0);
@@ -318,8 +317,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         if (is_floating) {
           // floating base: Dirichlet application of known temperature from ocean
           //   coupler; assumes base of ice shelf has zero liquid fraction
-          double Enth0 = EC->getEnthPermissive(shelfbtemp(i, j), 0.0,
-                                               EC->getPressureFromDepth(ice_thickness(i, j)));
+          double Enth0 = EC->enthalpy_permissive(shelfbtemp(i, j), 0.0,
+                                               EC->pressure(ice_thickness(i, j)));
 
           system.setDirichletBasal(Enth0);
         } else if (base_is_cold) {
@@ -351,8 +350,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
               Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
             }
             const double depth = ice_thickness(i, j) - k * dz,
-              p = EC->getPressureFromDepth(depth); // FIXME issue #15
-            double omega = EC->getWaterFraction(Enthnew[k], p);
+              p = EC->pressure(depth); // FIXME issue #15
+            double omega = EC->water_fraction(Enthnew[k], p);
             if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
               double fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
 
@@ -429,19 +428,19 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base
           } else {
             const double
-              p_0 = EC->getPressureFromDepth(ice_thickness(i, j)),
-              p_1 = EC->getPressureFromDepth(ice_thickness(i, j) - dz); // FIXME issue #15
-            const bool k1_istemperate = EC->isTemperate(Enthnew[1], p_1); // level  z = + \Delta z
+              p_0 = EC->pressure(ice_thickness(i, j)),
+              p_1 = EC->pressure(ice_thickness(i, j) - dz); // FIXME issue #15
+            const bool k1_istemperate = EC->is_temperate(Enthnew[1], p_1); // level  z = + \Delta z
 
             double hf_up;
             if (k1_istemperate) {
               const double
-                Tpmp_0 = EC->getMeltingTemp(p_0),
-                Tpmp_1 = EC->getMeltingTemp(p_1);
+                Tpmp_0 = EC->melting_temperature(p_0),
+                Tpmp_1 = EC->melting_temperature(p_1);
 
               hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / dz;
             } else {
-              double T_0 = EC->getAbsTemp(Enthnew[0], p_0);
+              double T_0 = EC->temperature(Enthnew[0], p_0);
               const double K_0 = system.k_from_T(T_0) / EC->c_from_T(T_0);
 
               hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / dz;

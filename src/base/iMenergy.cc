@@ -208,8 +208,8 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
         if (mask.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = ice_surface_temp(i,j);
         } else { // ice: sees temp of base of ice
-          const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-          result(i,j) = EC->getAbsTemp(result(i,j), pressure);
+          const double pressure = EC->pressure(ice_thickness(i,j));
+          result(i,j) = EC->temperature(result(i,j), pressure);
         }
       } else { // floating: apply pressure melting temp as top of bedrock temp
         result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;

@@ -62,7 +62,7 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
 
       if (mask.icy(i, j)) {
         // accumulate area of base which is at melt point
-        if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           meltarea += a;
         }
       }
@@ -396,12 +396,12 @@ double  IceModel::compute_ice_volume_temperate() {
         const double A = cell_area(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          if (EC->is_temperate(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
             volume += (grid.z(k + 1) - grid.z(k)) * A;
           }
         }
 
-        if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           volume += (ice_thickness(i,j) - grid.z(ks)) * A;
         }
       }
@@ -437,12 +437,12 @@ double IceModel::compute_ice_volume_cold() {
         const double A = cell_area(i, j);
 
         for (int k=0; k<ks; ++k) {
-          if (not EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          if (not EC->is_temperate(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
             volume += (grid.z(k+1) - grid.z(k)) * A;
           }
         }
 
-        if (not EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+        if (not EC->is_temperate(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           volume += (ice_thickness(i,j) - grid.z(ks)) * A;
         }
       }
@@ -497,7 +497,7 @@ double IceModel::compute_ice_area_temperate() {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
-          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
       }
     }
@@ -530,7 +530,7 @@ double IceModel::compute_ice_area_cold() {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
-          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j))) == false) { // FIXME issue #15
+          EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j))) == false) { // FIXME issue #15
         area += cell_area(i,j);
       }
     }

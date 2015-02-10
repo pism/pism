@@ -115,7 +115,7 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   m_bed.set(-1000.0); // assures shelf is floating
 
 
-  double enth0  = m_enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
+  double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_enthalpy.set(enth0);
 
   IceModelVec::AccessList list;

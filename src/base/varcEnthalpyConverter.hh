@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 Ed Bueler
+// Copyright (C) 2011, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -42,11 +42,11 @@ public:
   }
   virtual ~varcEnthalpyConverter() {}
 
-  virtual double getEnthalpyCTS(double p) const;
+  virtual double enthalpy_cts(double p) const;
 
-  virtual double getAbsTemp(double E, double p) const;
+  virtual double temperature(double E, double p) const;
 
-  virtual double getEnth(double T, double omega, double p) const;
+  virtual double enthalpy(double T, double omega, double p) const;
 
   /*!
     Equation (4.39) in [\ref GreveBlatter2009] is
@@ -58,7 +58,7 @@ public:
   }
 
   virtual double c_from_enth(double E, double p) const {
-    return c_from_T(getAbsTemp(E, p));
+    return c_from_T(temperature(E, p));
   }
 
 protected:

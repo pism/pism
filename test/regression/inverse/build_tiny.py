@@ -30,7 +30,7 @@ tauc_lo = 1e4       # Pa
 tauc_free_bedrock = 0  # Will get set later
 
 EC = PISM.EnthalpyConverter(PISM.Context().config)
-enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+enth0  = EC.enthalpy(273.15, 0.01, 0) # 0.01 water fraction
 bed0  = 0;
 
 def geometry(x,y):

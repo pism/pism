@@ -148,13 +148,13 @@ double FlowLaw::averaged_hardness(double thickness, int kbelowH,
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
   if (kbelowH > 0) {
     double
-      p0 = m_EC->getPressureFromDepth(thickness),
+      p0 = m_EC->pressure(thickness),
       E0 = enthalpy[0],
       h0 = hardness_parameter(E0, p0); // ice hardness at the left endpoint
 
     for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
       const double
-        p1 = m_EC->getPressureFromDepth(thickness - zlevels[i]), // pressure at the right endpoint
+        p1 = m_EC->pressure(thickness - zlevels[i]), // pressure at the right endpoint
         E1 = enthalpy[i], // enthalpy at the right endpoint
         h1 = hardness_parameter(E1, p1); // ice hardness at the right endpoint
 
@@ -172,7 +172,7 @@ double FlowLaw::averaged_hardness(double thickness, int kbelowH,
   // zlevels[kbelowH] to thickness:
   double
     depth = thickness - zlevels[kbelowH],
-    p = m_EC->getPressureFromDepth(depth);
+    p = m_EC->pressure(depth);
 
   B += depth * hardness_parameter(enthalpy[kbelowH], p);
 
@@ -206,16 +206,15 @@ This is a modification of Glen-Paterson-Budd ice, which is PatersonBudd.  In par
 \f$A()\f$ is the softness factor for PatersonBudd, if \f$E\f$ is the enthalpy, and \f$p\f$ is
 the pressure then the softness we compute is
    \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
-The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by getPATemp().
+The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by pressure_adjusted_temperature().
  */
 double GPBLD::softness_parameter(double enthalpy, double pressure) const {
-  double E_s, E_l;
-  m_EC->getEnthalpyInterval(pressure, E_s, E_l);
+  const double E_s = m_EC->enthalpy_cts(pressure);
   if (enthalpy < E_s) {       // cold ice
-    double T_pa = m_EC->getPATemp(enthalpy, pressure);
+    double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
     return softness_parameter_paterson_budd(T_pa);
   } else { // temperate ice
-    double omega = m_EC->getWaterFraction(enthalpy, pressure);
+    double omega = m_EC->water_fraction(enthalpy, pressure);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
     omega = std::min(omega, water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
@@ -227,14 +226,14 @@ double GPBLD::softness_parameter(double enthalpy, double pressure) const {
 
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
 double PatersonBudd::softness_parameter(double E, double pressure) const {
-  double T_pa = m_EC->getPATemp(E, pressure);
+  double T_pa = m_EC->pressure_adjusted_temperature(E, pressure);
   return softness_parameter_from_temp(T_pa);
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
 double PatersonBudd::flow(double stress, double E,
                            double pressure, double gs) const {
-  double temp = m_EC->getAbsTemp(E, pressure);
+  double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, gs);
 }
 
@@ -316,7 +315,7 @@ GoldsbyKohlstedt::GoldsbyKohlstedt(MPI_Comm c, const std::string &pre,
 
 double GoldsbyKohlstedt::flow(double stress, double E,
                                  double pressure, double grainsize) const {
-  double temp = m_EC->getAbsTemp(E, pressure);
+  double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
 
@@ -342,7 +341,7 @@ double GoldsbyKohlstedt::hardness_parameter(double enthalpy, double pressure) co
   // FIXME: The following is a re-implementation of the Paterson-Budd relation
   // for the hardness parameter. This should not be here, but we currently need
   // ice hardness to compute the strain heating. See SIAFD::compute_volumetric_strain_heating().
-  T_pa = m_EC->getPATemp(enthalpy, pressure);
+  T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
 
   if (T_pa < m_crit_temp) {
     softness = m_A_cold * exp(-m_Q_cold/(m_ideal_gas_constant * T_pa));
