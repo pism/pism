@@ -38,19 +38,10 @@ public:
   virtual ~varcEnthalpyConverter();
 
 protected:
-  virtual double enthalpy_cts_impl(double p) const;
-
-  /*!
-    Equation (4.39) in [\ref GreveBlatter2009] is
-    \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
-    \f$T_r = 256.82\f$ K.
-  */
-  virtual double c_from_T_impl(double T) const {
-    return c_i + c_gradient * (T - T_r);
-  }
-
-  virtual double enthalpy_impl(double T, double omega, double p) const;
-  virtual double temperature_impl(double E, double p) const;
+  double enthalpy_cts_impl(double p) const;
+  double c_from_T_impl(double T) const;
+  double enthalpy_impl(double T, double omega, double p) const;
+  double temperature_impl(double E, double p) const;
 
   //!< reference temperature in the parameterization of C(T)
   const double T_r;

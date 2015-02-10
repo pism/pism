@@ -93,6 +93,14 @@ double varcEnthalpyConverter::enthalpy_cts_impl(double p) const {
   return EfromT(melting_temperature(p));
 }
 
+/*!
+  Equation (4.39) in [\ref GreveBlatter2009] is
+  \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
+  \f$T_r = 256.82\f$ K.
+*/
+double varcEnthalpyConverter::c_from_T_impl(double T) const {
+  return c_i + c_gradient * (T - T_r);
+}
 
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
 /*!
