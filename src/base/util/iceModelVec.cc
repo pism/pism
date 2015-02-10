@@ -912,13 +912,12 @@ void IceModelVec::AccessList::add(const IceModelVec &vec) {
   m_vecs.push_back(&vec);
 }
 
-void convert_vec(Vec v, Unit from, Unit to) {
-  PetscErrorCode ierr;
-
-  UnitConverter c(from, to);
+void convert_vec(Vec v, const UnitSystem system,
+                 const std::string &spec1, const std::string &spec2) {
+  UnitConverter c(system, spec1, spec2);
 
   PetscInt data_size = 0;
-  ierr = VecGetLocalSize(v, &data_size);
+  PetscErrorCode ierr = VecGetLocalSize(v, &data_size);
   PISM_CHK(ierr, "VecGetLocalSize");
 
   petsc::VecArray data(v);

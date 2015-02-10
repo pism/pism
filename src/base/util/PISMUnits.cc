@@ -168,12 +168,4 @@ void UnitConverter::convert_doubles(double *data, size_t length) const {
   cv_convert_doubles(m_converter, data, length, data);
 }
 
-void convert_doubles(double *data, size_t data_size,
-                     const Unit &from, const Unit &to) {
-  UnitConverter c(from, to);
-
-  c.convert_doubles(data, data_size);
-}
-
-
 } // end of namespace pism

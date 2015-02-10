@@ -396,10 +396,11 @@ void IceModelVec2::view(int viewer_size) const {
   }
 
   for (unsigned int j = 0; j < std::min(m_dof, 2U); ++j) {
-    std::string c_name = m_metadata[j].get_name(),
+    std::string
+      c_name              = m_metadata[j].get_name(),
       long_name = m_metadata[j].get_string("long_name"),
-      units = m_metadata[j].get_string("glaciological_units"),
-      title = long_name + " (" + units + ")";
+      glaciological_units = m_metadata[j].get_string("glaciological_units"),
+      title               = long_name + " (" + glaciological_units + ")";
 
     if (not map_viewers[c_name]) {
       map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
@@ -413,8 +414,6 @@ void IceModelVec2::view(int viewer_size) const {
 }
 
 //! \brief View a 2D vector field using existing PETSc viewers.
-//! Allocates and de-allocates g2, the temporary global vector; performance
-//! should not matter here.
 void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
   PetscErrorCode ierr;
 
@@ -429,8 +428,9 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
   for (unsigned int i = 0; i < std::min(m_dof, 2U); ++i) {
     std::string
       long_name = m_metadata[i].get_string("long_name"),
-      units     = m_metadata[i].get_string("glaciological_units"),
-      title     = long_name + " (" + units + ")";
+      units               = m_metadata[i].get_string("units"),
+      glaciological_units = m_metadata[i].get_string("glaciological_units"),
+      title               = long_name + " (" + glaciological_units + ")";
 
     if (not (bool)viewers[i]) {
       continue;
@@ -447,9 +447,8 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
 
     IceModelVec2::get_dof(da2, tmp, i);
 
-    convert_vec(tmp,
-                m_metadata[i].get_units(),
-                m_metadata[i].get_glaciological_units());
+    convert_vec(tmp, m_metadata[i].get_unit_system(),
+                units, glaciological_units);
 
     ierr = VecView(tmp, v);
     PISM_CHK(ierr, "VecView");

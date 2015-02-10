@@ -112,18 +112,6 @@ private:
   UnitConverter& operator=(UnitConverter const &);
 };
 
-/** Convert an array of doubles from units in `from` into units int `to` (in place).
- * 
- *
- * @param[in,out] data array
- * @param[in] data_size array size
- * @param[in] from source units
- * @param[in] to destination units
- *
- * @return 
- */
-void convert_doubles(double *data, size_t data_size, const Unit &from, const Unit &to);
-
 } // end of namespace pism
 
 #endif /* _PISMUNITS_H_ */
