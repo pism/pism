@@ -1356,59 +1356,62 @@ void PIO::read_attributes(const string &variable_name, NCVariable &variable) con
   \li if both valid_min and valid_max are set, then valid_range is written
   instead of the valid_min, valid_max pair.
  */
-void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
+void PIO::write_attributes(const NCVariable &variable, IO_Type nctype,
                            bool write_in_glaciological_units) const {
-  string var_name = var.get_name();
+  string var_name = variable.get_name();
   try {
     // units, valid_min, valid_max and valid_range need special treatment:
-    if (var.has_attribute("units")) {
-      string output_units = var.get_string("units");
+    if (variable.has_attribute("units")) {
+      string output_units = variable.get_string("units");
 
       if (write_in_glaciological_units) {
-        output_units = var.get_string("glaciological_units");
+        output_units = variable.get_string("glaciological_units");
       }
 
       put_att_text(var_name, "units", output_units);
     }
 
     vector<double> bounds(2);
-    if (var.has_attribute("valid_min")) {
-      bounds[0]  = var.get_double("valid_min");
+    if (variable.has_attribute("valid_min")) {
+      bounds[0]  = variable.get_double("valid_min");
     }
-    if (var.has_attribute("valid_max")) {
-      bounds[1]  = var.get_double("valid_max");
+    if (variable.has_attribute("valid_max")) {
+      bounds[1]  = variable.get_double("valid_max");
     }
 
     double fill_value = 0.0;
-    if (var.has_attribute("_FillValue")) {
-      fill_value = var.get_double("_FillValue");
+    if (variable.has_attribute("_FillValue")) {
+      fill_value = variable.get_double("_FillValue");
     }
 
     // We need to save valid_min, valid_max and valid_range in the units
     // matching the ones in the output.
     if (write_in_glaciological_units) {
 
-      UnitConverter c(var.get_units(), var.get_glaciological_units());
+      std::string
+        units               = variable.get_string("units"),
+        glaciological_units = variable.get_string("glaciological_units");
+      UnitConverter c(variable.get_unit_system(), units, glaciological_units);
 
       bounds[0]  = c(bounds[0]);
       bounds[1]  = c(bounds[1]);
       fill_value = c(fill_value);
     }
 
-    if (var.has_attribute("_FillValue")) {
+    if (variable.has_attribute("_FillValue")) {
       put_att_double(var_name, "_FillValue", nctype, fill_value);
     }
 
-    if (var.has_attribute("valid_min") && var.has_attribute("valid_max")) {
+    if (variable.has_attribute("valid_min") && variable.has_attribute("valid_max")) {
       put_att_double(var_name, "valid_range", nctype, bounds);
-    } else if (var.has_attribute("valid_min")) {
+    } else if (variable.has_attribute("valid_min")) {
       put_att_double(var_name, "valid_min",   nctype, bounds[0]);
-    } else if (var.has_attribute("valid_max")) {
+    } else if (variable.has_attribute("valid_max")) {
       put_att_double(var_name, "valid_max",   nctype, bounds[1]);
     }
 
     // Write text attributes:
-    const NCVariable::StringAttrs &strings = var.get_all_strings();
+    const NCVariable::StringAttrs &strings = variable.get_all_strings();
     NCVariable::StringAttrs::const_iterator i;
     for (i = strings.begin(); i != strings.end(); ++i) {
       string
@@ -1425,7 +1428,7 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     }
 
     // Write double attributes:
-    const NCVariable::DoubleAttrs &doubles = var.get_all_doubles();
+    const NCVariable::DoubleAttrs &doubles = variable.get_all_doubles();
     NCVariable::DoubleAttrs::const_iterator j;
     for (j = doubles.begin(); j != doubles.end(); ++j) {
       string name  = j->first;
