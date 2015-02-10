@@ -138,6 +138,22 @@ UnitConverter::UnitConverter() {
   m_converter = cv_get_trivial();
 }
 
+UnitConverter::UnitConverter(const UnitSystem &sys,
+                             const std::string &spec1, const std::string &spec2) {
+
+  Unit u1(sys, spec1), u2(sys, spec2);
+
+  if (ut_are_convertible(u1.get(), u2.get()) == 0) {
+    throw RuntimeError::formatted("cannot convert %s to %s", spec1.c_str(), spec2.c_str());
+  }
+
+  m_converter = ut_get_converter(u1.get(), u2.get());
+  if (m_converter == NULL) {
+    throw RuntimeError::formatted("cannot create a converter from %s to %s",
+                                  spec1.c_str(), spec2.c_str());
+  }
+}
+
 UnitConverter::UnitConverter(const Unit &u1, const Unit &u2) {
   if (ut_are_convertible(u1.get(), u2.get()) == 0) {
     std::string message = "cannot convert " + u1.format() + " to " + u2.format();

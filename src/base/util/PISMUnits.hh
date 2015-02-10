@@ -88,6 +88,7 @@ class UnitConverter {
 public:
   UnitConverter();
   UnitConverter(const Unit &u1, const Unit &u2);
+  UnitConverter(const UnitSystem &sys, const std::string &u1, const std::string &u2);
   ~UnitConverter();
   /** Convert an array of doubles in place
    *
