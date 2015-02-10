@@ -49,6 +49,8 @@ public:
   PIO(const PIO &other);
   ~PIO();
 
+  MPI_Comm com() const;
+
   static bool check_if_exists(MPI_Comm com, const std::string &filename);
 
   void open(const std::string &filename, IO_Mode mode);

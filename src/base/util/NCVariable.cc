@@ -80,6 +80,38 @@ UnitSystem NCVariable::get_unit_system() const {
   return m_unit_system;
 }
 
+//! @brief Check if the range of a \b global Vec `v` is in the range
+//! specified by valid_min and valid_max attributes.
+void NCVariable::check_range(const std::string &filename, double min, double max) {
+
+  const std::string &units_string = get_string("units");
+
+  if (has_attribute("valid_min") && has_attribute("valid_max")) {
+    double
+      valid_min = get_double("valid_min"),
+      valid_max = get_double("valid_max");
+    if ((min < valid_min) || (max > valid_max)) {
+      throw RuntimeError::formatted("some values of '%s' in '%s' are outside the valid range [%f, %f] (%s).",
+                                    get_name().c_str(), filename.c_str(),
+                                    valid_min, valid_max, units_string.c_str());
+    }
+  } else if (has_attribute("valid_min")) {
+    double valid_min = get_double("valid_min");
+    if (min < valid_min) {
+      throw RuntimeError::formatted("some values of '%s' in '%s' are less than the valid minimum (%f %s).",
+                                    get_name().c_str(), filename.c_str(),
+                                    valid_min, units_string.c_str());
+    }
+  } else if (has_attribute("valid_max")) {
+    double valid_max = get_double("valid_max");
+    if (max > valid_max) {
+      throw RuntimeError::formatted("some values of '%s' in '%s' are greater than the valid maximum (%f %s).\n",
+                                    get_name().c_str(), filename.c_str(),
+                                    valid_max, units_string.c_str());
+    }
+  }
+}
+
 //! 3D version
 NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
                                      const IceGrid &g, const std::vector<double> &zlevels)
@@ -129,7 +161,6 @@ void NCSpatialVariable::init_internal(const std::string &name, const IceGrid &g,
 
   set_name(name);
   m_grid = &g;
-  m_com = g.com;
 
   m_zlevels = z_levels;
 
@@ -152,7 +183,6 @@ NCSpatialVariable::NCSpatialVariable(const NCSpatialVariable &other)
   m_variable_order      = other.m_variable_order;
   m_zlevels             = other.m_zlevels;
   m_grid                = other.m_grid;
-  m_com                 = other.m_com;
 }
 
 NCSpatialVariable::~NCSpatialVariable() {
@@ -248,7 +278,7 @@ void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
   if (has_attribute("units") && input_units.empty()) {
     const std::string &units_string = get_string("units"),
       &long_name = get_string("long_name");
-    verbPrintf(2, m_com,
+    verbPrintf(2, nc.com(),
                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                "              Assuming that it is in '%s'.\n",
                get_name().c_str(), long_name.c_str(),
@@ -339,7 +369,7 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
   if (exists) {                      // the variable was found successfully
 
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
-      verbPrintf(2, m_com,
+      verbPrintf(2, nc.com(),
                  "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
                  default_value, get_string("units").c_str(), get_name().c_str(),
                  nc.inq_filename().c_str());
@@ -360,7 +390,7 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
       std::string internal_units = get_string("units");
       input_units = internal_units;
       if (not internal_units.empty()) {
-        verbPrintf(2, m_com,
+        verbPrintf(2, nc.com(),
                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                    "              Assuming that it is in '%s'.\n",
                    get_name().c_str(),
@@ -378,16 +408,16 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     nc.read_valid_range(name_found, *this);
 
     double min = 0.0, max = 0.0;
-    compute_range(m_grid->com, output, data_size, &min, &max);
+    compute_range(nc.com(), output, data_size, &min, &max);
     
     // Check the range and warn the user if needed:
     check_range(nc.inq_filename(), min, max);
 
     if (do_report_range) {
       // We can report the success, and the range now:
-      verbPrintf(2, m_com, "  FOUND ");
+      verbPrintf(2, nc.com(), "  FOUND ");
 
-      this->report_range(min, max, found_by_standard_name);
+      this->report_range(nc.com(), min, max, found_by_standard_name);
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
@@ -403,7 +433,7 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                     this->get_string("glaciological_units"));
 
     std::string spacer(get_name().size(), ' ');
-    verbPrintf(2, m_com,
+    verbPrintf(2, nc.com(),
                "  absent %s / %-10s\n"
                "         %s \\ not found; using default constant %7.2f (%s)\n",
                get_name().c_str(),
@@ -419,7 +449,7 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 
 
 //! Report the range of a \b global Vec `v`.
-void NCSpatialVariable::report_range(double min, double max,
+void NCSpatialVariable::report_range(MPI_Comm com, double min, double max,
                                      bool found_by_standard_name) {
 
   // UnitConverter constructor will make sure that units are compatible.
@@ -434,14 +464,14 @@ void NCSpatialVariable::report_range(double min, double max,
   if (has_attribute("standard_name")) {
 
     if (found_by_standard_name) {
-      verbPrintf(2, m_com,
+      verbPrintf(2, com,
                  " %s / standard_name=%-10s\n"
                  "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                  get_name().c_str(),
                  get_string("standard_name").c_str(), spacer.c_str(), min, max,
                  get_string("glaciological_units").c_str());
     } else {
-      verbPrintf(2, m_com,
+      verbPrintf(2, com,
                  " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                  "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                  get_name().c_str(),
@@ -450,43 +480,12 @@ void NCSpatialVariable::report_range(double min, double max,
     }
 
   } else {
-    verbPrintf(2, m_com,
+    verbPrintf(2, com,
                " %s / %-10s\n"
                "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                get_name().c_str(),
                get_string("long_name").c_str(), spacer.c_str(), min, max,
                get_string("glaciological_units").c_str());
-  }
-}
-
-//! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
-void NCSpatialVariable::check_range(const std::string &filename, double min, double max) {
-
-  const std::string &units_string = get_string("units");
-
-  if (has_attribute("valid_min") && has_attribute("valid_max")) {
-    double
-      valid_min = get_double("valid_min"),
-      valid_max = get_double("valid_max");
-    if ((min < valid_min) || (max > valid_max)) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are outside the valid range [%f, %f] (%s).",
-                                    get_name().c_str(), filename.c_str(),
-                                    valid_min, valid_max, units_string.c_str());
-    }
-  } else if (has_attribute("valid_min")) {
-    double valid_min = get_double("valid_min");
-    if (min < valid_min) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are less than the valid minimum (%f %s).",
-                                    get_name().c_str(), filename.c_str(),
-                                    valid_min, units_string.c_str());
-    }
-  } else if (has_attribute("valid_max")) {
-    double valid_max = get_double("valid_max");
-    if (max > valid_max) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are greater than the valid maximum (%f %s).\n",
-                                    get_name().c_str(), filename.c_str(),
-                                    valid_max, units_string.c_str());
-    }
   }
 }
 

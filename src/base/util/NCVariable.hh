@@ -55,7 +55,7 @@ class PIO;
   Also:
 
   - empty string attributes are ignored (they are not written to the
-  output; file and has_attribute("foo") returns false if "foo" is
+  output file and has_attribute("foo") returns false if "foo" is
   absent or equal to an empty string).
 
   Typical attributes stored here:
@@ -106,6 +106,8 @@ public:
   void report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
 
 protected:
+  void check_range(const std::string &filename, double min, double max);
+
   unsigned int m_n_spatial_dims;
 
   //! @brief The unit system to use.
@@ -163,14 +165,12 @@ public:
   const NCVariable& get_z() const;
 
 private:
-  MPI_Comm m_com;
   std::string m_variable_order;        //!< variable order in output files;
   std::string m_time_dimension_name;
   NCVariable m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
-  void report_range(double min, double max, bool found_by_standard_name);
-  void check_range(const std::string &filename, double min, double max);
+  void report_range(MPI_Comm com, double min, double max, bool found_by_standard_name);
   void define_dimensions(const PIO &nc) const;
 
   void init_internal(const std::string &name, const IceGrid &g,

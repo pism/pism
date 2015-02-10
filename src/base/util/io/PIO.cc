@@ -261,6 +261,10 @@ PIO::PIO(const PIO &other)
 PIO::~PIO() {
 }
 
+MPI_Comm PIO::com() const {
+  return m_com;
+}
+
 // Chooses the best I/O backend for reading from 'filename'.
 void PIO::detect_mode(const string &filename) {
   assert(not (bool)m_nc);
