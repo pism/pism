@@ -398,7 +398,7 @@ void IceModelVec2::view(int viewer_size) const {
   for (unsigned int j = 0; j < std::min(m_dof, 2U); ++j) {
     std::string
       c_name              = m_metadata[j].get_name(),
-      long_name = m_metadata[j].get_string("long_name"),
+      long_name           = m_metadata[j].get_string("long_name"),
       glaciological_units = m_metadata[j].get_string("glaciological_units"),
       title               = long_name + " (" + glaciological_units + ")";
 
@@ -427,7 +427,7 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
 
   for (unsigned int i = 0; i < std::min(m_dof, 2U); ++i) {
     std::string
-      long_name = m_metadata[i].get_string("long_name"),
+      long_name           = m_metadata[i].get_string("long_name"),
       units               = m_metadata[i].get_string("units"),
       glaciological_units = m_metadata[i].get_string("glaciological_units"),
       title               = long_name + " (" + glaciological_units + ")";
