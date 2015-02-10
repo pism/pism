@@ -1576,7 +1576,7 @@ void PIO::read_timeseries(const NCTimeseries &metadata,
       input_units = internal_units;
     }
 
-    convert_doubles(&data[0], data.size(), input_units, internal_units);
+    UnitConverter(input_units, internal_units).convert_doubles(&data[0], data.size());
 
   } catch (RuntimeError &e) {
     e.add_context("reading time-series variable '%s' from '%s'", name.c_str(), inq_filename().c_str());
@@ -1611,9 +1611,8 @@ void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
     vector<double> tmp = data;
 
     // convert to glaciological units:
-    convert_doubles(&tmp[0], tmp.size(),
-                    metadata.get_units(),
-                    metadata.get_glaciological_units());
+    UnitConverter(metadata.get_units(),
+                  metadata.get_glaciological_units()).convert_doubles(&tmp[0], tmp.size());
 
     put_1d_var(name,
                static_cast<unsigned int>(t_start),
@@ -1704,7 +1703,7 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
       input_units = internal_units;
     }
 
-    convert_doubles(&data[0], data.size(), input_units, internal_units);
+    UnitConverter(input_units, internal_units).convert_doubles(&data[0], data.size());
 
     // FIXME: check that time intervals described by the time bounds
     // variable are contiguous (without gaps) and stop if they are not.
@@ -1728,8 +1727,8 @@ void PIO::write_time_bounds(const NCTimeBounds &metadata,
     vector<double> tmp = data;
 
     // convert to glaciological units:
-    convert_doubles(&tmp[0], tmp.size(),
-                    metadata.get_units(), metadata.get_glaciological_units());
+    UnitConverter(metadata.get_units(),
+                  metadata.get_glaciological_units()).convert_doubles(&tmp[0], tmp.size());
 
     vector<unsigned int> start(2), count(2);
     start[0] = static_cast<unsigned int>(t_start);

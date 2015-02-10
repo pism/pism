@@ -302,7 +302,8 @@ void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
 
   // Convert data:
   size_t size = m_grid->xm() * m_grid->ym() * nlevels;
-  convert_doubles(output, size, input_units, get_units());
+
+  UnitConverter(input_units, get_units()).convert_doubles(output, size);
 }
 
 //! \brief Write a \b global Vec `v` to a variable.
@@ -337,7 +338,7 @@ void NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
       tmp[k] = input[k];
     }
 
-    convert_doubles(&tmp[0], tmp.size(), get_units(), get_glaciological_units());
+    UnitConverter(get_units(), get_glaciological_units()).convert_doubles(&tmp[0], tmp.size());
     nc.put_vec(*m_grid, name_found, nlevels, &tmp[0]);
   } else {
     nc.put_vec(*m_grid, name_found, nlevels, input);
@@ -410,7 +411,7 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     }
 
     // Convert data:
-    convert_doubles(output, data_size, input_units, get_units());
+    UnitConverter(input_units, get_units()).convert_doubles(output, data_size);
 
     // Read the valid range info:
     nc.read_valid_range(name_found, *this);
