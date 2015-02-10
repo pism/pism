@@ -52,6 +52,7 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
 
 NCVariable::NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims)
   : m_n_spatial_dims(ndims),
+    m_unit_system(system),
     m_units(system, "1"),
     m_glaciological_units(system, "1"),
     m_short_name(name) {
@@ -111,6 +112,10 @@ void NCVariable::set_glaciological_units(const std::string &new_units) {
     throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
                                   this->get_string("units").c_str(), new_units.c_str());
   }
+}
+
+UnitSystem NCVariable::get_unit_system() const {
+  return m_unit_system;
 }
 
 Unit NCVariable::get_units() const {
@@ -815,15 +820,13 @@ void NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
   nc.redef();
 
   exists = nc.inq_dim(m_dimension_name);
-  if (exists == false) {
-    NCVariable tmp(m_dimension_name, get_units().get_system());
-    nc.def_dim(PISM_UNLIMITED, tmp);
+  if (not exists) {
+    nc.def_dim(PISM_UNLIMITED, NCVariable(m_dimension_name, m_unit_system));
   }
 
   exists = nc.inq_var(get_name());
-  if (exists == false) {
-    std::vector<std::string> dims(1);
-    dims[0] = m_dimension_name;
+  if (not exists) {
+    std::vector<std::string> dims(1, m_dimension_name);
     nc.redef();
     nc.def_var(get_name(), nctype, dims);
   }
@@ -849,8 +852,6 @@ void NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
   
   std::string dimension_name = get_dimension_name();
 
-  UnitSystem system = get_units().get_system();
-
   exists = nc.inq_var(get_name());
   if (exists) {
     return;
@@ -859,15 +860,13 @@ void NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
   nc.redef();
 
   exists = nc.inq_dim(dimension_name);
-  if (exists == false) {
-    NCVariable tmp(dimension_name, system);
-    nc.def_dim(PISM_UNLIMITED, tmp);
+  if (not exists) {
+    nc.def_dim(PISM_UNLIMITED, NCVariable(dimension_name, m_unit_system));
   }
 
   exists = nc.inq_dim(m_bounds_name);
-  if (exists == false) {
-    NCVariable tmp(m_bounds_name, system);
-    nc.def_dim(2, tmp);
+  if (not exists) {
+    nc.def_dim(2, NCVariable(m_bounds_name, m_unit_system));
   }
 
   dims.push_back(dimension_name);

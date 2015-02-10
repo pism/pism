@@ -89,6 +89,7 @@ public:
   void clear_all_strings();
 
   // getters
+  UnitSystem get_unit_system() const;
   Unit get_units() const;
   Unit get_glaciological_units() const;
 
@@ -111,6 +112,9 @@ public:
 
 protected:
   unsigned int m_n_spatial_dims;
+
+  //! @brief The unit system to use.
+  UnitSystem m_unit_system;
 
 private:
   //! internal (PISM) units
