@@ -32,9 +32,9 @@ namespace pism {
 
 Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
   : m_unit_system(g->config.get_unit_system()),
-    dimension(dimension_name, dimension_name, m_unit_system),
-    var(name, dimension_name, m_unit_system),
-    bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
+    m_dimension(dimension_name, dimension_name, m_unit_system),
+    m_variable(name, dimension_name, m_unit_system),
+    m_bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
 {
   private_constructor(g->com, name, dimension_name);
 }
@@ -42,25 +42,25 @@ Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::str
 Timeseries::Timeseries(MPI_Comm c, const UnitSystem &unit_system,
                        const std::string & name, const std::string & dimension_name)
   : m_unit_system(unit_system),
-    dimension(dimension_name, dimension_name, m_unit_system),
-    var(name, dimension_name, m_unit_system),
-    bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
+    m_dimension(dimension_name, dimension_name, m_unit_system),
+    m_variable(name, dimension_name, m_unit_system),
+    m_bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
 {
   private_constructor(c, name, dimension_name);
 }
 
 void Timeseries::private_constructor(MPI_Comm c, const std::string &name, const std::string &dimension_name) {
-  com = c;
-  dimension.set_string("bounds", dimension_name + "_bounds");
+  m_com = c;
+  m_dimension.set_string("bounds", dimension_name + "_bounds");
 
   short_name = name;
-  use_bounds = true;
+  m_use_bounds = true;
 }
 
 //! Ensure that time bounds have the same units as the dimension.
 void Timeseries::set_bounds_units() {
-  bounds.set_units(dimension.get_string("units"));
-  bounds.set_glaciological_units(dimension.get_string("glaciological_units"));
+  m_bounds.set_units(m_dimension.get_string("units"));
+  m_bounds.set_glaciological_units(m_dimension.get_string("glaciological_units"));
 }
 
 
@@ -69,7 +69,7 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
 
   bool exists, found_by_standard_name;
   std::vector<std::string> dims;
-  std::string time_name, standard_name = var.get_string("standard_name"),
+  std::string time_name, standard_name = m_variable.get_string("standard_name"),
     name_found;
 
   nc.inq_var(short_name, standard_name,
@@ -93,13 +93,13 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
 
   time_name = dims[0];
 
-  NCTimeseries tmp_dim = dimension;
+  NCTimeseries tmp_dim = m_dimension;
   tmp_dim.set_name(time_name);
 
-  nc.read_timeseries(tmp_dim, time_manager, time);
+  nc.read_timeseries(tmp_dim, time_manager, m_time);
   bool is_increasing = true;
-  for (unsigned int j = 1; j < time.size(); ++j) {
-    if (time[j] - time[j-1] < 1e-16) {
+  for (unsigned int j = 1; j < m_time.size(); ++j) {
+    if (m_time[j] - m_time[j-1] < 1e-16) {
       is_increasing = false;
       break;
     }
@@ -112,25 +112,25 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
   std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
 
   if (!time_bounds_name.empty()) {
-    use_bounds = true;
+    m_use_bounds = true;
 
     set_bounds_units();
-    NCTimeBounds tmp_bounds = bounds;
+    NCTimeBounds tmp_bounds = m_bounds;
     tmp_bounds.set_name(time_bounds_name);
 
     tmp_bounds.set_units(tmp_dim.get_string("units"));
 
-    nc.read_time_bounds(tmp_bounds, time_manager, time_bounds);
+    nc.read_time_bounds(tmp_bounds, time_manager, m_time_bounds);
   } else {
-    use_bounds = false;
+    m_use_bounds = false;
   }
 
-  nc.read_timeseries(var, time_manager, values);
+  nc.read_timeseries(m_variable, time_manager, m_values);
 
-  if (time.size() != values.size()) {
+  if (m_time.size() != m_values.size()) {
     throw RuntimeError::formatted("variables %s and %s in %s have different numbers of values.",
-                                  dimension.get_name().c_str(),
-                                  var.get_name().c_str(),
+                                  m_dimension.get_name().c_str(),
+                                  m_variable.get_name().c_str(),
                                   nc.inq_filename().c_str());
   }
 
@@ -143,32 +143,32 @@ void Timeseries::report_range() {
 
   // min_element and max_element return iterators; "*" is used to get
   // the value corresponding to this iterator
-  min = *std::min_element(values.begin(), values.end());
-  max = *std::max_element(values.begin(), values.end());
+  min = *std::min_element(m_values.begin(), m_values.end());
+  max = *std::max_element(m_values.begin(), m_values.end());
 
-  UnitConverter c(var.get_units(), var.get_glaciological_units());
+  UnitConverter c(m_variable.get_units(), m_variable.get_glaciological_units());
   min = c(min);
   max = c(max);
 
-  std::string spacer(var.get_name().size(), ' ');
+  std::string spacer(m_variable.get_name().size(), ' ');
 
-  verbPrintf(2, com,
+  verbPrintf(2, m_com,
              "  FOUND  %s / %-60s\n"
              "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-             var.get_name().c_str(),
-             var.get_string("long_name").c_str(), spacer.c_str(), min, max,
-             var.get_string("glaciological_units").c_str());
+             m_variable.get_name().c_str(),
+             m_variable.get_string("long_name").c_str(), spacer.c_str(), min, max,
+             m_variable.get_string("glaciological_units").c_str());
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
 void Timeseries::write(const PIO &nc) {
   // write the dimensional variable; this call should go first
-  nc.write_timeseries(dimension, 0, time);
-  nc.write_timeseries(var, 0, values);
+  nc.write_timeseries(m_dimension, 0, m_time);
+  nc.write_timeseries(m_variable, 0, m_values);
 
-  if (use_bounds) {
+  if (m_use_bounds) {
     set_bounds_units();
-    nc.write_time_bounds(bounds, 0, time_bounds);
+    nc.write_time_bounds(m_bounds, 0, m_time_bounds);
   }
 }
 
@@ -179,8 +179,8 @@ void Timeseries::write(const PIO &nc) {
  * @param[in] scaling_factor multiplicative scaling factor
  */
 void Timeseries::scale(double scaling_factor) {
-  for (unsigned int i = 0; i < values.size(); ++i) {
-    values[i] *= scaling_factor;
+  for (unsigned int i = 0; i < m_values.size(); ++i) {
+    m_values[i] *= scaling_factor;
   }
 }
 
@@ -194,49 +194,49 @@ void Timeseries::scale(double scaling_factor) {
 double Timeseries::operator()(double t) {
 
   // piecewise-constant case:
-  if (use_bounds) {
+  if (m_use_bounds) {
     std::vector<double>::iterator j;
 
-    j = lower_bound(time_bounds.begin(), time_bounds.end(), t); // binary search
+    j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t); // binary search
 
-    if (j == time_bounds.end()) {
-      return values.back(); // out of range (on the right)
+    if (j == m_time_bounds.end()) {
+      return m_values.back(); // out of range (on the right)
     }
 
-    int i = (int)(j - time_bounds.begin());
+    int i = (int)(j - m_time_bounds.begin());
 
     if (i == 0) {
-      return values[0];         // out of range (on the left)
+      return m_values[0];         // out of range (on the left)
     }
 
     if (i % 2 == 0) {
       throw RuntimeError::formatted("time bounds array in %s does not represent continguous time intervals.\n"
                                     "(PISM was trying to compute %s at time %3.3f seconds.)",
-                                    bounds.get_name().c_str(), short_name.c_str(), t);
+                                    m_bounds.get_name().c_str(), short_name.c_str(), t);
     }
 
-    return values[(i-1)/2];
+    return m_values[(i-1)/2];
   }
 
   // piecewise-linear case:
-  std::vector<double>::iterator end = time.end(), j;
+  std::vector<double>::iterator end = m_time.end(), j;
   
-  j = lower_bound(time.begin(), end, t); // binary search
+  j = lower_bound(m_time.begin(), end, t); // binary search
 
   if (j == end) {
-    return values.back(); // out of range (on the right)
+    return m_values.back(); // out of range (on the right)
   }
 
-  int i = (int)(j - time.begin());
+  int i = (int)(j - m_time.begin());
 
   if (i == 0) {
-    return values[0];   // out of range (on the left)
+    return m_values[0];   // out of range (on the left)
   }
 
-  double dt = time[i] - time[i - 1];
-  double dv = values[i] - values[i - 1];
+  double dt = m_time[i] - m_time[i - 1];
+  double dv = m_values[i] - m_values[i - 1];
   
-  return values[i - 1] + (t - time[i - 1]) / dt * dv;
+  return m_values[i - 1] + (t - m_time[i - 1]) / dt * dv;
 }
 
 //! Get a value of timeseries by index.
@@ -246,13 +246,13 @@ double Timeseries::operator()(double t) {
 double Timeseries::operator[](unsigned int j) const {
 
 #if (PISM_DEBUG==1)
-  if (j >= values.size()) {
+  if (j >= m_values.size()) {
     throw RuntimeError::formatted("Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
-                                  var.get_name().c_str(), (int)values.size(), j);
+                                  m_variable.get_name().c_str(), (int)m_values.size(), j);
   }
 #endif
 
-  return values[j];
+  return m_values[j];
 }
 
 //! \brief Compute an average of a time-series over interval (t,t+dt) using
@@ -275,18 +275,18 @@ double Timeseries::average(double t, double dt, unsigned int N) {
 
 //! Append a pair (t,v) to the timeseries.
 void Timeseries::append(double v, double a, double b) {
-  time.push_back(b);
-  values.push_back(v);
-  time_bounds.push_back(a);
-  time_bounds.push_back(b);
+  m_time.push_back(b);
+  m_values.push_back(v);
+  m_time_bounds.push_back(a);
+  m_time_bounds.push_back(b);
 }
 
 NCTimeseries& Timeseries::metadata() {
-  return var;
+  return m_variable;
 }
 
 NCTimeseries& Timeseries::dimension_metadata() {
-  return dimension;
+  return m_dimension;
 }
 
 //! Returns the length of the time-series stored.
@@ -294,7 +294,7 @@ NCTimeseries& Timeseries::dimension_metadata() {
   This length is changed by read() and append().
  */
 int Timeseries::length() {
-  return (int)values.size();
+  return (int)m_values.size();
 }
 
 //----- DiagnosticTimeseries
@@ -303,11 +303,11 @@ DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid *g, const std::string &
   : Timeseries(g, name, dimension_name) {
 
   buffer_size = (size_t)g->config.get("timeseries_buffer_size");
-  start = 0;
+  m_start = 0;
   rate_of_change = false;
-  dimension.set_string("calendar", g->time->calendar());
-  dimension.set_string("long_name", "time");
-  dimension.set_string("axis", "T");
+  m_dimension.set_string("calendar", g->time->calendar());
+  m_dimension.set_string("long_name", "time");
+  m_dimension.set_string("axis", "T");
 }
 
 //! Destructor; makes sure that everything is written to a file.
@@ -323,17 +323,17 @@ DiagnosticTimeseries::~DiagnosticTimeseries() {
  */
 void DiagnosticTimeseries::append(double V, double /*a*/, double b) {
 
-  if (rate_of_change && v.empty()) {
-    v_previous = V;
+  if (rate_of_change && m_v.empty()) {
+    m_v_previous = V;
   }
 
   // append to the interpolation buffer
-  t.push_back(b);
-  v.push_back(V);
+  m_t.push_back(b);
+  m_v.push_back(V);
 
-  if (t.size() == 3) {
-    t.pop_front();
-    v.pop_front();
+  if (m_t.size() == 3) {
+    m_t.pop_front();
+    m_v.pop_front();
   }
 }
 
@@ -341,61 +341,61 @@ void DiagnosticTimeseries::append(double V, double /*a*/, double b) {
 //! quantity at time `T` and store the obtained pair (T, value).
 void DiagnosticTimeseries::interp(double a, double b) {
 
-  if (t.empty()) {
+  if (m_t.empty()) {
     throw RuntimeError("DiagnosticTimeseries::interp(...): interpolation buffer is empty");
   }
 
-  if (t.size() == 1) {
-    time.push_back(b);
-    values.push_back(GSL_NAN);
-    time_bounds.push_back(a);
-    time_bounds.push_back(b);
+  if (m_t.size() == 1) {
+    m_time.push_back(b);
+    m_values.push_back(GSL_NAN);
+    m_time_bounds.push_back(a);
+    m_time_bounds.push_back(b);
     return;
   }
 
-  if ((b < t[0]) || (b > t[1])) {
+  if ((b < m_t[0]) || (b > m_t[1])) {
     throw RuntimeError::formatted("DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
                                   b);
   }
 
   double 
     // compute the "cumulative" quantity using linear interpolation
-    v_current = v[0] + (b - t[0]) / (t[1] - t[0]) * (v[1] - v[0]),
+    v_current = m_v[0] + (b - m_t[0]) / (m_t[1] - m_t[0]) * (m_v[1] - m_v[0]),
     // the value to report
     value = v_current;
 
   if (rate_of_change) {
     // use backward-in-time finite difference to compute the rate of change:
-    value = (v_current - v_previous) / (b - a);
+    value = (v_current - m_v_previous) / (b - a);
 
     // remember the value of the "cumulative" quantity for differencing during
     // the next call:
-    v_previous = v_current;
+    m_v_previous = v_current;
   }
 
   // use the right endpoint as the 'time' record (the midpoint is also an option)
-  time.push_back(b);
-  values.push_back(value);
+  m_time.push_back(b);
+  m_values.push_back(value);
 
   // save the time bounds
-  time_bounds.push_back(a);
-  time_bounds.push_back(b);
+  m_time_bounds.push_back(a);
+  m_time_bounds.push_back(b);
 
-  if (time.size() == buffer_size) {
+  if (m_time.size() == buffer_size) {
     flush();
   }
 }
 
 void DiagnosticTimeseries::init(const std::string &filename) {
-  PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
-  bool file_exists = nc.check_if_exists(com, filename);
+  bool file_exists = nc.check_if_exists(m_com, filename);
 
   if (file_exists == true) {
     nc.open(filename, PISM_READONLY);
-    len = nc.inq_dimlen(dimension.get_name());
+    len = nc.inq_dimlen(m_dimension.get_name());
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
       std::vector<double> tmp;
@@ -404,21 +404,21 @@ void DiagnosticTimeseries::init(const std::string &filename) {
       if (var_exists) {
         nc.get_1d_var(short_name, len - 1, 1, tmp);
         // NOTE: this is WRONG if rate_of_change == true!
-        v.push_back(tmp[0]);
-        v_previous = tmp[0];
+        m_v.push_back(tmp[0]);
+        m_v_previous = tmp[0];
       }
     }
     nc.close();
   }
 
   output_filename = filename;
-  start = len;
+  m_start = len;
 }
 
 
-  //! Writes data to a file.
+//! Writes data to a file.
 void DiagnosticTimeseries::flush() {
-  PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never
@@ -427,46 +427,46 @@ void DiagnosticTimeseries::flush() {
     return;
   }
 
-  if (time.empty()) {
+  if (m_time.empty()) {
     return;
   }
 
   nc.open(output_filename, PISM_READWRITE);
-  len = nc.inq_dimlen(dimension.get_name());
+  len = nc.inq_dimlen(m_dimension.get_name());
 
   if (len > 0) {
     double last_time;
-    nc.inq_dim_limits(dimension.get_dimension_name(),
+    nc.inq_dim_limits(m_dimension.get_dimension_name(),
                       NULL, &last_time);
-    if (last_time < time.front()) {
-      start = len;
+    if (last_time < m_time.front()) {
+      m_start = len;
     }
   }
 
-  if (len == (unsigned int)start) {
-    nc.write_timeseries(dimension, start, time);  
+  if (len == (unsigned int)m_start) {
+    nc.write_timeseries(m_dimension, m_start, m_time);  
 
     set_bounds_units();
-    nc.write_time_bounds(bounds, start, time_bounds);
+    nc.write_time_bounds(m_bounds, m_start, m_time_bounds);
   }
-  nc.write_timeseries(var, start, values);
+  nc.write_timeseries(m_variable, m_start, m_values);
 
-  start += time.size();
+  m_start += m_time.size();
 
-  time.clear();
-  values.clear();
-  time_bounds.clear();
+  m_time.clear();
+  m_values.clear();
+  m_time_bounds.clear();
 
   nc.close();
 }
 
 void DiagnosticTimeseries::reset() {
-  time.clear();
-  values.clear();
-  time_bounds.clear();
-  start = 0;
-  t.clear();
-  v.clear();
+  m_time.clear();
+  m_values.clear();
+  m_time_bounds.clear();
+  m_start = 0;
+  m_t.clear();
+  m_v.clear();
 }
 
 

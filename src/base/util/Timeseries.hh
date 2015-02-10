@@ -94,13 +94,13 @@ public:
 protected:
   void set_bounds_units();
   UnitSystem m_unit_system;
-  NCTimeseries dimension, var;
-  MPI_Comm com;
-  NCTimeBounds bounds;
-  bool use_bounds;
-  std::vector<double> time;
-  std::vector<double> values;
-  std::vector<double> time_bounds;
+  NCTimeseries m_dimension, m_variable;
+  MPI_Comm m_com;
+  NCTimeBounds m_bounds;
+  bool m_use_bounds;
+  std::vector<double> m_time;
+  std::vector<double> m_values;
+  std::vector<double> m_time_bounds;
 private:
   void private_constructor(MPI_Comm com, const std::string &name, const std::string &dimension_name);
   void report_range();
@@ -176,9 +176,9 @@ public:
   bool rate_of_change;
 
 protected:
-  size_t start;
-  std::deque<double> t, v;
-  double v_previous;
+  size_t m_start;
+  std::deque<double> m_t, m_v;
+  double m_v_previous;
 };
 
 } // end of namespace pism
