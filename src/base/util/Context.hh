@@ -42,12 +42,16 @@ public:
   const Vars& variables() const;
 
   double convert(double value, const std::string &unit1, const std::string &unit2) const;
+
   UnitSystem unit_system() const;
 
   Time::Ptr time();
   const Time::Ptr time() const;
 
   Profiling profiling() const;
+
+  const EnthalpyConverter& enthalpy_converter() const;
+
 private:
   Config m_config;
   Vars m_variables;
