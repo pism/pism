@@ -19,7 +19,6 @@
 #ifndef __DrainageCalculator_hh
 #define __DrainageCalculator_hh
 
-#include "NCVariable.hh"
 #include "PISMConfig.hh"
 
 namespace pism {
