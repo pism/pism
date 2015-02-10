@@ -76,10 +76,12 @@ protected:
   virtual double melting_temperature_impl(double pressure) const;
   virtual double temperature_impl(double E, double pressure) const;
   virtual bool is_temperate_impl(double E, double pressure) const;
+
   void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
+
   double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
   double T_0;
-  bool   do_cold_ice_methods;
+  bool do_cold_ice_methods;
 };
 
 
@@ -91,43 +93,20 @@ protected:
   The pressure dependence of the pressure-melting temperature is neglected.
 
   Note: Any instance of FlowLaw uses an EnthalpyConverter; this is
-  the one used in verification mode.
+  the one used in cold mode verification code.
 */
 class ColdEnthalpyConverter : public EnthalpyConverter {
 public:
-  ColdEnthalpyConverter(const Config &config) : EnthalpyConverter(config) {
-    do_cold_ice_methods = true;
-  }
+  ColdEnthalpyConverter(const Config &config);
+  virtual ~ColdEnthalpyConverter();
 
-  virtual ~ColdEnthalpyConverter() {}
-
-  /*! */
-  virtual double enthalpy_permissive(double T, double /*omega*/, double /*pressure*/) const {
-    return c_i * (T - T_0);
-  }
 protected:
-  /*! */
-  virtual double enthalpy_impl(double T, double /*omega*/, double /*pressure*/) const {
-    return c_i * (T - T_0);
-  }
-
-  /*! */
-  virtual double water_fraction_impl(double /*E*/, double /*pressure*/) const {
-    return 0.0;
-  }
-
-  /*! */
-  virtual double melting_temperature_impl(double /*pressure*/) const {
-    return T_melting;
-  }
-  /*! */
-  virtual bool is_temperate_impl(double /*E*/, double /*pressure*/) const {
-    return false;
-  }
-  /*! */
-  virtual double temperature_impl(double E, double /*pressure*/) const {
-    return (E / c_i) + T_0;
-  }
+  double enthalpy_permissive_impl(double T, double /*omega*/, double /*pressure*/) const;
+  double enthalpy_impl(double T, double /*omega*/, double /*pressure*/) const;
+  double water_fraction_impl(double /*E*/, double /*pressure*/) const;
+  double melting_temperature_impl(double /*pressure*/) const;
+  bool is_temperate_impl(double /*E*/, double /*pressure*/) const;
+  double temperature_impl(double E, double /*pressure*/) const;
 };
 
 } // end of namespace pism
