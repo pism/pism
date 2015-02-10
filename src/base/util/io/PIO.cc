@@ -725,37 +725,6 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
   }
 }
 
-/*! Do not use this method to get units of time and time_bounds
-  variables: in these two cases we need to handle the reference date
-  correctly.
- */
-void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
-  try {
-    // Get the string:
-    string units_string = get_att_text(name, "units");
-
-    // If a variables does not have the units attribute, set the flag and return:
-    if (units_string.empty()) {
-      has_units = false;
-      units = Unit(units.get_system(), "1");
-      return;
-    }
-
-    // strip trailing spaces
-    while (ends_with(units_string, " ")) {
-      units_string.resize(units_string.size() - 1);
-    }
-
-    // this may fail if the unit string is invalid
-    units = Unit(units.get_system(), units_string);
-
-    has_units = true;
-  } catch (RuntimeError &e) {
-    e.add_context("getting units of variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
-    throw;
-  }
-}
-
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
 void PIO::def_dim(unsigned long int length, const NCVariable &metadata) const {
   string name = metadata.get_name();
@@ -1391,7 +1360,7 @@ void PIO::write_attributes(const NCVariable &variable, IO_Type nctype,
       std::string
         units               = variable.get_string("units"),
         glaciological_units = variable.get_string("glaciological_units");
-      UnitConverter c(variable.get_unit_system(), units, glaciological_units);
+      UnitConverter c(m_unit_system, units, glaciological_units);
 
       bounds[0]  = c(bounds[0]);
       bounds[1]  = c(bounds[1]);
@@ -1491,12 +1460,9 @@ void PIO::read_valid_range(const string &name, NCVariable &variable) const {
     }
 
     // Read the units.
-    string input_units_string = get_att_text(name, "units");
-
-    UnitSystem sys = variable.get_units().get_system();
-    Unit input_units = Unit(sys, input_units_string);
-
-    UnitConverter c(input_units, variable.get_units());
+    UnitConverter c(m_unit_system,
+                    get_att_text(name, "units"),
+                    variable.get_string("units"));
 
     vector<double> bounds = get_att_double(name, "valid_range");
     if (bounds.size() == 2) {             // valid_range is present
@@ -1555,17 +1521,17 @@ void PIO::read_timeseries(const NCTimeseries &metadata,
     get_1d_var(name_found, 0, length, data);
 
     bool input_has_units = false;
-    Unit internal_units = metadata.get_units(),
-      input_units(internal_units.get_system(), "1");
+    Unit internal_units(m_unit_system, metadata.get_string("units")),
+      input_units(m_unit_system, "1");
 
     string input_units_string = get_att_text(name_found, "units");
 
-    if (input_units_string.empty() == true) {
+    if (input_units_string.empty()) {
       input_has_units = false;
     } else {
       input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
-      input_units = Unit(internal_units.get_system(), input_units_string);
+      input_units = Unit(m_unit_system, input_units_string);
       input_has_units = true;
     }
 
@@ -1614,8 +1580,9 @@ void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
     vector<double> tmp = data;
 
     // convert to glaciological units:
-    UnitConverter(metadata.get_units(),
-                  metadata.get_glaciological_units()).convert_doubles(&tmp[0], tmp.size());
+    UnitConverter(m_unit_system,
+                  metadata.get_string("units"),
+                  metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
     put_1d_var(name,
                static_cast<unsigned int>(t_start),
@@ -1633,7 +1600,7 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
   string name = metadata.get_name();
 
   try {
-    Unit internal_units = metadata.get_units();
+    Unit internal_units(m_unit_system, metadata.get_string("units"));
 
     // Find the variable:
     bool variable_exists = inq_var(name);
@@ -1730,8 +1697,9 @@ void PIO::write_time_bounds(const NCTimeBounds &metadata,
     vector<double> tmp = data;
 
     // convert to glaciological units:
-    UnitConverter(metadata.get_units(),
-                  metadata.get_glaciological_units()).convert_doubles(&tmp[0], tmp.size());
+    UnitConverter(m_unit_system,
+                  metadata.get_string("units"),
+                  metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
     vector<unsigned int> start(2), count(2);
     start[0] = static_cast<unsigned int>(t_start);

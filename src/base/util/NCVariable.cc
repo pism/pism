@@ -118,14 +118,6 @@ UnitSystem NCVariable::get_unit_system() const {
   return m_unit_system;
 }
 
-Unit NCVariable::get_units() const {
-  return m_units;
-}
-
-Unit NCVariable::get_glaciological_units() const {
-  return m_glaciological_units;
-}
-
 //! 3D version
 NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
                                      const IceGrid &g, const std::vector<double> &zlevels)
@@ -289,12 +281,9 @@ void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
 
   nc.get_vec(*m_grid, name_found, nlevels, time, output);
 
-  bool input_has_units;
-  Unit input_units(get_units().get_system(), "1");
+  std::string input_units = nc.get_att_text(name_found, "units");
 
-  nc.inq_units(name_found, input_has_units, input_units);
-
-  if (has_attribute("units") && (not input_has_units)) {
+  if (has_attribute("units") && input_units.empty()) {
     const std::string &units_string = get_string("units"),
       &long_name = get_string("long_name");
     verbPrintf(2, m_com,
@@ -302,13 +291,15 @@ void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
                "              Assuming that it is in '%s'.\n",
                get_name().c_str(), long_name.c_str(),
                units_string.c_str());
-    input_units = get_units();
+    input_units = units_string;
   }
 
   // Convert data:
   size_t size = m_grid->xm() * m_grid->ym() * nlevels;
 
-  UnitConverter(input_units, get_units()).convert_doubles(output, size);
+  UnitConverter(m_unit_system,
+                input_units,
+                get_string("units")).convert_doubles(output, size);
 }
 
 //! \brief Write a \b global Vec `v` to a variable.
@@ -343,7 +334,10 @@ void NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
       tmp[k] = input[k];
     }
 
-    UnitConverter(get_units(), get_glaciological_units()).convert_doubles(&tmp[0], tmp.size());
+    UnitConverter(m_unit_system,
+                  get_string("units"),
+                  get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
+
     nc.put_vec(*m_grid, name_found, nlevels, &tmp[0]);
   } else {
     nc.put_vec(*m_grid, name_found, nlevels, input);
@@ -398,25 +392,25 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     // the units, because check_range and report_range expect data to
     // be in PISM (MKS) units.
 
-    bool input_has_units = false;
-    Unit input_units(get_units().get_system(), "1");
+    std::string input_units = nc.get_att_text(name_found, "units");
 
-    nc.inq_units(name_found, input_has_units, input_units);
-
-    if (not input_has_units) {
-      input_units = get_units();
-      if (get_string("units") != "") {
+    if (input_units.empty()) {
+      std::string internal_units = get_string("units");
+      input_units = internal_units;
+      if (not internal_units.empty()) {
         verbPrintf(2, m_com,
                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                    "              Assuming that it is in '%s'.\n",
                    get_name().c_str(),
                    get_string("long_name").c_str(),
-                   get_string("units").c_str());
+                   internal_units.c_str());
       }
     }
 
     // Convert data:
-    UnitConverter(input_units, get_units()).convert_doubles(output, data_size);
+    UnitConverter(m_unit_system,
+                  input_units,
+                  get_string("units")).convert_doubles(output, data_size);
 
     // Read the valid range info:
     nc.read_valid_range(name_found, *this);
@@ -442,7 +436,9 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 
     // If it is optional, fill with the provided default value.
     // UnitConverter constructor will make sure that units are compatible.
-    UnitConverter c(this->get_units(), this->get_glaciological_units());
+    UnitConverter c(m_unit_system,
+                    this->get_string("units"),
+                    this->get_string("glaciological_units"));
 
     std::string spacer(get_name().size(), ' ');
     verbPrintf(2, m_com,
@@ -465,7 +461,9 @@ void NCSpatialVariable::report_range(double min, double max,
                                      bool found_by_standard_name) {
 
   // UnitConverter constructor will make sure that units are compatible.
-  UnitConverter c(this->get_units(), this->get_glaciological_units());
+  UnitConverter c(m_unit_system,
+                  this->get_string("units"),
+                  this->get_string("glaciological_units"));
   min = c(min);
   max = c(max);
 

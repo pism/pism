@@ -80,8 +80,6 @@ public:
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
-  void inq_units(const std::string &name, bool &has_units, Unit &units) const;
-
   void def_dim(unsigned long int length, const NCVariable &metadata) const;
 
   void def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;

@@ -90,8 +90,6 @@ public:
 
   // getters
   UnitSystem get_unit_system() const;
-  Unit get_units() const;
-  Unit get_glaciological_units() const;
 
   double get_double(const std::string &name) const;
   std::vector<double> get_doubles(const std::string &name) const;
