@@ -53,8 +53,6 @@ using pism::StarStencil;
   }
 }
 
-%rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
-
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
 %extend pism::IceModelVec2S
