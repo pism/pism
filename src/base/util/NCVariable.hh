@@ -115,13 +115,6 @@ protected:
   UnitSystem m_unit_system;
 
 private:
-  //! internal (PISM) units
-  Unit m_units;
-
-  //! @brief for diagnostic variables: units to use when writing to a
-  //! NetCDF file and for standard out reports
-  Unit m_glaciological_units;
-
   //! string and boolean attributes
   std::map<std::string, std::string> m_strings;
 

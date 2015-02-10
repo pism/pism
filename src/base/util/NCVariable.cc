@@ -53,8 +53,6 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
 NCVariable::NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims)
   : m_n_spatial_dims(ndims),
     m_unit_system(system),
-    m_units(system, "1"),
-    m_glaciological_units(system, "1"),
     m_short_name(name) {
 
   clear_all_strings();
@@ -80,16 +78,7 @@ unsigned int NCVariable::get_n_spatial_dimensions() const {
 
 //! Set the internal units.
 void NCVariable::set_units(const std::string &new_units) {
-
-  // Do not use NCVariable::set_string here, because it is written in
-  // a way that forces users to use set_units() to set units.
-  m_strings["units"] = new_units;
-  m_strings["glaciological_units"] = new_units;
-
-  m_units = Unit(m_units.get_system(), new_units);
-
-  // Set the glaciological units too (ensures internal consistency):
-  m_glaciological_units = m_units;
+  set_string("units", new_units);
 }
 
 //! Set the glaciological (output) units.
@@ -97,21 +86,7 @@ void NCVariable::set_units(const std::string &new_units) {
   and for standard out reports.
  */
 void NCVariable::set_glaciological_units(const std::string &new_units) {
-  // Save the human-friendly version of the string; this is to avoid getting
-  // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
-  // (and thus violating the CF conventions).
-
-  // Do not use NCVariable::set_string here, because it is written in
-  // a way that forces users to use set_glaciological_units() to set
-  // "glaciological" units.
-  m_strings["glaciological_units"] = new_units;
-
-  m_glaciological_units = Unit(m_units.get_system(), new_units);
-
-  if (not UnitConverter::are_convertible(m_units, m_glaciological_units)) {
-    throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
-                                  this->get_string("units").c_str(), new_units.c_str());
-  }
+  set_string("glaciological_units", new_units);
 }
 
 UnitSystem NCVariable::get_unit_system() const {
@@ -143,7 +118,7 @@ NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string
 
 void NCSpatialVariable::init_internal(const std::string &name, const IceGrid &g,
                                       const std::vector<double> &z_levels) {
-  m_time_dimension_name = "t";        // will be overriden later
+  m_time_dimension_name = "t";        // will be overridden later
 
   m_x.set_string("axis", "X");
   m_x.set_string("long_name", "X-coordinate in Cartesian system");
@@ -710,25 +685,34 @@ std::vector<double> NCVariable::get_doubles(const std::string &name) const {
   }
 }
 
-const std::map<std::string,std::string>& NCVariable::get_all_strings() const {
+const NCVariable::StringAttrs& NCVariable::get_all_strings() const {
   return m_strings;
 }
 
-const std::map<std::string,std::vector<double> >& NCVariable::get_all_doubles() const {
+const NCVariable::DoubleAttrs& NCVariable::get_all_doubles() const {
   return m_doubles;
 }
 
 //! Set a string attribute.
 void NCVariable::set_string(const std::string &name, const std::string &value) {
 
-  if (name == "units" or name == "glaciological_units") {
-    throw RuntimeError::formatted("Use NCVariable::set_%s() to set %s."
-                                  " (Called as %s.set_string(\"%s\", \"%s\"))",
-                                  name.c_str(), name.c_str(),
-                                  get_name().c_str(), name.c_str(), value.c_str());
-  }
+  if (name == "units") {
+    // create a dummy object to validate the units string
+    Unit tmp(m_unit_system, value);
 
-  if (name == "short_name") {
+    m_strings[name] = value;
+    m_strings["glaciological_units"] = value;
+  } else if (name == "glaciological_units") {
+    m_strings[name] = value;
+
+    Unit internal(m_unit_system, get_string("units")),
+      glaciological(m_unit_system, value);
+
+    if (not UnitConverter::are_convertible(internal, glaciological)) {
+      throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
+                                    get_string("units").c_str(), value.c_str());
+    }
+  } else if (name == "short_name") {
     set_name(name);
   } else {
     m_strings[name] = value;
