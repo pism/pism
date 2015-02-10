@@ -25,7 +25,7 @@
 namespace pism {
 
 varcEnthalpyConverter::varcEnthalpyConverter(const Config &config)
-  : EnthalpyConverter(config), T_r(256.81786846822), c_gradient(7.253) {
+  : EnthalpyConverter(config), m_T_r(256.81786846822), m_c_gradient(7.253) {
   // empty
 }
 
@@ -49,8 +49,8 @@ temperature is:
  */
 double varcEnthalpyConverter::EfromT(double T) const {
   const double
-     Trefdiff = 0.5 * (T + T_0) - T_r; 
-  return (c_i + c_gradient * Trefdiff) * (T - T_0);
+     Trefdiff = 0.5 * (T + m_T_0) - m_T_r; 
+  return (m_c_i + m_c_gradient * Trefdiff) * (T - m_T_0);
 }
 
 
@@ -78,11 +78,11 @@ double varcEnthalpyConverter::TfromE(double E) const {
     throw RuntimeError("E < 0 in varcEnthalpyConverter is not allowed.");
   }
   const double
-    ALPHA = 2.0 / c_gradient,
-    BETA  = ALPHA * c_i + 2.0 * (T_0 - T_r),
+    ALPHA = 2.0 / m_c_gradient,
+    BETA  = ALPHA * m_c_i + 2.0 * (m_T_0 - m_T_r),
     tmp   = 2.0 * ALPHA * E,
     dT    = tmp / (sqrt(BETA*BETA + 2.0*tmp) + BETA);
-  return T_0 + dT;
+  return m_T_0 + dT;
 }
 
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
@@ -99,7 +99,7 @@ double varcEnthalpyConverter::enthalpy_cts_impl(double p) const {
   \f$T_r = 256.82\f$ K.
 */
 double varcEnthalpyConverter::c_from_T_impl(double T) const {
-  return c_i + c_gradient * (T - T_r);
+  return m_c_i + m_c_gradient * (T - m_T_r);
 }
 
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
@@ -147,7 +147,7 @@ double varcEnthalpyConverter::enthalpy_impl(double T, double omega, double p) co
   if (T < T_m) {
     return EfromT(T);
   } else {
-    return enthalpy_cts(p) + omega * L;
+    return enthalpy_cts(p) + omega * m_L;
   }
 }
 

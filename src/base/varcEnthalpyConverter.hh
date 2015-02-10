@@ -44,10 +44,10 @@ protected:
   double temperature_impl(double E, double p) const;
 
   //!< reference temperature in the parameterization of C(T)
-  const double T_r;
+  const double m_T_r;
   //!< \brief the rate of change of C with respect to T in the
   //! parameterization of C(T)
-  const double c_gradient;
+  const double m_c_gradient;
 
   double EfromT(double T) const;
   double TfromE(double E) const;

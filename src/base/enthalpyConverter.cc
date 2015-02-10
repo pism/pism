@@ -26,17 +26,17 @@
 namespace pism {
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
-  beta      = config.get("beta_CC"); // K Pa-1
-  c_i       = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
-  g         = config.get("standard_gravity"); // m s-2
-  L         = config.get("water_latent_heat_fusion"); // J kg-1
-  p_air     = config.get("surface_pressure"); // Pa
-  rho_i     = config.get("ice_density"); // kg m-3
-  T_melting = config.get("water_melting_point_temperature"); // K  
-  T_tol     = config.get("cold_mode_is_temperate_ice_tolerance"); // K
-  T_0       = config.get("enthalpy_converter_reference_temperature"); // K
+  m_beta        = config.get("beta_CC"); // K Pa-1
+  m_c_i         = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
+  m_g           = config.get("standard_gravity"); // m s-2
+  m_L           = config.get("water_latent_heat_fusion"); // J kg-1
+  m_p_air       = config.get("surface_pressure"); // Pa
+  m_rho_i       = config.get("ice_density"); // kg m-3
+  m_T_melting   = config.get("water_melting_point_temperature"); // K  
+  m_T_tolerance = config.get("cold_mode_is_temperate_ice_tolerance"); // K
+  m_T_0         = config.get("enthalpy_converter_reference_temperature"); // K
 
-  do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
+  m_do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
 }
 
 EnthalpyConverter::~EnthalpyConverter() {
@@ -61,9 +61,9 @@ be negative, representing a position above the surface of the ice.
  */
 double EnthalpyConverter::pressure(double depth) const {
   if (depth > 0.0) {
-    return p_air + rho_i * g * depth;
+    return m_p_air + m_rho_i * m_g * depth;
   } else {
-    return p_air; // at or above surface of ice
+    return m_p_air; // at or above surface of ice
   }
 }
 
@@ -72,24 +72,24 @@ double EnthalpyConverter::c_from_T(double T) const {
 }
 
 double EnthalpyConverter::c_from_T_impl(double /*T*/) const {
-  return c_i;
+  return m_c_i;
 }
 
 //! Get melting temperature from pressure p.
 /*!
      \f[ T_m(p) = T_{melting} - \beta p. \f]
- */ 
+ */
 double EnthalpyConverter::melting_temperature(double pressure) const {
   return this->melting_temperature_impl(pressure);
 }
 
 double EnthalpyConverter::melting_temperature_impl(double pressure) const {
-  return T_melting - beta * pressure;
+  return m_T_melting - m_beta * pressure;
 }
 
 
 //! Get enthalpy E_s(p) at cold-temperate transition point from pressure p.
-/*! Returns 
+/*! Returns
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
  */
 double EnthalpyConverter::enthalpy_cts(double p) const {
@@ -97,7 +97,7 @@ double EnthalpyConverter::enthalpy_cts(double p) const {
 }
 
 double EnthalpyConverter::enthalpy_cts_impl(double p) const {
-  return c_i * (melting_temperature(p) - T_0);
+  return m_c_i * (melting_temperature(p) - m_T_0);
 }
 
 
@@ -108,13 +108,13 @@ double EnthalpyConverter::enthalpy_cts_impl(double p) const {
  */
 void EnthalpyConverter::enthalpy_interval(double p, double &E_s, double &E_l) const {
   E_s = enthalpy_cts(p);
-  E_l = E_s + L;
+  E_l = E_s + m_L;
 }
 
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate_impl(double E, double p) const {
-  if (do_cold_ice_methods) {
-    return (pressure_adjusted_temperature(E, p) >= T_melting - T_tol);
+  if (m_do_cold_ice_methods) {
+    return (pressure_adjusted_temperature(E, p) >= m_T_melting - m_T_tolerance);
   } else {
     return (E >= enthalpy_cts(p));
   }
@@ -141,7 +141,7 @@ double EnthalpyConverter::temperature_impl(double E, double p) const {
   }
 
   if (E < E_s) {
-    return (E / c_i) + T_0;
+    return (E / m_c_i) + m_T_0;
   } else {
     return melting_temperature(p);
   }
@@ -154,7 +154,7 @@ The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
  */
 double EnthalpyConverter::pressure_adjusted_temperature(double E, double pressure) const {
-  return temperature(E, pressure) - melting_temperature(pressure) + T_melting;
+  return temperature(E, pressure) - melting_temperature(pressure) + m_T_melting;
 }
 
 
@@ -187,7 +187,7 @@ double EnthalpyConverter::water_fraction_impl(double E, double pressure) const {
   if (E <= E_s) {
     return 0.0;
   } else {
-    return (E - E_s) / L;
+    return (E - E_s) / m_L;
   }
 }
 
@@ -231,9 +231,9 @@ double EnthalpyConverter::enthalpy_impl(double T, double omega, double p) const 
 #endif
 
   if (T < T_m) {
-    return c_i * (T - T_0);
+    return m_c_i * (T - m_T_0);
   } else {
-    return enthalpy_cts(p) + omega * L;
+    return enthalpy_cts(p) + omega * m_L;
   }
 }
 
@@ -278,7 +278,7 @@ double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, doubl
 
 ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
-  do_cold_ice_methods = true;
+  m_do_cold_ice_methods = true;
 }
 
 ColdEnthalpyConverter::~ColdEnthalpyConverter() {
@@ -288,12 +288,12 @@ ColdEnthalpyConverter::~ColdEnthalpyConverter() {
 double ColdEnthalpyConverter::enthalpy_permissive_impl(double T,
                                                        double /*omega*/,
                                                        double /*pressure*/) const {
-  return c_i * (T - T_0);
+  return m_c_i * (T - m_T_0);
 }
 /*! */
 double ColdEnthalpyConverter::enthalpy_impl(double T, double /*omega*/,
                                             double /*pressure*/) const {
-  return c_i * (T - T_0);
+  return m_c_i * (T - m_T_0);
 }
 
 /*! */
@@ -304,7 +304,7 @@ double ColdEnthalpyConverter::water_fraction_impl(double /*E*/,
 
 /*! */
 double ColdEnthalpyConverter::melting_temperature_impl(double /*pressure*/) const {
-  return T_melting;
+  return m_T_melting;
 }
 /*! */
 bool ColdEnthalpyConverter::is_temperate_impl(double /*E*/, double /*pressure*/) const {
@@ -312,7 +312,7 @@ bool ColdEnthalpyConverter::is_temperate_impl(double /*E*/, double /*pressure*/)
 }
 /*! */
 double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) const {
-  return (E / c_i) + T_0;
+  return (E / m_c_i) + m_T_0;
 }
 
 
