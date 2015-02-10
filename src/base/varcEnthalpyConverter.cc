@@ -24,6 +24,15 @@
 
 namespace pism {
 
+varcEnthalpyConverter::varcEnthalpyConverter(const Config &config)
+  : EnthalpyConverter(config), T_r(256.81786846822), c_gradient(7.253) {
+  // empty
+}
+
+varcEnthalpyConverter::~varcEnthalpyConverter() {
+  // empty
+}
+
 /*!
 A calculation only used in the cold case.
 
@@ -80,7 +89,7 @@ double varcEnthalpyConverter::TfromE(double E) const {
 /*!
 Calls EfromT().
  */
-double varcEnthalpyConverter::enthalpy_cts(double p) const {
+double varcEnthalpyConverter::enthalpy_cts_impl(double p) const {
   return EfromT(melting_temperature(p));
 }
 
@@ -89,7 +98,7 @@ double varcEnthalpyConverter::enthalpy_cts(double p) const {
 /*!
 Calls TfromE().
  */
-double varcEnthalpyConverter::temperature(double E, double p) const {
+double varcEnthalpyConverter::temperature_impl(double E, double p) const {
   double E_s, E_l;
   enthalpy_interval(p, E_s, E_l);
 
@@ -110,7 +119,7 @@ double varcEnthalpyConverter::temperature(double E, double p) const {
 /*!
 Calls EfromT().
  */
-double varcEnthalpyConverter::enthalpy(double T, double omega, double p) const {
+double varcEnthalpyConverter::enthalpy_impl(double T, double omega, double p) const {
   const double T_m = melting_temperature(p);
 
   if (T <= 0.0) {

@@ -34,34 +34,24 @@ namespace pism {
 */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
-  varcEnthalpyConverter(const Config &config)
-    : EnthalpyConverter(config),
-      T_r(256.81786846822),
-      c_gradient(7.253)
-  {
-  }
-  virtual ~varcEnthalpyConverter() {}
+  varcEnthalpyConverter(const Config &config);
+  virtual ~varcEnthalpyConverter();
 
-  virtual double enthalpy_cts(double p) const;
-
-  virtual double temperature(double E, double p) const;
-
-  virtual double enthalpy(double T, double omega, double p) const;
+protected:
+  virtual double enthalpy_cts_impl(double p) const;
 
   /*!
     Equation (4.39) in [\ref GreveBlatter2009] is
     \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
     \f$T_r = 256.82\f$ K.
   */
-  virtual double c_from_T(double T) const {
+  virtual double c_from_T_impl(double T) const {
     return c_i + c_gradient * (T - T_r);
   }
 
-  virtual double c_from_enth(double E, double p) const {
-    return c_from_T(temperature(E, p));
-  }
+  virtual double enthalpy_impl(double T, double omega, double p) const;
+  virtual double temperature_impl(double E, double p) const;
 
-protected:
   //!< reference temperature in the parameterization of C(T)
   const double T_r;
   //!< \brief the rate of change of C with respect to T in the

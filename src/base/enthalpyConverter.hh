@@ -48,28 +48,35 @@ class Config;
 class EnthalpyConverter {
 public:
   EnthalpyConverter(const Config &config);
-  virtual ~EnthalpyConverter() {}
+  virtual ~EnthalpyConverter();
   
-  virtual bool is_temperate(double E, double pressure) const;
+  bool is_temperate(double E, double pressure) const;
 
-  virtual double temperature(double E, double pressure) const;
-  virtual double melting_temperature(double pressure) const;
-  virtual double pressure_adjusted_temperature(double E, double pressure) const;
+  double temperature(double E, double pressure) const;
+  double melting_temperature(double pressure) const;
+  double pressure_adjusted_temperature(double E, double pressure) const;
 
-  virtual double water_fraction(double E, double pressure) const;
+  double water_fraction(double E, double pressure) const;
 
-  virtual double enthalpy(double T, double omega, double pressure) const;
-  virtual double enthalpy_cts(double pressure) const;
-  virtual double enthalpy_permissive(double T, double omega, double pressure) const;
+  double enthalpy(double T, double omega, double pressure) const;
+  double enthalpy_cts(double pressure) const;
+  double enthalpy_permissive(double T, double omega, double pressure) const;
 
-  virtual double c_from_T(double /*T*/) const {
-    return c_i;
-  }
+  double c_from_T(double T) const;
 
   double pressure(double depth) const;
 
 protected:
-  virtual void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
+  virtual double enthalpy_permissive_impl(double T, double omega, double pressure) const;
+  virtual double enthalpy_cts_impl(double pressure) const;
+  virtual double c_from_T_impl(double T) const;
+  virtual double enthalpy_impl(double T, double omega, double pressure) const;
+  virtual double water_fraction_impl(double E, double pressure) const;
+  virtual double pressure_adjusted_temperature_impl(double E, double pressure) const;
+  virtual double melting_temperature_impl(double pressure) const;
+  virtual double temperature_impl(double E, double pressure) const;
+  virtual bool is_temperate_impl(double E, double pressure) const;
+  void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
   double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
   double T_0;
   bool   do_cold_ice_methods;
@@ -95,33 +102,31 @@ public:
   virtual ~ColdEnthalpyConverter() {}
 
   /*! */
-  virtual double melting_temperature(double /*pressure*/) const {
-    return T_melting;
+  virtual double enthalpy_permissive(double T, double /*omega*/, double /*pressure*/) const {
+    return c_i * (T - T_0);
+  }
+protected:
+  /*! */
+  virtual double enthalpy_impl(double T, double /*omega*/, double /*pressure*/) const {
+    return c_i * (T - T_0);
   }
 
   /*! */
-  virtual double temperature(double E, double /*pressure*/) const {
-    return (E / c_i) + T_0;
-  }
-
-  /*! */
-  virtual double water_fraction(double /*E*/, double /*pressure*/) const {
+  virtual double water_fraction_impl(double /*E*/, double /*pressure*/) const {
     return 0.0;
   }
 
   /*! */
-  virtual double enthalpy(double T, double /*omega*/, double /*pressure*/) const {
-    return c_i * (T - T_0);
+  virtual double melting_temperature_impl(double /*pressure*/) const {
+    return T_melting;
   }
-
   /*! */
-  virtual double enthalpy_permissive(double T, double /*omega*/, double /*pressure*/) const {
-    return c_i * (T - T_0);
-  }
-
-  /*! */
-  virtual bool is_temperate(double /*E*/, double /*pressure*/) const {
+  virtual bool is_temperate_impl(double /*E*/, double /*pressure*/) const {
     return false;
+  }
+  /*! */
+  virtual double temperature_impl(double E, double /*pressure*/) const {
+    return (E / c_i) + T_0;
   }
 };
 

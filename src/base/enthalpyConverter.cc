@@ -39,6 +39,19 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
 }
 
+EnthalpyConverter::~EnthalpyConverter() {
+  // empty
+}
+
+bool EnthalpyConverter::is_temperate(double E, double pressure) const {
+  return this->is_temperate_impl(E, pressure);
+}
+
+double EnthalpyConverter::temperature(double E, double pressure) const {
+  return this->temperature_impl(E, pressure);
+}
+
+
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]
@@ -54,13 +67,24 @@ double EnthalpyConverter::pressure(double depth) const {
   }
 }
 
+double EnthalpyConverter::c_from_T(double T) const {
+  return this->c_from_T_impl(T);
+}
+
+double EnthalpyConverter::c_from_T_impl(double /*T*/) const {
+  return c_i;
+}
 
 //! Get melting temperature from pressure p.
 /*!
      \f[ T_m(p) = T_{melting} - \beta p. \f]
  */ 
-double EnthalpyConverter::melting_temperature(double p) const {
-  return T_melting - beta * p;
+double EnthalpyConverter::melting_temperature(double pressure) const {
+  return this->melting_temperature_impl(pressure);
+}
+
+double EnthalpyConverter::melting_temperature_impl(double pressure) const {
+  return T_melting - beta * pressure;
 }
 
 
@@ -69,6 +93,10 @@ double EnthalpyConverter::melting_temperature(double p) const {
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
  */
 double EnthalpyConverter::enthalpy_cts(double p) const {
+  return this->enthalpy_cts_impl(p);
+}
+
+double EnthalpyConverter::enthalpy_cts_impl(double p) const {
   return c_i * (melting_temperature(p) - T_0);
 }
 
@@ -84,7 +112,7 @@ void EnthalpyConverter::enthalpy_interval(double p, double &E_s, double &E_l) co
 }
 
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
-bool EnthalpyConverter::is_temperate(double E, double p) const {
+bool EnthalpyConverter::is_temperate_impl(double E, double p) const {
   if (do_cold_ice_methods) {
     return (pressure_adjusted_temperature(E, p) >= T_melting - T_tol);
   } else {
@@ -103,7 +131,7 @@ bool EnthalpyConverter::is_temperate(double E, double p) const {
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
-double EnthalpyConverter::temperature(double E, double p) const {
+double EnthalpyConverter::temperature_impl(double E, double p) const {
   double E_s, E_l;
   enthalpy_interval(p, E_s, E_l);
 
@@ -125,32 +153,46 @@ double EnthalpyConverter::temperature(double E, double p) const {
 The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
  */
-double EnthalpyConverter::pressure_adjusted_temperature(double E, double p) const {
-  return temperature(E, p) - melting_temperature(p) + T_melting;
+double EnthalpyConverter::pressure_adjusted_temperature(double E, double pressure) const {
+  return this->pressure_adjusted_temperature_impl(E, pressure);
+}
+
+double EnthalpyConverter::pressure_adjusted_temperature_impl(double E, double pressure) const {
+  return temperature(E, pressure) - melting_temperature(pressure) + T_melting;
 }
 
 
 //! Get liquid water fraction from enthalpy and pressure.
 /*!
-From \ref AschwandenBuelerKhroulevBlatter,
-   \f[ \omega(E,p) = \begin{cases}  0.0,            & E \le E_s(p), \\
-                                    (E-E_s(p)) / L, & E_s(p) < E < E_l(p).
-                     \end{cases} \f]
+  From [@ref AschwandenBuelerKhroulevBlatter],
+   @f[
+   \omega(E,p) =
+   \begin{cases}
+     0.0, & E \le E_s(p), \\
+     (E-E_s(p)) / L, & E_s(p) < E < E_l(p).
+   \end{cases}
+   @f]
 
-We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$).
+   We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
-double EnthalpyConverter::water_fraction(double E, double p) const {
+double EnthalpyConverter::water_fraction(double E, double pressure) const {
+  return this->water_fraction_impl(E, pressure);
+}
+
+double EnthalpyConverter::water_fraction_impl(double E, double pressure) const {
   double E_s, E_l;
-  enthalpy_interval(p, E_s, E_l);
+  enthalpy_interval(pressure, E_s, E_l);
+
   if (E >= E_l) {
-    throw RuntimeError::formatted("E=%f and p=%f correspond to liquid water", E, p);
+    throw RuntimeError::formatted("E=%f and pressure=%f correspond to liquid water",
+                                  E, pressure);
   }
+
   if (E <= E_s) {
     return 0.0;
   } else {
     return (E - E_s) / L;
   }
-  return 0;
 }
 
 
@@ -170,6 +212,10 @@ Certain cases are not allowed and throw exceptions:
 These inequalities may be violated in the sixth digit or so, however.
  */
 double EnthalpyConverter::enthalpy(double T, double omega, double p) const {
+  return this->enthalpy_impl(T, omega, p);
+}
+
+double EnthalpyConverter::enthalpy_impl(double T, double omega, double p) const {
   const double T_m = melting_temperature(p);
 
 #if (PISM_DEBUG==1)
@@ -209,14 +255,21 @@ as cold ice, ignoring the water fraction (\f$\omega\f$) value.
 Calls enthalpy(), which validates its inputs. 
 
 Computes:
-  \f[E = \begin{cases}
-            E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0, \\
-            E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0, 
-         \end{cases} \f]
-but ensures \f$0\le \omega \le 1\f$ in second case.  Calls enthalpy() for
-\f$E(T,\omega,p)\f$.
+  @f[
+  E =
+  \begin{cases}
+    E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0, \\
+    E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0,
+  \end{cases}
+  @f]
+  but ensures @f$ 0 \le \omega \le 1 @f$ in second case.  Calls enthalpy() for
+  @f$ E(T,\omega,p) @f$.
  */
 double EnthalpyConverter::enthalpy_permissive(double T, double omega, double pressure) const {
+  return this->enthalpy_permissive_impl(T, omega, pressure);
+}
+
+double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, double pressure) const {
 
   const double T_m = melting_temperature(pressure);
 
