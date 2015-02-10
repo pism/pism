@@ -34,20 +34,20 @@ Delta_MBP::Delta_MBP(const IceGrid &g, OceanModel* in)
 
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
-  offset->metadata().set_units("1");
+  offset->metadata().set_string("units", "1");
   offset->metadata().set_string("long_name", "melange back pressure fraction");
-  offset->dimension_metadata().set_units(m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("kg m-2 s-1");
+  shelfbmassflux.set_string("units", "kg m-2 s-1");
   shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units("Kelvin");
+  shelfbtemp.set_string("units", "Kelvin");
 }
 
 Delta_MBP::~Delta_MBP() {

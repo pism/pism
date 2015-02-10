@@ -170,7 +170,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ice_surface_temp.set_units("K");
+  ice_surface_temp.set_string("units", "K");
 }
 
 TemperatureIndex::~TemperatureIndex() {

@@ -123,16 +123,16 @@ void NCSpatialVariable::init_internal(const std::string &name, const IceGrid &g,
   m_x.set_string("axis", "X");
   m_x.set_string("long_name", "X-coordinate in Cartesian system");
   m_x.set_string("standard_name", "projection_x_coordinate");
-  m_x.set_units("m");
+  m_x.set_string("units", "m");
 
   m_y.set_string("axis", "Y");
   m_y.set_string("long_name", "Y-coordinate in Cartesian system");
   m_y.set_string("standard_name", "projection_y_coordinate");
-  m_y.set_units("m");
+  m_y.set_string("units", "m");
 
   m_z.set_string("axis", "Z");
   m_z.set_string("long_name", "Z-coordinate in Cartesian system");
-  m_z.set_units("m");
+  m_z.set_string("units", "m");
   m_z.set_string("positive", "up");
 
   set_string("coordinates", "lat lon");

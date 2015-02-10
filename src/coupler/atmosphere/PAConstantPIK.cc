@@ -54,7 +54,7 @@ PIK::PIK(const IceGrid &g)
   m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
   m_air_temp_snapshot.set_string("long_name",
                                "snapshot of the near-surface air temperature");
-  m_air_temp_snapshot.set_units("K");
+  m_air_temp_snapshot.set_string("units", "K");
 }
 
 void PIK::mean_precipitation(IceModelVec2S &result) {

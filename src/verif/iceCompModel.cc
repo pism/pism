@@ -986,7 +986,7 @@ void IceCompModel::reportErrors() {
   unsigned int start;
   NCTimeseries err("N", "N", grid.config.get_unit_system());
 
-  err.set_units("1");
+  err.set_string("units", "1");
 
   PIO nc(grid.com, "netcdf3", grid.config.get_unit_system()); // OK to use netcdf3
 
@@ -1012,7 +1012,7 @@ void IceCompModel::reportErrors() {
 
     // Always write grid parameters:
     err.set_name("dx");
-    err.set_units("meters");
+    err.set_string("units", "meters");
     nc.write_timeseries(err, (size_t)start, grid.dx());
     err.set_name("dy");
     nc.write_timeseries(err, (size_t)start, grid.dy());
@@ -1020,7 +1020,7 @@ void IceCompModel::reportErrors() {
     nc.write_timeseries(err, (size_t)start, grid.dz_max());
 
     // Always write the test name:
-    err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+    err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
     err.set_name("test");
     nc.write_timeseries(err, (size_t)start, (double)testname, PISM_BYTE);
   }
@@ -1039,24 +1039,24 @@ void IceCompModel::reportErrors() {
                maxetaerr/pow(domeHexact,m));
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("relative_volume");
-      err.set_units("percent");
+      err.set_string("units", "percent");
       err.set_string("long_name", "relative ice volume error");
       nc.write_timeseries(err, (size_t)start, 100*volerr/volexact);
 
       err.set_name("relative_max_eta");
-      err.set_units("1");
+      err.set_string("units", "1");
       err.set_string("long_name", "relative $\\eta$ error");
       nc.write_timeseries(err, (size_t)start, maxetaerr/pow(domeHexact,m));
 
       err.set_name("maximum_thickness");
-      err.set_units("meters");
+      err.set_string("units", "meters");
       err.set_string("long_name", "maximum ice thickness error");
       nc.write_timeseries(err, (size_t)start, maxHerr);
 
       err.set_name("average_thickness");
-      err.set_units("meters");
+      err.set_string("units", "meters");
       err.set_string("long_name", "average ice thickness error");
       nc.write_timeseries(err, (size_t)start, avHerr);
     }
@@ -1073,9 +1073,9 @@ void IceCompModel::reportErrors() {
                maxTerr, avTerr, basemaxTerr, baseavTerr);
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_temperature");
-      err.set_units("Kelvin");
+      err.set_string("units", "Kelvin");
       err.set_string("long_name", "maximum ice temperature error");
       nc.write_timeseries(err, (size_t)start, maxTerr);
 
@@ -1100,9 +1100,9 @@ void IceCompModel::reportErrors() {
                maxTerr, avTerr, maxTberr, avTberr);
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_temperature");
-      err.set_units("Kelvin");
+      err.set_string("units", "Kelvin");
       err.set_string("long_name", "maximum ice temperature error");
       nc.write_timeseries(err, (size_t)start, maxTerr);
 
@@ -1130,9 +1130,9 @@ void IceCompModel::reportErrors() {
                max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_sigma");
-      err.set_units("J s-1 m-3");
+      err.set_string("units", "J s-1 m-3");
       err.set_glaciological_units("1e6 J s-1 m-3");
       err.set_string("long_name", "maximum strain heating error");
       nc.write_timeseries(err, (size_t)start, max_strain_heating_error);
@@ -1153,10 +1153,10 @@ void IceCompModel::reportErrors() {
                grid.convert(maxUerr, "m/second", "m/year"), grid.convert(avUerr, "m/second", "m/year"), grid.convert(maxWerr, "m/second", "m/year"), grid.convert(avWerr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_surface_velocity");
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
-      err.set_units("m/s");
+      err.set_string("units", "m/s");
       err.set_glaciological_units("meters/year");
       nc.write_timeseries(err, (size_t)start, maxUerr);
 
@@ -1187,9 +1187,9 @@ void IceCompModel::reportErrors() {
                grid.convert(maxuberr, "m/second", "m/year"), grid.convert(maxvberr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_velocity");
-      err.set_units("m/s");
+      err.set_string("units", "m/s");
       err.set_glaciological_units("meters/year");
       nc.write_timeseries(err, (size_t)start, maxvecerr);
 
@@ -1200,9 +1200,9 @@ void IceCompModel::reportErrors() {
       err.set_name("maximum_basal_v");
       nc.write_timeseries(err, (size_t)start, maxvberr);
 
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("relative_basal_velocity");
-      err.set_units("percent");
+      err.set_string("units", "percent");
       nc.write_timeseries(err, (size_t)start, (avvecerr/exactmaxspeed)*100);
     }
   }
@@ -1224,9 +1224,9 @@ void IceCompModel::reportErrors() {
                grid.convert(maxbmelterr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_melt_rate");
-      err.set_units("m/s");
+      err.set_string("units", "m/s");
       err.set_glaciological_units("meters/year");
       nc.write_timeseries(err, (size_t)start, maxbmelterr);
     }

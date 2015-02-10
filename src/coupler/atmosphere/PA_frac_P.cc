@@ -32,17 +32,17 @@ Frac_P::Frac_P(const IceGrid &g, AtmosphereModel* in)
   option_prefix = "-atmosphere_frac_P";
   offset_name = "frac_P";
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
-  offset->metadata().set_units("1");
+  offset->metadata().set_string("units", "1");
   offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
-  offset->dimension_metadata().set_units(m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  air_temp.set_units("K");
+  air_temp.set_string("units", "K");
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_units("m / s");
+  precipitation.set_string("units", "m / s");
   precipitation.set_glaciological_units("m / year");
 }
 

@@ -76,7 +76,7 @@ void IceModelVec3Custom::create(const IceGrid &mygrid,
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();
   while (j != z_attrs.end()) {
     if (j->first == "units") {
-      m_metadata[0].get_z().set_units(j->second);
+      m_metadata[0].get_z().set_string("units", j->second);
     } else if (j->first == "glaciological_units") {
       m_metadata[0].get_z().set_glaciological_units(j->second);
     } else {

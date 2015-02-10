@@ -266,7 +266,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
     return;
   }
 
-  err.set_units("1");
+  err.set_string("units", "1");
 
   verbPrintf(2, m_grid->com, "Also writing errors to '%s'...\n", filename->c_str());
 
@@ -291,49 +291,49 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   // Always write grid parameters:
   err.set_name("dx");
-  err.set_units("meters");
+  err.set_string("units", "meters");
   nc.write_timeseries(err, (size_t)start, m_grid->dx());
   err.set_name("dy");
   nc.write_timeseries(err, (size_t)start, m_grid->dy());
 
   // Always write the test name:
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
   nc.write_timeseries(err, (size_t)start, testname[0], PISM_BYTE);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
-  err.set_units("m/year");
+  err.set_string("units", "m/year");
   err.set_string("long_name", "maximum ice velocity magnitude error");
   nc.write_timeseries(err, (size_t)start, max_vector);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("relative_velocity");
-  err.set_units("percent");
+  err.set_string("units", "percent");
   err.set_string("long_name", "relative ice velocity magnitude error");
   nc.write_timeseries(err, (size_t)start, rel_vector);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
-  err.set_units("m/year");
+  err.set_string("units", "m/year");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, max_u);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
-  err.set_units("m/year");
+  err.set_string("units", "m/year");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, max_v);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
-  err.set_units("m/year");
+  err.set_string("units", "m/year");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, avg_u);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
-  err.set_units("m/year");
+  err.set_string("units", "m/year");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, avg_v);
 

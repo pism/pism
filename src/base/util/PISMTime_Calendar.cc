@@ -170,7 +170,7 @@ void Time_Calendar::init_from_file(const std::string &filename) {
   bool exists;
 
   NCTimeseries time_axis(time_name, time_name, m_unit_system);
-  time_axis.set_units(m_time_units.format());
+  time_axis.set_string("units", m_time_units.format());
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
@@ -226,7 +226,7 @@ void Time_Calendar::init_from_file(const std::string &filename) {
   if (time_bounds_name.empty() == false) {
     // use the time bounds
     NCTimeBounds bounds(time_bounds_name, time_name, m_unit_system);
-    bounds.set_units(m_time_units.format());
+    bounds.set_string("units", m_time_units.format());
 
     nc.read_time_bounds(bounds, this, time);
   } else {

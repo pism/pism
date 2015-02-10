@@ -208,7 +208,7 @@ reading data from a file.
 std::string offset_name	= "delta_T";
 
 offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-offset->set_units("Kelvin", "");
+offset->set_string("units", "Kelvin");
 offset->set_dimension_units(grid.time->units_string(), "");
 
 ierr = verbPrintf(2, g.com,

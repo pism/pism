@@ -132,13 +132,13 @@ void Elevation::init() {
                                    "surface mass balance (accumulation/ablation) rate");
   m_climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.set_units("kg m-2 s-1");
+  m_climatic_mass_balance.set_string("units", "kg m-2 s-1");
   m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   m_ice_surface_temp.set_string("pism_intent", "diagnostic");
   m_ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  m_ice_surface_temp.set_units("K");
+  m_ice_surface_temp.set_string("units", "K");
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
   verbPrintf(2, m_grid.com, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");

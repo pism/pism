@@ -816,7 +816,7 @@ void PIO::def_time(const string &name, const string &calendar, const string &uni
     NCVariable time(name, m_unit_system);
     time.set_string("long_name", "time");
     time.set_string("calendar", calendar);
-    time.set_units(units);
+    time.set_string("units", units);
     time.set_string("axis", "T");
 
     def_dim(PISM_UNLIMITED, time);
@@ -1298,7 +1298,7 @@ void PIO::read_attributes(const string &variable_name, NCVariable &variable) con
         string value = get_att_text(variable_name, attribute_name);
 
         if (attribute_name == "units") {
-          variable.set_units(value);
+          variable.set_string("units", value);
         } else {
           variable.set_string(attribute_name, value);
         }

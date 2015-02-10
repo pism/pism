@@ -415,7 +415,7 @@ void IceModelVec::set_attrs(const std::string &my_pism_intent,
 
   metadata(N).set_string("long_name", my_long_name);
 
-  metadata(N).set_units(my_units);
+  metadata(N).set_string("units", my_units);
 
   metadata(N).set_string("pism_intent", my_pism_intent);
 

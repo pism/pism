@@ -34,22 +34,22 @@ Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
 
   offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
 
-  offset->metadata().set_units("Kelvin");
+  offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "ice-surface temperature offsets");
-  offset->dimension_metadata().set_units(m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
                                    "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
-  climatic_mass_balance.set_units("kg m-2 s-1");
+  climatic_mass_balance.set_string("units", "kg m-2 s-1");
   climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ice_surface_temp.set_units("K");
+  ice_surface_temp.set_string("units", "K");
 }
 
 Delta_T::~Delta_T() {

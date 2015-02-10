@@ -144,7 +144,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     // we're found the time dimension
     NCTimeseries time_dimension(dimname, dimname, m_grid->config.get_unit_system());
 
-    time_dimension.set_units(m_grid->time->units_string());
+    time_dimension.set_string("units", m_grid->time->units_string());
     nc.read_timeseries(time_dimension, m_grid->time, time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
@@ -153,7 +153,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
       if (bounds_name.empty() == false) {
         // read time bounds data from a file
         NCTimeBounds tb(bounds_name, dimname, m_grid->config.get_unit_system());
-        tb.set_units(time_dimension.get_string("units"));
+        tb.set_string("units", time_dimension.get_string("units"));
 
         nc.read_time_bounds(tb, m_grid->time, time_bounds);
 

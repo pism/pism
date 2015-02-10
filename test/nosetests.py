@@ -81,7 +81,7 @@ def vec_metadata_test():
 
     m = vec_scalar.metadata()
 
-    m.set_units("kg")
+    m.set_string("units", "kg")
 
     print m.get_string("units")
 

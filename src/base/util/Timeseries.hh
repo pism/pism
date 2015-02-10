@@ -47,7 +47,7 @@ class IceGrid;
 
   \code
   delta_T = new Timeseries(grid.com, grid.rank, "delta_T", "time");
-  ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+  ierr = delta_T->set_string("units", "Kelvin", ""); CHKERRQ(ierr);
   ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
   ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
   CHKERRQ(ierr);
@@ -129,7 +129,7 @@ private:
 
   \code
   offsets = new DiagnosticTimeseries(g, "delta_T", "time");
-  offsets->set_units("Kelvin", "Celsius");
+  offsets->set_string("units", "Kelvin", "Celsius");
   offsets->set_dimension_units("seconds", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000
   offsets->output_filename = seriesname;

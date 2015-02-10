@@ -57,9 +57,9 @@ IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
     extra_bounds("time_bounds", config.get_string("time_dimension_name"), g.config.get_unit_system()),
     timestamp("timestamp", config.get_string("time_dimension_name"), g.config.get_unit_system()) {
 
-  extra_bounds.set_units(grid.time->units_string());
+  extra_bounds.set_string("units", grid.time->units_string());
 
-  timestamp.set_units("hours");
+  timestamp.set_string("units", "hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
 
   pism_signal = 0;

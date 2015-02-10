@@ -37,23 +37,23 @@ WeatherStation::WeatherStation(const IceGrid &g)
     m_precip_metadata(g.config.get_unit_system(), "precipitation", m_grid),
     m_air_temp_metadata(g.config.get_unit_system(), "air_temp", m_grid)
 {
-  m_precipitation.dimension_metadata().set_units(m_grid.time->units_string());
-  m_precipitation.metadata().set_units("m / second");
+  m_precipitation.dimension_metadata().set_string("units", m_grid.time->units_string());
+  m_precipitation.metadata().set_string("units", "m / second");
   m_precipitation.metadata().set_string("long_name",
                                             "ice-equivalent precipitation rate");
 
-  m_air_temperature.dimension_metadata().set_units(m_grid.time->units_string());
-  m_air_temperature.metadata().set_units("Kelvin");
+  m_air_temperature.dimension_metadata().set_string("units", m_grid.time->units_string());
+  m_air_temperature.metadata().set_string("units", "Kelvin");
   m_air_temperature.metadata().set_string("long_name",
                                               "near-surface air temperature");
 
   m_air_temp_metadata.set_string("pism_intent", "diagnostic");
   m_air_temp_metadata.set_string("long_name", "near-surface air temperature");
-  m_air_temp_metadata.set_units("K");
+  m_air_temp_metadata.set_string("units", "K");
 
   m_precip_metadata.set_string("pism_intent", "diagnostic");
   m_precip_metadata.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precip_metadata.set_units("m / s");
+  m_precip_metadata.set_string("units", "m / s");
   m_precip_metadata.set_glaciological_units("m / year");
 }
 

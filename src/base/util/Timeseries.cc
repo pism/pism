@@ -59,7 +59,7 @@ void Timeseries::private_constructor(MPI_Comm c, const std::string &name, const 
 
 //! Ensure that time bounds have the same units as the dimension.
 void Timeseries::set_bounds_units() {
-  m_bounds.set_units(m_dimension.get_string("units"));
+  m_bounds.set_string("units", m_dimension.get_string("units"));
   m_bounds.set_glaciological_units(m_dimension.get_string("glaciological_units"));
 }
 
@@ -118,7 +118,7 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
     NCTimeBounds tmp_bounds = m_bounds;
     tmp_bounds.set_name(time_bounds_name);
 
-    tmp_bounds.set_units(tmp_dim.get_string("units"));
+    tmp_bounds.set_string("units", tmp_dim.get_string("units"));
 
     nc.read_time_bounds(tmp_bounds, time_manager, m_time_bounds);
   } else {

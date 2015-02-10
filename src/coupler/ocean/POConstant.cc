@@ -38,13 +38,13 @@ Constant::Constant(const IceGrid &g)
   m_shelfbmassflux.set_string("pism_intent", "climate_state");
   m_shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  m_shelfbmassflux.set_units("kg m-2 s-1");
+  m_shelfbmassflux.set_string("units", "kg m-2 s-1");
   m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
   m_shelfbtemp.set_string("pism_intent", "climate_state");
   m_shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  m_shelfbtemp.set_units("Kelvin");
+  m_shelfbtemp.set_string("units", "Kelvin");
 }
 
 Constant::~Constant() {
