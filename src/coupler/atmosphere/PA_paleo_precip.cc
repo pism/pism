@@ -42,7 +42,7 @@ PaleoPrecip::PaleoPrecip(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   precipitation.set_string("units", "m / s");
-  precipitation.set_glaciological_units("m / year");
+  precipitation.set_string("glaciological_units", "m / year");
 
   m_precipexpfactor = m_config.get("precip_exponential_factor_for_temperature");
 }

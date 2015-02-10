@@ -75,13 +75,16 @@ void SSATestCase::buildSSACoefficients()
   m_bc_values.set_attrs("intent",
                      "Y-component of the SSA velocity boundary conditions",
                      "m s-1", "", 1);
-  m_bc_values.set_glaciological_units("m year-1");
+  m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(0).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
   m_bc_values.metadata(0).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
   m_bc_values.metadata(0).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
+
+  m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(1).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
   m_bc_values.metadata(1).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
   m_bc_values.metadata(1).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
+
   m_bc_values.write_in_glaciological_units = true;
   m_bc_values.set(m_config.get("fill_value", "m/year", "m/s"));
 
@@ -376,7 +379,8 @@ void SSATestCase::write(const std::string &filename) {
   exact.set_attrs("diagnostic",
                   "Y-component of the SSA exact solution",
                   "m s-1", "", 1);
-  exact.set_glaciological_units("m year-1");
+  exact.metadata(0).set_string("glaciological_units", "m year-1");
+  exact.metadata(1).set_string("glaciological_units", "m year-1");
   exact.write_in_glaciological_units = true;
 
   IceModelVec::AccessList list(exact);

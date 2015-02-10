@@ -41,7 +41,7 @@ Cache::Cache(const IceGrid &g, OceanModel* in)
                                    "ice mass flux from ice shelf base"
                                    " (positive flux is loss from ice shelf)",
                                    "kg m-2 s-1", "");
-  m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1");
+  m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
   m_shelf_base_temperature.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);

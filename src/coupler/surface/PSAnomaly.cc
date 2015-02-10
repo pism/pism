@@ -51,7 +51,7 @@ Anomaly::Anomaly(const IceGrid &g, SurfaceModel* in)
   climatic_mass_balance_anomaly->set_attrs("climate_forcing",
                                            "anomaly of the surface mass balance (accumulation/ablation) rate",
                                            "kg m-2 s-1", "");
-  climatic_mass_balance_anomaly->set_glaciological_units("kg m-2 year-1");
+  climatic_mass_balance_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
   climatic_mass_balance_anomaly->write_in_glaciological_units = true;
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
@@ -60,7 +60,7 @@ Anomaly::Anomaly(const IceGrid &g, SurfaceModel* in)
   climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance.set_string("units", "kg m-2 s-1");
-  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  climatic_mass_balance.set_string("glaciological_units", "kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",

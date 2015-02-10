@@ -133,7 +133,7 @@ void Elevation::init() {
   m_climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
   m_climatic_mass_balance.set_string("units", "kg m-2 s-1");
-  m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  m_climatic_mass_balance.set_string("glaciological_units", "kg m-2 year-1");
 
   m_ice_surface_temp.set_string("pism_intent", "diagnostic");
   m_ice_surface_temp.set_string("long_name",

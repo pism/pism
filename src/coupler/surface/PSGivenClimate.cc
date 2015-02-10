@@ -48,7 +48,7 @@ Given::Given(const IceGrid &g)
   climatic_mass_balance->set_attrs("climate_forcing",
                                    "surface mass balance (accumulation/ablation) rate",
                                    "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
-  climatic_mass_balance->set_glaciological_units("kg m-2 year-1");
+  climatic_mass_balance->metadata().set_string("glaciological_units", "kg m-2 year-1");
   climatic_mass_balance->write_in_glaciological_units = true;
 }
 

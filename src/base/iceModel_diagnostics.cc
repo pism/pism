@@ -1305,7 +1305,7 @@ IceModel_dt::IceModel_dt(IceModel *m)
   m_ts = new DiagnosticTimeseries(&m_grid, "dt", m_time_dimension_name);
 
   m_ts->metadata().set_string("units", "second");
-  m_ts->metadata().set_glaciological_units("year");
+  m_ts->metadata().set_string("glaciological_units", "year");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "mass continuity time step");
 }
@@ -1665,7 +1665,7 @@ IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m)
   m_ts = new DiagnosticTimeseries(&m_grid, "max_hor_vel", m_time_dimension_name);
 
   m_ts->metadata().set_string("units", "m/second");
-  m_ts->metadata().set_glaciological_units("m/year");
+  m_ts->metadata().set_string("glaciological_units", "m/year");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
                                 "maximum abs component of horizontal ice velocity"

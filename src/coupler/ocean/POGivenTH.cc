@@ -93,7 +93,7 @@ GivenTH::GivenTH(const IceGrid &g)
   m_shelfbmassflux.set_attrs("climate_forcing",
                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                            "kg m-2 s-1", "");
-  m_shelfbmassflux.set_glaciological_units("kg m-2 year-1");
+  m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 }
 
 GivenTH::~GivenTH() {

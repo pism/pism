@@ -238,7 +238,7 @@ void IceModel::createVecs() {
     // PROPOSED standard_name = land_ice_age
     age3.set_attrs("model_state", "age of ice",
                    "s", "");
-    age3.set_glaciological_units("years");
+    age3.metadata().set_string("glaciological_units", "years");
     age3.write_in_glaciological_units = true;
     age3.metadata().set_double("valid_min", 0.0);
     grid.variables().add(age3);
@@ -296,7 +296,7 @@ void IceModel::createVecs() {
   // PROPOSED standard_name = lithosphere_upward_heat_flux
   geothermal_flux.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
                             "W m-2", "");
-  geothermal_flux.set_glaciological_units("mW m-2");
+  geothermal_flux.metadata().set_string("glaciological_units", "mW m-2");
   geothermal_flux.write_in_glaciological_units = true;
   geothermal_flux.set_time_independent(true);
   grid.variables().add(geothermal_flux);
@@ -306,7 +306,7 @@ void IceModel::createVecs() {
   bedtoptemp.set_attrs("internal",
                        "temperature of top of bedrock thermal layer",
                        "K", "");
-  bedtoptemp.set_glaciological_units("K");
+  bedtoptemp.metadata().set_string("glaciological_units", "K");
   grid.variables().add(bedtoptemp);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
@@ -325,7 +325,7 @@ void IceModel::createVecs() {
   basal_melt_rate.set_attrs("model_state",
                             "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
                             "m s-1", "land_ice_basal_melt_rate");
-  basal_melt_rate.set_glaciological_units("m year-1");
+  basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   basal_melt_rate.write_in_glaciological_units = true;
   basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   grid.variables().add(basal_melt_rate);
@@ -419,8 +419,8 @@ void IceModel::createVecs() {
     vBCvel.set_attrs("model_state",
                      "Y-component of the SSA velocity boundary conditions",
                      "m s-1", "", 1);
-    vBCvel.set_glaciological_units("m year-1");
     for (int j = 0; j < 2; ++j) {
+      vBCvel.metadata(j).set_string("glaciological_units", "m year-1");
       vBCvel.metadata(j).set_double("valid_min",  grid.convert(-1e6, "m/year", "m/second"));
       vBCvel.metadata(j).set_double("valid_max",  grid.convert( 1e6, "m/year", "m/second"));
       vBCvel.metadata(j).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
@@ -469,7 +469,7 @@ void IceModel::createVecs() {
                                   "if projection parameters are not available; "
                                   "otherwise WGS84 ellipsoid is used");
   cell_area.set_time_independent(true);
-  cell_area.set_glaciological_units("km2");
+  cell_area.metadata().set_string("glaciological_units", "km2");
   cell_area.write_in_glaciological_units = true;
   grid.variables().add(cell_area);
 
@@ -480,7 +480,7 @@ void IceModel::createVecs() {
                                   "ice-equivalent surface mass balance (accumulation/ablation) rate",
                                   "kg m-2 s-1",
                                   "land_ice_surface_specific_mass_balance_flux");
-  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
   climatic_mass_balance.write_in_glaciological_units = true;
   climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -507,7 +507,7 @@ void IceModel::createVecs() {
   // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
   // rescales from m/s to m/year when writing to NetCDF and std out:
   shelfbmassflux.write_in_glaciological_units = true;
-  shelfbmassflux.set_glaciological_units("m year-1");
+  shelfbmassflux.metadata().set_string("glaciological_units", "m year-1");
   // do not add; boundary models are in charge here
   // grid.variables().add(shelfbmassflux);
 
@@ -542,7 +542,7 @@ void IceModel::createVecs() {
     flux_divergence.set_attrs("diagnostic",
                               "flux divergence",
                               "m s-1", "");
-    flux_divergence.set_glaciological_units("m year-1");
+    flux_divergence.metadata().set_string("glaciological_units", "m year-1");
     flux_divergence.write_in_glaciological_units = true;
   }
 
@@ -553,7 +553,7 @@ void IceModel::createVecs() {
                                                 "in grounded areas (positive means ice gain)",
                                                 "kg m-2", "");
     grounded_basal_flux_2D_cumulative.set_time_independent(false);
-    grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2");
+    grounded_basal_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
@@ -564,7 +564,7 @@ void IceModel::createVecs() {
                                                 "in floating areas (positive means ice gain)",
                                                 "kg m-2", "");
     floating_basal_flux_2D_cumulative.set_time_independent(false);
-    floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2");
+    floating_basal_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
@@ -574,7 +574,7 @@ void IceModel::createVecs() {
                                         "cumulative nonnegative rule flux (positive means ice gain)",
                                         "kg m-2", "");
     nonneg_flux_2D_cumulative.set_time_independent(false);
-    nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2");
+    nonneg_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
@@ -584,7 +584,7 @@ void IceModel::createVecs() {
                                            "cumulative discharge (calving) flux (positive means ice loss)",
                                            "kg m-2", "");
     discharge_flux_2D_cumulative.set_time_independent(false);
-    discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2");
+    discharge_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     discharge_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 }

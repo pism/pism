@@ -59,10 +59,10 @@ of the classes listed above and then call "create" to allocate it.
 
 ~~~
 // land ice thickness
-ierr = ice_thickness.create(grid, "thk", WITH_GHOSTS, 2); CHKERRQ(ierr);
-ierr = ice_thickness.set_attrs("model_state", "land ice thickness",
-                               "m", "land_ice_thickness"); CHKERRQ(ierr);
-ierr = ice_thickness.metadata().set_double("valid_min", 0.0); CHKERRQ(ierr);
+ice_thickness.create(grid, "thk", WITH_GHOSTS, 2);
+ice_thickness.set_attrs("model_state", "land ice thickness",
+                        "m", "land_ice_thickness");
+ice_thickness.metadata().set_double("valid_min", 0.0);
 ~~~
 
 Here `grid` is an IceGrid instance, "thk" is the name of the NetCDF
@@ -97,7 +97,7 @@ file into internal units defines by the set_attrs() call (see above).
 If you want PISM to save data in units other than internal ones, first
 set these "glaciological" units:
 ~~~
-ierr = ice_thickness.set_glaciological_units("km"); CHKERRQ(ierr);
+ice_thickness.metadata().set_string("glaciological_units", "km");
 ~~~
 Then set IceModelVec::write_in_glaciological_units to `true`:
 ~~~
@@ -121,17 +121,17 @@ surface, atmosphere and ocean models; %i.e. for all the classes derived from PIS
 bool do_regrid = false;
 int start = -1;
 
-ierr = find_pism_input(precip_filename, do_regrid, start); CHKERRQ(ierr);
+find_pism_input(precip_filename, do_regrid, start);
 
 // read precipitation rate from file
-ierr = verbPrintf(2, grid.com,
-                  "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-                  "      from %s ... \n",
-                  precip_filename.c_str()); CHKERRQ(ierr);
+verbPrintf(2, grid.com,
+           "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+           "      from %s ... \n",
+           precip_filename.c_str());
 if (do_regrid) {
-  ierr = precipitation.regrid(precip_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
+  precipitation.regrid(precip_filename, CRITICAL); // fails if not found!
 } else {
-  ierr = precipitation.read(precip_filename, start); CHKERRQ(ierr); // fails if not found!
+  precipitation.read(precip_filename, start); // fails if not found!
 }
 ~~~
 
@@ -145,7 +145,7 @@ index "by hand".
 The snippet below is an example of case 3 (for 2D fields, reading the last record).
 
 ~~~
-ierr = variable.regrid(filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
+variable.regrid(filename, CRITICAL); // fails if not found!
 ~~~
 
 @subsection writing_data Writing data to a file
@@ -153,7 +153,7 @@ ierr = variable.regrid(filename, CRITICAL); CHKERRQ(ierr); // fails if not found
 To write a field stored in an IceModelVec to an already "prepared" file, just call
 
 ~~~
-ierr = precip.write(filename); CHKERRQ(ierr);
+precip.write(filename);
 ~~~
 
 The file referred to by "filename" here has to have the time "time"
@@ -168,17 +168,17 @@ If you do need to "prepare" a file, do:
 PIO nc(grid.com, grid.config.get_string("output_format"));
 
 std::string time_name = config.get_string("time_dimension_name");
-ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
-ierr = nc.def_time(time_name, grid.time->calendar(),
-                   grid.time->CF_units_string()); CHKERRQ(ierr);
-ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
-ierr = nc.close(); CHKERRQ(ierr);
+nc.open(filename, PISM_WRITE); // append == false
+nc.def_time(time_name, grid.time->calendar(),
+            grid.time->CF_units_string());
+nc.append_time(time_name, grid.time->current());
+nc.close();
 ~~~
 
 When a file is opened with the `PISM_WRITE` mode, PISM checks if this
 file is present and moves it aside if it is; to append to an existing file, use
 ~~~
-ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append == true
+nc.open(filename, PISM_WRITE, true); // append == true
 ~~~
 A newly-created file is "empty" and contains no records. The nc.append_time()
 call creates a record corresponding to a particular model year.
@@ -193,7 +193,7 @@ variable from a file it is re-starting from and will always write it to an
 output, snapshot and backup files.
 
 ~~~
-ierr = variables.add(ice_thickness); CHKERRQ(ierr);
+variables.add(ice_thickness);
 ~~~
 
 @subsection reading_scalar_forcing Reading scalar forcing data
@@ -211,16 +211,16 @@ offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_na
 offset->set_string("units", "Kelvin");
 offset->set_dimension_units(grid.time->units_string(), "");
 
-ierr = verbPrintf(2, g.com,
-                  "  reading %s data from forcing file %s...\n",
-                  offset->short_name.c_str(), filename.c_str()); CHKERRQ(ierr);
+verbPrintf(2, g.com,
+           "  reading %s data from forcing file %s...\n",
+           offset->short_name.c_str(), filename.c_str());
 
 PIO nc(g.com, "netcdf3", grid.get_unit_system());
-ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+nc.open(filename, PISM_NOWRITE);
 {
-  ierr = offset->read(nc, grid.time); CHKERRQ(ierr);
+  offset->read(nc, grid.time);
 }
-ierr = nc.close(); CHKERRQ(ierr);
+nc.close();
 
 // use offset
 
@@ -245,11 +245,11 @@ IceModelVec2T object and reading data from a file.
 ~~~
 IceModelVec2T temperature;
 temperature.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
-ierr = temperature.create(grid, "artm", WITHOUT_GHOSTS); CHKERRQ(ierr);
-ierr = temperature.set_attrs("climate_forcing",
-                             "temperature of the ice at the ice surface but below firn processes",
-                             "Kelvin", ""); CHKERRQ(ierr);
-ierr = temperature.init(filename); CHKERRQ(ierr);
+temperature.create(grid, "artm", WITHOUT_GHOSTS);
+temperature.set_attrs("climate_forcing",
+                      "temperature of the ice at the ice surface but below firn processes",
+                      "Kelvin", "");
+temperature.init(filename);
 ~~~
 
 @section using_vars Using fields managed by IceModel in a surface model to implement a parameterization

@@ -47,7 +47,7 @@ Given::Given(const IceGrid &g)
   shelfbmassflux->set_attrs("climate_forcing",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                             "kg m-2 s-1", "");
-  shelfbmassflux->set_glaciological_units("kg m-2 year-1");
+  shelfbmassflux->metadata().set_string("glaciological_units", "kg m-2 year-1");
   shelfbmassflux->write_in_glaciological_units = true;
 }
 

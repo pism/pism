@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
       ghf.set_attrs("",
                      "upward geothermal flux at bedrock thermal layer base",
                      "W m-2", "");
-      ghf.set_glaciological_units("mW m-2");
+      ghf.metadata().set_string("glaciological_units", "mW m-2");
 
       ghf.set(0.042);  // see Test K
 

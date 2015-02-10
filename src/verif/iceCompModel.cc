@@ -1133,7 +1133,7 @@ void IceCompModel::reportErrors() {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_sigma");
       err.set_string("units", "J s-1 m-3");
-      err.set_glaciological_units("1e6 J s-1 m-3");
+      err.set_string("glaciological_units", "1e6 J s-1 m-3");
       err.set_string("long_name", "maximum strain heating error");
       nc.write_timeseries(err, (size_t)start, max_strain_heating_error);
 
@@ -1157,7 +1157,7 @@ void IceCompModel::reportErrors() {
       err.set_name("maximum_surface_velocity");
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
       err.set_string("units", "m/s");
-      err.set_glaciological_units("meters/year");
+      err.set_string("glaciological_units", "meters/year");
       nc.write_timeseries(err, (size_t)start, maxUerr);
 
       err.set_name("average_surface_velocity");
@@ -1190,7 +1190,7 @@ void IceCompModel::reportErrors() {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_velocity");
       err.set_string("units", "m/s");
-      err.set_glaciological_units("meters/year");
+      err.set_string("glaciological_units", "meters/year");
       nc.write_timeseries(err, (size_t)start, maxvecerr);
 
       err.set_name("average_basal_velocity");
@@ -1227,7 +1227,7 @@ void IceCompModel::reportErrors() {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_melt_rate");
       err.set_string("units", "m/s");
-      err.set_glaciological_units("meters/year");
+      err.set_string("glaciological_units", "meters/year");
       nc.write_timeseries(err, (size_t)start, maxbmelterr);
     }
   }

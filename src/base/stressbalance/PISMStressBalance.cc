@@ -42,7 +42,7 @@ StressBalance::StressBalance(const IceGrid &g,
                 "vertical velocity of ice, relative to base of ice directly below",
                 "m s-1", "");
   m_w.set_time_independent(false);
-  m_w.set_glaciological_units("m year-1");
+  m_w.metadata().set_string("glaciological_units", "m year-1");
   m_w.write_in_glaciological_units = true;
 
   m_strain_heating.create(m_grid, "strain_heating", WITHOUT_GHOSTS);

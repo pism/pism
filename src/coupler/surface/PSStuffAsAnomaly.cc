@@ -32,7 +32,7 @@ StuffAsAnomaly::StuffAsAnomaly(const IceGrid &g, SurfaceModel *input)
                       "surface mass balance (accumulation/ablation) rate",
                       "kg m-2 s-1",
                       "land_ice_surface_specific_mass_balance_flux");
-  mass_flux.set_glaciological_units("kg m-2 year-1");
+  mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
   mass_flux.write_in_glaciological_units = true;
 
   temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);

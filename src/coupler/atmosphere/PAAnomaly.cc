@@ -52,7 +52,7 @@ Anomaly::Anomaly(const IceGrid &g, AtmosphereModel* in)
   precipitation_anomaly->set_attrs("climate_forcing",
                                    "anomaly of the ice-equivalent precipitation rate",
                                    "m s-1", "");
-  precipitation_anomaly->set_glaciological_units("m year-1");
+  precipitation_anomaly->metadata().set_string("glaciological_units", "m year-1");
   precipitation_anomaly->write_in_glaciological_units = true;
 
   air_temp.set_string("pism_intent", "diagnostic");
@@ -62,7 +62,7 @@ Anomaly::Anomaly(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   precipitation.set_string("units", "m / s");
-  precipitation.set_glaciological_units("m / year");
+  precipitation.set_string("glaciological_units", "m / year");
 }
 
 Anomaly::~Anomaly()

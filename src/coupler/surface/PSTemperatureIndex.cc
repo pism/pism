@@ -130,7 +130,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
                                     "instantaneous surface mass balance (accumulation/ablation) rate",
                                     "kg m-2 s-1",
                                     "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_climatic_mass_balance.write_in_glaciological_units = true;
   m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -142,7 +142,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
                                 " (precipitation minus rain)",
                                 "kg m-2 s-1",
                                 "");
-  m_accumulation_rate.set_glaciological_units("kg m-2 year-1");
+  m_accumulation_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_accumulation_rate.write_in_glaciological_units = true;
 
   m_melt_rate.create(m_grid, "smelt", WITHOUT_GHOSTS);
@@ -150,7 +150,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
                         "instantaneous surface melt rate",
                         "kg m-2 s-1",
                         "");
-  m_melt_rate.set_glaciological_units("kg m-2 year-1");
+  m_melt_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_melt_rate.write_in_glaciological_units = true;
 
   m_runoff_rate.create(m_grid, "srunoff", WITHOUT_GHOSTS);
@@ -158,7 +158,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
                           "instantaneous surface meltwater runoff rate",
                           "kg m-2 s-1",
                           "");
-  m_runoff_rate.set_glaciological_units("kg m-2 year-1");
+  m_runoff_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_runoff_rate.write_in_glaciological_units = true;
 
   m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);

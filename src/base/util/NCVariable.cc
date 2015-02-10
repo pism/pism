@@ -76,19 +76,6 @@ unsigned int NCVariable::get_n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
-//! Set the internal units.
-void NCVariable::set_units(const std::string &new_units) {
-  set_string("units", new_units);
-}
-
-//! Set the glaciological (output) units.
-/*! These units are used for output (if write_in_glaciological_units is set)
-  and for standard out reports.
- */
-void NCVariable::set_glaciological_units(const std::string &new_units) {
-  set_string("glaciological_units", new_units);
-}
-
 UnitSystem NCVariable::get_unit_system() const {
   return m_unit_system;
 }

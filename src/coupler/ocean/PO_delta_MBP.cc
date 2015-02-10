@@ -42,7 +42,7 @@ Delta_MBP::Delta_MBP(const IceGrid &g, OceanModel* in)
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_string("units", "kg m-2 s-1");
-  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
+  shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
 
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",

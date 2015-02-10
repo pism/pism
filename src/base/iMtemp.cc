@@ -163,7 +163,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   IceModelVec2S &bwatcurr = vWork2d[0];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");
-  bwatcurr.set_glaciological_units("m");
+  bwatcurr.metadata().set_string("glaciological_units", "m");
 
   assert(subglacial_hydrology != NULL);
   subglacial_hydrology->subglacial_water_thickness(bwatcurr);

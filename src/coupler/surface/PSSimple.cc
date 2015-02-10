@@ -40,7 +40,7 @@ Simple::Simple(const IceGrid &g)
   climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance.set_string("units", "kg m-2 s-1");
-  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  climatic_mass_balance.set_string("glaciological_units", "kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",

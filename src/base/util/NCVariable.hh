@@ -77,9 +77,6 @@ public:
   virtual ~NCVariable();
 
   // setters
-  void set_units(const std::string &unit_spec);
-  void set_glaciological_units(const std::string &unit_spec);
-
   void set_double(const std::string &name, double value);
   void set_doubles(const std::string &name, const std::vector<double> &values);
   void set_name(const std::string &name);

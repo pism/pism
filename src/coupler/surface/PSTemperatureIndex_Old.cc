@@ -51,7 +51,7 @@ TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
                                   "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
                                   "kg m-2 s-1",
                                   "land_ice_surface_specific_mass_balance_flux");
-  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
+  climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
   climatic_mass_balance.write_in_glaciological_units = true;
   climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -62,7 +62,7 @@ TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
                               "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
                               "m s-1",
                               "");
-  accumulation_rate.set_glaciological_units("m year-1");
+  accumulation_rate.metadata().set_string("glaciological_units", "m year-1");
   accumulation_rate.write_in_glaciological_units = true;
 
   melt_rate.create(m_grid, "smelt", WITHOUT_GHOSTS);
@@ -70,7 +70,7 @@ TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
                       "instantaneous ice-equivalent surface melt rate",
                       "m s-1",
                       "");
-  melt_rate.set_glaciological_units("m year-1");
+  melt_rate.metadata().set_string("glaciological_units", "m year-1");
   melt_rate.write_in_glaciological_units = true;
 
   runoff_rate.create(m_grid, "srunoff", WITHOUT_GHOSTS);
@@ -78,7 +78,7 @@ TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
                         "instantaneous ice-equivalent surface meltwater runoff rate",
                         "m s-1",
                         "");
-  runoff_rate.set_glaciological_units("m year-1");
+  runoff_rate.metadata().set_string("glaciological_units", "m year-1");
   runoff_rate.write_in_glaciological_units = true;
 }
 

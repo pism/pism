@@ -35,7 +35,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
   // PROPOSED standard_name = lithosphere_upward_heat_flux
   m_upward_flux.set_attrs("diagnostic", "upward geothermal flux at bedrock surface",
                           "W m-2", "");
-  m_upward_flux.set_glaciological_units("mW m-2");
+  m_upward_flux.metadata().set_string("glaciological_units", "mW m-2");
   m_upward_flux.write_in_glaciological_units = true;
 
   // build constant diffusivity for heat equation

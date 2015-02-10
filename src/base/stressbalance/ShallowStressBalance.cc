@@ -55,14 +55,17 @@ ShallowStressBalance::ShallowStressBalance(const IceGrid &g, const EnthalpyConve
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
                        "m s-1", "", 1);
-  m_velocity.set_glaciological_units("m year-1");
+
+  m_velocity.metadata(0).set_string("glaciological_units", "m year-1");
+  m_velocity.metadata(1).set_string("glaciological_units", "m year-1");
+
   m_velocity.write_in_glaciological_units = true;
 
   m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
                                        "W m-2", "");
-  m_basal_frictional_heating.set_glaciological_units("mW m-2");
+  m_basal_frictional_heating.metadata().set_string("glaciological_units", "mW m-2");
   m_basal_frictional_heating.write_in_glaciological_units = true;
 }
 

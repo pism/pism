@@ -373,19 +373,6 @@ const std::string& IceModelVec::get_name() const {
   return m_name;
 }
 
-//! Sets the glaciological units of an IceModelVec.
-/*!
-This affects NCVariable::report_range() and IceModelVec::write().  In write(),
-if IceModelVec::write_in_glaciological_units == true, then that variable is written
-with a conversion to the glaciological units set here.
- */
-void  IceModelVec::set_glaciological_units(const std::string &my_units) {
-
-  for (unsigned int j = 0; j < m_dof; ++j) {
-    metadata(j).set_glaciological_units(my_units);
-  }
-}
-
 //! Resets most IceModelVec attributes.
 void IceModelVec::reset_attrs(unsigned int N) {
 

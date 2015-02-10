@@ -89,7 +89,7 @@ void Diagnostic::set_attrs(const std::string &my_long_name,
   m_vars[N].set_string("units", my_units);
 
   if (not my_glaciological_units.empty()) {
-    m_vars[N].set_glaciological_units(my_glaciological_units);
+    m_vars[N].set_string("glaciological_units", my_glaciological_units);
   }
 }
 

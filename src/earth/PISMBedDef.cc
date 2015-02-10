@@ -52,7 +52,7 @@ BedDef::BedDef(const IceGrid &g)
   m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
                      "m s-1", "tendency_of_bedrock_altitude");
-  m_uplift.set_glaciological_units("m year-1");
+  m_uplift.metadata().set_string("glaciological_units", "m year-1");
   m_uplift.write_in_glaciological_units = true;
 
   // Set default values (we set them early so that pismv can override

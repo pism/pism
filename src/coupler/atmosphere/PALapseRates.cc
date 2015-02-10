@@ -32,7 +32,7 @@ LapseRates::LapseRates(const IceGrid &g, AtmosphereModel* in)
   m_precipitation.set_string("long_name",
                            "ice-equivalent precipitation rate with a lapse-rate correction");
   m_precipitation.set_string("units", "m s-1");
-  m_precipitation.set_glaciological_units("m year-1");
+  m_precipitation.set_string("glaciological_units", "m year-1");
 
   m_air_temp.set_string("pism_intent", "diagnostic");
   m_air_temp.set_string("long_name",

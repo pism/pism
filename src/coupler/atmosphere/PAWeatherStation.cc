@@ -54,7 +54,7 @@ WeatherStation::WeatherStation(const IceGrid &g)
   m_precip_metadata.set_string("pism_intent", "diagnostic");
   m_precip_metadata.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   m_precip_metadata.set_string("units", "m / s");
-  m_precip_metadata.set_glaciological_units("m / year");
+  m_precip_metadata.set_string("glaciological_units", "m / year");
 }
 
 WeatherStation::~WeatherStation() {

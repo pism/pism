@@ -49,7 +49,7 @@ Given::Given(const IceGrid &g)
                       "Kelvin", "");
   precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                            "m s-1", "");
-  precipitation->set_glaciological_units("m year-1");
+  precipitation->metadata().set_string("glaciological_units", "m year-1");
   precipitation->write_in_glaciological_units = true;
 }
 
