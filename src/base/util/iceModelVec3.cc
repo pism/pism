@@ -46,12 +46,16 @@ namespace pism {
 // methods for base class IceModelVec and derived class IceModelVec2S
 // are in "iceModelVec.cc"
 
-IceModelVec3D::IceModelVec3D() : IceModelVec() {
-  // empty
+IceModelVec3D::IceModelVec3D()
+  : IceModelVec() {
+  m_bsearch_accel = gsl_interp_accel_alloc();
+  if (m_bsearch_accel == NULL) {
+    throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+  }
 }
 
 IceModelVec3D::~IceModelVec3D() {
-  // empty
+  gsl_interp_accel_free(m_bsearch_accel);
 }
 
 IceModelVec3::IceModelVec3() {
@@ -149,10 +153,7 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
     return arr[i][j][0];
   }
 
-  int mcurr = 0;
-  while (zlevels[mcurr+1] < z) {
-    mcurr++;
-  }
+  unsigned int mcurr = gsl_interp_accel_find(m_bsearch_accel, &zlevels[0], zlevels.size(), z);
 
   const double incr = (z - zlevels[mcurr]) / (zlevels[mcurr+1] - zlevels[mcurr]);
   const double valm = arr[i][j][mcurr];

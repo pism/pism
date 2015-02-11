@@ -105,6 +105,11 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
+
+  m_bsearch_accel = gsl_interp_accel_alloc();
+  if (m_bsearch_accel == NULL) {
+    throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+  }
 }
 
 /*! @brief Initialize a uniform, shallow (3 z-levels), doubly periodic grid
@@ -231,6 +236,7 @@ std::string IceGrid::init_calendar() {
 
 IceGrid::~IceGrid() {
   delete time;
+  gsl_interp_accel_free(m_bsearch_accel);
 }
 
 //! \brief Set the vertical levels in the ice according to values in Mz, Lz,
@@ -313,11 +319,7 @@ unsigned int IceGrid::kBelowHeight(double height) const {
                                   " grid Lz = %5.4f\n", height, Lz());
   }
 
-  unsigned int mcurr = 0;
-  while (m_z[mcurr+1] < height) {
-    mcurr++;
-  }
-  return mcurr;
+  return gsl_interp_accel_find(m_bsearch_accel, &m_z[0], m_z.size(), height);
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.

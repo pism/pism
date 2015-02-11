@@ -22,6 +22,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <gsl/gsl_interp.h>
+
 #include "PISMUnits.hh"
 #include "PISMVars.hh"
 
@@ -292,6 +294,9 @@ private:
   //! them from the one component to another (e.g. from IceModel to
   //! surface and ocean models).
   Vars m_variables;
+
+  //! GSL binary search accelerator used to speed up kBelowHeight().
+  gsl_interp_accel *m_bsearch_accel;
 
   void check_parameters();
 

@@ -20,6 +20,7 @@
 #define __IceModelVec_hh
 
 #include <petscvec.h>
+#include <gsl/gsl_interp.h>
 
 #include "NCVariable.hh"
 #include "Viewer.hh"
@@ -499,6 +500,8 @@ protected:
   void allocate(const IceGrid &mygrid, const std::string &my_short_name,
                 IceModelVecKind ghostedp, const std::vector<double> &levels,
                 unsigned int stencil_width = 1);
+private:
+  gsl_interp_accel *m_bsearch_accel;
 };
 
 

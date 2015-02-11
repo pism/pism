@@ -99,22 +99,6 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   }
 }
 
-static int k_below(double z, const vector<double> &zlevels) {
-  double z_min = zlevels.front(), z_max = zlevels.back();
-  int mcurr = 0;
-
-  if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
-    throw RuntimeError::formatted("k_below(): z = %5.4f is outside the allowed range: [%f, %f]",
-                                  z, z_min, z_max);
-  }
-
-  while (zlevels[mcurr+1] < z) {
-    mcurr++;
-  }
-
-  return mcurr;
-}
-
 //! \brief Bi-(or tri-)linear interpolation.
 /*!
  * This is the interpolation code itself.
@@ -142,6 +126,19 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
   unsigned int nlevels = zlevels_out.size();
   double *input_array = &(lic->buffer[0]);
 
+  std::vector<unsigned int> kbelow(nlevels, 0);
+
+  if (nlevels > 1) {
+    gsl_interp_accel *accel = gsl_interp_accel_alloc();
+    if (accel == NULL) {
+      throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+    }
+    for (unsigned int k = 0; k < nlevels; ++k) {
+      kbelow[k] = gsl_interp_accel_find(accel, &zlevels_in[0], zlevels_in.size(), zlevels_out[k]);
+    }
+    gsl_interp_accel_free(accel);
+  }
+
   // array sizes for mapping from logical to "flat" indices
   int
     y_count = lic->count[Y],
@@ -154,10 +151,6 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
     const int i0 = i - grid.xs(), j0 = j - grid.ys();
 
     for (unsigned int k = 0; k < nlevels; k++) {
-      // location (x,y,z) is in target computational domain
-      const double
-        z = zlevels_out[k];
-
       // Indices of neighboring points.
       const int
         Im = lic->x_left[i0],
@@ -169,7 +162,7 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
 
       if (nlevels > 1) {
         // get the index into the source grid, for just below the level z
-        const int kc = k_below(z, zlevels_in);
+        const int kc = kbelow[k];
 
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
@@ -192,6 +185,8 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
         } else {
           dz = zlevels_in[kc+1] - zlevels_in[kc];
         }
+        // location (x,y,z) is in target computational domain
+        const double z = zlevels_out[k];
         const double kk = (z - zkc) / dz;
 
         // linear interpolation in the z-direction
