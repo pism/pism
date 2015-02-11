@@ -100,15 +100,10 @@ double EnthalpyConverter::enthalpy_cts_impl(double p) const {
   return m_c_i * (melting_temperature(p) - m_T_0);
 }
 
-
-//! Get enthalpies E_s(p) and E_l(p) (endpoints of temperate ice enthalpy range) from pressure p.
-/*! Ice at enthalpy \f$E\f$ is temperate if \f$E_s(p) < E < E_l(p)\f$:
-     \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
-     \f[ E_l(p) = E_s(p) + L. \f]
- */
-void EnthalpyConverter::enthalpy_interval(double p, double &E_s, double &E_l) const {
-  E_s = enthalpy_cts(p);
-  E_l = E_s + m_L;
+//! @brief Compute the maximum allowed value of ice enthalpy
+//! (corresponds to @f$ \omega = 1 @f$).
+double EnthalpyConverter::enthalpy_liquid(double p) const {
+  return enthalpy_cts(p) + m_L;
 }
 
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
@@ -132,15 +127,15 @@ We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::temperature_impl(double E, double p) const {
-  double E_s, E_l;
-  enthalpy_interval(p, E_s, E_l);
 
-  if (E >= E_l) {
+#if (PISM_DEBUG==1)
+  if (E >= enthalpy_liquid(p)) {
     throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
                                   E, p);
   }
+#endif
 
-  if (E < E_s) {
+  if (E < enthalpy_cts(p)) {
     return (E / m_c_i) + m_T_0;
   } else {
     return melting_temperature(p);
@@ -176,14 +171,15 @@ double EnthalpyConverter::water_fraction(double E, double pressure) const {
 }
 
 double EnthalpyConverter::water_fraction_impl(double E, double pressure) const {
-  double E_s, E_l;
-  enthalpy_interval(pressure, E_s, E_l);
 
-  if (E >= E_l) {
+#if (PISM_DEBUG==1)
+  if (E >= enthalpy_liquid(pressure)) {
     throw RuntimeError::formatted("E=%f and pressure=%f correspond to liquid water",
                                   E, pressure);
   }
+#endif
 
+  double E_s = enthalpy_cts(pressure);
   if (E <= E_s) {
     return 0.0;
   } else {

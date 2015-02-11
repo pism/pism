@@ -107,15 +107,15 @@ double varcEnthalpyConverter::c_from_T_impl(double T) const {
 Calls TfromE().
  */
 double varcEnthalpyConverter::temperature_impl(double E, double p) const {
-  double E_s, E_l;
-  enthalpy_interval(p, E_s, E_l);
 
-  if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
+#if (PISM_DEBUG==1)
+  if (E >= enthalpy_liquid(p)) {
     throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
                                   E, p);
   }
+#endif
 
-  if (E < E_s) {
+  if (E < enthalpy_cts(p)) {
     return TfromE(E);
   } else {
     return melting_temperature(p);

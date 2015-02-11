@@ -76,6 +76,7 @@ protected:
   virtual double temperature_impl(double E, double pressure) const;
   virtual bool is_temperate_impl(double E, double pressure) const;
 
+  double enthalpy_liquid(double pressure) const;
   void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
 
   double m_T_melting, m_L, m_c_i, m_rho_i, m_g, m_p_air, m_beta, m_T_tolerance;
@@ -107,16 +108,6 @@ protected:
   bool is_temperate_impl(double /*E*/, double /*pressure*/) const;
   double temperature_impl(double E, double /*pressure*/) const;
 };
-
-/*
-class KirchoffEnthalpyConverter : public EnthalpyConverter {
-public:
-  KirchoffEnthalpyConverter(const Config &config);
-  virtual ~KirchoffEnthalpyConverter();
-private:
-  double L(double T_pm);
-};
-*/
 
 } // end of namespace pism
 
