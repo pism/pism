@@ -81,7 +81,7 @@ double KirchhoffEnthalpyConverter::enthalpy_impl(double T, double omega, double 
   }
 }
 
-double KirchhoffEnthalpyConverter::enthalpy_liquid(double pressure) const {
+double KirchhoffEnthalpyConverter::enthalpy_liquid_impl(double pressure) const {
   return enthalpy_cts(pressure) + L(melting_temperature(pressure));
 }
 

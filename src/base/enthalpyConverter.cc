@@ -103,6 +103,10 @@ double EnthalpyConverter::enthalpy_cts_impl(double p) const {
 //! @brief Compute the maximum allowed value of ice enthalpy
 //! (corresponds to @f$ \omega = 1 @f$).
 double EnthalpyConverter::enthalpy_liquid(double p) const {
+  return this->enthalpy_liquid_impl(p);
+}
+
+double EnthalpyConverter::enthalpy_liquid_impl(double p) const {
   return enthalpy_cts(p) + m_L;
 }
 

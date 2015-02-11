@@ -60,6 +60,7 @@ public:
 
   double enthalpy(double T, double omega, double pressure) const;
   double enthalpy_cts(double pressure) const;
+  double enthalpy_liquid(double pressure) const;
   double enthalpy_permissive(double T, double omega, double pressure) const;
 
   double c_from_T(double T) const;
@@ -74,10 +75,9 @@ protected:
   virtual double water_fraction_impl(double E, double pressure) const;
   virtual double melting_temperature_impl(double pressure) const;
   virtual double temperature_impl(double E, double pressure) const;
-  virtual bool is_temperate_impl(double E, double pressure) const;
+  virtual double enthalpy_liquid_impl(double pressure) const;
 
-  virtual double enthalpy_liquid(double pressure) const;
-  void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
+  virtual bool is_temperate_impl(double E, double pressure) const;
 
   double m_T_melting, m_L, m_c_i, m_rho_i, m_g, m_p_air, m_beta, m_T_tolerance;
   double m_T_0;
@@ -88,7 +88,7 @@ protected:
 //! An EnthalpyConverter for use in verification tests.
 /*!
   Treats ice at any temperature as cold (= zero liquid fraction).  Makes absolute
-  temperature (in K) and enthalpy proportional:  \f$E = c_i (T - T_0)\f$. 
+  temperature (in K) and enthalpy proportional:  \f$E = c_i (T - T_0)\f$.
 
   The pressure dependence of the pressure-melting temperature is neglected.
 
@@ -123,7 +123,7 @@ protected:
   double water_fraction_impl(double E, double pressure) const;
   double enthalpy_impl(double T, double omega, double pressure) const;
 
-  double enthalpy_liquid(double pressure) const;
+  double enthalpy_liquid_impl(double pressure) const;
 private:
   //! specific heat capacity of pure water
   double m_c_w;
