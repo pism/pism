@@ -1827,7 +1827,8 @@ IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute() {
 
 #if (PISM_USE_PROJ4==1)
 IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
-                                                 std::string var_name, std::string proj_string)
+                                                 const std::string &var_name,
+                                                 const std::string &proj_string)
   : Diag<IceModel>(m) {
   assert(var_name == "lat" || var_name == "lon");
   m_var_name = var_name;
@@ -1838,7 +1839,8 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
     levels[k] = k;
   }
 
-  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), m_var_name + "_bnds", m_grid, levels));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(),
+                                     m_var_name + "_bnds", m_grid, levels));
   m_vars[0].get_z().set_name("nv4");
   m_vars[0].get_z().clear_all_strings();
   m_vars[0].get_z().clear_all_doubles();

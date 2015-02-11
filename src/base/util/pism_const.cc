@@ -102,7 +102,7 @@ void verbPrintf(const int threshold,
 
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
-bool ends_with(std::string str, std::string suffix) {
+bool ends_with(const std::string &str, const std::string &suffix) {
   if (str.empty() and (not suffix.empty())) {
     return false;
   }
@@ -212,7 +212,9 @@ std::string pism_args_string() {
  * "name + separator + more stuff + .nc", then removes the string after the
  * separator.
  */
-std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix) {
+std::string pism_filename_add_suffix(const std::string &filename,
+                                     const std::string &separator,
+                                     const std::string &suffix) {
   std::string basename = filename, result;
 
   // find where the separator begins:

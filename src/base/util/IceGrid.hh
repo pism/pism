@@ -161,7 +161,7 @@ public:
 
   static Ptr Create(MPI_Comm c, const Config &config);
 
-  static void FromFile(const PIO &file, const std::string var_name, Periodicity p,
+  static void FromFile(const PIO &file, const std::string &var_name, Periodicity p,
                        IceGrid *output);
 
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,

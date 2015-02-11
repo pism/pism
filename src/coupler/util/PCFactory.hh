@@ -153,21 +153,21 @@ public:
 
   //! Adds a boundary model to the dictionary.
   template <class M>
-  void add_model(std::string name) {
+  void add_model(const std::string &name) {
     m_models[name] = ModelCreatorPtr(new SpecificModelCreator<M>);
   }
 
   template <class M>
-  void add_modifier(std::string name) {
+  void add_modifier(const std::string &name) {
     m_modifiers[name] = ModifierCreatorPtr(new SpecificModifierCreator<M>);
   }
 
   //! Removes a boundary model from the dictionary.
-  void remove_model(std::string name) {
+  void remove_model(const std::string &name) {
     m_models.erase(name);
   }
 
-  void remove_modifier(std::string name) {
+  void remove_modifier(const std::string &name) {
     m_modifiers.erase(name);
   }
 

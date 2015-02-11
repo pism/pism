@@ -135,18 +135,22 @@ protected:
     }
   }
 
-  void set_vec_parameters(std::map<std::string, std::string> standard_names)
+  void set_vec_parameters(const std::map<std::string, std::string> &standard_names)
   {
     unsigned int buffer_size = (unsigned int) Model::m_config.get("climate_forcing_buffer_size");
 
     PIO nc(Model::m_grid.com, "netcdf3", Model::m_grid.config.get_unit_system());
     nc.open(filename, PISM_READONLY);
 
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       unsigned int n_records = 0;
-      std::string short_name = k->first,
-        standard_name = standard_names[short_name];
+      const std::string &short_name = k->first;
+      std::string standard_name;
+      if (standard_names.find(short_name) != standard_names.end()) {
+        standard_name = standard_names.find(short_name)->second;
+      }
+      // else leave standard_name empty
 
       n_records = nc.inq_nrecords(short_name, standard_name);
 

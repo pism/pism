@@ -321,7 +321,7 @@ std::string PIO::backend_type() const {
  *
  * @return 0 on success
  */
-void PIO::use_mapped_io(string var_name, bool &result) const {
+void PIO::use_mapped_io(const string &var_name, bool &result) const {
 
   vector<string> dimnames = inq_vardims(var_name);
 

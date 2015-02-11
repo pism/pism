@@ -53,14 +53,16 @@ void verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 std::string pism_timestamp();
 std::string pism_username_prefix(MPI_Comm com);
 std::string pism_args_string();
-std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix);
+std::string pism_filename_add_suffix(const std::string &filename,
+                                     const std::string &separator,
+                                     const std::string &suffix);
 
 PetscLogDouble GetTime();
 
-bool ends_with(std::string str, std::string suffix);
+bool ends_with(const std::string &str, const std::string &suffix);
 std::string join(const std::vector<std::string> &strings, const std::string &separator);
 
-inline bool set_contains(std::set<std::string> S, std::string name) {
+inline bool set_contains(const std::set<std::string> &S, const std::string &name) {
   return (S.find(name) != S.end());
 }
 

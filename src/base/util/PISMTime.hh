@@ -27,7 +27,7 @@ namespace pism {
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
-inline bool pism_is_valid_calendar_name(std::string name) {
+inline bool pism_is_valid_calendar_name(const std::string &name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
   if (name == "standard"            ||

@@ -463,8 +463,8 @@ class IceModel_lat_lon_bounds : public Diag<IceModel>
 {
 public:
   IceModel_lat_lon_bounds(IceModel *m,
-                          std::string var_name,
-                          std::string proj_string);
+                          const std::string &var_name,
+                          const std::string &proj_string);
   ~IceModel_lat_lon_bounds();
   virtual IceModelVec::Ptr compute();
 protected:

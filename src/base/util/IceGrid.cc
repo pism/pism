@@ -157,7 +157,7 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
 }
 
 //! \brief Sets grid parameters using data read from the file.
-void IceGrid::FromFile(const PIO &file, const std::string var_name,
+void IceGrid::FromFile(const PIO &file, const std::string &var_name,
                        Periodicity periodicity,
                        IceGrid *output) {
   try {

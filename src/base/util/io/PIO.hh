@@ -197,7 +197,7 @@ private:
   int m_xs, m_xm, m_ys, m_ym;
   UnitSystem m_unit_system;
 
-  void use_mapped_io(std::string var_name, bool &result) const;
+  void use_mapped_io(const std::string &var_name, bool &result) const;
 
   void compute_start_and_count(const std::string &name,
                                unsigned int t_start, unsigned int t_count,
