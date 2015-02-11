@@ -36,6 +36,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
+#include "varcEnthalpyConverter.hh"
 #include "PISMMohrCoulombYieldStress.hh"
 #include "error_handling.hh"
 %}
@@ -208,6 +209,7 @@
 
 /* PISM header with no dependence on other PISM headers. */
 %include "enthalpyConverter.hh"
+%include "varcEnthalpyConverter.hh"
 %ignore pism::Vector2::operator=;
 %include "Vector2.hh"
 
