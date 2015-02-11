@@ -1864,6 +1864,8 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
 
   pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
+    // if we got here, then lonlat was allocated already
+    pj_free(lonlat);
     throw RuntimeError::formatted("proj.4 string '%s' is invalid.", proj_string.c_str());
   }
 }
