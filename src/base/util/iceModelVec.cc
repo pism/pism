@@ -885,8 +885,12 @@ IceModelVec::AccessList::AccessList() {
 
 IceModelVec::AccessList::~AccessList() {
   while (not m_vecs.empty()) {
-    m_vecs.back()->end_access();
-    m_vecs.pop_back();
+    try {
+      m_vecs.back()->end_access();
+      m_vecs.pop_back();
+    } catch (...) {
+      handle_fatal_errors(MPI_COMM_SELF);
+    }
   }
 }
 
