@@ -68,35 +68,40 @@ static void compute_strain_heating_errors(const Config &config,
   list.add(thickness);
   list.add(strain_heating);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double
-      xx = grid.x(i),
-      yy = grid.y(j),
-      r  = sqrt(PetscSqr(xx) + PetscSqr(yy));
+      double
+        xx = grid.x(i),
+        yy = grid.y(j),
+        r  = sqrt(PetscSqr(xx) + PetscSqr(yy));
 
-    if ((r >= 1.0) && (r <= LforFG - 1.0)) {
-      // only evaluate error if inside sheet and not at central
-      // singularity
-      bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
-                &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0],
-                &strain_heating_exact[0], &dummy4[0]);
+      if ((r >= 1.0) && (r <= LforFG - 1.0)) {
+        // only evaluate error if inside sheet and not at central
+        // singularity
+        bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
+                  &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0],
+                  &strain_heating_exact[0], &dummy4[0]);
 
-      for (int k = 0; k < Mz; k++) {
-        strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
-      }
-      const int ks = grid.kBelowHeight(thickness(i, j));
-      strain_heating_ij = strain_heating.get_column(i, j);
-      for (int k = 0; k < ks; k++) {  // only eval error if below num surface
-        const double _strain_heating_error = fabs(strain_heating_ij[k] - strain_heating_exact[k]);
-        max_strain_heating_error = std::max(max_strain_heating_error, _strain_heating_error);
-        avcount += 1.0;
-        av_strain_heating_error += _strain_heating_error;
+        for (int k = 0; k < Mz; k++) {
+          strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
+        }
+        const int ks = grid.kBelowHeight(thickness(i, j));
+        strain_heating_ij = strain_heating.get_column(i, j);
+        for (int k = 0; k < ks; k++) {  // only eval error if below num surface
+          const double _strain_heating_error = fabs(strain_heating_ij[k] - strain_heating_exact[k]);
+          max_strain_heating_error = std::max(max_strain_heating_error, _strain_heating_error);
+          avcount += 1.0;
+          av_strain_heating_error += _strain_heating_error;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
-
+  loop.check();
 
   gmax_strain_heating_err = GlobalMax(grid.com, max_strain_heating_error);
   gav_strain_heating_err = GlobalSum(grid.com, av_strain_heating_error);

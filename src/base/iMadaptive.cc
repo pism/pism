@@ -64,30 +64,36 @@ double IceModel::max_timestep_cfl_3d() {
 
   // update global max of abs of velocities for CFL; only velocities under surface
   double max_u = 0.0, max_v = 0.0, max_w = 0.0;
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j)) {
-      const int ks = grid.kBelowHeight(ice_thickness(i, j));
-      const double
-        *u = u3.get_column(i, j),
-        *v = v3.get_column(i, j),
-        *w = w3.get_column(i, j);
-
-      for (int k = 0; k <= ks; ++k) {
+      if (mask.icy(i, j)) {
+        const int ks = grid.kBelowHeight(ice_thickness(i, j));
         const double
-          absu = fabs(u[k]),
-          absv = fabs(v[k]);
-        max_u = std::max(max_u, absu);
-        max_v = std::max(max_v, absv);
-        max_w = std::max(max_w, fabs(w[k]));
-        const double denom = fabs(absu / grid.dx()) + fabs(absv / grid.dy());
-        if (denom > 0.0) {
-          max_dt = std::min(max_dt, 1.0 / denom);
+          *u = u3.get_column(i, j),
+          *v = v3.get_column(i, j),
+          *w = w3.get_column(i, j);
+
+        for (int k = 0; k <= ks; ++k) {
+          const double
+            absu = fabs(u[k]),
+            absv = fabs(v[k]);
+          max_u = std::max(max_u, absu);
+          max_v = std::max(max_v, absv);
+          max_w = std::max(max_w, fabs(w[k]));
+          const double denom = fabs(absu / grid.dx()) + fabs(absv / grid.dy());
+          if (denom > 0.0) {
+            max_dt = std::min(max_dt, 1.0 / denom);
+          }
         }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   gmaxu = GlobalMax(grid.com, max_u);
   gmaxv = GlobalMax(grid.com, max_v);
@@ -406,25 +412,31 @@ unsigned int IceModel::countCFLViolations() {
   list.add(v3);
 
   unsigned int CFL_violation_count = 0;
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    const int fks = grid.kBelowHeight(ice_thickness(i,j));
+      const int fks = grid.kBelowHeight(ice_thickness(i,j));
 
-    const double
-      *u = u3.get_column(i, j),
-      *v = v3.get_column(i, j);
+      const double
+        *u = u3.get_column(i, j),
+        *v = v3.get_column(i, j);
 
-    // check horizontal CFL conditions at each point
-    for (int k = 0; k <= fks; k++) {
-      if (fabs(u[k]) > CFL_x) {
-        CFL_violation_count += 1;
-      }
-      if (fabs(v[k]) > CFL_y) {
-        CFL_violation_count += 1;
+      // check horizontal CFL conditions at each point
+      for (int k = 0; k <= fks; k++) {
+        if (fabs(u[k]) > CFL_x) {
+          CFL_violation_count += 1;
+        }
+        if (fabs(v[k]) > CFL_y) {
+          CFL_violation_count += 1;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return (unsigned int)GlobalMax(grid.com, CFL_violation_count);
 }

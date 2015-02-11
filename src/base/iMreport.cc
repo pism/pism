@@ -597,21 +597,27 @@ double IceModel::compute_ice_enthalpy() {
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(Enth3);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // count all ice, including cells which have so little they
-    // are considered "ice-free"
-    if (ice_thickness(i,j) > 0) {
-      const int ks = grid.kBelowHeight(ice_thickness(i,j));
-      const double *Enth = Enth3.get_column(i,j);
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
+      if (ice_thickness(i,j) > 0) {
+        const int ks = grid.kBelowHeight(ice_thickness(i,j));
+        const double *Enth = Enth3.get_column(i,j);
 
-      for (int k=0; k<ks; ++k) {
-        enthalpy_sum += Enth[k] * (grid.z(k+1) - grid.z(k));
+        for (int k=0; k<ks; ++k) {
+          enthalpy_sum += Enth[k] * (grid.z(k+1) - grid.z(k));
+        }
+        enthalpy_sum += Enth[ks] * (ice_thickness(i,j) - grid.z(ks));
       }
-      enthalpy_sum += Enth[ks] * (ice_thickness(i,j) - grid.z(ks));
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   // FIXME: use cell_area.
   enthalpy_sum *= config.get("ice_density") * (grid.dx() * grid.dy());

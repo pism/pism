@@ -184,47 +184,53 @@ IceModelVec::Ptr PSB_flux::compute() {
   list.add(*thickness);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double u_sum = 0, v_sum = 0,
-      thk = (*thickness)(i,j);
-    int ks = m_grid.kBelowHeight(thk);
+      double u_sum = 0, v_sum = 0,
+        thk = (*thickness)(i,j);
+      int ks = m_grid.kBelowHeight(thk);
 
-    // an "ice-free" cell:
-    if (thk < icefree_thickness) {
-      (*result)(i,j).u = 0;
-      (*result)(i,j).v = 0;
-      continue;
+      // an "ice-free" cell:
+      if (thk < icefree_thickness) {
+        (*result)(i,j).u = 0;
+        (*result)(i,j).v = 0;
+        continue;
+      }
+
+      // an ice-filled cell:
+      const double *u_ij = NULL, *v_ij = NULL;
+      u_ij = u3.get_column(i, j);
+      v_ij = v3.get_column(i, j);
+
+      if (thk <= m_grid.z(1)) {
+        (*result)(i,j).u = u_ij[0];
+        (*result)(i,j).v = v_ij[0];
+        continue;
+      }
+
+      for (int k = 1; k <= ks; ++k) {
+        u_sum += (m_grid.z(k) - m_grid.z(k-1)) * (u_ij[k] + u_ij[k-1]);
+        v_sum += (m_grid.z(k) - m_grid.z(k-1)) * (v_ij[k] + v_ij[k-1]);
+      }
+
+      // Finish the trapezoidal rule integration (multiply by 1/2).
+      (*result)(i,j).u = 0.5 * u_sum;
+      (*result)(i,j).v = 0.5 * v_sum;
+
+      // The top surface of the ice is not aligned with the grid, so
+      // we have at most dz meters of ice above grid.z(ks).
+      // Assume that its velocity is (u_ij[ks], v_ij[ks]) and add its
+      // contribution.
+      (*result)(i,j).u += u_ij[ks] * (thk - m_grid.z(ks));
+      (*result)(i,j).v += v_ij[ks] * (thk - m_grid.z(ks));
     }
-
-    // an ice-filled cell:
-    const double *u_ij = NULL, *v_ij = NULL;
-    u_ij = u3.get_column(i, j);
-    v_ij = v3.get_column(i, j);
-
-    if (thk <= m_grid.z(1)) {
-      (*result)(i,j).u = u_ij[0];
-      (*result)(i,j).v = v_ij[0];
-      continue;
-    }
-
-    for (int k = 1; k <= ks; ++k) {
-      u_sum += (m_grid.z(k) - m_grid.z(k-1)) * (u_ij[k] + u_ij[k-1]);
-      v_sum += (m_grid.z(k) - m_grid.z(k-1)) * (v_ij[k] + v_ij[k-1]);
-    }
-
-    // Finish the trapezoidal rule integration (multiply by 1/2).
-    (*result)(i,j).u = 0.5 * u_sum;
-    (*result)(i,j).v = 0.5 * v_sum;
-
-    // The top surface of the ice is not aligned with the grid, so
-    // we have at most dz meters of ice above grid.z(ks).
-    // Assume that its velocity is (u_ij[ks], v_ij[ks]) and add its
-    // contribution.
-    (*result)(i,j).u += u_ij[ks] * (thk - m_grid.z(ks));
-    (*result)(i,j).v += v_ij[ks] * (thk - m_grid.z(ks));
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }
@@ -457,40 +463,46 @@ IceModelVec::Ptr PSB_wvel::compute() {
     sea_water_density = m_grid.config.get("sea_water_density"),
     R = ice_density / sea_water_density;
 
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    const double
-      *u = u3.get_column(i, j),
-      *v = v3.get_column(i, j),
-      *w = w3.get_column(i, j);
-    double *result = result3->get_column(i, j);
-
-    int ks = m_grid.kBelowHeight((*thickness)(i,j));
-
-    // in the ice:
-    if (M.grounded(i,j)) {
-      for (int k = 0; k <= ks ; k++) {
-        result[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
-      }
-
-    } else {                  // floating
       const double
-        z_sl = R * (*thickness)(i,j),
-        w_sl = w3.getValZ(i, j, z_sl);
+        *u = u3.get_column(i, j),
+        *v = v3.get_column(i, j),
+        *w = w3.get_column(i, j);
+      double *result = result3->get_column(i, j);
 
-      for (int k = 0; k <= ks ; k++) {
-        result[k] = w[k] - w_sl;
+      int ks = m_grid.kBelowHeight((*thickness)(i,j));
+
+      // in the ice:
+      if (M.grounded(i,j)) {
+        for (int k = 0; k <= ks ; k++) {
+          result[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+        }
+
+      } else {                  // floating
+        const double
+          z_sl = R * (*thickness)(i,j),
+          w_sl = w3.getValZ(i, j, z_sl);
+
+        for (int k = 0; k <= ks ; k++) {
+          result[k] = w[k] - w_sl;
+        }
+
+      }
+
+      // above the ice:
+      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+        result[k] = 0.0;
       }
 
     }
-
-    // above the ice:
-    for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
-      result[k] = 0.0;
-    }
-
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result3;
 }
@@ -703,10 +715,8 @@ IceModelVec::Ptr PSB_uvel::compute() {
 
       int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
-      const double *u_ij;
-      u_ij = u3.get_column(i,j);
-      double *u_out_ij;
-      u_out_ij = result->get_column(i,j);
+      const double *u_ij = u3.get_column(i,j);
+      double *u_out_ij = result->get_column(i,j);
 
       // in the ice:
       for (int k = 0; k <= ks ; k++) {
@@ -758,10 +768,8 @@ IceModelVec::Ptr PSB_vvel::compute() {
 
       int ks = m_grid.kBelowHeight((*thickness)(i,j));
 
-      const double *v_ij;
-      double *v_out_ij;
-      v_ij = v3.get_column(i,j);
-      v_out_ij = result->get_column(i,j);
+      const double *v_ij = v3.get_column(i,j);
+      double *v_out_ij = result->get_column(i,j);
 
       // in the ice:
       for (int k = 0; k <= ks ; k++) {

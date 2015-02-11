@@ -760,40 +760,46 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   list.add(m_delta[0]);
   list.add(m_delta[1]);
   list.add(D_stag);
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    for (int o = 0; o < 2; ++o) {
-      const int oi = 1 - o, oj = o;
+      for (int o = 0; o < 2; ++o) {
+        const int oi = 1 - o, oj = o;
 
-      double *delta_ij = m_delta[o].get_column(i,j);
+        double *delta_ij = m_delta[o].get_column(i,j);
 
-      const double
-        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+        const double
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-      if (thk == 0) {
-        D_stag(i,j,o) = 0.0;
-        continue;
+        if (thk == 0) {
+          D_stag(i,j,o) = 0.0;
+          continue;
+        }
+
+        const unsigned int ks = m_grid.kBelowHeight(thk);
+        double Dfoffset = 0.0;
+
+        for (unsigned int k = 1; k <= ks; ++k) {
+          double depth = thk - m_grid.z(k);
+
+          const double dz = m_grid.z(k) - m_grid.z(k-1);
+          // trapezoidal rule
+          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+        }
+
+        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+        const double dz = thk - m_grid.z(ks);
+        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+        D_stag(i,j,o) = Dfoffset;
       }
-
-      const unsigned int ks = m_grid.kBelowHeight(thk);
-      double Dfoffset = 0.0;
-
-      for (unsigned int k = 1; k <= ks; ++k) {
-        double depth = thk - m_grid.z(k);
-
-        const double dz = m_grid.z(k) - m_grid.z(k-1);
-        // trapezoidal rule
-        Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
-      }
-
-      // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - m_grid.z(ks);
-      Dfoffset += 0.5 * dz * dz * delta_ij[ks];
-
-      D_stag(i,j,o) = Dfoffset;
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 }
 
 //! \brief Compute I.
@@ -835,32 +841,38 @@ void SIAFD::compute_I() {
   assert(thk_smooth.get_stencil_width() >= 2);
 
   for (int o = 0; o < 2; ++o) {
-    for (PointsWithGhosts p(m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+    ParallelSection loop(m_grid.com);
+    try {
+      for (PointsWithGhosts p(m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-      const int oi = 1-o, oj=o;
-      const double
-        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+        const int oi = 1-o, oj=o;
+        const double
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-      double *delta_ij = m_delta[o].get_column(i,j);
-      double *I_ij     = I[o].get_column(i,j);
+        double *delta_ij = m_delta[o].get_column(i,j);
+        double *I_ij     = I[o].get_column(i,j);
 
-      const unsigned int ks = m_grid.kBelowHeight(thk);
+        const unsigned int ks = m_grid.kBelowHeight(thk);
 
-      // within the ice:
-      I_ij[0] = 0.0;
-      double I_current = 0.0;
-      for (unsigned int k = 1; k <= ks; ++k) {
-        const double dz = m_grid.z(k) - m_grid.z(k-1);
-        // trapezoidal rule
-        I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
-        I_ij[k] = I_current;
+        // within the ice:
+        I_ij[0] = 0.0;
+        double I_current = 0.0;
+        for (unsigned int k = 1; k <= ks; ++k) {
+          const double dz = m_grid.z(k) - m_grid.z(k-1);
+          // trapezoidal rule
+          I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
+          I_ij[k] = I_current;
+        }
+        // above the ice:
+        for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+          I_ij[k] = I_current;
+        }
       }
-      // above the ice:
-      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
-        I_ij[k] = I_current;
-      }
+    } catch (...) {
+      loop.failed();
     }
+    loop.check();
   } // o-loop
 }
 

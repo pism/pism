@@ -278,77 +278,83 @@ void SSAFEM::cacheQuadPtValues() {
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
 
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
-      double hq[Quadrature::Nq], hxq[Quadrature::Nq], hyq[Quadrature::Nq];
-      double ds_xq[Quadrature::Nq], ds_yq[Quadrature::Nq];
-      if (driving_stress_explicit) {
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_x, ds_xq);
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_y, ds_yq);
-      } else {
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_surface, hq, hxq, hyq);
-      }
-
-      double Hq[Quadrature::Nq], bq[Quadrature::Nq], taucq[Quadrature::Nq];
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_thickness, Hq);
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_bed, bq);
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, taucq);
-
-      const int ij = m_element_index.flatten(i, j);
-      Coefficients *coefficients = &m_coefficients[4*ij];
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-        coefficients[q].H  = Hq[q];
-        coefficients[q].b  = bq[q];
-        coefficients[q].tauc = taucq[q];
+  ParallelSection loop(m_grid.com);
+  try {
+    for (int i=xs; i<xs+xm; i++) {
+      for (int j=ys; j<ys+ym; j++) {
+        double hq[Quadrature::Nq], hxq[Quadrature::Nq], hyq[Quadrature::Nq];
+        double ds_xq[Quadrature::Nq], ds_yq[Quadrature::Nq];
         if (driving_stress_explicit) {
-          coefficients[q].driving_stress.u = ds_xq[q];
-          coefficients[q].driving_stress.v = ds_yq[q];
+          m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_x, ds_xq);
+          m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_y, ds_yq);
         } else {
-          coefficients[q].driving_stress.u = -ice_density*m_earth_grav*Hq[q]*hxq[q];
-          coefficients[q].driving_stress.v = -ice_density*m_earth_grav*Hq[q]*hyq[q];
+          m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_surface, hq, hxq, hyq);
         }
 
-        coefficients[q].mask = gc.mask(coefficients[q].b, coefficients[q].H);
-      }
+        double Hq[Quadrature::Nq], bq[Quadrature::Nq], taucq[Quadrature::Nq];
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_thickness, Hq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_bed, bq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, taucq);
 
-      // In the following, we obtain the averaged hardness value from enthalpy by
-      // interpolating enthalpy in each column over a quadrature point and then
-      // taking the average over the column.  A faster approach would be to take
-      // the column average over each element nodes and then interpolate to the
-      // quadrature points. Does this make a difference?
-
-      // Obtain the values of enthalpy at each vertical level at each of the vertices
-      // of the current element.
-      Enth_e[0] = m_enthalpy->get_column(i, j);
-      Enth_e[1] = m_enthalpy->get_column(i+1, j);
-      Enth_e[2] = m_enthalpy->get_column(i+1, j+1);
-      Enth_e[3] = m_enthalpy->get_column(i, j+1);
-
-      // We now want to interpolate to the quadrature points at each of the
-      // vertical levels.  It would be nice to use quadrature::computeTestFunctionValues,
-      // but the way we have just obtained the values at the element vertices
-      // using getInternalColumn doesn't make this straightforward.  So we compute the values
-      // by hand.
-      const FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
-      for (unsigned int k = 0; k < m_grid.Mz(); k++) {
-        Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
+        const int ij = m_element_index.flatten(i, j);
+        Coefficients *coefficients = &m_coefficients[4*ij];
         for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-          for (unsigned int p = 0; p < Quadrature::Nk; p++) {
-            Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
+          coefficients[q].H  = Hq[q];
+          coefficients[q].b  = bq[q];
+          coefficients[q].tauc = taucq[q];
+          if (driving_stress_explicit) {
+            coefficients[q].driving_stress.u = ds_xq[q];
+            coefficients[q].driving_stress.v = ds_yq[q];
+          } else {
+            coefficients[q].driving_stress.u = -ice_density*m_earth_grav*Hq[q]*hxq[q];
+            coefficients[q].driving_stress.v = -ice_density*m_earth_grav*Hq[q]*hyq[q];
+          }
+
+          coefficients[q].mask = gc.mask(coefficients[q].b, coefficients[q].H);
+        }
+
+        // In the following, we obtain the averaged hardness value from enthalpy by
+        // interpolating enthalpy in each column over a quadrature point and then
+        // taking the average over the column.  A faster approach would be to take
+        // the column average over each element nodes and then interpolate to the
+        // quadrature points. Does this make a difference?
+
+        // Obtain the values of enthalpy at each vertical level at each of the vertices
+        // of the current element.
+        Enth_e[0] = m_enthalpy->get_column(i, j);
+        Enth_e[1] = m_enthalpy->get_column(i+1, j);
+        Enth_e[2] = m_enthalpy->get_column(i+1, j+1);
+        Enth_e[3] = m_enthalpy->get_column(i, j+1);
+
+        // We now want to interpolate to the quadrature points at each of the
+        // vertical levels.  It would be nice to use quadrature::computeTestFunctionValues,
+        // but the way we have just obtained the values at the element vertices
+        // using getInternalColumn doesn't make this straightforward.  So we compute the values
+        // by hand.
+        const FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+        for (unsigned int k = 0; k < m_grid.Mz(); k++) {
+          Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
+          for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+            for (unsigned int p = 0; p < Quadrature::Nk; p++) {
+              Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
+            }
           }
         }
-      }
 
-      // Now, for each column over a quadrature point, find the averaged_hardness.
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-        // Evaluate column integrals in flow law at every quadrature point's column
-        coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
-                                                          m_grid.kBelowHeight(coefficients[q].H),
-                                                          &(m_grid.z()[0]), Enth_q[q]);
-      }
+        // Now, for each column over a quadrature point, find the averaged_hardness.
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+          // Evaluate column integrals in flow law at every quadrature point's column
+          coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
+                                                            m_grid.kBelowHeight(coefficients[q].H),
+                                                            &(m_grid.z()[0]), Enth_q[q]);
+        }
 
-    } // j-loop
-  } // i-loop
+      } // j-loop
+    } // i-loop
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   for (unsigned int q = 0; q < Quadrature::Nq; q++) {
     delete [] Enth_q[q];

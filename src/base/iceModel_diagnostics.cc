@@ -341,18 +341,24 @@ IceModelVec::Ptr IceModel_hardav::compute() {
   list.add(model->Enth3);
   list.add(model->ice_thickness);
   list.add(*result);
-  for (Points p(m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid.com);
+  try {
+    for (Points p(m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    Eij = model->Enth3.get_column(i,j);
-    const double H = model->ice_thickness(i,j);
-    if (mask.icy(i, j)) {
-      (*result)(i,j) = flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
-                                                   &(m_grid.z()[0]), Eij);
-    } else { // put negative value below valid range
-      (*result)(i,j) = fillval;
+      Eij = model->Enth3.get_column(i,j);
+      const double H = model->ice_thickness(i,j);
+      if (mask.icy(i, j)) {
+        (*result)(i,j) = flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
+                                                     &(m_grid.z()[0]), Eij);
+      } else { // put negative value below valid range
+        (*result)(i,j) = fillval;
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   return result;
 }
