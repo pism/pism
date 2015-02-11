@@ -44,6 +44,7 @@ set(PISMUTIL_SRC
   base/util/MaxTimestep.cc
   base/util/PISMDiagnostic.cc
   base/enthalpyConverter.cc
+  base/KirchhoffEnthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/ColumnInterpolation.cc
   base/util/Mask.cc

@@ -208,7 +208,7 @@ double EnthalpyConverter::enthalpy(double T, double omega, double p) const {
 }
 
 double EnthalpyConverter::enthalpy_impl(double T, double omega, double p) const {
-  const double T_m = melting_temperature(p);
+  const double T_melting = melting_temperature(p);
 
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
@@ -217,16 +217,17 @@ double EnthalpyConverter::enthalpy_impl(double T, double omega, double p) const 
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
     throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
-  if (T > T_m + 1.0e-6) {
-    throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
+  if (T > T_melting + 1.0e-6) {
+    throw RuntimeError::formatted("T=%f exceeds T_melting=%f; not allowed",T,T_melting);
   }
-  if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory; got T=%f, T_m=%f, omega=%f",
-                                  T, T_m, omega);
+  if ((T < T_melting - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
+    throw RuntimeError::formatted("T < T_melting AND omega > 0 is contradictory;"
+                                  " got T=%f, T_melting=%f, omega=%f",
+                                  T, T_melting, omega);
   }
 #endif
 
-  if (T < T_m) {
+  if (T < T_melting) {
     return m_c_i * (T - m_T_0);
   } else {
     return enthalpy_cts(p) + omega * m_L;

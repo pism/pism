@@ -76,7 +76,7 @@ protected:
   virtual double temperature_impl(double E, double pressure) const;
   virtual bool is_temperate_impl(double E, double pressure) const;
 
-  double enthalpy_liquid(double pressure) const;
+  virtual double enthalpy_liquid(double pressure) const;
   void enthalpy_interval(double pressure, double &E_s, double &E_l) const;
 
   double m_T_melting, m_L, m_c_i, m_rho_i, m_g, m_p_air, m_beta, m_T_tolerance;
@@ -101,13 +101,34 @@ public:
   virtual ~ColdEnthalpyConverter();
 
 protected:
-  double enthalpy_permissive_impl(double T, double /*omega*/, double /*pressure*/) const;
-  double enthalpy_impl(double T, double /*omega*/, double /*pressure*/) const;
-  double water_fraction_impl(double /*E*/, double /*pressure*/) const;
-  double melting_temperature_impl(double /*pressure*/) const;
-  bool is_temperate_impl(double /*E*/, double /*pressure*/) const;
-  double temperature_impl(double E, double /*pressure*/) const;
+  double enthalpy_permissive_impl(double T, double omega, double pressure) const;
+  double enthalpy_impl(double T, double omega, double pressure) const;
+  double water_fraction_impl(double E, double pressure) const;
+  double melting_temperature_impl(double pressure) const;
+  bool is_temperate_impl(double E, double pressure) const;
+  double temperature_impl(double E, double pressure) const;
 };
+
+//! @brief An enthalpy converter including pressure-dependence of the
+//! latent heat of fusion of water. (To be used by Glint2.)
+class KirchhoffEnthalpyConverter : public EnthalpyConverter {
+public:
+  KirchhoffEnthalpyConverter(const Config &config);
+  virtual ~KirchhoffEnthalpyConverter();
+
+  //! @brief Latent heat of fusion of water as a function of
+  //! pressure-melting temperature.
+  double L(double T_pm) const;
+protected:
+  double water_fraction_impl(double E, double pressure) const;
+  double enthalpy_impl(double T, double omega, double pressure) const;
+
+  double enthalpy_liquid(double pressure) const;
+private:
+  //! specific heat capacity of pure water
+  double m_c_w;
+};
+
 
 } // end of namespace pism
 
