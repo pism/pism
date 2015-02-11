@@ -536,3 +536,17 @@ def column_interpolation_test(plot=False):
         quadratic_delta > 1e-3):
         return False
     return True
+
+def pism_join_test():
+    "Test PISM.join()"
+    assert PISM.join(["one", "two"], ':') == "one:two"
+
+def pism_split_test():
+    "Test PISM.split()"
+    assert PISM.split("one,two,three", ',') == ("one", "two", "three")
+
+def pism_ends_with_test():
+    "Test PISM.ends_with()"
+    assert PISM.ends_with("foo.nc", ".nc") == True
+    assert PISM.ends_with("foo.nc and more text", ".nc") == False
+    assert PISM.ends_with("", "suffix") == False

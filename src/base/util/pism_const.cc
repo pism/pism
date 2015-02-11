@@ -126,6 +126,18 @@ std::string join(const std::vector<std::string> &strings, const std::string &sep
   return result;
 }
 
+//! Transform a `separator`-separated list (a string) into a vector of strings.
+std::vector<std::string> split(const std::string &input, char separator) {
+  std::istringstream input_list(input);
+  std::string token;
+  std::vector<std::string> result;
+
+  while (getline(input_list, token, separator)) {
+    result.push_back(token);
+  }
+  return result;
+}
+
 //! Checks if a vector of doubles is strictly increasing.
 bool is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();

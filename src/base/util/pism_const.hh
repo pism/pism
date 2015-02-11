@@ -61,6 +61,7 @@ PetscLogDouble GetTime();
 
 bool ends_with(const std::string &str, const std::string &suffix);
 std::string join(const std::vector<std::string> &strings, const std::string &separator);
+std::vector<std::string> split(const std::string &input, char separator);
 
 inline bool set_contains(const std::set<std::string> &S, const std::string &name) {
   return (S.find(name) != S.end());
