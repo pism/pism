@@ -34,7 +34,6 @@ set(PISMUTIL_SRC
   base/util/petscwrappers/KSP.cc
   base/util/petscwrappers/Mat.cc
   base/util/petscwrappers/SNES.cc
-  base/util/petscwrappers/Tao.cc
   base/util/petscwrappers/Vec.cc
   base/util/petscwrappers/VecScatter.cc
   base/util/petscwrappers/Viewer.cc
@@ -74,6 +73,10 @@ set(PISMUTIL_SRC
   base/util/PISMUnits.cc
   base/varcEnthalpyConverter.cc
   )
+
+if(Pism_USE_TAO)
+  list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
+endif()
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)

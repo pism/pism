@@ -566,7 +566,7 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
   loop.check();
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(grid.com);
+  ierr = PetscSynchronizedFlush(m_grid.com);
   PISM_CHK(ierr, "PetscSynchronizedFlush");
 #else
   ierr = PetscSynchronizedFlush(m_grid.com, NULL);
@@ -822,7 +822,7 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **ve
     *str = SAME_NONZERO_PATTERN;
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
