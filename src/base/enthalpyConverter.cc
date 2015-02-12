@@ -43,12 +43,12 @@ EnthalpyConverter::~EnthalpyConverter() {
   // empty
 }
 
-bool EnthalpyConverter::is_temperate(double E, double pressure) const {
-  return this->is_temperate_impl(E, pressure);
+bool EnthalpyConverter::is_temperate(double E, double P) const {
+  return this->is_temperate_impl(E, P);
 }
 
-double EnthalpyConverter::temperature(double E, double pressure) const {
-  return this->temperature_impl(E, pressure);
+double EnthalpyConverter::temperature(double E, double P) const {
+  return this->temperature_impl(E, P);
 }
 
 
@@ -79,12 +79,12 @@ double EnthalpyConverter::c_from_T_impl(double /*T*/) const {
 /*!
      \f[ T_m(p) = T_{melting} - \beta p. \f]
  */
-double EnthalpyConverter::melting_temperature(double pressure) const {
-  return this->melting_temperature_impl(pressure);
+double EnthalpyConverter::melting_temperature(double P) const {
+  return this->melting_temperature_impl(P);
 }
 
-double EnthalpyConverter::melting_temperature_impl(double pressure) const {
-  return m_T_melting - m_beta * pressure;
+double EnthalpyConverter::melting_temperature_impl(double P) const {
+  return m_T_melting - m_beta * P;
 }
 
 
@@ -152,8 +152,8 @@ double EnthalpyConverter::temperature_impl(double E, double p) const {
 The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
  */
-double EnthalpyConverter::pressure_adjusted_temperature(double E, double pressure) const {
-  return temperature(E, pressure) - melting_temperature(pressure) + m_T_melting;
+double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) const {
+  return temperature(E, P) - melting_temperature(P) + m_T_melting;
 }
 
 
@@ -170,20 +170,20 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double pressur
 
    We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
-double EnthalpyConverter::water_fraction(double E, double pressure) const {
-  return this->water_fraction_impl(E, pressure);
+double EnthalpyConverter::water_fraction(double E, double P) const {
+  return this->water_fraction_impl(E, P);
 }
 
-double EnthalpyConverter::water_fraction_impl(double E, double pressure) const {
+double EnthalpyConverter::water_fraction_impl(double E, double P) const {
 
 #if (PISM_DEBUG==1)
-  if (E >= enthalpy_liquid(pressure)) {
+  if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted("E=%f and pressure=%f correspond to liquid water",
-                                  E, pressure);
+                                  E, P);
   }
 #endif
 
-  double E_s = enthalpy_cts(pressure);
+  double E_s = enthalpy_cts(P);
   if (E <= E_s) {
     return 0.0;
   } else {
@@ -262,18 +262,18 @@ Computes:
   but ensures @f$ 0 \le \omega \le 1 @f$ in second case.  Calls enthalpy() for
   @f$ E(T,\omega,p) @f$.
  */
-double EnthalpyConverter::enthalpy_permissive(double T, double omega, double pressure) const {
-  return this->enthalpy_permissive_impl(T, omega, pressure);
+double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) const {
+  return this->enthalpy_permissive_impl(T, omega, P);
 }
 
-double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, double pressure) const {
+double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, double P) const {
 
-  const double T_m = melting_temperature(pressure);
+  const double T_m = melting_temperature(P);
 
   if (T < T_m) {
-    return enthalpy(T, 0.0, pressure);
-  } else { // T >= T_m(pressure) replaced with T = T_m(pressure)
-    return enthalpy(T_m, std::max(0.0, std::min(omega, 1.0)), pressure);
+    return enthalpy(T, 0.0, P);
+  } else { // T >= T_m(P) replaced with T = T_m(P)
+    return enthalpy(T_m, std::max(0.0, std::min(omega, 1.0)), P);
   }
 }
 

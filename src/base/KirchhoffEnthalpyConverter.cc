@@ -37,25 +37,25 @@ double KirchhoffEnthalpyConverter::L(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
-double KirchhoffEnthalpyConverter::water_fraction_impl(double E, double pressure) const {
+double KirchhoffEnthalpyConverter::water_fraction_impl(double E, double P) const {
 
 #if (PISM_DEBUG==1)
-  if (E >= enthalpy_liquid(pressure)) {
+  if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted("E=%f and pressure=%f correspond to liquid water",
-                                  E, pressure);
+                                  E, P);
   }
 #endif
 
-  double E_s = enthalpy_cts(pressure);
+  double E_s = enthalpy_cts(P);
   if (E <= E_s) {
     return 0.0;
   } else {
-    return (E - E_s) / L(melting_temperature(pressure));
+    return (E - E_s) / L(melting_temperature(P));
   }
 }
 
-double KirchhoffEnthalpyConverter::enthalpy_impl(double T, double omega, double pressure) const {
-  const double T_m = melting_temperature(pressure);
+double KirchhoffEnthalpyConverter::enthalpy_impl(double T, double omega, double P) const {
+  const double T_m = melting_temperature(P);
 
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
@@ -77,12 +77,12 @@ double KirchhoffEnthalpyConverter::enthalpy_impl(double T, double omega, double 
   if (T < T_m) {
     return m_c_i * (T - m_T_0);
   } else {
-    return enthalpy_cts(pressure) + omega * L(T_m);
+    return enthalpy_cts(P) + omega * L(T_m);
   }
 }
 
-double KirchhoffEnthalpyConverter::enthalpy_liquid_impl(double pressure) const {
-  return enthalpy_cts(pressure) + L(melting_temperature(pressure));
+double KirchhoffEnthalpyConverter::enthalpy_liquid_impl(double P) const {
+  return enthalpy_cts(P) + L(melting_temperature(P));
 }
 
 } // end of namespace pism
