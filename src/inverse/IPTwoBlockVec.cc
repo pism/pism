@@ -32,11 +32,13 @@ IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
   ierr = PetscObjectGetComm((PetscObject)b, &comm_b); PISM_CHK(ierr, "PetscObjectGetComm");
   assert(comm == comm_b);
 
+  // These have to be PetscInt because of PETSc calls below
   PetscInt lo_a, hi_a;
   ierr = VecGetOwnershipRange(a, &lo_a, &hi_a); PISM_CHK(ierr, "VecGetOwnershipRange");
   ierr = VecGetSize(a, &m_na_global); PISM_CHK(ierr, "VecGetSize");
   m_na_local = hi_a - lo_a;
 
+  // These have to be PetscInt because of PETSc calls below
   PetscInt lo_b, hi_b;
   ierr = VecGetOwnershipRange(b, &lo_b, &hi_b); PISM_CHK(ierr, "VecGetOwnershipRange");
   ierr = VecGetSize(b, &m_nb_global); PISM_CHK(ierr, "VecGetSize");

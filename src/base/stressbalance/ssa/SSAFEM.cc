@@ -769,6 +769,8 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
     return;
   }
 
+  // iter has to be a PetscInt because it is used in the
+  // SNESGetIterationNumber() call below.
   PetscInt iter = 0;
   ierr = SNESGetIterationNumber(m_snes, &iter);
   PISM_CHK(ierr, "SNESGetIterationNumber");

@@ -533,6 +533,7 @@ void IceModelVec::dump(const char filename[]) const {
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
 void IceModelVec::checkCompatibility(const char* func, const IceModelVec &other) const {
   PetscErrorCode ierr;
+  // We have to use PetscInt because of VecGetSizes below.
   PetscInt X_size, Y_size;
 
   if (m_dof != other.m_dof) {
@@ -907,6 +908,7 @@ void convert_vec(Vec v, const UnitSystem system,
                  const std::string &spec1, const std::string &spec2) {
   UnitConverter c(system, spec1, spec2);
 
+  // has to be a PetscInt because of the VecGetLocalSize() call
   PetscInt data_size = 0;
   PetscErrorCode ierr = VecGetLocalSize(v, &data_size);
   PISM_CHK(ierr, "VecGetLocalSize");

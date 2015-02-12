@@ -960,6 +960,8 @@ void SSAFD::picard_manager(double nuH_regularization,
                            double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
   double   nuH_norm, nuH_norm_change;
+  // ksp_iterations should be a PetscInt because it is used in the
+  // KSPGetIterationNumber() call below
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 

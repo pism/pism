@@ -220,7 +220,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   atmosphere->mean_precipitation(climatic_mass_balance);
 
   // set up air temperature time series
-  PetscInt Nseries = 0;
+  int Nseries = 0;
   mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries);
 
   PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
@@ -231,7 +231,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
   // times for the air temperature time-series, in years:
   std::vector<PetscScalar> ts(Nseries), T(Nseries);
-  for (PetscInt k = 0; k < Nseries; ++k) {
+  for (int k = 0; k < Nseries; ++k) {
     ts[k] = my_t + k * dtseries;
   }
 

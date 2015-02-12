@@ -150,6 +150,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
 void IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {
   PetscErrorCode ierr;
 
+  // Has to be a PetscInt because of the TaoGetSolutionStatus call.
   PetscInt its;
   ierr = TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL);
   PISM_CHK(ierr, "TaoGetSolutionStatus");
