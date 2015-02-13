@@ -86,7 +86,7 @@ public:
   void clear_all_strings();
 
   // getters
-  UnitSystem get_unit_system() const;
+  UnitSystem unit_system() const;
 
   double get_double(const std::string &name) const;
   std::vector<double> get_doubles(const std::string &name) const;
@@ -135,7 +135,11 @@ public:
                     const IceGrid &g, const std::vector<double> &zlevels);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
+
   void set_levels(const std::vector<double> &levels);
+  const std::vector<double>& get_levels() const;
+
+  const IceGrid& grid() const;
 
   void set_time_independent(bool flag);
 

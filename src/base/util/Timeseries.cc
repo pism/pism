@@ -146,7 +146,7 @@ void Timeseries::report_range() {
   min = *std::min_element(m_values.begin(), m_values.end());
   max = *std::max_element(m_values.begin(), m_values.end());
 
-  UnitConverter c(m_variable.get_unit_system(),
+  UnitConverter c(m_variable.unit_system(),
                   m_variable.get_string("units"),
                   m_variable.get_string("glaciological_units"));
   min = c(min);

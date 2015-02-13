@@ -447,7 +447,7 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
 
     IceModelVec2::get_dof(da2, tmp, i);
 
-    convert_vec(tmp, m_metadata[i].get_unit_system(),
+    convert_vec(tmp, m_metadata[i].unit_system(),
                 units, glaciological_units);
 
     ierr = VecView(tmp, v);

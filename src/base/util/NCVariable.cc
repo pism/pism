@@ -76,7 +76,7 @@ unsigned int NCVariable::get_n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
-UnitSystem NCVariable::get_unit_system() const {
+UnitSystem NCVariable::unit_system() const {
   return m_unit_system;
 }
 
@@ -196,6 +196,10 @@ void NCSpatialVariable::set_levels(const std::vector<double> &levels) {
   m_zlevels = levels;
 }
 
+const std::vector<double>& NCSpatialVariable::get_levels() const {
+  return m_zlevels;
+}
+
 void NCSpatialVariable::set_time_independent(bool flag) {
   if (flag == true) {
     m_time_dimension_name = "";
@@ -203,6 +207,11 @@ void NCSpatialVariable::set_time_independent(bool flag) {
     m_time_dimension_name = m_grid->config.get_string("time_dimension_name");
   }
 }
+
+const IceGrid& NCSpatialVariable::grid() const {
+  return *m_grid;
+}
+
 
 //! Read a variable from a file into an array `output`.
 /*! This also converts the data from input units to internal units if needed.
