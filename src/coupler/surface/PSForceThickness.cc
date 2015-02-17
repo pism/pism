@@ -161,6 +161,9 @@ void ForceThickness::init() {
                "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
                m_input_file.c_str());
     m_ftt_mask.regrid(m_input_file, CRITICAL);
+  } else {
+    throw RuntimeError::formatted("variable 'ftt_mask' was not found in '%s'",
+                                  m_input_file.c_str());
   }
 }
 
