@@ -78,7 +78,13 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
     var1 = ma.array(var1, mask = mask)
     var2 = ma.array(var2, mask = mask)
 
-    delta = abs(var1 - var2).max()
+    if isinstance(var1.dtype, (int, float)):
+        delta = abs(var1 - var2).max()
+    else:
+        if (var1 == var2).all():
+            delta = 0
+        else:
+            delta = 1
 
     if relative:
         denom = max(abs(var1).max(), abs(var2).max())
