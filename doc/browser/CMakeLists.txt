@@ -79,5 +79,11 @@ else ()
   if (NOT DOXYGEN_DOT_EXECUTABLE)
     message (STATUS "'dot' was not found. Please install graphviz if you want to re-build source code browsers.")
   endif()
+
+  add_custom_target(browser
+    COMMAND ${CMAKE_COMMAND} -E echo "Please install LaTeX, Doxygen, and Graphviz to build the source code browser.")
+
+  add_custom_target(browser.tgz
+    COMMAND ${CMAKE_COMMAND} -E echo "Please install LaTeX, Doxygen, and Graphviz to build the source code browser.")
 endif ()
 
