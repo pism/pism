@@ -56,6 +56,7 @@ def usagefailure(message):
 
 def compare_vars(nc1, nc2, name, tol, relative=False):
     from numpy import squeeze, isnan, ma
+    import numpy
 
     try:
         var1 = ma.array(squeeze(nc1.variables[name][:]))
@@ -78,9 +79,9 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
     var1 = ma.array(var1, mask = mask)
     var2 = ma.array(var2, mask = mask)
 
-    if isinstance(var1.dtype, (int, float)):
+    try:
         delta = abs(var1 - var2).max()
-    else:
+    except TypeError:
         if (var1 == var2).all():
             delta = 0
         else:
