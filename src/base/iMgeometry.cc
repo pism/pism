@@ -286,13 +286,13 @@ void IceModel::adjust_flow(StarStencil<int> mask,
  * from regular grid neighbors, making sure that velocities from ice-free areas
  * are not used.
  *
- * Note that the input parameter `input_velocity` contains both components of
- * the velocity field in the neighborhood of i,j, while `output_velocity`
+ * Note that the input parameter `in_SSA_velocity` contains both components of
+ * the velocity field in the neighborhood of i,j, while `out_SSA_velocity`
  * contains \b scalars: projections of velocity vectors onto normals to
  * corresponding cell interfaces.
  *
- * The SIA flux `input_flux` is computed on the staggered grid by SIAFD, so
- * the loop below just copies it to `output_flux`.
+ * The SIA flux `in_SIA_flux` is computed on the staggered grid by SIAFD, so
+ * the loop below just copies it to `out_SIA_flux`.
  *
  * 2) Adjust the flow using the mask by calling adjust_flow().
  *
@@ -442,17 +442,15 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   SIA and \f$\mathbf{U}_b\f$ is the less-diffusive sliding velocity.
   We interpret \f$\mathbf{U}_b\f$ as a basal sliding velocity in the hybrid.
 
-  The main ice-dynamical inputs to this method are identified in these lines,
-  which get outputs from StressBalance *stress_balance:
+  The main ice-dynamical inputs to this method come from the outputs from
+  StressBalance *stress_balance:
   \code
-  IceModelVec2Stag *Qdiff;
-  stress_balance->get_diffusive_flux(Qdiff);
-  IceModelVec2V *vel_advective;
-  stress_balance->get_advective_2d_velocity(vel_advective);
+  const IceModelVec2Stag &Qdiff = stress_balance->diffusive_flux();
+  const IceModelVec2V &vel_advective = stress_balance->advective_velocity();
   \endcode
-  The diffusive flux \f$-D\nabla h\f$ is thus stored in `IceModelVec2Stag`
-  `*Qdiff` while the less-diffusive velocity \f$\mathbf{U}_b\f$ is stored in
-  `IceModelVec2V` `*vel_advective`.
+  The diffusive flux \f$-D\nabla h\f$ is thus stored in a `IceModelVec2Stag`
+  while the less-diffusive velocity \f$\mathbf{U}_b\f$ is stored in a
+  `IceModelVec2V`.
 
   The methods used here are first-order and explicit in time.  The derivatives in
   \f$\nabla \cdot (D \nabla h)\f$ are computed by centered finite difference
@@ -463,7 +461,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
 
   The divergence of the flux from velocity \f$\mathbf{U}_b\f$ is computed by
   the upwinding technique [equation (25) in \ref Winkelmannetal2011] which
-  is the donor cell upwind method [\ref LeVeque].
+  is the donor cell upwind (i.e. Gudunov) method [\ref LeVeque].
   The CFL condition for this advection scheme is checked; see
   computeMax2DSlidingSpeed() and determineTimeStep().  This method implements the
   direct-superposition (PIK) hybrid which adds the SSA velocity to the SIA velocity
@@ -686,7 +684,7 @@ void IceModel::massContExplicitStep() {
 
             // A cell that became "full" experiences both SMB and basal melt.
           } else {
-            // An empty of partially-filled cell experiences neither.
+            // A not-full partially-filled cell experiences neither.
             surface_mass_balance = 0.0;
             my_basal_melt_rate   = 0.0;
           }
@@ -822,7 +820,7 @@ void IceModel::massContExplicitStep() {
 }
 
 /**
-   @brief Updates the fractional "floatation mask".
+   @brief Updates the fractional "flotation mask".
 
    This mask ranges from 0 to 1 and is equal to the fraction of the
    cell (by area) that is grounded.
