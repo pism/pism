@@ -87,6 +87,31 @@ def water_fraction_at_cts_test():
 
     try_all_converters(run)
 
+def enthalpy_of_water_test():
+    """Test the dependence of the enthalpy of water at T_m(p) on p."""
+
+    config = PISM.Context().config
+    c_w = config.get("water_specific_heat_capacity")
+
+    EC = converters["Glint2 (Kirchhoff)"]
+
+    depth0 = 0.0
+    p0     = EC.pressure(depth0)
+    T0     = EC.melting_temperature(p0)
+    omega0 = 1.0
+    E0     = EC.enthalpy(T0, omega0, p0)
+
+    depth1 = 1000.0
+    p1     = EC.pressure(depth1)
+    T1     = EC.melting_temperature(p1)
+    omega1 = 1.0
+    E1     = EC.enthalpy(T1, omega1, p1)
+
+    # if we change the pressure of water from p0 to p1 while keeping
+    # it at T_m(p), its enthalpy should change and this change should
+    # be equal to c_w * (T_m(p1) - T_m(p0))
+    assert np.fabs((E1 - E0) - c_w * (T1 - T0)) < 1e-9
+
 def plot_converter(name, EC):
     """Test an enthalpy converter passed as the argument."""
 
