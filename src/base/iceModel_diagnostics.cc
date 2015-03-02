@@ -1347,6 +1347,7 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "total over ice domain of top surface ice mass flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
   m_ts->rate_of_change = true;
 }
 
@@ -1384,6 +1385,7 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "total over grounded ice domain of basal mass flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
   m_ts->rate_of_change = true;
 }
 
@@ -1403,6 +1405,7 @@ IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "cumulative total grounded basal mass flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
 void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
@@ -1421,6 +1424,7 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "total sub-shelf ice flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
   m_ts->rate_of_change = true;
 }
 
@@ -1440,6 +1444,7 @@ IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel 
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "cumulative total sub-shelf ice flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
 void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
@@ -1458,6 +1463,7 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
   m_ts->rate_of_change = true;
 }
 
@@ -1477,6 +1483,7 @@ IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "cumulative 'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
 void IceModel_nonneg_flux_cumulative::update(double a, double b) {
@@ -1495,6 +1502,7 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "discharge (calving & icebergs) flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
   m_ts->rate_of_change = true;
 }
 
@@ -1513,6 +1521,7 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "cumulative discharge (calving etc.) flux");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
 void IceModel_discharge_flux_cumulative::update(double a, double b) {
@@ -1693,6 +1702,7 @@ IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "mass flux from thk to Href");
+  m_ts->metadata().set_string("comment", "does not correspond to mass gain or loss");
   m_ts->rate_of_change = true;
 }
 
@@ -1710,6 +1720,7 @@ IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "mass flux from Href to thk");
+  m_ts->metadata().set_string("comment", "does not correspond to mass gain or loss");
   m_ts->rate_of_change = true;
 }
 
@@ -1728,6 +1739,7 @@ IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m)
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name", "sum(divQ)");
+  m_ts->metadata().set_string("comment", "positive means ice gain");
   m_ts->rate_of_change = true;
 }
 
@@ -1744,9 +1756,10 @@ IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel 
   // set metadata:
   m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "nonneg_flux_cumulative", m_grid));
 
-  set_attrs("cumulative non-negative rule (thk >= 0) flux (positive means ice gain)",
+  set_attrs("cumulative non-negative rule (thk >= 0) flux",
             "",                 // no standard name
             "kg m-2", "Gt m-2", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
 }
 
 IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute() {
@@ -1767,9 +1780,10 @@ IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumu
   // set metadata:
   m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "grounded_basal_flux_cumulative", m_grid));
 
-  set_attrs("cumulative grounded basal flux (positive means ice gain)",
+  set_attrs("cumulative grounded basal flux",
             "",                 // no standard name
             "kg m-2", "Gt m-2", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
 }
 
 IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute() {
@@ -1790,9 +1804,10 @@ IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumu
   // set metadata:
   m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "floating_basal_flux_cumulative", m_grid));
 
-  set_attrs("cumulative floating basal flux (positive means ice gain)",
+  set_attrs("cumulative floating basal flux",
             "",                 // no standard name
             "kg m-2", "Gt m-2", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
 }
 
 IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute() {
@@ -1812,11 +1827,13 @@ IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(Ice
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "discharge_flux_cumulative", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(),
+                                     "discharge_flux_cumulative", m_grid));
 
-  set_attrs("cumulative ice discharge (calving) flux (negative means ice loss)",
+  set_attrs("cumulative ice discharge (calving) flux",
             "",                 // no standard name
             "kg m-2", "Gt m-2", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
 }
 
 IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute() {
