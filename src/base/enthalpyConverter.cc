@@ -43,10 +43,12 @@ EnthalpyConverter::~EnthalpyConverter() {
   // empty
 }
 
+//! Return `true` if ice at `(E, P)` is temperate.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
   return this->is_temperate_impl(E, P);
 }
 
+//! Return temperature of ice at `(E, P)`.
 double EnthalpyConverter::temperature(double E, double P) const {
   return this->temperature_impl(E, P);
 }
@@ -67,12 +69,24 @@ double EnthalpyConverter::pressure(double depth) const {
   }
 }
 
+//! Return specific heat capacity of ice as a function of temperature `T`.
 double EnthalpyConverter::c_from_T(double T) const {
   return this->c_from_T_impl(T);
 }
 
 double EnthalpyConverter::c_from_T_impl(double /*T*/) const {
   return m_c_i;
+}
+
+//! Latent heat of fusion of water as a function of pressure melting
+//! temperature.
+double EnthalpyConverter::L(double T_m) const {
+  return this->L_impl(T_m);
+}
+
+double EnthalpyConverter::L_impl(double T_m) const {
+  (void) T_m;
+  return m_L;
 }
 
 //! Get melting temperature from pressure p.
@@ -92,30 +106,30 @@ double EnthalpyConverter::melting_temperature_impl(double P) const {
 /*! Returns
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
  */
-double EnthalpyConverter::enthalpy_cts(double p) const {
-  return this->enthalpy_cts_impl(p);
+double EnthalpyConverter::enthalpy_cts(double P) const {
+  return this->enthalpy_cts_impl(P);
 }
 
-double EnthalpyConverter::enthalpy_cts_impl(double p) const {
-  return m_c_i * (melting_temperature(p) - m_T_0);
+double EnthalpyConverter::enthalpy_cts_impl(double P) const {
+  return m_c_i * (melting_temperature(P) - m_T_0);
 }
 
 //! @brief Compute the maximum allowed value of ice enthalpy
 //! (corresponds to @f$ \omega = 1 @f$).
-double EnthalpyConverter::enthalpy_liquid(double p) const {
-  return this->enthalpy_liquid_impl(p);
+double EnthalpyConverter::enthalpy_liquid(double P) const {
+  return this->enthalpy_liquid_impl(P);
 }
 
-double EnthalpyConverter::enthalpy_liquid_impl(double p) const {
-  return enthalpy_cts(p) + m_L;
+double EnthalpyConverter::enthalpy_liquid_impl(double P) const {
+  return enthalpy_cts(P) + L(melting_temperature(P));
 }
 
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
-bool EnthalpyConverter::is_temperate_impl(double E, double p) const {
+bool EnthalpyConverter::is_temperate_impl(double E, double P) const {
   if (m_do_cold_ice_methods) {
-    return (pressure_adjusted_temperature(E, p) >= m_T_melting - m_T_tolerance);
+    return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
   } else {
-    return (E >= enthalpy_cts(p));
+    return (E >= enthalpy_cts(P));
   }
 }
 
@@ -130,19 +144,19 @@ bool EnthalpyConverter::is_temperate_impl(double E, double p) const {
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
-double EnthalpyConverter::temperature_impl(double E, double p) const {
+double EnthalpyConverter::temperature_impl(double E, double P) const {
 
 #if (PISM_DEBUG==1)
-  if (E >= enthalpy_liquid(p)) {
-    throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
-                                  E, p);
+  if (E >= enthalpy_liquid(P)) {
+    throw RuntimeError::formatted("E=%f at P=%f equals or exceeds that of liquid water",
+                                  E, P);
   }
 #endif
 
-  if (E < enthalpy_cts(p)) {
+  if (E < enthalpy_cts(P)) {
     return (E / m_c_i) + m_T_0;
   } else {
-    return melting_temperature(p);
+    return melting_temperature(P);
   }
 }
 
@@ -187,7 +201,7 @@ double EnthalpyConverter::water_fraction_impl(double E, double P) const {
   if (E <= E_s) {
     return 0.0;
   } else {
-    return (E - E_s) / m_L;
+    return (E - E_s) / L(melting_temperature(P));
   }
 }
 
@@ -207,12 +221,12 @@ Certain cases are not allowed and throw exceptions:
 - \f$T<T_m(p)\f$ and \f$\omega > 0\f$ (error code 4)
 These inequalities may be violated in the sixth digit or so, however.
  */
-double EnthalpyConverter::enthalpy(double T, double omega, double p) const {
-  return this->enthalpy_impl(T, omega, p);
+double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
+  return this->enthalpy_impl(T, omega, P);
 }
 
-double EnthalpyConverter::enthalpy_impl(double T, double omega, double p) const {
-  const double T_melting = melting_temperature(p);
+double EnthalpyConverter::enthalpy_impl(double T, double omega, double P) const {
+  const double T_melting = melting_temperature(P);
 
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
@@ -234,7 +248,7 @@ double EnthalpyConverter::enthalpy_impl(double T, double omega, double p) const 
   if (T < T_melting) {
     return m_c_i * (T - m_T_0);
   } else {
-    return enthalpy_cts(p) + omega * m_L;
+    return enthalpy_cts(P) + omega * L(T_melting);
   }
 }
 
@@ -314,6 +328,22 @@ bool ColdEnthalpyConverter::is_temperate_impl(double /*E*/, double /*pressure*/)
 /*! */
 double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) const {
   return (E / m_c_i) + m_T_0;
+}
+
+// KirchhoffEnthalpyConverter
+
+KirchhoffEnthalpyConverter::KirchhoffEnthalpyConverter(const Config &config)
+  : EnthalpyConverter(config) {
+  m_c_w = config.get("water_specific_heat_capacity"); // J kg-1 K-1
+}
+
+KirchhoffEnthalpyConverter::~KirchhoffEnthalpyConverter() {
+  // empty
+}
+
+// FIXME: We need a reference for this!
+double KirchhoffEnthalpyConverter::L_impl(double T_pm) const {
+  return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
 

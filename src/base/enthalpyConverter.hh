@@ -50,37 +50,60 @@ public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter();
   
-  bool is_temperate(double E, double pressure) const;
+  bool is_temperate(double E, double P) const;
 
-  double temperature(double E, double pressure) const;
-  double melting_temperature(double pressure) const;
-  double pressure_adjusted_temperature(double E, double pressure) const;
+  double temperature(double E, double P) const;
+  double melting_temperature(double P) const;
+  double pressure_adjusted_temperature(double E, double P) const;
 
-  double water_fraction(double E, double pressure) const;
+  double water_fraction(double E, double P) const;
 
-  double enthalpy(double T, double omega, double pressure) const;
-  double enthalpy_cts(double pressure) const;
-  double enthalpy_liquid(double pressure) const;
-  double enthalpy_permissive(double T, double omega, double pressure) const;
+  double enthalpy(double T, double omega, double P) const;
+  double enthalpy_cts(double P) const;
+  double enthalpy_liquid(double P) const;
+  double enthalpy_permissive(double T, double omega, double P) const;
 
   double c_from_T(double T) const;
+
+  //! @brief Latent heat of fusion of water as a function of
+  //! pressure-melting temperature.
+  double L(double T_m) const;
 
   double pressure(double depth) const;
 
 protected:
-  virtual double enthalpy_permissive_impl(double T, double omega, double pressure) const;
-  virtual double enthalpy_cts_impl(double pressure) const;
+  virtual double enthalpy_permissive_impl(double T, double omega, double P) const;
+  virtual double enthalpy_cts_impl(double P) const;
   virtual double c_from_T_impl(double T) const;
-  virtual double enthalpy_impl(double T, double omega, double pressure) const;
-  virtual double water_fraction_impl(double E, double pressure) const;
-  virtual double melting_temperature_impl(double pressure) const;
-  virtual double temperature_impl(double E, double pressure) const;
-  virtual double enthalpy_liquid_impl(double pressure) const;
+  virtual double L_impl(double T_pm) const;
+  virtual double enthalpy_impl(double T, double omega, double P) const;
+  virtual double water_fraction_impl(double E, double P) const;
+  virtual double melting_temperature_impl(double P) const;
+  virtual double temperature_impl(double E, double P) const;
+  virtual double enthalpy_liquid_impl(double P) const;
 
-  virtual bool is_temperate_impl(double E, double pressure) const;
+  virtual bool is_temperate_impl(double E, double P) const;
 
-  double m_T_melting, m_L, m_c_i, m_rho_i, m_g, m_p_air, m_beta, m_T_tolerance;
+  //! melting temperature of pure water at atmospheric pressure
+  double m_T_melting;
+  //! latent heat of fusion of water at atmospheric pressure
+  double m_L;
+  //! specific heat capacity of ice
+  double m_c_i;
+  //! density of ice
+  double m_rho_i;
+  //! acceleration due to gravity
+  double m_g;
+  //! atmospheric pressure
+  double m_p_air;
+  //! beta in the Clausius-Clapeyron relation (@f$ \diff{T_m}{p} = - \beta @f$).
+  double m_beta;
+  //! temperature tolerance used in `is_temperate()` in cold ice mode
+  double m_T_tolerance;
+  //! reference temperature in the definition of ice enthalpy
   double m_T_0;
+  //! @brief if cold ice methods are selected, use `is_temperate()`
+  //! check based on temperature, not enthalpy
   bool m_do_cold_ice_methods;
 };
 
@@ -101,12 +124,12 @@ public:
   virtual ~ColdEnthalpyConverter();
 
 protected:
-  double enthalpy_permissive_impl(double T, double omega, double pressure) const;
-  double enthalpy_impl(double T, double omega, double pressure) const;
-  double water_fraction_impl(double E, double pressure) const;
-  double melting_temperature_impl(double pressure) const;
-  bool is_temperate_impl(double E, double pressure) const;
-  double temperature_impl(double E, double pressure) const;
+  double enthalpy_permissive_impl(double T, double omega, double P) const;
+  double enthalpy_impl(double T, double omega, double P) const;
+  double water_fraction_impl(double E, double P) const;
+  double melting_temperature_impl(double P) const;
+  bool is_temperate_impl(double E, double P) const;
+  double temperature_impl(double E, double P) const;
 };
 
 //! @brief An enthalpy converter including pressure-dependence of the
@@ -115,15 +138,8 @@ class KirchhoffEnthalpyConverter : public EnthalpyConverter {
 public:
   KirchhoffEnthalpyConverter(const Config &config);
   virtual ~KirchhoffEnthalpyConverter();
-
-  //! @brief Latent heat of fusion of water as a function of
-  //! pressure-melting temperature.
-  double L(double T_pm) const;
 protected:
-  double water_fraction_impl(double E, double pressure) const;
-  double enthalpy_impl(double T, double omega, double pressure) const;
-
-  double enthalpy_liquid_impl(double pressure) const;
+  double L_impl(double T_m) const;
 private:
   //! specific heat capacity of pure water
   double m_c_w;
