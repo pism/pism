@@ -22,8 +22,6 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
-#include <stdexcept>
-
 namespace pism {
 namespace bed {
 
