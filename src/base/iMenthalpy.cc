@@ -200,7 +200,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   // essentially physical constants:
   const double
     ice_density = config.get("ice_density"),              // kg m-3
-    L            = config.get("water_latent_heat_fusion"), // J kg-1
     // constants controlling the numerical method:
     bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
@@ -345,13 +344,19 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         //   using DrainageCalculator dc
         for (unsigned int k=0; k < system.ks(); k++) {
           if (Enthnew[k] > system.Enth_s(k)) { // avoid doing any more work if cold
+
+            const double
+              depth = ice_thickness(i, j) - k * dz,
+              p     = EC->pressure(depth), // FIXME issue #15
+              T_m   = EC->melting_temperature(p),
+              L     = EC->L(T_m),
+              omega = EC->water_fraction(Enthnew[k], p);
+
             if (Enthnew[k] >= system.Enth_s(k) + 0.5 * L) {
               liquifiedCount++; // count these rare events...
               Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
             }
-            const double depth = ice_thickness(i, j) - k * dz,
-              p = EC->pressure(depth); // FIXME issue #15
-            double omega = EC->water_fraction(Enthnew[k], p);
+
             if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
               double fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
 
@@ -377,6 +382,10 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         {
           if (Enthnew[0] < system.Enth_s(0) && till_water_thickness(i,j) > 0.0) {
             const double E_difference = system.Enth_s(0) - Enthnew[0];
+
+            const double depth = ice_thickness(i, j),
+              pressure         = EC->pressure(depth),
+              T_m              = EC->melting_temperature(pressure);
 
             Enthnew[0] = system.Enth_s(0);
             // This adjustment creates energy out of nothing. We will
@@ -405,7 +414,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             // Hfrozen, we find the thickness of the basal water layer
             // we need to freeze co restore energy conservation.
 
-            Hfrozen = E_difference * (0.5*dz) / L;
+            Hfrozen = E_difference * (0.5*dz) / EC->L(T_m);
           }
         }
 
@@ -429,13 +438,14 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           } else {
             const double
               p_0 = EC->pressure(ice_thickness(i, j)),
-              p_1 = EC->pressure(ice_thickness(i, j) - dz); // FIXME issue #15
+              p_1 = EC->pressure(ice_thickness(i, j) - dz), // FIXME issue #15
+              Tpmp_0 = EC->melting_temperature(p_0);
+
             const bool k1_istemperate = EC->is_temperate(Enthnew[1], p_1); // level  z = + \Delta z
 
             double hf_up;
             if (k1_istemperate) {
               const double
-                Tpmp_0 = EC->melting_temperature(p_0),
                 Tpmp_1 = EC->melting_temperature(p_1);
 
               hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / dz;
@@ -452,7 +462,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             //
             // after we compute it we make sure there is no refreeze if
             // there is no available basal water
-            basal_melt_rate(i, j) = (Rb(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * L);
+            basal_melt_rate(i, j) = (Rb(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * EC->L(Tpmp_0));
 
             if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0) {
               basal_melt_rate(i, j) = 0.0;
