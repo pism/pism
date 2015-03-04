@@ -102,8 +102,7 @@ if __name__ == '__main__':
                            "pointwise rms noise to add (in m/a)",
                            default=None)
 
-  misfit_weight_type = PISM.optionsList(context.com,
-                                        "-misfit_type",
+  misfit_weight_type = PISM.optionsList("-misfit_type",
                                         "Choice of misfit weight function",
                                         "grounded,fast",
                                         "grounded")
@@ -120,8 +119,7 @@ if __name__ == '__main__':
                                  "Compute SIA/SSA using regional model semantics",
                                  default=False)
 
-  design_var = PISM.optionsList(context.com,
-                                "-inv_ssa",
+  design_var = PISM.optionsList("-inv_ssa",
                                 "design variable for inversion",
                                 "tauc,hardav",
                                 "tauc")

@@ -290,7 +290,7 @@ if __name__ == "__main__":
   do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
   Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-  design_var = PISM.optionsList(context.com, "-inv_ssa",
+  design_var = PISM.optionsList("-inv_ssa",
                                 "design variable for inversion",
                                 "tauc,hardav", "tauc")
   do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)

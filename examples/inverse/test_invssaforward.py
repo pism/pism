@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014 David Maxwell
+# Copyright (C) 2012, 2014, 2015 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -427,7 +427,7 @@ if __name__ == "__main__":
   inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
   verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
   use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
-  design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+  design_var = PISM.optionsList("-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
   using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
     "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
@@ -488,7 +488,7 @@ if __name__ == "__main__":
 
   ssarun.ssa.linearize_at(zeta1)
 
-  test_type = PISM.optionsList(grid.com, "-inv_test", "",["j_design","j_design_transpose","lin","lin_transpose"],"")
+  test_type = PISM.optionsList("-inv_test", "",["j_design","j_design_transpose","lin","lin_transpose"],"")
 
   if test_type == "":
     PISM.verbPrintf(1,com,"Must specify a test type via -inv_test\n")

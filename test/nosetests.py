@@ -268,8 +268,8 @@ def options_test():
     SA = PISM.optionsStringArray("-SA", "description", default="one,two")
     SA = PISM.optionsStringArray("-SA", "description", default=None)
 
-    M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default="one")
-    M = PISM.optionsList(ctx.com, "-L", "description", choices="one,two", default=None)
+    M = PISM.optionsList("-L", "description", choices="one,two", default="one")
+    M = PISM.optionsList("-L", "description", choices="one,two", default=None)
 
 def pism_vars_test():
     """Test adding fields to and getting them from pism::Vars."""

@@ -5,7 +5,7 @@
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-init-hook='import sys; sys.path = ["${Pism_SOURCE_DIR}/site-packages/"] + sys.path'
+init-hook='import sys; sys.path = ["${Pism_SOURCE_DIR}/site-packages/"] + sys.path; import petsc4py; petsc4py.init(sys.argv)'
 
 # Profiled execution.
 profile=no
