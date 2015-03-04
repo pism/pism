@@ -63,7 +63,7 @@ public:
   double enthalpy_liquid(double P) const;
   double enthalpy_permissive(double T, double omega, double P) const;
 
-  double c_from_T(double T) const;
+  double c(double T) const;
 
   //! @brief Latent heat of fusion of water as a function of
   //! pressure-melting temperature.
@@ -74,7 +74,7 @@ public:
 protected:
   virtual double enthalpy_permissive_impl(double T, double omega, double P) const;
   virtual double enthalpy_cts_impl(double P) const;
-  virtual double c_from_T_impl(double T) const;
+  virtual double c_impl(double T) const;
   virtual double L_impl(double T_pm) const;
   virtual double enthalpy_impl(double T, double omega, double P) const;
   virtual double water_fraction_impl(double E, double P) const;

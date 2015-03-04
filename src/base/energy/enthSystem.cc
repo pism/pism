@@ -83,7 +83,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   }
 
   // check if c(T) is a constant function:
-  if (EC.c_from_T(260) != EC.c_from_T(270)) {
+  if (EC.c(260) != EC.c(270)) {
     m_c_depends_on_T = true;
   } else {
     m_c_depends_on_T = false;
@@ -313,7 +313,7 @@ void enthSystemCtx::assemble_R() {
         double T = m_EC.temperature(m_Enth[k],
                                    m_EC.pressure(depth)); // FIXME: issue #15
 
-        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC.c_from_T(T)) * m_R_factor;
+        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC.c(T)) * m_R_factor;
       } else {
         // temperate case
         m_R[k] = m_R_temp;

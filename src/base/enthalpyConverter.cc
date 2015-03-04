@@ -25,6 +25,34 @@
 
 namespace pism {
 
+/*! @class EnthalpyConverter
+
+  Maps from @f$ (H,p) @f$ to @f$ (T,\omega,p) @f$ and back.
+
+  Requirements:
+
+  1. A converter has to implement an invertible map @f$ (H,p) \to (T,
+     \omega, p) @f$ *and* its inverse. Both the forward map and the
+     inverse need to be defined for all permissible values of @f$
+     (H,p) @f$ and @f$ (T, \omega, p) @f$, respectively.
+
+  2. A converter has to be consistent with laws and parameterizations
+     used elsewhere in the model. This includes models coupled to
+     PISM.
+
+  3. For a fixed volume of liquid (or solid) water and given two
+     energy states @f$ (H_1, p_1) @f$ and @f$ (H_2, p_2) @f$ , let @f$
+     \Delta U_H @f$ be the difference in internal energy of this
+     volume between the two states *computed using enthalpy*. We require
+     that @f$ \Delta U_T = \Delta U_H @f$ , where @f$ \Delta U_T @f$
+     is the difference in internal energy *computed using corresponding*
+     @f$ (T_1, \omega_1, p_1) @f$ *and* @f$ (T_2, \omega_2, p_2) @f$.
+
+  4. We assume that ice and water are incompressible, so a change in
+     pressure does no work, and @f$ \Diff{H}{p} = 0 @f$. In addition
+     to this, for cold ice and liquid water @f$ \Diff{T}{p} = 0 @f$.
+*/
+
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_beta        = config.get("beta_CC"); // K Pa-1
   m_c_i         = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
@@ -69,12 +97,12 @@ double EnthalpyConverter::pressure(double depth) const {
   }
 }
 
-//! Return specific heat capacity of ice as a function of temperature `T`.
-double EnthalpyConverter::c_from_T(double T) const {
-  return this->c_from_T_impl(T);
+//! Specific heat capacity of ice as a function of temperature `T`.
+double EnthalpyConverter::c(double T) const {
+  return this->c_impl(T);
 }
 
-double EnthalpyConverter::c_from_T_impl(double /*T*/) const {
+double EnthalpyConverter::c_impl(double /*T*/) const {
   return m_c_i;
 }
 
@@ -330,8 +358,69 @@ double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) co
   return (E / m_c_i) + m_T_0;
 }
 
-// KirchhoffEnthalpyConverter
+/*! @class KirchhoffEnthalpyConverter
 
+  Following a re-interpretation of [@ref
+  AschwandenBuelerKhroulevBlatter], we require that @f$ \Diff{H}{p} =
+  0 @f$:
+
+  @f[
+  \Diff{H}{p} = \diff{H_w}{p} + \diff{H_w}{p}\Diff{T}{p}
+  @f]
+
+  We assume that water is incompressible, so @f$ \Diff{T}{p} = 0 @f$
+  and the second term vanishes.
+
+  As for the first term, equation (5) of [@ref
+  AschwandenBuelerKhroulevBlatter] defines @f$ H_w @f$ as follows:
+
+  @f[
+  H_w = \int_{T_0}^{T_m(p)} C_i(t) dt + L + \int_{T_m(p)}^T C_w(t)dt  
+  @f]
+
+  Using the fundamental theorem of Calculus, we get
+  @f[
+  \diff{H_w}{p} = (C_i(T_m(p)) - C_w(T_m(p))) \diff{T_m(p)}{p} + \diff{L}{p}
+  @f]
+
+  Assuming that @f$ C_i(T) = c_i @f$ and @f$ C_w(T) = c_w @f$ (i.e. specific heat
+  capacities of ice and water do not depend on temperature) and using
+  the Clausius-Clapeyron relation
+  @f[
+  T_m(p) = T_m(p_{\text{air}}) - \beta p,  
+  @f]
+
+  we get
+  @f{align}{
+  \Diff{H}{p} &= (c_i - c_w)\diff{T_m(p)}{p} + \diff{L}{p}\\
+  &= \beta(c_w - c_i) + \diff{L}{p}\\
+  @f}
+  Requiring @f$ \Diff{H}{p} = 0 @f$ implies
+  @f[
+  \diff{L}{p} = -\beta(c_w - c_i),
+  @f]
+  and so
+  @f{align}{
+  L(p) &= -\beta p (c_w - c_i) + C\\
+  &= (T_m(p) - T_m(p_{\text{air}})) (c_w - c_i) + C.
+  @f}
+
+  Letting @f$ p = p_{\text{air}} @f$ we find @f$ C = L(p_\text{air}) = L_0 @f$, so
+  @f[
+  L(p) = (T_m(p) - T_m(p_{\text{air}})) (c_w - c_i) + L_0,
+  @f]
+  where @f$ L_0 @f$ is the latent heat of fusion of water at atmospheric
+  pressure.
+
+  Therefore a consistent interpretation of [@ref
+  AschwandenBuelerKhroulevBlatter] requires the temperature-dependent
+  approximation of the latent heat of fusion of water given above.
+
+  Note that this form of @f$ L(p) @f$ also follows from Kirchhoff's
+  law of thermochemistry.
+*/
+
+//! Converter using Kirchhoff's law of thermochemistry.
 KirchhoffEnthalpyConverter::KirchhoffEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
   m_c_w = config.get("water_specific_heat_capacity"); // J kg-1 K-1
@@ -341,7 +430,8 @@ KirchhoffEnthalpyConverter::~KirchhoffEnthalpyConverter() {
   // empty
 }
 
-// FIXME: We need a reference for this!
+//! @brief Latent heat of fusion of water using Kirchhoff's law of
+//! thermochemistry.
 double KirchhoffEnthalpyConverter::L_impl(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
