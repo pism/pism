@@ -80,34 +80,42 @@ UnitSystem NCVariable::unit_system() const {
   return m_unit_system;
 }
 
-//! @brief Check if the range of a \b global Vec `v` is in the range
-//! specified by valid_min and valid_max attributes.
+//! @brief Check if the range `[min, max]` is a subset of `[valid_min, valid_max]`.
+/*! Throws an exception if this check failed.
+ */
 void NCVariable::check_range(const std::string &filename, double min, double max) {
 
   const std::string &units_string = get_string("units");
+  const char
+    *units = units_string.c_str(),
+    *name = get_name().c_str(),
+    *file = filename.c_str();
 
-  if (has_attribute("valid_min") && has_attribute("valid_max")) {
+  if (has_attribute("valid_min") and has_attribute("valid_max")) {
     double
       valid_min = get_double("valid_min"),
       valid_max = get_double("valid_max");
-    if ((min < valid_min) || (max > valid_max)) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are outside the valid range [%f, %f] (%s).",
-                                    get_name().c_str(), filename.c_str(),
-                                    valid_min, valid_max, units_string.c_str());
+    if ((min < valid_min) or (max > valid_max)) {
+      throw RuntimeError::formatted("some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
+                                    "computed min = %e %s, computed max = %e %s",
+                                    name, file,
+                                    valid_min, valid_max, units, min, units, max, units);
     }
   } else if (has_attribute("valid_min")) {
     double valid_min = get_double("valid_min");
     if (min < valid_min) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are less than the valid minimum (%f %s).",
-                                    get_name().c_str(), filename.c_str(),
-                                    valid_min, units_string.c_str());
+      throw RuntimeError::formatted("some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
+                                    "computed min = %e %s, computed max = %e %s",
+                                    name, file,
+                                    valid_min, units, min, units, max, units);
     }
   } else if (has_attribute("valid_max")) {
     double valid_max = get_double("valid_max");
     if (max > valid_max) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are greater than the valid maximum (%f %s).\n",
-                                    get_name().c_str(), filename.c_str(),
-                                    valid_max, units_string.c_str());
+      throw RuntimeError::formatted("some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
+                                    "computed min = %e %s, computed max = %e %s",
+                                    name, file,
+                                    valid_max, units, min, units, max, units);
     }
   }
 }
