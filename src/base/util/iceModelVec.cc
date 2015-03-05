@@ -835,7 +835,14 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
 
   nc.open(filename, PISM_READONLY);
 
-  this->regrid(nc, flag, default_value);
+  try {
+    this->regrid(nc, flag, default_value);
+  } catch (RuntimeError &e) {
+    e.add_context("regridding '%s' from '%s'",
+                  this->get_name().c_str(), filename.c_str());
+    nc.close();
+    throw;
+  }
 
   nc.close();
 }
