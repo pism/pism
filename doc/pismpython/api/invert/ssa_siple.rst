@@ -12,7 +12,6 @@ Classes interfacing with siple-based algorithms for inverting the SSA from :math
 
 .. automodule:: PISM.invert.ssa_siple
    :members:
-   :undoc-members:
    :private-members:
    :special-members:
    :show-inheritance:
