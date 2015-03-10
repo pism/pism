@@ -550,3 +550,41 @@ def pism_ends_with_test():
     assert PISM.ends_with("foo.nc", ".nc") == True
     assert PISM.ends_with("foo.nc and more text", ".nc") == False
     assert PISM.ends_with("", "suffix") == False
+
+def linear_interpolation_test(plot=False):
+    "Test linear interpolation code used to regrid fields"
+    import numpy as np
+
+    M_in = 11
+    M_out = 101
+    a = 0.0
+    b = 10.0
+    padding = 1.0
+    x_input = np.linspace(a, b, M_in)
+    x_output = np.sort(((b + padding) - (a - padding)) * np.random.rand(M_out) + (a - padding))
+
+    def F(x):
+        return x * 2.0 + 5.0
+
+    values = F(x_input)
+
+    i = PISM.LinearInterpolation(x_input, x_output)
+
+    F_interpolated = i.interpolate(values)
+
+    F_desired = F(x_output)
+    F_desired[x_output < a] = F(a)
+    F_desired[x_output > b] = F(b)
+
+    if plot:
+        import pylab as plt
+
+        plt.hold(True)
+        plt.plot(x_output, F_interpolated, 'o-', color='blue', label="interpolated result")
+        plt.plot(x_output, F_desired, 'x-', color='green', label="desired result")
+        plt.plot(x_input, values, 'o-', color='red', label="input")
+        plt.grid(True)
+        plt.legend(loc="best")
+        plt.show()
+
+    assert np.max(np.fabs(F_desired - F_interpolated)) < 1e-16

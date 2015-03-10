@@ -39,6 +39,7 @@ set(PISMUTIL_SRC
   base/util/petscwrappers/Viewer.cc
   base/util/error_handling.cc
   base/util/options.cc
+  base/util/interpolation.cc
   base/util/Context.cc
   base/util/MaxTimestep.cc
   base/util/PISMDiagnostic.cc

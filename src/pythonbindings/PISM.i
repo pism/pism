@@ -30,6 +30,8 @@
 // draws in all the other needed includes as well. See the end of this file for the list
 // of PISM headers being wrapped.
 
+#include "interpolation.hh"
+
 #include "PISMUnits.hh"
 #include "pism_python.hh"
 
@@ -208,6 +210,8 @@
 %immutable pism::PISM_DefaultConfigFile;
 
 /* PISM header with no dependence on other PISM headers. */
+%include "interpolation.hh"
+
 %include "enthalpyConverter.hh"
 %include "varcEnthalpyConverter.hh"
 %ignore pism::Vector2::operator=;
