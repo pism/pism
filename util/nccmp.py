@@ -55,7 +55,7 @@ def usagefailure(message):
     exit(2)
 
 def compare_vars(nc1, nc2, name, tol, relative=False):
-    from numpy import squeeze, isnan, ma
+    from numpy import squeeze, isnan, ma, finfo, fabs
     import numpy
 
     try:
@@ -89,13 +89,20 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
 
     if relative:
         denom = max(abs(var1).max(), abs(var2).max())
-        print "name = %s, delta = %e, denom = %e" % (name, delta, denom)
+        print "Variable %s, delta = %e, denom = %e" % (name, delta, denom)
         if denom > 0:
             delta = delta / denom
 
     # The actual check:
-    if (delta > tol):
-        print "name = %s, delta = %e, tol = %e" % (name, delta, tol)
+    #
+    # Sometimes delta ends up being a denormalized number, which is zero
+    # for all practical purposes, but is not zero, so we give up on
+    # bit-for-bit equality here.
+    if delta > tol:
+        if tol == 0.0 and delta < 10 * finfo(float).tiny:
+            print "Variable %s: Treating %e as zero." % (name, delta)
+            return
+        print "Variable %s: delta = %e, tol = %e" % (name, delta, tol)
         failure()
 
 
@@ -105,6 +112,8 @@ def compare(file1, file2, variables, exclude, tol, relative):
     except:
         print "netCDF4 is not installed!"
         sys.exit(1)
+
+    print "Comparing %s and %s" % (file1, file2)
 
     from numpy import unique, r_
 
