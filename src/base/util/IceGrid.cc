@@ -1074,10 +1074,10 @@ grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p
       switch (dimtype) {
       case X_AXIS:
         {
-          this->x_len = file.inq_dimlen(dimname);
           double x_min = 0.0, x_max = 0.0;
           file.inq_dim_limits(dimname, &x_min, &x_max);
           file.get_dim(dimname, this->x);
+          this->x_len = this->x.size();
           this->x0 = 0.5 * (x_min + x_max);
           this->Lx = 0.5 * (x_max - x_min);
           if (p & X_PERIODIC) {
@@ -1088,10 +1088,10 @@ grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p
         }
       case Y_AXIS:
         {
-          this->y_len = file.inq_dimlen(dimname);
           double y_min = 0.0, y_max = 0.0;
           file.inq_dim_limits(dimname, &y_min, &y_max);
           file.get_dim(dimname, this->y);
+          this->y_len = this->y.size();
           this->y0 = 0.5 * (y_min + y_max);
           this->Ly = 0.5 * (y_max - y_min);
           if (p & Y_PERIODIC) {
@@ -1102,9 +1102,9 @@ grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p
         }
       case Z_AXIS:
         {
-          this->z_len = file.inq_dimlen(dimname);
           file.inq_dim_limits(dimname, &this->z_min, &this->z_max);
           file.get_dim(dimname, this->z);
+          this->z_len = this->z.size();
           break;
         }
       case T_AXIS:
