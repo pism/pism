@@ -41,6 +41,17 @@ def context_missing_attribute_test():
 def init_config_twice_test():
     "Test initializing the config twice"
     ctx = PISM.Context()
+    ctx._config = None          # re-set config
+
+    system = PISM.UnitSystem("")
+    overrides = PISM.Config(ctx.com, "pism_overrides", system)
+
+    # use the overrides keyword argument
+    ctx.init_config(overrides=overrides)
+    config = ctx.config
+
+    # start over and don't use overrides this time
+    ctx._config = None          # re-set config
     config = ctx.config         # this should initialize config
 
     try:
@@ -164,6 +175,8 @@ def create_modeldata_test():
     grid = create_dummy_grid()
     md = PISM.model.ModelData(grid)
 
+    md2 = PISM.model.ModelData(grid, config=grid.config)
+
 
 def grid_from_file_test():
     "Intiialize a grid from a file"
@@ -262,6 +275,8 @@ def options_test():
     "Test command-line option handling"
     ctx = PISM.Context()
 
+    o = PISM.PETSc.Options()
+
     M = PISM.optionsInt("-M", "description", default=100)
     M = PISM.optionsInt("-M", "description", default=None)
 
@@ -271,17 +286,33 @@ def options_test():
     R = PISM.optionsReal("-R", "description", default=1.5)
     R = PISM.optionsReal("-R", "description", default=None)
 
+    o.setValue("-B", "on")
     B = PISM.optionsFlag("-B", "description", default=False)
     B = PISM.optionsFlag("B", "description", default=False)
     B = PISM.optionsFlag("-B", "description", default=None)
 
-    sys.argv.extend(["-IA", "1,2,3"])
+    o.setValue("-no_C", "on")
+    C = PISM.optionsFlag("C", "description", default=None)
+
+    o.setValue("-no_D", "on")
+    o.setValue("-D", "on")
+    try:
+        # should throw RuntimeError
+        D = PISM.optionsFlag("D", "description", default=None)
+        return False
+    except RuntimeError:
+        pass
+
+    o.setValue("-IA", "1,2,3")
     IA = PISM.optionsIntArray("-IA", "description", default=[1, 2])
     IA = PISM.optionsIntArray("-IA", "description", default=None)
+    IA2 = PISM.optionsIntArray("-IA2", "description", default=None)
 
+    o.setValue("-RA", "1,2,3")
     RA = PISM.optionsRealArray("-RA", "description", default=[2, 3])
     RA = PISM.optionsRealArray("-RA", "description", default=None)
 
+    o.setValue("-SA", "1,2,3")
     SA = PISM.optionsStringArray("-SA", "description", default="one,two")
     SA = PISM.optionsStringArray("-SA", "description", default=None)
 
