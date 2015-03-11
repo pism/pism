@@ -580,6 +580,8 @@ void IceModel::allocate_enthalpy_converter() {
 
   if (config.get_flag("use_linear_in_temperature_heat_capacity")) {
     EC = new varcEnthalpyConverter(config);
+  } else if (config.get_flag("use_Kirchhoff_law")) {
+    EC = new KirchhoffEnthalpyConverter(config);
   } else {
     EC = new EnthalpyConverter(config);
   }

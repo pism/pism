@@ -154,6 +154,7 @@ void set_config_from_options(Config &config) {
   config.keyword_from_option("z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
 
   // Energy modeling
+  config.flag_from_option("use_Kirchhoff_law", "use_Kirchhoff_law");
   config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");
   config.flag_from_option("vark",
                           "use_temperature_dependent_thermal_conductivity");

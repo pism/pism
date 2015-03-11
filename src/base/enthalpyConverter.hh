@@ -132,8 +132,8 @@ protected:
   double temperature_impl(double E, double P) const;
 };
 
-//! @brief An enthalpy converter including pressure-dependence of the
-//! latent heat of fusion of water. (To be used by Glint2.)
+//! @brief An enthalpy converter including pressure-dependence of the latent heat of fusion of
+//! water.
 class KirchhoffEnthalpyConverter : public EnthalpyConverter {
 public:
   KirchhoffEnthalpyConverter(const Config &config);

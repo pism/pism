@@ -333,27 +333,25 @@ double ColdEnthalpyConverter::enthalpy_permissive_impl(double T,
                                                        double /*pressure*/) const {
   return m_c_i * (T - m_T_0);
 }
-/*! */
+
 double ColdEnthalpyConverter::enthalpy_impl(double T, double /*omega*/,
                                             double /*pressure*/) const {
   return m_c_i * (T - m_T_0);
 }
 
-/*! */
 double ColdEnthalpyConverter::water_fraction_impl(double /*E*/,
                                                   double /*pressure*/) const {
   return 0.0;
 }
 
-/*! */
 double ColdEnthalpyConverter::melting_temperature_impl(double /*pressure*/) const {
   return m_T_melting;
 }
-/*! */
+
 bool ColdEnthalpyConverter::is_temperate_impl(double /*E*/, double /*pressure*/) const {
   return false;
 }
-/*! */
+
 double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) const {
   return (E / m_c_i) + m_T_0;
 }
