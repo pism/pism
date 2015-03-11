@@ -19,15 +19,45 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>            // std::min
+#include <gsl/gsl_interp.h>
 
 #include "PIO.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 #include "PISMConfig.hh"
 
+#include "interpolation.hh"
 #include "error_handling.hh"
 
 namespace pism {
+
+//! Compute start and count for getting a subset of x.
+/*! Given a grid `x` we find `x_start` and `x_count` so that `[subset_x_min, subset_x_max]` is in
+ *  `[x[x_start], x[x_start + x_count]]`.
+ *
+ *  `x_start` and `x_count` define the smallest subset of `x` with this property.
+ *
+ *  Note that `x_start + x_count <= x.size()` as long as `x` is strictly increasing.
+ *
+ * @param[in] x input grid (defined interpolation domain)
+ * @param[in] subset_x_min minimum `x` of a subset (interpolation range)
+ * @param[in] subset_x_max maxumum `x` of a subset (interpolation range)
+ * @param[out] x_start starting index
+ * @param[out] x_count number of elements required
+ */
+static void subset_start_and_count(const std::vector<double> &x,
+                                   double subset_x_min, double subset_x_max,
+                                   unsigned int &x_start, unsigned int &x_count) {
+  unsigned int x_size = x.size();
+
+  x_start = gsl_interp_bsearch(&x[0], subset_x_min, 0, x_size - 1);
+
+  unsigned int x_end = gsl_interp_bsearch(&x[0], subset_x_max, 0, x_size - 1) + 1;
+
+  x_end = std::min(x_size - 1, x_end);
+
+  x_count = x_end - x_start + 1;
+}
 
 //! Construct a local interpolation context.
 /*!
@@ -75,9 +105,9 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // tolerance (one micron)
   double eps = 1e-6;
-  if (not (x_min >= input_x_min - eps && x_max <= input_x_max + eps &&
-           y_min >= input_y_min - eps && y_max <= input_y_max + eps &&
-           z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
+  if (not (x_min >= input_x_min - eps and x_max <= input_x_max + eps and
+           y_min >= input_y_min - eps and y_max <= input_y_max + eps and
+           z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
 
     throw RuntimeError::formatted("target computational domain not a subset of source (in NetCDF file)\n"
                                   "computational domain:\n"
@@ -99,26 +129,10 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   count[T] = 1;                     // read only one record
 
   // X
-  start[X] = 0;
-  while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min_proc) {
-    start[X]++;
-  }
-
-  count[X] = 1;
-  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X] - 1] <= x_max_proc) {
-    count[X]++;
-  }
+  subset_start_and_count(input.x, x_min_proc, x_max_proc, start[X], count[X]);
 
   // Y
-  start[Y] = 0;
-  while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min_proc) {
-    start[Y]++;
-  }
-
-  count[Y] = 1;
-  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y] - 1] <= y_max_proc) {
-    count[Y]++;
-  }
+  subset_start_and_count(input.y, y_min_proc, y_max_proc, start[Y], count[Y]);
 
   // Z
   start[Z] = 0;                    // always start at the base
@@ -145,111 +159,17 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   allocation.check();
 
   // Compute indices of neighbors and map-plane interpolation coefficients.
-  x_left.resize(grid.xm());
-  x_right.resize(grid.xm());
-  x_alpha.resize(grid.xm());
+  LinearInterpolation x_interp(&input.x[start[X]], count[X],
+                               &grid.x()[grid.xs()], grid.xm());
+  x_left = x_interp.left();
+  x_right = x_interp.right();
+  x_alpha = x_interp.alpha();
 
-  // x-direction; loop over all grid points in this processor's sub-domain
-  for (int i = 0; i < grid.xm(); ++i) {
-    // i is the index in this processor's sub-domain
-    // x is the x-coordinate in the total domain
-    double x = grid.x(grid.xs() + i);
-
-    // This is here to make it crash and burn if something goes wrong, instead
-    // of quietly doing the wrong thing.
-    x_left[i]  = -1;
-    x_right[i] = -1;
-    x_alpha[i] = -1;
-
-    // go through all the grid intervals in the x-direction in this
-    // processor's sub-domain:
-    for (unsigned int k = 0; k < count[X] - 1; ++k) {
-      unsigned int kk = k + start[X]; // global grid point index
-      if (input.x[kk] <= x && input.x[kk + 1] >= x) {
-        // if the i-th point is in the current interval
-        x_left[i]  = std::min(k,     count[X] - 1);
-        x_right[i] = std::min(k + 1, count[X] - 1);
-        x_alpha[i] = (x - input.x[kk]) / (input.x[kk + 1] - input.x[kk]);
-        break;
-      }
-    }
-  }
-
-  // Check all values of x_left to make sure that the edge of the
-  // computational domain is handled correctly. In PISM each grid
-  // point is at the center of a grid cell, so it may be impossible to
-  // use *interpolation* to transfer a field from a coarse grid to a
-  // finer grid: some points of the fine grid may be *inside* the
-  // domain covered by the coarse grid, but *outside* the convex hull
-  // of all the coarse grid points. So, we modify x_left, x_right, and
-  // x_alpha to use constant extrapolation for these fine grid points.
-
-  for (int i = 0; i < grid.xm(); ++i) {
-    // for all points in the x-direction in this sub-domain
-
-    // get the coordinate
-    double x = grid.x(grid.xs() + i);
-    if (x_left[i] == -1 && x < input.x[0]) {
-      // if x_left was not assigned and the point is to the left of
-      // the left-most column in the input grid
-      x_left[i]  = 0;
-      x_right[i] = 0;
-      x_alpha[i] = 0;
-    }
-
-    if (x_left[i] == -1 && x > input.x.back()) {
-      x_left[i]  = count[X] - 1;
-      x_right[i] = count[X] - 1;
-      x_alpha[i] = 0;
-    }
-  }
-
-  // y-direction
-  y_left.resize(grid.ym());
-  y_right.resize(grid.ym());
-  y_alpha.resize(grid.ym());
-
-  for (int j = 0; j < grid.ym(); ++j) {
-    double y = grid.y(grid.ys() + j);
-
-    // This is here to make it crash and burn if something goes wrong, instead
-    // of quietly doing the wrong thing.
-    y_left[j]  = -1;
-    y_right[j] = -1;
-    y_alpha[j] = -1;
-
-    for (unsigned int k = 0; k < count[Y] - 1; ++k) {
-      unsigned int kk = k + start[Y];
-      if (input.y[kk] <= y && input.y[kk + 1] >= y) {
-        y_left[j]  = std::min(k,     count[Y] - 1);
-        y_right[j] = std::min(k + 1, count[Y] - 1);
-        y_alpha[j] = (y - input.y[kk]) / (input.y[kk + 1] - input.y[kk]);
-        break;
-      }
-    }
-  }
-
-  // Take care of the edge if the domain in the y-direction (see above
-  // for details).
-  for (int i = 0; i < grid.ym(); ++i) {
-    // for all points in the y-direction in this sub-domain
-
-    // get the coordinate
-    double y = grid.y(grid.ys() + i);
-    if (y_left[i] == -1 && y < input.y[0]) {
-      // if y_left was not assigned and the point is below the
-      // bottom row in the input grid
-      y_left[i]  = 0;
-      y_right[i] = 0;
-      y_alpha[i] = 0;
-    }
-
-    if (y_left[i] == -1 && y > input.y.back()) {
-      y_left[i]  = count[Y] - 1;
-      y_right[i] = count[Y] - 1;
-      y_alpha[i] = 0;
-    }
-  }
+  LinearInterpolation y_interp(&input.y[start[Y]], count[Y],
+                               &grid.y()[grid.ys()], grid.ym());
+  y_left = y_interp.left();
+  y_right = y_interp.right();
+  y_alpha = y_interp.alpha();
 }
 
 LocalInterpCtx::~LocalInterpCtx() {
