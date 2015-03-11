@@ -35,35 +35,35 @@ if len(sys.argv) < 5:
 field = sys.argv[1]
 outimage = sys.argv[2]
 
-legloc='lower right'
+legloc = 'lower right'
 
 secpera = 31556926.0
 vfactor = 1.0e6 * 1.0e9
 
 n = (len(sys.argv) - 3) / 2
 labels = []
-plt.figure(figsize=(9,4))
+plt.figure(figsize=(9, 4))
 
 style = ['b-',  'g-',  'r-',  'c-',  'm-',  'y-',  'k-',
          'b--', 'g--', 'r--', 'c--', 'm--', 'y--', 'k--']
 for k in range(n):
 
-  tsfile = sys.argv[2*k+3]
-  labels.append(sys.argv[2*k+4])
+    tsfile = sys.argv[2 * k + 3]
+    labels.append(sys.argv[2 * k + 4])
 
-  try:
-    ncfile = NC(tsfile, "r")
-  except:
-    print "ERROR: can't read from file %s ..." % tsfile
-    sys.exit(2)
-  t = ncfile.variables["time"][:] / secpera
-  var = ncfile.variables[field][:]
-  ncfile.close()
-  print "read variable '%s' from time-series file '%s' ..." % (field,tsfile)
+    try:
+        ncfile = NC(tsfile, "r")
+    except:
+        print "ERROR: can't read from file %s ..." % tsfile
+        sys.exit(2)
+    t = ncfile.variables["time"][:] / secpera
+    var = ncfile.variables[field][:]
+    ncfile.close()
+    print "read variable '%s' from time-series file '%s' ..." % (field, tsfile)
 
-  plt.plot(t, var / vfactor, style[k], linewidth=2.5)  # automatic colors; default order
-                                             # blue, green, red, cyan, magenta, ...
-  plt.hold(True)
+    plt.plot(t, var / vfactor, style[k], linewidth=2.5)  # automatic colors; default order
+    # blue, green, red, cyan, magenta, ...
+    plt.hold(True)
 
 plt.hold(False)
 plt.legend(labels, loc=legloc)
@@ -71,5 +71,5 @@ plt.xlabel("t (years)", size=16)
 plt.ylabel("%s ($10^6$ km$^3$)" % field, size=16)
 plt.grid(True)
 print "saving image to file '%s' ..." % outimage
-#plt.show()
+# plt.show()
 plt.savefig(outimage, bbox_inches='tight')

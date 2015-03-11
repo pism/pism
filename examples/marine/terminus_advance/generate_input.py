@@ -17,10 +17,10 @@ parser.add_option("-M", dest="Mx", default=101, type=int,
 
 (options, args) = parser.parse_args()
 
-My            = 3
-bed_slope     = 0.02
+My = 3
+bed_slope = 0.02
 ice_thickness = 1000.0
-U             = 100.0
+U = 100.0
 
 nc = NC(options.output_file_name, 'w')
 
@@ -32,21 +32,21 @@ xx, yy = np.meshgrid(x, y)
 zeros = np.zeros((My, options.Mx))
 topg = (0.5 * options.length - xx) * bed_slope
 
-thk   = zeros.copy()
+thk = zeros.copy()
 thk[topg > 200] = ice_thickness
 
 v = zeros.copy()
 u = zeros.copy() + U
 
 nc.create_dimensions(x, y)
-nc.write("topg", topg, attrs={"units" : "m", "long_name" : "bed_topography"})
-nc.write("climatic_mass_balance", zeros, attrs={"units" : "kg m-2 year-1"})
-nc.write("ice_surface_temp", zeros, attrs={"units" : "Celsius"})
+nc.write("topg", topg, attrs={"units": "m", "long_name": "bed_topography"})
+nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m-2 year-1"})
+nc.write("ice_surface_temp", zeros, attrs={"units": "Celsius"})
 nc.write("thk", thk,
-         attrs={"units" : "m", "standard_name" : "land_ice_thickness"})
+         attrs={"units": "m", "standard_name": "land_ice_thickness"})
 nc.write("ubar", u,
-         attrs={"units" : "m/year", "long_name" : "x-component of velocity"})
+         attrs={"units": "m/year", "long_name": "x-component of velocity"})
 nc.write("vbar", v,
-         attrs={"units" : "m/year", "long_name" : "y-component of velocity"})
+         attrs={"units": "m/year", "long_name": "y-component of velocity"})
 
 nc.close()

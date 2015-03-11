@@ -17,12 +17,13 @@ M = options.M
 # grid
 x = np.linspace(-L, L, M)
 y = np.linspace(-L, L, M)
-xx,yy = np.meshgrid(x, y)
+xx, yy = np.meshgrid(x, y)
+
 
 def tongue(xx, x0, width):
     "create one ice tongue"
     result = np.zeros_like(xx)
-    result[:,x0:x0+width] = 100.0
+    result[:, x0:x0 + width] = 100.0
     return result
 
 thk = np.zeros_like(xx)
@@ -36,7 +37,7 @@ while x0 + width < M - 1:
     width += 1
 
 # make tongues shorter
-thk[5:,:] = 0
+thk[5:, :] = 0
 
 bc_mask = np.zeros_like(thk)
 bc_mask[thk > 0] = 1
@@ -56,23 +57,23 @@ try:
 
     nc.create_dimensions(x, y, time_dependent=False)
 
-    nc.define_2d_field("topg", attrs={"units" : "m",
-                                      "long_name" : "bedrock topography"})
-    nc.define_2d_field("thk", attrs={"units" : "m",
-                                     "long_name" : "ice thickness"})
+    nc.define_2d_field("topg", attrs={"units": "m",
+                                      "long_name": "bedrock topography"})
+    nc.define_2d_field("thk", attrs={"units": "m",
+                                     "long_name": "ice thickness"})
 
-    nc.define_2d_field("climatic_mass_balance", attrs={"units" : "kg m-2 year-1"})
-    nc.define_2d_field("ice_surface_temp", attrs={"units" : "Celsius"})
+    nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m-2 year-1"})
+    nc.define_2d_field("ice_surface_temp", attrs={"units": "Celsius"})
 
-    nc.define_2d_field("u_ssa_bc", attrs={"units" : "m/year"})
-    nc.define_2d_field("v_ssa_bc", attrs={"units" : "m/year"})
+    nc.define_2d_field("u_ssa_bc", attrs={"units": "m/year"})
+    nc.define_2d_field("v_ssa_bc", attrs={"units": "m/year"})
 except:
     nc = NC(options.output, 'a')
 
 nc.write("topg", z)
 nc.write("thk", thk)
 nc.write("climatic_mass_balance", np.zeros_like(xx))
-nc.write("ice_surface_temp", np.zeros_like(xx) - 30.0) # irrelevant
+nc.write("ice_surface_temp", np.zeros_like(xx) - 30.0)  # irrelevant
 nc.write("u_ssa_bc", ubar)
 nc.write("v_ssa_bc", vbar)
 nc.write("bc_mask", bc_mask)
