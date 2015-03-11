@@ -223,6 +223,7 @@
 
 %include "PISMUnits.hh"
 %include pism_DM.i
+%include pism_Vec.i
 /* End of independent PISM classes. */
 
 %include pism_PIO.i
