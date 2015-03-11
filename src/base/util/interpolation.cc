@@ -63,18 +63,18 @@ void LinearInterpolation::init(const double *input_x, unsigned int input_x_size,
   for (unsigned int i = 0; i < output_x_size; ++i) {
     double x = output_x[i];
 
-    // gsl_interp_bsearch always returns an index "left" such that "left + 1" is valid
-    unsigned int left = gsl_interp_bsearch(input_x, x, 0, input_x_size - 1);
+    // gsl_interp_bsearch always returns an index "L" such that "L + 1" is valid
+    unsigned int L = gsl_interp_bsearch(input_x, x, 0, input_x_size - 1);
 
-    unsigned int right = x > input_x[left] ? left + 1 : left;
+    unsigned int R = x > input_x[L] ? L + 1 : L;
 
-    m_left[i] = left;
-    m_right[i] = right;
+    m_left[i] = L;
+    m_right[i] = R;
 
-    if (left != right) {        // protect from division by zero
-      if (x <= input_x[right]) {
+    if (L != R) {        // protect from division by zero
+      if (x <= input_x[R]) {
         // regular case
-        m_alpha[i] = (x - input_x[left]) / (input_x[right] - input_x[left]);
+        m_alpha[i] = (x - input_x[L]) / (input_x[R] - input_x[L]);
       } else {
         // extrapolation on the right
         m_alpha[i] = 1.0;
@@ -107,10 +107,10 @@ std::vector<double> LinearInterpolation::interpolate(const std::vector<double> &
 
   for (size_t k = 0; k < result.size(); ++k) {
     const int
-      left = m_left[k],
-      right = m_right[k];
-    const double alpha = m_alpha[k];
-    result[k] = input_values[left] + alpha * (input_values[right] - input_values[left]);
+      L = m_left[k],
+      R = m_right[k];
+    const double Alpha = m_alpha[k];
+    result[k] = input_values[L] + Alpha * (input_values[R] - input_values[L]);
   }
   return result;
 }

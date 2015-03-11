@@ -61,10 +61,10 @@ namespace pism {
  * `alpha[i]` is the linear interpolation weight used like this:
  * ~~~ c++
  * const int
- *   left = m_left[k],
- *   right = m_right[k];
- * const double alpha = m_alpha[k];
- * result[k] = input_values[left] + alpha * (input_values[right] - input_values[left]);
+ *   L = m_left[k],
+ *   R = m_right[k];
+ * const double Alpha = m_alpha[k];
+ * result[k] = input_values[L] + Alpha * (input_values[R] - input_values[L]);
  * ~~~
  */
 class LinearInterpolation {
