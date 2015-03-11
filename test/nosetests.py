@@ -10,7 +10,9 @@ Run this to get a coverage report:
 nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/nosetests.py
 """
 
-import PISM, sys
+import PISM
+import sys
+
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -19,10 +21,12 @@ def create_dummy_grid():
     PISM.model.initShallowGrid(grid, 1e5, 1e5, 100, 100, PISM.NOT_PERIODIC)
     return grid
 
+
 def context_test():
     "Test creating a new PISM context"
     ctx = PISM.Context()
     config = ctx.config
+
 
 def context_missing_attribute_test():
     "Test the handling of missing attributes"
@@ -32,6 +36,7 @@ def context_missing_attribute_test():
         return False
     except AttributeError:
         return True
+
 
 def init_config_twice_test():
     "Test initializing the config twice"
@@ -44,9 +49,11 @@ def init_config_twice_test():
     except RuntimeError:
         return True
 
+
 def create_grid_test():
     "Test the creation of the IceGrid object"
     create_dummy_grid()
+
 
 def algorithm_failure_exception_test():
     "Test the AlgorithmFailureException class"
@@ -58,10 +65,12 @@ def algorithm_failure_exception_test():
         print "{}".format(e)
         return True
 
+
 def printing_test():
     "Test verbPrintf"
     ctx = PISM.Context()
     PISM.verbPrintf(1, ctx.com, "hello %s!\n", "world")
+
 
 def random_vec_test():
     "Test methods creating random fields"
@@ -72,6 +81,7 @@ def random_vec_test():
 
     vec_scalar_ghosted = PISM.vec.randVectorS(grid, 1.0, 2)
     vec_vector_ghosted = PISM.vec.randVectorV(grid, 2.0, 2)
+
 
 def vec_metadata_test():
     "Test accessing IceModelVec metadata"
@@ -84,6 +94,7 @@ def vec_metadata_test():
     m.set_string("units", "kg")
 
     print m.get_string("units")
+
 
 def vars_ownership_test():
     "Test passing IceModelVec ownership from Python to C++ (i.e. PISM)."
@@ -98,8 +109,9 @@ def vars_ownership_test():
     thk = variables.get("thk")
     print thk
     thk.begin_access()
-    print "thickness at 0,0 is", thk[0,0]
+    print "thickness at 0,0 is", thk[0, 0]
     thk.end_access()
+
 
 def vec_access_test():
     "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
@@ -109,21 +121,22 @@ def vec_access_test():
     vec_scalar_ghosted = PISM.vec.randVectorS(grid, 1.0, 2)
 
     with PISM.vec.Access(comm=[vec_scalar_ghosted], nocomm=vec_scalar):
-        for (i,j) in grid.points_with_ghosts():
+        for (i, j) in grid.points_with_ghosts():
             pass
 
     with PISM.vec.Access(comm=vec_scalar_ghosted, nocomm=[vec_scalar]):
-        for (i,j) in grid.points():
+        for (i, j) in grid.points():
             # do something
             pass
 
-        for (i,j,x,y) in grid.coords():
+        for (i, j, x, y) in grid.coords():
             # do something with coordinates
             pass
 
     # try with nocomm=None
     with PISM.vec.Access(comm=vec_scalar_ghosted):
         pass
+
 
 def toproczero_test():
     "Test communication to processor 0"
@@ -135,20 +148,22 @@ def toproczero_test():
     tz = PISM.vec.ToProcZero(grid)
     array_scalar_0 = tz.communicate(vec_scalar)
 
-    tz2 = PISM.vec.ToProcZero(grid,dof=2,dim=2)
+    tz2 = PISM.vec.ToProcZero(grid, dof=2, dim=2)
     array_vector_0 = tz2.communicate(vec_vector)
 
     try:
-        tz3 = PISM.vec.ToProcZero(grid,dof=2,dim=3)
+        tz3 = PISM.vec.ToProcZero(grid, dof=2, dim=3)
         return False
     except NotImplementedError:
         # 3D fields are not supported (yet)
         pass
 
+
 def create_modeldata_test():
     "Test creating the ModelData class"
     grid = create_dummy_grid()
     md = PISM.model.ModelData(grid)
+
 
 def grid_from_file_test():
     "Intiialize a grid from a file"
@@ -158,11 +173,11 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.PIO(grid,"netcdf3")
+    pio = PISM.PIO(grid, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     pio.def_time(grid.config.get_string("time_dimension_name"),
                  grid.config.get_string("calendar"), grid.time.units_string())
-    pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
+    pio.append_time(grid.config.get_string("time_dimension_name"), grid.time.current())
     pio.close()
 
     enthalpy.write(output_file)
@@ -170,6 +185,7 @@ def grid_from_file_test():
     grid2 = PISM.Context().newgrid()
 
     PISM.model.initGridFromFile(grid, output_file, PISM.NOT_PERIODIC)
+
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -241,6 +257,7 @@ def create_special_vecs_test():
 
     return True
 
+
 def options_test():
     "Test command-line option handling"
     ctx = PISM.Context()
@@ -259,10 +276,10 @@ def options_test():
     B = PISM.optionsFlag("-B", "description", default=None)
 
     sys.argv.extend(["-IA", "1,2,3"])
-    IA = PISM.optionsIntArray("-IA", "description", default=[1,2])
+    IA = PISM.optionsIntArray("-IA", "description", default=[1, 2])
     IA = PISM.optionsIntArray("-IA", "description", default=None)
 
-    RA = PISM.optionsRealArray("-RA", "description", default=[2,3])
+    RA = PISM.optionsRealArray("-RA", "description", default=[2, 3])
     RA = PISM.optionsRealArray("-RA", "description", default=None)
 
     SA = PISM.optionsStringArray("-SA", "description", default="one,two")
@@ -270,6 +287,7 @@ def options_test():
 
     M = PISM.optionsList("-L", "description", choices="one,two", default="one")
     M = PISM.optionsList("-L", "description", choices="one,two", default=None)
+
 
 def pism_vars_test():
     """Test adding fields to and getting them from pism::Vars."""
@@ -284,6 +302,7 @@ def pism_vars_test():
 
     # test getting by standard name
     print v.get("land_ice_thickness").metadata().get_string("units")
+
 
 def modelvecs_test():
     "Test the ModelVecs class"
@@ -342,11 +361,11 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.PIO(grid,"netcdf3")
+    pio = PISM.PIO(grid, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     pio.def_time(grid.config.get_string("time_dimension_name"),
                  grid.config.get_string("calendar"), grid.time.units_string())
-    pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
+    pio.append_time(grid.config.get_string("time_dimension_name"), grid.time.current())
     pio.close()
 
     vecs.write(output_file)
@@ -390,12 +409,13 @@ def sia_test():
 
     vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata)
 
+
 def util_test():
     "Test the PISM.util module"
     grid = create_dummy_grid()
 
     output_file = "test_pism_util.nc"
-    pio = PISM.PIO(grid,"netcdf3")
+    pio = PISM.PIO(grid, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     pio.close()
 
@@ -409,6 +429,7 @@ def util_test():
     b.update(c=3.0)
 
     print b.a, b["b"], b.has_key("b"), b
+
 
 def logging_test():
     "Test the PISM.logging module"
@@ -445,7 +466,8 @@ def logging_test():
 
     pio.open("other_log.nc", PISM.PISM_READWRITE_MOVE)
     pio.close()
-    c.write("other_log.nc", "other_log") # non-default arguments
+    c.write("other_log.nc", "other_log")  # non-default arguments
+
 
 def column_interpolation_test(plot=False):
     """Test ColumnInterpolation by interpolating from the coarse grid to the
@@ -460,10 +482,10 @@ def column_interpolation_test(plot=False):
         "Compute levels of a quadratic coarse grid."
         result = np.zeros(Mz)
         z_lambda = 4.0
-        for k in xrange(Mz-1):
+        for k in xrange(Mz - 1):
             zeta = float(k) / (Mz - 1)
-            result[k] = Lz * ((zeta / z_lambda) * (1.0 + (z_lambda - 1.0) * zeta));
-        result[Mz-1] = Lz
+            result[k] = Lz * ((zeta / z_lambda) * (1.0 + (z_lambda - 1.0) * zeta))
+        result[Mz - 1] = Lz
         return result
 
     def fine_grid(z_coarse):
@@ -480,7 +502,7 @@ def column_interpolation_test(plot=False):
 
     def test_quadratic_interp():
         z_coarse = z_quadratic(Mz, Lz)
-        f_coarse = (z_coarse / Lz)**2
+        f_coarse = (z_coarse / Lz) ** 2
         z_fine = fine_grid(z_coarse)
 
         print "Testing quadratic interpolation"
@@ -488,7 +510,7 @@ def column_interpolation_test(plot=False):
 
     def test_linear_interp():
         z_coarse = np.linspace(0, Lz, Mz)
-        f_coarse = (z_coarse / Lz)**2
+        f_coarse = (z_coarse / Lz) ** 2
         z_fine = fine_grid(z_coarse)
 
         print "Testing linear interpolation"
@@ -522,34 +544,38 @@ def column_interpolation_test(plot=False):
         print "norm1(fine_to_coarse(coarse_to_fine(f)) - f) = %f" % delta
         print "norm1(PISM - NumPy) = %f" % delta_numpy
 
-        return delta,delta_numpy
+        return delta, delta_numpy
 
-    linear_delta,linear_delta_numpy = test_linear_interp()
+    linear_delta, linear_delta_numpy = test_linear_interp()
 
-    quadratic_delta,_ = test_quadratic_interp()
+    quadratic_delta, _ = test_quadratic_interp()
 
     if plot:
         plt.show()
 
     if (linear_delta > 1e-12 or
-        linear_delta_numpy > 1e-12 or
-        quadratic_delta > 1e-3):
+            linear_delta_numpy > 1e-12 or
+            quadratic_delta > 1e-3):
         return False
     return True
+
 
 def pism_join_test():
     "Test PISM.join()"
     assert PISM.join(["one", "two"], ':') == "one:two"
 
+
 def pism_split_test():
     "Test PISM.split()"
     assert PISM.split("one,two,three", ',') == ("one", "two", "three")
+
 
 def pism_ends_with_test():
     "Test PISM.ends_with()"
     assert PISM.ends_with("foo.nc", ".nc") == True
     assert PISM.ends_with("foo.nc and more text", ".nc") == False
     assert PISM.ends_with("", "suffix") == False
+
 
 def linear_interpolation_test(plot=False):
     "Test linear interpolation code used to regrid fields"

@@ -6,7 +6,9 @@ import PISM
 import numpy as np
 import pylab as plt
 
+
 class EnthalpyTest(object):
+
     def __init__(self, Mz=101, dt=0.1):
         ctx = PISM.Context()
         self.EC = PISM.EnthalpyConverter(ctx.config)
@@ -29,7 +31,6 @@ class EnthalpyTest(object):
         self.z = np.array(grid.zlevels_fine)
 
         self.enthalpy = PISM.model.createEnthalpyVec(grid)
-
 
         self.strain_heating = PISM.model.createStrainHeatingVec(grid)
 
@@ -56,7 +57,8 @@ class EnthalpyTest(object):
         self.strain_heating.set(0.0)
 
     def init_column(self):
-        self.esys.initThisColumn(1, 1, False, self.Lz) # NOT marginal (but it does not matter)
+        self.esys.initThisColumn(1, 1, False, self.Lz)  # NOT marginal (but it does not matter)
+
 
 def dirichlet_test(dt):
     """Test the enthalpy solver with Dirichlet B.C. at the base and
@@ -72,7 +74,7 @@ def dirichlet_test(dt):
     def E_exact(z):
         """Exact solution is a straight line connecting basal and surface
         conditions."""
-        return E_base + (z/T.Lz) * (E_surface - E_base)
+        return E_base + (z / T.Lz) * (E_surface - E_base)
 
     with PISM.vec.Access(nocomm=[T.enthalpy, T.u, T.v, T.w, T.strain_heating]):
         T.init_column()
@@ -84,6 +86,7 @@ def dirichlet_test(dt):
 
         plt.plot(T.z, x, label="dt={}".format(dt))
         plt.plot(T.z, E_exact(T.z))
+
 
 def neumann_bc_base_test(dt):
     """Test the enthalpy solver with Neumann B.C. at the base and
@@ -115,14 +118,14 @@ def neumann_bc_base_test(dt):
 if __name__ == "__main__":
     plt.figure(1)
     plt.hold(True)
-    for dt in [10**x for x in range(1,6)]:
+    for dt in [10 ** x for x in range(1, 6)]:
         dirichlet_test(dt)
     plt.grid(True)
     plt.legend()
 
     plt.figure(2)
     plt.hold(True)
-    for dt in [10**x for x in range(1,6)]:
+    for dt in [10 ** x for x in range(1, 6)]:
         neumann_bc_base_test(dt)
     plt.grid(True)
     plt.legend()
