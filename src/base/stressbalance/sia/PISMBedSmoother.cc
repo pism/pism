@@ -70,6 +70,13 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
                "* Initializing bed smoother object with %.3f km half-width ...\n",
                grid.convert(m_smoothing_range, "m", "km"));
   }
+
+  // Make sure that Nx and Ny are initialized. In most cases SIAFD::update() will call
+  // preprocess_bed() and set appropriate values, but in a zero-length (-y 0) run IceModel does not
+  // call SIAFD::update()... We may need to re-structure this class so that everything is
+  // initialized right after construction and users don't have to call preprocess_bed() manually.
+  Nx = -1;
+  Ny = -1;
 }
 
 
