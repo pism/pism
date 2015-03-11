@@ -19,7 +19,7 @@
 #include <sstream>
 #include <algorithm>
 #include <string.h>
-#include <assert.h>
+#include <cassert>
 
 #include "pism_options.hh"
 #include "NCVariable.hh"

@@ -21,7 +21,7 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
-#include <assert.h>
+#include <cassert>
 #include "pism_const.hh"
 #include "PISMConfig.hh"
 #include "localMassBalance.hh"

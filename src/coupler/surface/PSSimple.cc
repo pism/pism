@@ -22,7 +22,7 @@
 #include "iceModelVec.hh"
 #include "PISMConfig.hh"
 
-#include <assert.h>
+#include <cassert>
 #include <stdexcept>
 
 namespace pism {

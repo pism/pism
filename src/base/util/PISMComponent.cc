@@ -24,7 +24,7 @@
 #include "iceModelVec.hh"
 
 #include "pism_options.hh"
-#include <assert.h>
+#include <cassert>
 
 #include "error_handling.hh"
 

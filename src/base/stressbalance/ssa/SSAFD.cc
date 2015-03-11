@@ -23,7 +23,7 @@
 #include "flowlaws.hh"
 #include "PISMVars.hh"
 
-#include <assert.h>
+#include <cassert>
 #include <stdexcept>
 
 namespace pism {

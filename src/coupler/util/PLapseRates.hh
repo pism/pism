@@ -26,7 +26,7 @@
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
-#include <assert.h>
+#include <cassert>
 
 #include "error_handling.hh"
 

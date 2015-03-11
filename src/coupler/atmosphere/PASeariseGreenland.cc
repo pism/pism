@@ -27,7 +27,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "PISMTime.hh"
-#include <assert.h>
+#include <cassert>
 #include "PISMConfig.hh"
 
 #include "error_handling.hh"

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMNC4_Quilt.hh"
-#include <assert.h>
+#include <cassert>
 #include "pism_const.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in

@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <cstring>
-#include <assert.h>
+#include <cassert>
 
 #include <vector>     // STL vector container; sortable; used in test L
 #include <algorithm>  // required by sort(...) in test L

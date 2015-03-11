@@ -25,7 +25,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
-#include <assert.h>
+#include <cassert>
 
 namespace pism {
 namespace surface {

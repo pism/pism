@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucForwardProblem.hh"
-#include <assert.h>
+#include <cassert>
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"

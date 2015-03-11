@@ -19,7 +19,7 @@
 #include "PAAnomaly.hh"
 #include "PISMConfig.hh"
 #include "IceGrid.hh"
-#include <assert.h>
+#include <cassert>
 
 namespace pism {
 namespace atmosphere {
