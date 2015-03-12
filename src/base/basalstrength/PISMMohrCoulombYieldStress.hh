@@ -19,9 +19,7 @@
 #ifndef _PISMMOHRCOULOMBYIELDSTRESS_H_
 #define _PISMMOHRCOULOMBYIELDSTRESS_H_
 
-#include "PISMDiagnostic.hh"
 #include "PISMYieldStress.hh"
-#include "PISMHydrology.hh"
 #include "iceModelVec.hh"
 
 namespace pism {

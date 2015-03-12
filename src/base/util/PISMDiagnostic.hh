@@ -24,12 +24,9 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
-#include "error_handling.hh"
 #include "iceModelVec.hh"
 
 namespace pism {
-
-class Vars;
 
 //! @brief Class representing diagnostic computations in PISM.
 /*!

@@ -20,7 +20,7 @@
 #define _PISMTIME_H_
 
 #include "pism_const.hh"
-#include "NCVariable.hh"
+#include "PISMUnits.hh"
 
 namespace pism {
 

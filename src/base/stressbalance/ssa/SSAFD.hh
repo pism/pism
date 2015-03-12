@@ -20,7 +20,6 @@
 #define _SSAFD_H_
 
 #include "SSA.hh"
-#include <petscksp.h>
 
 #include "error_handling.hh"
 #include "Viewer.hh"
@@ -126,15 +125,6 @@ protected:
 
 //! Constructs a new SSAFD
 SSA * SSAFDFactory(const IceGrid &, const EnthalpyConverter &);
-
-//! \brief Reports the nuH (viscosity times thickness) product on the staggered
-//! grid.
-class SSAFD_nuH : public Diag<SSAFD>
-{
-public:
-  SSAFD_nuH(SSAFD *m);
-  virtual IceModelVec::Ptr compute();
-};
 
 } // end of namespace stressbalance
 } // end of namespace pism

@@ -19,9 +19,9 @@
 #ifndef __localMassBalance_hh
 #define __localMassBalance_hh
 
-#include <petsc.h>
+
 #include <gsl/gsl_rng.h>
-#include "NCVariable.hh"
+
 #include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {

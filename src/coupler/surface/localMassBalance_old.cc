@@ -22,7 +22,6 @@
 #include <gsl/gsl_randist.h>
 
 #include "pism_const.hh"
-#include "NCVariable.hh"
 #include "localMassBalance_old.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"

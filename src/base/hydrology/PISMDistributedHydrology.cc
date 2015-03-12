@@ -23,6 +23,7 @@
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 #include "error_handling.hh"
+#include "PIO.hh"
 
 namespace pism {
 namespace hydrology {

@@ -16,15 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "PSForceThickness.hh"
 #include "IceGrid.hh"
 #include "PISMVars.hh"
 #include "PIO.hh"
 #include "PISMConfig.hh"
 #include "Mask.hh"
-
 #include "pism_options.hh"
-
 #include "error_handling.hh"
 
 namespace pism {

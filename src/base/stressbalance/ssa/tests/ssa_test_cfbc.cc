@@ -30,6 +30,7 @@ static char help[] =
 #include "PIO.hh"
 #include "NCVariable.hh"
 #include "SSAFD.hh"
+#include "SSAFD_diagnostics.hh"
 #include "SSATestCase.hh"
 #include "pism_options.hh"
 #include "Mask.hh"

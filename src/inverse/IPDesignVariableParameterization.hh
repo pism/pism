@@ -20,14 +20,12 @@
 #ifndef IPTAUCPARAMETERIZATION_HH_7ZRETI1S
 #define IPTAUCPARAMETERIZATION_HH_7ZRETI1S
 
-
-#include <petsc.h>
-#include "NCVariable.hh"
-#include "iceModelVec.hh"
+#include <string>
 
 namespace pism {
 
 class Config;
+class IceModelVec2S;
 
 namespace inverse {
 

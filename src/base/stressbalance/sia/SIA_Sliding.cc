@@ -21,7 +21,7 @@
 #include "enthalpyConverter.hh"
 #include "PISMVars.hh"
 #include "flowlaw_factory.hh"
-
+#include "IceGrid.hh"
 #include "error_handling.hh"
 
 namespace pism {

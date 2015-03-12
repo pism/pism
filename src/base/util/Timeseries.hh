@@ -19,13 +19,15 @@
 #ifndef __Timeseries_hh
 #define __Timeseries_hh
 
-#include "NCVariable.hh"
 #include <deque>
+#include <mpi.h>
+
+#include "NCVariable.hh"
 
 namespace pism {
 
 class IceGrid;
-
+class PIO;
 
 //! \brief A general class for reading and accessing time-series.
 /*!

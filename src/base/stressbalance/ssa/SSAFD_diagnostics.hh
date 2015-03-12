@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,38 +17,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _SSA_DIAGNOSTICS_H_
-#define _SSA_DIAGNOSTICS_H_
+#ifndef _SSAFD_DIAGNOSTIC_H_
+#define _SSAFD_DIAGNOSTIC_H_
 
-#include "SSA.hh"
 #include "PISMDiagnostic.hh"
 
 namespace pism {
 namespace stressbalance {
-
-//! \brief Computes the magnitude of the driving shear stress at the base of
-//! ice (diagnostically).
-class SSA_taud_mag : public Diag<SSA>
+//! \brief Reports the nuH (viscosity times thickness) product on the staggered
+//! grid.
+class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
-  SSA_taud_mag(SSA *m);
+  SSAFD_nuH(SSAFD *m);
   virtual IceModelVec::Ptr compute();
 };
-
-//! @brief Computes the driving shear stress at the base of ice
-//! (diagnostically).
-/*! This is *not* a duplicate of SSB_taud: SSA_taud::compute() uses
-  SSA::compute_driving_stress(), which tries to be smarter near ice margins.
-*/
-class SSA_taud : public Diag<SSA>
-{
-public:
-  SSA_taud(SSA *m);
-  virtual IceModelVec::Ptr compute();
-};
-
-
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSA_DIAGNOSTICS_H_ */
+#endif /* _SSAFD_DIAGNOSTIC_H_ */

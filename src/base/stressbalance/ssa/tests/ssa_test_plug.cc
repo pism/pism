@@ -41,7 +41,7 @@ static char help[] =
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
 #include <math.h>
-
+#include "PISMConfig.hh"
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 

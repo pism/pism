@@ -52,6 +52,7 @@
 #include "PISMEigenCalving.hh"
 #include "PISMFloatKill.hh"
 #include "error_handling.hh"
+#include "PISMTime.hh"
 
 namespace pism {
 

@@ -40,7 +40,10 @@
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "PISMMohrCoulombYieldStress.hh"
+#include "rheology/flowlaws.hh"
+#include "flowlaw_factory.hh"
 #include "error_handling.hh"
+#include "PISMDiagnostic.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values

@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <gsl/gsl_math.h>
+
 #include "PAWeatherStation.hh"
 #include "PISMConfig.hh"
 #include "pism_const.hh"
@@ -24,7 +26,7 @@
 #include "iceModelVec.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-
+#include "PIO.hh"
 #include "error_handling.hh"
 
 namespace pism {

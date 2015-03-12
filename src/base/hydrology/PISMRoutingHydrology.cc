@@ -22,6 +22,7 @@
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
 #include "error_handling.hh"
+#include "PIO.hh"
 
 namespace pism {
 namespace hydrology {

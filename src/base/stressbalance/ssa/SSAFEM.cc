@@ -16,13 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "IceGrid.hh"
 #include "SSAFEM.hh"
 #include "FETools.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 #include "pism_options.hh"
-#include <stdexcept>
 
 namespace pism {
 namespace stressbalance {

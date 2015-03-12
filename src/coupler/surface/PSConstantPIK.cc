@@ -16,11 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "PSConstantPIK.hh"
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
-#include <stdexcept>
 
 namespace pism {
 namespace surface {

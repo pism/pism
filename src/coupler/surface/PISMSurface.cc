@@ -17,6 +17,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+#include <gsl/gsl_math.h>
+
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
 #include "PIO.hh"
@@ -25,7 +28,6 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
-#include <cassert>
 
 namespace pism {
 namespace surface {

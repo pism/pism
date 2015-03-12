@@ -76,8 +76,8 @@ private:
   MPI_Comm m_com;
   UnitSystem m_unit_system;
   NCVariable m_data;
+  //! @brief the name of the file this config database was initialized from
   std::string m_config_filename;
-  //!< \brief the name of the file this config database was initialized from 
   double get_quiet(const std::string &name) const;
   std::string get_string_quiet(const std::string &name) const;
   bool   get_flag_quiet(const std::string &name) const;

@@ -16,14 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>
+#include <cassert>
+#include <gsl/gsl_math.h>
+
 #include "PISMMohrCoulombYieldStress.hh"
 #include "PISMHydrology.hh"
 #include "PISMVars.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
-#include <cmath>
-#include <cassert>
 #include "error_handling.hh"
+#include "PIO.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 

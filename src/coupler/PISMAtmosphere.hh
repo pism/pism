@@ -20,6 +20,8 @@
 #ifndef __PISMAtmosphere_hh
 #define __PISMAtmosphere_hh
 
+#include <vector>
+
 #include "PISMComponent.hh"
 
 namespace pism {

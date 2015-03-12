@@ -25,6 +25,8 @@
 #include "TerminationReason.hh"
 #include "KSP.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 namespace inverse {
 

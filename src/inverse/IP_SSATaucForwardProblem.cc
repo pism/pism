@@ -21,6 +21,7 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 namespace inverse {

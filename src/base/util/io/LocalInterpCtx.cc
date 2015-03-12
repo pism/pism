@@ -25,6 +25,7 @@
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 #include "PISMConfig.hh"
+#include "IceGrid.hh"
 
 #include "interpolation.hh"
 #include "error_handling.hh"

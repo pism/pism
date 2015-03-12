@@ -16,6 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <algorithm>            // std::min
+#include <cassert>
+#include <gsl/gsl_math.h>
+
 #include "PSTemperatureIndex.hh"
 #include "localMassBalance.hh"
 #include "IceGrid.hh"
@@ -24,9 +28,7 @@
 #include "PISMTime.hh"
 #include "PISMAtmosphere.hh"
 #include "Mask.hh"
-
-#include <algorithm>            // std::min
-#include <cassert>
+#include "PIO.hh"
 
 #include "error_handling.hh"
 

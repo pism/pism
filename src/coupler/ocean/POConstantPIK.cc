@@ -17,16 +17,19 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "POConstantPIK.hh"
 #include "PISMVars.hh"
 #include "PISMConfig.hh"
 #include "IceGrid.hh"
 #include "iceModelVec.hh"
 #include "pism_options.hh"
-#include <stdexcept>
+
 
 namespace pism {
 namespace ocean {
+
 PIK::PIK(const IceGrid &g)
   : OceanModel(g),
     m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),

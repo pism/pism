@@ -19,9 +19,10 @@
 #ifndef __lic_hh
 #define __lic_hh
 
-#include "IceGrid.hh"
-
 namespace pism {
+
+class IceGrid;
+class grid_info;
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).
 /*!

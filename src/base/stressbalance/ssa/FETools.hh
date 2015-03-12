@@ -24,9 +24,14 @@
 #define _FETOOLS_H_
 
 #include <petscmat.h>
-#include "iceModelVec.hh"       // to get Vector2
+#include "Vector2.hh"
 
 namespace pism {
+class IceModelVec;
+class IceModelVec2S;
+class IceModelVec2Int;
+class IceModelVec2V;
+class IceGrid;
 namespace fem {
 //! \file 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.

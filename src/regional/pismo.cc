@@ -25,7 +25,7 @@ static char help[] =
 #include "iceModel.hh"
 
 #include "regional.hh"
-
+#include "PISMConfig.hh"
 #include "PAFactory.hh"
 #include "POFactory.hh"
 #include "PSFactory.hh"
@@ -34,7 +34,6 @@ static char help[] =
 #include "PISMConstantYieldStress.hh"
 #include "PIO.hh"
 #include "pism_options.hh"
-
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 

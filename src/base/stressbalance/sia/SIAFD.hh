@@ -20,9 +20,12 @@
 #define _SIAFD_H_
 
 #include "SSB_Modifier.hh"      // derivesfrom SSB_Modifier
-#include "PISMDiagnostic.hh"    // derives from Diag
 
 namespace pism {
+
+class Diagnostic;
+class TSDiagnostic;
+
 namespace stressbalance {
 
 class BedSmoother;

@@ -20,6 +20,8 @@
 #ifndef _SSB_DIAGNOSTICS_H_
 #define _SSB_DIAGNOSTICS_H_
 
+#include "PISMDiagnostic.hh"
+
 namespace pism {
 
 class Vars;

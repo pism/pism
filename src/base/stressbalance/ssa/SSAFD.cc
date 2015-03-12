@@ -16,15 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+#include <stdexcept>
+
 #include "SSAFD.hh"
+#include "SSAFD_diagnostics.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "pism_options.hh"
 #include "flowlaws.hh"
 #include "PISMVars.hh"
-
-#include <cassert>
-#include <stdexcept>
+#include "IceGrid.hh"
+#include "PISMTime.hh"
 
 namespace pism {
 namespace stressbalance {

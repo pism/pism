@@ -22,10 +22,12 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
+#include "flowlaws.hh"
+#include "PISMConfig.hh"
+#include "IceGrid.hh"
 
 namespace pism {
 namespace inverse {
-
 
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, const EnthalpyConverter &e,
                                                        IPDesignVariableParameterization &tp)

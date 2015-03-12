@@ -21,18 +21,17 @@
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
-#include "IceGrid.hh"
-#include "flowlaws.hh"
-#include "flowlaw_factory.hh"
-#include <PISMDiagnostic.hh>
 
 namespace pism {
 namespace rheology {
 class FlowLaw;
 }
 
+class IceGrid;
 class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
+class Diagnostic;
+class TSDiagnostic;
 
 namespace stressbalance {
 

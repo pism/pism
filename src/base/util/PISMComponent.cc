@@ -16,16 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+#include <cassert>
+
 #include "PISMComponent.hh"
 #include "PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "NCVariable.hh"
 #include "iceModelVec.hh"
-
 #include "pism_options.hh"
-#include <cassert>
-
 #include "error_handling.hh"
 
 namespace pism {

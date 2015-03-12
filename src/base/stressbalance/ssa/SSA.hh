@@ -20,11 +20,12 @@
 #define _SSA_H_
 
 #include "ShallowStressBalance.hh"
-#include "PISMDiagnostic.hh"
-
-#include "error_handling.hh"
 
 namespace pism {
+
+class Diagnostic;
+class TSDiagnostic;
+
 namespace stressbalance {
 
 //! Gives an extension coefficient to maintain ellipticity of SSA where ice is thin.

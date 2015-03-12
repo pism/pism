@@ -213,15 +213,15 @@ void Config::set_flag(const std::string &name, bool value) {
 
 //! Get a flag from a command-line option.
 /*!
-  If called as flag_from_option("foo", "foo"), checks both -foo and -no_foo.
+  If called as `flag_from_option("foo", "foo")`, checks both `-foo` and `-no_foo`.
 
-  \li if -foo is set, calls set_flag("foo", true),
+  - if `-foo` is set, calls `set_flag("foo", true)`,
 
-  \li if -no_foo is set, calls set_flag("foo", false),
+  - if `-no_foo` is set, calls `set_flag("foo", false)`,
 
-  \li if both are set, prints an error message and stops,
+  - if *both* are set, prints an error message and stops,
 
-  \li if none, does nothing.
+  - if none, does nothing.
 
 */
 void Config::flag_from_option(const std::string &name, const std::string &flag) {

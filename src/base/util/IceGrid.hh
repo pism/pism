@@ -19,25 +19,22 @@
 #ifndef __grid_hh
 #define __grid_hh
 
+#include <cassert>
 #include <vector>
 #include <string>
 #include <map>
 #include <gsl/gsl_interp.h>
 
-#include "PISMUnits.hh"
 #include "PISMVars.hh"
-
-#include <cassert>
-
 #include "DM.hh"
 #include "pism_const.hh"
 
 namespace pism {
 
 class Time;
-class Prof;
 class Config;
 class PIO;
+class UnitSystem;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -183,7 +180,6 @@ public:
   petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
 
   void report_parameters() const;
-
 
   void allocate();  // FIXME! allocate in the constructor!
 

@@ -37,9 +37,10 @@ static char help[] =
 #include "ShallowStressBalance.hh"
 #include "PISMVars.hh"
 #include "Mask.hh"
-
+#include "IceGrid.hh"
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
+#include "PISMTime.hh"
 
 namespace pism {
 

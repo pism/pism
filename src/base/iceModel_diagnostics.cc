@@ -16,11 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "pism_options.hh"
 #include "iceModel_diagnostics.hh"
 #include "PISMDiagnostic.hh"
 #include "Mask.hh"
-
+#include "flowlaws.hh"
 #include "PISMBedDef.hh"
 #include "PISMYieldStress.hh"
 #include "PISMHydrology.hh"

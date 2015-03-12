@@ -19,17 +19,16 @@
 #ifndef __Component_hh
 #define __Component_hh
 
-#include <petscsys.h>
-#include <gsl/gsl_math.h>
 #include <string>
 #include <set>
 #include <map>
 
-#include "PIO.hh"
 #include "MaxTimestep.hh"
+#include "IO_Flags.hh"
 
 namespace pism {
 
+class PIO;
 class IceGrid;
 class Config;
 class NCSpatialVariable;

@@ -18,7 +18,7 @@
 
 #include "SSATestCase.hh"
 #include "PIO.hh"
-
+#include "PISMTime.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
 #include "pism_options.hh"

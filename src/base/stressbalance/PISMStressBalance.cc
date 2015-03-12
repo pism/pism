@@ -25,6 +25,7 @@
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "PISMConfig.hh"
+#include "flowlaws.hh"
 
 namespace pism {
 namespace stressbalance {

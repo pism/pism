@@ -28,6 +28,8 @@
 
 #include "error_handling.hh"
 #include "PISMBedDef.hh"
+#include "PISMConfig.hh"
+#include "PISMTime.hh"
 
 namespace pism {
 
