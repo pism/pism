@@ -140,7 +140,7 @@ add_custom_target (etags
 
 # re-run tests that failed
 add_custom_target (retest
-  COMMAND ${CMAKE_CTEST_COMMAND} --rerun-failed
+  COMMAND ${CMAKE_CTEST_COMMAND} --rerun-failed --output-on-failure
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   VERBATIM
 )
