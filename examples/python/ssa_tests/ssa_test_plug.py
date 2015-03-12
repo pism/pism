@@ -92,8 +92,8 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         self.config.set_double("epsilon_ssa", 0.0)
 
     def exactSolution(self, i, j, x, y):
-        earth_grav = self.config.get("standard_gravity")
-        ice_rho = self.config.get("ice_density")
+        earth_grav = self.config.get_double("standard_gravity")
+        ice_rho = self.config.get_double("ice_density")
         f = ice_rho * earth_grav * H0 * dhdx
         ynd = y / L
 

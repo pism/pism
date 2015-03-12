@@ -109,9 +109,6 @@ void SSATestCaseExp::initializeSSACoefficients() {
   m_thickness.set(H0);
   m_surface.set(H0);
   m_bed.set(0.);
-  // double threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
-  // double tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
-  // printf("tauc0=%g\n",tauc0);
   m_tauc.set(tauc0);
 
 
@@ -146,8 +143,8 @@ void SSATestCaseExp::initializeSSACoefficients() {
 
 void SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, double x, double /*y*/,
                                    double *u, double *v) {
-  double tauc_threshold_velocity = m_config.get("pseudo_plastic_uthreshold",
-                                                "m/year", "m/second");
+  double tauc_threshold_velocity = m_config.get_double("pseudo_plastic_uthreshold",
+                                                       "m/year", "m/second");
   double v0 = m_grid->convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
   double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));

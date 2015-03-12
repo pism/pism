@@ -49,12 +49,12 @@ GivenTH::Constants::Constants(const Config &config) {
   // to use the spatially-variable top-of-the-ice temperature.
   shelf_top_surface_temperature    = -20.0; // degrees Celsius
 
-  water_latent_heat_fusion         = config.get("water_latent_heat_fusion");
-  sea_water_density                = config.get("sea_water_density");
-  sea_water_specific_heat_capacity = config.get("sea_water_specific_heat_capacity");
-  ice_density                      = config.get("ice_density");
-  ice_specific_heat_capacity       = config.get("ice_specific_heat_capacity");
-  ice_thermal_diffusivity          = config.get("ice_thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
+  water_latent_heat_fusion         = config.get_double("water_latent_heat_fusion");
+  sea_water_density                = config.get_double("sea_water_density");
+  sea_water_specific_heat_capacity = config.get_double("sea_water_specific_heat_capacity");
+  ice_density                      = config.get_double("ice_density");
+  ice_specific_heat_capacity       = config.get_double("ice_specific_heat_capacity");
+  ice_thermal_diffusivity          = config.get_double("ice_thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
   limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
 }
 
@@ -212,7 +212,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  m_shelfbmassflux.scale(m_config.get("ice_density"));
+  m_shelfbmassflux.scale(m_config.get_double("ice_density"));
 }
 
 

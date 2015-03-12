@@ -101,7 +101,7 @@ void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
 
 void SSATestCaseCFBC::initializeSSAModel() {
 
-  m_config.set_double("ice_softness", pow(1.9e8, -m_config.get("ssa_Glen_exponent")));
+  m_config.set_double("ice_softness", pow(1.9e8, -m_config.get_double("ssa_Glen_exponent")));
   m_config.set_flag("compute_surf_grad_inward_ssa", false);
   m_config.set_flag("calving_front_stress_boundary_condition", true);
   m_config.set_string("ssa_flow_law", "isothermal_glen");
@@ -126,8 +126,8 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   list.add(m_bc_values);
   list.add(m_ice_mask);
 
-  double ocean_rho = m_config.get("sea_water_density"),
-    ice_rho = m_config.get("ice_density");
+  double ocean_rho = m_config.get_double("sea_water_density"),
+    ice_rho = m_config.get_double("ice_density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

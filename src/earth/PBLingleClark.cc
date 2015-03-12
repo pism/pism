@@ -143,7 +143,7 @@ void PBLingleClark::correct_topg() {
              boot_file->c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
   topg_tmp.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                      "m", "bedrock_altitude");
@@ -184,7 +184,7 @@ void PBLingleClark::update_impl(double my_t, double my_dt) {
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config.get("bed_def_interval_years", "years", "seconds") &&
+  if ((dt_beddef < m_config.get_double("bed_def_interval_years", "years", "seconds") &&
        t_final < m_grid.time->end()) ||
       dt_beddef < 1e-12) {
     return;

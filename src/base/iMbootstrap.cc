@@ -69,8 +69,8 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
       if (age_revision == age3.get_state_counter()) {
         verbPrintf(2, grid.com,
                    " - setting initial age to %.4f years\n",
-                   config.get("initial_age_of_ice_years"));
-        age3.set(config.get("initial_age_of_ice_years", "years", "seconds"));
+                   config.get_double("initial_age_of_ice_years"));
+        age3.set(config.get_double("initial_age_of_ice_years", "years", "seconds"));
 
       } else {
         verbPrintf(2, grid.com,
@@ -175,12 +175,12 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   }
 
   basal_melt_rate.regrid(filename, OPTIONAL,
-                         config.get("bootstrapping_bmelt_value_no_var"));
+                         config.get_double("bootstrapping_bmelt_value_no_var"));
   geothermal_flux.regrid(filename, OPTIONAL,
-                         config.get("bootstrapping_geothermal_flux_value_no_var"));
+                         config.get_double("bootstrapping_geothermal_flux_value_no_var"));
 
   ice_thickness.regrid(filename, OPTIONAL,
-                       config.get("bootstrapping_H_value_no_var"));
+                       config.get_double("bootstrapping_H_value_no_var"));
   // check the range of the ice thickness
   {
     Range thk_range = ice_thickness.range();
@@ -248,7 +248,8 @@ the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
 There are two alternative bootstrap methods determined by the configuration parameter
-`config.get("bootstrapping_temperature_heuristic"))`. Allowed values are `"smb"` and `"quartic_guess"`.
+`config.get_double("bootstrapping_temperature_heuristic"))`. Allowed values are `"smb"` and
+`"quartic_guess"`.
 
 1. If the `smb` method is chosen, which is the default, and if \f$m>0\f$,
 then the method sets the ice
@@ -301,11 +302,11 @@ void IceModel::putTempAtDepth() {
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
              usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
   const double
-    ice_k = config.get("ice_thermal_conductivity"),
-    melting_point_temp = config.get("water_melting_point_temperature"),
-    ice_density = config.get("ice_density"),
-    beta_CC_grad = config.get("beta_CC") * ice_density * config.get("standard_gravity"),
-    KK = ice_k / (ice_density * config.get("ice_specific_heat_capacity"));
+    ice_k = config.get_double("ice_thermal_conductivity"),
+    melting_point_temp = config.get_double("water_melting_point_temperature"),
+    ice_density = config.get_double("ice_density"),
+    beta_CC_grad = config.get_double("beta_CC") * ice_density * config.get_double("standard_gravity"),
+    KK = ice_k / (ice_density * config.get_double("ice_specific_heat_capacity"));
 
   assert(surface != NULL);
 
@@ -315,7 +316,7 @@ void IceModel::putTempAtDepth() {
     if (usesmb == true) {
       surface->ice_surface_mass_flux(climatic_mass_balance);
       // convert from [kg m-2 s-1] to [m / s]
-      climatic_mass_balance.scale(1.0 / config.get("ice_density"));
+      climatic_mass_balance.scale(1.0 / config.get_double("ice_density"));
     }
   }
 

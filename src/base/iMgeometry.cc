@@ -523,7 +523,7 @@ void IceModel::massContExplicitStep() {
     compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created(),
     compute_flux_divergence = flux_divergence.was_created();
 
-  double ice_density = config.get("ice_density"),
+  double ice_density = config.get_double("ice_density"),
     meter_per_s_to_kg_per_m2 = dt * ice_density;
 
   assert(surface != NULL);
@@ -903,8 +903,8 @@ void IceModel::update_floatation_mask() {
   MaskQuery mask(vMask);
 
   double
-    ice_density   = config.get("ice_density"),
-    ocean_density = config.get("sea_water_density"),
+    ice_density   = config.get_double("ice_density"),
+    ocean_density = config.get_double("sea_water_density"),
     mu            = ice_density / ocean_density;
 
   assert(ocean != NULL);

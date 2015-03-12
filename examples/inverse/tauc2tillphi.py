@@ -36,17 +36,17 @@ class BasalTillStrength:
 
         config = PISM.Context().config
 
-        self.hydrology_pressure_fraction = config.get("hydrology_pressure_fraction")
-        self.till_c_0 = config.get("till_c_0") * 1e3  # convert from kPa to Pa
-        self.bwat_max = config.get("bwat_max")
+        self.hydrology_pressure_fraction = config.get_double("hydrology_pressure_fraction")
+        self.till_c_0 = config.get_double("till_c_0") * 1e3  # convert from kPa to Pa
+        self.bwat_max = config.get_double("bwat_max")
 
         self.usebmr = config.get_flag("bmr_enhance_basal_water_pressure")
         self.usethkeff = config.get_flag("thk_eff_basal_water_pressure")
 
-        self.bmr_scale = config.get("bmr_enhance_scale")
-        self.thkeff_reduce = config.get("thk_eff_reduced")
-        self.thkeff_H_high = config.get("thk_eff_H_high")
-        self.thkeff_H_low = config.get("thk_eff_H_low")
+        self.bmr_scale = config.get_double("bmr_enhance_scale")
+        self.thkeff_reduce = config.get_double("thk_eff_reduced")
+        self.thkeff_H_high = config.get_double("thk_eff_H_high")
+        self.thkeff_H_low = config.get_double("thk_eff_H_low")
 
     def setFromOptions(self):
         # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
@@ -68,16 +68,16 @@ class BasalTillStrength:
 
     def updateYieldStress(self, mask, thickness, bwat, bmr, tillphi, tauc):
         config = PISM.Context().config
-        hydrology_pressure_fraction = self.hydrology_pressure_fraction  # config.get("hydrology_pressure_fraction")
-        till_c_0 = self.till_c_0  # config.get("till_c_0") * 1e3 # convert from kPa to Pa
-        bwat_max = self.bwat_max  # config.get("bwat_max")
+        hydrology_pressure_fraction = self.hydrology_pressure_fraction  # config.get_double("hydrology_pressure_fraction")
+        till_c_0 = self.till_c_0  # config.get_double("till_c_0") * 1e3 # convert from kPa to Pa
+        bwat_max = self.bwat_max  # config.get_double("bwat_max")
 
         rho_g = self.rho_g
 
         Nmin = 1e45
         with PISM.vec.Access(nocomm=[mask, thickness, bwat, bmr, tillphi], comm=tauc):
             mq = PISM.MaskQuery(mask)
-            GHOSTS = int(self.grid.config.get("grid_max_stencil_width"))
+            GHOSTS = int(self.grid.config.get_double("grid_max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
                 if mq.floating_ice(i, j):
                     tauc[i, j] = 0
@@ -97,9 +97,9 @@ class BasalTillStrength:
 
     def updateTillPhi_algebraic(self, mask, thickness, bwat, bmr, tauc, tillphi, tillphi_prev=None):
         config = PISM.Context().config
-        hydrology_pressure_fraction = self.hydrology_pressure_fraction  # config.get("hydrology_pressure_fraction")
-        till_c_0 = self.till_c_0  # config.get("till_c_0") * 1e3 # convert from kPa to Pa
-        bwat_max = self.bwat_max  # config.get("bwat_max")
+        hydrology_pressure_fraction = self.hydrology_pressure_fraction  # config.get_double("hydrology_pressure_fraction")
+        till_c_0 = self.till_c_0  # config.get_double("till_c_0") * 1e3 # convert from kPa to Pa
+        bwat_max = self.bwat_max  # config.get_double("bwat_max")
 
         rho_g = self.rho_g
 
@@ -110,7 +110,7 @@ class BasalTillStrength:
             vars.append(tillphi_prev)
         with PISM.vec.Access(nocomm=vars, comm=tillphi):
             mq = PISM.MaskQuery(mask)
-            GHOSTS = int(self.grid.config.get("grid_max_stencil_width"))
+            GHOSTS = int(self.grid.config.get_double("grid_max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
                 if mq.floating_ice(i, j):
                     if not tillphi_prev is None:
@@ -198,7 +198,7 @@ if PISM.getVerbosityLevel() > 3:
 if PISM.OptionBool("-ssa_glen", "SSA flow law Glen exponent"):
     B_schoof = 3.7e8     # Pa s^{1/3}; hardness
     config.set_string("ssa_flow_law", "isothermal_glen")
-    config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
+    config.set_double("ice_softness", pow(B_schoof, -config.get_double("Glen_exponent")))
 else:
     config.set_string("ssa_flow_law", "gpbld")
 
@@ -220,8 +220,8 @@ bwat = PISM.model.createBasalWaterVec(grid)
 for v in [bmr, tillphi, bwat]:
     v.regrid(bootfile, True)
 
-standard_gravity = config.get("standard_gravity")
-ice_rho = config.get("ice_density")
+standard_gravity = config.get_double("standard_gravity")
+ice_rho = config.get_double("ice_density")
 basal_till = BasalTillStrength(grid, ice_rho, standard_gravity)
 
 basal_till.updateYieldStress(ice_mask, thickness, bwat, bmr, tillphi, tauc)

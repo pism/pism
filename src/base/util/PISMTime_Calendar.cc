@@ -78,8 +78,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config.get("start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
+  m_run_start = increment_date(0, (int)m_config.get_double("start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config.get_double("run_length_years"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -99,7 +99,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config.get("start_year", "years", "seconds");
+    result = m_config.get_double("start_year", "years", "seconds");
   }
   return ys.is_set();
 }
@@ -115,7 +115,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config.get("run_length_years", "years", "seconds");
+    result = m_config.get_double("run_length_years", "years", "seconds");
   }
   return y.is_set();
 }
@@ -133,8 +133,8 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config.get("start_year", "years", "seconds") +
-              m_config.get("run_length_years", "years", "seconds"));
+    result = (m_config.get_double("start_year", "years", "seconds") +
+              m_config.get_double("run_length_years", "years", "seconds"));
   }
   return ye.is_set();
 }

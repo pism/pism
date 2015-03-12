@@ -41,8 +41,8 @@ void IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec 
 
   double zeta_min, zeta_max, hardav_min, hardav_max;
 
-  hardav_min = m_grid->config.get("inv_ssa_hardav_min");
-  hardav_max = m_grid->config.get("inv_ssa_hardav_max");
+  hardav_min = m_grid->config.get_double("inv_ssa_hardav_min");
+  hardav_max = m_grid->config.get_double("inv_ssa_hardav_max");
 
   IPDesignVariableParameterization &design_param = m_forward.design_param();
   design_param.fromDesignVariable(hardav_min,&zeta_min);

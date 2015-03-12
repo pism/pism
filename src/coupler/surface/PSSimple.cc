@@ -79,7 +79,7 @@ void Simple::update_impl(double my_t, double my_dt) {
 
 void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   atmosphere->mean_precipitation(result);
-  result.scale(m_config.get("ice_density"));
+  result.scale(m_config.get_double("ice_density"));
 }
 
 void Simple::ice_surface_temperature(IceModelVec2S &result) {

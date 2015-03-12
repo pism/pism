@@ -191,7 +191,7 @@ IceModel::~IceModel() {
 */
 void IceModel::createVecs() {
 
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = config.get_double("grid_max_stencil_width");
 
   verbPrintf(3, grid.com,
              "Allocating memory...\n");
@@ -423,7 +423,7 @@ void IceModel::createVecs() {
       vBCvel.metadata(j).set_string("glaciological_units", "m year-1");
       vBCvel.metadata(j).set_double("valid_min",  grid.convert(-1e6, "m/year", "m/second"));
       vBCvel.metadata(j).set_double("valid_max",  grid.convert( 1e6, "m/year", "m/second"));
-      vBCvel.metadata(j).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
+      vBCvel.metadata(j).set_double("_FillValue", config.get_double("fill_value", "m/year", "m/s"));
     }
     //just for diagnostics...
     grid.variables().add(vBCvel);

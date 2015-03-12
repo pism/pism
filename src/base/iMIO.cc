@@ -763,7 +763,7 @@ void IceModel::write_snapshot() {
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  backup_interval = config.get("backup_interval");
+  backup_interval = config.get_double("backup_interval");
 
   options::String backup_file("-o", "Output file name");
   if (backup_file.is_set()) {

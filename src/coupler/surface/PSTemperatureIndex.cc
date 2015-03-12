@@ -45,14 +45,14 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
   m_faustogreve           = NULL;
   m_sd_period             = 0;
   m_sd_ref_time           = 0.0;
-  m_base_ddf.snow         = m_config.get("pdd_factor_snow");
-  m_base_ddf.ice          = m_config.get("pdd_factor_ice");
-  m_base_ddf.refreezeFrac = m_config.get("pdd_refreeze");
-  m_base_pddThresholdTemp = m_config.get("pdd_positive_threshold_temp");
-  m_base_pddStdDev        = m_config.get("pdd_std_dev");
+  m_base_ddf.snow         = m_config.get_double("pdd_factor_snow");
+  m_base_ddf.ice          = m_config.get_double("pdd_factor_ice");
+  m_base_ddf.refreezeFrac = m_config.get_double("pdd_refreeze");
+  m_base_pddThresholdTemp = m_config.get_double("pdd_positive_threshold_temp");
+  m_base_pddStdDev        = m_config.get_double("pdd_std_dev");
   m_sd_use_param          = m_config.get_flag("pdd_std_dev_use_param");
-  m_sd_param_a            = m_config.get("pdd_std_dev_param_a");
-  m_sd_param_b            = m_config.get("pdd_std_dev_param_b");
+  m_sd_param_a            = m_config.get_double("pdd_std_dev_param_a");
+  m_sd_param_b            = m_config.get_double("pdd_std_dev_param_b");
 
 
   m_randomized = options::Bool("-pdd_rand",
@@ -96,7 +96,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
 
     unsigned int n_records = 0;
     std::string short_name = "air_temp_sd";
-    unsigned int buffer_size = (unsigned int) m_config.get("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) m_config.get_double("climate_forcing_buffer_size");
 
     PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
     nc.open(file, PISM_READONLY);
@@ -249,7 +249,7 @@ MaxTimestep TemperatureIndex::max_timestep(double my_t) {
 double TemperatureIndex::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
   double
-    balance_year_start_day = m_config.get("pdd_balance_year_start_day"),
+    balance_year_start_day = m_config.get_double("pdd_balance_year_start_day"),
     one_day                = m_grid.convert(1.0, "days", "seconds"),
     year_start             = m_grid.time->calendar_year_start(time),
     balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
@@ -308,8 +308,8 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   }
 
   const double
-    sigmalapserate = m_config.get("pdd_std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config.get("pdd_std_dev_lapse_lat_base");
+    sigmalapserate = m_config.get_double("pdd_std_dev_lapse_lat_rate"),
+    sigmabaselat   = m_config.get_double("pdd_std_dev_lapse_lat_base");
 
   if (sigmalapserate != 0.0) {
     latitude = m_grid.variables().get_2d_scalar("latitude");
@@ -329,7 +329,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   atmosphere->init_timeseries(ts);
 
-  const double ice_density = m_config.get("ice_density");
+  const double ice_density = m_config.get_double("ice_density");
 
   ParallelSection loop(m_grid.com);
   try {

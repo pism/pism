@@ -41,7 +41,7 @@ ShallowStressBalance::ShallowStressBalance(const IceGrid &g, const EnthalpyConve
   m_bc_mask = NULL;
   sea_level = 0;
 
-  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
 
   if (m_config.get_flag("do_pseudo_plastic_till") == true) {
     basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(m_config);
@@ -317,7 +317,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(m_config.get("ice_softness"),-1.0/m_config.get("ssa_Glen_exponent"));
+  double hardness = pow(m_config.get_double("ice_softness"),-1.0/m_config.get_double("ssa_Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(V);
@@ -429,8 +429,8 @@ IceModelVec::Ptr SSB_taud::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid.variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_grid.config.get("standard_gravity"),
-    ice_density = m_grid.config.get("ice_density");
+  double standard_gravity = m_grid.config.get_double("standard_gravity"),
+    ice_density = m_grid.config.get_double("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*result);

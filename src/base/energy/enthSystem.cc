@@ -51,13 +51,13 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_U0 = GSL_NAN;
   m_B0 = GSL_NAN;
 
-  m_ice_density = config.get("ice_density");
-  m_ice_c   = config.get("ice_specific_heat_capacity");
-  m_ice_k   = config.get("ice_thermal_conductivity");
-  m_p_air   = config.get("surface_pressure");
+  m_ice_density = config.get_double("ice_density");
+  m_ice_c   = config.get_double("ice_specific_heat_capacity");
+  m_ice_k   = config.get_double("ice_thermal_conductivity");
+  m_p_air   = config.get_double("surface_pressure");
 
   m_ice_K  = m_ice_k / m_ice_c;
-  m_ice_K0 = m_ice_K * config.get("enthalpy_temperate_conductivity_ratio");
+  m_ice_K0 = m_ice_K * config.get_double("enthalpy_temperate_conductivity_ratio");
 
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);

@@ -56,8 +56,8 @@ static void compute_strain_heating_errors(const Config &config,
   const double LforFG = 750000; // m
 
   const double
-    ice_rho   = config.get("ice_density"),
-    ice_c     = config.get("ice_specific_heat_capacity");
+    ice_rho   = config.get_double("ice_density"),
+    ice_c     = config.get_double("ice_specific_heat_capacity");
 
   double   junk0, junk1;
 
@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
-    const int WIDE_STENCIL = config.get("grid_max_stencil_width");
+    const int WIDE_STENCIL = config.get_double("grid_max_stencil_width");
 
     Vars &vars = grid.variables();
 

@@ -165,7 +165,7 @@ bool Config::get_flag_quiet(const std::string &name) const {
 
 
 //! Returns a `double` parameter. Stops if it was not found.
-double Config::get(const std::string &name) const {
+double Config::get_double(const std::string &name) const {
   if (m_options_left_set) {
     m_parameters_used.insert(name);
   }
@@ -173,9 +173,9 @@ double Config::get(const std::string &name) const {
   return this->get_quiet(name);
 }
 
-double Config::get(const std::string & name, const std::string & u1, const std::string & u2) const {
+double Config::get_double(const std::string & name, const std::string & u1, const std::string & u2) const {
   // always use get() (*not* _quiet) here
-  return m_unit_system.convert(this->get(name),  u1.c_str(),  u2.c_str());
+  return m_unit_system.convert(this->get_double(name),  u1.c_str(),  u2.c_str());
 }
 
 

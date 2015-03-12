@@ -41,13 +41,13 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
   m_upward_flux.write_in_glaciological_units = true;
 
   // build constant diffusivity for heat equation
-  m_bed_rho = m_config.get("bedrock_thermal_density");
-  m_bed_c   = m_config.get("bedrock_thermal_specific_heat_capacity");
-  m_bed_k   = m_config.get("bedrock_thermal_conductivity");
+  m_bed_rho = m_config.get_double("bedrock_thermal_density");
+  m_bed_c   = m_config.get_double("bedrock_thermal_specific_heat_capacity");
+  m_bed_k   = m_config.get_double("bedrock_thermal_conductivity");
   m_bed_D   = m_bed_k / (m_bed_rho * m_bed_c);
 
-  m_Mbz = (int)m_config.get("grid_Mbz");
-  m_Lbz = (int)m_config.get("grid_Lbz");
+  m_Mbz = (int)m_config.get_double("grid_Mbz");
+  m_Lbz = (int)m_config.get_double("grid_Lbz");
   m_input_file.clear();
 
   // FIXME: Move the code processing command-line options elsewhere,
@@ -82,7 +82,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
         m_Mbz = info.z_len;
         m_Lbz = -info.z_min;
       } else {
-        // override values we got using config.get() in the constructor
+        // override values we got using config.get_double() in the constructor
         m_Mbz = 1;
         m_Lbz = 0;
       }

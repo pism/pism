@@ -138,18 +138,18 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
 
   const double
-    ice_density        = config.get("ice_density"),
-    ice_c              = config.get("ice_specific_heat_capacity"),
-    L                  = config.get("water_latent_heat_fusion"),
-    melting_point_temp = config.get("water_melting_point_temperature"),
-    beta_CC_grad       = config.get("beta_CC") * ice_density * config.get("standard_gravity");
+    ice_density        = config.get_double("ice_density"),
+    ice_c              = config.get_double("ice_specific_heat_capacity"),
+    L                  = config.get_double("water_latent_heat_fusion"),
+    melting_point_temp = config.get_double("water_melting_point_temperature"),
+    beta_CC_grad       = config.get_double("beta_CC") * ice_density * config.get_double("standard_gravity");
 
   const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
+  const double bulgeMax  = config.get_double("enthalpy_cold_bulge_max") / ice_c;
 
   // now get map-plane fields, starting with coupler fields
   assert(surface != NULL);
@@ -209,12 +209,12 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   // counts unreasonably low temperature values; deprecated?
   int myLowTempCount = 0;
-  int maxLowTempCount = static_cast<int>(config.get("max_low_temp_count"));
-  double globalMinAllowedTemp = config.get("global_min_allowed_temp");
+  int maxLowTempCount = static_cast<int>(config.get_double("max_low_temp_count"));
+  double globalMinAllowedTemp = config.get_double("global_min_allowed_temp");
 
   MaskQuery mask(vMask);
 
-  const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
+  const double thickness_threshold = config.get_double("energy_advection_ice_thickness_threshold");
 
   ParallelSection loop(grid.com);
   try {

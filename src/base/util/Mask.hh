@@ -70,10 +70,10 @@ public:
   GeometryCalculator(double seaLevel, const Config &config)
   {
     sea_level = seaLevel;
-    alpha = 1 - config.get("ice_density") / config.get("sea_water_density");
+    alpha = 1 - config.get_double("ice_density") / config.get_double("sea_water_density");
     is_dry_simulation = config.get_flag("is_dry_simulation");
-    icefree_thickness = config.get("mask_icefree_thickness_standard");
-    is_floating_thickness = config.get("mask_is_floating_thickness_standard");
+    icefree_thickness = config.get_double("mask_icefree_thickness_standard");
+    is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");
   }
 
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,

@@ -31,7 +31,7 @@ namespace stressbalance {
 SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
   : SSB_Modifier(g, e) {
 
-  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
 
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {
@@ -560,7 +560,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   std::vector<double> delta_ij(m_grid.Mz());
 
   const double enhancement_factor = m_flow_law->enhancement_factor();
-  double ice_grain_size = m_config.get("ice_grain_size");
+  double ice_grain_size = m_config.get_double("ice_grain_size");
 
   bool compute_grain_size_using_age = m_config.get_flag("compute_grain_size_using_age");
 

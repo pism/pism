@@ -32,8 +32,8 @@ namespace pism {
 namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
-  m_min_thickness = config.get("min_thickness_strength_extension_ssa");
-  m_constant_nu = config.get("constant_nu_strength_extension_ssa");
+  m_min_thickness = config.get_double("min_thickness_strength_extension_ssa");
+  m_constant_nu = config.get_double("constant_nu_strength_extension_ssa");
 }
 
 //! Set strength = (viscosity times thickness).

@@ -85,7 +85,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         self.config.set_flag("compute_surf_grad_inward_ssa", True)
 
     def exactSolution(self, i, j, x, y):
-        tauc_threshold_velocity = self.config.get("pseudo_plastic_uthreshold",
+        tauc_threshold_velocity = self.config.get_double("pseudo_plastic_uthreshold",
                                                   "m/year", "m/second")
         v0 = self.grid.convert(100, "m/year", "m/second")
         alpha = math.sqrt((tauc0 / tauc_threshold_velocity) / (4 * nu0 * H0))

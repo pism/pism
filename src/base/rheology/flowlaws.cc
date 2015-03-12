@@ -66,24 +66,24 @@ FlowLaw::FlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  m_standard_gravity   = config.get("standard_gravity");
-  m_ideal_gas_constant = config.get("ideal_gas_constant");
+  m_standard_gravity   = config.get_double("standard_gravity");
+  m_ideal_gas_constant = config.get_double("ideal_gas_constant");
 
-  m_rho                = config.get("ice_density");
-  m_beta_CC_grad       = config.get("beta_CC") * m_rho * m_standard_gravity;
-  m_melting_point_temp = config.get("water_melting_point_temperature");
-  m_e                  = config.get(m_prefix + "enhancement_factor");
-  m_n                  = config.get(m_prefix + "Glen_exponent");
+  m_rho                = config.get_double("ice_density");
+  m_beta_CC_grad       = config.get_double("beta_CC") * m_rho * m_standard_gravity;
+  m_melting_point_temp = config.get_double("water_melting_point_temperature");
+  m_e                  = config.get_double(m_prefix + "enhancement_factor");
+  m_n                  = config.get_double(m_prefix + "Glen_exponent");
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
 
-  m_A_cold = config.get("Paterson_Budd_A_cold");
-  m_A_warm = config.get("Paterson_Budd_A_warm");
-  m_Q_cold = config.get("Paterson_Budd_Q_cold");
-  m_Q_warm = config.get("Paterson_Budd_Q_warm");
-  m_crit_temp = config.get("Paterson_Budd_critical_temperature");
-  m_schoofLen = config.get("Schoof_regularizing_length", "km", "m"); // convert to meters
-  m_schoofVel = config.get("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
+  m_A_cold = config.get_double("Paterson_Budd_A_cold");
+  m_A_warm = config.get_double("Paterson_Budd_A_warm");
+  m_Q_cold = config.get_double("Paterson_Budd_Q_cold");
+  m_Q_warm = config.get_double("Paterson_Budd_Q_warm");
+  m_crit_temp = config.get_double("Paterson_Budd_critical_temperature");
+  m_schoofLen = config.get_double("Schoof_regularizing_length", "km", "m"); // convert to meters
+  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
 }
 
@@ -194,10 +194,10 @@ This constructor just sets flow law factor for nonzero water content, from
 GPBLD::GPBLD(MPI_Comm c, const std::string &pre,
                    const Config &config, const EnthalpyConverter *my_EC)
   : FlowLaw(c, pre, config, my_EC) {
-  T_0              = config.get("water_melting_point_temperature");    // K
-  water_frac_coeff = config.get("gpbld_water_frac_coeff");
+  T_0              = config.get_double("water_melting_point_temperature");    // K
+  water_frac_coeff = config.get_double("gpbld_water_frac_coeff");
   water_frac_observed_limit
-                   = config.get("gpbld_water_frac_observed_limit");
+                   = config.get_double("gpbld_water_frac_observed_limit");
 }
 
 //! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
@@ -250,7 +250,7 @@ double PatersonBudd::flow_from_temp(double stress, double temp,
 IsothermalGlen::IsothermalGlen(MPI_Comm c, const std::string &pre,
                                      const Config &config, const EnthalpyConverter *my_EC)
   : PatersonBudd(c, pre, config, my_EC) {
-  m_softness_A = config.get("ice_softness");
+  m_softness_A = config.get_double("ice_softness");
   m_hardness_B = pow(m_softness_A, m_hardness_power);
 }
 
@@ -259,11 +259,11 @@ IsothermalGlen::IsothermalGlen(MPI_Comm c, const std::string &pre,
 Hooke::Hooke(MPI_Comm c, const std::string &pre,
                    const Config &config, const EnthalpyConverter *my_EC)
   : PatersonBudd(c, pre, config, my_EC) {
-  m_Q_Hooke  = config.get("Hooke_Q");
-  m_A_Hooke  = config.get("Hooke_A");
-  m_C_Hooke  = config.get("Hooke_C");
-  m_K_Hooke  = config.get("Hooke_k");
-  m_Tr_Hooke = config.get("Hooke_Tr");
+  m_Q_Hooke  = config.get_double("Hooke_Q");
+  m_A_Hooke  = config.get_double("Hooke_A");
+  m_C_Hooke  = config.get_double("Hooke_C");
+  m_K_Hooke  = config.get_double("Hooke_k");
+  m_Tr_Hooke = config.get_double("Hooke_Tr");
 }
 
 double Hooke::softness_parameter_from_temp(double T_pa) const {

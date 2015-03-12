@@ -46,11 +46,11 @@ namespace surface {
   modeled temperature away from the input temperature time series which contains
   the part of location-dependent temperature cycle on the time interval.
 
-  \note 
-  \li Please avoid using config.get("...") and config.get_flag("...") calls
+  @note 
+  - Please avoid using `config.get...("...")` calls
   inside those methods of this class which are called inside loops over 
   spatial grids.  Doing otherwise increases computational costs.
-  \li This base class should be more general.  For instance, it could allow as
+  - This base class should be more general.  For instance, it could allow as
   input a time series for precipation rate.
 */
 class LocalMassBalance {

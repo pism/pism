@@ -304,7 +304,7 @@ int Timeseries::length() {
 DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
   : Timeseries(g, name, dimension_name) {
 
-  buffer_size = (size_t)g->config.get("timeseries_buffer_size");
+  buffer_size = (size_t)g->config.get_double("timeseries_buffer_size");
   m_start = 0;
   rate_of_change = false;
   m_dimension.set_string("calendar", g->time->calendar());

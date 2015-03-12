@@ -58,9 +58,9 @@ IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  config.set_double("bedrock_thermal_density", config.get("ice_density"));
-  config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-  config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+  config.set_double("bedrock_thermal_density", config.get_double("ice_density"));
+  config.set_double("bedrock_thermal_conductivity", config.get_double("ice_thermal_conductivity"));
+  config.set_double("bedrock_thermal_specific_heat_capacity", config.get_double("ice_specific_heat_capacity"));
 }
 
 void IceEISModel::set_grid_defaults() {

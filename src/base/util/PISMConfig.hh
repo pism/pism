@@ -51,8 +51,8 @@ public:
 
   std::string get_config_filename() const;
   UnitSystem get_unit_system() const;
-  double get(const std::string &) const;
-  double get(const std::string &name, const std::string &u1, const std::string &u2) const;
+  double get_double(const std::string &) const;
+  double get_double(const std::string &name, const std::string &u1, const std::string &u2) const;
   bool   get_flag(const std::string&) const;
   std::string get_string(const std::string &name) const;
   // Set a flag (overriding the default in pism_config.cdl). Should not be used

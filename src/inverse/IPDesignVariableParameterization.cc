@@ -40,7 +40,7 @@ void IPDesignVariableParameterization::set_scales(const Config & config,
   std::string key("design_param_");
   key += design_var_name;
   key += "_scale";
-  m_d_scale = config.get(key);
+  m_d_scale = config.get_double(key);
 }
 
 //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
@@ -150,7 +150,7 @@ void IPDesignVariableParamExp::set_scales(const Config &config, const std::strin
   std::string key("design_param_");
   key += design_var_name;
   key += "_eps";
-  m_d_eps = config.get(key);
+  m_d_eps = config.get_double(key);
 }
 
 void IPDesignVariableParamExp::toDesignVariable(double p, double *value,
@@ -180,14 +180,14 @@ void IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
   key += design_var_name;
   key += "0";
 
-  double d0 = config.get(key);
+  double d0 = config.get_double(key);
   m_d0_sq = d0*d0 / (m_d_scale*m_d_scale);
 
 
   key = "design_param_";
   key += design_var_name;
   key += "_eps";
-  m_d_eps = config.get(key);
+  m_d_eps = config.get_double(key);
 }
 
 void IPDesignVariableParamTruncatedIdent::toDesignVariable(double p,

@@ -226,8 +226,8 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
   const bool do_energy = config.get_flag("do_energy");
-  const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
-            log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
+  const int log10scalevol  = static_cast<int>(config.get_double("summary_vol_scale_factor_log10")),
+            log10scalearea = static_cast<int>(config.get_double("summary_area_scale_factor_log10"));
   const std::string tunitstr = config.get_string("summary_time_unit_name");
   const bool use_calendar = config.get_flag("summary_time_use_calendar");
 
@@ -339,8 +339,8 @@ double IceModel::compute_ice_volume() {
 double IceModel::compute_sealevel_volume() {
   double volume = 0.0;
   MaskQuery mask(vMask);
-  double ocean_rho = config.get("sea_water_density");
-  double ice_rho = config.get("ice_density");
+  double ocean_rho = config.get_double("sea_water_density");
+  double ice_rho = config.get_double("ice_density");
 
   assert (ocean != NULL);
   double sea_level = ocean->sea_level_elevation();
@@ -620,7 +620,7 @@ double IceModel::compute_ice_enthalpy() {
   loop.check();
 
   // FIXME: use cell_area.
-  enthalpy_sum *= config.get("ice_density") * (grid.dx() * grid.dy());
+  enthalpy_sum *= config.get_double("ice_density") * (grid.dx() * grid.dy());
 
   return GlobalSum(grid.com, enthalpy_sum);
 }

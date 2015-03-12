@@ -56,7 +56,7 @@ void IceModel::setFromOptions() {
 
   // warn about some option combinations
 
-  if (config.get("maximum_time_step_years") <= 0) {
+  if (config.get_double("maximum_time_step_years") <= 0) {
     throw RuntimeError("maximum_time_step_years has to be greater than 0.");
   }
   

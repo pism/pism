@@ -40,9 +40,9 @@ LocalMassBalance::LocalMassBalance(const Config &myconfig)
 PDDMassBalance::PDDMassBalance(const Config& myconfig)
   : LocalMassBalance(myconfig) {
   precip_as_snow     = config.get_flag("interpret_precip_as_snow");
-  Tmin               = config.get("air_temp_all_precip_as_snow");
-  Tmax               = config.get("air_temp_all_precip_as_rain");
-  pdd_threshold_temp = config.get("pdd_positive_threshold_temp");
+  Tmin               = config.get_double("air_temp_all_precip_as_snow");
+  Tmax               = config.get_double("air_temp_all_precip_as_rain");
+  pdd_threshold_temp = config.get_double("pdd_positive_threshold_temp");
   refreeze_ice_melt  = config.get_flag("pdd_refreeze_ice_melt");
 }
 
@@ -51,7 +51,7 @@ PDDMassBalance::PDDMassBalance(const Config& myconfig)
     precipitation time-series.
  */
 unsigned int PDDMassBalance::get_timeseries_length(double dt) {
-  const unsigned int    NperYear = static_cast<unsigned int>(config.get("pdd_max_evals_per_year"));
+  const unsigned int    NperYear = static_cast<unsigned int>(config.get_double("pdd_max_evals_per_year"));
   const double dt_years = m_unit_system.convert(dt, "seconds", "years");
 
   return std::max(1U, static_cast<unsigned int>(ceil(NperYear * dt_years)));
@@ -246,7 +246,7 @@ PDDrandMassBalance::~PDDrandMassBalance() {
   number of days or number of days plus one.
 
   Thus this method ignores
-  `config.get("pdd_max_evals_per_year")`, which is
+  `config.get_double("pdd_max_evals_per_year")`, which is
   used in the base class PDDMassBalance.
 
   Implementation of get_PDDs() requires returned N >= 2, so we
@@ -286,17 +286,17 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
 FaustoGrevePDDObject::FaustoGrevePDDObject(const IceGrid &g)
   : m_grid(g), m_config(g.config) {
 
-  beta_ice_w  = m_config.get("pdd_fausto_beta_ice_w");
-  beta_snow_w = m_config.get("pdd_fausto_beta_snow_w");
+  beta_ice_w  = m_config.get_double("pdd_fausto_beta_ice_w");
+  beta_snow_w = m_config.get_double("pdd_fausto_beta_snow_w");
 
-  T_c         = m_config.get("pdd_fausto_T_c");
-  T_w         = m_config.get("pdd_fausto_T_w");
-  beta_ice_c  = m_config.get("pdd_fausto_beta_ice_c");
-  beta_snow_c = m_config.get("pdd_fausto_beta_snow_c");
+  T_c         = m_config.get_double("pdd_fausto_T_c");
+  T_w         = m_config.get_double("pdd_fausto_T_w");
+  beta_ice_c  = m_config.get_double("pdd_fausto_beta_ice_c");
+  beta_snow_c = m_config.get_double("pdd_fausto_beta_snow_c");
 
-  fresh_water_density        = m_config.get("fresh_water_density");
-  ice_density                = m_config.get("ice_density");
-  pdd_fausto_latitude_beta_w = m_config.get("pdd_fausto_latitude_beta_w");
+  fresh_water_density        = m_config.get_double("fresh_water_density");
+  ice_density                = m_config.get_double("ice_density");
+  pdd_fausto_latitude_beta_w = m_config.get_double("pdd_fausto_latitude_beta_w");
 
   m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   m_temp_mj.set_attrs("internal",
@@ -349,10 +349,10 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
                                           const IceModelVec2S &lat,
                                           const IceModelVec2S &lon) {
   const double
-    d_mj     = m_config.get("snow_temp_fausto_d_mj"),      // K
-    gamma_mj = m_config.get("snow_temp_fausto_gamma_mj"),  // K m-1
-    c_mj     = m_config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
-    kappa_mj = m_config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
+    d_mj     = m_config.get_double("snow_temp_fausto_d_mj"),      // K
+    gamma_mj = m_config.get_double("snow_temp_fausto_gamma_mj"),  // K m-1
+    c_mj     = m_config.get_double("snow_temp_fausto_c_mj"),      // K (degN)-1
+    kappa_mj = m_config.get_double("snow_temp_fausto_kappa_mj");  // K (degW)-1
 
   const IceModelVec2S
     &h        = surfelev,

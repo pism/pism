@@ -69,7 +69,7 @@ IceCompModel::IceCompModel(IceGrid &g, Config &conf, Config &conf_overrides, int
 
   if (testname == 'V') {
     config.set_string("ssa_flow_law", "isothermal_glen");
-    config.set_double("ice_softness", pow(1.9e8, -config.get("sia_Glen_exponent")));
+    config.set_double("ice_softness", pow(1.9e8, -config.get_double("sia_Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
     config.set_string("sia_flow_law", "arr");
@@ -247,9 +247,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     if (testname == 'K') {
       verbPrintf(1,grid.com,
                  "setting material properties of bedrock to those of ice in Test K\n");
-      config.set_double("bedrock_thermal_density", config.get("ice_density"));
-      config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-      config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+      config.set_double("bedrock_thermal_density", config.get_double("ice_density"));
+      config.set_double("bedrock_thermal_conductivity", config.get_double("ice_thermal_conductivity"));
+      config.set_double("bedrock_thermal_specific_heat_capacity", config.get_double("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
       verbPrintf(1,grid.com,
@@ -262,9 +262,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    config.set_double("bedrock_thermal_density", config.get("ice_density"));
-    config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-    config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+    config.set_double("bedrock_thermal_density", config.get_double("ice_density"));
+    config.set_double("bedrock_thermal_conductivity", config.get_double("ice_thermal_conductivity"));
+    config.set_double("bedrock_thermal_specific_heat_capacity", config.get_double("ice_specific_heat_capacity"));
   }
 
   btu = new energy::BTU_Verification(grid, testname, bedrock_is_ice_forK);
@@ -306,7 +306,7 @@ void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = config.get("ice_density") / config.get("lithosphere_density");  // for simple isostasy
+  f = config.get_double("ice_density") / config.get_double("lithosphere_density");  // for simple isostasy
 
   std::string bed_def_model = config.get_string("bed_deformation_model");
 
@@ -692,10 +692,10 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   }
 
   double
-    seawater_density = config.get("sea_water_density"),
-    ice_density      = config.get("ice_density"),
-    Glen_n           = config.get("sia_Glen_exponent"),
-    standard_gravity = config.get("standard_gravity");
+    seawater_density = config.get_double("sea_water_density"),
+    ice_density      = config.get_double("ice_density"),
+    Glen_n           = config.get_double("sia_Glen_exponent"),
+    standard_gravity = config.get_double("standard_gravity");
 
   // area of grid square in square km:
   const double   a = grid.dx() * grid.dy() * 1e-3 * 1e-3;
@@ -867,7 +867,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
 void IceCompModel::additionalAtStartTimestep() {
 
   if (exactOnly == true && testname != 'K') {
-    dt_force = config.get("maximum_time_step_years", "years", "seconds");
+    dt_force = config.get_double("maximum_time_step_years", "years", "seconds");
   }
 
   if (testname == 'F' || testname == 'G') {

@@ -76,16 +76,16 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   std::string word = config.get_string("grid_periodicity");
   m_periodicity = string_to_periodicity(word);
 
-  unsigned int tmp_Mz = config.get("grid_Mz");
-  double tmp_Lz = config.get("grid_Lz");
+  unsigned int tmp_Mz = config.get_double("grid_Mz");
+  double tmp_Lz = config.get_double("grid_Lz");
   SpacingType spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
   set_vertical_levels(tmp_Lz, tmp_Mz, spacing);
 
-  m_Lx  = config.get("grid_Lx");
-  m_Ly  = config.get("grid_Ly");
+  m_Lx  = config.get_double("grid_Lx");
+  m_Ly  = config.get_double("grid_Ly");
 
-  m_Mx  = static_cast<int>(config.get("grid_Mx"));
-  m_My  = static_cast<int>(config.get("grid_My"));
+  m_Mx  = static_cast<int>(config.get_double("grid_Mx"));
+  m_My  = static_cast<int>(config.get_double("grid_My"));
 
   m_Nx = 0;
   m_Ny = 0;                  // will be set to a correct value in allocate()
@@ -121,8 +121,8 @@ IceGrid::Ptr IceGrid::Shallow(MPI_Comm c, const Config &config,
                               unsigned int Mx, unsigned int My, Periodicity p) {
 
   std::vector<double> z(3, 0.0);
-  z[1] = 0.5 * config.get("grid_Lz");
-  z[2] = 1.0 * config.get("grid_Lz");
+  z[1] = 0.5 * config.get_double("grid_Lz");
+  z[2] = 1.0 * config.get_double("grid_Lz");
 
   return IceGrid::Create(c, config, Lx, Ly, x0, y0, z, Mx, My, p);
 }
@@ -150,8 +150,8 @@ IceGrid::Ptr IceGrid::Create(MPI_Comm c, const Config &config) {
   Ptr result(new IceGrid(c, config));
 
   SpacingType spacing = string_to_spacing(config.get_string("grid_ice_vertical_spacing"));
-  result->set_vertical_levels(config.get("grid_Lz"),
-                              config.get("grid_Mz"),
+  result->set_vertical_levels(config.get_double("grid_Lz"),
+                              config.get_double("grid_Mz"),
                               spacing);
 
   result->compute_nprocs();
@@ -173,7 +173,7 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
-      double Lz = output->config.get("grid_Lz");
+      double Lz = output->config.get_double("grid_Lz");
       verbPrintf(3, output->com,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
@@ -263,7 +263,7 @@ which may not even be a grid created by this routine).
 void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
                                   SpacingType spacing) {
 
-  double lambda = config.get("grid_lambda");
+  double lambda = config.get_double("grid_lambda");
 
   if (new_Mz < 2) {
     throw RuntimeError("IceGrid::set_vertical_levels(): Mz must be at least 2.");
@@ -459,7 +459,7 @@ void IceGrid::allocate() {
 
   ownership_ranges_from_options();
 
-  unsigned int max_stencil_width = (unsigned int)config.get("grid_max_stencil_width");
+  unsigned int max_stencil_width = (unsigned int)config.get_double("grid_max_stencil_width");
 
   try {
     petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);

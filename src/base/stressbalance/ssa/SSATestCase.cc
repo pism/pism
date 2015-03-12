@@ -32,7 +32,7 @@ namespace stressbalance {
 void SSATestCase::buildSSACoefficients()
 {
 
-  const unsigned int WIDE_STENCIL = m_config.get("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
 
   // ice surface elevation
   m_surface.create(*m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -78,15 +78,15 @@ void SSATestCase::buildSSACoefficients()
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(0).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
   m_bc_values.metadata(0).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
-  m_bc_values.metadata(0).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(0).set_double("_FillValue", m_config.get_double("fill_value", "m/year", "m/s"));
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(1).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
   m_bc_values.metadata(1).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
-  m_bc_values.metadata(1).set_double("_FillValue", m_config.get("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(1).set_double("_FillValue", m_config.get_double("fill_value", "m/year", "m/s"));
 
   m_bc_values.write_in_glaciological_units = true;
-  m_bc_values.set(m_config.get("fill_value", "m/year", "m/s"));
+  m_bc_values.set(m_config.get_double("fill_value", "m/year", "m/s"));
 
   // grounded_dragging_floating integer mask
   m_ice_mask.create(*m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
@@ -181,7 +181,7 @@ void SSATestCase::report(const std::string &testname) {
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
   if (m_config.get_flag("do_pseudo_plastic_till") &&
-      m_config.get("pseudo_plastic_q") != 1.0) {
+      m_config.get_double("pseudo_plastic_q") != 1.0) {
     verbPrintf(1,m_grid->com,
                "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }

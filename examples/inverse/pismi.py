@@ -219,7 +219,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.get_grid()
-    high_tauc = grid.config.get("high_tauc")
+    high_tauc = grid.config.get_double("high_tauc")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         mq = PISM.MaskQuery(mask)
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     com = context.com
     PISM.set_abort_on_sigint(True)
 
-    WIDE_STENCIL = int(config.get("grid_max_stencil_width"))
+    WIDE_STENCIL = int(config.get_double("grid_max_stencil_width"))
 
     usage = \
         """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model] 

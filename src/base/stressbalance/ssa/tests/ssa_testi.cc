@@ -83,7 +83,7 @@ void SSATestCaseI::initializeSSAModel() {
   m_config.set_flag("do_pseudo_plastic_till", false);
 
   m_config.set_string("ssa_flow_law", "isothermal_glen");
-  m_config.set_double("ice_softness", pow(B_schoof, -m_config.get("ssa_Glen_exponent")));
+  m_config.set_double("ice_softness", pow(B_schoof, -m_config.get_double("ssa_Glen_exponent")));
 }
 
 void SSATestCaseI::initializeSSACoefficients() {
@@ -100,8 +100,8 @@ void SSATestCaseI::initializeSSACoefficients() {
   IceModelVec::AccessList list;
   list.add(m_tauc);
 
-  double standard_gravity = m_config.get("standard_gravity"),
-    ice_rho = m_config.get("ice_density");
+  double standard_gravity = m_config.get_double("standard_gravity"),
+    ice_rho = m_config.get_double("ice_density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

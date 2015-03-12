@@ -137,7 +137,7 @@ protected:
 
   void set_vec_parameters(const std::map<std::string, std::string> &standard_names)
   {
-    unsigned int buffer_size = (unsigned int) Model::m_config.get("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) Model::m_config.get_double("climate_forcing_buffer_size");
 
     PIO nc(Model::m_grid.com, "netcdf3", Model::m_grid.config.get_unit_system());
     nc.open(filename, PISM_READONLY);
@@ -171,7 +171,7 @@ protected:
 
       (k->second)->set_n_records(n_records);
 
-      (k->second)->set_n_evaluations_per_year((unsigned int)Model::m_config.get("climate_forcing_evaluations_per_year"));
+      (k->second)->set_n_evaluations_per_year((unsigned int)Model::m_config.get_double("climate_forcing_evaluations_per_year"));
 
       ++k;
     }

@@ -35,7 +35,7 @@ YearlyCycle::YearlyCycle(const IceGrid &g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(g.config.get_unit_system(), "air_temp_snapshot", g) {
 
-  m_snow_temp_july_day = m_config.get("snow_temp_july_day");
+  m_snow_temp_july_day = m_config.get_double("snow_temp_july_day");
 
   // Allocate internal IceModelVecs:
   m_air_temp_mean_annual.create(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS);

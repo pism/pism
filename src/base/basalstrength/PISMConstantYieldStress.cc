@@ -40,7 +40,7 @@ void ConstantYieldStress::init_impl() {
 
   options::Real
     tauc("-tauc", "set basal yield stress to a constant (units of Pa)",
-         m_config.get("default_tauc"));
+         m_config.get_double("default_tauc"));
 
   // if -tauc was set we just use that value
   if (tauc.is_set()) {
@@ -55,10 +55,10 @@ void ConstantYieldStress::init_impl() {
       m_tauc.read(filename, start);
     } else {
       m_tauc.regrid(filename, OPTIONAL,
-                  m_config.get("default_tauc"));
+                  m_config.get_double("default_tauc"));
     }
   } else {
-    m_tauc.set(m_config.get("default_tauc"));
+    m_tauc.set(m_config.get_double("default_tauc"));
   }
 
   regrid("ConstantYieldStress", m_tauc);

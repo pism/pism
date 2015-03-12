@@ -62,8 +62,8 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
     C4p0 = C4.allocate_proc0_copy();
   }
 
-  m_Glen_exponent = config.get("sia_Glen_exponent"); // choice is SIA; see #285
-  m_smoothing_range = config.get("bed_smoother_range");
+  m_Glen_exponent = config.get_double("sia_Glen_exponent"); // choice is SIA; see #285
+  m_smoothing_range = config.get_double("bed_smoother_range");
 
   if (m_smoothing_range > 0.0) {
     verbPrintf(2, grid.com,

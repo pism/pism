@@ -20,7 +20,7 @@ pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth 
 To use a parameter, do
 
 ~~~
-double g = config.get("standard_gravity");
+double g = config.get_double("standard_gravity");
 ~~~
 
 To use a flag, do
@@ -30,7 +30,7 @@ bool compute_age = config.get_flag("do_age");
 ~~~
 
 @note
-- It is a good idea to avoid calling `config.get()` and
+- It is a good idea to avoid calling `config.get_double()` and
   `config.get_flag()` from within loops: looking up a parameter by its
   name is slow.
 - Please see [this page](@ref config) for a list of flags and
@@ -244,7 +244,7 @@ IceModelVec2T object and reading data from a file.
 
 ~~~
 IceModelVec2T temperature;
-temperature.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+temperature.set_n_records((unsigned int) config.get_double("climate_forcing_buffer_size"));
 temperature.create(grid, "artm", WITHOUT_GHOSTS);
 temperature.set_attrs("climate_forcing",
                       "temperature of the ice at the ice surface but below firn processes",

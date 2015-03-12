@@ -27,7 +27,7 @@ namespace pism {
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
   : m_unit_system(config.get_unit_system()) {
-  m_plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
+  m_plastic_regularize = config.get_double("plastic_regularization", "m/year", "m/second");
 }
 
 IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
@@ -70,9 +70,9 @@ void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, 
 
 IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Config &config)
   : IceBasalResistancePlasticLaw(config) {
-  m_pseudo_q = config.get("pseudo_plastic_q");
-  m_pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
-  m_sliding_scale_factor_reduces_tauc = config.get("sliding_scale_factor_reduces_tauc");
+  m_pseudo_q = config.get_double("pseudo_plastic_q");
+  m_pseudo_u_threshold = config.get_double("pseudo_plastic_uthreshold", "m/year", "m/second");
+  m_sliding_scale_factor_reduces_tauc = config.get_double("sliding_scale_factor_reduces_tauc");
 }
 
 IceBasalResistancePseudoPlasticLaw::~IceBasalResistancePseudoPlasticLaw() {
