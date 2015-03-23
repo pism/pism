@@ -13,8 +13,9 @@ converters = {"Default": PISM.EnthalpyConverter(config),
 def try_all_converters(test):
     print ""
     for name, converter in converters.items():
-        print "Testing '%s' converter..." % name
+        print "Testing '%s' converter..." % name,
         test(name, converter)
+        print "done"
 
 
 def reversibility_test():
@@ -27,22 +28,30 @@ def reversibility_test():
 
         # cold ice
         # enthalpy form
-        E = EC.enthalpy(250.0, 0.0, P)
+        omega_prescribed = 0.0
+        E = EC.enthalpy(250.0, omega_prescribed, P)
         # temperature form
         T = EC.temperature(E, P)
         omega = EC.water_fraction(E, P)
         # we should get the same E back
         assert E == EC.enthalpy(T, omega, P)
+        assert omega == omega_prescribed
 
         # temperate ice
-        # enthalpy form
         T_m = EC.melting_temperature(P)
-        E = EC.enthalpy(T_m, 0.1, P)
+        # enthalpy form
+        omega_prescribed = 0.1
+        E = EC.enthalpy(T_m, omega_prescribed, P)
         # temperature form
         T = EC.temperature(E, P)
         omega = EC.water_fraction(E, P)
         # we should get the same E back
         assert E == EC.enthalpy(T, omega, P)
+        if not EC.is_temperate(E, P):
+            # don't test reversibility of omega if our converter
+            # treats this ice as cold
+            return
+        assert omega == omega_prescribed
 
     try_all_converters(run)
 
