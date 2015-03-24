@@ -26,7 +26,7 @@ Context::Context(Config &new_config)
 }
 
 MPI_Comm Context::com() const {
-  return m_config.com();
+  return MPI_COMM_SELF;         // FIXME
 }
 
 Vars& Context::variables() {

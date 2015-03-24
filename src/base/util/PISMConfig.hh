@@ -34,8 +34,6 @@ public:
   Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system);
   ~Config();
 
-  MPI_Comm com() const;
-
   void set_double(const std::string &name, double value);
   void set_string(const std::string &name, const std::string &value);
 
