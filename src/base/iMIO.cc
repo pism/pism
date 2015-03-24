@@ -42,6 +42,7 @@
 #include "PISMEigenCalving.hh"
 
 #include "error_handling.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -378,14 +379,14 @@ void IceModel::initFromFile(const std::string &filename) {
     }
   }
 
-  if (config.get_flag("do_energy") && config.get_flag("do_cold_ice_methods")) {
+  if (config.get_boolean("do_energy") && config.get_boolean("do_cold_ice_methods")) {
     verbPrintf(3, grid.com,
                "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(T3, Enth3);
   }
 
   // check if the input file has Href; set to 0 if it is not present
-  if (config.get_flag("part_grid")) {
+  if (config.get_boolean("part_grid")) {
     bool href_exists = nc.inq_var("Href");
 
     if (href_exists == true) {
@@ -399,7 +400,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   // read the age field if present, otherwise set to zero
-  if (config.get_flag("do_age")) {
+  if (config.get_boolean("do_age")) {
     bool age_exists = nc.inq_var("age");
 
     if (age_exists) {
@@ -471,11 +472,11 @@ void IceModel::regrid(int dimensions) {
     // defaults if user gives no regrid_vars list
     regrid_vars->insert("litho_temp");
 
-    if (config.get_flag("do_age")) {
+    if (config.get_boolean("do_age")) {
       regrid_vars->insert("age");
     }
 
-    if (config.get_flag("do_cold_ice_methods")) {
+    if (config.get_boolean("do_cold_ice_methods")) {
       regrid_vars->insert("temp");
     } else {
       regrid_vars->insert("enthalpy");
@@ -769,7 +770,7 @@ void IceModel::init_backups() {
   if (backup_file.is_set()) {
     backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
   } else {
-    backup_filename = executable_short_name + "_backup.nc";
+    backup_filename = "pism_backup.nc";
   }
 
   backup_interval = options::Real("-backup_interval",
@@ -807,8 +808,8 @@ void IceModel::write_backup() {
   std::string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
-           "%s automatic backup at %s, %3.3f hours after the beginning of the run\n",
-           executable_short_name.c_str(), grid.time->date().c_str(), wall_clock_hours);
+           "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
+           grid.time->date().c_str(), wall_clock_hours);
 
   verbPrintf(2, grid.com,
              "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",

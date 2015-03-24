@@ -25,7 +25,7 @@
 #include "flowlaws.hh"
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include "tests/exactTestsABCDE.h"
 #include "tests/exactTestsFG.h"

@@ -23,7 +23,7 @@
 #include "pism_const.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
 
@@ -142,7 +142,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   if (time_found) {
     // we're found the time dimension
-    NCTimeseries time_dimension(dimname, dimname, m_grid->config.get_unit_system());
+    NCTimeseries time_dimension(dimname, dimname, m_grid->config.unit_system());
 
     time_dimension.set_string("units", m_grid->time->units_string());
     nc.read_timeseries(time_dimension, m_grid->time, time);
@@ -152,7 +152,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     if (time.size() > 1) {
       if (bounds_name.empty() == false) {
         // read time bounds data from a file
-        NCTimeBounds tb(bounds_name, dimname, m_grid->config.get_unit_system());
+        NCTimeBounds tb(bounds_name, dimname, m_grid->config.unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
         nc.read_time_bounds(tb, m_grid->time, time_bounds);

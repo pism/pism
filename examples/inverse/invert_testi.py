@@ -143,7 +143,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
     def _initPhysics(self):
         config = self.config
-        config.set_flag("do_pseudo_plastic_till", False)
+        config.set_boolean("do_pseudo_plastic_till", False)
 
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)

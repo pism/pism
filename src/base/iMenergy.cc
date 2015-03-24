@@ -16,15 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+
 #include "iceModel.hh"
 #include "Mask.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "enthalpyConverter.hh"
-#include <cassert>
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -63,7 +65,7 @@ void IceModel::energyStep() {
   btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
   grid.profiling.end("BTU");
 
-  if (config.get_flag("do_cold_ice_methods")) {
+  if (config.get_boolean("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
     grid.profiling.begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
@@ -135,7 +137,7 @@ void IceModel::combine_basal_melt_rate() {
   assert(ocean != NULL);
   ocean->shelf_base_mass_flux(shelfbmassflux);
 
-  const bool sub_gl = config.get_flag("sub_groundingline");
+  const bool sub_gl = config.get_boolean("sub_groundingline");
 
   IceModelVec::AccessList list;
 

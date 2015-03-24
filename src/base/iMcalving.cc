@@ -32,6 +32,7 @@
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 

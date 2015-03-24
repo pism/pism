@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "iceModelVec3Custom.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 
 namespace pism {
@@ -69,7 +69,7 @@ void IceModelVec3Custom::create(const IceGrid &mygrid,
 
   m_dof = 1;
 
-  m_metadata.push_back(NCSpatialVariable(m_grid->config.get_unit_system(),
+  m_metadata.push_back(NCSpatialVariable(m_grid->config.unit_system(),
                                          m_name, *m_grid, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 

@@ -19,7 +19,7 @@
 
 #include "PS_EISMINTII.hh"
 #include "PISMAtmosphere.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "pism_options.hh"
 #include <stdexcept>
 #include "error_handling.hh"

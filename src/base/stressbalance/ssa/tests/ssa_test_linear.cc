@@ -56,7 +56,7 @@ class SSATestCaseExp: public SSATestCase
 public:
   SSATestCaseExp(MPI_Comm com, Config &c)
     : SSATestCase(com, c) {
-    UnitSystem s = c.get_unit_system();
+    UnitSystem s = c.unit_system();
 
     L     = s.convert(50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
@@ -89,7 +89,7 @@ void SSATestCaseExp::initializeGrid(int Mx,int My) {
 
 void SSATestCaseExp::initializeSSAModel() {
   // Use a pseudo-plastic law with linear till
-  m_config.set_flag("do_pseudo_plastic_till", true);
+  m_config.set_boolean("do_pseudo_plastic_till", true);
   m_config.set_double("pseudo_plastic_q", 1.0);
 
   // The following is irrelevant because we will force linear rheology later.
@@ -103,7 +103,7 @@ void SSATestCaseExp::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(4000*10);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
 
   // Set constants for most coefficients.
   m_thickness.set(H0);
@@ -169,9 +169,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
     setVerbosityLevel(5);
 

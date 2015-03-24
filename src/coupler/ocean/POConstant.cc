@@ -20,7 +20,7 @@
 
 #include "POConstant.hh"
 #include "PISMVars.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
@@ -30,8 +30,8 @@ namespace pism {
 namespace ocean {
 Constant::Constant(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
-    m_shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
+    m_shelfbmassflux(g.config.unit_system(), "shelfbmassflux", m_grid),
+    m_shelfbtemp(g.config.unit_system(), "shelfbtemp", m_grid) {
 
   m_mymeltrate = 0.0;
   m_meltrate_set = false;
@@ -62,7 +62,7 @@ void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!m_config.get_flag("is_dry_simulation")) {
+  if (!m_config.get_boolean("is_dry_simulation")) {
     verbPrintf(2, m_grid.com, "* Initializing the constant ocean model...\n");
   }
 

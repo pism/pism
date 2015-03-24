@@ -24,7 +24,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include <cassert>
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "error_handling.hh"
 
 namespace pism {

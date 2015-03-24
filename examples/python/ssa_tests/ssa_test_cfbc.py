@@ -37,7 +37,7 @@ usage of SSA_TEST_CFBC:
 """
 
 context = PISM.Context()
-unit_system = context.config.get_unit_system()
+unit_system = context.config.unit_system()
 
 H0 = 600.          # meters
 V0 = unit_system.convert(300, "m/year", "m/second")
@@ -68,10 +68,10 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_flag("compute_surf_grad_inward_ssa", True)
-        config.set_flag("calving_front_stress_boundary_condition", True)
+        config.set_boolean("compute_surf_grad_inward_ssa", True)
+        config.set_boolean("calving_front_stress_boundary_condition", True)
 
-        config.set_flag("do_pseudo_plastic_till", False)
+        config.set_boolean("do_pseudo_plastic_till", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 

@@ -23,7 +23,7 @@
 #include "Timeseries.hh"        // inline code
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
 
 namespace pism {

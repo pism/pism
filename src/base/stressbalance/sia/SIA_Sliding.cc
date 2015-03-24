@@ -68,7 +68,7 @@ void SIA_Sliding::init_impl() {
   ShallowStressBalance::init_impl();
 
   m_standard_gravity  = m_config.get_double("standard_gravity");
-  m_verification_mode = m_config.get_flag("sia_sliding_verification_mode");
+  m_verification_mode = m_config.get_boolean("sia_sliding_verification_mode");
 
   if (m_config.is_set("EISMINT_II_experiment")) {
     m_eisII_experiment = m_config.get_string("EISMINT_II_experiment");

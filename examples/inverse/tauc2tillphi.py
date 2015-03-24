@@ -40,8 +40,8 @@ class BasalTillStrength:
         self.till_c_0 = config.get_double("till_c_0") * 1e3  # convert from kPa to Pa
         self.bwat_max = config.get_double("bwat_max")
 
-        self.usebmr = config.get_flag("bmr_enhance_basal_water_pressure")
-        self.usethkeff = config.get_flag("thk_eff_basal_water_pressure")
+        self.usebmr = config.get_boolean("bmr_enhance_basal_water_pressure")
+        self.usethkeff = config.get_boolean("thk_eff_basal_water_pressure")
 
         self.bmr_scale = config.get_double("bmr_enhance_scale")
         self.thkeff_reduce = config.get_double("thk_eff_reduced")
@@ -59,7 +59,7 @@ class BasalTillStrength:
         # // option a pure number (a fraction); no conversion
         config.scalar_from_option("hydrology_pressure_fraction", "hydrology_pressure_fraction")
 
-        config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure")
+        config.boolean_from_option("thk_eff", "thk_eff_basal_water_pressure")
 
         # # // "friction angle" in degrees
         # config.scalar_from_option("plastic_phi", "default_till_phi")

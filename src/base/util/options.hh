@@ -23,6 +23,9 @@
 namespace pism {
 namespace options {
 
+//! Template base class used by PISM's option-processing classes.
+/*! (Ensures API consistency and helps code reuse.)
+ */
 template <typename T>
 class Option {
 public:

@@ -24,14 +24,14 @@
 #include "IceGrid.hh"
 #include "PIO.hh"
 #include "PISMTime.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
 
 namespace pism {
 
 Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
-  : m_unit_system(g->config.get_unit_system()),
+  : m_unit_system(g->config.unit_system()),
     m_dimension(dimension_name, dimension_name, m_unit_system),
     m_variable(name, dimension_name, m_unit_system),
     m_bounds(dimension_name + "_bounds", dimension_name, m_unit_system)

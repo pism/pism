@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PA_delta_T.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -28,8 +28,8 @@ namespace atmosphere {
 
 Delta_T::Delta_T(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.config.get_unit_system(), "air_temp", m_grid),
-    precipitation(g.config.get_unit_system(), "precipitation", m_grid)
+    air_temp(g.config.unit_system(), "air_temp", m_grid),
+    precipitation(g.config.unit_system(), "precipitation", m_grid)
 {
   offset = NULL;
   option_prefix = "-atmosphere_delta_T";

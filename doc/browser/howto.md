@@ -26,12 +26,12 @@ double g = config.get_double("standard_gravity");
 To use a flag, do
 
 ~~~
-bool compute_age = config.get_flag("do_age");
+bool compute_age = config.get_boolean("do_age");
 ~~~
 
 @note
 - It is a good idea to avoid calling `config.get_double()` and
-  `config.get_flag()` from within loops: looking up a parameter by its
+  `config.get_boolean()` from within loops: looking up a parameter by its
   name is slow.
 - Please see [this page](@ref config) for a list of flags and
   parameters currently used in PISM.

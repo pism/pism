@@ -562,17 +562,17 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   const double enhancement_factor = m_flow_law->enhancement_factor();
   double ice_grain_size = m_config.get_double("ice_grain_size");
 
-  bool compute_grain_size_using_age = m_config.get_flag("compute_grain_size_using_age");
+  bool compute_grain_size_using_age = m_config.get_boolean("compute_grain_size_using_age");
 
   // some flow laws use grain size, and even need age to update grain size
-  if (compute_grain_size_using_age && (!m_config.get_flag("do_age"))) {
+  if (compute_grain_size_using_age && (!m_config.get_boolean("do_age"))) {
     throw RuntimeError("SIAFD::compute_diffusive_flux(): do_age not set but\n"
                        "age is needed for grain-size-based flow law");
   }
 
   const bool use_age = (FlowLawUsesGrainSize(m_flow_law) &&
                         compute_grain_size_using_age &&
-                        m_config.get_flag("do_age"));
+                        m_config.get_boolean("do_age"));
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must

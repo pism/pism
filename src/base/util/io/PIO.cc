@@ -23,7 +23,7 @@
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 #include "NCVariable.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "PISMTime.hh"
 #include "PISMNC3File.hh"
 #include "PISMNC4_Quilt.hh"
@@ -239,7 +239,7 @@ PIO::PIO(MPI_Comm c, const string &mode, const UnitSystem &units_system)
 }
 
 PIO::PIO(const IceGrid &grid, const string &mode)
-  : m_unit_system(grid.config.get_unit_system()) {
+  : m_unit_system(grid.config.unit_system()) {
   constructor(grid.com, mode);
   if (m_nc) {
     set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());

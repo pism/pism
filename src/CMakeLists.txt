@@ -49,6 +49,7 @@ set(PISMUTIL_SRC
   base/util/Mask.cc
   base/util/NCVariable.cc
   base/util/PISMConfig.cc
+  base/util/PISMConfigInterface.cc
   base/util/PISMComponent.cc
   base/util/PISMTime.cc
   base/util/PISMTime_Calendar.cc

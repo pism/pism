@@ -20,7 +20,7 @@
 #include <cassert>
 #include "TerminationReason.hh"
 #include "pism_options.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 
 namespace pism {

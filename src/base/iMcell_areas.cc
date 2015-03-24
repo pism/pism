@@ -22,9 +22,9 @@
 
 #include "iceModel.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
 
 #include "error_handling.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -46,7 +46,7 @@ static double triangle_area(double *A, double *B, double *C) {
 void IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
-  if (config.get_flag("correct_cell_areas") == false ||
+  if (config.get_boolean("correct_cell_areas") == false ||
       global_attributes.has_attribute("proj4") == false) {
 
     cell_area.set(grid.dx() * grid.dy());

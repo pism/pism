@@ -101,7 +101,7 @@ void Hydrology::init() {
 
     unsigned int buffer_size = (unsigned int) m_config.get_double("climate_forcing_buffer_size");
 
-    PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
+    PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());
     nc.open(itb_file, PISM_READONLY);
     unsigned int n_records = nc.inq_nrecords("inputtobed", "");
     nc.close();
@@ -262,7 +262,7 @@ in derived classes of Hydrology.
  */
 void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
                                IceModelVec2S &result) {
-  bool   use_const   = m_config.get_flag("hydrology_use_const_bmelt");
+  bool   use_const   = m_config.get_boolean("hydrology_use_const_bmelt");
   double const_bmelt = m_config.get_double("hydrology_const_bmelt");
 
   IceModelVec::AccessList list;

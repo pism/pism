@@ -23,7 +23,7 @@ import PISM
 import math
 
 context = PISM.Context()
-unit_system = context.config.get_unit_system()
+unit_system = context.config.unit_system()
 
 L = 50.e3  # // 50km half-width
 H0 = 500  # // m
@@ -39,7 +39,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_flag("do_pseudo_plastic_till", True)
+        config.set_boolean("do_pseudo_plastic_till", True)
         config.set_double("pseudo_plastic_q", 1.0)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -82,7 +82,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         se.set_min_thickness(4000 * 10)
 
         # For the benefit of SSAFD on a non-periodic grid
-        self.config.set_flag("compute_surf_grad_inward_ssa", True)
+        self.config.set_boolean("compute_surf_grad_inward_ssa", True)
 
     def exactSolution(self, i, j, x, y):
         tauc_threshold_velocity = self.config.get_double("pseudo_plastic_uthreshold",

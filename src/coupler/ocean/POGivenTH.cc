@@ -23,7 +23,7 @@
 #include "POGivenTH.hh"
 #include "IceGrid.hh"
 #include "PISMVars.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {
@@ -55,7 +55,7 @@ GivenTH::Constants::Constants(const Config &config) {
   ice_density                      = config.get_double("ice_density");
   ice_specific_heat_capacity       = config.get_double("ice_specific_heat_capacity");
   ice_thermal_diffusivity          = config.get_double("ice_thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
-  limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
+  limit_salinity_range             = config.get_boolean("ocean_three_equation_model_clip_salinity");
 }
 
 GivenTH::GivenTH(const IceGrid &g)

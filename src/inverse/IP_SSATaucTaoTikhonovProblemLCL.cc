@@ -20,7 +20,7 @@
 
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace inverse {

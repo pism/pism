@@ -139,7 +139,7 @@ PetscErrorCode PSConstantGLINT2::update(PetscReal my_t, PetscReal my_dt)
 
 #if 0
   PIO nc(grid.com, grid.rank, "netcdf3",
-         grid.get_unit_system());
+         grid.unit_system());
   ierr = nc.open("PSConstantGLINT2.nc", PISM_WRITE); CHKERRQ(ierr);
   std::set<std::string> vars = {"ice_surface_temp", "climatic_mass_balance"};
   this->define_variables(vars, nc, PISM_DOUBLE);

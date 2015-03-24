@@ -18,7 +18,7 @@
 
 #include "enthSystem.hh"
 #include <gsl/gsl_math.h>
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
 #include "enthalpyConverter.hh"
 
@@ -76,7 +76,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_R_cold = m_ice_K * m_R_factor;
   m_R_temp = m_ice_K0 * m_R_factor;
 
-  if (config.get_flag("use_temperature_dependent_thermal_conductivity")) {
+  if (config.get_boolean("use_temperature_dependent_thermal_conductivity")) {
     m_k_depends_on_T = true;
   } else {
     m_k_depends_on_T = false;

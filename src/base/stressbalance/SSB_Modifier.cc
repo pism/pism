@@ -21,7 +21,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "flowlaw_factory.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace stressbalance {

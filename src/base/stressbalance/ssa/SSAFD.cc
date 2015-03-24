@@ -237,7 +237,7 @@ void SSAFD::init_impl() {
   nuh_viewer_size = viewer_size;
   view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
-  if (m_config.get_flag("calving_front_stress_boundary_condition")) {
+  if (m_config.get_boolean("calving_front_stress_boundary_condition")) {
     verbPrintf(2,m_grid.com,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
@@ -252,7 +252,7 @@ void SSAFD::init_impl() {
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
 
-  if (m_config.get_flag("do_fracture_density")) {
+  if (m_config.get_boolean("do_fracture_density")) {
     fracture_density = m_grid.variables().get_2d_scalar("fracture_density");
   }
 }
@@ -287,10 +287,10 @@ void SSAFD::assemble_rhs() {
   const double standard_gravity = m_config.get_double("standard_gravity"),
     rho_ocean = m_config.get_double("sea_water_density"),
     rho_ice = m_config.get_double("ice_density");
-  const bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
+  const bool use_cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = m_config.get_flag("ssa_dirichlet_bc");
+  bool bedrock_boundary = m_config.get_boolean("ssa_dirichlet_bc");
 
   m_b.set(0.0);
 
@@ -498,10 +498,10 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   const double   dx=m_grid.dx(), dy=m_grid.dy();
   const double   beta_ice_free_bedrock = m_config.get_double("beta_ice_free_bedrock");
-  const bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
+  const bool use_cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config.get_flag("ssa_dirichlet_bc");
+  const bool bedrock_boundary = m_config.get_boolean("ssa_dirichlet_bc");
 
   // shortcut:
   IceModelVec2V &vel = m_velocity;
@@ -519,13 +519,13 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     list.add(*m_bc_mask);
   }
 
-  const bool sub_gl = m_config.get_flag("sub_groundingline");
+  const bool sub_gl = m_config.get_boolean("sub_groundingline");
   if (sub_gl) {
     list.add(*m_gl_mask);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
-  bool nu_bedrock_set=m_config.get_flag("nu_bedrock_set");
+  bool nu_bedrock_set=m_config.get_boolean("nu_bedrock_set");
   if (nu_bedrock_set) {
     list.add(*m_thickness);
     list.add(*m_bed);
@@ -915,7 +915,7 @@ void SSAFD::solve() {
   }
 
   // Post-process velocities if the user asked for it:
-  if (m_config.get_flag("brutal_sliding")) {
+  if (m_config.get_boolean("brutal_sliding")) {
     const double brutal_sliding_scaleFactor = m_config.get_double("brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
@@ -979,7 +979,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
   m_stdout_ssa.clear();
 
-  bool use_cfbc = m_config.get_flag("calving_front_stress_boundary_condition");
+  bool use_cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
 
   if (use_cfbc == true) {
     compute_nuH_staggered_cfbc(nuH, nuH_regularization);
@@ -1280,7 +1280,7 @@ void SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 void SSAFD::fracture_induced_softening() {
-  if (m_config.get_flag("do_fracture_density") == false) {
+  if (m_config.get_boolean("do_fracture_density") == false) {
     return;
   }
 
@@ -1793,8 +1793,8 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "nuH[0]", m_grid));
-  m_vars.push_back(NCSpatialVariable(m_grid.config.get_unit_system(), "nuH[1]", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.unit_system(), "nuH[0]", m_grid));
+  m_vars.push_back(NCSpatialVariable(m_grid.config.unit_system(), "nuH[1]", m_grid));
 
   set_attrs("ice thickness times effective viscosity, i-offset", "",
             "Pa s m", "kPa s m", 0);

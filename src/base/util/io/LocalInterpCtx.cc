@@ -24,7 +24,7 @@
 #include "PIO.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 
 #include "interpolation.hh"
@@ -87,7 +87,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   report_range = true;
 
   verbPrintf(3, com, "\nRegridding file grid info:\n");
-  input.report(com, grid.config.get_unit_system(), 3);
+  input.report(com, grid.config.unit_system(), 3);
 
   // Grid spacing (assume that the grid is equally-spaced) and the
   // extent of the domain. To compute the extent of the domain, assume

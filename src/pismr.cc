@@ -78,14 +78,17 @@ int main(int argc, char *argv[]) {
     }
 
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides, true);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
+    print_config(3, com, config);
 
     IceGrid g(com, config);
     IceModel m(g, config, overrides);
-
-    m.setExecName("pismr");
 
     m.init();
 

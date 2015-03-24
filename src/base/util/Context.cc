@@ -21,7 +21,7 @@
 
 namespace pism {
 
-Context::Context(Config &new_config)
+Context::Context(const Config &new_config)
   : m_config(new_config), m_EC(new_config) {
 }
 
@@ -37,7 +37,7 @@ const Vars& Context::variables() const {
   return m_variables;
 }
 
-Config &Context::config() {
+const Config& Context::config() {
   return m_config;
 }
 
@@ -51,7 +51,7 @@ double Context::convert(double value, const std::string &unit1, const std::strin
 }
 
 UnitSystem Context::unit_system() const {
-  return m_config.get_unit_system();
+  return m_config.unit_system();
 }
 
 Time::Ptr Context::time() {

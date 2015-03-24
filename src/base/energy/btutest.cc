@@ -80,8 +80,9 @@ int main(int argc, char *argv[]) {
 
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
 
     verbosityLevelFromOptions();
     verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
@@ -117,7 +118,10 @@ int main(int argc, char *argv[]) {
                "btutest tests BedThermalUnit and IceModelVec3BTU\n");
 
     // read the config option database:
-    init_config(com, config, overrides);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
     config.set_string("calendar", "none");
 
     // when IceGrid constructor is called, these settings are used

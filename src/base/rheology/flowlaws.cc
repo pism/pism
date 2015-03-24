@@ -22,7 +22,7 @@
 #include "pism_options.hh"
 #include "iceModelVec.hh"
 
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 
 #include "error_handling.hh"

@@ -27,6 +27,18 @@ namespace pism {
 
 class Config;
 
+void verbosityLevelFromOptions();
+
+void show_usage(MPI_Comm com, const std::string &execname, const std::string &usage);
+
+//! @brief Returns true if PISM should terminate after printing some
+//! messages to stdout.
+bool show_usage_check_req_opts(MPI_Comm com,
+                               const std::string &execname,
+                               const std::vector<std::string> &required_options,
+                               const std::string &usage);
+
+
 //! Utilities for processing command-line options.
 namespace options {
 
@@ -111,23 +123,6 @@ void ignored(MPI_Comm com, const std::string &name);
 void forbidden(const std::string &name);
 } // end of namespace options
 
-void verbosityLevelFromOptions();
-
-void show_usage(MPI_Comm com, const std::string &execname, const std::string &usage);
-
-//! @brief Returns true if PISM should terminate after printing some
-//! messages to stdout.
-bool show_usage_check_req_opts(MPI_Comm com,
-                               const std::string &execname,
-                               const std::vector<std::string> &required_options,
-                               const std::string &usage);
-
-// config file initialization:
-void init_config(MPI_Comm com,
-                 Config &config, Config &overrides,
-                 bool process_options = false);
-
-void set_config_from_options(Config &config);
 } // end of namespace pism
 
 #endif /* _PISM_OPTIONS_H_ */

@@ -23,7 +23,7 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <cassert>
 #include "pism_const.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "localMassBalance.hh"
 #include "IceGrid.hh"
 #include <algorithm>
@@ -32,18 +32,18 @@ namespace pism {
 namespace surface {
 
 LocalMassBalance::LocalMassBalance(const Config &myconfig)
-  : config(myconfig), m_unit_system(config.get_unit_system()),
+  : config(myconfig), m_unit_system(config.unit_system()),
     seconds_per_day(86400) {
   // empty
 }
 
 PDDMassBalance::PDDMassBalance(const Config& myconfig)
   : LocalMassBalance(myconfig) {
-  precip_as_snow     = config.get_flag("interpret_precip_as_snow");
+  precip_as_snow     = config.get_boolean("interpret_precip_as_snow");
   Tmin               = config.get_double("air_temp_all_precip_as_snow");
   Tmax               = config.get_double("air_temp_all_precip_as_rain");
   pdd_threshold_temp = config.get_double("pdd_positive_threshold_temp");
-  refreeze_ice_melt  = config.get_flag("pdd_refreeze_ice_melt");
+  refreeze_ice_melt  = config.get_boolean("pdd_refreeze_ice_melt");
 }
 
 

@@ -51,7 +51,7 @@ if is_regional:
 grid = PISM.Context().newgrid()
 PISM.model.initGridFromFile(grid, input_file, periodicity)
 
-config.set_flag("do_pseudo_plastic_till", False)
+config.set_boolean("do_pseudo_plastic_till", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() > 3:

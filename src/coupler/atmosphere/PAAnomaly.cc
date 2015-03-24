@@ -20,7 +20,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PAAnomaly.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 
 namespace pism {
@@ -28,8 +28,8 @@ namespace atmosphere {
 
 Anomaly::Anomaly(const IceGrid &g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
-    air_temp(g.config.get_unit_system(), "air_temp", m_grid),
-    precipitation(g.config.get_unit_system(), "precipitation", m_grid)
+    air_temp(g.config.unit_system(), "air_temp", m_grid),
+    precipitation(g.config.unit_system(), "precipitation", m_grid)
 {
   option_prefix  = "-atmosphere_anomaly";
 

@@ -19,12 +19,13 @@
 #include <petsc.h>
 #include "pism_const.hh"
 #include "flowlaw_factory.hh"
-#include "PISMConfig.hh"
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
 
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
+
+#include "PISMConfig.hh"
 
 using namespace pism;
 
@@ -48,9 +49,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
     EnthalpyConverter EC(config);
 

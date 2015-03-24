@@ -41,6 +41,7 @@ static char help[] =
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -308,11 +309,15 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
-    config.set_flag("compute_grain_size_using_age", false);
+    config.set_boolean("compute_grain_size_using_age", false);
 
     bool
       usage_set = options::Bool("-usage", "print usage info"),

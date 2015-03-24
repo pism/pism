@@ -77,7 +77,7 @@ class BedDef;
 }
 
 // forward declarations
-class Config;
+class DefaultConfig;
 class IceGrid;
 class EnthalpyConverter;
 class YieldStress;
@@ -140,7 +140,7 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, Config &config, Config &overrides);
+  IceModel(IceGrid &g, DefaultConfig &config, DefaultConfig &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -181,7 +181,6 @@ public:
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
   virtual void step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual void setExecName(const std::string &my_executable_short_name);
   void reset_counters();
 
   // see iMbootstrap.cc
@@ -215,7 +214,7 @@ protected:
 
   IceGrid &grid;
 
-  Config &config,           //!< configuration flags and parameters
+  DefaultConfig &config,           //!< configuration flags and parameters
     &overrides;                 //!< flags and parameters overriding config, see -config_override
 
   NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
@@ -317,8 +316,6 @@ protected:
 
   std::string stdout_flags;
 
-  std::string executable_short_name;
-  
 protected:
   // see iceModel.cc
   virtual void createVecs();

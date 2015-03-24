@@ -27,6 +27,7 @@
 #include "pism_options.hh"
 
 #include "error_handling.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -492,7 +493,7 @@ void IceModel::write_extras() {
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not save_extra) or
-      (not config.get_flag("extras_force_output_times"))) {
+      (not config.get_boolean("extras_force_output_times"))) {
     return MaxTimestep();
   }
 
@@ -522,7 +523,7 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not save_ts) or
-      (not config.get_flag("ts_force_output_times"))) {
+      (not config.get_boolean("ts_force_output_times"))) {
     return MaxTimestep();
   }
 

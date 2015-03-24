@@ -63,7 +63,7 @@ Instead see the ForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, Config &c, Config &o)
+  IceRegionalModel(IceGrid &g, DefaultConfig &c, DefaultConfig &o)
      : IceModel(g,c,o) {};
 protected:
   virtual void set_vars_from_options();
@@ -157,7 +157,7 @@ void IceRegionalModel::createVecs() {
                        "time-independent basal melt rate in the no-model-strip",
                        "m s-1", "");
 
-  if (config.get_flag("ssa_dirichlet_bc")) {
+  if (config.get_boolean("ssa_dirichlet_bc")) {
     // remove the bc_mask variable from the dictionary
     grid.variables().remove("bc_mask");
 
@@ -274,7 +274,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
-  if (config.get_flag("ssa_dirichlet_bc")) {
+  if (config.get_boolean("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
     nc.open(filename, PISM_READONLY);
@@ -302,7 +302,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   IceModel::initFromFile(filename);
 
-  if (config.get_flag("ssa_dirichlet_bc")) {
+  if (config.get_boolean("ssa_dirichlet_bc")) {
       vBCvel.metadata().set_string("pism_intent", "model_state");
   }
 
@@ -326,7 +326,7 @@ void IceRegionalModel::set_vars_from_options() {
                        "pismo has no well-defined semantics without it!");
   }
 
-  if (config.get_flag("do_cold_ice_methods")) {
+  if (config.get_boolean("do_cold_ice_methods")) {
     throw RuntimeError("pismo does not support the 'cold' mode.");
   }
 }
@@ -463,14 +463,18 @@ int main(int argc, char *argv[]) {
     }
 
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides, true);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
+    print_config(3, com, config);
 
     // initialize the ice dynamics model
     IceGrid g(com, config);
     IceRegionalModel m(g, config, overrides);
-    m.setExecName("pismo");
 
     m.init();
 

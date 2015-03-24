@@ -27,6 +27,7 @@
 
 #include "error_handling.hh"
 #include "pism_options.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 

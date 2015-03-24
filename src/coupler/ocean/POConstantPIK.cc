@@ -21,7 +21,7 @@
 
 #include "POConstantPIK.hh"
 #include "PISMVars.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 #include "iceModelVec.hh"
 #include "pism_options.hh"
@@ -32,8 +32,8 @@ namespace ocean {
 
 PIK::PIK(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
-    m_shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)
+    m_shelfbmassflux(g.config.unit_system(), "shelfbmassflux", m_grid),
+    m_shelfbtemp(g.config.unit_system(), "shelfbtemp", m_grid)
 {
   m_shelfbmassflux.set_string("pism_intent", "climate_state");
   m_shelfbmassflux.set_string("long_name",

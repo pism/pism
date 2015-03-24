@@ -138,11 +138,6 @@ SSATestCase::~SSATestCase()
 //! Initialize the test case at the start of a run
 void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 {
-  // Set options from command line.
-  m_config.scalar_from_option("ssa_eps",  "epsilon_ssa");
-  m_config.scalar_from_option("ssa_maxi", "max_iterations_ssafd");
-  m_config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence");
-
   // Subclass builds grid->
   initializeGrid(Mx,My);
 
@@ -180,7 +175,7 @@ void SSATestCase::report(const std::string &testname) {
   double gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
-  if (m_config.get_flag("do_pseudo_plastic_till") &&
+  if (m_config.get_boolean("do_pseudo_plastic_till") &&
       m_config.get_double("pseudo_plastic_q") != 1.0) {
     verbPrintf(1,m_grid->com,
                "WARNING: numerical errors not valid for pseudo-plastic till\n");
@@ -259,9 +254,9 @@ void SSATestCase::report_netcdf(const std::string &testname,
                                 double max_v,
                                 double avg_u,
                                 double avg_v) {
-  NCTimeseries err("N", "N", m_grid->config.get_unit_system());
+  NCTimeseries err("N", "N", m_grid->config.unit_system());
   unsigned int start;
-  NCVariable global_attributes("PISM_GLOBAL", m_grid->config.get_unit_system());
+  NCVariable global_attributes("PISM_GLOBAL", m_grid->config.unit_system());
 
   options::String filename("-report_file", "NetCDF error report file");
 

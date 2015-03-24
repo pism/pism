@@ -35,6 +35,8 @@ static char help[] =
   "  class thereof.Also may be used in a PISM\n"
   "  software (regression) test.\n\n";
 
+#include <cmath>
+
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // FlowLaw
@@ -45,9 +47,9 @@ static char help[] =
 #include "SSAFD.hh"
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
-#include <math.h>
 #include "pism_options.hh"
 #include "Mask.hh"
+#include "PISMConfig.hh"
 
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
@@ -61,7 +63,7 @@ public:
   SSATestCaseConst(MPI_Comm com, Config &c, double q):
     SSATestCase(com, c), basal_q(q)
   {
-    UnitSystem s = c.get_unit_system();
+    UnitSystem s = c.unit_system();
 
     L     = s.convert(50.0, "km", "m"); // 50km half-width
     H0    = 500;                        // m
@@ -93,11 +95,11 @@ void SSATestCaseConst::initializeGrid(int Mx,int My) {
 
 
 void SSATestCaseConst::initializeSSAModel() {
-  m_config.set_flag("do_pseudo_plastic_till", true);
+  m_config.set_boolean("do_pseudo_plastic_till", true);
   m_config.set_double("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  m_config.set_flag("do_pseudo_plastic_till", true);
+  m_config.set_boolean("do_pseudo_plastic_till", true);
 
   // The following is irrelevant because we will force linear rheology later.
   m_enthalpyconverter = new EnthalpyConverter(m_config);
@@ -110,7 +112,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
 
   // Set constant thickness, tauc
   m_bc_mask.set(MASK_GROUNDED);
@@ -180,9 +182,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
     setVerbosityLevel(5);
 

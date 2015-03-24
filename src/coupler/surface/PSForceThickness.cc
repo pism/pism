@@ -22,7 +22,7 @@
 #include "IceGrid.hh"
 #include "PISMVars.hh"
 #include "PIO.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "Mask.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
@@ -33,9 +33,9 @@ namespace surface {
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(const IceGrid &g, SurfaceModel *input)
   : SurfaceModifier(g, input),
-    m_climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
-    m_climatic_mass_balance_original(g.config.get_unit_system(), "climatic_mass_balance_original", m_grid),
-    m_ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
+    m_climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance", m_grid),
+    m_climatic_mass_balance_original(g.config.unit_system(), "climatic_mass_balance_original", m_grid),
+    m_ice_surface_temp(g.config.unit_system(), "ice_surface_temp", m_grid) {
 
   m_alpha = m_config.get_double("force_to_thickness_alpha", "yr-1", "s-1");
   m_alpha_ice_free_factor = m_config.get_double("force_to_thickness_ice_free_alpha_factor");

@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PO_delta_SL.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {
@@ -28,8 +28,8 @@ namespace ocean {
 
 Delta_SL::Delta_SL(const IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid) {
+    shelfbmassflux(g.config.unit_system(), "shelfbmassflux", m_grid),
+    shelfbtemp(g.config.unit_system(), "shelfbtemp", m_grid) {
 
   option_prefix = "-ocean_delta_SL";
   offset_name   = "delta_SL";

@@ -77,7 +77,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(const IceGrid &g,
   m_tillwat.set_attrs("internal",
                       "copy of till water thickness held by MohrCoulombYieldStress",
                       "m", "");
-  bool addtransportable = m_config.get_flag("tauc_add_transportable_water");
+  bool addtransportable = m_config.get_boolean("tauc_add_transportable_water");
   if (addtransportable == true) {
     m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
     m_bwat.set_attrs("internal",
@@ -145,7 +145,7 @@ void MohrCoulombYieldStress::init_impl() {
   {
     const std::string flag_name = "tauc_add_transportable_water";
     hydrology::Routing *hydrology_routing = dynamic_cast<hydrology::Routing*>(m_hydrology);
-    if (m_config.get_flag(flag_name) == true && hydrology_routing == NULL) {
+    if (m_config.get_boolean(flag_name) == true && hydrology_routing == NULL) {
       throw RuntimeError::formatted("Flag %s is set.\n"
                                     "Thus the Mohr-Coulomb yield stress model needs a hydrology::Routing\n"
                                     "(or derived like hydrology::Distributed) object with transportable water.\n"
@@ -184,7 +184,7 @@ void MohrCoulombYieldStress::init_impl() {
       int start = 0;
       find_pism_input(filename, boot, start);
 
-      PIO nc(m_grid.com, "guess_mode", m_grid.config.get_unit_system());
+      PIO nc(m_grid.com, "guess_mode", m_grid.config.unit_system());
 
       nc.open(filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));
@@ -357,8 +357,8 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
   // this model does no internal time-stepping
 
-  bool slipperygl       = m_config.get_flag("tauc_slippery_grounding_lines"),
-       addtransportable = m_config.get_flag("tauc_add_transportable_water");
+  bool slipperygl       = m_config.get_boolean("tauc_slippery_grounding_lines"),
+       addtransportable = m_config.get_boolean("tauc_add_transportable_water");
 
   const double high_tauc   = m_config.get_double("high_tauc"),
                tillwat_max = m_config.get_double("hydrology_tillwat_max"),

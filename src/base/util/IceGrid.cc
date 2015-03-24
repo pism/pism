@@ -23,7 +23,7 @@
 #include "pism_const.hh"
 #include "PISMTime.hh"
 #include "PISMTime_Calendar.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "PIO.hh"
@@ -99,9 +99,9 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   }
 
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
-    time = new Time(com, config, calendar, config.get_unit_system());
+    time = new Time(com, config, calendar, config.unit_system());
   } else {
-    time = new Time_Calendar(com, config, calendar, config.get_unit_system());
+    time = new Time_Calendar(com, config, calendar, config.unit_system());
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
@@ -820,7 +820,7 @@ void IceGrid::set_periodicity(Periodicity p) {
 }
 
 double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return config.get_unit_system().convert(value, unit1, unit2);
+  return config.unit_system().convert(value, unit1, unit2);
 }
 
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {

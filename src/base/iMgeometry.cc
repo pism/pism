@@ -31,6 +31,7 @@
 #include "error_handling.hh"
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -57,7 +58,7 @@ void IceModel::updateSurfaceElevationAndMask() {
   update_mask(bed_topography, ice_thickness, vMask);
   update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
 
-  if (config.get_flag("kill_icebergs") && iceberg_remover != NULL) {
+  if (config.get_boolean("kill_icebergs") && iceberg_remover != NULL) {
     iceberg_remover->update(vMask, ice_thickness);
     // the call above modifies ice thickness and updates the mask
     // accordingly
@@ -516,7 +517,7 @@ void IceModel::massContExplicitStep() {
 
   const double dx = grid.dx(), dy = grid.dy();
   bool
-    include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
+    include_bmr_in_continuity = config.get_boolean("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
     compute_cumulative_nonneg_flux = nonneg_flux_2D_cumulative.was_created(),
     compute_cumulative_grounded_basal_flux = grounded_basal_flux_2D_cumulative.was_created(),
@@ -553,9 +554,9 @@ void IceModel::massContExplicitStep() {
   list.add(vHnew);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
-  const bool do_part_grid = config.get_flag("part_grid"),
-    do_redist = config.get_flag("part_redist"),
-    reduce_frontal_thickness = config.get_flag("part_grid_reduce_frontal_thickness");
+  const bool do_part_grid = config.get_boolean("part_grid"),
+    do_redist = config.get_boolean("part_redist"),
+    reduce_frontal_thickness = config.get_boolean("part_grid_reduce_frontal_thickness");
   if (do_part_grid) {
     list.add(vHref);
     if (do_redist) {
@@ -565,7 +566,7 @@ void IceModel::massContExplicitStep() {
       H_residual.set(0.0);
     }
   }
-  const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
+  const bool dirichlet_bc = config.get_boolean("ssa_dirichlet_bc");
   if (dirichlet_bc) {
     list.add(vBCMask);
     list.add(vBCvel);

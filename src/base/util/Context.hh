@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 #include <string>
 #include <mpi.h>
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "PISMUnits.hh"
@@ -32,10 +32,10 @@ namespace pism {
 
 class Context {
 public:
-  Context(Config &config);
+  Context(const Config &config);
   MPI_Comm com() const;
 
-  Config &config();
+  const Config &config();
   const Config& config() const;
 
   Vars& variables();
@@ -53,7 +53,7 @@ public:
   const EnthalpyConverter& enthalpy_converter() const;
 
 private:
-  Config m_config;
+  const Config &m_config;
   Vars m_variables;
   mutable Profiling m_profiling;
   Time::Ptr m_time;

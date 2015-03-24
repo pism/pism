@@ -19,12 +19,14 @@
 
 #include <cmath>
 #include <petscdmda.h>
+
 #include "iceModel.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 #include "error_handling.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -55,13 +57,13 @@ void IceModel::calculateFractureDensity() {
   list.add(vFDnew);
   list.add(vMask);
 
-  const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
+  const bool dirichlet_bc = config.get_boolean("ssa_dirichlet_bc");
   if (dirichlet_bc) {
     list.add(vBCMask);
     list.add(vBCvel);
   }
 
-  const bool write_fd = config.get_flag("write_fd_fields");
+  const bool write_fd = config.get_boolean("write_fd_fields");
   if (write_fd) {
     list.add(vFG);
     list.add(vFH);

@@ -27,7 +27,8 @@
 #include "PIO.hh"
 #include "utCalendar2_cal.h"
 #include "calcalcs.h"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
+#include "NCVariable.hh"
 
 namespace pism {
 

@@ -65,7 +65,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
   // Fill 3D fields using heuristics:
   {
     // set the initial age of the ice if appropriate
-    if (config.get_flag("do_age")) {
+    if (config.get_boolean("do_age")) {
       if (age_revision == age3.get_state_counter()) {
         verbPrintf(2, grid.com,
                    " - setting initial age to %.4f years\n",
@@ -78,7 +78,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
       }
     }
 
-    if (config.get_flag("do_cold_ice_methods") == true) {
+    if (config.get_boolean("do_cold_ice_methods") == true) {
       if (temperature_revision == T3.get_state_counter()) {
         verbPrintf(2, grid.com,
                    "getting surface B.C. from couplers...\n");
@@ -192,7 +192,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     }
   }
 
-  if (config.get_flag("part_grid")) {
+  if (config.get_boolean("part_grid")) {
     // Read the Href field from an input file. This field is
     // grid-dependent, so interpolating it from one grid to a
     // different one does not make sense in general.
@@ -208,7 +208,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     strain_rates.set(0.0);
   }
 
-  if (config.get_flag("ssa_dirichlet_bc")) {
+  if (config.get_boolean("ssa_dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
     vBCMask.regrid(filename, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
@@ -299,7 +299,7 @@ void IceModel::putTempAtDepth() {
              (config.get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
               ? "quartic guess sans smb" : "mass balance for velocity estimate"));
 
-  const bool do_cold = config.get_flag("do_cold_ice_methods"),
+  const bool do_cold = config.get_boolean("do_cold_ice_methods"),
              usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
   const double
     ice_k = config.get_double("ice_thermal_conductivity"),

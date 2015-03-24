@@ -35,7 +35,7 @@ using std::dynamic_pointer_cast;
 #include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
 
@@ -99,7 +99,7 @@ void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
 
   m_name = my_name;
 
-  m_metadata.push_back(NCSpatialVariable(m_grid->config.get_unit_system(),
+  m_metadata.push_back(NCSpatialVariable(m_grid->config.unit_system(),
                                          my_name, *m_grid, zlevels));
 }
 

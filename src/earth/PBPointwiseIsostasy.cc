@@ -19,7 +19,7 @@
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include <stdexcept>
 

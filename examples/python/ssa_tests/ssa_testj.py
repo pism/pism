@@ -31,7 +31,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.modeldata.config
-        config.set_flag("do_pseudo_plastic_till", False)
+        config.set_boolean("do_pseudo_plastic_till", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 

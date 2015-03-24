@@ -23,7 +23,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
 
 namespace pism {

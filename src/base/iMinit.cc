@@ -53,6 +53,7 @@
 #include "PISMFloatKill.hh"
 #include "error_handling.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -402,7 +403,7 @@ void IceModel::model_state_setup() {
   if (stress_balance) {
     stress_balance->init();
 
-    if (config.get_flag("include_bmr_in_continuity")) {
+    if (config.get_boolean("include_bmr_in_continuity")) {
       stress_balance->set_basal_melt_rate(basal_melt_rate);
     }
   }
@@ -479,7 +480,7 @@ void IceModel::model_state_setup() {
   }
 
   if (input_file.is_set()) {
-    PIO nc(grid.com, "netcdf3", grid.config.get_unit_system());
+    PIO nc(grid.com, "netcdf3", grid.config.unit_system());
 
     nc.open(input_file, PISM_READONLY);
     bool run_stats_exists = nc.inq_var("run_stats");
@@ -528,9 +529,9 @@ void IceModel::model_state_setup() {
   compute_cell_areas();
 
   // a report on whether PISM-PIK modifications of IceModel are in use
-  const bool pg   = config.get_flag("part_grid"),
-    pr   = config.get_flag("part_redist"),
-    ki   = config.get_flag("kill_icebergs");
+  const bool pg   = config.get_boolean("part_grid"),
+    pr   = config.get_boolean("part_redist"),
+    ki   = config.get_boolean("kill_icebergs");
   if (pg || pr || ki) {
     verbPrintf(2, grid.com,
                "* PISM-PIK mass/geometry methods are in use:  ");
@@ -579,9 +580,9 @@ void IceModel::allocate_enthalpy_converter() {
     return;
   }
 
-  if (config.get_flag("use_linear_in_temperature_heat_capacity")) {
+  if (config.get_boolean("use_linear_in_temperature_heat_capacity")) {
     EC = new varcEnthalpyConverter(config);
-  } else if (config.get_flag("use_Kirchhoff_law")) {
+  } else if (config.get_boolean("use_Kirchhoff_law")) {
     EC = new KirchhoffEnthalpyConverter(config);
   } else {
     EC = new EnthalpyConverter(config);
@@ -638,7 +639,7 @@ void IceModel::allocate_iceberg_remover() {
     return;
   }
 
-  if (config.get_flag("kill_icebergs")) {
+  if (config.get_boolean("kill_icebergs")) {
 
     // this will throw an exception on failure
     iceberg_remover = new calving::IcebergRemover(grid);
@@ -715,8 +716,8 @@ void IceModel::allocate_basal_yield_stress() {
 void IceModel::allocate_submodels() {
 
   // FIXME: someday we will have an "energy balance" sub-model...
-  if (config.get_flag("do_energy") == true) {
-    if (config.get_flag("do_cold_ice_methods") == false) {
+  if (config.get_boolean("do_energy") == true) {
+    if (config.get_boolean("do_cold_ice_methods") == false) {
       verbPrintf(2, grid.com,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {

@@ -24,7 +24,7 @@
 #include "matlablike.hh"
 #include "greens.hh"
 #include "deformation.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "error_handling.hh"
 #include "Vec.hh"
 

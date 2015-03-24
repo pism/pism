@@ -43,7 +43,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_flag("do_pseudo_plastic_till", False)
+        config.set_boolean("do_pseudo_plastic_till", False)
 
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -64,7 +64,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.
-        self.config.set_flag("compute_surf_grad_inward_ssa", True)
+        self.config.set_boolean("compute_surf_grad_inward_ssa", True)
         self.config.set_double("epsilon_ssa", 0.0)  # don't use this lower bound
 
         standard_gravity = self.config.get_double("standard_gravity")

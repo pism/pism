@@ -44,7 +44,8 @@ def init_config_twice_test():
     ctx._config = None          # re-set config
 
     system = PISM.UnitSystem("")
-    overrides = PISM.Config(ctx.com, "pism_overrides", system)
+    overrides = PISM.DefaultConfig(ctx.com, "pism_overrides",
+                                   "-config_override", system)
 
     # use the overrides keyword argument
     ctx.init_config(overrides=overrides)

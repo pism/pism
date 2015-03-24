@@ -21,7 +21,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include <stdexcept>
 #include "error_handling.hh"
@@ -38,7 +38,7 @@ PBLingleClark::PBLingleClark(const IceGrid &g)
   m_bedstartp0 = m_topg_initial.allocate_proc0_copy();
   m_upliftp0   = m_topg_initial.allocate_proc0_copy();
 
-  bool use_elastic_model = m_config.get_flag("bed_def_lc_elastic_model");
+  bool use_elastic_model = m_config.get_boolean("bed_def_lc_elastic_model");
 
   m_bdLC = NULL;
 

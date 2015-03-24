@@ -30,6 +30,7 @@
 
 #include "error_handling.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -47,7 +48,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
 
-  assert(config.get_flag("temperature_allow_above_melting") == false);
+  assert(config.get_boolean("temperature_allow_above_melting") == false);
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
@@ -144,7 +145,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
     melting_point_temp = config.get_double("water_melting_point_temperature"),
     beta_CC_grad       = config.get_double("beta_CC") * ice_density * config.get_double("standard_gravity");
 
-  const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
+  const bool allow_above_melting = config.get_boolean("temperature_allow_above_melting");
 
 
   // this is bulge limit constant in K; is max amount by which ice

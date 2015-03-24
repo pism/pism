@@ -23,7 +23,7 @@
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "PISMAtmosphere.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "error_handling.hh"
 
 namespace pism {
@@ -33,7 +33,7 @@ namespace surface {
 
 TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
-    ice_surface_temp(g.config.get_unit_system(), temperature_name, g) {
+    ice_surface_temp(g.config.unit_system(), temperature_name, g) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = m_config.get_double("pdd_factor_snow");

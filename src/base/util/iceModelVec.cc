@@ -23,7 +23,7 @@
 #include "PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"

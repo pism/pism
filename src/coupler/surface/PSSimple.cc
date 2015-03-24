@@ -23,7 +23,7 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "iceModelVec.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace surface {
@@ -31,8 +31,8 @@ namespace surface {
 ///// Simple PISM surface model.
 Simple::Simple(const IceGrid &g)
   : SurfaceModel(g),
-    climatic_mass_balance(g.config.get_unit_system(), "climatic_mass_balance", m_grid),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
+    climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance", m_grid),
+    ice_surface_temp(g.config.unit_system(), "ice_surface_temp", m_grid) {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",

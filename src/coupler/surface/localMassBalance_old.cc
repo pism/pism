@@ -24,14 +24,14 @@
 #include "pism_const.hh"
 #include "localMassBalance_old.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "error_handling.hh"
 
 namespace pism {
 namespace surface {
 
 PDDMassBalance_Old::PDDMassBalance_Old(const Config& myconfig) : LocalMassBalance_Old(myconfig) {
-  precip_as_snow = config.get_flag("interpret_precip_as_snow");
+  precip_as_snow = config.get_boolean("interpret_precip_as_snow");
   Tmin = config.get_double("air_temp_all_precip_as_snow");
   Tmax = config.get_double("air_temp_all_precip_as_rain");
 

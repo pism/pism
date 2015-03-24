@@ -20,7 +20,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PAWeatherStation.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
@@ -36,8 +36,8 @@ WeatherStation::WeatherStation(const IceGrid &g)
   : AtmosphereModel(g),
     m_precipitation(&g, "precipitation", g.config.get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", g.config.get_string("time_dimension_name")),
-    m_precip_metadata(g.config.get_unit_system(), "precipitation", m_grid),
-    m_air_temp_metadata(g.config.get_unit_system(), "air_temp", m_grid)
+    m_precip_metadata(g.config.unit_system(), "precipitation", m_grid),
+    m_air_temp_metadata(g.config.unit_system(), "air_temp", m_grid)
 {
   m_precipitation.dimension_metadata().set_string("units", m_grid.time->units_string());
   m_precipitation.metadata().set_string("units", "m / second");
@@ -86,7 +86,7 @@ void WeatherStation::init() {
              "  - Reading air temperature and precipitation from '%s'...\n",
              filename->c_str());
 
-  PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
+  PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());
   nc.open(filename, PISM_READONLY);
   {
     m_precipitation.read(nc, m_grid.time);

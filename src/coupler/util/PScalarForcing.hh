@@ -24,7 +24,7 @@
 #include "Timeseries.hh"
 #include "pism_options.hh"
 #include "PISMTime.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 #include "PIO.hh"
 
 #include "error_handling.hh"
@@ -85,7 +85,7 @@ protected:
                "  reading %s data from forcing file %s...\n",
                offset->short_name.c_str(), file->c_str());
 
-    PIO nc(g.com, "netcdf3", g.config.get_unit_system());
+    PIO nc(g.com, "netcdf3", g.config.unit_system());
     nc.open(file, PISM_READONLY);
     {
       offset->read(nc, g.time);

@@ -39,7 +39,7 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
-    ice_surface_temp(g.config.get_unit_system(), "ice_surface_temp", m_grid) {
+    ice_surface_temp(g.config.unit_system(), "ice_surface_temp", m_grid) {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;
@@ -50,7 +50,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
   m_base_ddf.refreezeFrac = m_config.get_double("pdd_refreeze");
   m_base_pddThresholdTemp = m_config.get_double("pdd_positive_threshold_temp");
   m_base_pddStdDev        = m_config.get_double("pdd_std_dev");
-  m_sd_use_param          = m_config.get_flag("pdd_std_dev_use_param");
+  m_sd_use_param          = m_config.get_boolean("pdd_std_dev_use_param");
   m_sd_param_a            = m_config.get_double("pdd_std_dev_param_a");
   m_sd_param_b            = m_config.get_double("pdd_std_dev_param_b");
 
@@ -98,7 +98,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
     std::string short_name = "air_temp_sd";
     unsigned int buffer_size = (unsigned int) m_config.get_double("climate_forcing_buffer_size");
 
-    PIO nc(m_grid.com, "netcdf3", m_grid.config.get_unit_system());
+    PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());
     nc.open(file, PISM_READONLY);
     n_records = nc.inq_nrecords(short_name, "");
     nc.close();

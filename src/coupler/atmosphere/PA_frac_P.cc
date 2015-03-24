@@ -19,15 +19,15 @@
 #include <gsl/gsl_math.h>
 
 #include "PA_frac_P.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Frac_P::Frac_P(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.config.get_unit_system(), "air_temp", m_grid),
-    precipitation(g.config.get_unit_system(), "precipitation", m_grid)
+    air_temp(g.config.unit_system(), "air_temp", m_grid),
+    precipitation(g.config.unit_system(), "precipitation", m_grid)
 {
   offset = NULL;
 

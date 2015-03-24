@@ -35,6 +35,7 @@ static char help[] =
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
 #include "Mask.hh"
+#include "PISMConfig.hh"
 
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
@@ -71,7 +72,7 @@ void SSATestCaseJ::initializeGrid(int Mx,int My) {
 }
 
 void SSATestCaseJ::initializeSSAModel() {
-  m_config.set_flag("do_pseudo_plastic_till", false);
+  m_config.set_boolean("do_pseudo_plastic_till", false);
 
   m_enthalpyconverter = new EnthalpyConverter(m_config);
   m_config.set_string("ssa_flow_law", "isothermal_glen");
@@ -158,9 +159,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
     setVerbosityLevel(5);
 

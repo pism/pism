@@ -33,17 +33,17 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
+IceEISModel::IceEISModel(IceGrid &g, DefaultConfig &conf, DefaultConfig &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
   m_experiment = 'A';
 
   // the following flag must be here in constructor because
   // IceModel::createVecs() uses it non-polythermal methods; can be
   // overridden by the command-line option "-energy enthalpy"
-  config.set_flag("do_cold_ice_methods", true);
+  config.set_boolean("do_cold_ice_methods", true);
 
   // see EISMINT II description; choose no ocean interaction,
-  config.set_flag("is_dry_simulation", true);
+  config.set_boolean("is_dry_simulation", true);
 
   // purely SIA, and E=1
   config.set_double("sia_enhancement_factor", 1.0);
@@ -52,7 +52,7 @@ IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
   config.set_double("bed_smoother_range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
-  config.set_flag("include_bmr_in_continuity", false);
+  config.set_boolean("include_bmr_in_continuity", false);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock

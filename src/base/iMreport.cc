@@ -18,8 +18,7 @@
 
 #include <cstring>
 #include <petscsys.h>
-#include <stdarg.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "iceModel.hh"
 #include "Mask.hh"
@@ -31,6 +30,7 @@
 #include "error_handling.hh"
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -96,7 +96,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
 
   double result = -1.0;  // result value if not do_age
 
-  if (not config.get_flag("do_age")) {
+  if (not config.get_boolean("do_age")) {
     return result;  // leave now
   }
 
@@ -225,11 +225,11 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = config.get_flag("do_energy");
+  const bool do_energy = config.get_boolean("do_energy");
   const int log10scalevol  = static_cast<int>(config.get_double("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(config.get_double("summary_area_scale_factor_log10"));
   const std::string tunitstr = config.get_string("summary_time_unit_name");
-  const bool use_calendar = config.get_flag("summary_time_use_calendar");
+  const bool use_calendar = config.get_boolean("summary_time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
@@ -323,7 +323,7 @@ double IceModel::compute_ice_volume() {
   }
 
   // Add the volume of the ice in Href:
-  if (config.get_flag("part_grid")) {
+  if (config.get_boolean("part_grid")) {
     list.add(vHref);
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();

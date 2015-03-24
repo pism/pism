@@ -80,7 +80,7 @@ void SSATestCaseI::initializeGrid(int Mx,int My) {
 void SSATestCaseI::initializeSSAModel() {
   m_enthalpyconverter = new EnthalpyConverter(m_config);
 
-  m_config.set_flag("do_pseudo_plastic_till", false);
+  m_config.set_boolean("do_pseudo_plastic_till", false);
 
   m_config.set_string("ssa_flow_law", "isothermal_glen");
   m_config.set_double("ice_softness", pow(B_schoof, -m_config.get_double("ssa_Glen_exponent")));
@@ -94,7 +94,7 @@ void SSATestCaseI::initializeSSACoefficients() {
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
   m_config.set_double("epsilon_ssa", 0.0);  // don't use this lower bound
 
   IceModelVec::AccessList list;
@@ -169,9 +169,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
     setVerbosityLevel(5);
 

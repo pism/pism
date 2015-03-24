@@ -29,6 +29,8 @@ static char help[] =
   "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
   "  class thereof.\n\n";
 
+#include <cmath>
+
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
@@ -40,10 +42,9 @@ static char help[] =
 #include "SSAFD.hh"
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
-#include <math.h>
-#include "PISMConfig.hh"
 #include "PetscInitializer.hh"
 #include "error_handling.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -106,7 +107,7 @@ void SSATestCasePlug::initializeSSAModel() {
 void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
   m_config.set_double("epsilon_ssa", 0.0);
 
   // Ensure we never use the strength extension.
@@ -182,9 +183,13 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    init_config(com, config, overrides);
+    DefaultConfig
+      config(com, "pism_config", "-config", unit_system),
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    overrides.init();
+    config.init_with_default();
+    config.import_from(overrides);
+    config.set_from_options();
 
     setVerbosityLevel(5);
 

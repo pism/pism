@@ -43,12 +43,14 @@
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, Config &conf, Config &conf_overrides, int mytest)
+IceCompModel::IceCompModel(IceGrid &g, DefaultConfig &conf,
+                           DefaultConfig &conf_overrides, int mytest)
   : IceModel(g, conf, conf_overrides) {
 
   // note lots of defaults are set by the IceModel constructor
@@ -64,8 +66,8 @@ IceCompModel::IceCompModel(IceGrid &g, Config &conf, Config &conf_overrides, int
   config.set_double("bed_smoother_range", 0.0);
 
   // set values of flags in run()
-  config.set_flag("do_mass_conserve", true);
-  config.set_flag("include_bmr_in_continuity", false);
+  config.set_boolean("do_mass_conserve", true);
+  config.set_boolean("include_bmr_in_continuity", false);
 
   if (testname == 'V') {
     config.set_string("ssa_flow_law", "isothermal_glen");
@@ -183,44 +185,44 @@ void IceCompModel::setFromOptions() {
     config.set_string("bed_deformation_model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
-    config.set_flag("do_energy", true);
+    config.set_boolean("do_energy", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     config.set_double("global_min_allowed_temp", 0.0);
     config.set_double("max_low_temp_count", 1000000);
   } else
-    config.set_flag("do_energy", false);
+    config.set_boolean("do_energy", false);
 
-  config.set_flag("is_dry_simulation", true);
+  config.set_boolean("is_dry_simulation", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
-    config.set_flag("temperature_allow_above_melting", false);
+    config.set_boolean("temperature_allow_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    config.set_flag("temperature_allow_above_melting", true);
+    config.set_boolean("temperature_allow_above_melting", true);
   }
 
   if (testname == 'V') {
     // no sub-shelf melting
-    config.set_flag("include_bmr_in_continuity", false);
+    config.set_boolean("include_bmr_in_continuity", false);
 
     // this test is isothermal
-    config.set_flag("do_energy", false);
+    config.set_boolean("do_energy", false);
 
     // do not use the SIA stress balance
-    config.set_flag("do_sia", false);
+    config.set_boolean("do_sia", false);
 
     // do use the SSA solver
     config.set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
-    config.set_flag("is_dry_simulation", false);
+    config.set_boolean("is_dry_simulation", false);
 
-    config.set_flag("ssa_dirichlet_bc", true);
+    config.set_boolean("ssa_dirichlet_bc", true);
   }
 
-  config.set_flag("do_cold_ice_methods", true);
+  config.set_boolean("do_cold_ice_methods", true);
 
   IceModel::setFromOptions();
 }
@@ -279,7 +281,7 @@ void IceCompModel::allocate_stressbalance() {
   }
 
   if (testname == 'E') {
-    config.set_flag("sia_sliding_verification_mode", true);
+    config.set_boolean("sia_sliding_verification_mode", true);
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC);
     SIAFD *sia = new SIAFD(grid, *EC);
 
@@ -986,11 +988,11 @@ void IceCompModel::reportErrors() {
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
-  NCTimeseries err("N", "N", grid.config.get_unit_system());
+  NCTimeseries err("N", "N", grid.config.unit_system());
 
   err.set_string("units", "1");
 
-  PIO nc(grid.com, "netcdf3", grid.config.get_unit_system()); // OK to use netcdf3
+  PIO nc(grid.com, "netcdf3", grid.config.unit_system()); // OK to use netcdf3
 
   options::String report_file("-report_file", "NetCDF error report file");
   bool append = options::Bool("-append", "Append the NetCDF error report");

@@ -44,6 +44,7 @@
 #include "flowlaw_factory.hh"
 #include "error_handling.hh"
 #include "PISMDiagnostic.hh"
+#include "PISMConfig.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -233,6 +234,7 @@
 
 /* make sure PIO.i is included before NCVariable.hh */
 %include pism_NCVariable.i
+%include "PISMConfigInterface.hh"
 %include "PISMConfig.hh"
 %include "pism_const.hh"
 

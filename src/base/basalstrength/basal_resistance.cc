@@ -19,14 +19,14 @@
 #include "basal_resistance.hh"
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 
 /* Purely plastic */
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
-  : m_unit_system(config.get_unit_system()) {
+  : m_unit_system(config.unit_system()) {
   m_plastic_regularize = config.get_double("plastic_regularization", "m/year", "m/second");
 }
 

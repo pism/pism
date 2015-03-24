@@ -20,15 +20,15 @@
 #include <gsl/gsl_math.h>
 
 #include "PO_delta_MBP.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {
 
 Delta_MBP::Delta_MBP(const IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in),
-    shelfbmassflux(g.config.get_unit_system(), "shelfbmassflux", m_grid),
-    shelfbtemp(g.config.get_unit_system(), "shelfbtemp", m_grid)
+    shelfbmassflux(g.config.unit_system(), "shelfbmassflux", m_grid),
+    shelfbtemp(g.config.unit_system(), "shelfbtemp", m_grid)
 {
 
   option_prefix = "-ocean_delta_MBP";

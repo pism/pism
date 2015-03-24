@@ -30,6 +30,7 @@
 #include "PISMSurface.hh"
 #include "PISMHydrology.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -181,7 +182,7 @@ double IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (config.get_flag("do_skip") == false) {
+  if (config.get_boolean("do_skip") == false) {
     return 0;
   }
 
@@ -289,14 +290,14 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (config.get_flag("do_energy")) {
+    if (config.get_boolean("do_energy")) {
       if (update_3d) {
         CFLmaxdt = max_timestep_cfl_3d();
       }
       dt_restrictions["3D CFL"] = CFLmaxdt;
     }
 
-    if (config.get_flag("do_mass_conserve")) {
+    if (config.get_boolean("do_mass_conserve")) {
       CFLmaxdt2D = max_timestep_cfl_2d();
 
       dt_restrictions["2D CFL"] = CFLmaxdt2D;

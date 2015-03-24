@@ -77,8 +77,8 @@ int IceModel::endOfTimeStepHook() {
   
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             executable_short_name.c_str(), grid.time->date().c_str());
+    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%s.nc",
+             grid.time->date().c_str());
     verbPrintf(1, grid.com, 
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);

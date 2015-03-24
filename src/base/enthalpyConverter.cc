@@ -19,7 +19,7 @@
 #include <petsc.h>  // for PetscErrorPrintf, etc.
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
 
@@ -64,7 +64,7 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_T_tolerance = config.get_double("cold_mode_is_temperate_ice_tolerance"); // K
   m_T_0         = config.get_double("enthalpy_converter_reference_temperature"); // K
 
-  m_do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
+  m_do_cold_ice_methods  = config.get_boolean("do_cold_ice_methods");
 }
 
 EnthalpyConverter::~EnthalpyConverter() {

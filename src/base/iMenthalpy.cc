@@ -28,6 +28,7 @@
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -195,7 +196,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                        double* liquifiedVol,
                                        unsigned int *bulgeCount) {
 
-  assert(config.get_flag("do_cold_ice_methods") == false);
+  assert(config.get_boolean("do_cold_ice_methods") == false);
 
   // essentially physical constants:
   const double
