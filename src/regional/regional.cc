@@ -20,6 +20,7 @@
 #include "regional.hh"
 #include "enthalpyConverter.hh"
 #include "PISMConfigInterface.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace stressbalance {

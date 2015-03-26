@@ -17,36 +17,29 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMBedDef.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
+#ifndef _PROFILING_H_
+#define _PROFILING_H_
+
+#include <map>
+#include <string>
+
+#include <petsclog.h>
 
 namespace pism {
-namespace bed {
 
-PBNull::PBNull(const IceGrid &g)
-  : BedDef(g) {
-  // empty
-}
+class Profiling {
+public:
+  Profiling();
+  void begin(const char *name) const;
+  void end(const char *name) const;
+  void stage_begin(const char *name) const;
+  void stage_end(const char *name) const;
+private:
+  PetscClassId m_classid;
+  mutable std::map<std::string, PetscLogEvent> m_events;
+  mutable std::map<std::string, PetscLogStage> m_stages;
+};
 
-void PBNull::init_impl() {
-  BedDef::init_impl();
-
-  verbPrintf(2, m_grid.com,
-             "* Initializing the dummy (no-op) bed deformation model...\n");
-  m_uplift.set(0.0);
-}
-
-MaxTimestep PBNull::max_timestep_impl(double t) {
-  (void) t;
-  return MaxTimestep();
-}
-
-void PBNull::update_impl(double t, double dt) {
-  m_t  = t;
-  m_dt = dt;
-  // This model does not update bed topography or bed uplift.
-}
-
-} // end of namespace bed
 } // end of namespace pism
+
+#endif /* _PROFILING_H_ */

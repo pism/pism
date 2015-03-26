@@ -71,19 +71,6 @@ double GlobalMax(MPI_Comm comm, double local);
 
 double GlobalSum(MPI_Comm comm, double local);
 
-class Profiling {
-public:
-  Profiling();
-  void begin(const char *name) const;
-  void end(const char *name) const;
-  void stage_begin(const char *name) const;
-  void stage_end(const char *name) const;
-private:
-  PetscClassId m_classid;
-  mutable std::map<std::string, PetscLogEvent> m_events;
-  mutable std::map<std::string, PetscLogStage> m_stages;
-};
-
 } // end of namespace pism
 
 #endif

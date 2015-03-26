@@ -24,6 +24,7 @@
 #include "flowlaw_factory.hh"
 #include "IceGrid.hh"
 #include "error_handling.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace stressbalance {

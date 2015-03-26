@@ -21,6 +21,7 @@
 #include "Mask.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace calving {

@@ -264,62 +264,6 @@ PetscLogDouble GetTime() {
   return result;
 }
 
-// PETSc profiling events
-
-Profiling::Profiling() {
-  PetscErrorCode ierr = PetscClassIdRegister("PISM", &m_classid);
-  PISM_CHK(ierr, "PetscClassIdRegister");
-}
-
-void Profiling::begin(const char * name) const {
-  PetscLogEvent event = 0;
-  PetscErrorCode ierr;
-
-  if (m_events.find(name) == m_events.end()) {
-    // not registered yet
-    ierr = PetscLogEventRegister(name, m_classid, &event);
-    PISM_CHK(ierr, "PetscLogEventRegister");
-    m_events[name] = event;
-  } else {
-    event = m_events[name];
-  }
-  ierr = PetscLogEventBegin(event, 0, 0, 0, 0);
-  PISM_CHK(ierr, "PetscLogEventBegin");
-}
-
-void Profiling::end(const char * name) const {
-  PetscLogEvent event = 0;
-  if (m_events.find(name) == m_events.end()) {
-    abort();                    // should never happen
-  } else {
-    event = m_events[name];
-  }
-  PetscErrorCode ierr = PetscLogEventEnd(event, 0, 0, 0, 0);
-  PISM_CHK(ierr, "PetscLogEventEnd");
-}
-
-void Profiling::stage_begin(const char * name) const {
-  PetscLogStage stage = 0;
-  PetscErrorCode ierr;
-
-  if (m_stages.find(name) == m_stages.end()) {
-    // not registered yet
-    ierr = PetscLogStageRegister(name, &stage);
-    PISM_CHK(ierr, "PetscLogStageRegister");
-    m_stages[name] = stage;
-  } else {
-    stage = m_stages[name];
-  }
-  ierr = PetscLogStagePush(stage);
-  PISM_CHK(ierr, "PetscLogStagePush");
-}
-
-void Profiling::stage_end(const char * name) const {
-  (void) name;
-  PetscErrorCode ierr = PetscLogStagePop();
-  PISM_CHK(ierr, "PetscLogStagePop");
-}
-
 bool set_contains(const std::set<std::string> &S, const std::string &name) {
   return (S.find(name) != S.end());
 }

@@ -23,6 +23,7 @@
 #include "basal_resistance.hh"
 #include "IceGrid.hh"
 #include "error_handling.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace inverse {

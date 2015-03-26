@@ -23,6 +23,7 @@
 #include "Mask.hh"
 #include "error_handling.hh"
 #include "IceGrid.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace calving {

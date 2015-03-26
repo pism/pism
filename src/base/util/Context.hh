@@ -27,6 +27,7 @@
 #include "PISMTime.hh"
 #include "PISMUnits.hh"
 #include "enthalpyConverter.hh"
+#include "Profiling.hh"
 
 namespace pism {
 

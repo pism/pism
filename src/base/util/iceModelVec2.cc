@@ -42,6 +42,7 @@ using std::dynamic_pointer_cast;
 
 #include "Vec.hh"
 #include "VecScatter.hh"
+#include "pism_const.hh"
 
 namespace pism {
 

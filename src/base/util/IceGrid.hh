@@ -27,7 +27,7 @@
 
 #include "PISMVars.hh"
 #include "DM.hh"
-#include "pism_const.hh"
+#include "Profiling.hh"
 
 namespace pism {
 

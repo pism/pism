@@ -17,13 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // Utility functions used by the SSAFEM code.
+#include <cassert>
 
 #include "FETools.hh"
 #include "flowlaws.hh"
 #include "IceGrid.hh"
-#include <cassert>
 
 #include "error_handling.hh"
+#include "pism_const.hh"
 
 namespace pism {
 

@@ -22,6 +22,7 @@
 #include "Vec.hh"
 
 #include "error_handling.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace stressbalance {

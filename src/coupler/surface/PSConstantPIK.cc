@@ -22,6 +22,7 @@
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace surface {

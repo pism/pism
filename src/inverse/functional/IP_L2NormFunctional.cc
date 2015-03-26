@@ -18,6 +18,7 @@
 
 #include "IP_L2NormFunctional.hh"
 #include "IceGrid.hh"
+#include "pism_const.hh"
 
 namespace pism {
 namespace inverse {
