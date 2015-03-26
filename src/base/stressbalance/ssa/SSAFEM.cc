@@ -47,8 +47,7 @@ SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
   ierr = SNESCreate(m_grid.com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
 
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian.
   m_callback_data.da = *m_da;
   m_callback_data.ssa = this;
 

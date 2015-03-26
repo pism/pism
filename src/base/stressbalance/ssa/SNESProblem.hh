@@ -116,7 +116,6 @@ SNESProblem<DOF, U>::SNESProblem(const IceGrid &g)
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
   m_callbackData.da = *m_DA;
   m_callbackData.solver = this;
 

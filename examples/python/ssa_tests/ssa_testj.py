@@ -67,16 +67,14 @@ class testj(PISM.ssa.SSAExactTestCase):
                                    vecs.vel_bc]):
             grid = self.grid
             for (i, j) in grid.points():
-                x = grid.x(i)
-                y = grid.y(j)
-                (H, junk, u, v) = PISM.exactJ(x, y)
-                vecs.land_ice_thickness[i, j] = H
-                vecs.surface_altitude[i, j] = (1.0 - ice_rho / ocean_rho) * H  # // FIXME task #7297
+                p = PISM.exactJ(grid.x(i), grid.y(j))
+                vecs.land_ice_thickness[i, j] = p.H
+                vecs.surface_altitude[i, j] = (1.0 - ice_rho / ocean_rho) * p.H  # // FIXME task #7297
 
-                # // special case at center point (Dirichlet BC)
+                # special case at center point (Dirichlet BC)
                 if (i == (grid.Mx()) / 2) and (j == (grid.My()) / 2):
                     vecs.bc_mask[i, j] = 1
-                    vecs.vel_bc[i, j] = [u, v]
+                    vecs.vel_bc[i, j] = [p.u, p.v]
 
     def _initSSA(self):
         # Test J has a viscosity that is independent of velocity.  So we force a
@@ -91,8 +89,8 @@ class testj(PISM.ssa.SSAExactTestCase):
         ssa.strength_extension.set_min_thickness(800.)
 
     def exactSolution(self, i, j, x, y):
-        (j1, j2, u, v) = PISM.exactJ(x, y)
-        return [u, v]
+        p = PISM.exactJ(x, y)
+        return [p.u, p.v]
 
 
 # The main code for a run follows:

@@ -120,18 +120,18 @@ void SSATestCaseI::initializeSSACoefficients() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double junk, myu, myv;
     const double myx = m_grid->x(i), myy=m_grid->y(j);
     // eval exact solution; will only use exact vels if at edge
-    exactI(m_schoof, myx, myy, &(m_bed(i,j)), &junk, &myu, &myv);
+    struct TestIParameters I_parameters = exactI(m_schoof, myx, myy);
+    m_bed(i, j) = I_parameters.bed;
     m_surface(i,j) = m_bed(i,j) + H0_schoof;
 
     bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
                  (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
       m_bc_mask(i,j) = 1;
-      m_bc_values(i,j).u = myu;
-      m_bc_values(i,j).v = myv;
+      m_bc_values(i,j).u = I_parameters.u;
+      m_bc_values(i,j).v = I_parameters.v;
     }
   }
 
@@ -148,8 +148,9 @@ void SSATestCaseI::initializeSSACoefficients() {
 void SSATestCaseI::exactSolution(int /*i*/, int /*j*/,
                                  double x, double y,
                                  double *u, double *v) {
-  double junk1, junk2;
-  exactI(m_schoof, x,y, &junk1, &junk2,u,v);
+  struct TestIParameters I_parameters = exactI(m_schoof, x, y);
+  *u = I_parameters.u;
+  *v = I_parameters.v;
 }
 
 } // end of namespace stressbalance

@@ -84,21 +84,19 @@ class testi(PISM.ssa.SSAExactTestCase):
         grid = self.grid
         with PISM.vec.Access(comm=[surface, bed, vel_bc, bc_mask]):
             for (i, j) in grid.points():
-                x = grid.x(i)
-                y = grid.y(j)
-                (bed_ij, junk, u, v) = PISM.exactI(m_schoof, x, y)
-                bed[i, j] = bed_ij
-                surface[i, j] = bed_ij + H0_schoof
+                p = PISM.exactI(m_schoof, grid.x(i), grid.y(j))
+                bed[i, j] = p.bed
+                surface[i, j] = p.bed + H0_schoof
 
                 edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
-                if (edge):
+                if edge:
                     bc_mask[i, j] = 1
-                    vel_bc[i, j].u = u
-                    vel_bc[i, j].v = v
+                    vel_bc[i, j].u = p.u
+                    vel_bc[i, j].v = p.v
 
     def exactSolution(self, i, j, x, y):
-        (j1, j2, u, v) = PISM.exactI(m_schoof, x, y)
-        return [u, v]
+        p = PISM.exactI(m_schoof, x, y)
+        return [p.u, p.v]
 
 # The main code for a run follows:
 if __name__ == '__main__':

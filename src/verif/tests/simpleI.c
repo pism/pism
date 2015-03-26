@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2015 Jed Brown and Ed Bueler
   
    This file is part of Pism.
   
@@ -36,7 +36,7 @@ Results from Test I:
 
 int main() {
 
-  double m, x, y, bed, tauc, u, v;
+  double m, x, y;
   int    scanret;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   
@@ -58,11 +58,14 @@ int main() {
     return 1;
   }
 
-  exactI(m,x*1000.0,y*1000.0, &bed, &tauc, &u, &v);
+  struct TestIParameters p = exactI(m, x*1000.0, y*1000.0);
 
   printf("\nResults from Test I:\n");
-  printf("  bed = %9.3f (m)     tau_c = %10.3f (kPa)\n",bed,tauc/1000.0);
-  printf("  u   = %9.3f (m/a)   v     = %10.3f (m/a)\n",u*secpera,v*secpera);
+  printf("  bed = %9.3f (m)     tau_c = %10.3f (kPa)\n",
+         p.bed, p.tauc / 1000.0);
+  printf("  u   = %9.3f (m/a)   v     = %10.3f (m/a)\n",
+         p.u * secpera,
+         p.v * secpera);
 
   return 0;
 }

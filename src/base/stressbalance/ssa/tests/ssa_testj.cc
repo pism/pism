@@ -107,22 +107,21 @@ void SSATestCaseJ::initializeSSACoefficients() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double junk1, myu, myv, H;
     const double myx = m_grid->x(i), myy = m_grid->y(j);
 
     // set H,h on regular grid
-    exactJ(myx, myy, &H, &junk1, &myu, &myv);
+    struct TestJParameters J_parameters = exactJ(myx, myy);
 
-    m_thickness(i,j) = H;
-    m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+    m_thickness(i,j) = J_parameters.H;
+    m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * J_parameters.H; // FIXME issue #15
 
     // special case at center point: here we set bc_values at (i,j) by
     // setting bc_mask and bc_values appropriately
     if ((i == ((int)m_grid->Mx()) / 2) and
         (j == ((int)m_grid->My()) / 2)) {
       m_bc_mask(i,j) = 1;
-      m_bc_values(i,j).u = myu;
-      m_bc_values(i,j).v = myv;
+      m_bc_values(i,j).u = J_parameters.u;
+      m_bc_values(i,j).v = J_parameters.v;
     }
   }
 
@@ -138,8 +137,9 @@ void SSATestCaseJ::initializeSSACoefficients() {
 void SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
                                  double x, double y,
                                  double *u, double *v) {
-  double junk1, junk2;
-  exactJ(x, y, &junk1, &junk2, u, v);
+  struct TestJParameters J_parameters = exactJ(x, y);
+  *u = J_parameters.u;
+  *v = J_parameters.v;
 }
 
 } // end of namespace stressbalance
