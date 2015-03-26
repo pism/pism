@@ -23,11 +23,7 @@
 #include <string>
 #include <vector>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
+#include "pism_memory.hh"
 
 #include "IO_Flags.hh"
 
@@ -58,11 +54,7 @@ namespace io {
 class NCFile
 {
 public:
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<NCFile> Ptr;
-#else
-  typedef std::shared_ptr<NCFile> Ptr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<NCFile> Ptr;
 
   NCFile(MPI_Comm com);
   virtual ~NCFile();

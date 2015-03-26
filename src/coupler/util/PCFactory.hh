@@ -19,11 +19,13 @@
 #ifndef _PCFACTORY_H_
 #define _PCFACTORY_H_
 
+#include <map>
+
+#include "pism_memory.hh"
 #include "pism_const.hh"
 #include "pism_options.hh"
 
 #include "IceGrid.hh"
-#include <map>
 
 #include "error_handling.hh"
 
@@ -69,13 +71,8 @@ public:
     }
   };
 
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<ModelCreator> ModelCreatorPtr;
-  typedef std::tr1::shared_ptr<ModifierCreator> ModifierCreatorPtr;
-#else
-  typedef std::shared_ptr<ModelCreator> ModelCreatorPtr;
-  typedef std::shared_ptr<ModifierCreator> ModifierCreatorPtr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<ModelCreator> ModelCreatorPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<ModifierCreator> ModifierCreatorPtr;
 
   PCFactory<Model,Modifier>(const IceGrid &g)
   : m_grid(g) {}

@@ -23,11 +23,7 @@
 #include <udunits2.h>
 #include <string>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
+#include "pism_memory.hh"
 
 namespace pism {
 
@@ -48,11 +44,8 @@ namespace pism {
 class UnitSystem {
 public:
   UnitSystem(const std::string &path = "");
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<ut_system> Ptr;
-#else
-  typedef std::shared_ptr<ut_system> Ptr;
-#endif
+
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<ut_system> Ptr;
 
   UnitSystem::Ptr get() const;
 

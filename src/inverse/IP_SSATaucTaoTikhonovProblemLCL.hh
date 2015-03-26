@@ -19,9 +19,12 @@
 #ifndef IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 #define IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 
+#include <petscsys.h>
+
+#include "pism_memory.hh"
+
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
-#include <petsc.h>
 #include "iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
@@ -43,11 +46,7 @@ class IP_SSATaucTaoTikhonovProblemLCL;
 class IP_SSATaucTaoTikhonovProblemLCLListener {
 public:
 
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
-#else
-  typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
 
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;

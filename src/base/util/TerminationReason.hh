@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,11 +24,7 @@
 #include <string>
 #include <sstream>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
+#include "pism_memory.hh"
 
 namespace pism {
 
@@ -36,11 +32,7 @@ class TerminationReason {
 public:
   TerminationReason() :m_reason(0) {};
   
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<TerminationReason> Ptr;
-#else
-  typedef std::shared_ptr<TerminationReason> Ptr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<TerminationReason> Ptr;
   
   virtual int reason() {
     return m_reason;

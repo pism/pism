@@ -41,13 +41,8 @@
 #include "PISMNC4_HDF5.hh"
 #endif
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-using std::tr1::shared_ptr;
-#else
-#include <memory>
-using std::shared_ptr;
-#endif
+#include "pism_memory.hh"
+using PISM_SHARED_PTR_NSPACE::shared_ptr;
 
 #include "error_handling.hh"
 

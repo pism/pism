@@ -24,13 +24,8 @@
 #include "iceModelVec_helpers.hh"
 #include "PISMConfigInterface.hh"
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-using std::tr1::dynamic_pointer_cast;
-#else
-#include <memory>
-using std::dynamic_pointer_cast;
-#endif
+#include "pism_memory.hh"
+using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 
 namespace pism {
 

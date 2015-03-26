@@ -20,6 +20,7 @@
 #ifndef _ICEMODELVEC3CUSTOM_H_
 #define _ICEMODELVEC3CUSTOM_H_
 
+#include "pism_memory.hh"
 #include "iceModelVec.hh"
 
 namespace pism {
@@ -39,13 +40,8 @@ public:
   IceModelVec3Custom();
   virtual ~IceModelVec3Custom();
 
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<IceModelVec3Custom> Ptr;
-  typedef std::tr1::shared_ptr<const IceModelVec3Custom> ConstPtr;
-#else
-  typedef std::shared_ptr<IceModelVec3Custom> Ptr;
-  typedef std::shared_ptr<const IceModelVec3Custom> ConstPtr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec3Custom> Ptr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const IceModelVec3Custom> ConstPtr;
 
   virtual void create(const IceGrid &mygrid,
                       const std::string &short_name,

@@ -17,40 +17,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _WRAPPER_H_
-#define _WRAPPER_H_
+//! @file pism_memory.hh
+//!
+//! We're trying to support both older compilers that provide C++ shared_ptr and weak_ptr in
+//! the std::tr1 namespace and newer, C++11-standard-compliant ones providing these smart pointers
+//! in std. This header should be removed once we decide to require a C++11-supporting compiler.
 
-#include "pism_memory.hh"
+#ifndef _PISM_MEMORY_H_
+#define _PISM_MEMORY_H_
 
-namespace pism {
-namespace petsc {
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#define PISM_SHARED_PTR_NSPACE std::tr1
+#else
+#include <memory>
+#define PISM_SHARED_PTR_NSPACE std
+#endif
 
-template<typename T>
-class Wrapper {
-public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Wrapper> Ptr;
-  typedef PISM_SHARED_PTR_NSPACE::weak_ptr<Wrapper> WeakPtr;
-
-  operator T() const {
-    return m_value;
-  }
-  T get() const {
-    return m_value;
-  }
-  T* rawptr() {
-    return &m_value;
-  }
-protected:
-  Wrapper() {
-    // empty
-  }
-  T m_value;
-private:
-  Wrapper(Wrapper const &);
-  Wrapper & operator=(Wrapper const &);
-};
-
-} // end of namespace petsc
-} // end of namespace pism
-
-#endif /* _WRAPPER_H_ */
+#endif /* _PISM_MEMORY_H_ */

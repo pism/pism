@@ -22,6 +22,7 @@
 
 #include <cassert>
 
+#include "pism_memory.hh"
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 #include "PISMConfigInterface.hh"
@@ -45,11 +46,8 @@ template<class ForwardProblem> class IPTaoTikhonovProblem;
  */
 template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
-#else
-  typedef std::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
+
 
   typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
   typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;

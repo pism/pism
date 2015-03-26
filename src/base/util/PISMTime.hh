@@ -19,6 +19,7 @@
 #ifndef _PISMTIME_H_
 #define _PISMTIME_H_
 
+#include "pism_memory.hh"
 #include "pism_const.hh"
 #include "PISMUnits.hh"
 
@@ -67,11 +68,7 @@ public:
        const UnitSystem &units_system);
   virtual ~Time();
 
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<Time> Ptr;
-#else
-  typedef std::shared_ptr<Time> Ptr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Time> Ptr;
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);

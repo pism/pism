@@ -64,6 +64,7 @@
 %include std_vector.i
 %include std_set.i
 
+%include "pism_memory.hh"
 #ifdef PISM_USE_TR1
 #define SWIG_SHARED_PTR_SUBNAMESPACE tr1
 #endif

@@ -25,6 +25,7 @@
 #include <map>
 #include <gsl/gsl_interp.h>
 
+#include "pism_memory.hh"
 #include "PISMVars.hh"
 #include "DM.hh"
 #include "Profiling.hh"
@@ -140,11 +141,7 @@ public:
   IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
 
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<IceGrid> Ptr;
-#else
-  typedef std::shared_ptr<IceGrid> Ptr;
-#endif
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceGrid> Ptr;
 
   static Ptr Shallow(MPI_Comm c, const Config &config,
                      double Lx, double Ly,
