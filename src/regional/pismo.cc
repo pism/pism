@@ -484,6 +484,8 @@ int main(int argc, char *argv[]) {
 
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed_regional.nc");
+
+    print_unused_parameters(3, com, config);
   }
   catch (...) {
     handle_fatal_errors(com);

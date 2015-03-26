@@ -148,12 +148,13 @@ Config::Doubles Config::all_doubles() const {
 }
 
 double Config::get_double(const std::string &name) const {
+  m_parameters_used.insert(name);
   return this->get_double_impl(name);
 }
 
 double Config::get_double(const std::string &name,
                           const std::string &u1, const std::string &u2) const {
-  double value = this->get_double_impl(name);
+  double value = this->get_double(name);
   return m_unit_system.convert(value, u1, u2);
 }
 
@@ -171,6 +172,7 @@ Config::Strings Config::all_strings() const {
 }
 
 std::string Config::get_string(const std::string &name) const {
+  m_parameters_used.insert(name);
   return this->get_string_impl(name);
 }
 
@@ -189,6 +191,7 @@ Config::Booleans Config::all_booleans() const {
 }
 
 bool Config::get_boolean(const std::string& name) const {
+  m_parameters_used.insert(name);
   return this->get_boolean_impl(name);
 }
 
@@ -214,7 +217,7 @@ void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) 
     std::string name  = j->first;
     std::string value = j->second;
 
-    if (value.empty()) {
+    if (value.empty() or ends_with(name, "_doc") or ends_with(name, "_units")) {
       continue;
     }
 
@@ -230,12 +233,13 @@ void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) 
   for (k = doubles.begin(); k != doubles.end(); ++k) {
     std::string name  = k->first;
     double value = k->second;
+    std::string units = strings[name + "_units"]; // will be empty if not set
 
     if (fabs(value) >= 1.0e7 or fabs(value) <= 1.0e-4) {
       // use scientific notation if a number is big or small
-      verbPrintf(v, com, "  %s = %12.3e\n", name.c_str(), value);
+      verbPrintf(v, com, "  %s = %12.3e (%s)\n", name.c_str(), value, units.c_str());
     } else {
-      verbPrintf(v, com, "  %s = %12.5f\n", name.c_str(), value);
+      verbPrintf(v, com, "  %s = %12.5f (%s)\n", name.c_str(), value, units.c_str());
     }
   }
 
@@ -249,14 +253,22 @@ void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) 
     std::string name  = p->first;
     std::string value = p->second ? "true" : "false";
 
-    verbPrintf(v, com, "  %s = \"%s\"\n", name.c_str(), value.c_str());
+    verbPrintf(v, com, "  %s = %s\n", name.c_str(), value.c_str());
   }
+
+  verbPrintf(v, com,
+             "### List of configuration parameters ends here.\n"
+             "###\n");
 }
 
 void print_unused_parameters(int verbosity_threshhold, MPI_Comm com,
                              const Config &config) {
   std::set<std::string> parameters_set = config.parameters_set_by_user();
   std::set<std::string> parameters_used = config.parameters_used();
+
+  if (options::Bool("-options_left", "report unused options")) {
+    verbosity_threshhold = getVerbosityLevel();
+  }
 
   std::set<std::string>::const_iterator k;
   for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
