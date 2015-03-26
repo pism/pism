@@ -70,7 +70,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
 protected:
-  NCSpatialVariable air_temp, precipitation;
+  SpatialVariableMetadata air_temp, precipitation;
   double m_precipexpfactor;
   std::vector<double> m_scaling_values;
 };

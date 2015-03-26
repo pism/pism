@@ -23,7 +23,7 @@
 #include "PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "iceModelVec.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
@@ -137,7 +137,7 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
     return;
   }
 
-  NCSpatialVariable &m = variable.metadata();
+  SpatialVariableMetadata &m = variable.metadata();
 
   if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
       (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {

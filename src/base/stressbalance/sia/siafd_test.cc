@@ -27,7 +27,7 @@ static char help[] =
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // FlowLaw
 #include "PIO.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "PISMStressBalance.hh"
 #include "SIAFD.hh"
 #include "exactTestsFG.h"

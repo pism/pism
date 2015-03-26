@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "pism_options.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"

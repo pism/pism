@@ -43,7 +43,7 @@ bool NetCDFConfig::is_set_impl(const std::string &name) const {
 // doubles
 
 double NetCDFConfig::get_double_impl(const std::string &name) const {
-  const NCVariable::DoubleAttrs& doubles = m_data.get_all_doubles();
+  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_double(name);
   } else {
@@ -55,10 +55,10 @@ double NetCDFConfig::get_double_impl(const std::string &name) const {
 }
 
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
-  const NCVariable::DoubleAttrs& doubles = m_data.get_all_doubles();
+  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
   Doubles result;
 
-  NCVariable::DoubleAttrs::const_iterator j;
+  VariableMetadata::DoubleAttrs::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     result[j->first] = (j->second)[0];
   }
@@ -73,7 +73,7 @@ void NetCDFConfig::set_double_impl(const std::string &name, double value) {
 // strings
 
 std::string NetCDFConfig::get_string_impl(const std::string &name) const {
-  const NCVariable::StringAttrs& strings = m_data.get_all_strings();
+  const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
   if (strings.find(name) != strings.end()) {
     return m_data.get_string(name);
   } else {
@@ -103,8 +103,8 @@ static bool string_is_true(const std::string &value) {
 }
 
 bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
-  const NCVariable::StringAttrs& strings = m_data.get_all_strings();
-  NCVariable::StringAttrs::const_iterator j = strings.find(name);
+  const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
+  VariableMetadata::StringAttrs::const_iterator j = strings.find(name);
   if (j != strings.end()) {
 
     const std::string &value = j->second;
@@ -129,10 +129,10 @@ bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
 }
 
 Config::Booleans NetCDFConfig::all_booleans_impl() const {
-  const NCVariable::StringAttrs& strings = m_data.get_all_strings();
+  const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
   Booleans result;
 
-  NCVariable::StringAttrs::const_iterator j;
+  VariableMetadata::StringAttrs::const_iterator j;
   for (j = strings.begin(); j != strings.end(); ++j) {
     std::string name = j->first;
     std::string value = j->second;

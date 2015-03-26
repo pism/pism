@@ -128,7 +128,7 @@ void Elevation::init() {
              m_z_M_max,
              m_grid.convert(m_M_limit_max, "m s-1", "m year-1"), m_z_ELA);
 
-  // NCSpatialVariables storing temperature and surface mass balance metadata
+  // SpatialVariableMetadatas storing temperature and surface mass balance metadata
 
   m_climatic_mass_balance.set_string("pism_intent", "diagnostic");
   m_climatic_mass_balance.set_string("long_name",

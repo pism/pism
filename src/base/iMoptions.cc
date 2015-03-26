@@ -111,7 +111,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
 
   std::set<std::string>::const_iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
-    const NCSpatialVariable &m = grid.variables().get(*i)->metadata();
+    const SpatialVariableMetadata &m = grid.variables().get(*i)->metadata();
 
     std::string intent = m.get_string("pism_intent");
 

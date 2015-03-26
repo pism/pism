@@ -22,7 +22,7 @@ static char help[] =
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PIO.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMTime.hh"
 #include "PISMVars.hh"

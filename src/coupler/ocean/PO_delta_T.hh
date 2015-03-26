@@ -41,7 +41,7 @@ protected:
   virtual void init_impl();
   virtual void shelf_base_temperature_impl(IceModelVec2S &result);
 protected:
-  NCSpatialVariable shelfbmassflux, shelfbtemp;
+  SpatialVariableMetadata shelfbmassflux, shelfbtemp;
 };
 
 } // end of namespace ocean

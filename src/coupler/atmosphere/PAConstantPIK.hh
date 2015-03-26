@@ -47,7 +47,7 @@ protected:
 protected:
   std::string m_input_file;
   IceModelVec2S m_precipitation, m_air_temp;
-  NCSpatialVariable m_air_temp_snapshot;
+  SpatialVariableMetadata m_air_temp_snapshot;
 };
 
 } // end of namespace atmosphere

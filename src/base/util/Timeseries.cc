@@ -93,7 +93,7 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
 
   time_name = dims[0];
 
-  NCTimeseries tmp_dim = m_dimension;
+  TimeseriesMetadata tmp_dim = m_dimension;
   tmp_dim.set_name(time_name);
 
   nc.read_timeseries(tmp_dim, time_manager, m_time);
@@ -115,7 +115,7 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
     m_use_bounds = true;
 
     set_bounds_units();
-    NCTimeBounds tmp_bounds = m_bounds;
+    TimeBoundsMetadata tmp_bounds = m_bounds;
     tmp_bounds.set_name(time_bounds_name);
 
     tmp_bounds.set_string("units", tmp_dim.get_string("units"));
@@ -283,11 +283,11 @@ void Timeseries::append(double v, double a, double b) {
   m_time_bounds.push_back(b);
 }
 
-NCTimeseries& Timeseries::metadata() {
+TimeseriesMetadata& Timeseries::metadata() {
   return m_variable;
 }
 
-NCTimeseries& Timeseries::dimension_metadata() {
+TimeseriesMetadata& Timeseries::dimension_metadata() {
   return m_dimension;
 }
 

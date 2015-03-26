@@ -21,7 +21,7 @@
 #include <cassert>
 #include <algorithm>
 
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "PIO.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
@@ -50,7 +50,7 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
 }
 
 
-NCVariable::NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims)
+VariableMetadata::VariableMetadata(const std::string &name, const UnitSystem &system, unsigned int ndims)
   : m_n_spatial_dims(ndims),
     m_unit_system(system),
     m_short_name(name) {
@@ -66,24 +66,24 @@ NCVariable::NCVariable(const std::string &name, const UnitSystem &system, unsign
   // valid_min and valid_max are unset
 }
 
-NCVariable::~NCVariable() {
+VariableMetadata::~VariableMetadata() {
   // empty
 }
 
 /** Get the number of spatial dimensions.
  */
-unsigned int NCVariable::get_n_spatial_dimensions() const {
+unsigned int VariableMetadata::get_n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
-UnitSystem NCVariable::unit_system() const {
+UnitSystem VariableMetadata::unit_system() const {
   return m_unit_system;
 }
 
 //! @brief Check if the range `[min, max]` is a subset of `[valid_min, valid_max]`.
 /*! Throws an exception if this check failed.
  */
-void NCVariable::check_range(const std::string &filename, double min, double max) {
+void VariableMetadata::check_range(const std::string &filename, double min, double max) {
 
   const std::string &units_string = get_string("units");
   const char
@@ -121,9 +121,9 @@ void NCVariable::check_range(const std::string &filename, double min, double max
 }
 
 //! 3D version
-NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
+SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
                                      const IceGrid &g, const std::vector<double> &zlevels)
-  : NCVariable("unnamed", system),
+  : VariableMetadata("unnamed", system),
     m_x("x", system),
     m_y("y", system),
     m_z("z", system) {
@@ -132,9 +132,9 @@ NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string
 }
 
 //! 2D version
-NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
+SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
                                      const IceGrid &g)
-  : NCVariable("unnamed", system),
+  : VariableMetadata("unnamed", system),
     m_x("x", system),
     m_y("y", system),
     m_z("z", system) {
@@ -143,7 +143,7 @@ NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string
   init_internal(name, g, z);
 }
 
-void NCSpatialVariable::init_internal(const std::string &name, const IceGrid &g,
+void SpatialVariableMetadata::init_internal(const std::string &name, const IceGrid &g,
                                       const std::vector<double> &z_levels) {
   m_time_dimension_name = "t";        // will be overridden later
 
@@ -185,30 +185,30 @@ void NCSpatialVariable::init_internal(const std::string &name, const IceGrid &g,
   m_variable_order = m_grid->config.get_string("output_variable_order");
 }
 
-NCSpatialVariable::NCSpatialVariable(const NCSpatialVariable &other)
-  : NCVariable(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
+SpatialVariableMetadata::SpatialVariableMetadata(const SpatialVariableMetadata &other)
+  : VariableMetadata(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
   m_time_dimension_name = other.m_time_dimension_name;
   m_variable_order      = other.m_variable_order;
   m_zlevels             = other.m_zlevels;
   m_grid                = other.m_grid;
 }
 
-NCSpatialVariable::~NCSpatialVariable() {
+SpatialVariableMetadata::~SpatialVariableMetadata() {
   // empty
 }
 
-void NCSpatialVariable::set_levels(const std::vector<double> &levels) {
+void SpatialVariableMetadata::set_levels(const std::vector<double> &levels) {
   if (levels.size() < 1) {
     throw RuntimeError("argument \"levels\" has to have length 1 or greater");
   }
   m_zlevels = levels;
 }
 
-const std::vector<double>& NCSpatialVariable::get_levels() const {
+const std::vector<double>& SpatialVariableMetadata::get_levels() const {
   return m_zlevels;
 }
 
-void NCSpatialVariable::set_time_independent(bool flag) {
+void SpatialVariableMetadata::set_time_independent(bool flag) {
   if (flag == true) {
     m_time_dimension_name = "";
   } else {
@@ -216,7 +216,7 @@ void NCSpatialVariable::set_time_independent(bool flag) {
   }
 }
 
-const IceGrid& NCSpatialVariable::grid() const {
+const IceGrid& SpatialVariableMetadata::grid() const {
   return *m_grid;
 }
 
@@ -224,7 +224,7 @@ const IceGrid& NCSpatialVariable::grid() const {
 //! Read a variable from a file into an array `output`.
 /*! This also converts the data from input units to internal units if needed.
  */
-void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
+void SpatialVariableMetadata::read(const PIO &nc, unsigned int time, double *output) {
 
   assert(m_grid != NULL);
 
@@ -315,7 +315,7 @@ void NCSpatialVariable::read(const PIO &nc, unsigned int time, double *output) {
 /*!
   Defines a variable and converts the units if needed.
  */
-void NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
+void SpatialVariableMetadata::write(const PIO &nc, IO_Type nctype,
                               bool write_in_glaciological_units,
                               const double *input) const {
 
@@ -363,14 +363,14 @@ void NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
     variable was not found in the input file
   - uses the last record in the file
  */
-void NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
+void SpatialVariableMetadata::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
                                double default_value, double *output) {
   unsigned int t_length = nc.inq_nrecords(get_name(), get_string("standard_name"));
 
   this->regrid(nc, t_length - 1, flag, do_report_range, default_value, output);
 }
 
-void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
+void SpatialVariableMetadata::regrid(const PIO &nc, unsigned int t_start,
                                RegriddingFlag flag, bool do_report_range,
                                double default_value, double *output) {
   assert(m_grid != NULL);
@@ -466,7 +466,7 @@ void NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 
 
 //! Report the range of a \b global Vec `v`.
-void NCSpatialVariable::report_range(MPI_Comm com, double min, double max,
+void SpatialVariableMetadata::report_range(MPI_Comm com, double min, double max,
                                      bool found_by_standard_name) {
 
   // UnitConverter constructor will make sure that units are compatible.
@@ -507,7 +507,7 @@ void NCSpatialVariable::report_range(MPI_Comm com, double min, double max,
 }
 
 //! \brief Define dimensions a variable depends on.
-void NCSpatialVariable::define_dimensions(const PIO &nc) const {
+void SpatialVariableMetadata::define_dimensions(const PIO &nc) const {
   bool exists;
 
   // x
@@ -536,8 +536,8 @@ void NCSpatialVariable::define_dimensions(const PIO &nc) const {
   }
 }
 
-//! Define a NetCDF variable corresponding to a NCVariable object.
-void NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
+//! Define a NetCDF variable corresponding to a VariableMetadata object.
+void SpatialVariableMetadata::define(const PIO &nc, IO_Type nctype,
                                bool write_in_glaciological_units) const {
   std::vector<std::string> dims;
 
@@ -597,33 +597,33 @@ void NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
   nc.write_attributes(*this, nctype, write_in_glaciological_units);
 }
 
-NCVariable& NCSpatialVariable::get_x() {
+VariableMetadata& SpatialVariableMetadata::get_x() {
   return m_x;
 }
 
-NCVariable& NCSpatialVariable::get_y() {
+VariableMetadata& SpatialVariableMetadata::get_y() {
   return m_y;
 }
 
-NCVariable& NCSpatialVariable::get_z() {
+VariableMetadata& SpatialVariableMetadata::get_z() {
   return m_z;
 }
 
-const NCVariable& NCSpatialVariable::get_x() const {
+const VariableMetadata& SpatialVariableMetadata::get_x() const {
   return m_x;
 }
 
-const NCVariable& NCSpatialVariable::get_y() const {
+const VariableMetadata& SpatialVariableMetadata::get_y() const {
   return m_y;
 }
 
-const NCVariable& NCSpatialVariable::get_z() const {
+const VariableMetadata& SpatialVariableMetadata::get_z() const {
   return m_z;
 }
 
 //! Checks if an attribute is present. Ignores empty strings, except
 //! for the "units" attribute.
-bool NCVariable::has_attribute(const std::string &name) const {
+bool VariableMetadata::has_attribute(const std::string &name) const {
 
   std::map<std::string,std::string>::const_iterator j = m_strings.find(name);
   if (j != m_strings.end()) {
@@ -641,34 +641,34 @@ bool NCVariable::has_attribute(const std::string &name) const {
   return false;
 }
 
-void NCVariable::set_name(const std::string &name) {
+void VariableMetadata::set_name(const std::string &name) {
   m_short_name = name;
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void NCVariable::set_double(const std::string &name, double value) {
+void VariableMetadata::set_double(const std::string &name, double value) {
   m_doubles[name] = std::vector<double>(1, value);
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void NCVariable::set_doubles(const std::string &name, const std::vector<double> &values) {
+void VariableMetadata::set_doubles(const std::string &name, const std::vector<double> &values) {
   m_doubles[name] = values;
 }
 
-void NCVariable::clear_all_doubles() {
+void VariableMetadata::clear_all_doubles() {
   m_doubles.clear();
 }
 
-void NCVariable::clear_all_strings() {
+void VariableMetadata::clear_all_strings() {
   m_strings.clear();
 }
 
-std::string NCVariable::get_name() const {
+std::string VariableMetadata::get_name() const {
   return m_short_name;
 }
 
 //! Get a single-valued scalar attribute.
-double NCVariable::get_double(const std::string &name) const {
+double VariableMetadata::get_double(const std::string &name) const {
   std::map<std::string,std::vector<double> >::const_iterator j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return (j->second)[0];
@@ -679,7 +679,7 @@ double NCVariable::get_double(const std::string &name) const {
 }
 
 //! Get an array-of-doubles attribute.
-std::vector<double> NCVariable::get_doubles(const std::string &name) const {
+std::vector<double> VariableMetadata::get_doubles(const std::string &name) const {
   std::map<std::string,std::vector<double> >::const_iterator j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return j->second;
@@ -688,16 +688,16 @@ std::vector<double> NCVariable::get_doubles(const std::string &name) const {
   }
 }
 
-const NCVariable::StringAttrs& NCVariable::get_all_strings() const {
+const VariableMetadata::StringAttrs& VariableMetadata::get_all_strings() const {
   return m_strings;
 }
 
-const NCVariable::DoubleAttrs& NCVariable::get_all_doubles() const {
+const VariableMetadata::DoubleAttrs& VariableMetadata::get_all_doubles() const {
   return m_doubles;
 }
 
 //! Set a string attribute.
-void NCVariable::set_string(const std::string &name, const std::string &value) {
+void VariableMetadata::set_string(const std::string &name, const std::string &value) {
 
   if (name == "units") {
     // create a dummy object to validate the units string
@@ -726,7 +726,7 @@ void NCVariable::set_string(const std::string &name, const std::string &value) {
 /*!
  * Returns an empty string if an attribute is not set.
  */
-std::string NCVariable::get_string(const std::string &name) const {
+std::string VariableMetadata::get_string(const std::string &name) const {
   if (name == "short_name") {
      return get_name();
   }
@@ -739,11 +739,11 @@ std::string NCVariable::get_string(const std::string &name) const {
   }
 }
 
-void NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
+void VariableMetadata::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
 
   // Print text attributes:
-  const NCVariable::StringAttrs &strings = this->get_all_strings();
-  NCVariable::StringAttrs::const_iterator i;
+  const VariableMetadata::StringAttrs &strings = this->get_all_strings();
+  VariableMetadata::StringAttrs::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
     std::string name  = i->first;
     std::string value = i->second;
@@ -757,8 +757,8 @@ void NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
   }
 
   // Print double attributes:
-  const NCVariable::DoubleAttrs &doubles = this->get_all_doubles();
-  NCVariable::DoubleAttrs::const_iterator j;
+  const VariableMetadata::DoubleAttrs &doubles = this->get_all_doubles();
+  VariableMetadata::DoubleAttrs::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     std::string name  = j->first;
     std::vector<double> values = j->second;
@@ -779,23 +779,23 @@ void NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
   }
 }
 
-NCTimeseries::NCTimeseries(const std::string &name, const std::string &dimension_name,
+TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
                            const UnitSystem &system)
-  : NCVariable(name, system, 0) {
+  : VariableMetadata(name, system, 0) {
   m_dimension_name = dimension_name;
 }
 
-NCTimeseries::~NCTimeseries()
+TimeseriesMetadata::~TimeseriesMetadata()
 {
   // empty
 }
 
-std::string NCTimeseries::get_dimension_name() const {
+std::string TimeseriesMetadata::get_dimension_name() const {
   return m_dimension_name;
 }
 
 //! Define a NetCDF variable corresponding to a time-series.
-void NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
+void TimeseriesMetadata::define(const PIO &nc, IO_Type nctype, bool) const {
 
   bool exists = nc.inq_var(get_name());
   if (exists) {
@@ -806,7 +806,7 @@ void NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
 
   exists = nc.inq_dim(m_dimension_name);
   if (not exists) {
-    nc.def_dim(PISM_UNLIMITED, NCVariable(m_dimension_name, m_unit_system));
+    nc.def_dim(PISM_UNLIMITED, VariableMetadata(m_dimension_name, m_unit_system));
   }
 
   exists = nc.inq_var(get_name());
@@ -819,19 +819,19 @@ void NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
   nc.write_attributes(*this, PISM_FLOAT, true);
 }
 
-/// NCTimeBounds
+/// TimeBoundsMetadata
 
-NCTimeBounds::NCTimeBounds(const std::string &var_name, const std::string &dim_name,
+TimeBoundsMetadata::TimeBoundsMetadata(const std::string &var_name, const std::string &dim_name,
                            const UnitSystem &system)
-  : NCTimeseries(var_name, dim_name, system) {
+  : TimeseriesMetadata(var_name, dim_name, system) {
   m_bounds_name    = "nv";      // number of vertexes
 }
 
-NCTimeBounds::~NCTimeBounds() {
+TimeBoundsMetadata::~TimeBoundsMetadata() {
   // empty
 }
 
-void NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
+void TimeBoundsMetadata::define(const PIO &nc, IO_Type nctype, bool) const {
   std::vector<std::string> dims;
   bool exists = false;
   
@@ -846,12 +846,12 @@ void NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
 
   exists = nc.inq_dim(dimension_name);
   if (not exists) {
-    nc.def_dim(PISM_UNLIMITED, NCVariable(dimension_name, m_unit_system));
+    nc.def_dim(PISM_UNLIMITED, VariableMetadata(dimension_name, m_unit_system));
   }
 
   exists = nc.inq_dim(m_bounds_name);
   if (not exists) {
-    nc.def_dim(2, NCVariable(m_bounds_name, m_unit_system));
+    nc.def_dim(2, VariableMetadata(m_bounds_name, m_unit_system));
   }
 
   dims.push_back(dimension_name);

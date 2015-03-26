@@ -52,7 +52,7 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 protected:
   double m_precip_lapse_rate;
-  NCSpatialVariable m_precipitation, m_air_temp;
+  SpatialVariableMetadata m_precipitation, m_air_temp;
   const IceModelVec2S *m_surface;
 };
 

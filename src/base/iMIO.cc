@@ -357,7 +357,7 @@ void IceModel::initFromFile(const std::string &filename) {
   for (i = vars.begin(); i != vars.end(); ++i) {
     // FIXME: remove const_cast. This is bad.
     IceModelVec *var = const_cast<IceModelVec*>(grid.variables().get(*i));
-    NCSpatialVariable &m = var->metadata();
+    SpatialVariableMetadata &m = var->metadata();
 
     std::string
       intent     = m.get_string("pism_intent"),
@@ -502,7 +502,7 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
 
     // FIXME: remove const_cast. This is bad.
     IceModelVec *v = const_cast<IceModelVec*>(grid.variables().get(*i));
-    NCSpatialVariable &m = v->metadata();
+    SpatialVariableMetadata &m = v->metadata();
 
     if (v->get_ndims() != ndims) {
       continue;
@@ -572,7 +572,7 @@ void IceModel::init_enthalpy(const std::string &filename,
     IceModelVec3 &temp = vWork3d,
       &liqfrac         = Enth3;
 
-    NCSpatialVariable enthalpy_metadata = Enth3.metadata();
+    SpatialVariableMetadata enthalpy_metadata = Enth3.metadata();
     temp.set_name("temp");
     temp.metadata(0).set_name("temp");
     temp.set_attrs("temporary", "ice temperature", "Kelvin",

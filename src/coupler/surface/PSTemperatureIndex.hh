@@ -22,7 +22,7 @@
 #include "iceModelVec2T.hh"
 #include "PISMSurface.hh"
 #include "localMassBalance.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -78,7 +78,7 @@ protected:
     m_snow_depth;            //!< snow depth (reset once a year)
   IceModelVec2T m_air_temp_sd;
 
-  NCSpatialVariable ice_surface_temp;
+  SpatialVariableMetadata ice_surface_temp;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
   bool m_sd_use_param, m_sd_file_set;

@@ -52,7 +52,7 @@ protected:
                                           IO_Type nctype);
 protected:
   std::vector<double> ts_mod, ts_values;
-  NCSpatialVariable air_temp, precipitation;
+  SpatialVariableMetadata air_temp, precipitation;
   IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
   std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 };

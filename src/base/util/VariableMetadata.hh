@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __NCVariable_hh
-#define __NCVariable_hh
+#ifndef __VariableMetadata_hh
+#define __VariableMetadata_hh
 
 #include <set>
 #include <map>
@@ -28,7 +28,7 @@
 #include "PISMUnits.hh"
 
 // We use PIO and IO_Type here. (I should move methods using this out
-// of NCSpatialVariable. -- CK)
+// of SpatialVariableMetadata. -- CK)
 #include "IO_Flags.hh"
 
 namespace pism {
@@ -71,10 +71,10 @@ class PIO;
 
 */
 
-class NCVariable {
+class VariableMetadata {
 public:
-  NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims = 0);
-  virtual ~NCVariable();
+  VariableMetadata(const std::string &name, const UnitSystem &system, unsigned int ndims = 0);
+  virtual ~VariableMetadata();
 
   // setters
   void set_double(const std::string &name, double value);
@@ -127,14 +127,14 @@ class IceGrid;
 enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
-class NCSpatialVariable : public NCVariable {
+class SpatialVariableMetadata : public VariableMetadata {
 public:
-  NCSpatialVariable(const UnitSystem &system, const std::string &name,
+  SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
                     const IceGrid &g);
-  NCSpatialVariable(const UnitSystem &system, const std::string &name,
+  SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
                     const IceGrid &g, const std::vector<double> &zlevels);
-  NCSpatialVariable(const NCSpatialVariable &other);
-  virtual ~NCSpatialVariable();
+  SpatialVariableMetadata(const SpatialVariableMetadata &other);
+  virtual ~SpatialVariableMetadata();
 
   void set_levels(const std::vector<double> &levels);
   const std::vector<double>& get_levels() const;
@@ -160,18 +160,18 @@ public:
   void define(const PIO &nc, IO_Type nctype,
               bool write_in_glaciological_units) const;
 
-  NCVariable& get_x();
-  NCVariable& get_y();
-  NCVariable& get_z();
+  VariableMetadata& get_x();
+  VariableMetadata& get_y();
+  VariableMetadata& get_z();
 
-  const NCVariable& get_x() const;
-  const NCVariable& get_y() const;
-  const NCVariable& get_z() const;
+  const VariableMetadata& get_x() const;
+  const VariableMetadata& get_y() const;
+  const VariableMetadata& get_z() const;
 
 private:
   std::string m_variable_order;        //!< variable order in output files;
   std::string m_time_dimension_name;
-  NCVariable m_x, m_y, m_z;
+  VariableMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
   void report_range(MPI_Comm com, double min, double max, bool found_by_standard_name);
@@ -182,11 +182,11 @@ private:
 };
 
 //! An internal class for reading, writing and converting time-series.
-class NCTimeseries : public NCVariable {
+class TimeseriesMetadata : public VariableMetadata {
 public:
-  NCTimeseries(const std::string &name, const std::string &dimension_name,
+  TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
                const UnitSystem &system);
-  virtual ~NCTimeseries();
+  virtual ~TimeseriesMetadata();
 
   std::string get_dimension_name() const;
 
@@ -195,12 +195,12 @@ private:
   std::string m_dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
 };
 
-class NCTimeBounds : public NCTimeseries
+class TimeBoundsMetadata : public TimeseriesMetadata
 {
 public:
-  NCTimeBounds(const std::string &name, const std::string &dimension_name,
+  TimeBoundsMetadata(const std::string &name, const std::string &dimension_name,
                const UnitSystem &system);
-  virtual ~NCTimeBounds();
+  virtual ~TimeBoundsMetadata();
   virtual void define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_bounds_name;
@@ -208,4 +208,4 @@ private:
 
 } // end of namespace pism
 
-#endif  // __NCVariable_hh
+#endif  // __VariableMetadata_hh

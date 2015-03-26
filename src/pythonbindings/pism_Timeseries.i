@@ -1,7 +1,7 @@
 %{
 #include "Timeseries.hh"
 using pism::Time;
-using pism::NCTimeseries;
+using pism::TimeseriesMetadata;
 %}
 
 %extend pism::Timeseries

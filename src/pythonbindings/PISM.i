@@ -233,8 +233,8 @@
 
 %include pism_PIO.i
 
-/* make sure PIO.i is included before NCVariable.hh */
-%include pism_NCVariable.i
+/* make sure PIO.i is included before VariableMetadata.hh */
+%include pism_VariableMetadata.i
 %include "PISMConfigInterface.hh"
 %include "PISMConfig.hh"
 %include "pism_const.hh"

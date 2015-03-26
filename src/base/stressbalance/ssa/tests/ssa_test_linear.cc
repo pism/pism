@@ -38,7 +38,7 @@ static char help[] =
 #include "flowlaws.hh" // FlowLaw
 #include "basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "PIO.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "SSAFEM.hh"
 #include "SSAFD.hh"
 #include "exactTestsIJ.h"

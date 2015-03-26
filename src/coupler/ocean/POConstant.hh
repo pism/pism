@@ -20,7 +20,7 @@
 #define _POCONSTANT_H_
 
 #include "PISMOcean.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 namespace ocean {
@@ -43,7 +43,7 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result);
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
-  NCSpatialVariable m_shelfbmassflux, m_shelfbtemp;
+  SpatialVariableMetadata m_shelfbmassflux, m_shelfbtemp;
   bool m_meltrate_set;
   double m_mymeltrate;
 };

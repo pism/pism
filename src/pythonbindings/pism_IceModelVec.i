@@ -4,7 +4,7 @@ using pism::IceGrid;
 using pism::petsc::DM;
 using pism::IO_Type;
 using pism::RegriddingFlag;
-using pism::NCSpatialVariable;
+using pism::SpatialVariableMetadata;
 using pism::petsc::Viewer;
 using pism::Profiling; 
 using pism::Vars;

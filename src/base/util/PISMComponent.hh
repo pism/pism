@@ -31,7 +31,7 @@ namespace pism {
 class PIO;
 class IceGrid;
 class Config;
-class NCSpatialVariable;
+class SpatialVariableMetadata;
 class Diagnostic;
 class TSDiagnostic;
 class Vars;

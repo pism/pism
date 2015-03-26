@@ -28,7 +28,7 @@
 #include "utCalendar2_cal.h"
 #include "calcalcs.h"
 #include "PISMConfigInterface.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 
@@ -170,7 +170,7 @@ void Time_Calendar::init_from_file(const std::string &filename) {
     time_name = m_config.get_string("time_dimension_name");
   bool exists;
 
-  NCTimeseries time_axis(time_name, time_name, m_unit_system);
+  TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
   time_axis.set_string("units", m_time_units.format());
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
@@ -226,7 +226,7 @@ void Time_Calendar::init_from_file(const std::string &filename) {
   // set the time
   if (time_bounds_name.empty() == false) {
     // use the time bounds
-    NCTimeBounds bounds(time_bounds_name, time_name, m_unit_system);
+    TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
     bounds.set_string("units", m_time_units.format());
 
     nc.read_time_bounds(bounds, this, time);

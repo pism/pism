@@ -24,7 +24,7 @@
 #include <set>
 
 #include "PISMConfigInterface.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 
@@ -58,7 +58,7 @@ protected:
   void set_boolean_impl(const std::string& name, bool value);
 protected:
   MPI_Comm m_com;
-  NCVariable m_data;
+  VariableMetadata m_data;
   //! @brief the name of the file this config database was initialized from
   std::string m_config_filename;
 

@@ -22,7 +22,7 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "PISMConfigInterface.hh"
 #include "PISMTime.hh"
 #include "PISMNC3File.hh"
@@ -720,7 +720,7 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
-void PIO::def_dim(unsigned long int length, const NCVariable &metadata) const {
+void PIO::def_dim(unsigned long int length, const VariableMetadata &metadata) const {
   string name = metadata.get_name();
   try {
     m_nc->redef();
@@ -807,7 +807,7 @@ void PIO::def_time(const string &name, const string &calendar, const string &uni
     }
 
     // time
-    NCVariable time(name, m_unit_system);
+    VariableMetadata time(name, m_unit_system);
     time.set_string("long_name", "time");
     time.set_string("calendar", calendar);
     time.set_string("units", units);
@@ -1271,7 +1271,7 @@ void PIO::set_local_extent(unsigned int xs, unsigned int xm,
   m_ym = ym;
 }
 
-void PIO::read_attributes(const string &variable_name, NCVariable &variable) const {
+void PIO::read_attributes(const string &variable_name, VariableMetadata &variable) const {
   try {
     bool variable_exists = inq_var(variable_name);
 
@@ -1319,7 +1319,7 @@ void PIO::read_attributes(const string &variable_name, NCVariable &variable) con
   \li if both valid_min and valid_max are set, then valid_range is written
   instead of the valid_min, valid_max pair.
  */
-void PIO::write_attributes(const NCVariable &variable, IO_Type nctype,
+void PIO::write_attributes(const VariableMetadata &variable, IO_Type nctype,
                            bool write_in_glaciological_units) const {
   string var_name = variable.get_name();
   try {
@@ -1374,8 +1374,8 @@ void PIO::write_attributes(const NCVariable &variable, IO_Type nctype,
     }
 
     // Write text attributes:
-    const NCVariable::StringAttrs &strings = variable.get_all_strings();
-    NCVariable::StringAttrs::const_iterator i;
+    const VariableMetadata::StringAttrs &strings = variable.get_all_strings();
+    VariableMetadata::StringAttrs::const_iterator i;
     for (i = strings.begin(); i != strings.end(); ++i) {
       string
         name  = i->first,
@@ -1391,8 +1391,8 @@ void PIO::write_attributes(const NCVariable &variable, IO_Type nctype,
     }
 
     // Write double attributes:
-    const NCVariable::DoubleAttrs &doubles = variable.get_all_doubles();
-    NCVariable::DoubleAttrs::const_iterator j;
+    const VariableMetadata::DoubleAttrs &doubles = variable.get_all_doubles();
+    VariableMetadata::DoubleAttrs::const_iterator j;
     for (j = doubles.begin(); j != doubles.end(); ++j) {
       string name  = j->first;
       vector<double> values = j->second;
@@ -1424,9 +1424,9 @@ void PIO::write_attributes(const NCVariable &variable, IO_Type nctype,
  *
  * @return 0 on success
  */
-void PIO::write_global_attributes(const NCVariable &var) const {
+void PIO::write_global_attributes(const VariableMetadata &var) const {
   try {
-    NCVariable tmp = var;
+    VariableMetadata tmp = var;
 
     string old_history = get_att_text("PISM_GLOBAL", "history");
 
@@ -1445,7 +1445,7 @@ void PIO::write_global_attributes(const NCVariable &var) const {
 /*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
     valid_range is found, sets the pair `valid_min` and `valid_max` instead.
  */
-void PIO::read_valid_range(const string &name, NCVariable &variable) const {
+void PIO::read_valid_range(const string &name, VariableMetadata &variable) const {
   try {
     // Never reset valid_min/max if they were set internally
     if (variable.has_attribute("valid_min") or
@@ -1480,7 +1480,7 @@ void PIO::read_valid_range(const string &name, NCVariable &variable) const {
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-void PIO::read_timeseries(const NCTimeseries &metadata,
+void PIO::read_timeseries(const TimeseriesMetadata &metadata,
                           Time *time, vector<double> &data) const {
   string name = metadata.get_name();
 
@@ -1547,7 +1547,7 @@ void PIO::read_timeseries(const NCTimeseries &metadata,
   }
 }
 
-void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
+void PIO::write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
                            double data, IO_Type nctype) const {
   vector<double> vector_data(1, data);
 
@@ -1559,7 +1559,7 @@ void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
  *
  * Always use glaciological units when saving time-series.
  */
-void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
+void PIO::write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
                            vector<double> &data,
                            IO_Type nctype) const {
   string name = metadata.get_name();
@@ -1588,7 +1588,7 @@ void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
   }
 }
 
-void PIO::read_time_bounds(const NCTimeBounds &metadata,
+void PIO::read_time_bounds(const TimeBoundsMetadata &metadata,
                            Time *time,
                            vector<double> &data) const {
   string name = metadata.get_name();
@@ -1677,7 +1677,7 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
   }
 }
 
-void PIO::write_time_bounds(const NCTimeBounds &metadata,
+void PIO::write_time_bounds(const TimeBoundsMetadata &metadata,
                             size_t t_start,
                             vector<double> &data, IO_Type nctype) const {
   string name = metadata.get_name();

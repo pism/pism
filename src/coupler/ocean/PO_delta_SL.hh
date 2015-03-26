@@ -39,7 +39,7 @@ protected:
   virtual void init_impl();
   virtual void sea_level_elevation_impl(double &result);
 protected:
-  NCSpatialVariable shelfbmassflux, shelfbtemp;
+  SpatialVariableMetadata shelfbmassflux, shelfbtemp;
 };
 
 } // end of namespace ocean

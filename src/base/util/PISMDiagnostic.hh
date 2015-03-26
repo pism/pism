@@ -19,7 +19,7 @@
 #ifndef __PISMDiagnostic_hh
 #define __PISMDiagnostic_hh
 
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code
 #include "PISMTime.hh"
 #include "IceGrid.hh"
@@ -65,7 +65,7 @@ public:
 
   virtual void set_zlevels(std::vector<double> &zlevels);
 
-  virtual NCSpatialVariable get_metadata(int N = 0);
+  virtual SpatialVariableMetadata get_metadata(int N = 0);
 
   virtual void define(const PIO &nc);
 
@@ -78,7 +78,7 @@ protected:
   const IceGrid &m_grid;                //!< the grid
   int m_dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
   IO_Type m_output_datatype;      //!< data type to use in the file
-  std::vector<NCSpatialVariable> m_vars; //!< metadata corresponding to NetCDF variables
+  std::vector<SpatialVariableMetadata> m_vars; //!< metadata corresponding to NetCDF variables
 };
 
 //! A template derived from Diagnostic, adding a "Model".

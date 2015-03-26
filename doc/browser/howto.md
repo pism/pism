@@ -86,7 +86,7 @@ attributes seen in PISM output files:
 
 The third call above `ice_thickness.metadata()` allows accessing
 variable metadata and adding arbitrary named attributes. See
-NCVariable for details.
+VariableMetadata for details.
 
 The CF convention covers some attribute semantics, including
 "valid_min" in this example.

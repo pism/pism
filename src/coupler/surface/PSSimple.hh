@@ -21,7 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -55,7 +55,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+  SpatialVariableMetadata climatic_mass_balance, ice_surface_temp;
 };
 
 } // end of namespace surface

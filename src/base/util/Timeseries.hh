@@ -22,7 +22,7 @@
 #include <deque>
 #include <mpi.h>
 
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 
@@ -87,8 +87,8 @@ public:
   void append(double value, double a, double b);
   int length();
 
-  NCTimeseries& metadata();
-  NCTimeseries& dimension_metadata();
+  TimeseriesMetadata& metadata();
+  TimeseriesMetadata& dimension_metadata();
 
   void scale(double scaling_factor);
 
@@ -96,9 +96,9 @@ public:
 protected:
   void set_bounds_units();
   UnitSystem m_unit_system;
-  NCTimeseries m_dimension, m_variable;
+  TimeseriesMetadata m_dimension, m_variable;
   MPI_Comm m_com;
-  NCTimeBounds m_bounds;
+  TimeBoundsMetadata m_bounds;
   bool m_use_bounds;
   std::vector<double> m_time;
   std::vector<double> m_values;

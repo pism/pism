@@ -43,7 +43,7 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 protected:
   double m_smb_lapse_rate;
-  NCSpatialVariable m_climatic_mass_balance, m_ice_surface_temp;
+  SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
 };
 
 } // end of namespace surface

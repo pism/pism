@@ -45,7 +45,7 @@ protected:
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
 protected:
-  NCSpatialVariable shelfbmassflux, shelfbtemp;
+  SpatialVariableMetadata shelfbmassflux, shelfbtemp;
 };
 
 } // end of namespace ocean

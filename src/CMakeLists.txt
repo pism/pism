@@ -47,7 +47,7 @@ set(PISMUTIL_SRC
   base/util/IceGrid.cc
   base/util/ColumnInterpolation.cc
   base/util/Mask.cc
-  base/util/NCVariable.cc
+  base/util/VariableMetadata.cc
   base/util/PISMConfig.cc
   base/util/PISMConfigInterface.cc
   base/util/PISMComponent.cc

@@ -21,7 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "localMassBalance_old.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -83,7 +83,7 @@ protected:
 
 private:
   std::string temperature_name, mass_balance_name;
-  NCSpatialVariable ice_surface_temp;
+  SpatialVariableMetadata ice_surface_temp;
 };
 
 } // end of namespace surface

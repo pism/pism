@@ -32,8 +32,8 @@ public:
   void set_name(const std::string &name, int component = 0);
   void set_units(const std::string &units, const std::string &external_units);
 
-  NCSpatialVariable& metadata(unsigned int N = 0);
-  const NCSpatialVariable& metadata(unsigned int N = 0) const;
+  SpatialVariableMetadata& metadata(unsigned int N = 0);
+  const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
 
   void set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
                  const std::string &my_units, const std::string &my_standard_name,
@@ -89,7 +89,7 @@ protected:
   unsigned int m_dof;
 
   //! stores metadata (NetCDF variable attributes)
-  std::vector<NCSpatialVariable> m_metadata;
+  std::vector<SpatialVariableMetadata> m_metadata;
   std::string m_name;
 private:
   mutable int m_access_counter;

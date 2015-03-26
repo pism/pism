@@ -217,7 +217,7 @@ protected:
   DefaultConfig &config,           //!< configuration flags and parameters
     &overrides;                 //!< flags and parameters overriding config, see -config_override
 
-  NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
+  VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters
     run_stats;                  //!< run statistics
 
@@ -483,8 +483,8 @@ protected:
   unsigned int next_extra;
   double last_extra;
   std::set<std::string> extra_vars;
-  NCTimeBounds extra_bounds;
-  NCTimeseries timestamp;
+  TimeBoundsMetadata extra_bounds;
+  TimeseriesMetadata timestamp;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);

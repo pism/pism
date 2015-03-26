@@ -306,7 +306,7 @@ void IceModel::init_extras() {
 
     std::set<std::string>::iterator i;
     for (i = vars_set.begin(); i != vars_set.end(); ++i) {
-      const NCSpatialVariable &m = grid.variables().get(*i)->metadata();
+      const SpatialVariableMetadata &m = grid.variables().get(*i)->metadata();
 
       std::string intent = m.get_string("pism_intent");
 

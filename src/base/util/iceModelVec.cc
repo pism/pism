@@ -478,14 +478,14 @@ void IceModelVec::read_attributes(const std::string &filename, int N) {
 }
 
 
-//! @brief Returns a reference to the NCSpatialVariable object
+//! @brief Returns a reference to the SpatialVariableMetadata object
 //! containing metadata for the compoment N.
-NCSpatialVariable& IceModelVec::metadata(unsigned int N) {
+SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) {
   assert(N < m_dof);
   return m_metadata[N];
 }
 
-const NCSpatialVariable& IceModelVec::metadata(unsigned int N) const {
+const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
   assert(N < m_dof);
   return m_metadata[N];
 }

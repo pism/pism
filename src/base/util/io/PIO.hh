@@ -32,9 +32,9 @@ namespace pism {
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 class IceGrid;
-class NCVariable;
-class NCTimeseries;
-class NCTimeBounds;
+class VariableMetadata;
+class TimeseriesMetadata;
+class TimeBoundsMetadata;
 class Time;
 
 //! \brief High-level PISM I/O class.
@@ -82,7 +82,7 @@ public:
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
-  void def_dim(unsigned long int length, const NCVariable &metadata) const;
+  void def_dim(unsigned long int length, const VariableMetadata &metadata) const;
 
   void def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 
@@ -160,33 +160,33 @@ public:
   void set_local_extent(unsigned int xs, unsigned int xm,
                         unsigned int ys, unsigned int ym);
 
-  void read_timeseries(const NCTimeseries &metadata,
+  void read_timeseries(const TimeseriesMetadata &metadata,
                        Time *time,
                        std::vector<double> &data) const;
 
 
-  void write_timeseries(const NCTimeseries &metadata, size_t t_start,
+  void write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
                         double data,
                         IO_Type nctype = PISM_DOUBLE) const;
-  void write_timeseries(const NCTimeseries &metadata, size_t t_start,
+  void write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
                         std::vector<double> &data,
                         IO_Type nctype = PISM_DOUBLE) const;
 
-  void read_time_bounds(const NCTimeBounds &metadata,
+  void read_time_bounds(const TimeBoundsMetadata &metadata,
                         Time *time,
                         std::vector<double> &data) const;
 
-  void write_time_bounds(const NCTimeBounds &metadata, size_t t_start,
+  void write_time_bounds(const TimeBoundsMetadata &metadata, size_t t_start,
                          std::vector<double> &data,
                          IO_Type nctype = PISM_DOUBLE) const;
 
-  void read_attributes(const std::string &name, NCVariable &variable) const;
-  void write_attributes(const NCVariable &var, IO_Type nctype,
+  void read_attributes(const std::string &name, VariableMetadata &variable) const;
+  void write_attributes(const VariableMetadata &var, IO_Type nctype,
                         bool write_in_glaciological_units) const;
 
-  void write_global_attributes(const NCVariable &var) const;
+  void write_global_attributes(const VariableMetadata &var) const;
 
-  void read_valid_range(const std::string &name, NCVariable &variable) const;
+  void read_valid_range(const std::string &name, VariableMetadata &variable) const;
 
   std::string backend_type() const;
 

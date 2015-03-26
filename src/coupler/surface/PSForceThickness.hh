@@ -21,7 +21,7 @@
 
 #include "PSModifier.hh"
 #include "iceModelVec.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -47,7 +47,7 @@ private:
   std::string m_input_file;
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   IceModelVec2S m_target_thickness, m_ftt_mask;
-  NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
+  SpatialVariableMetadata m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
 };
 
 } // end of namespace surface

@@ -513,7 +513,7 @@ void Distributed::update_impl(double icet, double icedt) {
 
 Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
   : Diag<Distributed>(m) {
-  m_vars.push_back(NCSpatialVariable(m_grid.config.unit_system(),
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(),
                                      "hydrovelbase_mag", m_grid));
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
             "", "m s-1", "m/year", 0);

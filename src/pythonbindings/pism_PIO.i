@@ -30,7 +30,7 @@
 }
 
 %include "IO_Flags.hh"
-%include "PIO.hh"               // include before NCVariable
+%include "PIO.hh"               // include before VariableMetadata
 
 %{
 #include "PIO.hh"

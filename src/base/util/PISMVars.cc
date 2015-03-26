@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMVars.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "iceModelVec.hh"
 
 #include "error_handling.hh"
@@ -65,7 +65,7 @@ void Vars::add(const IceModelVec &v, const std::string &name) {
 */
 void Vars::add(const IceModelVec &v) {
 
-  const NCSpatialVariable &m = v.metadata();
+  const SpatialVariableMetadata &m = v.metadata();
   std::string name = v.get_name();
 
   if (m.has_attribute("standard_name")) {
@@ -93,7 +93,7 @@ void Vars::add(const IceModelVec &v) {
 void Vars::remove(const std::string &name) {
 
   const IceModelVec *v = m_variables[name];
-  const NCSpatialVariable &m = v->metadata();
+  const SpatialVariableMetadata &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
     if (m.has_attribute("standard_name")) {
@@ -204,7 +204,7 @@ std::set<std::string> Vars::keys() const {
 
 void Vars::add_shared(IceModelVec::Ptr variable) {
 
-  const NCSpatialVariable &m = variable->metadata();
+  const SpatialVariableMetadata &m = variable->metadata();
   std::string name = variable->get_name();
 
   if (m.has_attribute("standard_name")) {

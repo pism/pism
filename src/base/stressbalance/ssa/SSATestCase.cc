@@ -254,9 +254,9 @@ void SSATestCase::report_netcdf(const std::string &testname,
                                 double max_v,
                                 double avg_u,
                                 double avg_v) {
-  NCTimeseries err("N", "N", m_grid->config.unit_system());
+  TimeseriesMetadata err("N", "N", m_grid->config.unit_system());
   unsigned int start;
-  NCVariable global_attributes("PISM_GLOBAL", m_grid->config.unit_system());
+  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->config.unit_system());
 
   options::String filename("-report_file", "NetCDF error report file");
 

@@ -23,7 +23,7 @@
 #include <gsl/gsl_interp.h>
 
 #include "pism_memory.hh"
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "Viewer.hh"
 #include "Vector2.hh"
 #include "StarStencil.hh"
@@ -222,9 +222,9 @@ public:
 
   void  set(double c);
 
-  NCSpatialVariable& metadata(unsigned int N = 0);
+  SpatialVariableMetadata& metadata(unsigned int N = 0);
 
-  const NCSpatialVariable& metadata(unsigned int N = 0) const;
+  const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
 
   int get_state_counter() const;
   void inc_state_counter();
@@ -247,7 +247,7 @@ protected:
   std::string m_name;
 
   //! stores metadata (NetCDF variable attributes)
-  std::vector<NCSpatialVariable> m_metadata;
+  std::vector<SpatialVariableMetadata> m_metadata;
 
   const IceGrid *m_grid;
 
