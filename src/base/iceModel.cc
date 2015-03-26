@@ -20,7 +20,7 @@
 #include <cstring>
 #include <sstream>
 #include <algorithm>
-#include <petscdmda.h>
+#include <petscsys.h>
 
 #include "iceModel.hh"
 #include "pism_signal.h"
@@ -811,8 +811,6 @@ void IceModel::run_to(double run_end) {
  * @return 0 on success
  */
 void IceModel::run() {
-  PetscErrorCode  ierr;
-
   bool do_mass_conserve = config.get_boolean("do_mass_conserve");
   bool do_energy = config.get_boolean("do_energy");
   bool do_age = config.get_boolean("do_age");
@@ -878,8 +876,7 @@ void IceModel::run() {
   options::Integer pause_time("-pause", "Pause after the run, seconds", 0);
   if (pause_time > 0) {
     verbPrintf(2,grid.com,"pausing for %d secs ...\n", pause_time.value());
-    ierr = PetscSleep(pause_time);
-    PISM_CHK(ierr, "PetscSleep");
+    PetscErrorCode ierr = PetscSleep(pause_time); PISM_CHK(ierr, "PetscSleep");
   }
 
   if (stepcount >= 0) {
