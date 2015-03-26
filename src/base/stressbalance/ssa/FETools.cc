@@ -22,7 +22,7 @@
 #include "FETools.hh"
 #include "flowlaws.hh"
 #include "IceGrid.hh"
-
+#include "iceModelVec.hh"
 #include "error_handling.hh"
 #include "pism_const.hh"
 
@@ -104,7 +104,7 @@ void DOFMap::extractLocalDOFs(int i, int j, double const*const*x_global, double 
 }
 
 void DOFMap::extractLocalDOFs(int i, int j,
-                                const IceModelVec2S &x_global, double *x_local) const
+                              const IceModelVec2S &x_global, double *x_local) const
 {
   x_local[0] = x_global(i, j);
   x_local[1] = x_global(i + 1, j);
@@ -116,7 +116,7 @@ void DOFMap::extractLocalDOFs(int i, int j,
   local vector `x_local` (vector-valued DOF version).
 */
 void DOFMap::extractLocalDOFs(int i, int j, Vector2 const*const*x_global,
-                                Vector2 *x_local) const
+                              Vector2 *x_local) const
 {
   x_local[0] = x_global[i][j];
   x_local[1] = x_global[i + 1][j];
@@ -125,8 +125,8 @@ void DOFMap::extractLocalDOFs(int i, int j, Vector2 const*const*x_global,
 }
 
 void DOFMap::extractLocalDOFs(int i, int j,
-                                const IceModelVec2V &x_global,
-                                Vector2 *x_local) const
+                              const IceModelVec2V &x_global,
+                              Vector2 *x_local) const
 {
   x_local[0] = x_global(i, j);
   x_local[1] = x_global(i + 1, j);
@@ -373,14 +373,14 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
   of a scalar-valued finite-element function with global degrees of freedom `x`.*/
 /*! There should be room for Quadrature::Nq values in the output vector `vals`. */
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
-                                                     double const*const*x_global, double *vals) {
+                                                   double const*const*x_global, double *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
 
 
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
-                                                     const IceModelVec2S &x_global, double *vals) {
+                                                   const IceModelVec2S &x_global, double *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
@@ -391,16 +391,16 @@ void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const DOFMap &d
 /*! There should be room for Quadrature::Nq values in the output
   vectors `vals`, `dx`, and `dy`. */
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j,
-                                                     const DOFMap &dof, double const*const*x_global,
-                                                     double *vals, double *dx, double *dy) {
+                                                   const DOFMap &dof, double const*const*x_global,
+                                                   double *vals, double *dx, double *dy) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, dx, dy);
 }
 
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j,
-                                                     const DOFMap &dof,
-                                                     const IceModelVec2S &x_global,
-                                                     double *vals, double *dx, double *dy) {
+                                                   const DOFMap &dof,
+                                                   const IceModelVec2S &x_global,
+                                                   double *vals, double *dx, double *dy) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, dx, dy);
 }
@@ -475,14 +475,14 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
   finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
 /*! There should be room for Quadrature::Nq values in the output vectors `vals`. */
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
-                                                     Vector2 const*const*x_global, Vector2 *vals) {
+                                                   Vector2 const*const*x_global, Vector2 *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
 
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
-                                                     const IceModelVec2V &x_global,
-                                                     Vector2 *vals) {
+                                                   const IceModelVec2V &x_global,
+                                                   Vector2 *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
@@ -494,15 +494,15 @@ void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &d
   @f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]@f].
 */
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
-                                                     Vector2 const*const* x_global,
-                                                     Vector2 *vals, double (*Dv)[3]) {
+                                                   Vector2 const*const* x_global,
+                                                   Vector2 *vals, double (*Dv)[3]) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, Dv);
 }
 
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
-                                                     const IceModelVec2V &x_global,
-                                                     Vector2 *vals, double (*Dv)[3]) {
+                                                   const IceModelVec2V &x_global,
+                                                   Vector2 *vals, double (*Dv)[3]) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, Dv);
 }

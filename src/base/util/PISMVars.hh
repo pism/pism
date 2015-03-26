@@ -23,10 +23,15 @@
 #include <set>
 #include <string>
 
-// We have to include this to get IceModelVec...::Ptr definitions.
-#include "iceModelVec.hh"
+#include "pism_memory.hh"
 
 namespace pism {
+
+class IceModelVec;
+class IceModelVec2S;
+class IceModelVec2V;
+class IceModelVec2Int;
+class IceModelVec3;
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
@@ -47,15 +52,22 @@ public:
 
   std::set<std::string> keys() const;
 
-  void add_shared(IceModelVec::Ptr);
-  void add_shared(IceModelVec::Ptr, const std::string &name);
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec> VecPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec2S> Vec2SPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec2V> Vec2VPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec2Int> Vec2IntPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec3> Vec3Ptr;
+
+  void add_shared(VecPtr);
+  void add_shared(VecPtr, const std::string &name);
 
   bool is_available_shared(const std::string &name) const;
-  IceModelVec::Ptr get_shared(const std::string &name) const;
-  IceModelVec2S::Ptr get_2d_scalar_shared(const std::string &name) const;
-  IceModelVec2V::Ptr get_2d_vector_shared(const std::string &name) const;
-  IceModelVec2Int::Ptr get_2d_mask_shared(const std::string &name) const;
-  IceModelVec3::Ptr get_3d_scalar_shared(const std::string &name) const;
+
+  VecPtr get_shared(const std::string &name) const;
+  Vec2SPtr get_2d_scalar_shared(const std::string &name) const;
+  Vec2VPtr get_2d_vector_shared(const std::string &name) const;
+  Vec2IntPtr get_2d_mask_shared(const std::string &name) const;
+  Vec3Ptr get_3d_scalar_shared(const std::string &name) const;
 
   std::set<std::string> keys_shared() const;
 private:
@@ -70,9 +82,9 @@ private:
   mutable std::map<std::string, std::string> m_standard_names;
 
   //! variables in *shared ownership*
-  mutable std::map<std::string, IceModelVec::Ptr> m_variables_shared;
+  mutable std::map<std::string, VecPtr> m_variables_shared;
 
-  IceModelVec::Ptr get_internal_shared(const std::string &name) const;
+  VecPtr get_internal_shared(const std::string &name) const;
 
   // Hide copy constructor / assignment operator.
   Vars(Vars const &);

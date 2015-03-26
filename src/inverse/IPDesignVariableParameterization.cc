@@ -18,6 +18,7 @@
 
 #include <cmath>
 
+#include "iceModelVec.hh"
 #include "IPDesignVariableParameterization.hh"
 #include "pism_options.hh"
 #include "PISMConfigInterface.hh"

@@ -18,6 +18,7 @@
 
 #include <gsl/gsl_math.h>
 
+#include "iceModelVec.hh"
 #include "PSElevation.hh"
 #include "PIO.hh"
 #include "PISMVars.hh"
