@@ -25,14 +25,6 @@
 #include <set>
 #include <map>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
-
-#include "error_handling.hh"
-
 namespace pism {
 
 #ifndef __GNUC__
@@ -63,44 +55,21 @@ bool ends_with(const std::string &str, const std::string &suffix);
 std::string join(const std::vector<std::string> &strings, const std::string &separator);
 std::vector<std::string> split(const std::string &input, char separator);
 
-inline bool set_contains(const std::set<std::string> &S, const std::string &name) {
-  return (S.find(name) != S.end());
-}
+bool set_contains(const std::set<std::string> &S, const std::string &name);
 
-inline void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
-  int err = MPI_Allreduce(local, result, count, MPIU_REAL, op, comm);
-  PISM_C_CHK(err, 0, "MPI_Allreduce");
-}
+void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op);
 
-inline void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {
-  GlobalReduce(comm, local, result, count, MPI_MIN);
-}
+void GlobalMin(MPI_Comm comm, double *local, double *result, int count);
 
-inline void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
-  GlobalReduce(comm, local, result, count, MPI_MAX);
-}
+void GlobalMax(MPI_Comm comm, double *local, double *result, int count);
 
-inline void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
-  GlobalReduce(comm, local, result, count, MPI_SUM);
-}
+void GlobalSum(MPI_Comm comm, double *local, double *result, int count);
 
-inline double GlobalMin(MPI_Comm comm, double local) {
-  double result;
-  GlobalMin(comm, &local, &result, 1);
-  return result;
-}
+double GlobalMin(MPI_Comm comm, double local);
 
-inline double GlobalMax(MPI_Comm comm, double local) {
-  double result;
-  GlobalMax(comm, &local, &result, 1);
-  return result;
-}
+double GlobalMax(MPI_Comm comm, double local);
 
-inline double GlobalSum(MPI_Comm comm, double local) {
-  double result;
-  GlobalSum(comm, &local, &result, 1);
-  return result;
-}
+double GlobalSum(MPI_Comm comm, double local);
 
 class Profiling {
 public:

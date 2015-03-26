@@ -22,6 +22,7 @@
 #include "iceModelVec3Custom.hh"
 #include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
+#include "error_handling.hh"
 
 namespace pism {
 

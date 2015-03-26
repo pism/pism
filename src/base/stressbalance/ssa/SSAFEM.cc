@@ -23,6 +23,7 @@
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 #include "pism_options.hh"
+#include "error_handling.hh"
 
 namespace pism {
 namespace stressbalance {

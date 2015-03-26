@@ -18,6 +18,7 @@
 
 #include "IPFunctional.hh"
 #include "IceGrid.hh"
+#include "error_handling.hh"
 
 namespace pism {
 namespace inverse {

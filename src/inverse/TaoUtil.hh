@@ -26,6 +26,7 @@
 #include "pism_const.hh"
 #include "TerminationReason.hh"
 #include "Tao.hh"
+#include "error_handling.hh"
 
 namespace pism {
 

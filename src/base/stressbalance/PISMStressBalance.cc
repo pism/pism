@@ -26,6 +26,7 @@
 #include "enthalpyConverter.hh"
 #include "PISMConfigInterface.hh"
 #include "flowlaws.hh"
+#include "error_handling.hh"
 
 namespace pism {
 namespace stressbalance {

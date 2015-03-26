@@ -320,4 +320,44 @@ void Profiling::stage_end(const char * name) const {
   PISM_CHK(ierr, "PetscLogStagePop");
 }
 
+bool set_contains(const std::set<std::string> &S, const std::string &name) {
+  return (S.find(name) != S.end());
+}
+
+void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
+  int err = MPI_Allreduce(local, result, count, MPIU_REAL, op, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+}
+
+void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MIN);
+}
+
+void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MAX);
+}
+
+void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_SUM);
+}
+
+double GlobalMin(MPI_Comm comm, double local) {
+  double result;
+  GlobalMin(comm, &local, &result, 1);
+  return result;
+}
+
+double GlobalMax(MPI_Comm comm, double local) {
+  double result;
+  GlobalMax(comm, &local, &result, 1);
+  return result;
+}
+
+double GlobalSum(MPI_Comm comm, double local) {
+  double result;
+  GlobalSum(comm, &local, &result, 1);
+  return result;
+}
+
+
 } // end of namespace pism

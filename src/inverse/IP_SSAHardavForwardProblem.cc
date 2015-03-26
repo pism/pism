@@ -25,6 +25,7 @@
 #include "flowlaws.hh"
 #include "PISMConfigInterface.hh"
 #include "IceGrid.hh"
+#include "error_handling.hh"
 
 namespace pism {
 namespace inverse {

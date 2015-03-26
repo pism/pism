@@ -22,6 +22,7 @@
 
 #include "pism_python.hh"
 #include "pism_const.hh"
+#include "error_handling.hh"
 
 namespace pism {
 namespace python {

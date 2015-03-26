@@ -27,6 +27,7 @@
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 

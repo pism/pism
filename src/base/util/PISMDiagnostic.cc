@@ -18,6 +18,7 @@
  */
 
 #include "PISMDiagnostic.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
