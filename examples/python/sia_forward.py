@@ -27,23 +27,27 @@ config = context.config
 
 PISM.set_abort_on_sigint(True)
 
-usage = \
-    """  sia_forward.py -i IN.nc [-o file.nc]
+usage = """\
+sia_forward.py -i IN.nc [-o file.nc]
   where:
     -i      IN.nc is input file in NetCDF format: contains PISM-written model state
   notes:
     * -i is required
-  """
+"""
 
 PISM.verbosityLevelFromOptions()
-PISM.show_usage_check_req_opts(context.com, "sia.py", ["-i"], usage)
+PISM.show_usage_check_req_opts(context.com, "sia_forward.py", ["-i"], usage)
 
-input_file = PISM.optionsString("-i", "input file")
-output_file = PISM.optionsString("-o", "output file", default="sia_" + os.path.basename(input_file))
-is_regional = PISM.optionsFlag("-regional", "Compute SIA using regional model semantics", default=False)
+input_file, input_set = PISM.optionsStringWasSet("-i", "input file")
+if not input_set:
+    import sys
+    sys.exit(1)
+
+output_file = PISM.optionsString("-o", "output file",
+                                 default="sia_" + os.path.basename(input_file))
+is_regional = PISM.optionsFlag("-regional",
+                               "Compute SIA using regional model semantics", default=False)
 verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
-PISM.set_config_from_options(context.com, config)
-
 
 periodicity = PISM.XY_PERIODIC
 if is_regional:
@@ -54,33 +58,30 @@ PISM.model.initGridFromFile(grid, input_file, periodicity)
 config.set_boolean("do_pseudo_plastic_till", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
-if PISM.getVerbosityLevel() > 3:
-    enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
-
 
 modeldata = PISM.model.ModelData(grid)
 modeldata.setPhysics(enthalpyconverter)
 
 vecs = modeldata.vecs
 
-vecs.add(PISM.model.createIceSurfaceVec(grid), 'surface')
-vecs.add(PISM.model.createIceThicknessVec(grid), 'thickness')
-vecs.add(PISM.model.createBedrockElevationVec(grid), 'bed')
-vecs.add(PISM.model.createEnthalpyVec(grid), 'enthalpy')
-vecs.add(PISM.model.createIceMaskVec(grid), 'ice_mask')
+vecs.add(PISM.model.createIceSurfaceVec(grid))
+vecs.add(PISM.model.createIceThicknessVec(grid))
+vecs.add(PISM.model.createBedrockElevationVec(grid))
+vecs.add(PISM.model.createEnthalpyVec(grid))
+vecs.add(PISM.model.createIceMaskVec(grid))
 
 # Read in the PISM state variables that are used directly in the SSA solver
-for v in [vecs.thickness, vecs.bed, vecs.enthalpy]:
+for v in [vecs.thk, vecs.topg, vecs.enthalpy]:
     v.regrid(input_file, critical=True)
 
 # variables mask and surface are computed from the geometry previously read
 sea_level = 0  # FIXME setFromOption?
 gc = PISM.GeometryCalculator(sea_level, config)
-gc.compute(vecs.bed, vecs.thickness, vecs.ice_mask, vecs.surface)
+gc.compute(vecs.topg, vecs.thk, vecs.mask, vecs.surface_altitude)
 
 # If running in regional mode, load in regional variables
 if is_regional:
-    vecs.add(PISM.model.createNoModelMask(grid), 'no_model_mask')
+    vecs.add(PISM.model.createNoModelMask(grid))
     vecs.no_model_mask.regrid(input_file, critical=True)
 
     if PISM.util.fileHasVariable(input_file, 'usurfstore'):
@@ -93,10 +94,10 @@ if is_regional:
 else:
     solver = PISM.SIAFD
 
-
+PISM.verbPrintf(2, context.com, "* Computing SIA velocities...\n")
 vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata, siasolver=solver)
 
-
+PISM.verbPrintf(2, context.com, "* Saving results to %s...\n" % output_file)
 pio = PISM.PIO(grid, "netcdf3")
 pio.open(output_file, PISM.PISM_READWRITE_MOVE)
 pio.def_time(grid.config.get_string("time_dimension_name"),

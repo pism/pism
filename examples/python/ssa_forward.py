@@ -30,7 +30,6 @@ if __name__ == '__main__':
 
     PISM.verbosityLevelFromOptions()
     PISM.verbPrintf(2, PISM.Context().com, "SSA forward model.\n")
-    PISM.stop_on_version_option()
     usage = \
         """  ssa_forward.py -i IN.nc -Mx number -My number [-o file.nc]
   or (at python prompt)
@@ -45,10 +44,14 @@ if __name__ == '__main__':
 
     PISM.show_usage_check_req_opts(com, "ssa_forward", ["-i"], usage)
 
-    boot_file = PISM.optionsString("-i", "input file with PISM model data")
+    input_file, input_file_set = PISM.optionsStringWasSet("-i", "input file with PISM model data")
+    if not input_file_set:
+        import sys
+        sys.exit(1)
+
     output_file = PISM.optionsString("-o", "output file", default="ssa_forward.nc")
 
-    ssa_run = PISM.ssa.SSAFromInputFile(boot_file)
+    ssa_run = PISM.ssa.SSAFromInputFile(input_file)
 
     ssa_run.setup()
 
