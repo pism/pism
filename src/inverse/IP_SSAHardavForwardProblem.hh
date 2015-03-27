@@ -142,7 +142,7 @@ public:
 
   virtual void set_design(IceModelVec2S &zeta);
 
-  virtual void linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr linearize_at(IceModelVec2S &zeta);
 
   virtual void assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
   virtual void assemble_residual(IceModelVec2V &u, Vec R);

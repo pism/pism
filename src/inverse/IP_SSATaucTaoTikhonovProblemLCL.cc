@@ -197,11 +197,11 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao /*tao*/, 
   *value = m_val_design / m_eta + m_val_state;
 }
 
-void IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x, TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x) {
   m_d->copy_from(m_dGlobal);
-  m_ssaforward.linearize_at(*m_d, reason);
+  TerminationReason::Ptr reason = m_ssaforward.linearize_at(*m_d);
   if (reason->failed()) {
-    return;
+    return reason;
   }
 
   m_uGlobal->copy_from(*m_ssaforward.solution());
@@ -213,7 +213,7 @@ void IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x, TerminationReason
   m_uGlobal->scale(m_velocityScale);
 
   *x =  *m_x;
-  reason = GenericTerminationReason::success();
+  return GenericTerminationReason::success();
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, Vec r) {

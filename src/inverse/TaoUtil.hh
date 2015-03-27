@@ -67,7 +67,7 @@ public:
 
   In addition to the `connect` method, a `Problem` must define 
   \code
-  void MyProblem::formInitialGuess(Vec *v, TerminationReason::Ptr &reason)
+  TerminationReason::Ptr MyProblem::formInitialGuess(Vec *v)
   \endcode
   which allows the problem to set the initial guess for optimization. If the minimization
   is successful, the solution will be found in the same vector that was returned by this method.
@@ -79,8 +79,7 @@ public:
   \code
   TaoBasicSolver<MyProblem> solver(com,"tao_cg",problem);
 
-  TerminationReason::Ptr reason;
-  solver.solve(reason);
+  TerminationReason::Ptr reason = solver.solve();
 
   if (reason->succeeded()) {
   printf("Success: %s\n",reason->description().c_str());
@@ -115,17 +114,17 @@ public:
   }
 
   //! Solve the minimization problem.
-  virtual void solve(TerminationReason::Ptr &reason) {
+  virtual TerminationReason::Ptr solve() {
     PetscErrorCode ierr;
 
     /* Solve the application */ 
     Vec x0;
-    m_problem.formInitialGuess(&x0,reason);
+    TerminationReason::Ptr reason = m_problem.formInitialGuess(&x0);
     if (reason->failed()) {
       TerminationReason::Ptr root_cause = reason;
-      reason.reset(new GenericTerminationReason(-1,"Unable to form initial guess"));
+      reason.reset(new GenericTerminationReason(-1, "Unable to form initial guess"));
       reason->set_root_cause(root_cause);
-      return;
+      return reason;
     }
     ierr = TaoSetInitialVector(m_tao, x0);
     PISM_CHK(ierr, "TaoSetInitialVector");
@@ -138,6 +137,7 @@ public:
     PISM_CHK(ierr, "TaoGetConvergedReason");
 
     reason.reset(new TAOTerminationReason(tao_reason));
+    return reason;
   }
 
   virtual void setMaximumIterations(int max_it) {

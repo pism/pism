@@ -67,9 +67,9 @@ protected:
 
   virtual void solve();
 
-  virtual void solve(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr solve_with_reason();
 
-  virtual void solve_nocache(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr solve_nocache();
 
   //! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
   /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the

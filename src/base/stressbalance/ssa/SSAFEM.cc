@@ -150,11 +150,7 @@ void SSAFEM::init_impl() {
 //! quadrature points before calling SSAFEM::solve_nocache().
 void SSAFEM::solve() {
 
-  // Set up the system to solve (store coefficient data at the quadrature points):
-  cacheQuadPtValues();
-
-  TerminationReason::Ptr reason;
-  solve_nocache(reason);
+  TerminationReason::Ptr reason = solve_with_reason();
   if (reason->failed()) {
     throw RuntimeError::formatted("SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
@@ -163,17 +159,17 @@ void SSAFEM::solve() {
   }
 }
 
-void SSAFEM::solve(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr SSAFEM::solve_with_reason() {
 
   // Set up the system to solve (store coefficient data at the quadrature points):
   cacheQuadPtValues();
 
-  solve_nocache(reason);
+  return solve_nocache();
 }
 
 //! Solve the SSA without first recomputing the values of coefficients at quad
 //! points.  See the disccusion of SSAFEM::solve for more discussion.
-void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
   m_epsilon_ssa = m_config.get_double("epsilon_ssa");
@@ -208,30 +204,31 @@ void SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
 
   // See if it worked.
   SNESConvergedReason snes_reason;
-  ierr = SNESGetConvergedReason(m_snes, &snes_reason);
-  PISM_CHK(ierr, "SNESGetConvergedReason");
+  ierr = SNESGetConvergedReason(m_snes, &snes_reason); PISM_CHK(ierr, "SNESGetConvergedReason");
 
-  reason.reset(new SNESTerminationReason(snes_reason));
-  if (reason->failed()) {
-    return;
+  TerminationReason::Ptr reason(new SNESTerminationReason(snes_reason));
+  if (not reason->failed()) {
+
+    // Extract the solution back from SSAX to velocity and communicate.
+    m_velocity.copy_from(m_velocity_global);
+    m_velocity.update_ghosts();
+
+    bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
+    if (view_solution) {
+      petsc::Viewer viewer;
+      ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
+      PISM_CHK(ierr, "PetscViewerASCIIOpen");
+
+      ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
+      PISM_CHK(ierr, "PetscViewerASCIIPrintf");
+
+      ierr = VecView(m_velocity_global.get_vec(), viewer);
+      PISM_CHK(ierr, "VecView");
+    }
+
   }
 
-  // Extract the solution back from SSAX to velocity and communicate.
-  m_velocity.copy_from(m_velocity_global);
-  m_velocity.update_ghosts();
-
-  bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
-  if (view_solution) {
-    petsc::Viewer viewer;
-    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
-    PISM_CHK(ierr, "PetscViewerASCIIOpen");
-
-    ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
-    PISM_CHK(ierr, "PetscViewerASCIIPrintf");
-
-    ierr = VecView(m_velocity_global.get_vec(), viewer);
-    PISM_CHK(ierr, "VecView");
-  }
+  return reason;
 }
 
 //! Initialize stored data from the coefficients in the SSA.  Called by SSAFEM::solve.

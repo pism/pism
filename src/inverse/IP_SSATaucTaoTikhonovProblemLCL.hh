@@ -111,7 +111,7 @@ public:
 
   virtual void evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
   
-  virtual void formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr formInitialGuess(Vec *x);
 
   virtual void evaluateConstraints(Tao tao, Vec x, Vec r);
 

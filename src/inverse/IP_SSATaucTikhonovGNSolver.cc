@@ -127,8 +127,8 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_tikhonov_ptol = grid.config.get_double("tikhonov_ptol");
 }
 
-void IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
-  m_ssaforward.linearize_at(m_d0,reason);
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {
+  return m_ssaforward.linearize_at(m_d0);
 }
 
 void IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x, IceModelVec2S &y) {
@@ -171,7 +171,7 @@ void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
   rhs.scale(-1);
 }
 
-void IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::solve_linearized() {
   PetscErrorCode ierr;
 
   this->assemble_GN_rhs(m_GN_rhs);
@@ -187,12 +187,12 @@ void IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason
   PISM_CHK(ierr, "KSPSolve");
 
   KSPConvergedReason ksp_reason;
-  ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
+  ierr = KSPGetConvergedReason(m_ksp ,&ksp_reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
   
   m_h.copy_from(m_hGlobal);
 
-  reason.reset(new KSPTerminationReason(ksp_reason));
+  return TerminationReason::Ptr(new KSPTerminationReason(ksp_reason));
 }
 
 void IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
@@ -204,7 +204,6 @@ void IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *valu
   double sValue;
   m_stateFunctional.valueAt(m_tmp_S1Local,&sValue);
   
-  
   m_tmp_D1Local.copy_from(m_d_diff);
   m_tmp_D1Local.add(1,h);
   
@@ -215,7 +214,7 @@ void IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *valu
 }
 
 
-void IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::check_convergence() {
 
   double designNorm, stateNorm, sumNorm;
   double dWeight, sWeight;
@@ -246,33 +245,30 @@ void IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reaso
   if (m_tikhonov_adaptive) {
     double disc_ratio = fabs((sqrt(m_val_state)/m_target_misfit) - 1.);
     if (disc_ratio > m_tikhonov_ptol) {
-      reason = GenericTerminationReason::keep_iterating();
-      return;
+      return GenericTerminationReason::keep_iterating();
     }
   }
   
   if (sumNorm < m_tikhonov_atol) {
-    reason.reset(new GenericTerminationReason(1,"TIKHONOV_ATOL"));
-    return;
+    return TerminationReason::Ptr(new GenericTerminationReason(1,"TIKHONOV_ATOL"));
   }
 
   if (sumNorm < m_tikhonov_rtol*std::max(designNorm,stateNorm)) {
-    reason.reset(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
-    return;
+    return TerminationReason::Ptr(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
   }
 
   if (m_iter>m_iter_max) {
-    reason = GenericTerminationReason::max_iter();
+    return GenericTerminationReason::max_iter();
   } else {
-    reason = GenericTerminationReason::keep_iterating();
+    return GenericTerminationReason::keep_iterating();
   }
 }
 
-void IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient() {
 
-  m_ssaforward.linearize_at(*m_d, reason);
+  TerminationReason::Ptr reason = m_ssaforward.linearize_at(*m_d);
   if (reason->failed()) {
-    return;
+    return reason;
   }
 
   m_d_diff.copy_from(*m_d);
@@ -300,9 +296,11 @@ void IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReas
   m_val_state = valState;
   
   m_value = valDesign * m_alpha + valState;
+
+  return reason;
 }
 
-void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::linesearch() {
   PetscErrorCode ierr;
 
   TerminationReason::Ptr step_reason;
@@ -318,15 +316,14 @@ void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
 
   if (descent_derivative >=0) {
     printf("descent derivative: %g\n",descent_derivative);
-    reason.reset(new GenericTerminationReason(-1,"Not descent direction"));
-    return;
+    return TerminationReason::Ptr(new GenericTerminationReason(-1, "Not descent direction"));
   }
 
   double alpha = 1;
   m_tmp_D1Local.copy_from(*m_d);
   while(true) {
     m_d->add(alpha,m_h);  // Replace with line search.
-    this->evaluate_objective_and_gradient(step_reason);
+    step_reason = this->evaluate_objective_and_gradient();
     if (step_reason->succeeded()) {
       if (m_value <= old_value + 1e-3*alpha*descent_derivative) {
         break;
@@ -338,20 +335,19 @@ void IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
     alpha *=.5;
     if (alpha<1e-20) {
       printf("alpha= %g; derivative = %g\n",alpha,descent_derivative);
-      reason.reset(new GenericTerminationReason(-1,"Too many step shrinks."));
-      return;
+      return TerminationReason::Ptr(new GenericTerminationReason(-1, "Too many step shrinks."));
     }
     m_d->copy_from(m_tmp_D1Local);
   }
   
-  reason = GenericTerminationReason::success();
-  return;
+  return GenericTerminationReason::success();
 }
 
-void IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::solve() {
 
   if (m_target_misfit == 0) {
-    throw RuntimeError::formatted("Call set target misfit prior to calling IP_SSATaucTikhonovGNSolver::solve.");
+    throw RuntimeError::formatted("Call set target misfit prior to calling"
+                                  " IP_SSATaucTikhonovGNSolver::solve.");
   }
 
   m_iter = 0;
@@ -359,20 +355,20 @@ void IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
 
   double dlogalpha = 0;
 
-  TerminationReason::Ptr step_reason;
+  TerminationReason::Ptr step_reason, reason;
 
-  this->evaluate_objective_and_gradient(step_reason);
+  step_reason = this->evaluate_objective_and_gradient();
   if (step_reason->failed()) {
     reason.reset(new GenericTerminationReason(-1,"Forward solve"));
     reason->set_root_cause(step_reason);
-    return;
+    return reason;
   }
 
   while(true) {
 
-    this->check_convergence(reason);
+    reason = this->check_convergence();
     if (reason->done()) {
-      return;
+      return reason;
     }
 
     if (m_tikhonov_adaptive) {
@@ -380,37 +376,38 @@ void IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
       m_alpha = exp(m_logalpha);
     }
 
-    this->solve_linearized(step_reason);
+    step_reason = this->solve_linearized();
     if (step_reason->failed()) {
       reason.reset(new GenericTerminationReason(-1,"Gauss Newton solve"));
       reason->set_root_cause(step_reason);
-      return;
+      return reason;
     }
 
-    this->linesearch(step_reason);
+    step_reason = this->linesearch();
     if (step_reason->failed()) {
       TerminationReason::Ptr cause = reason;
       reason.reset(new GenericTerminationReason(-1,"Linesearch"));
       reason->set_root_cause(step_reason);
-      return;
+      return reason;
     }
 
     if (m_tikhonov_adaptive) {
-      this->compute_dlogalpha(&dlogalpha,step_reason);
+      step_reason = this->compute_dlogalpha(&dlogalpha);
       if (step_reason->failed()) {
         TerminationReason::Ptr cause = reason;
         reason.reset(new GenericTerminationReason(-1,"Tikhonov penalty update"));
         reason->set_root_cause(step_reason);
-        return;
+        return reason;
       }
     }
 
     m_iter++;
   }
+
+  return reason;
 }
 
-void IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha,
-                                                   TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha) {
 
   PetscErrorCode ierr;
 
@@ -438,8 +435,7 @@ void IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha,
   PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (ksp_reason<0) {
-    reason.reset(new KSPTerminationReason(ksp_reason));
-    return;
+    return TerminationReason::Ptr(new KSPTerminationReason(ksp_reason));
   }
 
   // S1Local contains T(h) + F(x) - u_obs, i.e. the linearized misfit field.
@@ -501,7 +497,7 @@ void IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha,
     *dlogalpha*=.5;
   }
 
-  reason = GenericTerminationReason::success();
+  return GenericTerminationReason::success();
 }
 
 } // end of namespace inverse

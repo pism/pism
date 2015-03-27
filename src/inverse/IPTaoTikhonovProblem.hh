@@ -104,8 +104,7 @@ public:
 
   TaoBasicSolver<InvSSATauc> solver(com, "cg", tikhonovProblem);
 
-  TerminationReason::Ptr reason;
-  solver.solve(reason);
+  TerminationReason::Ptr reason = solver.solve();
 
   if (reason->succeeded()) {
   printf("Success: %s\n",reason->description().c_str());
@@ -129,7 +128,7 @@ public:
 
   <li> A method
   \code
-  void linearize_at(DesignVec &d, TerminationReason::Ptr &reason);
+  TerminationReason::Ptr linearize_at(DesignVec &d);
   \endcode
   that instructs the class to compute the value of F and 
   anything needed to compute its linearization at \a d.   This is the first method
@@ -227,9 +226,9 @@ public:
 
   //! Callback from TaoBasicSolver to form the starting iterate for the minimization.  See also
   //  setInitialGuess.
-  virtual void formInitialGuess(Vec *v, TerminationReason::Ptr &reason) {
+  virtual TerminationReason::Ptr formInitialGuess(Vec *v) {
     *v = m_dGlobal.get_vec();
-    reason = GenericTerminationReason::success();
+    return GenericTerminationReason::success();
   }
 
 protected:
@@ -404,8 +403,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
   m_d->copy_from_vec(x);
 
-  TerminationReason::Ptr reason;
-  m_forward.linearize_at(*m_d, reason);
+  TerminationReason::Ptr reason = m_forward.linearize_at(*m_d);
   if (reason->failed()) {
     verbPrintf(2, m_grid->com,
                "IPTaoTikhonovProblem::evaluateObjectiveAndGradient"

@@ -87,25 +87,25 @@ public:
   virtual void evaluateGNFunctional(DesignVec &h, double *value);
 
   virtual void apply_GN(IceModelVec2S &h, IceModelVec2S &out);
-  virtual void  apply_GN(Vec h, Vec out);
+  virtual void apply_GN(Vec h, Vec out);
 
-  virtual void init(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr init();
 
-  virtual void check_convergence(TerminationReason::Ptr &reason); 
+  virtual TerminationReason::Ptr check_convergence(); 
   
-  virtual void solve(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr solve();
 
-  virtual void evaluate_objective_and_gradient(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr evaluate_objective_and_gradient();
 
 protected:
 
   virtual void assemble_GN_rhs(DesignVec &out);
 
-  virtual void solve_linearized(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr solve_linearized();
 
-  virtual void compute_dlogalpha(double *dalpha, TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr compute_dlogalpha(double *dalpha);
 
-  virtual void linesearch(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr linesearch();
 
   void construct();
 

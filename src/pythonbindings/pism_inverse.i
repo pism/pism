@@ -22,31 +22,16 @@
 #include "inverse/functional/IPLogRelativeFunctional.hh"
 #include "inverse/functional/IPLogRatioFunctional.hh"
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
+
 #ifdef PISM_USE_TAO
 #include "inverse/TaoUtil.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 #endif
-%}
 
-%{
 #include "TerminationReason.hh"
 %}
-
-%typemap(in, numinputs=0, noblock=1) pism::TerminationReason::Ptr & OUTPUT(pism::TerminationReason::Ptr temp) {
-  $1 = &temp;
-}
-
-%typemap(argout,noblock=1) pism::TerminationReason::Ptr & OUTPUT
-{
-  {
-    pism::TerminationReason::Ptr *smartresult = new pism::TerminationReason::Ptr(*$1);
-    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
-  }
-};
-
-%apply pism::TerminationReason::Ptr & OUTPUT { pism::TerminationReason::Ptr &reason };
 
 %shared_ptr(pism::TerminationReason)
 %shared_ptr(pism::KSPTerminationReason)

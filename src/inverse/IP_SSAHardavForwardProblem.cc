@@ -135,10 +135,9 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-void IP_SSAHardavForwardProblem::linearize_at(IceModelVec2S &zeta,
-                                              TerminationReason::Ptr &reason) {
+TerminationReason::Ptr IP_SSAHardavForwardProblem::linearize_at(IceModelVec2S &zeta) {
   this->set_design(zeta);
-  this->solve_nocache(reason);
+  return this->solve_nocache();
 }
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ as defined in the class-level documentation.
