@@ -408,13 +408,15 @@ void PIO::open(const string &filename, IO_Mode mode) {
 
       int old_fill;
       m_nc->set_fill(PISM_NOFILL, old_fill);
-    } else {                      // mode == PISM_READWRITE
+    } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
       assert((bool)m_nc);
 
       m_nc->open(filename, mode);
 
       int old_fill;
       m_nc->set_fill(PISM_NOFILL, old_fill);
+    } else {
+      throw RuntimeError::formatted("invalid mode: %d", mode);
     }
   } catch (RuntimeError &e) {
     e.add_context("opening or creating \"" + filename + "\"");
