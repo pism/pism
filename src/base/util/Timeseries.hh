@@ -117,7 +117,7 @@ private:
   First, prepare a file for writing:
 
   \code
-  char seriesname[] = "ser_delta_T.nc";
+  std::string seriesname = "ser_delta_T.nc";
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   nc.open_for_writing(seriesname, true, false);
   nc.close();

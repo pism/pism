@@ -52,12 +52,6 @@
 
 %include "pism_exception.i"
 
-/* PISM still uses PetscErrorCode in some places. Convert it to integers. */
-%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PetscErrorCode {
-   $1 = PyInt_Check($input) ? 1 : 0;
-}
-%typemap(directorout) PetscErrorCode %{ $result =  PyInt_AsLong($input); %}
-
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
 // Conversions between python lists and certain std::vector's
@@ -77,23 +71,6 @@
 
 // Why did I include this?
 %include "cstring.i"
-
-/* Type maps for treating pointer-to-pointer arguments as output. */
-%define %Pism_pointer_pointer_typemaps(TYPE)
-%typemap(in, numinputs=0,noblock=1) TYPE ** OUTPUT (TYPE *temp) {
-    $1 = &temp;
-}
-%typemap(argout,noblock=1) TYPE ** OUTPUT
-{
-    %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
-};
-%enddef
-
-/* Tell SWIG that all pointer-to-pointer arguments are output. */
-%define %Pism_pointer_pointer_is_always_output(TYPE)
-%Pism_pointer_pointer_typemaps(TYPE);
-%apply TYPE ** OUTPUT { TYPE **}
-%enddef
 
 /* Type map for treating reference arguments as output. */
 %define %Pism_reference_output_typemaps(TYPE)
@@ -121,15 +98,6 @@
     %append_output(SWIG_From(bool)(*$1));
 };
 
-%typemap(in, numinputs=0,noblock=1) PETScInt & OUTPUT (PETScInt temp) {
-    $1 = &temp;
-}
-
-%typemap(argout,noblock=1) PETScInt & OUTPUT
-{
-    %append_output(SWIG_From(int)(*$1));
-};
-
 %typemap(in, numinputs=0,noblock=1) std::string& result (std::string temp) {
     $1 = &temp;
 }
@@ -144,22 +112,6 @@
 }
 
 %apply std::string &OUTPUT { std::string &result}
-
-%typemap(in, numinputs=0,noblock=1) std::vector<int> & OUTPUT (std::vector<int> temp) {
-    $1 = &temp;
-}
-
-%typemap(argout,noblock=1) std::vector<int> & OUTPUT
-{
-    int len;
-    len = $1->size();
-    $result = PyList_New(len);
-     int i;
-     for(i=0; i<len; i++)
-     {
-         PyList_SetItem($result, i, PyInt_FromLong((*$1)[i]));
-     }
-}
 
 %typemap(in, numinputs=0,noblock=1) std::vector<double> & OUTPUT (std::vector<double> temp) {
     $1 = &temp;
@@ -177,7 +129,6 @@
      }
 }
 
-%apply std::vector<int> & OUTPUT {std::vector<int> &result};
 %apply std::vector<double> & OUTPUT {std::vector<double> &result};
 %apply std::vector<std::string> & OUTPUT {std::vector<std::string> & result};
  
@@ -188,8 +139,6 @@
 %apply double & OUTPUT {double & out};
 %apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
-
-%Pism_pointer_pointer_is_always_output(pism::IceFlowLaw)
 
 %include pism_options.i
 

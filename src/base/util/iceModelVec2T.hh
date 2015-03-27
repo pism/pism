@@ -46,7 +46,7 @@ namespace pism {
   Usage example:
   \code
   // initialization:
-  char filename[] = "climate_inputs.nc";
+  std::string filename = "climate_inputs.nc";
   IceModelVec2T v;
   v.set_n_records(config.get_double("climate_forcing_buffer_size"))));
   ierr = v.create(grid, "snowtemp", false); CHKERRQ(ierr);
