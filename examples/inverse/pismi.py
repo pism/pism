@@ -18,6 +18,15 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+# try to start coverage
+try:                            # pragma: no cover
+    import coverage
+    cov = coverage.coverage(branch=True)
+    cov.load()
+    cov.start()
+except ImportError:             # pragma: no cover
+    pass
+
 import PISM
 import PISM.invert.ssa
 import numpy as np
@@ -25,7 +34,6 @@ import sys
 import os
 import math
 from PISM.logging import logMessage
-
 
 class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
@@ -73,7 +81,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
             d = self.toproczero(data.zeta_step)
         zeta = self.toproczero(data.zeta)
 
-        secpera = grid.convert(1.0, "year", "second")
+        secpera = self.grid.convert(1.0, "year", "second")
 
         if self.grid.rank() == 0:
             import matplotlib.pyplot as pp
@@ -241,8 +249,9 @@ def createDesignVec(grid, design_var, name=None, **kwargs):
         raise ValueError("Unknown design variable %s" % design_var)
     return design_vec
 
+
 # Main code starts here
-if __name__ == "__main__":
+def run():
     context = PISM.Context()
     config = context.config
     com = context.com
@@ -562,3 +571,17 @@ if __name__ == "__main__":
 
     # Save the misfit history
     misfit_logger.write(output_filename)
+
+if __name__ == "__main__":
+    run()
+
+# try to stop coverage and save a report:
+try:                            # pragma: no cover
+    cov.stop()
+    report = PISM.optionsFlag("-report_coverage", "save coverage information and a report",
+                              default=False)
+    if report:
+        cov.save()
+        cov.html_report(include=["pismi.py"], directory="pismi_coverage")
+except:                         # pragma: no cover
+    pass
