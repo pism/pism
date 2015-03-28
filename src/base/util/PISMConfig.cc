@@ -26,10 +26,10 @@
 
 namespace pism {
 
-NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, const UnitSystem &unit_system)
-  : Config(unit_system),
+NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, const UnitSystem &system)
+  : Config(system),
     m_com(new_com),
-    m_data(name, unit_system) {
+    m_data(name, system) {
   m_options_left_set = options::Bool("-options_left", "report on unused options");
 }
 
@@ -189,8 +189,8 @@ void NetCDFConfig::write_impl(const PIO &nc) const {
 DefaultConfig::DefaultConfig(MPI_Comm com,
                                          const std::string &variable_name,
                                          const std::string &option,
-                                         const UnitSystem &unit_system)
-  : NetCDFConfig(com, variable_name, unit_system),
+                                         const UnitSystem &system)
+  : NetCDFConfig(com, variable_name, system),
     m_option(option) {
   // empty
 }
@@ -200,13 +200,13 @@ DefaultConfig::~DefaultConfig() {
 }
 
 void DefaultConfig::init(bool use_default_path) {
-  options::String filename(m_option,
+  options::String file(m_option,
                            "Name of the file to read " + m_data.get_name() + " from",
                            PISM_DefaultConfigFile);
-  if (use_default_path or filename.is_set()) {
-    this->read(m_com, filename);
+  if (use_default_path or file.is_set()) {
+    this->read(m_com, file);
     verbPrintf(2, m_com, "Reading configuration parameters (%s) from file '%s'.\n",
-               m_data.get_name().c_str(), filename->c_str());
+               m_data.get_name().c_str(), file->c_str());
   }
 }
 

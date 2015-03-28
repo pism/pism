@@ -29,8 +29,8 @@
 
 namespace pism {
 
-Config::Config(const UnitSystem &unit_system)
-  : m_unit_system(unit_system) {
+Config::Config(const UnitSystem &system)
+  : m_unit_system(system) {
   // empty
 }
 
@@ -42,11 +42,11 @@ const UnitSystem& Config::unit_system() const {
   return m_unit_system;
 }
 
-void Config::read(MPI_Comm com, const std::string &filename) {
+void Config::read(MPI_Comm com, const std::string &file) {
 
   PIO nc(com, "netcdf3", this->unit_system()); // OK to use netcdf3
 
-  nc.open(filename, PISM_READONLY);
+  nc.open(file, PISM_READONLY);
 
   this->read(nc);
 
@@ -63,13 +63,13 @@ void Config::write(const PIO &nc) const {
   this->write_impl(nc);
 }
 
-void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
+void Config::write(MPI_Comm com, const std::string &file, bool append) const {
 
   PIO nc(com, "netcdf3", this->unit_system()); // OK to use netcdf3
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  nc.open(filename, mode);
+  nc.open(file, mode);
 
   this->write(nc);
 
