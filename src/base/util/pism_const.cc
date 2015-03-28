@@ -150,7 +150,7 @@ bool is_increasing(const std::vector<double> &a) {
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
-std::string pism_timestamp() {
+std::string pism_timestamp(MPI_Comm com) {
   time_t now;
   tm tm_now;
   char date_str[50];
@@ -159,6 +159,8 @@ std::string pism_timestamp() {
   // Format specifiers for strftime():
   //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
   strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+
+  MPI_Bcast(date_str, 50, MPI_CHAR, 0, com);
 
   return std::string(date_str);
 }
@@ -181,7 +183,7 @@ std::string pism_username_prefix(MPI_Comm com) {
   }
   
   std::ostringstream message;
-  message << username << "@" << hostname << " " << pism_timestamp() << ": ";
+  message << username << "@" << hostname << " " << pism_timestamp(com) << ": ";
 
   std::string result = message.str();
   unsigned int length = result.size();

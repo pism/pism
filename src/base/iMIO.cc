@@ -805,7 +805,7 @@ void IceModel::write_backup() {
   last_backup_time = wall_clock_hours;
 
   // create a history string:
-  std::string date_str = pism_timestamp();
+  std::string date_str = pism_timestamp(grid.com);
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
