@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <algorithm>
+#include <gsl/gsl_interp.h>
 
 #include "iceModel.hh"
 #include "PIO.hh"
@@ -486,10 +487,37 @@ void IceModel::write_extras() {
   grid.profiling.end("extra_file reporting");
 }
 
-//! Computes the maximum time-step we can take and still hit all the requested years.
-/*!
-  Sets restrict to 'false' if any time-step is OK.
- */
+static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t) {
+
+  const size_t N = times.size();
+  if (t >= times.back()) {
+    return MaxTimestep();
+  }
+
+  size_t j = 0;
+  double dt = 0.0;
+  if (t < times[0]) {
+    j = -1;
+  } else {
+    j = gsl_interp_bsearch(&times[0], t, 0, N - 1);
+  }
+
+  dt = times[j + 1] - t;
+
+  // now make sure that we don't end up taking a time-step of less than 1
+  // second long
+  if (dt < 1.0) {
+    if (j + 2 < N) {
+      return MaxTimestep(times[j + 2] - t);
+    } else {
+      return MaxTimestep();
+    }
+  } else {
+    return MaxTimestep(dt);
+  }
+}
+
+//! Computes the maximum time-step we can take and still hit all `-extra_times`.
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not save_extra) or
@@ -497,29 +525,10 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
     return MaxTimestep();
   }
 
-  std::vector<double>::iterator j;
-  j = upper_bound(extra_times.begin(), extra_times.end(), my_t);
-
-  if (j == extra_times.end()) {
-    return MaxTimestep();
-  }
-
-  double my_dt = *j - my_t;
-
-  // now make sure that we don't end up taking a time-step of less than 1
-  // second long
-  if (my_dt < 1.0) {
-    if ((j + 1) != extra_times.end()) {
-      return MaxTimestep(*(j + 1) - my_t);
-    } else {
-      return MaxTimestep();
-    }
-  } else {
-    return MaxTimestep(my_dt);
-  }
+  return reporting_max_timestep(extra_times, my_t);
 }
 
-//! Computes the maximum time-step we can take and still hit all the requested years.
+//! Computes the maximum time-step we can take and still hit all `-ts_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not save_ts) or
@@ -527,19 +536,7 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
     return MaxTimestep();
   }
 
-  // make sure that we hit the left endpoint of the first report interval
-  if (my_t < ts_times[0]) {
-    return MaxTimestep(ts_times[0] - my_t);
-  }
-
-  std::vector<double>::iterator j;
-  j = upper_bound(ts_times.begin(), ts_times.end(), my_t);
-
-  if (j == ts_times.end()) {
-    return MaxTimestep();
-  }
-
-  return MaxTimestep(*j - my_t);
+  return reporting_max_timestep(ts_times, my_t);
 }
 
 //! Flush scalar time-series.
