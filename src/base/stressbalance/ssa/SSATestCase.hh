@@ -22,8 +22,8 @@
 #include "SSA.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace stressbalance {

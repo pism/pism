@@ -20,7 +20,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PO_delta_MBP.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {

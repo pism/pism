@@ -18,14 +18,15 @@
 
 #include <gsl/gsl_math.h>
 
-#include "iceModelVec.hh"
 #include "PSElevation.hh"
+
+#include "base/util/iceModelVec.hh"
 #include "base/util/io/PIO.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
-#include "PISMConfigInterface.hh"
-#include "error_handling.hh"
-#include "pism_options.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 namespace surface {

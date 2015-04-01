@@ -22,18 +22,17 @@
 #include <cassert>
 
 #include "iceModel.hh"
-#include "pism_signal.h"
-#include "Mask.hh"
-#include "coupler/PISMOcean.hh"
-#include "base/calving/PISMOceanKill.hh"
-#include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMCalvingAtThickness.hh"
 #include "base/calving/PISMEigenCalving.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMIcebergRemover.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-#include "pism_const.hh"
+#include "base/calving/PISMOceanKill.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/pism_const.hh"
+#include "coupler/PISMOcean.hh"
 
 namespace pism {
 

@@ -16,16 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism_const.hh"
-#include "iceModelVec.hh"
-#include "columnSystem.hh"
 #include <cassert>
-
 #include <fstream>
 #include <iostream>
 
-#include "error_handling.hh"
-#include "ColumnInterpolation.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/iceModelVec.hh"
+#include "columnSystem.hh"
+
+#include "base/util/error_handling.hh"
+#include "base/util/ColumnInterpolation.hh"
 
 namespace pism {
 

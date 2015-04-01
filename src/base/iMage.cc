@@ -16,15 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscdmda.h>
-#include "iceModelVec.hh"
+#include <petscsys.h>
+
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/pism_options.hh"
 #include "columnSystem.hh"
 #include "iceModel.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-
-#include "error_handling.hh"
 
 namespace pism {
 

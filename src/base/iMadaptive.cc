@@ -21,17 +21,17 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "Mask.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/energy/bedrockThermalUnit.hh"
-#include "PISMTime.hh"
 #include "base/calving/PISMEigenCalving.hh"
+#include "base/energy/bedrockThermalUnit.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-#include "error_handling.hh"
 
 namespace pism {
 

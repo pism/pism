@@ -24,25 +24,24 @@
 #include <sstream>
 #include <set>
 
-#include "base/util/io/PIO.hh"
-#include "earth/PISMBedDef.hh"
-#include "base/energy/bedrockThermalUnit.hh"
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
-#include "PISMTime.hh"
-#include "PISMDiagnostic.hh"
-#include "base/calving/PISMOceanKill.hh"
-#include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMCalvingAtThickness.hh"
 #include "base/calving/PISMEigenCalving.hh"
-
-#include "error_handling.hh"
-#include "PISMConfig.hh"
+#include "base/calving/PISMFloatKill.hh"
+#include "base/calving/PISMOceanKill.hh"
+#include "base/energy/bedrockThermalUnit.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMDiagnostic.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/pism_options.hh"
+#include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
+#include "earth/PISMBedDef.hh"
 
 namespace pism {
 

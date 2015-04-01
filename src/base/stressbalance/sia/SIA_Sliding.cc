@@ -17,12 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SIA_Sliding.hh"
-#include "Mask.hh"
 #include "base/enthalpyConverter.hh"
-#include "PISMVars.hh"
 #include "base/rheology/flowlaw_factory.hh"
-#include "IceGrid.hh"
-#include "error_handling.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace stressbalance {

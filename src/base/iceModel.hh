@@ -39,8 +39,8 @@
 #include <vector>
 
 // IceModel owns a bunch of fields, so we have to include this.
-#include "iceModelVec.hh"
-#include "MaxTimestep.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 

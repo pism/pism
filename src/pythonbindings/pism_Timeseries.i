@@ -1,5 +1,5 @@
 %{
-#include "Timeseries.hh"
+#include "base/util/Timeseries.hh"
 using pism::Time;
 using pism::TimeseriesMetadata;
 %}
@@ -18,4 +18,4 @@ using pism::TimeseriesMetadata;
     }
 };
 
-%include "Timeseries.hh"
+%include "base/util/Timeseries.hh"

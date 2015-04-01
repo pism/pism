@@ -18,8 +18,8 @@
  */
 
 #include "PISMBedDef.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace bed {

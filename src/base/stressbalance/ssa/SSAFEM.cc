@@ -16,14 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
 #include "SSAFEM.hh"
 #include "FETools.hh"
-#include "Mask.hh"
+#include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/rheology/flowlaws.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace stressbalance {

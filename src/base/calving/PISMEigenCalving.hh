@@ -19,8 +19,8 @@
 #ifndef _PISMEIGENCALVING_H_
 #define _PISMEIGENCALVING_H_
 
-#include "iceModelVec.hh"
-#include "PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -22,13 +22,13 @@ static char help[] =
 
 #include <petscsys.h>
 
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
 #include "base/iceModel.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMConfig.hh"
 
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 using namespace pism;
 

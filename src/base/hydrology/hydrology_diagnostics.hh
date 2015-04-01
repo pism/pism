@@ -19,8 +19,8 @@
 #ifndef _HYDROLOGY_DIAGNOSTICS_H_
 #define _HYDROLOGY_DIAGNOSTICS_H_
 
-#include "iceModelVec.hh"
-#include "PISMDiagnostic.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMDiagnostic.hh"
 #include "PISMHydrology.hh"
 
 namespace pism {

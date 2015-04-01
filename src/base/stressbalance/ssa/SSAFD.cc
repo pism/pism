@@ -21,13 +21,13 @@
 
 #include "SSAFD.hh"
 #include "SSAFD_diagnostics.hh"
-#include "Mask.hh"
+#include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
 #include "base/rheology/flowlaws.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
-#include "PISMTime.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMTime.hh"
 
 namespace pism {
 namespace stressbalance {

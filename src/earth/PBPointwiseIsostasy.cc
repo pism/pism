@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMBedDef.hh"
-#include "IceGrid.hh"
-#include "PISMTime.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 #include <stdexcept>
 

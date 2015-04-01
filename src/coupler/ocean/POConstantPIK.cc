@@ -20,11 +20,11 @@
 #include <gsl/gsl_math.h>
 
 #include "POConstantPIK.hh"
-#include "PISMVars.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
-#include "iceModelVec.hh"
-#include "pism_options.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/pism_options.hh"
 
 
 namespace pism {

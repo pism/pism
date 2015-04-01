@@ -19,8 +19,8 @@
 #include <gsl/gsl_math.h>
 
 #include "PSStuffAsAnomaly.hh"
-#include "IceGrid.hh"
-#include "PISMTime.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMTime.hh"
 
 namespace pism {
 namespace surface {

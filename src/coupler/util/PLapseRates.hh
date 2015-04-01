@@ -19,16 +19,16 @@
 #ifndef _PLAPSERATES_H_
 #define _PLAPSERATES_H_
 
-#include "IceGrid.hh"
-#include "iceModelVec2T.hh"
-#include "pism_options.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/iceModelVec2T.hh"
+#include "base/util/pism_options.hh"
 #include "base/util/io/PIO.hh"
-#include "PISMVars.hh"
-#include "PISMTime.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include <cassert>
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 

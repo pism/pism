@@ -17,12 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSATestCase.hh"
-#include "base/util/io/PIO.hh"
-#include "PISMTime.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "pism_options.hh"
-#include "Mask.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 namespace stressbalance {

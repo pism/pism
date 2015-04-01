@@ -19,7 +19,7 @@
 #include <cassert>
 
 #include "IPTwoBlockVec.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace inverse {

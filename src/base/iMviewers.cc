@@ -23,11 +23,11 @@
 #include <petscksp.h>
 
 #include "iceModel.hh"
-#include "PISMDiagnostic.hh"
 
-#include "error_handling.hh"
-#include "pism_options.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMDiagnostic.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 

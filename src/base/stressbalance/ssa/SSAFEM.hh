@@ -22,7 +22,7 @@
 #include "SSA.hh"
 #include "FETools.hh"
 #include "base/util/petscwrappers/SNES.hh"
-#include "TerminationReason.hh"
+#include "base/util/TerminationReason.hh"
 
 namespace pism {
 namespace stressbalance {

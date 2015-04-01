@@ -20,8 +20,8 @@
 #ifndef _PISMICEBERGREMOVER_H_
 #define _PISMICEBERGREMOVER_H_
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace calving {

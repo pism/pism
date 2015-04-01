@@ -20,7 +20,7 @@
 #define _PAYEARLYCYCLE_H_
 
 #include "coupler/PISMAtmosphere.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace atmosphere {

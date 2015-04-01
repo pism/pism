@@ -18,12 +18,12 @@
  */
 
 #include "PISMEigenCalving.hh"
-#include "PISMVars.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
-#include "Mask.hh"
-#include "error_handling.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace calving {

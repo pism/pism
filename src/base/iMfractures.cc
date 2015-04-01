@@ -18,15 +18,15 @@
 
 
 #include <cmath>
-#include <petscdmda.h>
+#include <petscsys.h>
 
 #include "iceModel.hh"
-#include "Mask.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
-#include "error_handling.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 

@@ -20,8 +20,8 @@
 #include <gsl/gsl_math.h>
 
 #include "PAAnomaly.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace atmosphere {

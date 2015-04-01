@@ -18,7 +18,7 @@
 
 #include "PISMNC4_Quilt.hh"
 #include <cassert>
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:

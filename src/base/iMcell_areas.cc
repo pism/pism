@@ -21,11 +21,11 @@
 #endif
 
 #include "iceModel.hh"
-#include "IceGrid.hh"
 
-#include "error_handling.hh"
-#include "PISMConfig.hh"
-#include "pism_const.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 

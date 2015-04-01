@@ -20,7 +20,7 @@
 #define _PSMODIFIER_H_
 
 #include "coupler/PISMSurface.hh"
-#include "Modifier.hh"
+#include "base/util/Modifier.hh"
 
 namespace pism {
 namespace surface {

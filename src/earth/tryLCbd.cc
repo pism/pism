@@ -43,14 +43,14 @@ static char help[] =
 #include <petscdmda.h>
 #include <petscdraw.h>
 
-#include "pism_const.hh"
-#include "PISMConfig.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/PISMConfig.hh"
 #include "deformation.hh"
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
 
 #include "base/util/petscwrappers/Viewer.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 #include "base/util/petscwrappers/Vec.hh"
 #include "base/util/petscwrappers/DM.hh"
 

@@ -30,21 +30,21 @@
 // draws in all the other needed includes as well. See the end of this file for the list
 // of PISM headers being wrapped.
 
-#include "interpolation.hh"
+#include "base/util/interpolation.hh"
 
-#include "PISMUnits.hh"
+#include "base/util/PISMUnits.hh"
 #include "pism_python.hh"
 
-#include "Mask.hh"
+#include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/varcEnthalpyConverter.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/rheology/flowlaws.hh"
 #include "base/rheology/flowlaw_factory.hh"
-#include "error_handling.hh"
-#include "PISMDiagnostic.hh"
-#include "PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/PISMDiagnostic.hh"
+#include "base/util/PISMConfig.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -58,7 +58,7 @@
 %include std_vector.i
 %include std_set.i
 
-%include "pism_memory.hh"
+%include "base/util/pism_memory.hh"
 #ifdef PISM_USE_TR1
 #define SWIG_SHARED_PTR_SUBNAMESPACE tr1
 #endif
@@ -164,18 +164,18 @@
 %immutable pism::PISM_DefaultConfigFile;
 
 /* PISM header with no dependence on other PISM headers. */
-%include "interpolation.hh"
+%include "base/util/interpolation.hh"
 
 %include "base/enthalpyConverter.hh"
 %include "base/varcEnthalpyConverter.hh"
 %ignore pism::Vector2::operator=;
-%include "Vector2.hh"
+%include "base/util/Vector2.hh"
 
 %ignore pism::Unit::operator=;
 %feature("valuewrapper") pism::UnitSystem;
 %feature("valuewrapper") pism::Unit;
 
-%include "PISMUnits.hh"
+%include "base/util/PISMUnits.hh"
 %include pism_DM.i
 %include pism_Vec.i
 /* End of independent PISM classes. */
@@ -184,9 +184,9 @@
 
 /* make sure PIO.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
-%include "PISMConfigInterface.hh"
-%include "PISMConfig.hh"
-%include "pism_const.hh"
+%include "base/util/PISMConfigInterface.hh"
+%include "base/util/PISMConfig.hh"
+%include "base/util/pism_const.hh"
 
 %include pism_IceModelVec.i
 
@@ -196,9 +196,9 @@
 
 %include pism_IceGrid.i
 
-%include "PISMDiagnostic.hh"
-%include "MaxTimestep.hh"
-%include "PISMComponent.hh"
+%include "base/util/PISMDiagnostic.hh"
+%include "base/util/MaxTimestep.hh"
+%include "base/util/PISMComponent.hh"
 %include "base/basalstrength/basal_resistance.hh"
 %include "base/rheology/flowlaws.hh"
 
@@ -211,11 +211,11 @@
  */
 %include pism_Hydrology.i
 
-%include "Mask.hh"
+%include "base/util/Mask.hh"
 %include "pism_python.hh"
 %include "base/basalstrength/PISMYieldStress.hh"
 %include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
-%include "PISMTime.hh"
+%include "base/util/PISMTime.hh"
 
 %include pism_SSA.i
 

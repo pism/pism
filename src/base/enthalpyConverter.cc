@@ -16,12 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petsc.h>  // for PetscErrorPrintf, etc.
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 #include "enthalpyConverter.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMConfigInterface.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 

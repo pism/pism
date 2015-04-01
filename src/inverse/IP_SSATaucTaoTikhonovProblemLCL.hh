@@ -21,11 +21,11 @@
 
 #include <petscsys.h>
 
-#include "pism_memory.hh"
+#include "base/util/pism_memory.hh"
 
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
 

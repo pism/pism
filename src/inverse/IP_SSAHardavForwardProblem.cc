@@ -19,14 +19,14 @@
 #include <cassert>
 
 #include "IP_SSAHardavForwardProblem.hh"
-#include "PISMVars.hh"
-#include "Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/rheology/flowlaws.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
-#include "error_handling.hh"
-#include "pism_const.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace inverse {

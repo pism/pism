@@ -19,7 +19,7 @@
 #ifndef __DrainageCalculator_hh
 #define __DrainageCalculator_hh
 
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace energy {

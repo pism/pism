@@ -19,8 +19,8 @@
 #ifndef _PISMYIELDSTRESS_H_
 #define _PISMYIELDSTRESS_H_
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 

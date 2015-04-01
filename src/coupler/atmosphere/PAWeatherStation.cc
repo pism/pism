@@ -20,14 +20,14 @@
 #include <gsl/gsl_math.h>
 
 #include "PAWeatherStation.hh"
-#include "PISMConfigInterface.hh"
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {

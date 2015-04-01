@@ -18,7 +18,7 @@
  */
 
 #include "PISMYieldStress.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 

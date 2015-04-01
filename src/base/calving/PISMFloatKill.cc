@@ -18,10 +18,10 @@
  */
 
 #include "PISMFloatKill.hh"
-#include "Mask.hh"
-#include "iceModelVec.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
+#include "base/util/Mask.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace calving {

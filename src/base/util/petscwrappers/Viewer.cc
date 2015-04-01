@@ -21,7 +21,7 @@
 
 #include <petscdraw.h>
 #include <cassert>
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace petsc {

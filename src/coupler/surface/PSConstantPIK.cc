@@ -20,9 +20,9 @@
 
 #include "PSConstantPIK.hh"
 #include "base/util/io/PIO.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace surface {

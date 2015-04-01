@@ -20,8 +20,8 @@
 #ifndef _SNESPROBLEM_H_
 #define _SNESPROBLEM_H_
 
-#include "IceGrid.hh"           // inline implementation in the header uses IceGrid
-#include "Vector2.hh"       // to get Vector2
+#include "base/util/IceGrid.hh" // inline implementation in the header uses IceGrid
+#include "base/util/Vector2.hh" // to get Vector2
 #include "base/util/petscwrappers/SNES.hh"
 
 namespace pism {

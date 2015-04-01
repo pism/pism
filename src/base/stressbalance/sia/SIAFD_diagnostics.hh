@@ -21,7 +21,7 @@
 #define _SIAFD_DIAGNOSTICS_H_
 
 #include "SIAFD.hh"
-#include "PISMDiagnostic.hh"
+#include "base/util/PISMDiagnostic.hh"
 
 namespace pism {
 namespace stressbalance {

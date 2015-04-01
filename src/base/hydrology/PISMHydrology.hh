@@ -19,8 +19,8 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include "iceModelVec.hh"
-#include "PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 

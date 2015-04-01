@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PSAnomaly.hh"
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace surface {

@@ -1,6 +1,6 @@
 %header%{
 #include "pism_python.hh"
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 %}
 
 %exception {

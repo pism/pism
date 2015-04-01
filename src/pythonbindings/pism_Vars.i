@@ -58,4 +58,4 @@ def get(self, key):
   %}
 }
 
-%include "PISMVars.hh"
+%include "base/util/PISMVars.hh"

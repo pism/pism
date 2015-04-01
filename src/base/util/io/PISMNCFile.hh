@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "pism_memory.hh"
+#include "base/util/pism_memory.hh"
 
 #include "IO_Flags.hh"
 

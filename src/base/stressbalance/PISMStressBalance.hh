@@ -19,8 +19,8 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
-#include "PISMComponent.hh"     // derives from Component
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"     // derives from Component
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 class Diagnostic;

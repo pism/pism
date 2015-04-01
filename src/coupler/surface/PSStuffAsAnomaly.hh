@@ -21,7 +21,7 @@
 
 #include "coupler/PISMSurface.hh"
 #include "PSModifier.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

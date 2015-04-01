@@ -18,23 +18,23 @@
 
 #include <gsl/gsl_math.h>
 
-#include "pism_options.hh"
-#include "iceModel_diagnostics.hh"
-#include "PISMDiagnostic.hh"
-#include "Mask.hh"
-#include "base/rheology/flowlaws.hh"
-#include "earth/PISMBedDef.hh"
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
-#include "enthalpyConverter.hh"
-#include "base/stressbalance/ShallowStressBalance.hh"
-#include "base/stressbalance/SSB_Modifier.hh"
 #include "base/energy/bedrockThermalUnit.hh"
-#include "error_handling.hh"
-#include "iceModelVec3Custom.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/rheology/flowlaws.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/stressbalance/SSB_Modifier.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMDiagnostic.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec3Custom.hh"
+#include "base/util/pism_options.hh"
+#include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
+#include "earth/PISMBedDef.hh"
+#include "enthalpyConverter.hh"
+#include "iceModel_diagnostics.hh"
 
 namespace pism {
 

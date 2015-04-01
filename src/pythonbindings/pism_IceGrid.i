@@ -1,5 +1,5 @@
 %{
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
 %}
 
 %extend pism::IceGrid
@@ -21,4 +21,4 @@
     }
 }
 
-%include "IceGrid.hh"
+%include "base/util/IceGrid.hh"

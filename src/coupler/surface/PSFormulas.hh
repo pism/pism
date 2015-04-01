@@ -21,7 +21,7 @@
 #define _PSFORMULAS_H_
 
 #include "coupler/PISMSurface.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

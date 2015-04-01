@@ -17,14 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PSTemperatureIndex_Old.hh"
-#include "localMassBalance_old.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "PISMVars.hh"
-#include "PISMTime.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "PISMConfigInterface.hh"
-#include "error_handling.hh"
+#include "localMassBalance_old.hh"
 
 namespace pism {
 namespace surface {

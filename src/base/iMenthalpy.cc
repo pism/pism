@@ -17,19 +17,19 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
-#include "base/energy/enthSystem.hh"
 #include "DrainageCalculator.hh"
-#include "Mask.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
 #include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/enthSystem.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
+#include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
 #include "enthalpyConverter.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-#include "error_handling.hh"
 
 namespace pism {
 

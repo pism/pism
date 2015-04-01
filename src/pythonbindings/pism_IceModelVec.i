@@ -153,5 +153,5 @@ using pism::StarStencil;
 };
 
 %ignore pism::StarStencil::operator[];
-%include "iceModelVec.hh"
-%include "Vector2.hh"
+%include "base/util/iceModelVec.hh"
+%include "base/util/Vector2.hh"

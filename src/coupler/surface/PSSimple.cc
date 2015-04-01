@@ -20,10 +20,10 @@
 #include <gsl/gsl_math.h>
 
 #include "PSSimple.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
-#include "iceModelVec.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace surface {

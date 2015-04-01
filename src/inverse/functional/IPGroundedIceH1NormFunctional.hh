@@ -21,7 +21,7 @@
 
 
 #include "IPFunctional.hh"
-#include "Mask.hh"
+#include "base/util/Mask.hh"
 
 namespace pism {
 namespace inverse {

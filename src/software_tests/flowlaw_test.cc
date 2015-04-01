@@ -17,15 +17,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 #include "base/rheology/flowlaw_factory.hh"
 #include "base/enthalpyConverter.hh"
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
-#include "PISMConfig.hh"
+#include "base/util/PISMConfig.hh"
 
 using namespace pism;
 

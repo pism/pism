@@ -21,15 +21,15 @@
 #include <cassert>
 
 #include "iceModel.hh"
-#include "PISMConfig.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
-#include "coupler/PISMSurface.hh"
+#include "base/util/pism_options.hh"
 #include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
 #include "enthalpyConverter.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
 
 namespace pism {
 

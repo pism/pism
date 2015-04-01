@@ -21,7 +21,7 @@
 #define _PSCACHE_H_
 
 #include "PSModifier.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

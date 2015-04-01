@@ -6,7 +6,7 @@
 
 %{
 #include "base/energy/enthSystem.hh"
-#include "ColumnInterpolation.hh"
+#include "base/util/ColumnInterpolation.hh"
 %}
 
 /* wrap the enthalpy solver to make testing easier */

@@ -16,14 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "flowlaw_factory.hh"
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "PISMUnits.hh"
 #include <cassert>
 #include <stdexcept>
 
-#include "error_handling.hh"
+#include "flowlaw_factory.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMUnits.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace rheology {

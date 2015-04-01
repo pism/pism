@@ -20,7 +20,7 @@
 #define _POMODIFIER_H_
 
 #include "coupler/PISMOcean.hh"
-#include "Modifier.hh"
+#include "base/util/Modifier.hh"
 
 namespace pism {
 namespace ocean {

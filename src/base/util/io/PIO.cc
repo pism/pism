@@ -19,12 +19,12 @@
 #include <petscvec.h>
 
 #include "PIO.hh"
-#include "IceGrid.hh"
-#include "pism_const.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_const.hh"
 #include "LocalInterpCtx.hh"
-#include "VariableMetadata.hh"
-#include "PISMConfigInterface.hh"
-#include "PISMTime.hh"
+#include "base/util/VariableMetadata.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
 #include "PISMNC3File.hh"
 #include "PISMNC4_Quilt.hh"
 #include <cassert>
@@ -41,10 +41,10 @@
 #include "PISMNC4_HDF5.hh"
 #endif
 
-#include "pism_memory.hh"
+#include "base/util/pism_memory.hh"
 using PISM_SHARED_PTR_NSPACE::shared_ptr;
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 

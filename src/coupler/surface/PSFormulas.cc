@@ -19,7 +19,7 @@
 
 #include "PSFormulas.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace surface {

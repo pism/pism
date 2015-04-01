@@ -19,18 +19,18 @@
 #include <cassert>
 
 #include "iceModel.hh"
-#include "base/energy/tempSystem.hh"
-#include "Mask.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/energy/bedrockThermalUnit.hh"
-#include "pism_options.hh"
 
-#include "error_handling.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/tempSystem.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
+#include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
 
 namespace pism {
 

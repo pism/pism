@@ -4,4 +4,4 @@
 %feature("valuewrapper") pism::VariableMetadata;
 %feature("valuewrapper") pism::SpatialVariableMetadata;
 
-%include "VariableMetadata.hh"
+%include "base/util/VariableMetadata.hh"

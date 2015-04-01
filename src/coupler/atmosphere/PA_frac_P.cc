@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PA_frac_P.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace atmosphere {

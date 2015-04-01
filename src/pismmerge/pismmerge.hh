@@ -20,7 +20,7 @@
 #define _PISMMERGE_H_
 
 #include "base/util/io/PISMNC4_Serial.hh"
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 #include <vector>
 #include <string>
 #include <map>

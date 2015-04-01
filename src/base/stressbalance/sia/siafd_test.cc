@@ -22,26 +22,26 @@ static char help[] =
   "  IceModel. Uses verification test F. Also may be used in a PISM software"
   "(regression) test.\n\n";
 
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
-#include "base/rheology/flowlaws.hh" // FlowLaw
-#include "base/util/io/PIO.hh"
-#include "VariableMetadata.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
 #include "SIAFD.hh"
-#include "verif/tests/exactTestsFG.h"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
+#include "base/rheology/flowlaws.hh" // FlowLaw
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/SSB_Modifier.hh"
 #include "base/stressbalance/ShallowStressBalance.hh"
-#include "PISMVars.hh"
-#include "Mask.hh"
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/VariableMetadata.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/io/PIO.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
-#include "PISMTime.hh"
-#include "PISMConfig.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "verif/tests/exactTestsFG.h"
 
 namespace pism {
 

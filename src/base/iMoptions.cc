@@ -22,19 +22,19 @@
 #include <set>
 
 #include "iceModel.hh"
-#include "earth/PISMBedDef.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+
 #include "base/basalstrength/PISMYieldStress.hh"
 #include "base/calving/PISMOceanKill.hh"
+#include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-
-#include "error_handling.hh"
+#include "earth/PISMBedDef.hh"
 
 namespace pism {
 

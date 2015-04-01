@@ -22,12 +22,12 @@
 
 #include "PISMMohrCoulombYieldStress.hh"
 #include "base/hydrology/PISMHydrology.hh"
-#include "PISMVars.hh"
-#include "pism_options.hh"
-#include "Mask.hh"
-#include "error_handling.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
-#include "IceGrid.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 

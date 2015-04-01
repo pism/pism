@@ -23,12 +23,12 @@
 #include "tests/exactTestO.h"
 #include "iceCompModel.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/error_handling.hh"
 #include "earth/PISMBedDef.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMConfig.hh"
 
 namespace pism {
 

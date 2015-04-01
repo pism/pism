@@ -1,7 +1,4 @@
-include_directories (
-  .
-  base/util
-  )
+include_directories (.)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used

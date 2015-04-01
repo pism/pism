@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "POGivenClimate.hh"
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace ocean {

@@ -19,8 +19,8 @@
 #ifndef __BedDef_hh
 #define __BedDef_hh
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 

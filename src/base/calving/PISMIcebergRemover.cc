@@ -19,10 +19,10 @@
 
 #include "PISMIcebergRemover.hh"
 #include "connected_components.hh"
-#include "Mask.hh"
-#include "PISMVars.hh"
-#include "error_handling.hh"
-#include "IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace calving {

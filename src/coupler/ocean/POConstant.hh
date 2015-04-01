@@ -20,7 +20,7 @@
 #define _POCONSTANT_H_
 
 #include "coupler/PISMOcean.hh"
-#include "VariableMetadata.hh"
+#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 namespace ocean {

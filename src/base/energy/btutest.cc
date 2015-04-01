@@ -19,19 +19,19 @@
 static char help[] =
   "Tests BedThermalUnit using Test K.  Sans IceModel.\n\n";
 
-#include "pism_options.hh"
-#include "IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
-#include "VariableMetadata.hh"
+#include "base/util/VariableMetadata.hh"
 #include "bedrockThermalUnit.hh"
-#include "PISMTime.hh"
-#include "PISMVars.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/PISMConfig.hh"
 
 #include "../../verif/tests/exactTestK.h"
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace energy {

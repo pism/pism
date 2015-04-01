@@ -27,15 +27,13 @@ static char help[] =
 #include <algorithm>            // std::transform()
 #include <petscsys.h>
 
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-#include "verif/iceCompModel.hh"
-
-#include "coupler/ocean/POConstant.hh"
-#include "pism_options.hh"
-
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/pism_options.hh"
+#include "coupler/ocean/POConstant.hh"
+#include "verif/iceCompModel.hh"
 
 using namespace pism;
 

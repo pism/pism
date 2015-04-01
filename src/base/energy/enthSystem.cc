@@ -18,12 +18,12 @@
 
 #include "enthSystem.hh"
 #include <gsl/gsl_math.h>
-#include "PISMConfigInterface.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/iceModelVec.hh"
 #include "base/enthalpyConverter.hh"
 
-#include "error_handling.hh"
-#include "ColumnInterpolation.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/ColumnInterpolation.hh"
 
 namespace pism {
 namespace energy {

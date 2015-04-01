@@ -16,12 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IP_SSATaucTikhonovGNSolver.hh"
 #include <cassert>
-#include "TerminationReason.hh"
-#include "pism_options.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
+
+#include "IP_SSATaucTikhonovGNSolver.hh"
+#include "base/util/TerminationReason.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace inverse {

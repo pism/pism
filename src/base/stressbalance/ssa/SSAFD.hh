@@ -21,7 +21,7 @@
 
 #include "SSA.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 #include "base/util/petscwrappers/Viewer.hh"
 #include "base/util/petscwrappers/KSP.hh"
 #include "base/util/petscwrappers/Mat.hh"

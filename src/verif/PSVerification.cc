@@ -24,16 +24,16 @@
 #include "coupler/PISMAtmosphere.hh"
 #include "base/rheology/flowlaws.hh"
 #include "base/enthalpyConverter.hh"
-#include "PISMTime.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 #include "tests/exactTestsABCDE.h"
 #include "tests/exactTestsFG.h"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
-#include "error_handling.hh"
-#include "IceGrid.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace surface {

@@ -1,8 +1,8 @@
 %{
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
 %}
 
-%include "options.hh"
+%include "base/util/options.hh"
 // instantiate templates used by option processing classes below
 %template(OptionStdString) pism::options::Option<std::string>;
 %template(OptionStdVectorStdString) pism::options::Option<std::vector<std::string> >;
@@ -27,4 +27,4 @@
 %ignore pism::options::IntegerList::operator[];
 %ignore pism::options::RealList::operator[];
 
-%include "pism_options.hh"
+%include "base/util/pism_options.hh"

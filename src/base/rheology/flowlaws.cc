@@ -17,15 +17,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "flowlaws.hh"
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 #include "base/enthalpyConverter.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/iceModelVec.hh"
 
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace rheology {

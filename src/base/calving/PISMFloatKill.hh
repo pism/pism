@@ -20,7 +20,7 @@
 #ifndef _PISMFLOATKILL_H_
 #define _PISMFLOATKILL_H_
 
-#include "PISMComponent.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 

@@ -35,15 +35,15 @@
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/io/PIO.hh"
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
 #include "coupler/ocean/POConstant.hh"
 #include "PSVerification.hh"
-#include "Mask.hh"
-#include "error_handling.hh"
+#include "base/util/Mask.hh"
+#include "base/util/error_handling.hh"
 #include "earth/PISMBedDef.hh"
-#include "IceGrid.hh"
-#include "PISMTime.hh"
-#include "PISMConfig.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMConfig.hh"
 
 namespace pism {
 

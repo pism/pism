@@ -22,11 +22,11 @@
 
 #include <cassert>
 
-#include "pism_memory.hh"
+#include "base/util/pism_memory.hh"
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace inverse {

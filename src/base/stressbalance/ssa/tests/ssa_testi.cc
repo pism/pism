@@ -23,20 +23,20 @@ static char help[] =
   "  class thereof. Uses verification test I. Also may be used in a PISM\n"
   "  software (regression) test.\n\n";
 
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
-#include "base/rheology/flowlaws.hh" // FlowLaw
 #include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "base/util/io/PIO.hh"
-#include "VariableMetadata.hh"
-#include "base/stressbalance/ssa/SSAFEM.hh"
+#include "base/rheology/flowlaws.hh" // FlowLaw
 #include "base/stressbalance/ssa/SSAFD.hh"
-#include "verif/tests/exactTestsIJ.h"
+#include "base/stressbalance/ssa/SSAFEM.hh"
 #include "base/stressbalance/ssa/SSATestCase.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/VariableMetadata.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/io/PIO.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "verif/tests/exactTestsIJ.h"
 
 namespace pism {
 namespace stressbalance {

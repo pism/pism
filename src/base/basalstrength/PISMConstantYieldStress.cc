@@ -17,9 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMConstantYieldStress.hh"
-#include "pism_options.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
+
+#include "base/util/pism_options.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 

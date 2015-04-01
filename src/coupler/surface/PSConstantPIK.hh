@@ -20,7 +20,7 @@
 #define _PSCONSTANTPIK_H_
 
 #include "coupler/PISMSurface.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 #include "coupler/PISMAtmosphere.hh"
 
 namespace pism {

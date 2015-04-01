@@ -20,11 +20,11 @@
 #include <cassert>
 
 #include "PISMOceanKill.hh"
-#include "pism_options.hh"
-#include "PISMVars.hh"
-#include "Mask.hh"
-#include "error_handling.hh"
-#include "IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/Mask.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace calving {

@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 #include "varcEnthalpyConverter.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 

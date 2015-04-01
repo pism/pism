@@ -21,21 +21,22 @@ static char help[] =
   "from data.\n";
 
 #include <petscsys.h>
-#include "IceGrid.hh"
+
+#include "base/util/IceGrid.hh"
 #include "base/iceModel.hh"
 
-#include "regional.hh"
-#include "PISMConfig.hh"
+#include "base/basalstrength/PISMConstantYieldStress.hh"
+#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/pism_options.hh"
 #include "coupler/atmosphere/PAFactory.hh"
 #include "coupler/ocean/POFactory.hh"
 #include "coupler/surface/PSFactory.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
-#include "base/basalstrength/PISMConstantYieldStress.hh"
-#include "base/util/io/PIO.hh"
-#include "pism_options.hh"
-#include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "regional.hh"
 
 namespace pism {
 

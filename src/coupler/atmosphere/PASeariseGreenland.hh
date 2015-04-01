@@ -21,7 +21,7 @@
 #define __PASeariseGreenland_hh
 
 #include "PAYearlyCycle.hh"
-#include "Timeseries.hh"
+#include "base/util/Timeseries.hh"
 
 namespace pism {
 namespace atmosphere {

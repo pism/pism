@@ -21,7 +21,7 @@
 
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "VariableMetadata.hh"
+#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {

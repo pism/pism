@@ -18,19 +18,19 @@
 
 #include <sstream>
 #include <cstring>
-#include <petscvec.h>
+#include <petscsys.h>
 
 #include "iceModel.hh"
-#include "pism_signal.h"
-#include "coupler/PISMSurface.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "enthalpyConverter.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "PISMDiagnostic.hh"
-#include "base/energy/bedrockThermalUnit.hh"
 
-#include "error_handling.hh"
+#include "base/energy/bedrockThermalUnit.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMDiagnostic.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
+#include "coupler/PISMSurface.hh"
+#include "enthalpyConverter.hh"
+#include "pism_signal.h"
 
 namespace pism {
 

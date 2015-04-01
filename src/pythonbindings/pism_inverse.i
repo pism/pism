@@ -30,14 +30,14 @@
 #include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 #endif
 
-#include "TerminationReason.hh"
+#include "base/util/TerminationReason.hh"
 %}
 
 %shared_ptr(pism::TerminationReason)
 %shared_ptr(pism::KSPTerminationReason)
 %shared_ptr(pism::SNESTerminationReason)
 %shared_ptr(pism::GenericTerminationReason)
-%include "TerminationReason.hh"
+%include "base/util/TerminationReason.hh"
 
 
 %include "inverse/functional/IPFunctional.hh"

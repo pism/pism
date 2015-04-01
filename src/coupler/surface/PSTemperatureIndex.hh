@@ -19,10 +19,10 @@
 #ifndef _PSTEMPERATUREINDEX_H_
 #define _PSTEMPERATUREINDEX_H_
 
-#include "iceModelVec2T.hh"
+#include "base/util/iceModelVec2T.hh"
 #include "coupler/PISMSurface.hh"
 #include "localMassBalance.hh"
-#include "VariableMetadata.hh"
+#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {

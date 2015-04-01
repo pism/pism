@@ -19,7 +19,7 @@
 #ifndef _PIO_H_
 #define _PIO_H_
 
-#include "PISMUnits.hh"
+#include "base/util/PISMUnits.hh"
 
 #include <map>
 #include <vector>

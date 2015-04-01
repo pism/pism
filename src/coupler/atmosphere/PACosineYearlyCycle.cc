@@ -19,14 +19,14 @@
 #include <gsl/gsl_math.h>
 
 #include "PACosineYearlyCycle.hh"
-#include "Timeseries.hh"
-#include "PISMTime.hh"
-#include "pism_options.hh"
-#include "PISMConfigInterface.hh"
-#include "IceGrid.hh"
+#include "base/util/Timeseries.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {

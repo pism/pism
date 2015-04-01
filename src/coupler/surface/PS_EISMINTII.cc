@@ -19,11 +19,10 @@
 
 #include "PS_EISMINTII.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "PISMConfigInterface.hh"
-#include "pism_options.hh"
-#include <stdexcept>
-#include "error_handling.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace surface {

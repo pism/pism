@@ -20,7 +20,7 @@
 #define _PISMCONSTANTYIELDSTRESS_H_
 
 #include "PISMYieldStress.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 

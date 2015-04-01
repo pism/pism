@@ -16,17 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petsc.h>
 #include <ctime>  // for time(), used to initialize random number gen
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <cassert>
-#include "pism_const.hh"
-#include "PISMConfigInterface.hh"
-#include "localMassBalance.hh"
-#include "IceGrid.hh"
 #include <algorithm>
+
+#include "base/util/pism_const.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "localMassBalance.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 namespace surface {

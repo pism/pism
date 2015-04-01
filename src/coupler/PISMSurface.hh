@@ -25,7 +25,7 @@
  * Implementations should go in separate files.
  */
 
-#include "PISMComponent.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 

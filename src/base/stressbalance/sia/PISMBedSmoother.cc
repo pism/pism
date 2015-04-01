@@ -17,12 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMBedSmoother.hh"
-#include "Mask.hh"
-#include "IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/IceGrid.hh"
 #include "base/util/petscwrappers/Vec.hh"
 
-#include "error_handling.hh"
-#include "pism_const.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 namespace stressbalance {

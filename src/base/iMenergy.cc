@@ -18,17 +18,17 @@
 
 #include <cassert>
 
-#include "iceModel.hh"
-#include "Mask.hh"
 #include "base/energy/bedrockThermalUnit.hh"
-#include "coupler/PISMSurface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 #include "coupler/PISMOcean.hh"
-#include "enthalpyConverter.hh"
+#include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-#include "error_handling.hh"
-#include "pism_const.hh"
+#include "enthalpyConverter.hh"
+#include "iceModel.hh"
 
 namespace pism {
 

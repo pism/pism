@@ -22,16 +22,16 @@ static char help[] = "\nBEDROUGH_TEST\n"
   "  from Matlab/Octave code exampletheta.m in src/base/bedroughplay.  Also\n"
   "  used in PISM software (regression) test.\n\n";
 
-#include "PISMConfig.hh"
+#include "base/util/PISMConfig.hh"
 #include <cmath>
 #include <cstdio>
-#include "pism_options.hh"
-#include "IceGrid.hh"
-#include "iceModelVec.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/iceModelVec.hh"
 #include "base/stressbalance/sia/PISMBedSmoother.hh"
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 using namespace pism;
 

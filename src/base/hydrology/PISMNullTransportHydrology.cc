@@ -16,10 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Mask.hh"
 #include "PISMHydrology.hh"
+#include "base/util/Mask.hh"
+#include "base/util/error_handling.hh"
 #include "hydrology_diagnostics.hh"
-#include "error_handling.hh"
 
 namespace pism {
 namespace hydrology {

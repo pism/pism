@@ -20,13 +20,13 @@
 #include <cstring>
 
 #include "iceModel.hh"
-#include "Mask.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/pism_const.hh"
 #include "coupler/PISMOcean.hh"
 #include "earth/PISMBedDef.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
-#include "pism_const.hh"
 
 namespace pism {
 

@@ -19,8 +19,7 @@
 #ifndef _REGIONAL_H_
 #define _REGIONAL_H_
 
-#include <petsc.h>
-#include "IceGrid.hh"
+#include "base/util/IceGrid.hh"
 #include "base/iceModel.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
 #include "base/stressbalance/ssa/SSAFD.hh"

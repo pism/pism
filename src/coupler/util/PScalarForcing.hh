@@ -19,15 +19,15 @@
 #ifndef _PSCALARFORCING_H_
 #define _PSCALARFORCING_H_
 
-#include "IceGrid.hh"
-#include "iceModelVec.hh"
-#include "Timeseries.hh"
-#include "pism_options.hh"
-#include "PISMTime.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/Timeseries.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/io/PIO.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 

@@ -20,7 +20,7 @@
 #define __BedSmoother_hh
 
 #include <petsc.h>
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 

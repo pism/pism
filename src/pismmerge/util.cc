@@ -18,7 +18,7 @@
 
 #include "pismmerge.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 using pism::io::NC4_Serial;
 

@@ -21,7 +21,7 @@
 
 #include <gsl/gsl_rng.h>
 
-#include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
+#include "base/util/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
 

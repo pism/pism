@@ -21,7 +21,7 @@
 #define _POCACHE_H_
 
 #include "POModifier.hh"
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {

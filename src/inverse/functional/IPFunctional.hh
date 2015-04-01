@@ -19,7 +19,7 @@
 #ifndef IPFUNCTIONAL_HH_1E2DIXE6
 #define IPFUNCTIONAL_HH_1E2DIXE6
 
-#include "iceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 #include "base/stressbalance/ssa/FETools.hh"
 
 namespace pism {

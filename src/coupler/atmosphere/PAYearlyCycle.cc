@@ -23,9 +23,9 @@
 #include <gsl/gsl_math.h>
 
 #include "PAYearlyCycle.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include <stdexcept>
 
 namespace pism {

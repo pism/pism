@@ -18,13 +18,13 @@
 
 #include "PBLingleClark.hh"
 #include "base/util/io/PIO.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 #include <stdexcept>
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace bed {

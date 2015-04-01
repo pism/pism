@@ -20,8 +20,8 @@
 #ifndef _PISMCALVINGATTHICKNESS_H_
 #define _PISMCALVINGATTHICKNESS_H_
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace calving {

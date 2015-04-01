@@ -20,7 +20,7 @@
 #ifndef _WRAPPER_H_
 #define _WRAPPER_H_
 
-#include "pism_memory.hh"
+#include "base/util/pism_memory.hh"
 
 namespace pism {
 namespace petsc {

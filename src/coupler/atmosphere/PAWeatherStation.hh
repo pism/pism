@@ -21,7 +21,7 @@
 #define _PAWEATHERSTATION_H_
 
 #include "coupler/PISMAtmosphere.hh"
-#include "Timeseries.hh"
+#include "base/util/Timeseries.hh"
 
 namespace pism {
 namespace atmosphere {

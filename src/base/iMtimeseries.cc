@@ -21,14 +21,14 @@
 #include <gsl/gsl_interp.h>
 
 #include "iceModel.hh"
-#include "base/util/io/PIO.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "PISMDiagnostic.hh"
-#include "PISMTime.hh"
-#include "pism_options.hh"
 
-#include "error_handling.hh"
-#include "PISMConfig.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMDiagnostic.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 

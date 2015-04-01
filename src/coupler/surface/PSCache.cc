@@ -21,11 +21,10 @@
 #include <algorithm>            // for std::min
 
 #include "PSCache.hh"
-#include "PISMTime.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
-
-#include "error_handling.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace surface {

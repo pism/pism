@@ -24,7 +24,7 @@
 #define _FETOOLS_H_
 
 #include <petscmat.h>
-#include "Vector2.hh"
+#include "base/util/Vector2.hh"
 
 namespace pism {
 class IceModelVec;

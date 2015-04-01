@@ -20,7 +20,7 @@
 #define _ICEMODEL_DIAGNOSTICS_H_
 
 #include "iceModel.hh"
-#include "PISMDiagnostic.hh"
+#include "base/util/PISMDiagnostic.hh"
 
 namespace pism {
 

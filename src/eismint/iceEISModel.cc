@@ -16,20 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IceGrid.hh"
 #include "base/iceModel.hh"
 #include "iceEISModel.hh"
+
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
 #include "base/stressbalance/sia/SIA_Sliding.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "pism_options.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
 #include "coupler/ocean/POConstant.hh"
 #include "coupler/surface/PS_EISMINTII.hh"
-
-#include "error_handling.hh"
 #include "earth/PISMBedDef.hh"
-#include "PISMConfig.hh"
-#include "PISMTime.hh"
 
 namespace pism {
 
