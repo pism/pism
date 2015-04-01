@@ -79,7 +79,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  atmosphere::AtmosphereModel *atmosphere;
+  atmosphere::AtmosphereModel *m_atmosphere;
 };
 
 } // end of namespace surface

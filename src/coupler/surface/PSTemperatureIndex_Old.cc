@@ -178,7 +178,7 @@ MaxTimestep TemperatureIndex_Old::max_timestep(PetscReal my_t) {
     }
   }
 
-  MaxTimestep dt_atmosphere = atmosphere->max_timestep(my_t);
+  MaxTimestep dt_atmosphere = m_atmosphere->max_timestep(my_t);
 
   return std::min(max_dt, dt_atmosphere);
 }
@@ -213,11 +213,11 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   const double ice_density = m_config.get_double("ice_density");
 
   // to ensure that temperature time series are correct:
-  atmosphere->update(my_t, my_dt);
+  m_atmosphere->update(my_t, my_dt);
 
   // This is a point-wise (local) computation, so we can use "climatic_mass_balance" to store
   // precipitation:
-  atmosphere->mean_precipitation(climatic_mass_balance);
+  m_atmosphere->mean_precipitation(climatic_mass_balance);
 
   // set up air temperature time series
   int Nseries = 0;
@@ -257,14 +257,14 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
   LocalMassBalance_Old::DegreeDayFactors  ddf = base_ddf;
 
-  atmosphere->begin_pointwise_access();
+  m_atmosphere->begin_pointwise_access();
   list.add(climatic_mass_balance);
 
   list.add(accumulation_rate);
   list.add(melt_rate);
   list.add(runoff_rate);
 
-  atmosphere->init_timeseries(ts);
+  m_atmosphere->init_timeseries(ts);
 
   ParallelSection loop(m_grid.com);
   try {
@@ -272,7 +272,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
       const int i = p.i(), j = p.j();
 
       // the temperature time series from the AtmosphereModel and its modifiers
-      atmosphere->temp_time_series(i, j, T);
+      m_atmosphere->temp_time_series(i, j, T);
 
       if (faustogreve != NULL) {
         // we have been asked to set mass balance parameters according to
@@ -311,7 +311,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   }
   loop.check();
 
-  atmosphere->end_pointwise_access();
+  m_atmosphere->end_pointwise_access();
 }
 
 
@@ -322,7 +322,7 @@ void TemperatureIndex_Old::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
 
 void TemperatureIndex_Old::ice_surface_temperature_impl(IceModelVec2S &result) {
-  atmosphere->mean_annual_temp(result);
+  m_atmosphere->mean_annual_temp(result);
 }
 
 void TemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
@@ -337,7 +337,7 @@ void TemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword, s
     result.insert("srunoff");
   }
 
-  atmosphere->add_vars_to_output(keyword, result);
+  m_atmosphere->add_vars_to_output(keyword, result);
 }
 
 void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {

@@ -54,7 +54,7 @@ void Simple::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
-  atmosphere->init();
+  m_atmosphere->init();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
@@ -71,19 +71,19 @@ MaxTimestep Simple::max_timestep_impl(double t) {
 void Simple::update_impl(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
-  if (atmosphere) {
-    atmosphere->update(my_t, my_dt);
+  if (m_atmosphere) {
+    m_atmosphere->update(my_t, my_dt);
   }
 }
 
 
 void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  atmosphere->mean_precipitation(result);
+  m_atmosphere->mean_precipitation(result);
   result.scale(m_config.get_double("ice_density"));
 }
 
 void Simple::ice_surface_temperature_impl(IceModelVec2S &result) {
-  atmosphere->mean_annual_temp(result);
+  m_atmosphere->mean_annual_temp(result);
 }
 
 void Simple::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {

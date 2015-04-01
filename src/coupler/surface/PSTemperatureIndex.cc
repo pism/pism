@@ -238,7 +238,7 @@ void TemperatureIndex::init_impl() {
 }
 
 MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
-  return atmosphere->max_timestep(my_t);
+  return m_atmosphere->max_timestep(my_t);
 }
 
 double TemperatureIndex::compute_next_balance_year_start(double time) {
@@ -268,7 +268,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   // update to ensure that temperature and precipitation time series
   // are correct:
-  atmosphere->update(my_t, my_dt);
+  m_atmosphere->update(my_t, my_dt);
 
   // set up air temperature and precipitation time series
   int Nseries = m_mbscheme->get_timeseries_length(my_dt);
@@ -313,7 +313,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   LocalMassBalance::DegreeDayFactors  ddf = m_base_ddf;
 
-  atmosphere->begin_pointwise_access();
+  m_atmosphere->begin_pointwise_access();
   list.add(m_air_temp_sd);
   list.add(m_climatic_mass_balance);
 
@@ -322,7 +322,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   list.add(m_runoff_rate);
   list.add(m_snow_depth);
 
-  atmosphere->init_timeseries(ts);
+  m_atmosphere->init_timeseries(ts);
 
   const double ice_density = m_config.get_double("ice_density");
 
@@ -332,10 +332,10 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
       const int i = p.i(), j = p.j();
 
       // the temperature time series from the AtmosphereModel and its modifiers
-      atmosphere->temp_time_series(i, j, T);
+      m_atmosphere->temp_time_series(i, j, T);
 
       // the precipitation time series from AtmosphereModel and its modifiers
-      atmosphere->precip_time_series(i, j, P);
+      m_atmosphere->precip_time_series(i, j, P);
 
       // interpolate temperature standard deviation time series
       if (m_sd_file_set == true) {
@@ -422,7 +422,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   }
   loop.check();
 
-  atmosphere->end_pointwise_access();
+  m_atmosphere->end_pointwise_access();
 
   m_next_balance_year_start = compute_next_balance_year_start(m_grid.time->current());
 }
@@ -435,7 +435,7 @@ void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
 void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
 
-  atmosphere->mean_annual_temp(result);
+  m_atmosphere->mean_annual_temp(result);
 }
 
 void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {

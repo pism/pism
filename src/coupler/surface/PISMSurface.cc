@@ -36,11 +36,11 @@ namespace surface {
 
 SurfaceModel::SurfaceModel(const IceGrid &g)
   : Component_TS(g) {
-  atmosphere = NULL;
+  m_atmosphere = NULL;
 }
 
 SurfaceModel::~SurfaceModel() {
-  delete atmosphere;
+  delete m_atmosphere;
 }
 
 void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
@@ -49,8 +49,8 @@ void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
 
 void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
-  if (atmosphere) {
-    atmosphere->get_diagnostics(dict, ts_dict);
+  if (m_atmosphere) {
+    m_atmosphere->get_diagnostics(dict, ts_dict);
   }
 }
 
@@ -59,10 +59,10 @@ void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
 }
 
 void SurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  if (atmosphere != NULL) {
-    delete atmosphere;
+  if (m_atmosphere != NULL) {
+    delete m_atmosphere;
   }
-  atmosphere = input;
+  m_atmosphere = input;
 }
 
 void SurfaceModel::init() {
@@ -72,7 +72,7 @@ void SurfaceModel::init() {
 
 void SurfaceModel::init_impl() {
   assert(atmosphere != NULL);
-  atmosphere->init();
+  m_atmosphere->init();
 }
 
 //! \brief Returns mass held in the surface layer.
@@ -119,28 +119,28 @@ void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result)
 }
 
 void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  if (atmosphere != NULL) {
-    atmosphere->define_variables(vars, nc, nctype);
+  if (m_atmosphere != NULL) {
+    m_atmosphere->define_variables(vars, nc, nctype);
   }
 }
 
 void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (atmosphere != NULL) {
-    atmosphere->write_variables(vars, nc);
+  if (m_atmosphere != NULL) {
+    m_atmosphere->write_variables(vars, nc);
   }
 }
 
 MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
-  if (atmosphere != NULL) {
-    return atmosphere->max_timestep(my_t);
+  if (m_atmosphere != NULL) {
+    return m_atmosphere->max_timestep(my_t);
   } else {
     return MaxTimestep();
   }
 }
 
 void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (atmosphere != NULL) {
-    atmosphere->add_vars_to_output(keyword, result);
+  if (m_atmosphere != NULL) {
+    m_atmosphere->add_vars_to_output(keyword, result);
   }
 }
 
