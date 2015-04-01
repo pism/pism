@@ -20,8 +20,9 @@
 #ifndef _PBLINGLECLARK_H_
 #define _PBLINGLECLARK_H_
 
-#include "PISMBedDef.hh"
 #include <fftw3.h>
+
+#include "PISMBedDef.hh"
 #include "deformation.hh"
 
 namespace pism {
@@ -39,12 +40,18 @@ protected:
   void update_impl(double my_t, double my_dt);
   void correct_topg();
   void allocate();
+
   // Vecs on processor 0:
-  petsc::Vec::Ptr m_Hp0,                      //!< ice thickness
-    m_bedp0,                      //!< bed elevation
-    m_Hstartp0,                   //!< initial (start-of-the-run) thickness
-    m_bedstartp0,                 //!< initial bed elevation
-    m_upliftp0;                   //!< bed uplift
+  //! ice thickness
+  petsc::Vec::Ptr m_Hp0;
+  //! bed elevation
+  petsc::Vec::Ptr m_bedp0;
+  //! initial (start-of-the-run) thickness
+  petsc::Vec::Ptr m_Hstartp0;
+  //! initial bed elevation
+  petsc::Vec::Ptr m_bedstartp0;
+  //! bed uplift
+  petsc::Vec::Ptr m_upliftp0;
   BedDeformLC *m_bdLC;
 };
 

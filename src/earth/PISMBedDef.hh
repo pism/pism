@@ -29,9 +29,6 @@ namespace pism {
 namespace bed {
 
 //! PISM bed deformation model (base class).
-/*! Unlike other Component_TS derived classes, the update() method of
-  BedDef has side-effects (modifies IceModel data members).
-*/
 class BedDef : public Component_TS {
 public:
   BedDef(const IceGrid &g);
