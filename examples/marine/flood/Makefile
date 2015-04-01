@@ -1,4 +1,4 @@
-input=-boot_file flood.nc -Mx 101 -My 101 -Mz 21 -Lz 1500
+input=-i flood.nc -bootstrap -Mx 101 -My 101 -Mz 21 -Lz 1500
 ssa=-stress_balance ssa+sia -plastic_phi 15
 ocean=-ocean constant,delta_SL -ocean_delta_SL_file flood.nc
 misc=-energy none

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014 The PISM Authors
+# Copyright (C) 2009-2015 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -313,7 +313,7 @@ else
 fi
 
 # construct command
-cmd="$PISM_MPIDO $NN $PISM -boot_file $INNAME -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $regridcommand $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
+cmd="$PISM_MPIDO $NN $PISM -i $INNAME -bootstrap -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $regridcommand $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
 echo
 $PISM_DO $cmd
 

@@ -437,10 +437,10 @@ int main(int argc, char *argv[]) {
     bool iset = options::Bool("-i", "input file name");
     bool bfset = options::Bool("-boot_file", "bootstrapping file name");
     std::string usage =
-      "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismo {-i IN.nc|-i IN.nc -bootstrap} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
+      "  -i IN.nc -bootstrap is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "  -no_model_strip X (re-)set width of no-model strip along edge of\n"
       "              computational domain to X km\n"

@@ -78,7 +78,7 @@ The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} con
 \subsubsection*{Diagnostic computation of ice shelf velocity}  The diagnostic velocity computation bootstraps from \texttt{Ross_combined.nc} and does a zero-year run; in the $211\times 211$ grid case we demonstrate below, the key parts of the PISM command are
 
 \begin{verbatim}
-pismr -boot_file ../Ross_combined.nc -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
+pismr -i ../Ross_combined.nc -bootstrap -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
     -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 \
     -pik -ssa_dirichlet_bc -y 0 -ssa_e 0.6 -ssafd_ksp_monitor
 \end{verbatim}

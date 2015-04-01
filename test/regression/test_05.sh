@@ -6,7 +6,7 @@ MPIEXEC=$2
 echo "Test # 5: bootstrapping from files with different variable orders."
 files="foo-05.nc bar-05.nc baz-05.nc"
 
-OPTS="-boot_file foo-05.nc -Mx 41 -My 61 -Mz 21 -Lz 5000 -y 0 -o_size small"
+OPTS="-i foo-05.nc -bootstrap -Mx 41 -My 61 -Mz 21 -Lz 5000 -y 0 -o_size small"
 
 set -e -x
 

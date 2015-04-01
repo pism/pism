@@ -41,7 +41,7 @@ John von Neumann
 - Create a new configuration .nc file with ncgen, and do your run with the new values.  For example:
 ~~~
     ncgen -o myconfig.nc myconfig.cdl
-    pismr -config myconfig.nc -boot_file mydata.nc -Mx 101 -My 101 -Mz 101 -Lz 4000 -y 100 -o start.nc
+    pismr -config myconfig.nc -i mydata.nc -bootstrap -Mx 101 -My 101 -Mz 101 -Lz 4000 -y 100 -o start.nc
     pismr -config myconfig.nc -i start.nc -y 10000 -o end.nc
 ~~~
   (Runtime option "-verbose 4" will report back your values as the PISM
@@ -61,7 +61,7 @@ John von Neumann
 ~~~
   Now run with the new values as before:
 ~~~
-    pismr -config myconfig.nc -boot_file mydata.nc -Mx 101 -My 101 -Mz 101 -Lz 4000 -y 100 -o start.nc
+    pismr -config myconfig.nc -i mydata.nc -bootstrap -Mx 101 -My 101 -Mz 101 -Lz 4000 -y 100 -o start.nc
     ...
 ~~~
 """

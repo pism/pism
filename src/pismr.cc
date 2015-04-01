@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
     bool iset = options::Bool("-i", "input file name");
     bool bfset = options::Bool("-boot_file", "bootstrapping file name");
     std::string usage =
-      "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismr {-i IN.nc|-i IN.nc -bootstrap} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
+      "  -i IN.nc -bootstrap is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "notes:\n"
       "  * one of -i or -boot_file is required\n"

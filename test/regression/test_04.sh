@@ -16,10 +16,10 @@ set -e -x
 $PISM_PATH/pismv -test G $COARSE -y 0 -o foo-04.nc 
 
 # Coarse -> fine:
-$PISM_PATH/pismr -boot_file foo-04.nc $FINE   $OPTS -o bar-04.nc
+$PISM_PATH/pismr -i foo-04.nc -bootstrap $FINE   $OPTS -o bar-04.nc
 
 # Fine -> coarse:
-$PISM_PATH/pismr -boot_file bar-04.nc $COARSE $OPTS -o baz-04.nc
+$PISM_PATH/pismr -i bar-04.nc -bootstrap $COARSE $OPTS -o baz-04.nc
 
 # Compare:
 $PISM_PATH/nccmp.py -v topg foo-04.nc baz-04.nc

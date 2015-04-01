@@ -52,7 +52,7 @@ The lowest grid point in a column of ice, at $z=0$, coincides with the highest g
 
 In the quadratically-spaced case the spacing near the ice/bedrock interface is about four times finer than it would be with equal spacing for the same value of \texttt{Mz}, while the spacing near the top of the computational box is correspondingly coarser.  For a detailed description of the spacing of the grid, see the documentation on \texttt{IceGrid::compute_vertical_levels()} in the PISM class browser.
 
-The user should specify the grid when using \texttt{-boot_file} or when initializing a verification test (section \ref{sec:verif}) or a simplified-geometry experiment (section \ref{sec:simp}).  If one initializes PISM from a saved model state using \texttt{-i} then the input file determines all grid parameters.  For instance, the command
+The user should specify the grid when using \texttt{-bootstrap} or when initializing a verification test (section \ref{sec:verif}) or a simplified-geometry experiment (section \ref{sec:simp}).  If one initializes PISM from a saved model state using \texttt{-i} then the input file determines all grid parameters.  For instance, the command
 
 \begin{verbatim}
 $  pismr -i foo.nc -y 100

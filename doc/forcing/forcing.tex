@@ -343,7 +343,7 @@ Simulations of the Greenland ice sheet typically use \texttt{-surface~pdd} inste
 
 The SeaRISE-Greenland setup uses a parameterized near-surface air temperature
 \cite{Faustoetal2009} and a constant-in-time precipitation field read from an
-input (\texttt{-i} or \texttt{-boot_file}) file. A temperature-index (PDD)
+input (\texttt{-i}) file. A temperature-index (PDD)
 scheme is used to compute the climatic mass balance.
 
 \begin{center}
@@ -475,7 +475,7 @@ Sometimes a run like the one above is still too costly. In this case it might be
 
 The command
 \begin{verbatim}
-$ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
+$ pismr -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
         -atmosphere searise_greenland \
         -surface pdd -ys 0 -ye 2.5 \
         -extra_file foo.nc -extra_times 0:0.1:2.5 \
@@ -921,8 +921,7 @@ data period in years.)
 \end{center}
 
 This surface model~component implements the setup used in~\cite{Martinetal2011}. The
-\variable{climatic_mass_balance} is read from an input (\texttt{-i} or
-\texttt{-boot_file}) file; the ice surface temperature is computed as a function of
+\variable{climatic_mass_balance} is read from an input (\texttt{-i}) file; the ice surface temperature is computed as a function of
 latitude (variable \variable{lat}) and surface elevation (dynamically updated
 by PISM). See equation~(1) in~\cite{Martinetal2011}.
 
@@ -1206,7 +1205,7 @@ Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify
   \end{tabular}
 \end{center}
 
-This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i} or \texttt{-boot_file}) file. To read time-independent precipitation from a different file, use the option \intextoption{atmosphere_searise_greenland_file}.
+This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i}) file. To read time-independent precipitation from a different file, use the option \intextoption{atmosphere_searise_greenland_file}.
 
 The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
 
@@ -1231,7 +1230,7 @@ Celsius of temperature change~\cite{Huybrechts02}.
 \end{center}
 
 This model~component reads a time-independent precipitation field from an input
-(\texttt{-i} or \texttt{-boot_file}) file and computes near-surface air
+(\texttt{-i}) file and computes near-surface air
 temperature using a latitude and surface elevation-dependent formula.
 
 The parameterization is the same as in the \texttt{-surface pik} model,

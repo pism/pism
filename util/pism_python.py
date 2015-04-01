@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2009-2014 the PISM Authors
+# Copyright (C) 2009-2015 the PISM Authors
 
 # @package pism_python
 # \author the PISM authors
@@ -11,7 +11,7 @@
 # Usage, including a minimal PISM call to bootstrap from this file:
 #
 # \verbatim $ pism_python.py  # creates foo.nc \endverbatim
-# \verbatim $ pismr -boot_file foo.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1 \endverbatim
+# \verbatim $ pismr -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1 \endverbatim
 
 import sys
 import time
@@ -96,4 +96,4 @@ setattr(nc, 'history', historystr)
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
 print('  for example, run:')
-print('    $ pismr -boot_file foo.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')
+print('    $ pismr -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')

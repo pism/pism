@@ -64,7 +64,7 @@ expackage="-extra_times 0:10:$RUNTIME -extra_vars $exvars"
 echo
 echo "$SCRIPTNAME  continue but regrid to $GRIDNAME and run for 2000 a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
-    -boot_file $PISM_INDATANAME $GRID \
+    -i $PISM_INDATANAME -bootstrap $GRID \
     -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \

@@ -34,6 +34,6 @@ ex_dt=3.1689e-07     # = 10 / 31556926 = 10 s
 exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"
 exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times 0:$ex_dt:$endtime"
 
-mpiexec -n $NN $pismexec -boot_file $initfile $grid $climate $physics \
+mpiexec -n $NN $pismexec -i $initfile -bootstrap $grid $climate $physics \
     $timediag $exdiag -ys 0.0 -y $endtime -max_dt $ts_dt -o $oname
 

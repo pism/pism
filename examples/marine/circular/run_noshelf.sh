@@ -15,7 +15,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -stress_balance ssa+sia -ssa_dirichlet_bc -o_order zyx"
+pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc -o_order zyx"
 
 doit="mpiexec -n $N pismr $pismopts"
 

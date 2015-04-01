@@ -22,23 +22,23 @@ digraph pism_init {
       labeljust = r;
       URL = "@ref IceModel::set_grid_defaults()";
 
-      is_boot_file_set1 [label = "Is -boot_file set?"];
+      is_bootstrap_set1 [label = "Is -bootstrap set?"];
       
-      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="@ref IceGrid::FromFile()"];
+      grid_from_bootstrap [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="@ref IceGrid::FromFile()"];
       
       fail_in_IceModel1 [label = "ERROR in base class IceModel"]
       
-      is_boot_file_set1 -> grid_from_boot_file [label = "yes"];
-      is_boot_file_set1 -> fail_in_IceModel1 [label = "no"];
+      is_bootstrap_set1 -> grid_from_bootstrap [label = "yes"];
+      is_bootstrap_set1 -> fail_in_IceModel1 [label = "no"];
 
     }
 
-    is_i_set1 -> is_boot_file_set1 [label = "no"];
+    is_i_set1 -> is_bootstrap_set1 [label = "no"];
     is_i_set1 -> grid_from_file [label = "yes"];
 
     grid_from_options [label = "Complete setting grid from options\nIceModel::set_grid_from_options()" color=darkgreen URL="@ref IceModel::set_grid_from_options()"];
       
-    grid_from_boot_file -> grid_from_options;
+    grid_from_bootstrap -> grid_from_options;
 
     createDA [label = "Distribute the model across processors\nIceGrid::allocate()" URL="@ref IceGrid::allocate()"];
     {grid_from_file grid_from_options} -> createDA;
@@ -69,18 +69,18 @@ digraph pism_init {
       labeljust = r;
       URL = "@ref IceModel::set_vars_from_options()";
 
-      is_boot_file_set [label = "Is -boot_file set?"];
+      is_bootstrap_set [label = "Is -bootstrap set?"];
       
       bootstrap_from_file [label = "IceModel::bootstrapFromFile()" color=darkgreen URL="@ref IceModel::bootstrapFromFile()"];
       
       fail_in_IceModel [label = "ERROR in base class IceModel"]
       
-      is_boot_file_set -> bootstrap_from_file [label = "yes"];
-      is_boot_file_set -> fail_in_IceModel [label = "no"];
+      is_bootstrap_set -> bootstrap_from_file [label = "yes"];
+      is_bootstrap_set -> fail_in_IceModel [label = "no"];
       
     }
     is_i_set2 -> initFromFile [label = "yes"];
-    is_i_set2 -> is_boot_file_set [label = "no"];
+    is_i_set2 -> is_bootstrap_set [label = "no"];
 
     regrid [label = "Regrid other data if -regrid_from\nIceModel::regrid()" color=darkgreen URL="@ref IceModel::regrid()"];
     {initFromFile bootstrap_from_file} -> regrid;

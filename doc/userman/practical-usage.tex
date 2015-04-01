@@ -17,7 +17,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \fileopt{i} & Chooses a PISM output file (NetCDF format) to initialize or restart from.  See section \ref{sec:initboot}. \\
-    \fileopt{boot_file} & Chooses a NetCDF file to bootstrap from, using heuristics to ``fill in'' missing fields.  See section \ref{sec:initboot}. \\
+    \intextoption{bootstrap} & Boostrap from the file set using \texttt{-i} using heuristics to ``fill in'' missing fields.  See section \ref{sec:initboot}. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa} and \texttt{vbar_ssa} velocities saved by a previous run using the \texttt{ssa} or \texttt{ssa+sia} stress balance (see section \ref{subsect:stressbalance}). \\ \midrule
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc}.\\
     \txtopt{o_size}{$\left<\text{size}\right>$} & Chooses the ``size'' of the output file to produce.  Possible sizes are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart PISM), \texttt{medium} (the default, includes a few diagnostic quantities) and \texttt{big} (writes all the variables mentioned in Tables~\ref{tab:three-d-diagnostics},~\ref{tab:three-d-diagnostics-vector},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~\ref{tab:two-d-diagnostics-3},~and~\ref{tab:two-d-diagnostics-vector}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
@@ -679,9 +679,9 @@ See table \ref{tab:regridvar} for the regriddable variables using
 Here is another example: suppose you have an output of a PISM run on a fairly
 coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a
 finer grid. This can be done using \texttt{-regrid_file} along with
-\texttt{-boot_file}\index{refining the grid}:
+\texttt{-bootstrap}\index{refining the grid}:
 \begin{verbatim}
-$ pismr -boot_file foo.nc -Mx 201 -My 201 -Mz 21 -Lz 4000 \
+$ pismr -i foo.nc -bootstrap -Mx 201 -My 201 -Mz 21 -Lz 4000 \
         -regrid_file foo.nc -regrid_vars litho_temp,enthalpy -y 100 -o bar.nc \
         -surface constant
 \end{verbatim}
@@ -946,7 +946,7 @@ $ flowline.py -o slab-in.nc --expand -d y slab.nc
 %$ - match dollar signs to make emacs happy
 produces  a PISM-ready \texttt{slab-in.nc}.  Specifically, \texttt{flowline.py} ``expands'' its input file in the y-direction.  Now we can ``bootstrap'' from \texttt{slab-in.nc}:
 \begin{verbatim}
-$ mpiexec -n 2 pismr -surface given -boot_file slab-in.nc -periodicity y \
+$ mpiexec -n 2 pismr -surface given -i slab-in.nc -bootstrap -periodicity y \
     -Mx 201 -My 3 -Lx 1000 -Ly 4 -Lz 2000 -Mz 11 -y 10000 -o pism-out.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy

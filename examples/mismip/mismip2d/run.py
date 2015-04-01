@@ -176,7 +176,7 @@ class Experiment:
         prepare.pism_bootstrap_file(boot_filename, self.experiment, step, self.mode, N=self.Mx,
                                     semianalytical_profile=self.semianalytic)
 
-        options = ["-boot_file %s" % boot_filename,
+        options = ["-i %s -bootstrap" % boot_filename,
                    "-Mx %d" % self.Mx,
                    "-My %d" % self.My,
                    "-Mz %d" % self.Mz,

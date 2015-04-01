@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012-2014 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
+# Copyright (C) 2012-2015 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
 
 import argparse
 
@@ -120,16 +120,16 @@ print 'opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfro
 print ''
 if args.e == 'Stnd':
     print 'infile=MISMIP3D_Stnd_initialSetup.nc'
-    print 'cmd="$pismr -boot_file $infile -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -ocean_kill_file $infile $opts"'
+    print 'cmd="$pismr -i $infile -bootstrap -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -ocean_kill_file $infile $opts"'
 elif args.e == 'P10S':
     print 'infile=MISMIP3D_P10S_initialSetup.nc'
-    print 'cmp="$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"'
+    print 'cmp="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"'
 elif args.e == 'P10R':
     print 'infile=P10S.nc'
     print 'cmd="$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts"'
 elif args.e == 'P75S':
     print 'infile=MISMIP3D_P75S_initialSetup.nc'
-    print 'cmd="$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"'
+    print 'cmd="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"'
 elif args.e == 'P75R':
     print 'infile=P75S.nc'
     print 'cmd="$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts"'

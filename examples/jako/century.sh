@@ -73,7 +73,7 @@ Mbz=101
 #Mbz=51
 
 echo
-cmd="$PISM_MPIDO $NN $PISM_EXEC -boot_file $BOOT  \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -i $BOOT -bootstrap  \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz $Mz -Mbz $Mbz -z_spacing equal \
   -no_model_strip 10 $PHYS \
   -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc \

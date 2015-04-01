@@ -4,7 +4,7 @@ xx=151
 yy=$xx
 length=400
 
-input="-boot_file input.nc"
+input="-i input.nc -bootstrap"
 
 grid="-Mx $xx -My $yy -Mz 11 -Mbz 1 -Lz 1500 -Lbz 0 -y $length"
 

@@ -57,7 +57,7 @@ def generate_input(N):
 
 
 def run_pismr((input_filename, output_filename)):
-    command = "pismr -boot_file %s -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0 -verbose 1" % (input_filename, output_filename, M, M)
+    command = "pismr -i %s -bootstrap -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0 -verbose 1" % (input_filename, output_filename, M, M)
     print "Running %s" % command
     subprocess.call(shlex.split(command))
 

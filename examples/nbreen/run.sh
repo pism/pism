@@ -105,7 +105,7 @@ diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlis
 
 set -x
 
-mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
+mpiexec -n $NN $pismexec -i $data -bootstrap $climate $physics $hydro \
     $grid -max_dt $dtmax -ys 0.0 -y $YY $diagnostics -o $oname
 
 set +x
