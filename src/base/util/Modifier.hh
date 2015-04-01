@@ -42,7 +42,8 @@ public:
     }
   }
 
-  virtual MaxTimestep max_timestep(double my_t)
+protected:
+  virtual MaxTimestep max_timestep_impl(double my_t)
   {
     if (input_model != NULL) {
       return input_model->max_timestep(my_t);
@@ -51,7 +52,6 @@ public:
     }
   }
 
-protected:
   virtual void update_impl(double my_t, double my_dt)
   {
     Model::m_t = my_t;
@@ -83,7 +83,7 @@ protected:
   }
 
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype) {
+                                     IO_Type nctype) {
     if (input_model != NULL) {
       input_model->define_variables(vars, nc, nctype);
     }

@@ -48,12 +48,12 @@ PIK::PIK(const IceGrid &g)
                              "K", "");
 }
 
-void PIK::attach_atmosphere_model(atmosphere::AtmosphereModel *input)
+void PIK::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
 {
   delete input;
 }
 
-void PIK::init() {
+void PIK::init_impl() {
   bool do_regrid = false;
   int start = -1;
 
@@ -123,7 +123,7 @@ void PIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(m_climatic_mass_balance);
 }
 
-void PIK::ice_surface_temperature(IceModelVec2S &result) {
+void PIK::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(m_ice_surface_temp);
 }
 

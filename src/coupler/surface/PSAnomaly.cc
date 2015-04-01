@@ -74,7 +74,7 @@ Anomaly::~Anomaly() {
   // empty
 }
 
-void Anomaly::init() {
+void Anomaly::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -104,7 +104,7 @@ void Anomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.add(1.0, *climatic_mass_balance_anomaly);
 }
 
-void Anomaly::ice_surface_temperature(IceModelVec2S &result) {
+void Anomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   result.add(1.0, *ice_surface_temp_anomaly);
 }

@@ -31,13 +31,11 @@ namespace surface {
 class ForceThickness : public SurfaceModifier {
 public:
   ForceThickness(const IceGrid &g, SurfaceModel *input);
-
   virtual ~ForceThickness();
-  virtual void init();
-  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  virtual void init_impl();
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double my_t);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);

@@ -87,7 +87,7 @@ TemperatureIndex_Old::~TemperatureIndex_Old() {
   delete faustogreve;
 }
 
-void TemperatureIndex_Old::init() {
+void TemperatureIndex_Old::init_impl() {
   bool pdd_rand, pdd_rand_repeatable, fausto_params;
 
   SurfaceModel::init();
@@ -321,7 +321,7 @@ void TemperatureIndex_Old::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 }
 
 
-void TemperatureIndex_Old::ice_surface_temperature(IceModelVec2S &result) {
+void TemperatureIndex_Old::ice_surface_temperature_impl(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 

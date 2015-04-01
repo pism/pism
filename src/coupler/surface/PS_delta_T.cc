@@ -58,7 +58,7 @@ Delta_T::~Delta_T() {
   // empty
 }
 
-void Delta_T::init() {
+void Delta_T::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -75,7 +75,7 @@ MaxTimestep Delta_T::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Delta_T::ice_surface_temperature(IceModelVec2S &result) {
+void Delta_T::ice_surface_temperature_impl(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   offset_data(result);
 }

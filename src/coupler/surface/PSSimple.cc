@@ -49,7 +49,7 @@ Simple::Simple(const IceGrid &g)
 }
 
 
-void Simple::init() {
+void Simple::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -82,7 +82,7 @@ void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.scale(m_config.get_double("ice_density"));
 }
 
-void Simple::ice_surface_temperature(IceModelVec2S &result) {
+void Simple::ice_surface_temperature_impl(IceModelVec2S &result) {
   atmosphere->mean_annual_temp(result);
 }
 

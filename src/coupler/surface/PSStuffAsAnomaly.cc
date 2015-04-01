@@ -62,7 +62,7 @@ StuffAsAnomaly::~StuffAsAnomaly() {
   // empty
 }
 
-void StuffAsAnomaly::init() {
+void StuffAsAnomaly::init_impl() {
   std::string input_file;
   bool do_regrid = false;
   int start = 0;
@@ -138,7 +138,7 @@ void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(mass_flux);
 }
 
-void StuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(temp);
 }
 

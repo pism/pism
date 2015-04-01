@@ -39,7 +39,7 @@ Elevation::Elevation(const IceGrid &g)
   // empty
 }
 
-void Elevation::init() {
+void Elevation::init_impl() {
   bool m_limits_set = false;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -182,7 +182,7 @@ MaxTimestep Elevation::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Elevation::attach_atmosphere_model(atmosphere::AtmosphereModel *input)
+void Elevation::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
 {
   delete input;
 }
@@ -240,7 +240,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.scale(m_config.get_double("ice_density"));
 }
 
-void Elevation::ice_surface_temperature(IceModelVec2S &result) {
+void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
 
   const IceModelVec2S *usurf = m_grid.variables().get_2d_scalar("surface_altitude");
 

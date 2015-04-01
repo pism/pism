@@ -46,11 +46,10 @@ class TemperatureIndex : public SurfaceModel {
 public:
   TemperatureIndex(const IceGrid &g);
   virtual ~TemperatureIndex();
-  virtual void init();
-  virtual MaxTimestep max_timestep(double my_t);
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  virtual void init_impl();
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);

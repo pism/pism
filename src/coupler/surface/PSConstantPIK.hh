@@ -36,14 +36,11 @@ namespace surface {
 class PIK : public SurfaceModel {
 public:
   PIK(const IceGrid &g);
-
-  virtual void init();
-
-  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
-
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  virtual void init_impl();
+  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,

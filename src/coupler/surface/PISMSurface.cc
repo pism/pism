@@ -55,6 +55,10 @@ void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict
 }
 
 void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
+  this->attach_atmosphere_model_impl(input);
+}
+
+void SurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
   if (atmosphere != NULL) {
     delete atmosphere;
   }
@@ -63,7 +67,10 @@ void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
 
 void SurfaceModel::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+  this->init_impl();
+}
 
+void SurfaceModel::init_impl() {
   assert(atmosphere != NULL);
   atmosphere->init();
 }
@@ -74,6 +81,10 @@ void SurfaceModel::init() {
  * the surface layer.
  */
 void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
+  this->mass_held_in_surface_layer_impl(result);
+}
+
+void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 
@@ -85,14 +96,25 @@ void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
  * layer thickness.
  */
 void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
+  this->surface_layer_thickness_impl(result);
+}
+
+void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 
+void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) {
+  this->ice_surface_temperature_impl(result);
+}
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
  */
 void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+  this->ice_surface_liquid_water_fraction_impl(result);
+}
+
+void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
   result.set(0.0);
 }
 
@@ -108,7 +130,7 @@ void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const
   }
 }
 
-MaxTimestep SurfaceModel::max_timestep(double my_t) {
+MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
   if (atmosphere != NULL) {
     return atmosphere->max_timestep(my_t);
   } else {

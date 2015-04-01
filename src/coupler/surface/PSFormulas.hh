@@ -35,12 +35,10 @@ class PSFormulas : public SurfaceModel {
 public:
   PSFormulas(const IceGrid &g);
   ~PSFormulas();
-
-  // the interface:
-  void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
-  void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  void ice_surface_temperature(IceModelVec2S &result);
 protected:
+  void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+  void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  void ice_surface_temperature_impl(IceModelVec2S &result);
   void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

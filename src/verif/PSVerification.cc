@@ -47,7 +47,7 @@ const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
 Verification::Verification(const IceGrid &g,
-                               EnthalpyConverter *EC, int test)
+                           EnthalpyConverter *EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
 }
@@ -56,7 +56,7 @@ Verification::~Verification() {
   // empty
 }
 
-void Verification::init() {
+void Verification::init_impl() {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).

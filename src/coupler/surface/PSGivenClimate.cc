@@ -58,12 +58,12 @@ Given::~Given() {
   // empty
 }
 
-void Given::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
+void Given::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
   delete input;
   input = NULL;
 }
 
-void Given::init() {
+void Given::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -91,7 +91,7 @@ void Given::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(*climatic_mass_balance);
 }
 
-void Given::ice_surface_temperature(IceModelVec2S &result) {
+void Given::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(*ice_surface_temp);
 }
 

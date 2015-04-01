@@ -67,7 +67,7 @@ Cache::~Cache() {
 }
 
 
-void Cache::init() {
+void Cache::init_impl() {
   int update_interval = m_update_interval_years;
 
   input_model->init();
@@ -141,19 +141,19 @@ void Cache::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(m_mass_flux);
 }
 
-void Cache::ice_surface_temperature(IceModelVec2S &result) {
+void Cache::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(m_temperature);
 }
 
-void Cache::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+void Cache::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
   result.copy_from(m_liquid_water_fraction);
 }
 
-void Cache::mass_held_in_surface_layer(IceModelVec2S &result) {
+void Cache::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
   result.copy_from(m_mass_held_in_surface_layer);
 }
 
-void Cache::surface_layer_thickness(IceModelVec2S &result) {
+void Cache::surface_layer_thickness_impl(IceModelVec2S &result) {
   result.copy_from(m_surface_layer_thickness);
 }
 

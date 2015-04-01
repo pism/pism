@@ -48,7 +48,7 @@ LapseRates::~LapseRates() {
   // empty
 }
 
-void LapseRates::init() {
+void LapseRates::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -82,7 +82,7 @@ void LapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   lapse_rate_correction(result, m_smb_lapse_rate);
 }
 
-void LapseRates::ice_surface_temperature(IceModelVec2S &result) {
+void LapseRates::ice_surface_temperature_impl(IceModelVec2S &result) {
   input_model->ice_surface_temperature(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }

@@ -75,11 +75,7 @@ ForceThickness::~ForceThickness() {
   // empty
 }
 
-void ForceThickness::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
-  input_model->attach_atmosphere_model(input);
-}
-
-void ForceThickness::init() {
+void ForceThickness::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -312,7 +308,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 }
 
 //! Does not modify ice surface temperature.
-void ForceThickness::ice_surface_temperature(IceModelVec2S &result) {
+void ForceThickness::ice_surface_temperature_impl(IceModelVec2S &result) {
   return input_model->ice_surface_temperature(result);
 }
 

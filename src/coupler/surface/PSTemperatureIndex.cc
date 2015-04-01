@@ -180,7 +180,7 @@ TemperatureIndex::~TemperatureIndex() {
   delete m_faustogreve;
 }
 
-void TemperatureIndex::init() {
+void TemperatureIndex::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   SurfaceModel::init();
@@ -237,12 +237,7 @@ void TemperatureIndex::init() {
   m_next_balance_year_start = compute_next_balance_year_start(m_grid.time->current());
 }
 
-MaxTimestep TemperatureIndex::max_timestep_impl(double t) {
-  (void) t;
-  return MaxTimestep();
-}
-
-MaxTimestep TemperatureIndex::max_timestep(double my_t) {
+MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
   return atmosphere->max_timestep(my_t);
 }
 
@@ -438,7 +433,7 @@ void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 }
 
 
-void TemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
+void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
 
   atmosphere->mean_annual_temp(result);
 }

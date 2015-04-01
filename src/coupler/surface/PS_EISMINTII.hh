@@ -35,10 +35,8 @@ class EISMINTII : public PSFormulas {
 public:
   EISMINTII(const IceGrid &g, int experiment);
   ~EISMINTII();
-
-  // the interface:
-  void init();
 protected:
+  void init_impl();
   virtual MaxTimestep max_timestep_impl(double t);
   void update_impl(PetscReal t, PetscReal dt);
   void initialize_using_formulas();

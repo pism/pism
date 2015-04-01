@@ -49,16 +49,27 @@ public:
   // the interface:
   void ice_surface_mass_flux(IceModelVec2S &result);
 
-  virtual void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
-  virtual void ice_surface_temperature(IceModelVec2S &result) = 0;
-  virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result);
-  virtual void mass_held_in_surface_layer(IceModelVec2S &result);
-  virtual void surface_layer_thickness(IceModelVec2S &result);
+  void ice_surface_temperature(IceModelVec2S &result);
+  void ice_surface_liquid_water_fraction(IceModelVec2S &result);
 
-  // provide default re-implementations of these parent's methods:
-  virtual void init();
-  virtual MaxTimestep max_timestep(double my_t);
+  void mass_held_in_surface_layer(IceModelVec2S &result);
+  void surface_layer_thickness(IceModelVec2S &result);
+
+  void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
+
+  void init();
 protected:
+  virtual void init_impl();
+  virtual MaxTimestep max_timestep_impl(double my_t);
+
+  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+
+  virtual void surface_layer_thickness_impl(IceModelVec2S &result);
+  virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result);
+
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result) = 0;  
+  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result);
+
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) = 0;
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,

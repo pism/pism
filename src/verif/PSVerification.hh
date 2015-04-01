@@ -31,10 +31,8 @@ class Verification : public PSFormulas {
 public:
   Verification(const IceGrid &g, EnthalpyConverter *EC, int test);
   ~Verification();
-
-  // the interface:
-  void init();
 private:
+  void init_impl();
   MaxTimestep max_timestep_impl(double t);
   void update_impl(PetscReal t, PetscReal dt);
   int m_testname;

@@ -32,12 +32,10 @@ class StuffAsAnomaly : public SurfaceModifier
 public:
   StuffAsAnomaly(const IceGrid &g, SurfaceModel *input);
   virtual ~StuffAsAnomaly();
-
-  virtual void init();
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature(IceModelVec2S &result);
-
 protected:
+  virtual void init_impl();
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);

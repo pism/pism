@@ -31,12 +31,12 @@ class LapseRates : public PLapseRates<SurfaceModel,SurfaceModifier>
 public:
   LapseRates(const IceGrid &g, SurfaceModel* in);
   virtual ~LapseRates();
-
-  virtual void init();
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature(IceModelVec2S &result);
-
 protected:
+  virtual void init_impl();
+
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,

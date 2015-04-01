@@ -37,7 +37,7 @@ EISMINTII::~EISMINTII() {
   // empty
 }
 
-void EISMINTII::init() {
+void EISMINTII::init_impl() {
 
   verbPrintf(2, m_grid.com, 
              "setting parameters for surface mass balance"

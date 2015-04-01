@@ -36,12 +36,9 @@ class Delta_T : public PScalarForcing<SurfaceModel,SurfaceModifier>
 public:
   Delta_T(const IceGrid &g, SurfaceModel* in);
   virtual ~Delta_T();
-
-  virtual void init();
-
-  virtual void ice_surface_temperature(IceModelVec2S &result);
-
 protected:
+  virtual void init_impl();
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
