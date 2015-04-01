@@ -1,24 +1,6 @@
 include_directories (
-  base
-  base/stressbalance
-  base/stressbalance/sia
-  base/stressbalance/ssa
-  base/stressbalance/blatter
-  base/calving
+  .
   base/util
-  base/util/io
-  base/util/petscwrappers
-  base/energy
-  base/rheology
-  base/basalstrength
-  base/hydrology
-  earth
-  coupler
-  coupler/atmosphere
-  coupler/surface
-  coupler/ocean
-  coupler/util
-  calcalcs
   )
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous

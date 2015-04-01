@@ -19,7 +19,7 @@
 #ifndef _PSTEMPERATUREINDEX_OLD_H_
 #define _PSTEMPERATUREINDEX_OLD_H_
 
-#include "PISMSurface.hh"
+#include "coupler/PISMSurface.hh"
 #include "localMassBalance_old.hh"
 #include "VariableMetadata.hh"
 

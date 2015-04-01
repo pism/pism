@@ -20,7 +20,7 @@
 #include <sstream>
 
 #include "PISMConfig.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 

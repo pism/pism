@@ -20,7 +20,7 @@
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
 #include "iceModel.hh"
-#include "PISMStressBalance.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
 

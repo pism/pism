@@ -19,7 +19,7 @@
 #ifndef _PAMODIFIER_H_
 #define _PAMODIFIER_H_
 
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "Modifier.hh"
 
 namespace pism {

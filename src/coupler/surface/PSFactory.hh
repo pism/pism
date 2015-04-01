@@ -20,7 +20,7 @@
 #define _PSFACTORY_H_
 
 #include "PSModifier.hh"
-#include "PCFactory.hh"
+#include "coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace surface {

@@ -20,7 +20,7 @@
 #ifndef _PSVERIFICATION_H_
 #define _PSVERIFICATION_H_
 
-#include "PSFormulas.hh"
+#include "coupler/surface/PSFormulas.hh"
 
 namespace pism {
 class EnthalpyConverter;

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PBLingleClark.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"

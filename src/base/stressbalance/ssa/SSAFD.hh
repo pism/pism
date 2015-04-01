@@ -22,9 +22,9 @@
 #include "SSA.hh"
 
 #include "error_handling.hh"
-#include "Viewer.hh"
-#include "KSP.hh"
-#include "Mat.hh"
+#include "base/util/petscwrappers/Viewer.hh"
+#include "base/util/petscwrappers/KSP.hh"
+#include "base/util/petscwrappers/Mat.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -19,7 +19,7 @@
 #ifndef _PISMMERGE_H_
 #define _PISMMERGE_H_
 
-#include "PISMNC4_Serial.hh"
+#include "base/util/io/PISMNC4_Serial.hh"
 #include "pism_const.hh"
 #include <vector>
 #include <string>

@@ -20,8 +20,8 @@
 #define _SSATESTCASE_H_
 
 #include "SSA.hh"
-#include "enthalpyConverter.hh"
-#include "basal_resistance.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/basalstrength/basal_resistance.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 

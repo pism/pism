@@ -18,12 +18,12 @@
 
 #include "SSA.hh"
 #include "Mask.hh"
-#include "basal_resistance.hh"
+#include "base/basalstrength/basal_resistance.hh"
 #include "PISMVars.hh"
 #include "pism_options.hh"
-#include "flowlaw_factory.hh"
-#include "PIO.hh"
-#include "enthalpyConverter.hh"
+#include "base/rheology/flowlaw_factory.hh"
+#include "base/util/io/PIO.hh"
+#include "base/enthalpyConverter.hh"
 #include "error_handling.hh"
 
 #include "SSA_diagnostics.hh"

@@ -21,11 +21,11 @@
 
 #include <petsc.h>
 #include "IceGrid.hh"
-#include "iceModel.hh"
-#include "SIAFD.hh"
-#include "SSAFD.hh"
-#include "PISMMohrCoulombYieldStress.hh"
-#include "PISMHydrology.hh"
+#include "base/iceModel.hh"
+#include "base/stressbalance/sia/SIAFD.hh"
+#include "base/stressbalance/ssa/SSAFD.hh"
+#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "base/hydrology/PISMHydrology.hh"
 
 namespace pism {
 namespace stressbalance {

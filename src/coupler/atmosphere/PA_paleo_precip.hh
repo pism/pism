@@ -19,7 +19,7 @@
 #ifndef _PA_PALEO_PRECIP_H_
 #define _PA_PALEO_PRECIP_H_
 
-#include "PScalarForcing.hh"
+#include "coupler/util/PScalarForcing.hh"
 #include "PAModifier.hh"
 
 namespace pism {

@@ -18,7 +18,7 @@
 
 #include "basal_resistance.hh"
 #include "pism_const.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 #include "PISMConfigInterface.hh"
 
 namespace pism {

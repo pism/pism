@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "columnSystem.hh"
+#include "base/columnSystem.hh"
 
 namespace pism {
 

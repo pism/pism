@@ -18,9 +18,9 @@
 
 #include "SIA_Sliding.hh"
 #include "Mask.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 #include "PISMVars.hh"
-#include "flowlaw_factory.hh"
+#include "base/rheology/flowlaw_factory.hh"
 #include "IceGrid.hh"
 #include "error_handling.hh"
 

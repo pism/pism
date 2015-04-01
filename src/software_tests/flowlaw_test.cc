@@ -18,11 +18,11 @@
 
 #include <petsc.h>
 #include "pism_const.hh"
-#include "flowlaw_factory.hh"
-#include "enthalpyConverter.hh"
+#include "base/rheology/flowlaw_factory.hh"
+#include "base/enthalpyConverter.hh"
 #include "pism_options.hh"
 
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 #include "PISMConfig.hh"

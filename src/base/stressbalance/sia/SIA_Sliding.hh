@@ -19,7 +19,7 @@
 #ifndef _SIA_SLIDING_H_
 #define _SIA_SLIDING_H_
 
-#include "ShallowStressBalance.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
 namespace stressbalance {

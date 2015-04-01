@@ -24,11 +24,11 @@
 
 #include "pism_memory.hh"
 #include "VariableMetadata.hh"
-#include "Viewer.hh"
+#include "base/util/petscwrappers/Viewer.hh"
 #include "Vector2.hh"
 #include "StarStencil.hh"
-#include "DM.hh"
-#include "Vec.hh"
+#include "base/util/petscwrappers/DM.hh"
+#include "base/util/petscwrappers/Vec.hh"
 
 namespace pism {
 

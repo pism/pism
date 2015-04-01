@@ -21,8 +21,8 @@
 #include "ShallowStressBalance.hh"
 #include "Mask.hh"
 #include "PISMVars.hh"
-#include "flowlaw_factory.hh"
-#include "basal_resistance.hh"
+#include "base/rheology/flowlaw_factory.hh"
+#include "base/basalstrength/basal_resistance.hh"
 #include "pism_options.hh"
 
 #include "error_handling.hh"

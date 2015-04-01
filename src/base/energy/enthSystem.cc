@@ -20,7 +20,7 @@
 #include <gsl/gsl_math.h>
 #include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 
 #include "error_handling.hh"
 #include "ColumnInterpolation.hh"

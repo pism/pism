@@ -27,7 +27,7 @@
 #include "pism_memory.hh"
 using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"

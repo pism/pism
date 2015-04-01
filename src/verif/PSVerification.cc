@@ -21,9 +21,9 @@
 #include <vector>
 
 #include "PSVerification.hh"
-#include "PISMAtmosphere.hh"
-#include "flowlaws.hh"
-#include "enthalpyConverter.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "base/rheology/flowlaws.hh"
+#include "base/enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "PISMConfigInterface.hh"
 

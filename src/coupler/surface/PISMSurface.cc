@@ -20,9 +20,9 @@
 #include <cassert>
 #include <gsl/gsl_math.h>
 
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
-#include "PIO.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"

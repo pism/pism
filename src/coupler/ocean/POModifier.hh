@@ -19,7 +19,7 @@
 #ifndef _POMODIFIER_H_
 #define _POMODIFIER_H_
 
-#include "PISMOcean.hh"
+#include "coupler/PISMOcean.hh"
 #include "Modifier.hh"
 
 namespace pism {

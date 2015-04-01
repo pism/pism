@@ -21,8 +21,8 @@
 #include <gsl/gsl_interp.h>
 
 #include "iceModel.hh"
-#include "PIO.hh"
-#include "PISMStressBalance.hh"
+#include "base/util/io/PIO.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"

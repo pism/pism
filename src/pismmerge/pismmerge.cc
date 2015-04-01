@@ -20,7 +20,7 @@
 #include "pism_options.hh"
 #include "pismmerge.hh"
 
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 using namespace pism;

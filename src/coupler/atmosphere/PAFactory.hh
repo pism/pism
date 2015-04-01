@@ -19,9 +19,9 @@
 #ifndef _PAFACTORY_H_
 #define _PAFACTORY_H_
 
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "PAModifier.hh"
-#include "PCFactory.hh"
+#include "coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace atmosphere {

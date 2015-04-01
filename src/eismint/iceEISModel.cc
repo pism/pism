@@ -17,17 +17,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IceGrid.hh"
-#include "iceModel.hh"
+#include "base/iceModel.hh"
 #include "iceEISModel.hh"
-#include "SIAFD.hh"
-#include "SIA_Sliding.hh"
-#include "PISMStressBalance.hh"
+#include "base/stressbalance/sia/SIAFD.hh"
+#include "base/stressbalance/sia/SIA_Sliding.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "pism_options.hh"
-#include "POConstant.hh"
-#include "PS_EISMINTII.hh"
+#include "coupler/ocean/POConstant.hh"
+#include "coupler/surface/PS_EISMINTII.hh"
 
 #include "error_handling.hh"
-#include "PISMBedDef.hh"
+#include "earth/PISMBedDef.hh"
 #include "PISMConfig.hh"
 #include "PISMTime.hh"
 

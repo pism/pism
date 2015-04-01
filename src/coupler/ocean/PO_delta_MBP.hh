@@ -20,7 +20,7 @@
 #ifndef _PO_DELTA_MBP_H_
 #define _PO_DELTA_MBP_H_
 
-#include "PScalarForcing.hh"
+#include "coupler/util/PScalarForcing.hh"
 #include "POModifier.hh"
 
 namespace pism {

@@ -19,7 +19,7 @@
 #ifndef _PALAPSERATES_H_
 #define _PALAPSERATES_H_
 
-#include "PLapseRates.hh"
+#include "coupler/util/PLapseRates.hh"
 #include "PAModifier.hh"
 
 namespace pism {

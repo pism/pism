@@ -1,15 +1,15 @@
 %{
-#include "stressbalance/ssa/SSAFEM.hh"
-#include "stressbalance/ssa/SSAFD.hh"
-#include "exactTestsIJ.h"
+#include "base/stressbalance/ssa/SSAFEM.hh"
+#include "base/stressbalance/ssa/SSAFD.hh"
+#include "verif/tests/exactTestsIJ.h"
 %}
 
-%include "stressbalance/ShallowStressBalance.hh"
-%include "stressbalance/ssa/SSA.hh"
-%include "stressbalance/ssa/SSAFD.hh"
-%include "stressbalance/ssa/SSAFEM.hh"
+%include "base/stressbalance/ShallowStressBalance.hh"
+%include "base/stressbalance/ssa/SSA.hh"
+%include "base/stressbalance/ssa/SSAFD.hh"
+%include "base/stressbalance/ssa/SSAFEM.hh"
 
 /* Wrap C code implementing exact solutions for SSA verification
  * tests.
  */
-%include "exactTestsIJ.h"
+%include "verif/tests/exactTestsIJ.h"

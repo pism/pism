@@ -22,7 +22,7 @@
 #include "Timeseries.hh"
 #include "pism_const.hh"
 #include "IceGrid.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMTime.hh"
 #include "PISMConfigInterface.hh"
 

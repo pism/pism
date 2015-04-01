@@ -21,9 +21,9 @@
 #include "PISMVars.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
-#include "PISMStressBalance.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "error_handling.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
 namespace hydrology {

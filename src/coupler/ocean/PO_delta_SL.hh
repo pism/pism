@@ -19,7 +19,7 @@
 #ifndef _PODSLFORCING_H_
 #define _PODSLFORCING_H_
 
-#include "PScalarForcing.hh"
+#include "coupler/util/PScalarForcing.hh"
 #include "POModifier.hh"
 
 namespace pism {

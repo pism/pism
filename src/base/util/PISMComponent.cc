@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "PISMComponent.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "VariableMetadata.hh"

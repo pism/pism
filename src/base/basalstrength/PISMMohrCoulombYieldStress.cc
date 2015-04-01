@@ -21,12 +21,12 @@
 #include <gsl/gsl_math.h>
 
 #include "PISMMohrCoulombYieldStress.hh"
-#include "PISMHydrology.hh"
+#include "base/hydrology/PISMHydrology.hh"
 #include "PISMVars.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
 #include "error_handling.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "IceGrid.hh"
 
 namespace pism {

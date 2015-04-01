@@ -1,5 +1,3 @@
-include_directories (./util)
-
 # Boundary models (surface, atmosphere, ocean).
 add_library (pismboundary
   ./atmosphere/PAConstantPIK.cc

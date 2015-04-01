@@ -19,8 +19,8 @@
 #ifndef _PS_DELTA_T_H_
 #define _PS_DELTA_T_H_
 
-#include "PScalarForcing.hh"
-#include "PISMSurface.hh"
+#include "coupler/util/PScalarForcing.hh"
+#include "coupler/PISMSurface.hh"
 #include "PSModifier.hh"
 
 namespace pism {

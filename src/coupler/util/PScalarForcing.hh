@@ -25,7 +25,7 @@
 #include "pism_options.hh"
 #include "PISMTime.hh"
 #include "PISMConfigInterface.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 
 #include "error_handling.hh"
 

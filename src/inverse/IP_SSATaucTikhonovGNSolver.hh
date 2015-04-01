@@ -23,7 +23,7 @@
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
 #include "TerminationReason.hh"
-#include "KSP.hh"
+#include "base/util/petscwrappers/KSP.hh"
 
 #include "error_handling.hh"
 

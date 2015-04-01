@@ -19,8 +19,8 @@
 #ifndef _PSLAPSERATES_H_
 #define _PSLAPSERATES_H_
 
-#include "PLapseRates.hh"
-#include "PISMSurface.hh"
+#include "coupler/util/PLapseRates.hh"
+#include "coupler/PISMSurface.hh"
 #include "PSModifier.hh"
 
 namespace pism {

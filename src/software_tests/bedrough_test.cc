@@ -28,9 +28,9 @@ static char help[] = "\nBEDROUGH_TEST\n"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "iceModelVec.hh"
-#include "PISMBedSmoother.hh"
+#include "base/stressbalance/sia/PISMBedSmoother.hh"
 
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 using namespace pism;

@@ -18,7 +18,7 @@
 
 #include "flowlaws.hh"
 #include "pism_const.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
 

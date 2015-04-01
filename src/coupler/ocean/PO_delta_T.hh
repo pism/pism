@@ -19,8 +19,8 @@
 #ifndef _PODTFORCING_H_
 #define _PODTFORCING_H_
 
-#include "PScalarForcing.hh"
-#include "PISMOcean.hh"
+#include "coupler/util/PScalarForcing.hh"
+#include "coupler/PISMOcean.hh"
 #include "POModifier.hh"
 
 namespace pism {

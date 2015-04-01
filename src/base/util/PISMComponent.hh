@@ -24,7 +24,7 @@
 #include <map>
 
 #include "MaxTimestep.hh"
-#include "IO_Flags.hh"
+#include "base/util/io/IO_Flags.hh"
 
 namespace pism {
 

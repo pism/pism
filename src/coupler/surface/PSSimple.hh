@@ -19,8 +19,8 @@
 #ifndef _PSSIMPLE_H_
 #define _PSSIMPLE_H_
 
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "VariableMetadata.hh"
 
 namespace pism {

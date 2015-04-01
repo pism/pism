@@ -26,7 +26,7 @@
 #include "deformation.hh"
 #include "PISMConfigInterface.hh"
 #include "error_handling.hh"
-#include "Vec.hh"
+#include "base/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace bed {

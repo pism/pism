@@ -19,7 +19,7 @@
 
 #include "PISMEigenCalving.hh"
 #include "PISMVars.hh"
-#include "PISMStressBalance.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "Mask.hh"
 #include "error_handling.hh"
 #include "IceGrid.hh"

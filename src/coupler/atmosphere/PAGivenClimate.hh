@@ -20,7 +20,7 @@
 #define _PAGIVEN_H_
 
 #include "PAModifier.hh"
-#include "PGivenClimate.hh"
+#include "coupler/util/PGivenClimate.hh"
 
 namespace pism {
 namespace atmosphere {

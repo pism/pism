@@ -19,13 +19,13 @@
 #include "PISMStressBalance.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
-#include "PISMOcean.hh"
+#include "coupler/PISMOcean.hh"
 #include "IceGrid.hh"
 #include "PISMVars.hh"
 #include "Mask.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 #include "PISMConfigInterface.hh"
-#include "flowlaws.hh"
+#include "base/rheology/flowlaws.hh"
 #include "error_handling.hh"
 
 namespace pism {

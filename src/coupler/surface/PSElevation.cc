@@ -20,7 +20,7 @@
 
 #include "iceModelVec.hh"
 #include "PSElevation.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"

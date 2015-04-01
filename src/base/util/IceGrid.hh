@@ -27,7 +27,7 @@
 
 #include "pism_memory.hh"
 #include "PISMVars.hh"
-#include "DM.hh"
+#include "base/util/petscwrappers/DM.hh"
 #include "Profiling.hh"
 
 namespace pism {

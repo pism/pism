@@ -19,7 +19,7 @@
 #ifndef _POGIVENTH_H_
 #define _POGIVENTH_H_
 
-#include "PGivenClimate.hh"
+#include "coupler/util/PGivenClimate.hh"
 #include "POModifier.hh"
 
 namespace pism {

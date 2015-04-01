@@ -19,8 +19,8 @@
 #ifndef _PSELEVATION_H_
 #define _PSELEVATION_H_
 
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "VariableMetadata.hh"
 
 namespace pism {

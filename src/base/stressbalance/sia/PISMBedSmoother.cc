@@ -19,7 +19,7 @@
 #include "PISMBedSmoother.hh"
 #include "Mask.hh"
 #include "IceGrid.hh"
-#include "Vec.hh"
+#include "base/util/petscwrappers/Vec.hh"
 
 #include "error_handling.hh"
 #include "pism_const.hh"

@@ -19,9 +19,9 @@
 #ifndef _PSCONSTANTPIK_H_
 #define _PSCONSTANTPIK_H_
 
-#include "PISMSurface.hh"
+#include "coupler/PISMSurface.hh"
 #include "iceModelVec.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 
 namespace pism {
 namespace surface {

@@ -36,12 +36,12 @@
 #include "pism_python.hh"
 
 #include "Mask.hh"
-#include "basal_resistance.hh"
-#include "enthalpyConverter.hh"
-#include "varcEnthalpyConverter.hh"
-#include "PISMMohrCoulombYieldStress.hh"
-#include "rheology/flowlaws.hh"
-#include "flowlaw_factory.hh"
+#include "base/basalstrength/basal_resistance.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/varcEnthalpyConverter.hh"
+#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "base/rheology/flowlaws.hh"
+#include "base/rheology/flowlaw_factory.hh"
 #include "error_handling.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMConfig.hh"
@@ -166,8 +166,8 @@
 /* PISM header with no dependence on other PISM headers. */
 %include "interpolation.hh"
 
-%include "enthalpyConverter.hh"
-%include "varcEnthalpyConverter.hh"
+%include "base/enthalpyConverter.hh"
+%include "base/varcEnthalpyConverter.hh"
 %ignore pism::Vector2::operator=;
 %include "Vector2.hh"
 
@@ -199,10 +199,10 @@
 %include "PISMDiagnostic.hh"
 %include "MaxTimestep.hh"
 %include "PISMComponent.hh"
-%include "basal_resistance.hh"
-%include "rheology/flowlaws.hh"
+%include "base/basalstrength/basal_resistance.hh"
+%include "base/rheology/flowlaws.hh"
 
-%include "flowlaw_factory.hh"
+%include "base/rheology/flowlaw_factory.hh"
 
 %include pism_ColumnSystem.i
 
@@ -213,8 +213,8 @@
 
 %include "Mask.hh"
 %include "pism_python.hh"
-%include "PISMYieldStress.hh"
-%include "PISMMohrCoulombYieldStress.hh"
+%include "base/basalstrength/PISMYieldStress.hh"
+%include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 %include "PISMTime.hh"
 
 %include pism_SSA.i

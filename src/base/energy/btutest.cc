@@ -21,7 +21,7 @@ static char help[] =
 
 #include "pism_options.hh"
 #include "IceGrid.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "VariableMetadata.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMTime.hh"
@@ -30,7 +30,7 @@ static char help[] =
 
 #include "../../verif/tests/exactTestK.h"
 
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 namespace pism {

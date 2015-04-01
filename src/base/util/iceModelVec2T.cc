@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include <algorithm>
 #include "iceModelVec2T.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"

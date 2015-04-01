@@ -20,21 +20,21 @@ static char help[] =
   "Ice sheet driver for PISM regional (outlet glacier) simulations, initialized\n"
   "from data.\n";
 
-#include <petsc.h>
+#include <petscsys.h>
 #include "IceGrid.hh"
-#include "iceModel.hh"
+#include "base/iceModel.hh"
 
 #include "regional.hh"
 #include "PISMConfig.hh"
-#include "PAFactory.hh"
-#include "POFactory.hh"
-#include "PSFactory.hh"
-#include "PISMStressBalance.hh"
-#include "PISMMohrCoulombYieldStress.hh"
-#include "PISMConstantYieldStress.hh"
-#include "PIO.hh"
+#include "coupler/atmosphere/PAFactory.hh"
+#include "coupler/ocean/POFactory.hh"
+#include "coupler/surface/PSFactory.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "base/basalstrength/PISMConstantYieldStress.hh"
+#include "base/util/io/PIO.hh"
 #include "pism_options.hh"
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 namespace pism {

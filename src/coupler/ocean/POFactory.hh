@@ -19,7 +19,7 @@
 #ifndef _POFACTORY_H_
 #define _POFACTORY_H_
 
-#include "PCFactory.hh"
+#include "coupler/util/PCFactory.hh"
 #include "POModifier.hh"
 
 namespace pism {

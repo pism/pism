@@ -20,7 +20,7 @@
 #ifndef _PAWEATHERSTATION_H_
 #define _PAWEATHERSTATION_H_
 
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "Timeseries.hh"
 
 namespace pism {

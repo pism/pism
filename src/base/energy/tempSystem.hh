@@ -19,7 +19,7 @@
 #ifndef __tempSystem_hh
 #define __tempSystem_hh
 
-#include "columnSystem.hh"
+#include "base/columnSystem.hh"
 #include "pism_const.hh"
 #include "Mask.hh"
 

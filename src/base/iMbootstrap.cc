@@ -22,9 +22,9 @@
 
 #include "iceModel.hh"
 #include "PISMConfig.hh"
-#include "PIO.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "base/util/io/PIO.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"

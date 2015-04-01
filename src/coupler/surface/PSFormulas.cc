@@ -18,7 +18,7 @@
  */
 
 #include "PSFormulas.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "pism_const.hh"
 
 namespace pism {

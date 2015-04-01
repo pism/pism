@@ -26,7 +26,7 @@
 #include "iceModelVec.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "error_handling.hh"
 
 namespace pism {

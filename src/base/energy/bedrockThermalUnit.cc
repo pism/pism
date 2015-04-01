@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "bedrockThermalUnit.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"

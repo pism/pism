@@ -19,7 +19,7 @@
 #ifndef _PAANOMALY_H_
 #define _PAANOMALY_H_
 
-#include "PGivenClimate.hh"
+#include "coupler/util/PGivenClimate.hh"
 #include "PAModifier.hh"
 
 namespace pism {

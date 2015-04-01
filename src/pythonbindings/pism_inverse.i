@@ -1,11 +1,11 @@
 
 /* Does not seem like this is used anywhere, but if I don't compile
    this, it will rot. */
-%include "stressbalance/ssa/SNESProblem.hh"
+%include "base/stressbalance/ssa/SNESProblem.hh"
 %template(SNESScalarProblem) pism::SNESProblem<1,double>;
 %template(SNESVectorProblem) pism::SNESProblem<2,pism::Vector2>;
 %{
-#include "SNESProblem.hh"
+#include "base/stressbalance/ssa/SNESProblem.hh"
 %}
 
 /* Inverse model classes */

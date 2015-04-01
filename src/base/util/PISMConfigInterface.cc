@@ -20,7 +20,7 @@
 #include <cassert>
 #include <mpi.h>
 
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMConfigInterface.hh"
 #include "PISMUnits.hh"
 #include "pism_const.hh"

@@ -1,5 +1,3 @@
-include_directories (../../verif/tests/ ../util)
-
 add_library (pismstressbalance
   PISMStressBalance.cc
   PISMStressBalance_diagnostics.cc

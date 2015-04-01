@@ -21,9 +21,9 @@
 
 #include "iceModel.hh"
 #include "Mask.hh"
-#include "PISMStressBalance.hh"
-#include "PISMOcean.hh"
-#include "PISMBedDef.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "coupler/PISMOcean.hh"
+#include "earth/PISMBedDef.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 #include "pism_const.hh"

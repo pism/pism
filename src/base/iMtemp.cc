@@ -19,13 +19,13 @@
 #include <cassert>
 
 #include "iceModel.hh"
-#include "tempSystem.hh"
+#include "base/energy/tempSystem.hh"
 #include "Mask.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
-#include "PISMStressBalance.hh"
-#include "PISMHydrology.hh"
-#include "bedrockThermalUnit.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/energy/bedrockThermalUnit.hh"
 #include "pism_options.hh"
 
 #include "error_handling.hh"

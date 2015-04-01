@@ -48,11 +48,11 @@ static char help[] =
 #include "deformation.hh"
 #include "pism_options.hh"
 
-#include "Viewer.hh"
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/Viewer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
-#include "Vec.hh"
-#include "DM.hh"
+#include "base/util/petscwrappers/Vec.hh"
+#include "base/util/petscwrappers/DM.hh"
 
 using namespace pism;
 

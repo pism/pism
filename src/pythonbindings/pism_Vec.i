@@ -1,5 +1,5 @@
 %{
-#include "Vec.hh"
+#include "base/util/petscwrappers/Vec.hh"
 %}
 
 /* This may be needed to use PISM's scatters to/from processor 0. */
@@ -7,7 +7,7 @@
 %shared_ptr(pism::petsc::TemporaryGlobalVec)
 %shared_ptr(pism::petsc::Wrapper< ::Vec >)
 
-%include "Wrapper.hh"
+%include "base/util/petscwrappers/Wrapper.hh"
 %template(VecWrapper) pism::petsc::Wrapper< ::Vec >;
 
-%include "Vec.hh"
+%include "base/util/petscwrappers/Vec.hh"

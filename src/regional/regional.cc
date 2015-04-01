@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "regional.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 #include "PISMConfigInterface.hh"
 #include "pism_const.hh"
 

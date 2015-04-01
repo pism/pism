@@ -22,7 +22,7 @@
 #include <petscvec.h>
 #include "cubature.h"
 #include "error_handling.hh"
-#include "Vec.hh"
+#include "base/util/petscwrappers/Vec.hh"
 
 void conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
                 Vec vresult) {

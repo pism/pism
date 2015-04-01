@@ -22,7 +22,7 @@
 
 #include "iceModel.hh"
 #include "Mask.hh"
-#include "PISMStressBalance.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "error_handling.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"

@@ -20,7 +20,7 @@
 #include <cassert>
 #include "PISMVars.hh"
 #include "Mask.hh"
-#include "basal_resistance.hh"
+#include "base/basalstrength/basal_resistance.hh"
 #include "IceGrid.hh"
 #include "error_handling.hh"
 #include "pism_const.hh"

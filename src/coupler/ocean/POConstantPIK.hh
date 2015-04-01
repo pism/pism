@@ -19,7 +19,7 @@
 #ifndef _POCONSTANTPIK_H_
 #define _POCONSTANTPIK_H_
 
-#include "PISMOcean.hh"
+#include "coupler/PISMOcean.hh"
 #include "VariableMetadata.hh"
 
 namespace pism {

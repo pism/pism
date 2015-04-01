@@ -22,7 +22,7 @@
 #include <petscvec.h>
 #include <fftw3.h>
 
-#include "Vec.hh"
+#include "base/util/petscwrappers/Vec.hh"
 
 namespace pism {
 

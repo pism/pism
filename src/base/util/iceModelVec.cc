@@ -20,7 +20,7 @@
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"

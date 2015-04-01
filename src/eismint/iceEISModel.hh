@@ -19,8 +19,7 @@
 #ifndef __iceEISModel_hh
 #define __iceEISModel_hh
 
-#include <petscdmda.h>
-#include "iceModel.hh"
+#include "base/iceModel.hh"
 
 namespace pism {
 

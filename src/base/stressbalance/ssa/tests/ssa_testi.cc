@@ -26,16 +26,16 @@ static char help[] =
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
-#include "flowlaws.hh" // FlowLaw
-#include "basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "PIO.hh"
+#include "base/rheology/flowlaws.hh" // FlowLaw
+#include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
+#include "base/util/io/PIO.hh"
 #include "VariableMetadata.hh"
-#include "SSAFEM.hh"
-#include "SSAFD.hh"
-#include "exactTestsIJ.h"
-#include "SSATestCase.hh"
+#include "base/stressbalance/ssa/SSAFEM.hh"
+#include "base/stressbalance/ssa/SSAFD.hh"
+#include "verif/tests/exactTestsIJ.h"
+#include "base/stressbalance/ssa/SSATestCase.hh"
 #include "PISMConfig.hh"
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 namespace pism {

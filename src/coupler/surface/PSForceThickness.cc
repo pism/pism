@@ -21,7 +21,7 @@
 #include "PSForceThickness.hh"
 #include "IceGrid.hh"
 #include "PISMVars.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 #include "PISMConfigInterface.hh"
 #include "Mask.hh"
 #include "pism_options.hh"

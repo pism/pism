@@ -29,7 +29,7 @@
 
 // We use PIO and IO_Type here. (I should move methods using this out
 // of SpatialVariableMetadata. -- CK)
-#include "IO_Flags.hh"
+#include "base/util/io/IO_Flags.hh"
 
 namespace pism {
 

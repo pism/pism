@@ -26,9 +26,9 @@
 #include "pism_options.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "Mask.hh"
-#include "PIO.hh"
+#include "base/util/io/PIO.hh"
 
 #include "error_handling.hh"
 

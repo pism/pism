@@ -21,7 +21,7 @@
 
 #include "SSA.hh"
 #include "FETools.hh"
-#include "SNES.hh"
+#include "base/util/petscwrappers/SNES.hh"
 #include "TerminationReason.hh"
 
 namespace pism {

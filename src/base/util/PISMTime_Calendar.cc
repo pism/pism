@@ -24,9 +24,9 @@
 
 #include "PISMTime_Calendar.hh"
 #include "pism_options.hh"
-#include "PIO.hh"
-#include "utCalendar2_cal.h"
-#include "calcalcs.h"
+#include "base/util/io/PIO.hh"
+#include "calcalcs/utCalendar2_cal.h"
+#include "calcalcs/calcalcs.h"
 #include "PISMConfigInterface.hh"
 #include "VariableMetadata.hh"
 

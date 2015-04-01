@@ -20,8 +20,8 @@
 #include "SSAFEM.hh"
 #include "FETools.hh"
 #include "Mask.hh"
-#include "basal_resistance.hh"
-#include "flowlaws.hh"
+#include "base/basalstrength/basal_resistance.hh"
+#include "base/rheology/flowlaws.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 

@@ -19,7 +19,7 @@
 #ifndef _PAFPFORCING_H_
 #define _PAFPFORCING_H_
 
-#include "PScalarForcing.hh"
+#include "coupler/util/PScalarForcing.hh"
 #include "PAModifier.hh"
 
 namespace pism {

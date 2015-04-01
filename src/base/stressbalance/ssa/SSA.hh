@@ -19,7 +19,7 @@
 #ifndef _SSA_H_
 #define _SSA_H_
 
-#include "ShallowStressBalance.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
 

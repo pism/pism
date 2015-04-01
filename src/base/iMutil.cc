@@ -22,13 +22,13 @@
 
 #include "iceModel.hh"
 #include "pism_signal.h"
-#include "PISMSurface.hh"
-#include "PISMStressBalance.hh"
+#include "coupler/PISMSurface.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
-#include "bedrockThermalUnit.hh"
+#include "base/energy/bedrockThermalUnit.hh"
 
 #include "error_handling.hh"
 

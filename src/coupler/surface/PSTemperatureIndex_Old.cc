@@ -22,7 +22,7 @@
 #include "pism_options.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "PISMConfigInterface.hh"
 #include "error_handling.hh"
 

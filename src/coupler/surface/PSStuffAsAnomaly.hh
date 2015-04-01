@@ -19,7 +19,7 @@
 #ifndef _PSSTUFFASANOMALY_H_
 #define _PSSTUFFASANOMALY_H_
 
-#include "PISMSurface.hh"
+#include "coupler/PISMSurface.hh"
 #include "PSModifier.hh"
 #include "iceModelVec.hh"
 

@@ -1,7 +1,5 @@
 # Classes for inverse problems.
 
-include_directories (functional)
-
 set(PISM_INVERSE_SOURCES
   ./IPDesignVariableParameterization.cc
   ./IP_SSATaucForwardProblem.cc

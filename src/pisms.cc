@@ -24,11 +24,11 @@ static char help[] =
 
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
-#include "iceModel.hh"
+#include "base/iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "pism_options.hh"
 
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 using namespace pism;

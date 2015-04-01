@@ -31,10 +31,10 @@ static char help[] =
 #include "PISMConfig.hh"
 #include "verif/iceCompModel.hh"
 
-#include "POConstant.hh"
+#include "coupler/ocean/POConstant.hh"
 #include "pism_options.hh"
 
-#include "PetscInitializer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
 #include "error_handling.hh"
 
 using namespace pism;

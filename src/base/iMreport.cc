@@ -22,13 +22,13 @@
 
 #include "iceModel.hh"
 #include "Mask.hh"
-#include "PISMStressBalance.hh"
-#include "PISMOcean.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "coupler/PISMOcean.hh"
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 
 #include "error_handling.hh"
-#include "PISMBedDef.hh"
+#include "earth/PISMBedDef.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 

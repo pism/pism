@@ -18,7 +18,7 @@
  */
 
 #include "PS_EISMINTII.hh"
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "PISMConfigInterface.hh"
 #include "pism_options.hh"
 #include <stdexcept>
