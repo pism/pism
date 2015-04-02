@@ -22,8 +22,6 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMConfigInterface.hh"
-
-#include <stdexcept>
 #include "base/util/error_handling.hh"
 
 namespace pism {
@@ -62,18 +60,12 @@ PBLingleClark::~PBLingleClark() {
   }
 }
 
-//! Initialize the Lingle-Clark bed deformation model using uplift.
-void PBLingleClark::init_impl() {
-  BedDef::init_impl();
-
-  verbPrintf(2, m_grid.com,
-             "* Initializing the Lingle-Clark bed deformation model...\n");
-
-  correct_topg();
-
-  m_thk->put_on_proc0(*m_Hstartp0);
-  m_topg.put_on_proc0(*m_bedstartp0);
-  m_uplift.put_on_proc0(*m_upliftp0);
+void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+                                          const IceModelVec2S &bed_uplift,
+                                          const IceModelVec2S &ice_thickness) {
+  ice_thickness.put_on_proc0(*m_Hstartp0);
+  bed_elevation.put_on_proc0(*m_bedstartp0);
+  bed_uplift.put_on_proc0(*m_upliftp0);
 
   ParallelSection rank0(m_grid.com);
   try {
@@ -84,6 +76,19 @@ void PBLingleClark::init_impl() {
     rank0.failed();
   }
   rank0.check();
+}
+
+//! Initialize the Lingle-Clark bed deformation model using uplift.
+void PBLingleClark::init_impl() {
+  BedDef::init_impl();
+
+  verbPrintf(2, m_grid.com,
+             "* Initializing the Lingle-Clark bed deformation model...\n");
+
+  correct_topg();
+
+  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  this->init_with_inputs_impl(m_topg, m_uplift, *ice_thickness);
 }
 
 MaxTimestep PBLingleClark::max_timestep_impl(double t) {
@@ -164,13 +169,12 @@ void PBLingleClark::correct_topg() {
 
   // Store the corrected topg as the new "topg_initial".
   m_topg_initial.copy_from(m_topg);
-
-  return;
 }
 
 
 //! Update the Lingle-Clark bed deformation model.
-void PBLingleClark::update_impl(double my_t, double my_dt) {
+void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                               double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
@@ -192,7 +196,7 @@ void PBLingleClark::update_impl(double my_t, double my_dt) {
 
   m_t_beddef_last = t_final;
 
-  m_thk->put_on_proc0(*m_Hp0);
+  ice_thickness.put_on_proc0(*m_Hp0);
   m_topg.put_on_proc0(*m_bedp0);
 
   ParallelSection rank0(m_grid.com);

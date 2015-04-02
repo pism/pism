@@ -42,9 +42,11 @@ MaxTimestep PBNull::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void PBNull::update_impl(double t, double dt) {
-  m_t  = t;
-  m_dt = dt;
+void PBNull::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                        double t, double dt) {
+  (void) ice_thickness;
+  (void) t;
+  (void) dt;
   // This model does not update bed topography or bed uplift.
 }
 

@@ -42,7 +42,8 @@ void PBPointwiseIsostasy::init_impl() {
   verbPrintf(2, m_grid.com,
              "* Initializing the pointwise isostasy bed deformation model...\n");
 
-  m_thk_last.copy_from(*m_thk);
+  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  m_thk_last.copy_from(*ice_thickness);
 }
 
 MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) {
@@ -51,7 +52,8 @@ MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) {
 }
 
 //! Updates the pointwise isostasy model.
-void PBPointwiseIsostasy::update_impl(double my_t, double my_dt) {
+void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                                     double my_t, double my_dt) {
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
     return;
@@ -79,7 +81,7 @@ void PBPointwiseIsostasy::update_impl(double my_t, double my_dt) {
   //! Our goal: topg = topg_last - f*(thk - thk_last)
 
   //! Step 1: topg = topg_last - f*thk
-  m_topg_last.add(-f, *m_thk, m_topg);
+  m_topg_last.add(-f, ice_thickness, m_topg);
   //! Step 2: topg = topg + f*thk_last = (topg_last - f*thk) + f*thk_last = topg_last - f*(thk - thk_last)
   m_topg.add(f, m_thk_last);
   //! This code is written this way to avoid allocating temp. storage for (thk - thk_last).
@@ -87,7 +89,7 @@ void PBPointwiseIsostasy::update_impl(double my_t, double my_dt) {
   //! Finally, we need to update bed uplift, topg_last and thk_last.
   compute_uplift(dt_beddef);
 
-  m_thk_last.copy_from(*m_thk);
+  m_thk_last.copy_from(ice_thickness);
   m_topg_last.copy_from(m_topg);
 
   //! Increment the topg state counter. SIAFD relies on this!

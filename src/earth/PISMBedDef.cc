@@ -30,8 +30,6 @@ namespace bed {
 BedDef::BedDef(const IceGrid &g)
   : Component_TS(g) {
 
-  m_thk    = NULL;
-
   m_t_beddef_last = GSL_NAN;
 
   const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
@@ -105,13 +103,37 @@ void BedDef::init() {
   this->init_impl();
 }
 
+//! Initialize using provided bed elevation and uplift.
+void BedDef::init(const IceModelVec2S &bed_elevation,
+                  const IceModelVec2S &bed_uplift,
+                  const IceModelVec2S &ice_thickness) {
+  this->init_with_inputs_impl(bed_elevation, bed_uplift, ice_thickness);
+}
+
+void BedDef::init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+                                   const IceModelVec2S &bed_uplift,
+                                   const IceModelVec2S &ice_thickness) {
+  m_topg.copy_from(bed_elevation);
+  m_uplift.copy_from(bed_uplift);
+  // suppress a compiler warning:
+  (void) ice_thickness;
+}
+
+void BedDef::update_impl(double t, double dt) {
+  const IceModelVec2S *thk = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  this->update_with_thickness_impl(*thk, t, dt);
+}
+
+void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
+  this->update_with_thickness_impl(ice_thickness, t, dt);
+}
+
+//! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl() {
   m_t_beddef_last = m_grid.time->start();
 
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;
-
-  m_thk = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
   std::string input_file;
   bool do_regrid = false;

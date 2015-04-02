@@ -35,6 +35,13 @@ public:
   virtual ~BedDef();
 
   void init();
+  void init(const IceModelVec2S &bed_elevation,
+            const IceModelVec2S &bed_uplift,
+            const IceModelVec2S &ice_thickness);
+
+  using Component_TS::update;
+  void update(const IceModelVec2S &ice_thickness,
+              double my_t, double my_dt);
 
   const IceModelVec2S& bed_elevation() const;
   const IceModelVec2S& uplift() const;
@@ -43,7 +50,13 @@ public:
   void set_uplift(const IceModelVec2S &input);
   
 protected:
+  void update_impl(double my_t, double my_dt);
+  virtual void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                          double my_t, double my_dt) = 0;
   virtual void init_impl();
+  virtual void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+                                     const IceModelVec2S &bed_uplift,
+                                     const IceModelVec2S &ice_thickness);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
@@ -64,18 +77,16 @@ protected:
 
   //! bed uplift rate
   IceModelVec2S m_uplift;
-
-  //! pointer to the current ice thickness
-  const IceModelVec2S *m_thk;
 };
 
 class PBNull : public BedDef {
 public:
   PBNull(const IceGrid &g);
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                  double my_t, double my_dt);
+  MaxTimestep max_timestep_impl(double t);
+  void init_impl();
 };
 
 //! Pointwide isostasy bed deformation model.
@@ -86,7 +97,8 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                  double my_t, double my_dt);
   IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 

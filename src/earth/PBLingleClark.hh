@@ -37,7 +37,11 @@ public:
 protected:
   MaxTimestep max_timestep_impl(double t);
   void init_impl();
-  void update_impl(double my_t, double my_dt);
+  void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+                             const IceModelVec2S &bed_uplift,
+                             const IceModelVec2S &ice_thickness);
+  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                  double my_t, double my_dt);
   void correct_topg();
   void allocate();
 
