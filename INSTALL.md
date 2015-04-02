@@ -4,7 +4,7 @@ Welcome to PISM!  All information about PISM can be found at
 
 ### Quick installation summary
 
-To download the latest stable release use git:
+To download the latest stable release use [GIT](http://git-scm.com/):
 
     git clone git://github.com/pism/pism.git pism0.6
 
