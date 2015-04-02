@@ -20,6 +20,7 @@
 #define __basal_resistance_hh
 
 #include <mpi.h>
+
 #include "base/util/PISMUnits.hh"
 
 namespace pism {

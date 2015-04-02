@@ -21,6 +21,7 @@
 #define __matlablike_hh
 
 #include <petscvec.h>
+
 #include "cubature.h"  /* for 'integrand' type */
 
 /*! Functions like Matlab's conv2(A,B,'same').

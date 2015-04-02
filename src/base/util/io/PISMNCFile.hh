@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "base/util/pism_memory.hh"
-
 #include "IO_Flags.hh"
 
 namespace pism {

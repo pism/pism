@@ -20,6 +20,7 @@
 #define __flowlaws_hh
 
 #include <petscsys.h>
+
 #include "base/util/PISMUnits.hh"
 
 namespace pism {

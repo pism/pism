@@ -22,8 +22,6 @@
 
 #include "IPTaoTikhonovProblem.hh"
 #include "IP_SSATaucForwardProblem.hh"
-
-
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 

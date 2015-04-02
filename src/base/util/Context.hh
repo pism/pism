@@ -22,6 +22,7 @@
 
 #include <string>
 #include <mpi.h>
+
 #include "PISMConfigInterface.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"

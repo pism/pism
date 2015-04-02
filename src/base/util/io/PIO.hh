@@ -19,12 +19,11 @@
 #ifndef _PIO_H_
 #define _PIO_H_
 
-#include "base/util/PISMUnits.hh"
-
 #include <map>
 #include <vector>
 #include <string>
 
+#include "base/util/PISMUnits.hh"
 #include "PISMNCFile.hh"
 
 namespace pism {

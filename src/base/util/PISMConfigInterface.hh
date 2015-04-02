@@ -23,7 +23,6 @@
 #include <set>
 #include <map>
 #include <string>
-
 #include <mpi.h>
 
 #include "PISMUnits.hh"

@@ -19,7 +19,6 @@
 #ifndef IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 #define IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 
-
 #include "IPFunctional.hh"
 #include "base/util/Mask.hh"
 

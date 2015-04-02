@@ -22,7 +22,6 @@
 
 #include <map>
 #include <string>
-
 #include <petsclog.h>
 
 namespace pism {

@@ -19,7 +19,6 @@
 #ifndef IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 #define IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 
-
 #include "base/stressbalance/ssa/SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
 #include "base/util/petscwrappers/KSP.hh"

@@ -19,13 +19,12 @@
 #ifndef _PGIVENCLIMATE_H_
 #define _PGIVENCLIMATE_H_
 
-#include "base/util/iceModelVec2T.hh"
-#include "base/util/PISMTime.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec2T.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
-
-#include "base/util/error_handling.hh"
 
 namespace pism {
 

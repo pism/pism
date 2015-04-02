@@ -19,13 +19,14 @@
 #ifndef _PISMMERGE_H_
 #define _PISMMERGE_H_
 
-#include "base/util/io/PISMNC4_Serial.hh"
-#include "base/util/pism_const.hh"
 #include <vector>
 #include <string>
 #include <map>
 #include <stdlib.h>
 #include <cstdio>
+
+#include "base/util/io/PISMNC4_Serial.hh"
+#include "base/util/pism_const.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:

@@ -19,9 +19,10 @@
 #ifndef __flowlaw_factory
 #define __flowlaw_factory
 
-#include "flowlaws.hh"
 #include <map>
 #include <string>
+
+#include "flowlaws.hh"
 
 namespace pism {
 namespace rheology {

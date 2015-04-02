@@ -22,7 +22,6 @@
 #include <petscsys.h>
 
 #include "base/util/pism_memory.hh"
-
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
 #include "base/util/iceModelVec.hh"

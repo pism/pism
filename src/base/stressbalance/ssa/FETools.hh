@@ -24,6 +24,7 @@
 #define _FETOOLS_H_
 
 #include <petscmat.h>
+
 #include "base/util/Vector2.hh"
 
 namespace pism {
