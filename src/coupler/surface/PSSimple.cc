@@ -53,7 +53,7 @@ void Simple::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  assert(atmosphere != NULL);
+  assert(m_atmosphere != NULL);
   m_atmosphere->init();
 
   verbPrintf(2, m_grid.com,

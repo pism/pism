@@ -71,7 +71,7 @@ void SurfaceModel::init() {
 }
 
 void SurfaceModel::init_impl() {
-  assert(atmosphere != NULL);
+  assert(m_atmosphere != NULL);
   m_atmosphere->init();
 }
 
