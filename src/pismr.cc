@@ -50,20 +50,17 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    bool iset = options::Bool("-i", "input file name");
-    bool bfset = options::Bool("-boot_file", "bootstrapping file name");
+    bool input_file_set = options::Bool("-i", "input file name");
     std::string usage =
-      "  pismr {-i IN.nc|-i IN.nc -bootstrap} [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismr -i IN.nc [-bootstrap] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -i IN.nc -bootstrap is input file in NetCDF format: contains a few fields, from which\n"
-      "              heuristics will build initial model state\n"
+      "  -bootstrap  enable heuristics to produce an initial state from an incomplete input\n"
       "notes:\n"
-      "  * one of -i or -boot_file is required\n"
-      "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((not iset) && (not bfset)) {
-      ierr = PetscPrintf(com,
-                         "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
+      "  * option -i is required\n"
+      "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
+    if (not input_file_set) {
+      ierr = PetscPrintf(com, "\nPISM ERROR: option -i is required\n\n");
       PISM_CHK(ierr, "PetscPrintf");
       show_usage(com, "pismr", usage);
       return 0;

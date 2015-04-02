@@ -129,8 +129,6 @@ the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
 void MohrCoulombYieldStress::init_impl() {
-  std::string filename;
-
   {
     std::string hydrology_tillwat_max = "hydrology_tillwat_max";
     bool till_is_present = m_config.get_double(hydrology_tillwat_max) > 0.0;
@@ -157,10 +155,6 @@ void MohrCoulombYieldStress::init_impl() {
 
   verbPrintf(2, m_grid.com, "* Initializing the default basal yield stress model...\n");
 
-  options::String
-    i("-i", "PISM input file"),
-    bootstrap("-boot_file", "PISM bootstrapping file");
-
   options::Real
     plastic_phi("-plastic_phi", "constant in space till friction angle",
                 m_config.get_double("default_till_phi"));
@@ -169,6 +163,11 @@ void MohrCoulombYieldStress::init_impl() {
     topg_to_phi_option("-topg_to_phi",
                 "Turn on, and specify, the till friction angle parameterization"
                 " based on bedrock elevation (topg)");
+
+  bool bootstrap = false;
+  int start = 0;
+  std::string filename;
+  bool use_input_file = find_pism_input(filename, bootstrap, start);
 
   if (topg_to_phi_option.is_set() and plastic_phi.is_set()) {
     throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
@@ -179,10 +178,7 @@ void MohrCoulombYieldStress::init_impl() {
     verbPrintf(2, m_grid.com,
                "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
-    if (i.is_set() || bootstrap.is_set()) {
-      bool boot = false;
-      int start = 0;
-      find_pism_input(filename, boot, start);
+    if (use_input_file) {
 
       PIO nc(m_grid.com, "guess_mode", m_grid.config.unit_system());
 
@@ -215,16 +211,12 @@ void MohrCoulombYieldStress::init_impl() {
                phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
                phi_max, topg_max);
 
-  } else if (i.is_set() or bootstrap.is_set()) {
-    bool boot = false;
-    int start = 0;
-    find_pism_input(filename, boot, start);
-
-    if (i.is_set()) {
-      m_till_phi.read(filename, start);
-    } else {
+  } else if (use_input_file) {
+    if (bootstrap) {
       m_till_phi.regrid(filename, OPTIONAL,
                         m_config.get_double("bootstrapping_tillphi_value_no_var"));
+    } else {
+      m_till_phi.read(filename, start);
     }
   } else {
     // Use the default value *or* the value set using the -plastic_phi
@@ -248,14 +240,10 @@ void MohrCoulombYieldStress::init_impl() {
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
-      bool boot = false;
-      int start = 0;
-      find_pism_input(filename, boot, start);
-
-      if (boot == false) {
-        m_tauc.read(filename, start);
-      } else {
+      if (bootstrap) {
         m_tauc.regrid(filename, CRITICAL);
+      } else {
+        m_tauc.read(filename, start);
       }
     }
 

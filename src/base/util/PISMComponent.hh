@@ -56,8 +56,8 @@ class IceModelVec;
   component.)
 
   Many PISM sub-models read data from the same file the rest of PISM reads
-  from. Component::find_pism_input() checks -i and -boot_file command-line
-  options and simplifies finding this file.
+  from. Component::find_pism_input() checks options `-i` and `-bootstrap`
+  options to simplify finding this file.
 
   \subsection pismcomponent_output Writing to an output file
 

@@ -98,7 +98,7 @@ void Routing::init() {
   verbPrintf(2, m_grid.com,
              "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
-  //   otherwise from -i or -boot_file, otherwise with constant value
+  //   otherwise from -i file, otherwise with constant value
 
   options::Real hydrology_null_strip("-hydrology_null_strip",
                                      "set the width, in km, of the strip around the edge"
@@ -125,34 +125,17 @@ MaxTimestep Routing::max_timestep_impl(double t) {
 void Routing::init_bwat() {
 
   // initialize water layer thickness from the context if present,
-  //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i = options::Bool("-i", "PISM input file");
-  bool bootstrap = options::Bool("-boot_file", "PISM bootstrapping file");
+  //   otherwise from -i file, otherwise with constant value
 
   const PetscReal bwatdefault = m_config.get_double("bootstrapping_bwat_value_no_var");
 
-  if (i || bootstrap) {
-    std::string filename;
-    int start;
-    bool boot = false;
-    find_pism_input(filename, boot, start);
-    if (i) {
-      PIO nc(m_grid, "guess_mode");
-      nc.open(filename, PISM_READONLY);
-      bool bwat_exists = nc.inq_var("bwat");
-      if (bwat_exists == true) {
-        m_W.read(filename, start);
-      } else {
-        verbPrintf(2, m_grid.com,
-                   "PISM WARNING: bwat for hydrology model not found in '%s'."
-                   "  Setting it to %.2f ...\n",
-                   filename.c_str(), bwatdefault);
-        m_W.set(bwatdefault);
-      }
-      nc.close();
-    } else {
-      m_W.regrid(filename, OPTIONAL, bwatdefault);
-    }
+  bool bootstrap = false;
+  int start = 0;
+  std::string filename;
+  bool use_input_file = find_pism_input(filename, bootstrap, start);
+
+  if (use_input_file) {
+    m_W.regrid(filename, OPTIONAL, bwatdefault);
   } else { // not sure if this case can be reached, but ...
     m_W.set(bwatdefault);
   }

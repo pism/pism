@@ -316,7 +316,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
 void IceRegionalModel::set_vars_from_options() {
 
-  // base class reads the -boot_file option and does the bootstrapping:
+  // base class reads the -bootstrap option and does the bootstrapping:
   IceModel::set_vars_from_options();
 
   bool nmstripSet = options::Bool("-no_model_strip", 
@@ -434,22 +434,20 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    bool iset = options::Bool("-i", "input file name");
-    bool bfset = options::Bool("-boot_file", "bootstrapping file name");
+    bool input_file_set = options::Bool("-i", "input file name");
     std::string usage =
-      "  pismo {-i IN.nc|-i IN.nc -bootstrap} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismo -i IN.nc [-bootstrap] [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -i IN.nc -bootstrap is input file in NetCDF format: contains a few fields, from which\n"
-      "              heuristics will build initial model state\n"
+      "  -i IN.nc   is input file in NetCDF format: contains PISM-written model state\n"
+      "  -bootstrap enables heuristics used to produce an initial state from incomplete input\n"
       "  -no_model_strip X (re-)set width of no-model strip along edge of\n"
       "              computational domain to X km\n"
       "notes:\n"
-      "  * one of -i or -boot_file is required\n"
-      "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((not iset) && (not bfset)) {
+      "  * option -i is required\n"
+      "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
+    if (not input_file_set) {
       ierr = PetscPrintf(com,
-                         "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
+                         "\nPISM ERROR: options -i is required\n\n");
       PISM_CHK(ierr, "PetscPrintf");
       show_usage(com, "pismo", usage);
       return 0;

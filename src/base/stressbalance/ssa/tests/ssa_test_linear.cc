@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     bool
       usage_set = options::Bool("-usage", "print usage info"),
       help_set  = options::Bool("-help", "print help info");
-    if ((usage_set==true) || (help_set==true)) {
+    if (usage_set or help_set) {
       ierr = PetscPrintf(com,
                          "\n"
                          "usage:\n"

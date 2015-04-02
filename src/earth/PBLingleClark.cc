@@ -107,11 +107,11 @@ void PBLingleClark::correct_topg() {
   options::String regrid_file("-regrid_file",
                               "Specifies the name of a file to regrid from");
 
-  options::String boot_file("-boot_file",
-                            "Specifies the name of the file to bootstrap from");
+  options::String input_file("-i", "Specifies the name of the input file.");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
-  if (not (regrid_file.is_set() and boot_file.is_set())) {
+  if (not (regrid_file.is_set() and bootstrap)) {
     return;
   }
 
@@ -140,7 +140,7 @@ void PBLingleClark::correct_topg() {
   verbPrintf(2, m_grid.com,
              "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
              "  of the bed deformation from '%s'...\n",
-             boot_file->c_str(), regrid_file->c_str());
+             input_file->c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
@@ -153,13 +153,13 @@ void PBLingleClark::correct_topg() {
   topg_tmp.regrid(regrid_file, CRITICAL);
 
   // After bootstrapping, topg contains the bed elevation field from
-  // -boot_file.
+  // -i file.
 
   topg_tmp.add(-1.0, m_topg_initial);
   // Now topg_tmp contains the change in bed elevation computed during the run
   // that produced -regrid_file.
 
-  // Apply this change to topg from -boot_file:
+  // Apply this change to topg from -i file:
   m_topg.add(1.0, topg_tmp);
 
   // Store the corrected topg as the new "topg_initial".

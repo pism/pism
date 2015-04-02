@@ -156,10 +156,11 @@ void SSA::init_impl() {
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   options::String input_file("-i", "PISM input file");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (input_file.is_set()) {
-    bool u_ssa_found, v_ssa_found;
-    unsigned int start;
+  if (input_file.is_set() and not bootstrap) {
+    bool u_ssa_found = false, v_ssa_found = false;
+    unsigned int start = 0;
     PIO nc(m_grid, "guess_mode");
 
     bool dont_read_initial_guess = options::Bool("-dontreadSSAvels",

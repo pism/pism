@@ -35,7 +35,7 @@ namespace pism {
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
-This procedure is called by the base class when option `-boot_file` is used.
+This procedure is called by the base class when option `-bootstrap` is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
@@ -125,7 +125,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
 
   // report on resulting computational box, rescale grid
   verbPrintf(2, grid.com, 
-             "  rescaling computational box for ice from -boot_file file and\n"
+             "  rescaling computational box for ice from -i file and\n"
              "    user options to dimensions:\n"
              "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
              (grid.x0() - grid.Lx())/1000.0,
@@ -200,7 +200,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     // such interpolation, though.)
     //
     // On the other hand, we need to read it in to be able to re-start
-    // from a PISM output file using the -boot_file option.
+    // from a PISM output file using the -bootstrap option.
     vHref.regrid(filename, OPTIONAL, 0.0);
   }
 

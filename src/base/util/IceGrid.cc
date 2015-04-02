@@ -434,8 +434,8 @@ void IceGrid::ownership_ranges_from_options() {
 /*!
   This procedure should only be called after the parameters describing the
   horizontal computational box (Lx,Ly) and the parameters for the horizontal
-  grid (Mx,My) are already determined. In particular, the input file (either \c
-  -i or `-boot_file`) and user options (like `-Mx`) must have already been
+  grid (Mx,My) are already determined. In particular, the input file (set using the
+  '-i' command-line option) and user options (like `-Mx`) must have already been
   read to determine the parameters, and any conflicts must have been resolved.
 
   This method contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"

@@ -71,18 +71,18 @@ void IceModel::set_grid_defaults() {
     My("-My", "grid size in Y direction", grid.My()),
     Mz("-Mz", "grid size in vertical direction", grid.Mz());
   options::Real Lz("-Lz", "height of the computational domain", grid.Lz());
-  if (not (Mx.is_set() && My.is_set() && Mz.is_set() && Lz.is_set())) {
-    throw RuntimeError("All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
+
+  if (not (Mx.is_set() and My.is_set() and Mz.is_set() and Lz.is_set())) {
+    throw RuntimeError("All of -bootstrap, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
   }
 
   // Get the bootstrapping file name:
 
-  options::String boot_file("-boot_file",
-                            "Specifies the file to bootstrap from");
-  std::string filename = boot_file;
+  options::String input_file("-i", "Specifies the input file");
+  std::string filename = input_file;
 
-  if (not boot_file.is_set()) {
-    throw RuntimeError("Please specify an input file using -i or -boot_file.");
+  if (not input_file.is_set()) {
+    throw RuntimeError("Please specify an input file using -i.");
   }
 
   // Use a bootstrapping file to set some grid parameters (they can be
@@ -270,8 +270,9 @@ void IceModel::grid_setup() {
 
   // Check if we are initializing from a PISM output file:
   options::String input_file("-i", "Specifies a PISM input file");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (input_file.is_set()) {
+  if (input_file.is_set() and not bootstrap) {
     PIO nc(grid, "guess_mode");
 
     // Get the 'source' global attribute to check if we are given a PISM output
@@ -380,8 +381,9 @@ void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
   options::String input_file("-i", "Specifies the PISM input file");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (input_file.is_set()) {
+  if (input_file.is_set() and not bootstrap) {
     initFromFile(input_file);
 
     regrid(0);
@@ -564,10 +566,11 @@ void IceModel::set_vars_from_options() {
   verbPrintf(3, grid.com,
              "Setting initial values of model state variables...\n");
 
-  options::String filename("-boot_file", "Specifies the file to bootstrap from");
+  options::String input_file("-i", "Specifies the input file");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (filename.is_set()) {
-    bootstrapFromFile(filename);
+  if (bootstrap and input_file.is_set()) {
+    bootstrapFromFile(input_file);
   } else {
     throw RuntimeError("No input file specified.");
   }

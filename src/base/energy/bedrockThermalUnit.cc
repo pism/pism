@@ -54,7 +54,8 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
   // possibly making Mbz and Lbz arguments of the constructor. It's
   // good to validate Lbz and Mbz here, though.
   {
-    options::String i("-i", "PISM input file name");
+    options::String input_file("-i", "PISM input file name");
+    bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
     options::Integer Mbz_option("-Mbz", "number of levels in bedrock thermal layer", m_Mbz);
     m_Mbz = Mbz_option;
@@ -63,8 +64,8 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
                       "depth (thickness) of bedrock thermal layer, in meters", m_Lbz);
     m_Lbz = Lbz;
 
-    if (i.is_set()) {
-      m_input_file = i;
+    if (input_file.is_set() and not bootstrap) {
+      m_input_file = input_file;
       options::ignored(m_grid.com, "-Mbz");
       options::ignored(m_grid.com, "-Lbz");
 

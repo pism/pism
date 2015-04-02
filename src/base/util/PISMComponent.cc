@@ -68,23 +68,21 @@ const IceGrid& Component::get_grid() const {
   return m_grid;
 }
 
-//! Finds PISM's input (-i or -boot_file) file using command-line options.
+//! Finds PISM's input file by reading options `-i` and `-bootstrap`.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
+
+  Returns `true` if an input file is used and `false` otherwise.
 */
 bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
 
   // read file name options:
-  options::String
-    i("-i", "input file name"),
-    boot_file("-boot_file", "bootstrapping file name");
+  options::String input_file("-i", "input file name");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (i.is_set() or boot_file.is_set()) {
-    if (i.is_set() and boot_file.is_set()) {
-      throw RuntimeError("both '-i' and '-boot_file' are used.");
-    }
+  if (input_file.is_set()) {
 
-    filename = i.is_set() ? i : boot_file;
+    filename = input_file;
 
     PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
     unsigned int last_record;
@@ -92,7 +90,7 @@ bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
     last_record = nc.inq_nrecords() - 1;
     nc.close();
 
-    if (boot_file.is_set()) {
+    if (bootstrap) {
       do_regrid = true;
       start     = 0;
     } else {

@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    options::String i_name("-i", "Input file name");
+    options::String input_file("-i", "Input file name");
     options::String output_name("-o", "Output file name");
     options::String var_name("-v", "Name of the variable to merge");
     options::Integer compression_level("-L", "Output compression level", 0);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    check_input_files(i_name);
+    check_input_files(input_file);
 
     // Check the validity of the -L option.
     if (compression_level.is_set()) {
@@ -202,17 +202,17 @@ int main(int argc, char *argv[]) {
     std::string o_name = output_name;
     if (not output_name.is_set()) {
       if (not var_name.is_set()) {
-        o_name = output_filename(i_name, "ALL");
+        o_name = output_filename(input_file, "ALL");
       } else {
-        o_name = output_filename(i_name, var_name);
+        o_name = output_filename(input_file, var_name);
       }
     }
 
     if (rank == 0) {
       if (var_name.is_set()) {
-        process_one_variable(var_name, i_name, o_name, compression_level);
+        process_one_variable(var_name, input_file, o_name, compression_level);
       } else {
-        process_all_variables(i_name, o_name, compression_level);
+        process_all_variables(input_file, o_name, compression_level);
       }
     }
   }

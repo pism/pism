@@ -36,30 +36,23 @@ ConstantYieldStress::~ConstantYieldStress () {
 void ConstantYieldStress::init_impl() {
   verbPrintf(2, m_grid.com, "* Initializing the constant basal yield stress model...\n");
 
-  options::String i("-i", "PISM input file"),
-    bootstrap("-boot_file", "PISM bootstrapping file");
-
-  options::Real
-    tauc("-tauc", "set basal yield stress to a constant (units of Pa)",
-         m_config.get_double("default_tauc"));
-
-  // if -tauc was set we just use that value
-  if (tauc.is_set()) {
-    m_tauc.set(tauc);
-  } else if (i.is_set() || bootstrap.is_set()) {
-    std::string filename;
-    int start;
-    bool boot = false;
-    find_pism_input(filename, boot, start);
-
-    if (i.is_set()) {
-      m_tauc.read(filename, start);
+  std::string filename;
+  int start = 0;
+  bool boot = false;
+  bool use_input_file = find_pism_input(filename, boot, start);
+  if (use_input_file) {
+    if (boot) {
+      m_tauc.regrid(filename, OPTIONAL, m_config.get_double("default_tauc"));
     } else {
-      m_tauc.regrid(filename, OPTIONAL,
-                  m_config.get_double("default_tauc"));
+      m_tauc.read(filename, start);
     }
   } else {
-    m_tauc.set(m_config.get_double("default_tauc"));
+    options::Real
+      tauc("-tauc", "set basal yield stress to a constant (units of Pa)",
+           m_config.get_double("default_tauc"));
+
+    // Set the constant value (either the default from a configuration file or set using -tauc).
+    m_tauc.set(tauc);
   }
 
   regrid("ConstantYieldStress", m_tauc);

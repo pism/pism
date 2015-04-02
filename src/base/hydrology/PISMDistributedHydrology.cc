@@ -111,36 +111,20 @@ void Distributed::init() {
 void Distributed::init_bwp() {
 
   // initialize water layer thickness from the context if present,
-  //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i = options::Bool("-i", "PISM input file");
-  bool bootstrap = options::Bool("-boot_file", "PISM bootstrapping file");
+  //   otherwise from -i otherwise with constant value
+  bool bootstrap = false;
+  int start = 0;
+  std::string filename;
+  bool use_input_file = find_pism_input(filename, bootstrap, start);
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   const double bwp_default = m_config.get_double("bootstrapping_bwp_value_no_var");
 
-  if (i || bootstrap) {
-    std::string filename;
-    int start;
-    bool bootstrap_set = false;
-    find_pism_input(filename, bootstrap_set, start);
-    if (i) {
-      PIO nc(m_grid, "guess_mode");
-      nc.open(filename, PISM_READONLY);
-      bool bwp_exists = nc.inq_var("bwp");
-      nc.close();
-      if (bwp_exists == true) {
-        m_P.read(filename, start);
-      } else {
-        verbPrintf(2, m_grid.com,
-                   "PISM WARNING: bwp for hydrology model not found in '%s'."
-                   "  Setting it to %.2f ...\n",
-                   filename.c_str(), bwp_default);
-        m_P.set(bwp_default);
-      }
-    } else {
-      m_P.regrid(filename, OPTIONAL, bwp_default);
-    }
+  if (use_input_file) {
+    // regridding is equivalent to reading in if grids match, but this way we can start from a file
+    // that does not have 'bwp', setting it to bwp_default
+    m_P.regrid(filename, OPTIONAL, bwp_default);
   } else {
     m_P.set(bwp_default);
   }
