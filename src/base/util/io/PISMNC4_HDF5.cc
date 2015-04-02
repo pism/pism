@@ -40,7 +40,7 @@
 #define TEMPORARY_STRING_LENGTH 32768
 
 #include "PISMNC4_HDF5.hh"
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace io {

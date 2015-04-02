@@ -22,7 +22,7 @@
 
 #include "PISMPNCFile.hh"
 
-#include "error_handling.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace io {
