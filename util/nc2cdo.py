@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
     # If present prepend history history attribute, otherwise create it
     from time import asctime
-    histstr = asctime() + ' : grid infos for CDO added by nc2cdo.py (PISM util) '
+    histstr = asctime() + ' : grid info for CDO added by nc2cdo.py, a PISM utility\n'
     if 'History' in nc.ncattrs():
         nc.History = histstr + nc.History
     elif 'history' in nc.ncattrs():
