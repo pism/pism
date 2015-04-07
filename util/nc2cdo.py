@@ -37,6 +37,8 @@ except:
 parser = ArgumentParser()
 parser.description = '''Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj4 string or a EPSG code must be given.'''
 parser.add_argument("FILE", nargs=1)
+parser.add_argument("--no_bounds", dest="bounds", action="store_false",
+                    help="do not add lat/lon bounds.", default=True)
 parser.add_argument("--srs", dest="srs",
                     help='''
                   a valid proj4 string describing describing the projection
@@ -44,6 +46,7 @@ parser.add_argument("--srs", dest="srs",
 options = parser.parse_args()
 args = options.FILE
 srs = options.srs
+bounds = options.bounds
 
 if len(args) == 1:
     nc_outfile = args[0]
@@ -61,18 +64,21 @@ def get_projection_from_file(nc):
     # which contains a Proj4 string:
     try:
         p = Proj(str(nc.proj4))
-        print('Found projection information in global attribute proj4, using it')
+        print(
+            'Found projection information in global attribute proj4, using it')
     except:
         try:
             p = Proj(str(nc.projection))
-            print('Found projection information in global attribute projection, using it')
+            print(
+                'Found projection information in global attribute projection, using it')
         except:
             try:
                 # go through variables and look for 'grid_mapping' attribute
                 for var in nc.variables.keys():
                     if hasattr(nc.variables[var], 'grid_mapping'):
                         mappingvarname = nc.variables[var].grid_mapping
-                        print('Found projection information in variable "%s", using it' % mappingvarname)
+                        print(
+                            'Found projection information in variable "%s", using it' % mappingvarname)
                         break
                 var_mapping = nc.variables[mappingvarname]
                 p = Proj(proj="stere",
@@ -161,22 +167,25 @@ if __name__ == "__main__":
         proj = get_projection_from_file(nc)
 
     # If it does not yet exist, create dimension 'grid_corner_dim_name'
-    if grid_corner_dim_name not in nc.dimensions.keys():
+    if bounds and grid_corner_dim_name not in nc.dimensions.keys():
         for corner in range(0, grid_corners):
             ## grid_corners in x-direction
             gc_easting[:, corner] = easting + de_vec[corner]
             # grid corners in y-direction
             gc_northing[:, corner] = northing + dn_vec[corner]
             # meshgrid of grid corners in x-y space
-            gc_ee, gc_nn = np.meshgrid(gc_easting[:, corner], gc_northing[:, corner])
+            gc_ee, gc_nn = np.meshgrid(
+                gc_easting[:, corner], gc_northing[:, corner])
             # project grid corners from x-y to lat-lon space
-            gc_lon[:, :, corner], gc_lat[:, :, corner] = proj(gc_ee, gc_nn, inverse=True)
+            gc_lon[:, :, corner], gc_lat[:, :, corner] = proj(
+                gc_ee, gc_nn, inverse=True)
 
         nc.createDimension(grid_corner_dim_name, size=grid_corners)
 
         var = 'lon_bnds'
         # Create variable 'lon_bnds'
-        var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
+        var_out = nc.createVariable(
+            var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
         # Assign units to variable 'lon_bnds'
         var_out.units = "degreesE"
         # Assign values to variable 'lon_nds'
@@ -184,7 +193,8 @@ if __name__ == "__main__":
 
         var = 'lat_bnds'
         # Create variable 'lat_bnds'
-        var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
+        var_out = nc.createVariable(
+            var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
         # Assign units to variable 'lat_bnds'
         var_out.units = "degreesN"
         # Assign values to variable 'lat_bnds'
@@ -209,8 +219,9 @@ if __name__ == "__main__":
     var_out.long_name = "Longitude"
     # Assign standard name to variable 'lon'
     var_out.standard_name = "longitude"
-    # Assign bounds to variable 'lon'
-    var_out.bounds = "lon_bnds"
+    if bounds:
+        # Assign bounds to variable 'lon'
+        var_out.bounds = "lon_bnds"
 
     var = 'lat'
     # If it does not yet exist, create variable 'lat'
@@ -225,9 +236,9 @@ if __name__ == "__main__":
     var_out.long_name = "Latitude"
     # Assign standard name to variable 'lat'
     var_out.standard_name = "latitude"
-    # Assign bounds to variable 'lat'
-    var_out.bounds = "lat_bnds"
-    # Assign values to variable 'lat'
+    if bounds:
+        # Assign bounds to variable 'lat'
+        var_out.bounds = "lat_bnds"
 
     # Make sure variables have 'coordinates' attribute
     for var in nc.variables.keys():
@@ -244,7 +255,8 @@ if __name__ == "__main__":
 
     # If present prepend history history attribute, otherwise create it
     from time import asctime
-    histstr = asctime() + ' : grid info for CDO added by nc2cdo.py, a PISM utility\n'
+    histstr = asctime() + \
+        ' : grid info for CDO added by nc2cdo.py, a PISM utility\n'
     if 'History' in nc.ncattrs():
         nc.History = histstr + nc.History
     elif 'history' in nc.ncattrs():
