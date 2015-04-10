@@ -29,17 +29,35 @@
 
 namespace pism {
 
+struct Config::Impl {
+  Impl(const UnitSystem &sys)
+    : unit_system(sys) {
+    // empty
+  }
+  //! Unit system. @fixme: this should be moved to the Context class.
+  UnitSystem unit_system;
+
+  std::string filename;
+
+  //! @brief Set of parameters set by the user. Used to warn about parameters that were set but were
+  //! not used.
+  std::set<std::string> parameters_set_by_user;
+  //! @brief Set of parameters used in a run. Used to warn about parameters that were set but were
+  //! not used.
+  std::set<std::string> parameters_used;
+};
+
 Config::Config(const UnitSystem &system)
-  : m_unit_system(system) {
+  : m_impl(new Impl(system)) {
   // empty
 }
 
 Config::~Config() {
-  // empty
+  delete m_impl;
 }
 
 const UnitSystem& Config::unit_system() const {
-  return m_unit_system;
+  return m_impl->unit_system;
 }
 
 void Config::read(MPI_Comm com, const std::string &file) {
@@ -56,7 +74,7 @@ void Config::read(MPI_Comm com, const std::string &file) {
 void Config::read(const PIO &nc) {
   this->read_impl(nc);
 
-  m_filename = nc.inq_filename();
+  m_impl->filename = nc.inq_filename();
 }
 
 void Config::write(const PIO &nc) const {
@@ -78,7 +96,7 @@ void Config::write(MPI_Comm com, const std::string &file, bool append) const {
 
 //! \brief Returns the name of the file used to initialize the database.
 std::string Config::filename() const {
-  return m_filename;
+  return m_impl->filename;
 }
 
 void Config::import_from(const Config &other) {
@@ -132,11 +150,11 @@ void Config::update_from(const Config &other) {
 }
 
 const std::set<std::string>& Config::parameters_set_by_user() const {
-  return m_parameters_set_by_user;
+  return m_impl->parameters_set_by_user;
 }
 
 const std::set<std::string>& Config::parameters_used() const {
-  return m_parameters_used;
+  return m_impl->parameters_used;
 }
 
 bool Config::is_set(const std::string &name) const {
@@ -148,20 +166,20 @@ Config::Doubles Config::all_doubles() const {
 }
 
 double Config::get_double(const std::string &name) const {
-  m_parameters_used.insert(name);
+  m_impl->parameters_used.insert(name);
   return this->get_double_impl(name);
 }
 
 double Config::get_double(const std::string &name,
                           const std::string &u1, const std::string &u2) const {
   double value = this->get_double(name);
-  return m_unit_system.convert(value, u1, u2);
+  return m_impl->unit_system.convert(value, u1, u2);
 }
 
 void Config::set_double(const std::string &name, double value,
                         Config::SetBy flag) {
   if (flag == USER) {
-    m_parameters_set_by_user.insert(name);
+    m_impl->parameters_set_by_user.insert(name);
   }
 
   this->set_double_impl(name, value);
@@ -172,7 +190,7 @@ Config::Strings Config::all_strings() const {
 }
 
 std::string Config::get_string(const std::string &name) const {
-  m_parameters_used.insert(name);
+  m_impl->parameters_used.insert(name);
   return this->get_string_impl(name);
 }
 
@@ -180,7 +198,7 @@ void Config::set_string(const std::string &name,
                         const std::string &value,
                         Config::SetBy flag) {
   if (flag == USER) {
-    m_parameters_set_by_user.insert(name);
+    m_impl->parameters_set_by_user.insert(name);
   }
 
   this->set_string_impl(name, value);
@@ -191,14 +209,14 @@ Config::Booleans Config::all_booleans() const {
 }
 
 bool Config::get_boolean(const std::string& name) const {
-  m_parameters_used.insert(name);
+  m_impl->parameters_used.insert(name);
   return this->get_boolean_impl(name);
 }
 
 void Config::set_boolean(const std::string& name, bool value,
                          Config::SetBy flag) {
   if (flag == USER) {
-    m_parameters_set_by_user.insert(name);
+    m_impl->parameters_set_by_user.insert(name);
   }
 
   this->set_boolean_impl(name, value);

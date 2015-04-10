@@ -25,11 +25,10 @@
 #include <string>
 #include <mpi.h>
 
-#include "PISMUnits.hh"
-
 namespace pism {
 
 class PIO;
+class UnitSystem;
 
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
@@ -113,17 +112,8 @@ protected:
 
   void set_from_options();
 private:
-  //! Unit system. @fixme: this should be moved to the Context class.
-  UnitSystem m_unit_system;
-
-  std::string m_filename;
-
-  //! @brief Set of parameters set by the user. Used to warn about parameters that were set but were
-  //! not used.
-  std::set<std::string> m_parameters_set_by_user;
-  //! @brief Set of parameters used in a run. Used to warn about parameters that were set but were
-  //! not used.
-  mutable std::set<std::string> m_parameters_used;
+  struct Impl;
+  Impl *m_impl;
 };
 
 void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config);
