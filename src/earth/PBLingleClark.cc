@@ -23,6 +23,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 namespace bed {

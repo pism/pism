@@ -4,6 +4,7 @@
   using pism::IceModelVec2Int;
   using pism::IceModelVec2V;
   using pism::IceModelVec3;
+  #include "base/util/PISMVars.hh"
 %}
 
 /* disable methods that use regular pointers */

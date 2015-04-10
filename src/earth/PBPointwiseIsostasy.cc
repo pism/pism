@@ -20,8 +20,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMConfigInterface.hh"
-
-#include <stdexcept>
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 namespace bed {

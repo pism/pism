@@ -37,6 +37,7 @@ static char help[] =
 #include "coupler/ocean/POFactory.hh"
 #include "coupler/surface/PSFactory.hh"
 #include "regional.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 

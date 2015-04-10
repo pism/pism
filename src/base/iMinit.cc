@@ -54,6 +54,7 @@
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 

@@ -16,7 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
 #include <petscvec.h>
+#include <gsl/gsl_interp.h>
 
 #include "PIO.hh"
 #include "base/util/IceGrid.hh"
@@ -27,7 +29,6 @@
 #include "base/util/PISMTime.hh"
 #include "PISMNC3File.hh"
 #include "PISMNC4_Quilt.hh"
-#include <cassert>
 
 #if (PISM_USE_PARALLEL_NETCDF4==1)
 #include "PISMNC4_Par.hh"

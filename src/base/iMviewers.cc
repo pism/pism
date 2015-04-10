@@ -19,8 +19,6 @@
 #include <sstream>
 #include <cstring>
 #include <cmath>
-#include <petscdmda.h>
-#include <petscksp.h>
 
 #include "iceModel.hh"
 
@@ -28,6 +26,7 @@
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 

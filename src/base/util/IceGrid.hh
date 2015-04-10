@@ -22,11 +22,9 @@
 #include <cassert>
 #include <vector>
 #include <string>
-#include <map>
-#include <gsl/gsl_interp.h>
 
 #include "pism_memory.hh"
-#include "PISMVars.hh"
+
 #include "base/util/petscwrappers/DM.hh"
 #include "Profiling.hh"
 
@@ -36,6 +34,7 @@ class Time;
 class Config;
 class PIO;
 class UnitSystem;
+class Vars;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -239,57 +238,8 @@ public:
   const Vars& variables() const;
 
 private:
-  // int to match types used by MPI
-  int m_rank, m_size;
-
-  unsigned int m_Nx, //!< number of processors in the x-direction
-    m_Ny;      //!< number of processors in the y-direction
-
-  //! @brief array containing lenghts (in the x-direction) of processor sub-domains
-  std::vector<int> m_procs_x;
-  //! @brief array containing lenghts (in the y-direction) of processor sub-domains
-  std::vector<int> m_procs_y;
-
-  Periodicity m_periodicity;
-
-  std::vector<double> m_x,             //!< x-coordinates of grid points
-    m_y;                          //!< y-coordinates of grid points
-
-  //! vertical grid levels in the ice; correspond to the storage grid
-  std::vector<double> m_z;
-
-  int m_xs, m_xm, m_ys, m_ym;
-  double m_dx,               //!< horizontal grid spacing
-    m_dy;                    //!< horizontal grid spacing
-  //! number of grid points in the x-direction
-  unsigned int m_Mx;
-  //! number of grid points in the y-direction
-  unsigned int m_My;
-
-  //! x-coordinate of the grid center
-  double m_x0;
-  //! y-coordinate of the grid center
-  double m_y0;
-
-  //! half width of the ice model grid in x-direction (m)
-  double m_Lx;
-  //! half width of the ice model grid in y-direction (m)
-  double m_Ly;
-
-  mutable std::map<int,petsc::DM::WeakPtr> m_dms;
-
-  // This DM is used for I/O operations and is not owned by any
-  // IceModelVec (so far, anyway). We keep a pointer to it here to
-  // avoid re-allocating it many times.
-  petsc::DM::Ptr m_dm_scalar_global;
-
-  //! @brief A dictionary with pointers to IceModelVecs, for passing
-  //! them from the one component to another (e.g. from IceModel to
-  //! surface and ocean models).
-  Vars m_variables;
-
-  //! GSL binary search accelerator used to speed up kBelowHeight().
-  gsl_interp_accel *m_bsearch_accel;
+  struct Impl;
+  Impl *m_impl;
 
   void check_parameters();
 
@@ -303,9 +253,6 @@ private:
   petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
 
   int dm_key(int, int) const;
-  std::string init_calendar();
-
-  bool is_equally_spaced() const;
 
   // Hide copy constructor / assignment operator.
   IceGrid(const IceGrid &);

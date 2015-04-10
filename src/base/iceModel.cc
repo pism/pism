@@ -45,6 +45,7 @@
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
 #include "pism_signal.h"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 

@@ -21,6 +21,7 @@
 #include "base/enthalpyConverter.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -42,6 +42,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 

@@ -20,6 +20,7 @@
 #include "base/util/Mask.hh"
 #include "base/util/error_handling.hh"
 #include "hydrology_diagnostics.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 namespace hydrology {
