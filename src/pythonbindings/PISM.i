@@ -166,8 +166,6 @@
 /* PISM header with no dependence on other PISM headers. */
 %include "base/util/interpolation.hh"
 
-%include "base/enthalpyConverter.hh"
-%include "base/varcEnthalpyConverter.hh"
 %ignore pism::Vector2::operator=;
 %include "base/util/Vector2.hh"
 
@@ -184,9 +182,17 @@
 
 /* make sure PIO.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
+
+%shared_ptr(pism::Config);
+%shared_ptr(pism::NetCDFConfig);
+%shared_ptr(pism::DefaultConfig);
 %include "base/util/PISMConfigInterface.hh"
 %include "base/util/PISMConfig.hh"
 %include "base/util/pism_const.hh"
+
+/* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
+%include "base/enthalpyConverter.hh"
+%include "base/varcEnthalpyConverter.hh"
 
 %include pism_IceModelVec.i
 
