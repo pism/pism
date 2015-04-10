@@ -21,49 +21,55 @@
 
 namespace pism {
 
-Context::Context(const Config &new_config)
-  : m_config(new_config), m_EC(new_config) {
+class Context::Impl {
+public:
+  Impl(MPI_Comm c,
+       UnitSystemPtr sys,
+       ConfigPtr conf,
+       EnthalpyConverterPtr EC,
+       TimePtr t)
+    : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t) {
+    // empty
+  }
+  MPI_Comm com;
+  UnitSystemPtr unit_system;
+  ConfigPtr config;
+  EnthalpyConverterPtr enthalpy_converter;
+  TimePtr time;
+};
+
+Context::Context(MPI_Comm c, UnitSystemPtr sys,
+                 ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t)
+  : m_impl(new Impl(c, sys, conf, EC, t)) {
+  // empty
 }
 
 MPI_Comm Context::com() const {
-  return MPI_COMM_SELF;         // FIXME
+  return m_impl->com;      
 }
 
-Vars& Context::variables() {
-  return m_variables;
+Context::UnitSystemPtr Context::unit_system() const {
+  return m_impl->unit_system;
 }
 
-const Vars& Context::variables() const {
-  return m_variables;
+Context::ConfigPtr Context::config() {
+  return m_impl->config;
 }
 
-const Config& Context::config() {
-  return m_config;
+Context::ConstConfigPtr Context::config() const {
+  return m_impl->config;
 }
 
-
-const Config& Context::config() const {
-  return m_config;
+Context::EnthalpyConverterPtr Context::enthalpy_converter() const {
+  return m_impl->enthalpy_converter;
 }
 
-double Context::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return unit_system().convert(value, unit1, unit2);
+Context::TimePtr Context::time() {
+  return m_impl->time;     
 }
 
-UnitSystem Context::unit_system() const {
-  return m_config.unit_system();
-}
-
-Time::Ptr Context::time() {
-  return m_time;
-}
-
-const Time::Ptr Context::time() const {
-  return m_time;
-}
-
-Profiling Context::profiling() const {
-  return m_profiling;
+Context::ConstTimePtr Context::time() const {
+  return m_impl->time;    
 }
 
 } // end of namespace pism

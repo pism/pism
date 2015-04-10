@@ -20,50 +20,43 @@
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
-#include <string>
 #include <mpi.h>
 
-#include "PISMConfigInterface.hh"
-#include "PISMVars.hh"
-#include "PISMTime.hh"
-#include "PISMUnits.hh"
-#include "base/enthalpyConverter.hh"
-#include "Profiling.hh"
+#include "pism_memory.hh"
 
 namespace pism {
 
+class UnitSystem;
+class Config;
+class EnthalpyConverter;
+class Time;
+
 class Context {
 public:
-  Context(const Config &config);
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<UnitSystem> UnitSystemPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Config> ConfigPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Config> ConstConfigPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<EnthalpyConverter> EnthalpyConverterPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Time> TimePtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Time> ConstTimePtr;
+
+  Context(MPI_Comm, UnitSystemPtr, ConfigPtr,
+          EnthalpyConverterPtr, TimePtr);
+
   MPI_Comm com() const;
+  UnitSystemPtr unit_system() const;
+  ConstConfigPtr config() const;
+  EnthalpyConverterPtr enthalpy_converter() const;
+  ConstTimePtr time() const;
 
-  const Config &config();
-  const Config& config() const;
-
-  Vars& variables();
-  const Vars& variables() const;
-
-  double convert(double value, const std::string &unit1, const std::string &unit2) const;
-
-  UnitSystem unit_system() const;
-
-  Time::Ptr time();
-  const Time::Ptr time() const;
-
-  Profiling profiling() const;
-
-  const EnthalpyConverter& enthalpy_converter() const;
-
+  ConfigPtr config();
+  TimePtr time();
 private:
-  const Config &m_config;
-  Vars m_variables;
-  mutable Profiling m_profiling;
-  Time::Ptr m_time;
-  EnthalpyConverter m_EC;
-
-  // Hide copy constructor / assignment operator.
-  Context(Context const &);
-  Context & operator=(Context const &);
+  class Impl;
+  PISM_SHARED_PTR_NSPACE::shared_ptr<Impl> m_impl;
+  // disable copying and assignments
+  Context(const Context& other);
+  Context & operator=(const Context &);
 };
 
 } // end of namespace pism
