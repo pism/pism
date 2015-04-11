@@ -25,6 +25,8 @@
 #include <string>
 #include <mpi.h>
 
+#include "pism_memory.hh"
+
 namespace pism {
 
 class PIO;
@@ -33,6 +35,9 @@ class UnitSystem;
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
 public:
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Config> Ptr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Config> ConstPtr;
+
   Config(const UnitSystem &unit_system);
   virtual ~Config();
 
