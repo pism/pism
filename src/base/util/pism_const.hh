@@ -23,7 +23,6 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <map>
 
 namespace pism {
 
