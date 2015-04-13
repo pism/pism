@@ -164,43 +164,55 @@
 %immutable pism::PISM_DefaultConfigFile;
 
 /* PISM header with no dependence on other PISM headers. */
+%include "base/util/pism_const.hh"
 %include "base/util/interpolation.hh"
 
 %ignore pism::Vector2::operator=;
 %include "base/util/Vector2.hh"
 
 %ignore pism::Unit::operator=;
+%shared_ptr(pism::UnitSystem);
 %feature("valuewrapper") pism::UnitSystem;
 %feature("valuewrapper") pism::Unit;
-
 %include "base/util/PISMUnits.hh"
+
 %include pism_DM.i
 %include pism_Vec.i
 /* End of independent PISM classes. */
-
-%include pism_PIO.i
-
-/* make sure PIO.i is included before VariableMetadata.hh */
-%include pism_VariableMetadata.i
 
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %shared_ptr(pism::DefaultConfig);
 %include "base/util/PISMConfigInterface.hh"
 %include "base/util/PISMConfig.hh"
-%include "base/util/pism_const.hh"
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
+%shared_ptr(pism::EnthalpyConverter);
+%shared_ptr(pism::ColdEnthalpyConverter);
+%shared_ptr(pism::KirchhoffEnthalpyConverter);
+%shared_ptr(pism::varcEnthalpyConverter);
 %include "base/enthalpyConverter.hh"
 %include "base/varcEnthalpyConverter.hh"
 
-%include pism_IceModelVec.i
-
-%include pism_Vars.i
-
-%include pism_Timeseries.i
+%shared_ptr(pism::Time);
+%include "base/util/PISMTime.hh"
 
 %include pism_IceGrid.i
+
+/* Timeseries uses IceGrid, so IceGrid has to be wrapped first. */
+%include pism_Timeseries.i
+
+/* PIO uses IceGrid, so IceGrid has to be wrapped first. */
+%include pism_PIO.i
+
+/* make sure PIO.i is included before VariableMetadata.hh */
+%include pism_VariableMetadata.i
+
+/* IceModelVec uses IceGrid and VariableMetadata, so they have to be wrapped first. */
+%include pism_IceModelVec.i
+
+/* pism::Vars uses IceModelVec, so IceModelVec has to be wrapped first. */
+%include pism_Vars.i
 
 %include "base/util/PISMDiagnostic.hh"
 %include "base/util/MaxTimestep.hh"
@@ -221,7 +233,6 @@
 %include "pism_python.hh"
 %include "base/basalstrength/PISMYieldStress.hh"
 %include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
-%include "base/util/PISMTime.hh"
 
 %include pism_SSA.i
 

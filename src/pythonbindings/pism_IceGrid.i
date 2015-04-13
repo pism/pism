@@ -21,4 +21,5 @@
     }
 }
 
+%shared_ptr(pism::IceGrid);
 %include "base/util/IceGrid.hh"
