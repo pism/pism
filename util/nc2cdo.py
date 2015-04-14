@@ -21,6 +21,7 @@
 #
 # \verbatim $ nc2cdo.py foo.nc \endverbatim
 
+import sys
 import numpy as np
 from argparse import ArgumentParser
 
