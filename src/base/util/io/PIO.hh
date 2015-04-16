@@ -196,17 +196,6 @@ private:
   int m_xs, m_xm, m_ys, m_ym;
   UnitSystem m_unit_system;
 
-  void use_mapped_io(const std::string &var_name, bool &result) const;
-
-  void compute_start_and_count(const std::string &name,
-                               unsigned int t_start, unsigned int t_count,
-                               unsigned int x_start, unsigned int x_count,
-                               unsigned int y_start, unsigned int y_count,
-                               unsigned int z_start, unsigned int z_count,
-                               std::vector<unsigned int> &start,
-                               std::vector<unsigned int> &count,
-                               std::vector<unsigned int> &imap) const;
-
   void detect_mode(const std::string &filename);
 
   void constructor(MPI_Comm com, const std::string &mode);

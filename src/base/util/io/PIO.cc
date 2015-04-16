@@ -217,6 +217,105 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
   }
 }
 
+static void compute_start_and_count(const PIO& nc,
+                                    const string &short_name,
+                                    unsigned int t_start, unsigned int t_count,
+                                    unsigned int x_start, unsigned int x_count,
+                                    unsigned int y_start, unsigned int y_count,
+                                    unsigned int z_start, unsigned int z_count,
+                                    vector<unsigned int> &start,
+                                    vector<unsigned int> &count,
+                                    vector<unsigned int> &imap) {
+  vector<string> dims = nc.inq_vardims(short_name);
+  unsigned int ndims = dims.size();
+
+  // Resize output vectors:
+  start.resize(ndims);
+  count.resize(ndims);
+  imap.resize(ndims);
+
+  // Assemble start, count and imap:
+  for (unsigned int j = 0; j < ndims; j++) {
+    string dimname = dims[j];
+
+    AxisType dimtype = nc.inq_dimtype(dimname);
+
+    switch (dimtype) {
+    case T_AXIS:
+      start[j] = t_start;
+      count[j] = t_count;
+      imap[j]  = x_count * y_count * z_count;
+      break;
+    case X_AXIS:
+      start[j] = x_start;
+      count[j] = x_count;
+      imap[j]  = y_count * z_count;
+      break;
+    case Y_AXIS:
+      start[j] = y_start;
+      count[j] = y_count;
+      imap[j]  = z_count;
+      break;
+    default:
+    case Z_AXIS:
+      start[j] = z_start;
+      count[j] = z_count;
+      imap[j]  = 1;
+      break;
+    }
+  }
+}
+
+/**
+ * Check if the storage order of a variable in the current file
+ * matches the memory storage order used by PISM.
+ *
+ * @param var_name name of the variable to check
+ * @param result set to false if storage orders match, true otherwise
+ *
+ * @return 0 on success
+ */
+static bool use_mapped_io(const PIO &nc, const string &var_name) {
+
+  vector<string> dimnames = nc.inq_vardims(var_name);
+
+  vector<AxisType> storage, memory;
+  memory.push_back(X_AXIS);
+  memory.push_back(Y_AXIS);
+
+  for (unsigned int j = 0; j < dimnames.size(); ++j) {
+    AxisType dimtype = nc.inq_dimtype(dimnames[j]);
+
+    if (j == 0 && dimtype == T_AXIS) {
+      // ignore the time dimension, but only if it is the first
+      // dimension in the list
+      continue;
+    }
+
+    if (dimtype == X_AXIS || dimtype == Y_AXIS) {
+      storage.push_back(dimtype);
+    } else if (dimtype == Z_AXIS) {
+      memory.push_back(dimtype); // now memory = {X_AXIS, Y_AXIS, Z_AXIS}
+      // assume that this variable has only one Z_AXIS in the file
+      storage.push_back(dimtype);
+    } else {
+      // an UNKNOWN_AXIS or T_AXIS at index != 0 was found, use mapped I/O
+      return true;
+    }
+  }
+
+  // we support 2D and 3D in-memory arrays, but not 4D
+  assert(memory.size() <= 3);
+
+  if (storage == memory) {
+    // same storage order, do not use mapped I/O
+    return false;
+  } else {
+    // different storage orders, use mapped I/O
+    return true;
+  }
+}
+
 //! \brief The code shared by different PIO constructors.
 void PIO::constructor(MPI_Comm c, const string &mode) {
   m_com  = c;
@@ -301,59 +400,6 @@ void PIO::detect_mode(const string &filename) {
 
 std::string PIO::backend_type() const {
   return m_backend_type;
-}
-
-/**
- * Check if the storage order of a variable in the current file
- * matches the memory storage order used by PISM.
- *
- * @param var_name name of the variable to check
- * @param result set to false if storage orders match, true otherwise
- *
- * @return 0 on success
- */
-void PIO::use_mapped_io(const string &var_name, bool &result) const {
-
-  vector<string> dimnames = inq_vardims(var_name);
-
-  vector<AxisType> storage, memory;
-  memory.push_back(X_AXIS);
-  memory.push_back(Y_AXIS);
-
-  for (unsigned int j = 0; j < dimnames.size(); ++j) {
-    AxisType dimtype = inq_dimtype(dimnames[j]);
-
-    if (j == 0 && dimtype == T_AXIS) {
-      // ignore the time dimension, but only if it is the first
-      // dimension in the list
-      continue;
-    }
-
-    if (dimtype == X_AXIS || dimtype == Y_AXIS) {
-      storage.push_back(dimtype);
-    } else if (dimtype == Z_AXIS) {
-      memory.push_back(dimtype); // now memory = {X_AXIS, Y_AXIS, Z_AXIS}
-      // assume that this variable has only one Z_AXIS in the file
-      storage.push_back(dimtype);
-    } else {
-      // an UNKNOWN_AXIS or T_AXIS at index != 0 was found, use mapped I/O
-      result = true;
-      return;
-    }
-  }
-
-  // we support 2D and 3D in-memory arrays, but not 4D
-  assert(memory.size() <= 3);
-
-  if (storage == memory) {
-    // same storage order, do not use mapped I/O
-    result = false;
-  } else {
-    // different storage orders, use mapped I/O
-    result = true;
-  }
-
-  return;
 }
 
 bool PIO::check_if_exists(MPI_Comm com, const string &filename) {
@@ -940,15 +986,14 @@ void PIO::get_vec(const IceGrid &grid, const string &var_name,
   try {
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
-    compute_start_and_count(var_name,
+    compute_start_and_count(*this, var_name,
                             t_start, t_count,
                             grid.xs(), grid.xm(),
                             grid.ys(), grid.ym(),
                             0, z_count,
                             start, count, imap);
 
-    bool mapped_io = true;
-    use_mapped_io(var_name, mapped_io);
+    bool mapped_io = use_mapped_io(*this, var_name);
     if (mapped_io == true) {
       get_varm_double(var_name, start, count, imap, output);
     } else {
@@ -1011,7 +1056,7 @@ void PIO::put_vec(const IceGrid &grid, const string &var_name,
 
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
-    compute_start_and_count(var_name,
+    compute_start_and_count(*this, var_name,
                             t_length - 1, t_count,
                             grid.xs(), grid.xm(),
                             grid.ys(), grid.ym(),
@@ -1062,15 +1107,14 @@ void PIO::regrid_vec(const IceGrid &grid, const string &var_name,
     double *buffer = &(lic->buffer[0]);
 
     const unsigned int t_count = 1;
-    compute_start_and_count(var_name,
+    compute_start_and_count(*this, var_name,
                             t_start, t_count,
                             lic->start[X], lic->count[X],
                             lic->start[Y], lic->count[Y],
                             lic->start[Z], lic->count[Z],
                             start, count, imap);
 
-    bool mapped_io = true;
-    use_mapped_io(var_name, mapped_io);
+    bool mapped_io = use_mapped_io(*this, var_name);
     if (mapped_io == true) {
       get_varm_double(var_name, start, count, imap, buffer);
     } else {
@@ -1110,15 +1154,14 @@ void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
     double *buffer = &(lic->buffer[0]);
     
     const unsigned int t_count = 1;
-    compute_start_and_count(var_name,
+    compute_start_and_count(*this, var_name,
                             t_start, t_count,
                             lic->start[X], lic->count[X],
                             lic->start[Y], lic->count[Y],
                             lic->start[Z], lic->count[Z],
                             start, count, imap);
 
-    bool mapped_io = true;
-    use_mapped_io(var_name, mapped_io);
+    bool mapped_io = use_mapped_io(*this, var_name);
     if (mapped_io == true) {
       get_varm_double(var_name, start, count, imap, buffer);
     } else {
@@ -1150,65 +1193,6 @@ void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
   }
 }
 
-
-
-
-void PIO::compute_start_and_count(const string &short_name,
-                                  unsigned int t_start, unsigned int t_count,
-                                  unsigned int x_start, unsigned int x_count,
-                                  unsigned int y_start, unsigned int y_count,
-                                  unsigned int z_start, unsigned int z_count,
-                                  vector<unsigned int> &start,
-                                  vector<unsigned int> &count,
-                                  vector<unsigned int> &imap) const {
-  vector<string> dims;
-
-  m_nc->inq_vardimid(short_name, dims);
-  unsigned int ndims = dims.size();
-
-  // Resize output vectors:
-  start.resize(ndims);
-  count.resize(ndims);
-  imap.resize(ndims);
-
-  // Assemble start, count and imap:
-  for (unsigned int j = 0; j < ndims; j++) {
-    string dimname = dims[j];
-
-    AxisType dimtype = inq_dimtype(dimname);
-
-    switch (dimtype) {
-    case T_AXIS:
-      start[j] = t_start;
-      count[j] = t_count;
-      imap[j]  = x_count * y_count * z_count;
-      break;
-    case X_AXIS:
-      start[j] = x_start;
-      count[j] = x_count;
-      imap[j]  = y_count * z_count;
-      break;
-    case Y_AXIS:
-      start[j] = y_start;
-      count[j] = y_count;
-      imap[j]  = z_count;
-      break;
-    default:
-    case Z_AXIS:
-      start[j] = z_start;
-      count[j] = z_count;
-      imap[j]  = 1;
-      break;
-    }
-
-    // #if (PISM_DEBUG==1)
-    //     fprintf(stderr, "[%d] var=%s start[%d]=%d count[%d]=%d imap[%d]=%d\n",
-    //             rank, short_name.c_str(),
-    //             j, start[j], j, count[j], j, imap[j]);
-    // #endif
-
-  }
-}
 
 void PIO::get_vara_double(const string &variable_name,
                           const vector<unsigned int> &start,
