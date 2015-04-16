@@ -142,11 +142,11 @@ void Constant::define_variables_impl(const std::set<std::string> &vars, const PI
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    m_shelfbtemp.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    m_shelfbmassflux.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_shelfbmassflux, m_grid, nc, nctype, order, true);
   }
 }
 

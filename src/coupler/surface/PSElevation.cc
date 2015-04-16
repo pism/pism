@@ -286,11 +286,11 @@ void Elevation::define_variables_impl(const std::set<std::string> &vars, const P
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
-    m_ice_surface_temp.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
   }
 }
 

@@ -461,7 +461,8 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   std::string order = m_grid->config.get_string("output_variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
-    metadata(j).define(*m_grid, nc, output_datatype, order, write_in_glaciological_units);
+    define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
+                            order, write_in_glaciological_units);
   }
 }
 

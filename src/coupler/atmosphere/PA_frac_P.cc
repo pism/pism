@@ -109,12 +109,12 @@ void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    air_temp.define(m_grid, nc, nctype, order, false);
+    define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
-    precipitation.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(precipitation, m_grid, nc, nctype, order, true);
     vars.erase("precipitation");
   }
 

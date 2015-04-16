@@ -358,15 +358,15 @@ void ForceThickness::define_variables_impl(const std::set<std::string> &vars, co
   }
 
   if (set_contains(vars, "ice_surface_temp")) {
-    m_ice_surface_temp.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance_original")) {
-    m_climatic_mass_balance_original.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_climatic_mass_balance_original, m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

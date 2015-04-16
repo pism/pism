@@ -175,12 +175,12 @@ void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
 
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units
-    m_air_temp_metadata.define(m_grid, nc, nctype, order, false);
+    define_spatial_variable(m_air_temp_metadata, m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {
     // do write using glaciological units
-    m_precip_metadata.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(m_precip_metadata, m_grid, nc, nctype, order, true);
   }
 }
 

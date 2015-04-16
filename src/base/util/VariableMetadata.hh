@@ -82,6 +82,8 @@ public:
   void set_name(const std::string &name);
   void set_string(const std::string &name, const std::string &value);
 
+  void set_time_independent(bool flag);
+
   void clear_all_doubles();
   void clear_all_strings();
 
@@ -96,6 +98,7 @@ public:
   unsigned int get_n_spatial_dimensions() const;
 
   bool has_attribute(const std::string &name) const;
+  bool get_time_independent() const;
 
   typedef std::map<std::string,std::string> StringAttrs;
   const StringAttrs& get_all_strings() const;
@@ -120,6 +123,7 @@ private:
   //! scalar and array attributes
   std::map<std::string, std::vector<double> > m_doubles;
   std::string m_short_name;
+  bool m_time_independent;
 };
 
 class IceGrid;
@@ -141,8 +145,6 @@ public:
 
   const IceGrid& grid() const;
 
-  void set_time_independent(bool flag);
-
   void read(const PIO &file, unsigned int time, double *output);
   void write(const PIO &nc, bool use_glaciological_units,
              const double *input) const;
@@ -157,10 +159,6 @@ public:
               bool report_range,
               double default_value, double *output);
 
-  void define(const IceGrid &grid, const PIO &nc, IO_Type nctype,
-              const std::string &variable_order,
-              bool use_glaciological_units) const;
-
   VariableMetadata& get_x();
   VariableMetadata& get_y();
   VariableMetadata& get_z();
@@ -170,8 +168,6 @@ public:
   const VariableMetadata& get_z() const;
 
 private:
-  std::string m_variable_order;        //!< variable order in output files;
-  std::string m_time_dimension_name;
   VariableMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
@@ -180,6 +176,12 @@ private:
   void init_internal(const std::string &name, const IceGrid &g,
                      const std::vector<double> &z_levels);
 };
+
+void define_spatial_variable(const SpatialVariableMetadata &var,
+                             const IceGrid &grid, const PIO &nc,
+                             IO_Type nctype,
+                             const std::string &variable_order,
+                             bool use_glaciological_units);
 
 //! An internal class for reading, writing and converting time-series.
 class TimeseriesMetadata : public VariableMetadata {

@@ -94,12 +94,12 @@ void Delta_SL::define_variables_impl(const std::set<std::string> &vars_input, co
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "shelfbtemp")) {
-    shelfbtemp.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(shelfbtemp, m_grid, nc, nctype, order, true);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    shelfbmassflux.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(shelfbmassflux, m_grid, nc, nctype, order, true);
     vars.erase("shelfbmassflux");
   }
 

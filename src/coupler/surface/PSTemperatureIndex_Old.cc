@@ -346,7 +346,7 @@ void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &va
 
   if (set_contains(vars, temperature_name)) {
     std::string order = m_grid.config.get_string("output_variable_order");
-    ice_surface_temp.define(m_grid, nc, nctype, order, true);
+    define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, mass_balance_name)) {

@@ -105,7 +105,7 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
                                             IO_Type nctype) {
   if (set_contains(vars, "air_temp_snapshot")) {
     std::string order = m_grid.config.get_string("output_variable_order");
-    m_air_temp_snapshot.define(m_grid, nc, nctype, order, false);
+    define_spatial_variable(m_air_temp_snapshot, m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {

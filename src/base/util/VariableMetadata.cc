@@ -53,7 +53,8 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
 VariableMetadata::VariableMetadata(const std::string &name, const UnitSystem &system, unsigned int ndims)
   : m_n_spatial_dims(ndims),
     m_unit_system(system),
-    m_short_name(name) {
+    m_short_name(name),
+    m_time_independent(false) {
 
   clear_all_strings();
   clear_all_doubles();
@@ -74,6 +75,14 @@ VariableMetadata::~VariableMetadata() {
  */
 unsigned int VariableMetadata::get_n_spatial_dimensions() const {
   return m_n_spatial_dims;
+}
+
+void VariableMetadata::set_time_independent(bool flag) {
+  m_time_independent = flag;
+}
+
+bool VariableMetadata::get_time_independent() const {
+  return m_time_independent;
 }
 
 UnitSystem VariableMetadata::unit_system() const {
@@ -145,8 +154,6 @@ SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const
 
 void SpatialVariableMetadata::init_internal(const std::string &name, const IceGrid &g,
                                       const std::vector<double> &z_levels) {
-  m_time_dimension_name = "t";        // will be overridden later
-
   m_x.set_string("axis", "X");
   m_x.set_string("long_name", "X-coordinate in Cartesian system");
   m_x.set_string("standard_name", "projection_x_coordinate");
@@ -165,8 +172,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name, const IceGr
   set_string("coordinates", "lat lon");
   set_string("grid_mapping", "mapping");
 
-  m_variable_order = "xyz";
-
   set_name(name);
   m_grid = &g;
 
@@ -181,14 +186,10 @@ void SpatialVariableMetadata::init_internal(const std::string &name, const IceGr
     get_z().set_name("");
     m_n_spatial_dims = 2;
   }
-
-  m_variable_order = m_grid->config.get_string("output_variable_order");
 }
 
 SpatialVariableMetadata::SpatialVariableMetadata(const SpatialVariableMetadata &other)
   : VariableMetadata(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
-  m_time_dimension_name = other.m_time_dimension_name;
-  m_variable_order      = other.m_variable_order;
   m_zlevels             = other.m_zlevels;
   m_grid                = other.m_grid;
 }
@@ -207,14 +208,6 @@ void SpatialVariableMetadata::set_levels(const std::vector<double> &levels) {
 
 const std::vector<double>& SpatialVariableMetadata::get_levels() const {
   return m_zlevels;
-}
-
-void SpatialVariableMetadata::set_time_independent(bool flag) {
-  if (flag == true) {
-    m_time_dimension_name = "";
-  } else {
-    m_time_dimension_name = m_grid->config.get_string("time_dimension_name");
-  }
 }
 
 const IceGrid& SpatialVariableMetadata::grid() const {
@@ -540,18 +533,19 @@ static void define_dimensions(const SpatialVariableMetadata& var,
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
-void SpatialVariableMetadata::define(const IceGrid &grid,const PIO &nc,
-                                     IO_Type nctype,
-                                     const std::string &variable_order,
-                                     bool use_glaciological_units) const {
+void define_spatial_variable(const SpatialVariableMetadata &var,
+                             const IceGrid &grid, const PIO &nc,
+                             IO_Type nctype,
+                             const std::string &variable_order,
+                             bool use_glaciological_units) {
   std::vector<std::string> dims;
-  std::string name = this->get_name();
+  std::string name = var.get_name();
 
   if (nc.inq_var(name)) {
     return;
   }
 
-  define_dimensions(*this, grid, nc);
+  define_dimensions(var, grid, nc);
 
   std::string order = variable_order;
   // "..._bounds" should be stored with grid corners (corresponding to
@@ -562,10 +556,14 @@ void SpatialVariableMetadata::define(const IceGrid &grid,const PIO &nc,
   }
 
   std::string
-    x = this->get_x().get_name(),
-    y = this->get_y().get_name(),
-    z = this->get_z().get_name(),
-    t = m_time_dimension_name;
+    x = var.get_x().get_name(),
+    y = var.get_y().get_name(),
+    z = var.get_z().get_name(),
+    t = "";
+
+  if (not var.get_time_independent()) {
+    t = grid.config.get_string("time_dimension_name");
+  }
 
   nc.redef();
 
@@ -600,7 +598,7 @@ void SpatialVariableMetadata::define(const IceGrid &grid,const PIO &nc,
 
   nc.def_var(name, nctype, dims);
 
-  nc.write_attributes(*this, nctype, use_glaciological_units);
+  nc.write_attributes(var, nctype, use_glaciological_units);
 }
 
 VariableMetadata& SpatialVariableMetadata::get_x() {
