@@ -137,13 +137,14 @@ void LapseRates::temp_snapshot(IceModelVec2S &result) {
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
+  std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    m_air_temp.define(nc, nctype, true);
+    m_air_temp.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "precipitation")) {
-    m_precipitation.define(nc, nctype, true);
+    m_precipitation.define(m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

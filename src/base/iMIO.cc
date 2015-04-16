@@ -291,7 +291,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       IceModelVec::Ptr v_diagnostic = diag->compute();
 
       v_diagnostic->write_in_glaciological_units = true;
-      v_diagnostic->write(nc, PISM_FLOAT); // diagnostic quantities are always written in float
+      v_diagnostic->write(nc);
 
       vars.erase(i++);
     }

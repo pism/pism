@@ -459,9 +459,9 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
 void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
-
+  std::string order = m_grid->config.get_string("output_variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
-    metadata(j).define(nc, output_datatype, write_in_glaciological_units);
+    metadata(j).define(*m_grid, nc, output_datatype, order, write_in_glaciological_units);
   }
 }
 
@@ -491,7 +491,7 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
+void IceModelVec::write_impl(const PIO &nc) const {
 
   verbPrintf(3, m_grid->com, "  Writing %s...\n", m_name.c_str());
 
@@ -507,10 +507,10 @@ void IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
 
     petsc::VecArray tmp_array(tmp);
 
-    metadata(0).write(nc, nctype, write_in_glaciological_units, tmp_array.get());
+    metadata(0).write(nc, write_in_glaciological_units, tmp_array.get());
   } else {
     petsc::VecArray v_array(m_v);
-    metadata(0).write(nc, nctype, write_in_glaciological_units, v_array.get());
+    metadata(0).write(nc, write_in_glaciological_units, v_array.get());
   }
 }
 
@@ -525,7 +525,8 @@ void IceModelVec::dump(const char filename[]) const {
   nc.append_time(m_grid->config.get_string("time_dimension_name"),
                  m_grid->time->current());
 
-  write(nc, PISM_DOUBLE);
+  define(nc, PISM_DOUBLE);
+  write(nc);
 
   nc.close();
 }
@@ -805,14 +806,14 @@ std::vector<double> IceModelVec::norm_all(int n) const {
   }
 }
 
-void IceModelVec::write(const std::string &filename, IO_Type nctype) const {
+void IceModelVec::write(const std::string &filename) const {
 
   PIO nc(*m_grid, m_grid->config.get_string("output_format"));
 
   // We expect the file to be present and ready to write into.
   nc.open(filename, PISM_READWRITE);
 
-  this->write(nc, nctype);
+  this->write(nc);
 
   nc.close();
 }
@@ -883,8 +884,9 @@ void IceModelVec::read(const PIO &nc, const unsigned int time) {
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec::write(const PIO &nc, IO_Type nctype) const {
-  write_impl(nc, nctype);
+void IceModelVec::write(const PIO &nc) const {
+  define(nc);
+  write_impl(nc);
 }
 
 IceModelVec::AccessList::AccessList() {

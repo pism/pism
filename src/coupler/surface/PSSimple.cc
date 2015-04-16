@@ -96,13 +96,14 @@ void Simple::add_vars_to_output_impl(const std::string &keyword, std::set<std::s
 }
 
 void Simple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ice_surface_temp.define(nc, nctype, true);
+    ice_surface_temp.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    climatic_mass_balance.define(nc, nctype, true);
+    climatic_mass_balance.define(m_grid, nc, nctype, order, true);
   }
 
   SurfaceModel::define_variables_impl(vars, nc, nctype);

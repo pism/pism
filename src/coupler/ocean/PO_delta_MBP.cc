@@ -87,14 +87,15 @@ void Delta_MBP::add_vars_to_output_impl(const std::string &keyword, std::set<std
 void Delta_MBP::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                               IO_Type nctype) {
   std::set<std::string> vars = vars_input;
+  std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    shelfbtemp.define(nc, nctype, true);
+    shelfbtemp.define(m_grid, nc, nctype, order, true);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    shelfbmassflux.define(nc, nctype, true);
+    shelfbmassflux.define(m_grid, nc, nctype, order, true);
     vars.erase("shelfbmassflux");
   }
 

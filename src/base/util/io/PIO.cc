@@ -1551,10 +1551,8 @@ void PIO::write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
                            IO_Type nctype) const {
   string name = metadata.get_name();
   try {
-    bool variable_exists = inq_var(name);
-
-    if (variable_exists == false) {
-      metadata.define(*this, nctype, true);
+    if (not inq_var(name)) {
+      define_timeseries(metadata, *this, nctype, true);
     }
 
     // create a copy of "data":
@@ -1584,9 +1582,7 @@ void PIO::read_time_bounds(const TimeBoundsMetadata &metadata,
     Unit internal_units(m_unit_system, metadata.get_string("units"));
 
     // Find the variable:
-    bool variable_exists = inq_var(name);
-
-    if (variable_exists == false) {
+    if (not inq_var(name)) {
       throw RuntimeError("variable " + name + " is missing");
     }
 
@@ -1625,9 +1621,7 @@ void PIO::read_time_bounds(const TimeBoundsMetadata &metadata,
     // Find the corresponding 'time' variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
-    variable_exists = inq_var(dimension_name);
-
-    if (variable_exists == false) {
+    if (not inq_var(dimension_name)) {
       throw RuntimeError("time coordinate variable " + dimension_name + " is missing");
     }
 
@@ -1671,7 +1665,7 @@ void PIO::write_time_bounds(const TimeBoundsMetadata &metadata,
   try {
     bool variable_exists = inq_var(name);
     if (variable_exists == false) {
-      metadata.define(*this, nctype, true);
+      define_time_bounds(metadata, *this, nctype, true);
     }
 
     // make a copy of "data"

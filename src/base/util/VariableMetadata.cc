@@ -204,6 +204,7 @@ void SpatialVariableMetadata::set_levels(const std::vector<double> &levels) {
   m_zlevels = levels;
 }
 
+
 const std::vector<double>& SpatialVariableMetadata::get_levels() const {
   return m_zlevels;
 }
@@ -315,26 +316,30 @@ void SpatialVariableMetadata::read(const PIO &nc, unsigned int time, double *out
 /*!
   Defines a variable and converts the units if needed.
  */
-void SpatialVariableMetadata::write(const PIO &nc, IO_Type nctype,
-                              bool write_in_glaciological_units,
-                              const double *input) const {
+void SpatialVariableMetadata::write(const PIO &nc,
+                                    bool use_glaciological_units,
+                                    const double *input) const {
 
   // find or define the variable
   std::string name_found;
   bool exists, found_by_standard_name;
-  nc.inq_var(get_name(), get_string("standard_name"),
+  nc.inq_var(this->get_name(),
+             this->get_string("standard_name"),
              exists, name_found, found_by_standard_name);
 
   if (not exists) {
-    define(nc, nctype, write_in_glaciological_units);
-    name_found = get_name();
+    throw RuntimeError::formatted("Can't find '%s' in '%s'.",
+                                  this->get_name().c_str(),
+                                  nc.inq_filename().c_str());
   }
 
   // make sure we have at least one level
-  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1);
+  const std::vector<double>& zlevels = this->get_levels();
+  unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  if (write_in_glaciological_units) {
-    size_t data_size = m_grid->xm() * m_grid->ym() * nlevels;
+  const IceGrid& grid = this->grid();
+  if (use_glaciological_units) {
+    size_t data_size = grid.xm() * grid.ym() * nlevels;
 
     // create a temporary array, convert to glaciological units, and
     // save
@@ -342,14 +347,14 @@ void SpatialVariableMetadata::write(const PIO &nc, IO_Type nctype,
     for (size_t k = 0; k < data_size; ++k) {
       tmp[k] = input[k];
     }
+    const UnitSystem& sys = grid.config.unit_system();
+    UnitConverter(sys,
+                  this->get_string("units"),
+                  this->get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
-    UnitConverter(m_unit_system,
-                  get_string("units"),
-                  get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
-
-    nc.put_vec(*m_grid, name_found, nlevels, &tmp[0]);
+    nc.put_vec(grid, name_found, nlevels, &tmp[0]);
   } else {
-    nc.put_vec(*m_grid, name_found, nlevels, input);
+    nc.put_vec(grid, name_found, nlevels, input);
   }
 }
 
@@ -507,58 +512,59 @@ void SpatialVariableMetadata::report_range(MPI_Comm com, double min, double max,
 }
 
 //! \brief Define dimensions a variable depends on.
-void SpatialVariableMetadata::define_dimensions(const PIO &nc) const {
-  bool exists;
+static void define_dimensions(const SpatialVariableMetadata& var,
+                              const IceGrid& grid, const PIO &nc) {
 
   // x
-  exists = nc.inq_dim(get_x().get_name());
-  if (not exists) {
-    nc.def_dim(m_grid->Mx(), m_x);
-    nc.put_dim(get_x().get_name(), m_grid->x());
+  if (not nc.inq_dim(var.get_x().get_name())) {
+    nc.def_dim(grid.Mx(), var.get_x());
+    nc.put_dim(var.get_x().get_name(), grid.x());
   }
 
   // y
-  exists = nc.inq_dim(get_y().get_name());
-  if (not exists) {
-    nc.def_dim(m_grid->My(), m_y);
-    nc.put_dim(get_y().get_name(), m_grid->y());
+  if (not nc.inq_dim(var.get_y().get_name())) {
+    nc.def_dim(grid.My(), var.get_y());
+    nc.put_dim(var.get_y().get_name(), grid.y());
   }
 
   // z
-  std::string z_name = get_z().get_name();
-  if (z_name.empty() == false) {
-    exists = nc.inq_dim(z_name);
-    if (not exists) {
-      unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1); // make sure we have at least one level
-      nc.def_dim(nlevels, m_z);
-      nc.put_dim(z_name, m_zlevels);
+  std::string z_name = var.get_z().get_name();
+  if (not z_name.empty()) {
+    if (not nc.inq_dim(z_name)) {
+      const std::vector<double>& levels = var.get_levels();
+      unsigned int nlevels = std::max(levels.size(), (size_t)1); // make sure we have at least one level
+      nc.def_dim(nlevels, var.get_z());
+      nc.put_dim(z_name, levels);
     }
   }
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
-void SpatialVariableMetadata::define(const PIO &nc, IO_Type nctype,
-                               bool write_in_glaciological_units) const {
+void SpatialVariableMetadata::define(const IceGrid &grid,const PIO &nc,
+                                     IO_Type nctype,
+                                     const std::string &variable_order,
+                                     bool use_glaciological_units) const {
   std::vector<std::string> dims;
+  std::string name = this->get_name();
 
-  bool exists = nc.inq_var(get_name());
-  if (exists) {
+  if (nc.inq_var(name)) {
     return;
   }
 
-  define_dimensions(nc);
-  std::string variable_order = m_variable_order;
+  define_dimensions(*this, grid, nc);
+
+  std::string order = variable_order;
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
   // order here
-  if (ends_with(get_name(), "_bounds") and variable_order == "zyx") {
-    variable_order = "yxz";
+  if (ends_with(name, "_bounds") and order == "zyx") {
+    order = "yxz";
   }
 
   std::string
-    x = get_x().get_name(),
-    y = get_y().get_name(),
-    z = get_z().get_name(),
+    x = this->get_x().get_name(),
+    y = this->get_y().get_name(),
+    z = this->get_z().get_name(),
     t = m_time_dimension_name;
 
   nc.redef();
@@ -569,14 +575,14 @@ void SpatialVariableMetadata::define(const PIO &nc, IO_Type nctype,
 
   // Use t,x,y,z(zb) variable order: it is weird, but matches the in-memory
   // storage order and so is *a lot* faster.
-  if (variable_order == "xyz") {
+  if (order == "xyz") {
     dims.push_back(x);
     dims.push_back(y);
   }
 
   // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
   // are stored in the "natural" order.
-  if (variable_order == "yxz") {
+  if (order == "yxz") {
     dims.push_back(y);
     dims.push_back(x);
   }
@@ -587,14 +593,14 @@ void SpatialVariableMetadata::define(const PIO &nc, IO_Type nctype,
 
   // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
   // but requires transposing data while writing and is *a lot* slower.
-  if (variable_order == "zyx") {
+  if (order == "zyx") {
     dims.push_back(y);
     dims.push_back(x);
   }
 
-  nc.def_var(get_name(), nctype, dims);
+  nc.def_var(name, nctype, dims);
 
-  nc.write_attributes(*this, nctype, write_in_glaciological_units);
+  nc.write_attributes(*this, nctype, use_glaciological_units);
 }
 
 VariableMetadata& SpatialVariableMetadata::get_x() {
@@ -795,28 +801,29 @@ std::string TimeseriesMetadata::get_dimension_name() const {
 }
 
 //! Define a NetCDF variable corresponding to a time-series.
-void TimeseriesMetadata::define(const PIO &nc, IO_Type nctype, bool) const {
+void define_timeseries(const TimeseriesMetadata& var,
+                       const PIO &nc, IO_Type nctype, bool) {
 
-  bool exists = nc.inq_var(get_name());
-  if (exists) {
+  std::string name = var.get_name();
+  std::string dimension_name = var.get_dimension_name();
+  
+  if (nc.inq_var(name)) {
     return;
   }
 
   nc.redef();
 
-  exists = nc.inq_dim(m_dimension_name);
-  if (not exists) {
-    nc.def_dim(PISM_UNLIMITED, VariableMetadata(m_dimension_name, m_unit_system));
+  if (not nc.inq_dim(dimension_name)) {
+    nc.def_dim(PISM_UNLIMITED, VariableMetadata(dimension_name, var.unit_system()));
   }
 
-  exists = nc.inq_var(get_name());
-  if (not exists) {
-    std::vector<std::string> dims(1, m_dimension_name);
+  if (not nc.inq_var(name)) {
+    std::vector<std::string> dims(1, dimension_name);
     nc.redef();
-    nc.def_var(get_name(), nctype, dims);
+    nc.def_var(name, nctype, dims);
   }
 
-  nc.write_attributes(*this, PISM_FLOAT, true);
+  nc.write_attributes(var, PISM_FLOAT, true);
 }
 
 /// TimeBoundsMetadata
@@ -831,37 +838,39 @@ TimeBoundsMetadata::~TimeBoundsMetadata() {
   // empty
 }
 
-void TimeBoundsMetadata::define(const PIO &nc, IO_Type nctype, bool) const {
-  std::vector<std::string> dims;
-  bool exists = false;
-  
-  std::string dimension_name = get_dimension_name();
+std::string TimeBoundsMetadata::get_bounds_name() const {
+  return m_bounds_name;
+}
 
-  exists = nc.inq_var(get_name());
-  if (exists) {
+void define_time_bounds(const TimeBoundsMetadata& var,
+                        const PIO &nc, IO_Type nctype, bool) {
+  std::string name = var.get_name();
+  std::string dimension_name = var.get_dimension_name();
+  std::string bounds_name = var.get_bounds_name();
+
+  if (nc.inq_var(name)) {
     return;
   }
 
   nc.redef();
 
-  exists = nc.inq_dim(dimension_name);
-  if (not exists) {
-    nc.def_dim(PISM_UNLIMITED, VariableMetadata(dimension_name, m_unit_system));
+  if (not nc.inq_dim(dimension_name)) {
+    nc.def_dim(PISM_UNLIMITED, VariableMetadata(dimension_name, var.unit_system()));
   }
 
-  exists = nc.inq_dim(m_bounds_name);
-  if (not exists) {
-    nc.def_dim(2, VariableMetadata(m_bounds_name, m_unit_system));
+  if (not nc.inq_dim(bounds_name)) {
+    nc.def_dim(2, VariableMetadata(bounds_name, var.unit_system()));
   }
 
+  std::vector<std::string> dims;
   dims.push_back(dimension_name);
-  dims.push_back(m_bounds_name);
+  dims.push_back(bounds_name);
 
   nc.redef();
 
-  nc.def_var(get_name(), nctype, dims);
+  nc.def_var(name, nctype, dims);
 
-  nc.write_attributes(*this, nctype, true);
+  nc.write_attributes(var, nctype, true);
 }
 
 } // end of namespace pism

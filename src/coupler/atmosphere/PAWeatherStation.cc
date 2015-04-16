@@ -171,14 +171,16 @@ void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
 
 void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
+  std::string order = m_grid.config.get_string("output_variable_order");
+
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units
-    m_air_temp_metadata.define(nc, nctype, false);
+    m_air_temp_metadata.define(m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {
     // do write using glaciological units
-    m_precip_metadata.define(nc, nctype, true);
+    m_precip_metadata.define(m_grid, nc, nctype, order, true);
   }
 }
 

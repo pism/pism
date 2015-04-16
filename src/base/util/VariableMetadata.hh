@@ -144,8 +144,8 @@ public:
   void set_time_independent(bool flag);
 
   void read(const PIO &file, unsigned int time, double *output);
-  void write(const PIO &file, IO_Type nctype,
-             bool write_in_glaciological_units, const double *input) const;
+  void write(const PIO &nc, bool use_glaciological_units,
+             const double *input) const;
 
   void regrid(const PIO &file,
               RegriddingFlag flag,
@@ -157,8 +157,9 @@ public:
               bool report_range,
               double default_value, double *output);
 
-  void define(const PIO &nc, IO_Type nctype,
-              bool write_in_glaciological_units) const;
+  void define(const IceGrid &grid, const PIO &nc, IO_Type nctype,
+              const std::string &variable_order,
+              bool use_glaciological_units) const;
 
   VariableMetadata& get_x();
   VariableMetadata& get_y();
@@ -175,7 +176,6 @@ private:
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
   void report_range(MPI_Comm com, double min, double max, bool found_by_standard_name);
-  void define_dimensions(const PIO &nc) const;
 
   void init_internal(const std::string &name, const IceGrid &g,
                      const std::vector<double> &z_levels);
@@ -189,8 +189,6 @@ public:
   virtual ~TimeseriesMetadata();
 
   std::string get_dimension_name() const;
-
-  virtual void define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
 };
@@ -201,10 +199,16 @@ public:
   TimeBoundsMetadata(const std::string &name, const std::string &dimension_name,
                const UnitSystem &system);
   virtual ~TimeBoundsMetadata();
-  virtual void define(const PIO &nc, IO_Type nctype, bool) const;
+  std::string get_bounds_name() const;
 private:
   std::string m_bounds_name;
 };
+
+void define_timeseries(const TimeseriesMetadata& var,
+                       const PIO &nc, IO_Type nctype, bool);
+
+void define_time_bounds(const TimeBoundsMetadata& var,
+                        const PIO &nc, IO_Type nctype, bool);
 
 } // end of namespace pism
 

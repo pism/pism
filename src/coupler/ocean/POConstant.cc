@@ -139,13 +139,14 @@ void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string>
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
+  std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    m_shelfbtemp.define(nc, nctype, true);
+    m_shelfbtemp.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    m_shelfbmassflux.define(nc, nctype, true);
+    m_shelfbmassflux.define(m_grid, nc, nctype, order, true);
   }
 }
 

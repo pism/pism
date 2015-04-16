@@ -460,7 +460,8 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
 void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ice_surface_temp.define(nc, nctype, true);
+    std::string order = m_grid.config.get_string("output_variable_order");
+    ice_surface_temp.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {

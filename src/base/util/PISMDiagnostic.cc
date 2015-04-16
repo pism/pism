@@ -66,8 +66,9 @@ SpatialVariableMetadata Diagnostic::get_metadata(int N) {
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define(const PIO &nc) {
+  std::string order = m_grid.config.get_string("output_variable_order");
   for (int j = 0; j < m_dof; ++j) {
-    m_vars[j].define(nc, m_output_datatype, true);
+    m_vars[j].define(m_grid, nc, m_output_datatype, order, true);
   }
 }
 

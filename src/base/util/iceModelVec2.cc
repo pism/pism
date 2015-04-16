@@ -278,14 +278,14 @@ void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
+void IceModelVec2::write_impl(const PIO &nc) const {
   PetscErrorCode ierr;
 
   assert(m_v != NULL);
 
   // The simplest case:
   if ((m_dof == 1) && (m_has_ghosts == false)) {
-    IceModelVec::write_impl(nc, nctype);
+    IceModelVec::write_impl(nc);
     return;
   }
 
@@ -306,7 +306,7 @@ void IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
     IceModelVec2::get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    m_metadata[j].write(nc, nctype, write_in_glaciological_units, tmp_array.get());
+    m_metadata[j].write(nc, write_in_glaciological_units, tmp_array.get());
   }
 }
 

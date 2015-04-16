@@ -347,6 +347,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
 }
 
 void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);
@@ -357,15 +358,15 @@ void ForceThickness::define_variables_impl(const std::set<std::string> &vars, co
   }
 
   if (set_contains(vars, "ice_surface_temp")) {
-    m_ice_surface_temp.define(nc, nctype, true);
+    m_ice_surface_temp.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.define(nc, nctype, true);
+    m_climatic_mass_balance.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance_original")) {
-    m_climatic_mass_balance_original.define(nc, nctype, true);
+    m_climatic_mass_balance_original.define(m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

@@ -282,14 +282,15 @@ void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std
 }
 
 void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  std::string order = m_grid.config.get_string("output_variable_order");
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
-    m_ice_surface_temp.define(nc, nctype, true);
+    m_ice_surface_temp.define(m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.define(nc, nctype, true);
+    m_climatic_mass_balance.define(m_grid, nc, nctype, order, true);
   }
 }
 

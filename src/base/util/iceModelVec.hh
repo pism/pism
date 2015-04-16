@@ -202,13 +202,13 @@ public:
                           const std::string &my_units, const std::string &my_standard_name,
                           int component = 0);
   virtual void  read_attributes(const std::string &filename, int component = 0);
-  virtual void  define(const PIO &nc, IO_Type output_datatype) const;
+  virtual void  define(const PIO &nc, IO_Type output_datatype = PISM_DOUBLE) const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const PIO &nc, unsigned int time);
 
-  void  write(const std::string &filename, IO_Type nctype = PISM_DOUBLE) const;
-  void  write(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  void  write(const std::string &filename) const;
+  void  write(const PIO &nc) const;
 
   void  regrid(const std::string &filename, RegriddingFlag flag,
                double default_value = 0.0);
@@ -240,7 +240,7 @@ protected:
   virtual void read_impl(const PIO &nc, unsigned int time);
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual void write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  virtual void write_impl(const PIO &nc) const;
   std::vector<double> zlevels;
 
   petsc::Vec  m_v;                       //!< Internal storage
@@ -330,7 +330,7 @@ protected:
   virtual void read_impl(const PIO &nc, const unsigned int time);
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual void write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  virtual void write_impl(const PIO &nc) const;
 };
 
 class IceModelVec2V;
