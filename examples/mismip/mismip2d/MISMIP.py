@@ -97,8 +97,9 @@ def rho_w():
     return 1000.0
 
 def g():
-    "Acceleration due to gravity"
-    return 9.81
+    """Acceleration due to gravity. (Table 2 on page 19 of mismip_4.pdf
+    uses this value, i.e. g = 9.8 m s-2.)"""
+    return 9.8
 
 def n():
     "Glen exponent"
