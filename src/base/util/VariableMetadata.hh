@@ -107,10 +107,10 @@ public:
   const DoubleAttrs& get_all_doubles() const;
 
   void report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
+  void check_range(const std::string &filename, double min, double max);
+  void report_range(MPI_Comm com, double min, double max, bool found_by_standard_name);
 
 protected:
-  void check_range(const std::string &filename, double min, double max);
-
   unsigned int m_n_spatial_dims;
 
   //! @brief The unit system to use.
@@ -145,18 +145,6 @@ public:
 
   const IceGrid& grid() const;
 
-  void read(const PIO &file, unsigned int time, double *output);
-
-  void regrid(const PIO &file,
-              RegriddingFlag flag,
-              bool report_range,
-              double default_value, double *output);
-  void regrid(const PIO &file,
-              unsigned int t_start,
-              RegriddingFlag flag,
-              bool report_range,
-              double default_value, double *output);
-
   VariableMetadata& get_x();
   VariableMetadata& get_y();
   VariableMetadata& get_z();
@@ -169,11 +157,22 @@ private:
   VariableMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   const IceGrid *m_grid;
-  void report_range(MPI_Comm com, double min, double max, bool found_by_standard_name);
-
   void init_internal(const std::string &name, const IceGrid &g,
                      const std::vector<double> &z_levels);
 };
+
+void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+                             RegriddingFlag flag, bool do_report_range,
+                             double default_value, double *output);
+
+void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+                             unsigned int t_start, RegriddingFlag flag,
+                             bool do_report_range, double default_value,
+                             double *output);
+
+void read_spatial_variable(const SpatialVariableMetadata &var,
+                           const PIO &nc, unsigned int time,
+                           double *output);
 
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const PIO &nc, bool use_glaciological_units,

@@ -425,12 +425,12 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    metadata(0).regrid(nc, flag, m_report_range, default_value, tmp_array.get());
+    regrid_spatial_variable(metadata(0), nc, flag, m_report_range, default_value, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    metadata(0).regrid(nc, flag, m_report_range, default_value, v_array.get());
+    regrid_spatial_variable(metadata(0), nc, flag, m_report_range, default_value, v_array.get());
   }
 }
 
@@ -448,12 +448,12 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    metadata(0).read(nc, time, tmp_array.get());
+    read_spatial_variable(metadata(0), nc, time, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    metadata(0).read(nc, time, v_array.get());
+    read_spatial_variable(metadata(0), nc, time, v_array.get());
   }
 }
 

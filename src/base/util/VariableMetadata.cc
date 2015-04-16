@@ -216,22 +216,22 @@ const IceGrid& SpatialVariableMetadata::grid() const {
 
 
 //! Read a variable from a file into an array `output`.
-/*! This also converts the data from input units to internal units if needed.
+/*! This also converts data from input units to internal units if needed.
  */
-void SpatialVariableMetadata::read(const PIO &nc, unsigned int time, double *output) {
-
-  assert(m_grid != NULL);
+void read_spatial_variable(const SpatialVariableMetadata &var,
+                           const PIO &nc, unsigned int time,
+                           double *output) {
 
   // Find the variable:
   std::string name_found;
   bool found_by_standard_name = false, variable_exists = false;
-  nc.inq_var(get_name(), get_string("standard_name"),
+  nc.inq_var(var.get_name(), var.get_string("standard_name"),
              variable_exists, name_found, found_by_standard_name);
 
   if (not variable_exists) {
     throw RuntimeError::formatted("Can't find '%s' (%s) in '%s'.",
-                                  get_name().c_str(),
-                                  get_string("standard_name").c_str(), nc.inq_filename().c_str());
+                                  var.get_name().c_str(),
+                                  var.get_string("standard_name").c_str(), nc.inq_filename().c_str());
   }
 
   // Sanity check: the variable in an input file should have the expected
@@ -241,7 +241,7 @@ void SpatialVariableMetadata::read(const PIO &nc, unsigned int time, double *out
     std::set<int> axes;
     axes.insert(X_AXIS);
     axes.insert(Y_AXIS);
-    if (get_z().get_name().empty() == false) {
+    if (var.get_z().get_name().empty() == false) {
       axes.insert(Z_AXIS);
     }
 
@@ -274,35 +274,38 @@ void SpatialVariableMetadata::read(const PIO &nc, unsigned int time, double *out
                                     input_ndims, name_found.c_str(),
                                     join(input_dims, ",").c_str(),
                                     nc.inq_filename().c_str(),
-                                    get_name().c_str(), get_string("long_name").c_str(),
+                                    var.get_name().c_str(), var.get_string("long_name").c_str(),
                                     static_cast<int>(axes.size()));
     }
   }
 
   // make sure we have at least one level
-  unsigned int nlevels = std::max(m_zlevels.size(), (size_t)1);
+  const std::vector<double>& zlevels = var.get_levels();
+  unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  nc.get_vec(*m_grid, name_found, nlevels, time, output);
+  const IceGrid& grid = var.grid();
+  nc.get_vec(grid, name_found, nlevels, time, output);
 
   std::string input_units = nc.get_att_text(name_found, "units");
 
-  if (has_attribute("units") && input_units.empty()) {
-    const std::string &units_string = get_string("units"),
-      &long_name = get_string("long_name");
+  if (var.has_attribute("units") && input_units.empty()) {
+    const std::string &units_string = var.get_string("units"),
+      &long_name = var.get_string("long_name");
     verbPrintf(2, nc.com(),
                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                "              Assuming that it is in '%s'.\n",
-               get_name().c_str(), long_name.c_str(),
+               var.get_name().c_str(), long_name.c_str(),
                units_string.c_str());
     input_units = units_string;
   }
 
   // Convert data:
-  size_t size = m_grid->xm() * m_grid->ym() * nlevels;
+  size_t size = grid.xm() * grid.ym() * nlevels;
 
-  UnitConverter(m_unit_system,
+  const UnitSystem& sys = grid.config.unit_system();
+  UnitConverter(sys,
                 input_units,
-                get_string("units")).convert_doubles(output, size);
+                var.get_string("units")).convert_doubles(output, size);
 }
 
 //! \brief Write a double array to a file.
@@ -361,24 +364,30 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
     variable was not found in the input file
   - uses the last record in the file
  */
-void SpatialVariableMetadata::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
-                               double default_value, double *output) {
-  unsigned int t_length = nc.inq_nrecords(get_name(), get_string("standard_name"));
+void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+                             RegriddingFlag flag, bool do_report_range,
+                             double default_value, double *output) {
+  unsigned int t_length = nc.inq_nrecords(var.get_name(),
+                                          var.get_string("standard_name"));
 
-  this->regrid(nc, t_length - 1, flag, do_report_range, default_value, output);
+  regrid_spatial_variable(var, nc, t_length - 1, flag, do_report_range,
+                          default_value, output);
 }
 
-void SpatialVariableMetadata::regrid(const PIO &nc, unsigned int t_start,
-                               RegriddingFlag flag, bool do_report_range,
-                               double default_value, double *output) {
-  assert(m_grid != NULL);
+void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+                             unsigned int t_start, RegriddingFlag flag,
+                             bool do_report_range, double default_value,
+                             double *output) {
 
-  const size_t data_size = m_grid->xm() * m_grid->ym() * m_zlevels.size();
+  const IceGrid& grid = var.grid();
+  const UnitSystem& sys = grid.config.unit_system();
+  const std::vector<double>& levels = var.get_levels();
+  const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
   // Find the variable
   bool exists, found_by_standard_name;
   std::string name_found;
-  nc.inq_var(get_name(), get_string("standard_name"),
+  nc.inq_var(var.get_name(), var.get_string("standard_name"),
              exists, name_found, found_by_standard_name);
 
   if (exists) {                      // the variable was found successfully
@@ -386,13 +395,13 @@ void SpatialVariableMetadata::regrid(const PIO &nc, unsigned int t_start,
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
       verbPrintf(2, nc.com(),
                  "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-                 default_value, get_string("units").c_str(), get_name().c_str(),
+                 default_value, var.get_string("units").c_str(), var.get_name().c_str(),
                  nc.inq_filename().c_str());
 
-      nc.regrid_vec_fill_missing(*m_grid, name_found, m_zlevels,
+      nc.regrid_vec_fill_missing(grid, name_found, levels,
                                  t_start, default_value, output);
     } else {
-      nc.regrid_vec(*m_grid, name_found, m_zlevels, t_start, output);
+      nc.regrid_vec(grid, name_found, levels, t_start, output);
     }
 
     // Now we need to get the units string from the file and convert
@@ -402,59 +411,59 @@ void SpatialVariableMetadata::regrid(const PIO &nc, unsigned int t_start,
     std::string input_units = nc.get_att_text(name_found, "units");
 
     if (input_units.empty()) {
-      std::string internal_units = get_string("units");
+      std::string internal_units = var.get_string("units");
       input_units = internal_units;
       if (not internal_units.empty()) {
         verbPrintf(2, nc.com(),
                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                    "              Assuming that it is in '%s'.\n",
-                   get_name().c_str(),
-                   get_string("long_name").c_str(),
+                   var.get_name().c_str(),
+                   var.get_string("long_name").c_str(),
                    internal_units.c_str());
       }
     }
 
     // Convert data:
-    UnitConverter(m_unit_system,
+    UnitConverter(sys,
                   input_units,
-                  get_string("units")).convert_doubles(output, data_size);
+                  var.get_string("units")).convert_doubles(output, data_size);
 
     // Read the valid range info:
-    nc.read_valid_range(name_found, *this);
+    nc.read_valid_range(name_found, var);
 
     double min = 0.0, max = 0.0;
     compute_range(nc.com(), output, data_size, &min, &max);
     
     // Check the range and warn the user if needed:
-    check_range(nc.inq_filename(), min, max);
+    var.check_range(nc.inq_filename(), min, max);
 
     if (do_report_range) {
       // We can report the success, and the range now:
       verbPrintf(2, nc.com(), "  FOUND ");
 
-      this->report_range(nc.com(), min, max, found_by_standard_name);
+      var.report_range(nc.com(), min, max, found_by_standard_name);
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
       // if it's critical, print an error message and stop
       throw RuntimeError::formatted("Can't find '%s' in the regridding file '%s'.",
-                                    get_name().c_str(), nc.inq_filename().c_str());
+                                    var.get_name().c_str(), nc.inq_filename().c_str());
     }
 
     // If it is optional, fill with the provided default value.
     // UnitConverter constructor will make sure that units are compatible.
-    UnitConverter c(m_unit_system,
-                    this->get_string("units"),
-                    this->get_string("glaciological_units"));
+    UnitConverter c(sys,
+                    var.get_string("units"),
+                    var.get_string("glaciological_units"));
 
-    std::string spacer(get_name().size(), ' ');
+    std::string spacer(var.get_name().size(), ' ');
     verbPrintf(2, nc.com(),
                "  absent %s / %-10s\n"
                "         %s \\ not found; using default constant %7.2f (%s)\n",
-               get_name().c_str(),
-               get_string("long_name").c_str(),
+               var.get_name().c_str(),
+               var.get_string("long_name").c_str(),
                spacer.c_str(), c(default_value),
-               get_string("glaciological_units").c_str());
+               var.get_string("glaciological_units").c_str());
 
     for (size_t k = 0; k < data_size; ++k) {
       output[k] = default_value;
@@ -464,8 +473,8 @@ void SpatialVariableMetadata::regrid(const PIO &nc, unsigned int t_start,
 
 
 //! Report the range of a \b global Vec `v`.
-void SpatialVariableMetadata::report_range(MPI_Comm com, double min, double max,
-                                     bool found_by_standard_name) {
+void VariableMetadata::report_range(MPI_Comm com, double min, double max,
+                                    bool found_by_standard_name) {
 
   // UnitConverter constructor will make sure that units are compatible.
   UnitConverter c(m_unit_system,

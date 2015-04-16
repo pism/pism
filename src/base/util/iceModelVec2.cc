@@ -337,7 +337,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
     {
       petsc::VecArray tmp_array(tmp);
-      m_metadata[j].read(nc, time, tmp_array.get());
+      read_spatial_variable(m_metadata[j], nc, time, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);
@@ -370,7 +370,7 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   for (unsigned int j = 0; j < m_dof; ++j) {
     {
       petsc::VecArray tmp_array(tmp);
-      m_metadata[j].regrid(nc, flag, m_report_range, default_value, tmp_array.get());
+      regrid_spatial_variable(m_metadata[j], nc, flag, m_report_range, default_value, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);
