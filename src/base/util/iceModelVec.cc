@@ -508,10 +508,10 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
     petsc::VecArray tmp_array(tmp);
 
-    metadata(0).write(nc, write_in_glaciological_units, tmp_array.get());
+    write_spatial_variable(metadata(0), nc, write_in_glaciological_units, tmp_array.get());
   } else {
     petsc::VecArray v_array(m_v);
-    metadata(0).write(nc, write_in_glaciological_units, v_array.get());
+    write_spatial_variable(metadata(0), nc, write_in_glaciological_units, v_array.get());
   }
 }
 

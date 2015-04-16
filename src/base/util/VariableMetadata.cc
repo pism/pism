@@ -305,32 +305,32 @@ void SpatialVariableMetadata::read(const PIO &nc, unsigned int time, double *out
                 get_string("units")).convert_doubles(output, size);
 }
 
-//! \brief Write a \b global Vec `v` to a variable.
+//! \brief Write a double array to a file.
 /*!
-  Defines a variable and converts the units if needed.
+  Converts the units if `use_glaciological_units` is `true`.
  */
-void SpatialVariableMetadata::write(const PIO &nc,
-                                    bool use_glaciological_units,
-                                    const double *input) const {
+void write_spatial_variable(const SpatialVariableMetadata &var,
+                            const PIO &nc, bool use_glaciological_units,
+                            const double *input) {
 
   // find or define the variable
   std::string name_found;
   bool exists, found_by_standard_name;
-  nc.inq_var(this->get_name(),
-             this->get_string("standard_name"),
+  nc.inq_var(var.get_name(),
+             var.get_string("standard_name"),
              exists, name_found, found_by_standard_name);
 
   if (not exists) {
     throw RuntimeError::formatted("Can't find '%s' in '%s'.",
-                                  this->get_name().c_str(),
+                                  var.get_name().c_str(),
                                   nc.inq_filename().c_str());
   }
 
   // make sure we have at least one level
-  const std::vector<double>& zlevels = this->get_levels();
+  const std::vector<double>& zlevels = var.get_levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  const IceGrid& grid = this->grid();
+  const IceGrid& grid = var.grid();
   if (use_glaciological_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
 
@@ -342,8 +342,8 @@ void SpatialVariableMetadata::write(const PIO &nc,
     }
     const UnitSystem& sys = grid.config.unit_system();
     UnitConverter(sys,
-                  this->get_string("units"),
-                  this->get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
+                  var.get_string("units"),
+                  var.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
     nc.put_vec(grid, name_found, nlevels, &tmp[0]);
   } else {

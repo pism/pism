@@ -146,8 +146,6 @@ public:
   const IceGrid& grid() const;
 
   void read(const PIO &file, unsigned int time, double *output);
-  void write(const PIO &nc, bool use_glaciological_units,
-             const double *input) const;
 
   void regrid(const PIO &file,
               RegriddingFlag flag,
@@ -176,6 +174,10 @@ private:
   void init_internal(const std::string &name, const IceGrid &g,
                      const std::vector<double> &z_levels);
 };
+
+void write_spatial_variable(const SpatialVariableMetadata &var,
+                            const PIO &nc, bool use_glaciological_units,
+                            const double *input);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const PIO &nc,

@@ -306,7 +306,7 @@ void IceModelVec2::write_impl(const PIO &nc) const {
     IceModelVec2::get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    m_metadata[j].write(nc, write_in_glaciological_units, tmp_array.get());
+    write_spatial_variable(m_metadata[j], nc, write_in_glaciological_units, tmp_array.get());
   }
 }
 
