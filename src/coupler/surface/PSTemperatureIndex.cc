@@ -31,6 +31,7 @@
 #include "base/util/io/PIO.hh"
 
 #include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace surface {
@@ -98,7 +99,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
     std::string short_name = "air_temp_sd";
     unsigned int buffer_size = (unsigned int) m_config.get_double("climate_forcing_buffer_size");
 
-    PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());
+    PIO nc(m_grid.com, "netcdf3");
     nc.open(file, PISM_READONLY);
     n_records = nc.inq_nrecords(short_name, "", m_grid.config.unit_system());
     nc.close();
@@ -461,7 +462,7 @@ void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, 
 
   if (set_contains(vars, "ice_surface_temp")) {
     std::string order = m_grid.config.get_string("output_variable_order");
-    define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {

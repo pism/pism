@@ -23,6 +23,7 @@
 #include "base/util/io/PIO.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
@@ -163,7 +164,7 @@ void NetCDFConfig::set_boolean_impl(const std::string &name, bool value) {
 */
 void NetCDFConfig::read_impl(const PIO &nc) {
 
-  nc.read_attributes(m_data.get_name(), m_data);
+  io::read_attributes(nc, m_data.get_name(), m_data);
 
   m_config_filename = nc.inq_filename();
 }
@@ -179,9 +180,9 @@ void NetCDFConfig::write_impl(const PIO &nc) const {
     nc.def_var(m_data.get_name(),
                PISM_BYTE, std::vector<std::string>());
 
-    nc.write_attributes(m_data, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_data, PISM_DOUBLE, false);
   } else {
-    nc.write_attributes(m_data, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_data, PISM_DOUBLE, false);
   }
 }
 

@@ -187,13 +187,13 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.PIO(grid, "netcdf3")
+    pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    pio.def_time(grid.config.get_string("time_dimension_name"),
-                 grid.config.get_string("calendar"),
-                 grid.time.units_string(),
-                 grid.config.unit_system())
-    pio.append_time(grid.config.get_string("time_dimension_name"), grid.time.current())
+    PISM.define_time(pio, grid.config.get_string("time_dimension_name"),
+                     grid.config.get_string("calendar"),
+                     grid.time.units_string(),
+                     grid.config.unit_system())
+    PISM.append_time(pio, grid.config.get_string("time_dimension_name"), grid.time.current())
     pio.close()
 
     enthalpy.write(output_file)
@@ -395,13 +395,13 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.PIO(grid, "netcdf3")
+    pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    pio.def_time(grid.config.get_string("time_dimension_name"),
-                 grid.config.get_string("calendar"),
-                 grid.time.units_string(),
-                 grid.config.unit_system())
-    pio.append_time(grid.config.get_string("time_dimension_name"), grid.time.current())
+    PISM.define_time(pio, grid.config.get_string("time_dimension_name"),
+                     grid.config.get_string("calendar"),
+                     grid.time.units_string(),
+                     grid.config.unit_system())
+    PISM.append_time(pio, grid.config.get_string("time_dimension_name"), grid.time.current())
     pio.close()
 
     vecs.write(output_file)
@@ -451,7 +451,7 @@ def util_test():
     grid = create_dummy_grid()
 
     output_file = "test_pism_util.nc"
-    pio = PISM.PIO(grid, "netcdf3")
+    pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     pio.close()
 
@@ -470,7 +470,7 @@ def util_test():
 def logging_test():
     "Test the PISM.logging module"
     grid = create_dummy_grid()
-    pio = PISM.PIO(grid, "netcdf3")
+    pio = PISM.PIO(grid.com, "netcdf3")
 
     import PISM.logging as L
 

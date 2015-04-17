@@ -44,6 +44,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMConfig.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -992,7 +993,7 @@ void IceCompModel::reportErrors() {
 
   err.set_string("units", "1");
 
-  PIO nc(grid.com, "netcdf3", grid.config.unit_system()); // OK to use netcdf3
+  PIO nc(grid.com, "netcdf3"); // OK to use netcdf3
 
   options::String report_file("-report_file", "NetCDF error report file");
   bool append = options::Bool("-append", "Append the NetCDF error report");
@@ -1009,24 +1010,24 @@ void IceCompModel::reportErrors() {
     nc.open(report_file, mode);
     start = nc.inq_dimlen("N");
 
-    nc.write_global_attributes(global_attributes);
+    io::write_global_attributes(nc, global_attributes);
 
     // Write the dimension variable:
-    nc.write_timeseries(err, (size_t)start, (double)(start + 1), PISM_INT);
+    io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
 
     // Always write grid parameters:
     err.set_name("dx");
     err.set_string("units", "meters");
-    nc.write_timeseries(err, (size_t)start, grid.dx());
+    io::write_timeseries(nc, err, (size_t)start, grid.dx());
     err.set_name("dy");
-    nc.write_timeseries(err, (size_t)start, grid.dy());
+    io::write_timeseries(nc, err, (size_t)start, grid.dy());
     err.set_name("dz");
-    nc.write_timeseries(err, (size_t)start, grid.dz_max());
+    io::write_timeseries(nc, err, (size_t)start, grid.dz_max());
 
     // Always write the test name:
     err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
     err.set_name("test");
-    nc.write_timeseries(err, (size_t)start, (double)testname, PISM_BYTE);
+    io::write_timeseries(nc, err, (size_t)start, (double)testname, PISM_BYTE);
   }
 
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
@@ -1047,22 +1048,22 @@ void IceCompModel::reportErrors() {
       err.set_name("relative_volume");
       err.set_string("units", "percent");
       err.set_string("long_name", "relative ice volume error");
-      nc.write_timeseries(err, (size_t)start, 100*volerr/volexact);
+      io::write_timeseries(nc, err, (size_t)start, 100*volerr/volexact);
 
       err.set_name("relative_max_eta");
       err.set_string("units", "1");
       err.set_string("long_name", "relative $\\eta$ error");
-      nc.write_timeseries(err, (size_t)start, maxetaerr/pow(domeHexact,m));
+      io::write_timeseries(nc, err, (size_t)start, maxetaerr/pow(domeHexact,m));
 
       err.set_name("maximum_thickness");
       err.set_string("units", "meters");
       err.set_string("long_name", "maximum ice thickness error");
-      nc.write_timeseries(err, (size_t)start, maxHerr);
+      io::write_timeseries(nc, err, (size_t)start, maxHerr);
 
       err.set_name("average_thickness");
       err.set_string("units", "meters");
       err.set_string("long_name", "average ice thickness error");
-      nc.write_timeseries(err, (size_t)start, avHerr);
+      io::write_timeseries(nc, err, (size_t)start, avHerr);
     }
   }
 
@@ -1081,18 +1082,18 @@ void IceCompModel::reportErrors() {
       err.set_name("maximum_temperature");
       err.set_string("units", "Kelvin");
       err.set_string("long_name", "maximum ice temperature error");
-      nc.write_timeseries(err, (size_t)start, maxTerr);
+      io::write_timeseries(nc, err, (size_t)start, maxTerr);
 
       err.set_name("average_temperature");
       err.set_string("long_name", "average ice temperature error");
-      nc.write_timeseries(err, (size_t)start, avTerr);
+      io::write_timeseries(nc, err, (size_t)start, avTerr);
 
       err.set_name("maximum_basal_temperature");
       err.set_string("long_name", "maximum basal temperature error");
-      nc.write_timeseries(err, (size_t)start, basemaxTerr);
+      io::write_timeseries(nc, err, (size_t)start, basemaxTerr);
       err.set_name("average_basal_temperature");
       err.set_string("long_name", "average basal temperature error");
-      nc.write_timeseries(err, (size_t)start, baseavTerr);
+      io::write_timeseries(nc, err, (size_t)start, baseavTerr);
     }
 
   } else if ((testname == 'K') || (testname == 'O')) {
@@ -1108,19 +1109,19 @@ void IceCompModel::reportErrors() {
       err.set_name("maximum_temperature");
       err.set_string("units", "Kelvin");
       err.set_string("long_name", "maximum ice temperature error");
-      nc.write_timeseries(err, (size_t)start, maxTerr);
+      io::write_timeseries(nc, err, (size_t)start, maxTerr);
 
       err.set_name("average_temperature");
       err.set_string("long_name", "average ice temperature error");
-      nc.write_timeseries(err, (size_t)start, avTerr);
+      io::write_timeseries(nc, err, (size_t)start, avTerr);
 
       err.set_name("maximum_bedrock_temperature");
       err.set_string("long_name", "maximum bedrock temperature error");
-      nc.write_timeseries(err, (size_t)start, maxTberr);
+      io::write_timeseries(nc, err, (size_t)start, maxTberr);
 
       err.set_name("average_bedrock_temperature");
       err.set_string("long_name", "average bedrock temperature error");
-      nc.write_timeseries(err, (size_t)start, avTberr);
+      io::write_timeseries(nc, err, (size_t)start, avTberr);
     }
   }
 
@@ -1139,11 +1140,11 @@ void IceCompModel::reportErrors() {
       err.set_string("units", "J s-1 m-3");
       err.set_string("glaciological_units", "1e6 J s-1 m-3");
       err.set_string("long_name", "maximum strain heating error");
-      nc.write_timeseries(err, (size_t)start, max_strain_heating_error);
+      io::write_timeseries(nc, err, (size_t)start, max_strain_heating_error);
 
       err.set_name("average_sigma");
       err.set_string("long_name", "average strain heating error");
-      nc.write_timeseries(err, (size_t)start, av_strain_heating_error);
+      io::write_timeseries(nc, err, (size_t)start, av_strain_heating_error);
     }
   }
 
@@ -1162,19 +1163,19 @@ void IceCompModel::reportErrors() {
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
       err.set_string("units", "m/s");
       err.set_string("glaciological_units", "meters/year");
-      nc.write_timeseries(err, (size_t)start, maxUerr);
+      io::write_timeseries(nc, err, (size_t)start, maxUerr);
 
       err.set_name("average_surface_velocity");
       err.set_string("long_name", "average ice surface horizontal velocity error");
-      nc.write_timeseries(err, (size_t)start, avUerr);
+      io::write_timeseries(nc, err, (size_t)start, avUerr);
 
       err.set_name("maximum_surface_w");
       err.set_string("long_name", "maximum ice surface vertical velocity error");
-      nc.write_timeseries(err, (size_t)start, maxWerr);
+      io::write_timeseries(nc, err, (size_t)start, maxWerr);
 
       err.set_name("average_surface_w");
       err.set_string("long_name", "average ice surface vertical velocity error");
-      nc.write_timeseries(err, (size_t)start, avWerr);
+      io::write_timeseries(nc, err, (size_t)start, avWerr);
     }
   }
 
@@ -1195,19 +1196,19 @@ void IceCompModel::reportErrors() {
       err.set_name("maximum_basal_velocity");
       err.set_string("units", "m/s");
       err.set_string("glaciological_units", "meters/year");
-      nc.write_timeseries(err, (size_t)start, maxvecerr);
+      io::write_timeseries(nc, err, (size_t)start, maxvecerr);
 
       err.set_name("average_basal_velocity");
-      nc.write_timeseries(err, (size_t)start, avvecerr);
+      io::write_timeseries(nc, err, (size_t)start, avvecerr);
       err.set_name("maximum_basal_u");
-      nc.write_timeseries(err, (size_t)start, maxuberr);
+      io::write_timeseries(nc, err, (size_t)start, maxuberr);
       err.set_name("maximum_basal_v");
-      nc.write_timeseries(err, (size_t)start, maxvberr);
+      io::write_timeseries(nc, err, (size_t)start, maxvberr);
 
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("relative_basal_velocity");
       err.set_string("units", "percent");
-      nc.write_timeseries(err, (size_t)start, (avvecerr/exactmaxspeed)*100);
+      io::write_timeseries(nc, err, (size_t)start, (avvecerr/exactmaxspeed)*100);
     }
   }
 
@@ -1232,7 +1233,7 @@ void IceCompModel::reportErrors() {
       err.set_name("maximum_basal_melt_rate");
       err.set_string("units", "m/s");
       err.set_string("glaciological_units", "meters/year");
-      nc.write_timeseries(err, (size_t)start, maxbmelterr);
+      io::write_timeseries(nc, err, (size_t)start, maxbmelterr);
     }
   }
 

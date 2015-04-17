@@ -26,6 +26,7 @@
 #include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
@@ -111,7 +112,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(*m_grid, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
   std::string name_found;
   bool exists, found_by_standard_name;
   nc.open(filename, PISM_READONLY);
@@ -145,7 +146,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     TimeseriesMetadata time_dimension(dimname, dimname, m_grid->config.unit_system());
 
     time_dimension.set_string("units", m_grid->time->units_string());
-    nc.read_timeseries(time_dimension, m_grid->time, time);
+    io::read_timeseries(m_grid->com, nc, time_dimension, m_grid->time, time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
@@ -155,7 +156,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         TimeBoundsMetadata tb(bounds_name, dimname, m_grid->config.unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
-        nc.read_time_bounds(tb, m_grid->time, time_bounds);
+        io::read_time_bounds(m_grid->com, nc, tb, m_grid->time, time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -333,13 +334,13 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  PIO nc(*m_grid, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
   nc.open(filename, PISM_READONLY);
 
   for (unsigned int j = 0; j < missing; ++j) {
     {
       petsc::VecArray tmp_array(m_v);
-      regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j,
+      io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j,
                            CRITICAL, m_report_range, 0.0, tmp_array.get());
     }
 

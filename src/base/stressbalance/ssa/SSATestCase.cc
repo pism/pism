@@ -23,6 +23,7 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -278,62 +279,62 @@ void SSATestCase::report_netcdf(const std::string &testname,
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(*m_grid, "netcdf3");      // OK to use NetCDF3.
+  PIO nc(m_grid->com, "netcdf3");      // OK to use NetCDF3.
   nc.open(filename, mode);
   start = nc.inq_dimlen("N");
 
-  nc.write_global_attributes(global_attributes);
+  io::write_global_attributes(nc, global_attributes);
 
   // Write the dimension variable:
-  nc.write_timeseries(err, (size_t)start, (double)(start + 1), PISM_INT);
+  io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
 
   // Always write grid parameters:
   err.set_name("dx");
   err.set_string("units", "meters");
-  nc.write_timeseries(err, (size_t)start, m_grid->dx());
+  io::write_timeseries(nc, err, (size_t)start, m_grid->dx());
   err.set_name("dy");
-  nc.write_timeseries(err, (size_t)start, m_grid->dy());
+  io::write_timeseries(nc, err, (size_t)start, m_grid->dy());
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
-  nc.write_timeseries(err, (size_t)start, testname[0], PISM_BYTE);
+  io::write_timeseries(nc, err, (size_t)start, testname[0], PISM_BYTE);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
   err.set_string("units", "m/year");
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  nc.write_timeseries(err, (size_t)start, max_vector);
+  io::write_timeseries(nc, err, (size_t)start, max_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("relative_velocity");
   err.set_string("units", "percent");
   err.set_string("long_name", "relative ice velocity magnitude error");
-  nc.write_timeseries(err, (size_t)start, rel_vector);
+  io::write_timeseries(nc, err, (size_t)start, rel_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
   err.set_string("units", "m/year");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  nc.write_timeseries(err, (size_t)start, max_u);
+  io::write_timeseries(nc, err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
   err.set_string("units", "m/year");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  nc.write_timeseries(err, (size_t)start, max_v);
+  io::write_timeseries(nc, err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
   err.set_string("units", "m/year");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  nc.write_timeseries(err, (size_t)start, avg_u);
+  io::write_timeseries(nc, err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
   err.set_string("units", "m/year");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  nc.write_timeseries(err, (size_t)start, avg_v);
+  io::write_timeseries(nc, err, (size_t)start, avg_v);
 
   nc.close();
 }
@@ -348,13 +349,13 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(*m_grid, m_grid->config.get_string("output_format"));
+  PIO pio(m_grid->com, m_grid->config.get_string("output_format"));
   pio.open(filename, PISM_READWRITE_MOVE);
-  pio.def_time(m_config.get_string("time_dimension_name"),
-               m_grid->time->calendar(),
-               m_grid->time->CF_units_string(),
-               m_config.unit_system());
-  pio.append_time(m_config.get_string("time_dimension_name"), 0.0);
+  io::define_time(pio, m_config.get_string("time_dimension_name"),
+                  m_grid->time->calendar(),
+                  m_grid->time->CF_units_string(),
+                  m_config.unit_system());
+  io::append_time(pio, m_config.get_string("time_dimension_name"), 0.0);
 
   m_surface.write(pio);
   m_thickness.write(pio);

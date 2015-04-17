@@ -19,6 +19,7 @@
 
 #include "PISMDiagnostic.hh"
 #include "error_handling.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
@@ -68,7 +69,7 @@ SpatialVariableMetadata Diagnostic::get_metadata(int N) {
 void Diagnostic::define(const PIO &nc) {
   std::string order = m_grid.config.get_string("output_variable_order");
   for (int j = 0; j < m_dof; ++j) {
-    define_spatial_variable(m_vars[j], m_grid, nc, m_output_datatype, order, true);
+    io::define_spatial_variable(m_vars[j], m_grid, nc, m_output_datatype, order, true);
   }
 }
 

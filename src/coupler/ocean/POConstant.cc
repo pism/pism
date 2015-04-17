@@ -25,6 +25,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/iceModelVec.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace ocean {
@@ -142,11 +143,11 @@ void Constant::define_variables_impl(const std::set<std::string> &vars, const PI
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    define_spatial_variable(m_shelfbmassflux, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbmassflux, m_grid, nc, nctype, order, true);
   }
 }
 

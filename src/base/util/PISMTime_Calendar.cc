@@ -29,6 +29,7 @@
 #include "calcalcs/calcalcs.h"
 #include "PISMConfigInterface.hh"
 #include "VariableMetadata.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
@@ -173,7 +174,7 @@ void Time_Calendar::init_from_file(const std::string &filename) {
   TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
   time_axis.set_string("units", m_time_units.format());
 
-  PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(m_com, "netcdf3"); // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);
   exists = nc.inq_var(time_name);
@@ -229,11 +230,11 @@ void Time_Calendar::init_from_file(const std::string &filename) {
     TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
     bounds.set_string("units", m_time_units.format());
 
-    nc.read_time_bounds(bounds, this, time);
+    io::read_time_bounds(m_com, nc, bounds, this, time);
   } else {
     // use the time axis
 
-    nc.read_timeseries(time_axis, this, time);
+    io::read_timeseries(m_com, nc, time_axis, this, time);
   }
 
   m_run_start       = time.front();

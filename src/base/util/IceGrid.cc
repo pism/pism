@@ -128,7 +128,7 @@ static std::string init_calendar(MPI_Comm com, const Config& config) {
   // "calendar" attribute is found.
   options::String time_file("-time_file", "name of the file specifying the run duration");
   if (time_file.is_set()) {
-    PIO nc(com, "netcdf3", config.unit_system());    // OK to use netcdf3
+    PIO nc(com, "netcdf3");    // OK to use netcdf3
 
     nc.open(time_file, PISM_READONLY);
     {

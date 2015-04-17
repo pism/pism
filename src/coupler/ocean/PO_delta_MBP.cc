@@ -21,6 +21,7 @@
 
 #include "PO_delta_MBP.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace ocean {
@@ -90,12 +91,12 @@ void Delta_MBP::define_variables_impl(const std::set<std::string> &vars_input, c
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    define_spatial_variable(shelfbtemp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(shelfbtemp, m_grid, nc, nctype, order, true);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    define_spatial_variable(shelfbmassflux, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(shelfbmassflux, m_grid, nc, nctype, order, true);
     vars.erase("shelfbmassflux");
   }
 

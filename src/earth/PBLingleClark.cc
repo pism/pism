@@ -100,7 +100,7 @@ MaxTimestep PBLingleClark::max_timestep_impl(double t) {
 void PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, topg_exists, topg_initial_exists;
 
-  PIO nc(m_grid, "guess_mode");
+  PIO nc(m_grid.com, "guess_mode");
 
   use_special_regrid_semantics = options::Bool("-regrid_bed_special",
                                                "Correct topg when switching to a different grid");

@@ -28,6 +28,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -86,7 +87,7 @@ void WeatherStation::init() {
              "  - Reading air temperature and precipitation from '%s'...\n",
              filename->c_str());
 
-  PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());
+  PIO nc(m_grid.com, "netcdf3");
   nc.open(filename, PISM_READONLY);
   {
     m_precipitation.read(nc, m_grid.time);
@@ -175,12 +176,12 @@ void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
 
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units
-    define_spatial_variable(m_air_temp_metadata, m_grid, nc, nctype, order, false);
+    io::define_spatial_variable(m_air_temp_metadata, m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {
     // do write using glaciological units
-    define_spatial_variable(m_precip_metadata, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_precip_metadata, m_grid, nc, nctype, order, true);
   }
 }
 

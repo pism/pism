@@ -32,6 +32,7 @@ static char help[] =
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace energy {
@@ -255,13 +256,13 @@ int main(int argc, char *argv[]) {
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid, grid.config.get_string("output_format"));
+    PIO pio(grid.com, grid.config.get_string("output_format"));
 
     std::string time_name = config.get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
-    pio.def_time(time_name, grid.time->calendar(),
-                 grid.time->CF_units_string(), unit_system);
-    pio.append_time(time_name, grid.time->end());
+    io::define_time(pio, time_name, grid.time->calendar(),
+                    grid.time->CF_units_string(), unit_system);
+    io::append_time(pio, time_name, grid.time->end());
 
     btu.define_variables(vars, pio, PISM_DOUBLE);
     btu.write_variables(vars, pio);

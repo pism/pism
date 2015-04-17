@@ -71,7 +71,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
 
       // If we're initializing from a file we need to get the number of bedrock
       // levels and the depth of the bed thermal layer from it:
-      PIO nc(m_grid, "guess_mode");
+      PIO nc(m_grid.com, "guess_mode");
 
       nc.open(m_input_file, PISM_READONLY);
 
@@ -159,7 +159,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
   }
 
   if (not m_input_file.empty()) {
-    PIO nc(m_grid, "guess_mode");
+    PIO nc(m_grid.com, "guess_mode");
 
     nc.open(m_input_file, PISM_READONLY);
     bool exists = nc.inq_var("litho_temp");

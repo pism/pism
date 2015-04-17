@@ -96,7 +96,6 @@ public:
   std::string short_name;
 protected:
   void set_bounds_units();
-  UnitSystem m_unit_system;
   TimeseriesMetadata m_dimension, m_variable;
   MPI_Comm m_com;
   TimeBoundsMetadata m_bounds;

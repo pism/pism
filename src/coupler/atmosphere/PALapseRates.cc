@@ -19,6 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PALapseRates.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -140,11 +141,11 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    define_spatial_variable(m_air_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_air_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "precipitation")) {
-    define_spatial_variable(m_precipitation, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_precipitation, m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

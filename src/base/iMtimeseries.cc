@@ -30,6 +30,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -94,7 +95,7 @@ void IceModel::init_timeseries() {
     }
   }
 
-  PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
+  PIO nc(grid.com, "netcdf3");      // Use NetCDF-3 to write time-series.
   nc.open(ts_file, mode);
 
   if (append == true) {
@@ -239,7 +240,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(grid, grid.config.get_string("output_format"));
+    PIO nc(grid.com, grid.config.get_string("output_format"));
     std::string time_name = config.get_string("time_dimension_name");
     bool time_exists;
 
@@ -433,7 +434,7 @@ void IceModel::write_extras() {
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
-  PIO nc(grid, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config.get_string("output_format"));
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
@@ -446,10 +447,10 @@ void IceModel::write_extras() {
 
     // Prepare the file:
     nc.open(filename, mode);
-    nc.def_time(config.get_string("time_dimension_name"),
-                grid.time->calendar(),
-                grid.time->CF_units_string(),
-                config.unit_system());
+    io::define_time(nc, config.get_string("time_dimension_name"),
+                    grid.time->calendar(),
+                    grid.time->CF_units_string(),
+                    config.unit_system());
     nc.put_att_text(config.get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
@@ -464,7 +465,7 @@ void IceModel::write_extras() {
   double      current_time = grid.time->current();
   std::string time_name    = config.get_string("time_dimension_name");
 
-  nc.append_time(time_name, current_time);
+  io::append_time(nc, time_name, current_time);
 
   unsigned int time_length = nc.inq_dimlen(time_name);
 
@@ -473,9 +474,9 @@ void IceModel::write_extras() {
   std::vector<double> data(2);
   data[0] = last_extra;
   data[1] = current_time;
-  nc.write_time_bounds(extra_bounds, time_start, data);
+  io::write_time_bounds(nc, extra_bounds, time_start, data);
 
-  nc.write_timeseries(timestamp, time_start, wall_clock_hours);
+  io::write_timeseries(nc, timestamp, time_start, wall_clock_hours);
 
   write_variables(nc, extra_vars, PISM_FLOAT);
 

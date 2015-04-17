@@ -19,6 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PSLapseRates.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace surface {
@@ -102,11 +103,11 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
-    define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

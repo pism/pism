@@ -180,7 +180,7 @@ void MohrCoulombYieldStress::init_impl() {
 
     if (use_input_file) {
 
-      PIO nc(m_grid.com, "guess_mode", m_grid.config.unit_system());
+      PIO nc(m_grid.com, "guess_mode");
 
       nc.open(filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));

@@ -40,6 +40,7 @@ set(PISMUTIL_SRC
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
   base/util/iceModelVec3Custom.cc
+  base/util/io/io_helpers.cc
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc

@@ -43,6 +43,7 @@
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -82,7 +83,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
       nc.def_var(mapping.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
     }
-    nc.write_attributes(mapping, PISM_DOUBLE, false);
+    io::write_attributes(nc, mapping, PISM_DOUBLE, false);
   }
 
   if (write_run_stats) {
@@ -93,10 +94,10 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
       nc.def_var(run_stats.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
     }
-    nc.write_attributes(run_stats, PISM_DOUBLE, false);
+    io::write_attributes(nc, run_stats, PISM_DOUBLE, false);
   }
 
-  nc.write_global_attributes(global_attributes);
+  io::write_global_attributes(nc, global_attributes);
 
   bool override_used = options::Bool("-config_override", "use configuration overrides");
   if (override_used) {
@@ -110,17 +111,17 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
 
 void IceModel::dumpToFile(const std::string &filename) {
-  PIO nc(grid, config.get_string("output_format"));
+  PIO nc(grid.com, config.get_string("output_format"));
 
   grid.profiling.begin("model state dump");
 
   // Prepare the file
   std::string time_name = config.get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
-  nc.def_time(time_name, grid.time->calendar(),
-              grid.time->CF_units_string(),
-              config.unit_system());
-  nc.append_time(time_name, grid.time->current());
+  io::define_time(nc, time_name, grid.time->calendar(),
+                  grid.time->CF_units_string(),
+                  config.unit_system());
+  io::append_time(nc, time_name, grid.time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);
@@ -341,7 +342,7 @@ void IceModel::write_model_state(const PIO &nc) {
   box from the same input file.
 */
 void IceModel::initFromFile(const std::string &filename) {
-  PIO nc(grid, "guess_mode");
+  PIO nc(grid.com, "guess_mode");
 
   verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
              filename.c_str());
@@ -556,7 +557,7 @@ void IceModel::init_enthalpy(const std::string &filename,
     liqfrac_exists  = false,
     enthalpy_exists = false;
 
-  PIO nc(grid, "guess_mode");
+  PIO nc(grid.com, "guess_mode");
   nc.open(filename, PISM_READONLY);
   enthalpy_exists = nc.inq_var("enthalpy");
   temp_exists     = nc.inq_var("temp");
@@ -716,12 +717,12 @@ void IceModel::write_snapshot() {
              filename, grid.time->date().c_str(),
              grid.time->date(saving_after).c_str());
 
-  PIO nc(grid, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config.get_string("output_format"));
 
   if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
-    nc.def_time(config.get_string("time_dimension_name"),
+    io::define_time(nc, config.get_string("time_dimension_name"),
                 grid.time->calendar(),
                 grid.time->CF_units_string(),
                 config.unit_system());
@@ -736,7 +737,7 @@ void IceModel::write_snapshot() {
 
   unsigned int time_length = 0;
 
-  nc.append_time(config.get_string("time_dimension_name"), grid.time->current());
+  io::append_time(nc, config.get_string("time_dimension_name"), grid.time->current());
   time_length = nc.inq_dimlen(config.get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
@@ -756,7 +757,7 @@ void IceModel::write_snapshot() {
 
     MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
-    nc.write_timeseries(timestamp, static_cast<size_t>(time_length - 1),
+    io::write_timeseries(nc, timestamp, static_cast<size_t>(time_length - 1),
                         wall_clock_hours);
   }
 
@@ -819,15 +820,15 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(grid, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config.get_string("output_format"));
 
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);
-  nc.def_time(config.get_string("time_dimension_name"),
+  io::define_time(nc, config.get_string("time_dimension_name"),
               grid.time->calendar(),
               grid.time->CF_units_string(),
               config.unit_system());
-  nc.append_time(config.get_string("time_dimension_name"), grid.time->current());
+  io::append_time(nc, config.get_string("time_dimension_name"), grid.time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);

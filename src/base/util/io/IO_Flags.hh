@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,6 +59,8 @@ enum Fill_Mode {
   PISM_FILL   = 0,
   PISM_NOFILL = 0x100
 };
+
+enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
 
 } // end of namespace pism
 

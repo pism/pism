@@ -138,7 +138,7 @@ protected:
   {
     unsigned int buffer_size = (unsigned int) Model::m_config.get_double("climate_forcing_buffer_size");
 
-    PIO nc(Model::m_grid.com, "netcdf3", Model::m_grid.config.unit_system());
+    PIO nc(Model::m_grid.com, "netcdf3");
     nc.open(filename, PISM_READONLY);
 
     std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();

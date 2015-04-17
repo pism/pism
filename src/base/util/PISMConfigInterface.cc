@@ -62,7 +62,7 @@ const UnitSystem& Config::unit_system() const {
 
 void Config::read(MPI_Comm com, const std::string &file) {
 
-  PIO nc(com, "netcdf3", this->unit_system()); // OK to use netcdf3
+  PIO nc(com, "netcdf3"); // OK to use netcdf3
 
   nc.open(file, PISM_READONLY);
 
@@ -83,7 +83,7 @@ void Config::write(const PIO &nc) const {
 
 void Config::write(MPI_Comm com, const std::string &file, bool append) const {
 
-  PIO nc(com, "netcdf3", this->unit_system()); // OK to use netcdf3
+  PIO nc(com, "netcdf3"); // OK to use netcdf3
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 

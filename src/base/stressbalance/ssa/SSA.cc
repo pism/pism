@@ -161,7 +161,7 @@ void SSA::init_impl() {
   if (input_file.is_set() and not bootstrap) {
     bool u_ssa_found = false, v_ssa_found = false;
     unsigned int start = 0;
-    PIO nc(m_grid, "guess_mode");
+    PIO nc(m_grid.com, "guess_mode");
 
     bool dont_read_initial_guess = options::Bool("-dontreadSSAvels",
                                                  "don't read the initial guess");

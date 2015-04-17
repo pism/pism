@@ -117,7 +117,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
 
 void IceModel::bootstrap_2d(const std::string &filename) {
 
-  PIO nc(grid, "guess_mode");
+  PIO nc(grid.com, "guess_mode");
   nc.open(filename, PISM_READONLY);
 
   verbPrintf(2, grid.com, 

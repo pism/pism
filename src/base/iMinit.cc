@@ -55,6 +55,7 @@
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -89,7 +90,7 @@ void IceModel::set_grid_defaults() {
   // Use a bootstrapping file to set some grid parameters (they can be
   // overridden later, in IceModel::set_grid_from_options()).
 
-  PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
+  PIO nc(grid.com, "netcdf3"); // OK to use netcdf3, we read very little data here.
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -137,7 +138,7 @@ void IceModel::set_grid_defaults() {
 
     bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
-      nc.read_attributes(mapping.get_name(), mapping);
+      io::read_attributes(nc, mapping.get_name(), mapping);
       mapping.report_to_stdout(grid.com, 4);
     }
     nc.close();
@@ -274,7 +275,7 @@ void IceModel::grid_setup() {
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
   if (input_file.is_set() and not bootstrap) {
-    PIO nc(grid, "guess_mode");
+    PIO nc(grid.com, "guess_mode");
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
@@ -288,7 +289,7 @@ void IceModel::grid_setup() {
 
     bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
-      nc.read_attributes(mapping.get_name(), mapping);
+      io::read_attributes(nc, mapping.get_name(), mapping);
       mapping.report_to_stdout(grid.com, 4);
     }
 
@@ -483,12 +484,12 @@ void IceModel::model_state_setup() {
   }
 
   if (input_file.is_set()) {
-    PIO nc(grid.com, "netcdf3", grid.config.unit_system());
+    PIO nc(grid.com, "netcdf3");
 
     nc.open(input_file, PISM_READONLY);
     bool run_stats_exists = nc.inq_var("run_stats");
     if (run_stats_exists) {
-      nc.read_attributes(run_stats.get_name(), run_stats);
+      io::read_attributes(nc, run_stats.get_name(), run_stats);
     }
     nc.close();
 

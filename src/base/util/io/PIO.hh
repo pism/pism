@@ -19,7 +19,6 @@
 #ifndef _PIO_H_
 #define _PIO_H_
 
-#include <map>
 #include <vector>
 #include <string>
 
@@ -30,12 +29,6 @@ namespace pism {
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
-class IceGrid;
-class VariableMetadata;
-class TimeseriesMetadata;
-class TimeBoundsMetadata;
-class Time;
-
 //! \brief High-level PISM I/O class.
 /*!
  * Hides the low-level NetCDF wrapper.
@@ -43,14 +36,11 @@ class Time;
 class PIO
 {
 public:
-  PIO(MPI_Comm com, const std::string &mode, const UnitSystem &units_system);
-  PIO(const IceGrid &g, const std::string &mode);
+  PIO(MPI_Comm com, const std::string &mode);
   PIO(const PIO &other);
   ~PIO();
 
   MPI_Comm com() const;
-
-  static bool check_if_exists(MPI_Comm com, const std::string &filename);
 
   void open(const std::string &filename, IO_Mode mode);
 
@@ -83,9 +73,10 @@ public:
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
-  void def_dim(unsigned long int length, const VariableMetadata &metadata) const;
-
-  void def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  void def_dim(const std::string &name, size_t length) const;
+  
+  void def_var(const std::string &name, IO_Type nctype,
+               const std::vector<std::string> &dims) const;
 
   void get_dim(const std::string &name, std::vector<double> &result) const;
 
@@ -95,13 +86,6 @@ public:
   void put_1d_var(const std::string &name, unsigned int start, unsigned int count,
                   const std::vector<double> &data) const;
 
-  void put_dim(const std::string &name, const std::vector<double> &data) const;
-
-  void append_time(const std::string &var_name, double value) const;
-
-  void def_time(const std::string &name, const std::string &calendar,
-                const std::string &units, const UnitSystem &unit_system) const;
-
   void append_history(const std::string &history) const;
 
   unsigned int inq_nattrs(const std::string &var_name) const;
@@ -110,33 +94,19 @@ public:
 
   IO_Type inq_atttype(const std::string &var_name, const std::string &att_name) const;
 
-  void put_att_double(const std::string &var_name, const std::string &att_name, IO_Type nctype,
-                      const std::vector<double> &values) const;
+  void put_att_double(const std::string &var_name, const std::string &att_name,
+                      IO_Type nctype, const std::vector<double> &values) const;
 
-  void put_att_double(const std::string &var_name, const std::string &att_name, IO_Type nctype,
-                      double value) const;
+  void put_att_double(const std::string &var_name, const std::string &att_name,
+                      IO_Type nctype, double value) const;
 
-  void put_att_text(const std::string &var_name, const std::string &att_name, const std::string &value) const;
+  void put_att_text(const std::string &var_name, const std::string &att_name,
+                    const std::string &value) const;
 
-  std::vector<double> get_att_double(const std::string &var_name, const std::string &att_name) const;
+  std::vector<double> get_att_double(const std::string &var_name,
+                                     const std::string &att_name) const;
 
   std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
-
-  void get_vec(const IceGrid &grid, const std::string &var_name, unsigned int z_count,
-               unsigned int t, double *output) const;
-
-  void put_vec(const IceGrid &grid, const std::string &var_name,
-               unsigned int z_count, const double *input) const;
-
-  void regrid_vec(const IceGrid &grid, const std::string &var_name,
-                  const std::vector<double> &zlevels_out,
-                  unsigned int t_start, double *output) const;
-
-  void regrid_vec_fill_missing(const IceGrid &grid, const std::string &var_name,
-                               const std::vector<double> &zlevels_out,
-                               unsigned int t_start,
-                               double default_value,
-                               double *output) const ;
 
   void get_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
@@ -162,45 +132,13 @@ public:
   void set_local_extent(unsigned int xs, unsigned int xm,
                         unsigned int ys, unsigned int ym) const;
 
-  void read_timeseries(const TimeseriesMetadata &metadata,
-                       Time *time,
-                       std::vector<double> &data) const;
-
-
-  void write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
-                        double data,
-                        IO_Type nctype = PISM_DOUBLE) const;
-  void write_timeseries(const TimeseriesMetadata &metadata, size_t t_start,
-                        std::vector<double> &data,
-                        IO_Type nctype = PISM_DOUBLE) const;
-
-  void read_time_bounds(const TimeBoundsMetadata &metadata,
-                        Time *time,
-                        std::vector<double> &data) const;
-
-  void write_time_bounds(const TimeBoundsMetadata &metadata, size_t t_start,
-                         std::vector<double> &data,
-                         IO_Type nctype = PISM_DOUBLE) const;
-
-  void read_attributes(const std::string &name, VariableMetadata &variable) const;
-  void write_attributes(const VariableMetadata &var, IO_Type nctype,
-                        bool write_in_glaciological_units) const;
-
-  void write_global_attributes(const VariableMetadata &var) const;
-
-  void read_valid_range(const std::string &name, VariableMetadata &variable) const;
-
   std::string backend_type() const;
-
 private:
   MPI_Comm m_com;
   std::string m_backend_type;
   io::NCFile::Ptr m_nc;
-  UnitSystem m_unit_system;
 
   void detect_mode(const std::string &filename);
-
-  void constructor(MPI_Comm com, const std::string &mode);
 };
 
 } // end of namespace pism

@@ -26,7 +26,7 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
-#include <stdexcept>
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -112,7 +112,7 @@ void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const
 
   if (set_contains(vars, "air_temp_snapshot")) {
     std::string order = m_grid.config.get_string("output_variable_order");
-    define_spatial_variable(m_air_temp_snapshot, m_grid, nc, nctype, order, false);
+    io::define_spatial_variable(m_air_temp_snapshot, m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "air_temp_mean_annual")) {

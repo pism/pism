@@ -25,6 +25,7 @@
 #include "base/util/pism_options.hh"
 #include "coupler/PISMAtmosphere.hh"
 #include "localMassBalance_old.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace surface {
@@ -347,7 +348,7 @@ void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &va
 
   if (set_contains(vars, temperature_name)) {
     std::string order = m_grid.config.get_string("output_variable_order");
-    define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, mass_balance_name)) {

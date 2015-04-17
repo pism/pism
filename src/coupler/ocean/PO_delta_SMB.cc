@@ -20,6 +20,7 @@
 
 #include "PO_delta_SMB.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace ocean {
@@ -92,12 +93,12 @@ void Delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, c
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "shelfbtemp")) {
-    define_spatial_variable(shelfbtemp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(shelfbtemp, m_grid, nc, nctype, order, true);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    define_spatial_variable(shelfbmassflux, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(shelfbmassflux, m_grid, nc, nctype, order, true);
     vars.erase("shelfbmassflux");
   }
 

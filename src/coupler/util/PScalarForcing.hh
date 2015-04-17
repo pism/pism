@@ -84,7 +84,7 @@ protected:
                "  reading %s data from forcing file %s...\n",
                offset->short_name.c_str(), file->c_str());
 
-    PIO nc(g.com, "netcdf3", g.config.unit_system());
+    PIO nc(g.com, "netcdf3");
     nc.open(file, PISM_READONLY);
     {
       offset->read(nc, g.time);

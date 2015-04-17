@@ -27,6 +27,7 @@
 
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
@@ -425,13 +426,13 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    regrid_spatial_variable(metadata(0), *m_grid, nc,
+    io::regrid_spatial_variable(metadata(0), *m_grid, nc,
                             flag, m_report_range, default_value, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    regrid_spatial_variable(metadata(0), *m_grid,  nc,
+    io::regrid_spatial_variable(metadata(0), *m_grid,  nc,
                             flag, m_report_range, default_value, v_array.get());
   }
 }
@@ -450,12 +451,12 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    read_spatial_variable(metadata(0), *m_grid, nc, time, tmp_array.get());
+    io::read_spatial_variable(metadata(0), *m_grid, nc, time, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    read_spatial_variable(metadata(0), *m_grid, nc, time, v_array.get());
+    io::read_spatial_variable(metadata(0), *m_grid, nc, time, v_array.get());
   }
 }
 
@@ -463,7 +464,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   std::string order = m_grid->config.get_string("output_variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
-    define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
+    io::define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
                             order, write_in_glaciological_units);
   }
 }
@@ -473,10 +474,10 @@ void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   name to find the variable to read attributes from.
  */
 void IceModelVec::read_attributes(const std::string &filename, int N) {
-  PIO nc(*m_grid, "netcdf3");     // OK to use netcdf3
+  PIO nc(m_grid->com, "netcdf3");     // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);
-  nc.read_attributes(metadata(N).get_name(), metadata(N));
+  io::read_attributes(nc, metadata(N).get_name(), metadata(N));
   nc.close();
 }
 
@@ -510,26 +511,26 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
     petsc::VecArray tmp_array(tmp);
 
-    write_spatial_variable(metadata(0), *m_grid,  nc,
-                           write_in_glaciological_units, tmp_array.get());
+    io::write_spatial_variable(metadata(0), *m_grid,  nc,
+                               write_in_glaciological_units, tmp_array.get());
   } else {
     petsc::VecArray v_array(m_v);
-    write_spatial_variable(metadata(0), *m_grid, nc,
-                           write_in_glaciological_units, v_array.get());
+    io::write_spatial_variable(metadata(0), *m_grid, nc,
+                               write_in_glaciological_units, v_array.get());
   }
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO nc(*m_grid, m_grid->config.get_string("output_format"));
+  PIO nc(m_grid->com, m_grid->config.get_string("output_format"));
 
   nc.open(filename, PISM_READWRITE_CLOBBER);
-  nc.def_time(m_grid->config.get_string("time_dimension_name"),
-              m_grid->time->calendar(),
-              m_grid->time->units_string(),
-              m_grid->config.unit_system());
-  nc.append_time(m_grid->config.get_string("time_dimension_name"),
-                 m_grid->time->current());
+  io::define_time(nc, m_grid->config.get_string("time_dimension_name"),
+                  m_grid->time->calendar(),
+                  m_grid->time->units_string(),
+                  m_grid->config.unit_system());
+  io::append_time(nc, m_grid->config.get_string("time_dimension_name"),
+                  m_grid->time->current());
 
   define(nc, PISM_DOUBLE);
   write(nc);
@@ -814,7 +815,7 @@ std::vector<double> IceModelVec::norm_all(int n) const {
 
 void IceModelVec::write(const std::string &filename) const {
 
-  PIO nc(*m_grid, m_grid->config.get_string("output_format"));
+  PIO nc(m_grid->com, m_grid->config.get_string("output_format"));
 
   // We expect the file to be present and ready to write into.
   nc.open(filename, PISM_READWRITE);
@@ -826,7 +827,7 @@ void IceModelVec::write(const std::string &filename) const {
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
 
-  PIO nc(*m_grid, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
 
   nc.open(filename, PISM_READONLY);
 
@@ -838,7 +839,7 @@ void IceModelVec::read(const std::string &filename, unsigned int time) {
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
 
-  PIO nc(*m_grid, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
 
   nc.open(filename, PISM_READONLY);
 

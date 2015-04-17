@@ -26,6 +26,7 @@
 #include "base/util/Mask.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace surface {
@@ -122,7 +123,7 @@ void ForceThickness::init_impl() {
 
   // m_input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
-  PIO nc(m_grid, "guess_mode");
+  PIO nc(m_grid.com, "guess_mode");
   bool mask_exists = false;
   nc.open(m_input_file, PISM_READONLY);
   mask_exists = nc.inq_var("ftt_mask");
@@ -358,15 +359,15 @@ void ForceThickness::define_variables_impl(const std::set<std::string> &vars, co
   }
 
   if (set_contains(vars, "ice_surface_temp")) {
-    define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance_original")) {
-    define_spatial_variable(m_climatic_mass_balance_original, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance_original, m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

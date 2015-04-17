@@ -42,6 +42,7 @@ static char help[] =
 #include "base/util/pism_const.hh"
 #include "base/util/pism_options.hh"
 #include "verif/tests/exactTestsFG.h"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -446,14 +447,14 @@ int main(int argc, char *argv[]) {
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    PIO pio(grid, "netcdf3");
+    PIO pio(grid.com, "netcdf3");
 
     pio.open(output_file, PISM_READWRITE_MOVE);
-    pio.def_time(config.get_string("time_dimension_name"),
-                 grid.time->calendar(),
-                 grid.time->CF_units_string(),
-                 unit_system);
-    pio.append_time(config.get_string("time_dimension_name"), 0.0);
+    io::define_time(pio, config.get_string("time_dimension_name"),
+                    grid.time->calendar(),
+                    grid.time->CF_units_string(),
+                    unit_system);
+    io::append_time(pio, config.get_string("time_dimension_name"), 0.0);
     pio.close();
 
     ice_surface_elevation.write(output_file);

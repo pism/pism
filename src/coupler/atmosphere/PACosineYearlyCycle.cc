@@ -81,7 +81,7 @@ void CosineYearlyCycle::init() {
                "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
                scaling_file->c_str());
 
-    PIO nc(m_grid, "netcdf3");    // OK to use netcdf3
+    PIO nc(m_grid.com, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
       A->read(nc, m_grid.time);

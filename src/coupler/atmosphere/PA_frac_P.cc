@@ -20,6 +20,7 @@
 
 #include "PA_frac_P.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -109,12 +110,12 @@ void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
   std::string order = m_grid.config.get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);
+    io::define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
-    define_spatial_variable(precipitation, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(precipitation, m_grid, nc, nctype, order, true);
     vars.erase("precipitation");
   }
 

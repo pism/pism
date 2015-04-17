@@ -38,6 +38,7 @@ using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 #include "base/util/petscwrappers/Vec.hh"
 #include "base/util/petscwrappers/VecScatter.hh"
 #include "pism_const.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
@@ -306,7 +307,7 @@ void IceModelVec2::write_impl(const PIO &nc) const {
     IceModelVec2::get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    write_spatial_variable(m_metadata[j], *m_grid, nc,
+    io::write_spatial_variable(m_metadata[j], *m_grid, nc,
                            write_in_glaciological_units, tmp_array.get());
   }
 }
@@ -338,7 +339,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
     {
       petsc::VecArray tmp_array(tmp);
-      read_spatial_variable(m_metadata[j], *m_grid, nc, time, tmp_array.get());
+      io::read_spatial_variable(m_metadata[j], *m_grid, nc, time, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);
@@ -371,7 +372,7 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   for (unsigned int j = 0; j < m_dof; ++j) {
     {
       petsc::VecArray tmp_array(tmp);
-      regrid_spatial_variable(m_metadata[j], *m_grid,  nc,
+      io::regrid_spatial_variable(m_metadata[j], *m_grid,  nc,
                               flag, m_report_range, default_value, tmp_array.get());
     }
 

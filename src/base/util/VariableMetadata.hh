@@ -123,8 +123,6 @@ private:
   bool m_time_independent;
 };
 
-enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
-
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
@@ -152,35 +150,6 @@ private:
                      const std::vector<double> &z_levels);
 };
 
-class IceGrid;
-class PIO;
-
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const PIO &nc,
-                             RegriddingFlag flag, bool do_report_range,
-                             double default_value, double *output);
-
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const PIO &nc,
-                             unsigned int t_start, RegriddingFlag flag,
-                             bool do_report_range, double default_value,
-                             double *output);
-
-void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const IceGrid& grid, const PIO &nc,
-                           unsigned int time, double *output);
-
-void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const IceGrid& grid, const PIO &nc,
-                            bool use_glaciological_units,
-                            const double *input);
-
-void define_spatial_variable(const SpatialVariableMetadata &var,
-                             const IceGrid &grid, const PIO &nc,
-                             IO_Type nctype,
-                             const std::string &variable_order,
-                             bool use_glaciological_units);
-
 //! An internal class for reading, writing and converting time-series.
 class TimeseriesMetadata : public VariableMetadata {
 public:
@@ -204,12 +173,6 @@ public:
 private:
   std::string m_bounds_name;
 };
-
-void define_timeseries(const TimeseriesMetadata& var,
-                       const PIO &nc, IO_Type nctype, bool);
-
-void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &nc, IO_Type nctype, bool);
 
 } // end of namespace pism
 

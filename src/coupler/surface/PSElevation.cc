@@ -27,6 +27,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 namespace surface {
@@ -286,11 +287,11 @@ void Elevation::define_variables_impl(const std::set<std::string> &vars, const P
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
-    define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
   }
 }
 

@@ -27,24 +27,23 @@
 #include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
 
 Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
-  : m_unit_system(g->config.unit_system()),
-    m_dimension(dimension_name, dimension_name, m_unit_system),
-    m_variable(name, dimension_name, m_unit_system),
-    m_bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
+  : m_dimension(dimension_name, dimension_name, g->config.unit_system()),
+    m_variable(name, dimension_name, g->config.unit_system()),
+    m_bounds(dimension_name + "_bounds", dimension_name, g->config.unit_system())
 {
   private_constructor(g->com, name, dimension_name);
 }
 
 Timeseries::Timeseries(MPI_Comm c, const UnitSystem &unit_system,
                        const std::string & name, const std::string & dimension_name)
-  : m_unit_system(unit_system),
-    m_dimension(dimension_name, dimension_name, m_unit_system),
-    m_variable(name, dimension_name, m_unit_system),
-    m_bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
+  : m_dimension(dimension_name, dimension_name, unit_system),
+    m_variable(name, dimension_name, unit_system),
+    m_bounds(dimension_name + "_bounds", dimension_name, unit_system)
 {
   private_constructor(c, name, dimension_name);
 }
@@ -96,7 +95,7 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
   TimeseriesMetadata tmp_dim = m_dimension;
   tmp_dim.set_name(time_name);
 
-  nc.read_timeseries(tmp_dim, time_manager, m_time);
+  io::read_timeseries(m_com, nc, tmp_dim, time_manager, m_time);
   bool is_increasing = true;
   for (unsigned int j = 1; j < m_time.size(); ++j) {
     if (m_time[j] - m_time[j-1] < 1e-16) {
@@ -120,12 +119,12 @@ void Timeseries::read(const PIO &nc, Time *time_manager) {
 
     tmp_bounds.set_string("units", tmp_dim.get_string("units"));
 
-    nc.read_time_bounds(tmp_bounds, time_manager, m_time_bounds);
+    io::read_time_bounds(m_com, nc, tmp_bounds, time_manager, m_time_bounds);
   } else {
     m_use_bounds = false;
   }
 
-  nc.read_timeseries(m_variable, time_manager, m_values);
+  io::read_timeseries(m_com, nc, m_variable, time_manager, m_values);
 
   if (m_time.size() != m_values.size()) {
     throw RuntimeError::formatted("variables %s and %s in %s have different numbers of values.",
@@ -165,12 +164,12 @@ void Timeseries::report_range() {
 //! Write timeseries data to a NetCDF file `filename`.
 void Timeseries::write(const PIO &nc) {
   // write the dimensional variable; this call should go first
-  nc.write_timeseries(m_dimension, 0, m_time);
-  nc.write_timeseries(m_variable, 0, m_values);
+  io::write_timeseries(nc, m_dimension, 0, m_time);
+  io::write_timeseries(nc, m_variable, 0, m_values);
 
   if (m_use_bounds) {
     set_bounds_units();
-    nc.write_time_bounds(m_bounds, 0, m_time_bounds);
+    io::write_time_bounds(nc, m_bounds, 0, m_time_bounds);
   }
 }
 
@@ -389,13 +388,11 @@ void DiagnosticTimeseries::interp(double a, double b) {
 }
 
 void DiagnosticTimeseries::init(const std::string &filename) {
-  PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(m_com, "netcdf3"); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
-  bool file_exists = nc.check_if_exists(m_com, filename);
-
-  if (file_exists == true) {
+  if (io::file_exists(m_com, filename)) {
     nc.open(filename, PISM_READONLY);
     len = nc.inq_dimlen(m_dimension.get_name());
     if (len > 0) {
@@ -420,7 +417,7 @@ void DiagnosticTimeseries::init(const std::string &filename) {
 
 //! Writes data to a file.
 void DiagnosticTimeseries::flush() {
-  PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(m_com, "netcdf3"); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never
@@ -446,12 +443,12 @@ void DiagnosticTimeseries::flush() {
   }
 
   if (len == (unsigned int)m_start) {
-    nc.write_timeseries(m_dimension, m_start, m_time);  
+    io::write_timeseries(nc, m_dimension, m_start, m_time);  
 
     set_bounds_units();
-    nc.write_time_bounds(m_bounds, m_start, m_time_bounds);
+    io::write_time_bounds(nc, m_bounds, m_start, m_time_bounds);
   }
-  nc.write_timeseries(m_variable, m_start, m_values);
+  io::write_timeseries(nc, m_variable, m_start, m_values);
 
   m_start += m_time.size();
 

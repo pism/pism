@@ -262,7 +262,7 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 
 
 void IceRegionalModel::initFromFile(const std::string &filename) {
-  PIO nc(grid, "guess_mode");
+  PIO nc(grid.com, "guess_mode");
 
   bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
 
