@@ -924,6 +924,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
                                    "sia_fevor_bed_slope_degrees"); CHKERRQ(ierr);
 
   // PISMFEvoR options
+  ierr = config.scalar_from_option("fevor_step","fevor_step"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("fevor_n_particles", "fevor_n_particles"); CHKERRQ(ierr);
 
   // old options

@@ -33,6 +33,8 @@ netcdf pism_config {
     pism_config:sia_fevor_bed_slope_degrees = -5.0;
     pism_config:sia_fevor_bed_slope_degrees_doc = "degrees; bed slope in the x direction for the slab-on-a-slope SIAFD_FEvoR setup";
 
+    pism_config:fevor_step = 100;
+    pism_config:fevor_step_doc = "years; How often to run a FEvoR time step";
     pism_config:fevor_n_particles = 125;
     pism_config:fevor_n_particles_doc = "count; number of 'particles' (distributions) to use";
 
