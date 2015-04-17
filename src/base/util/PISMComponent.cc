@@ -27,6 +27,7 @@
 #include "iceModelVec.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
+#include "PISMConfigInterface.hh"
 
 namespace pism {
 
@@ -84,7 +85,7 @@ bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
 
     filename = input_file;
 
-    PIO nc(m_grid, "netcdf3");      // OK to use netcdf3
+    PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());      // OK to use netcdf3
     unsigned int last_record;
     nc.open(filename, PISM_READONLY);
     last_record = nc.inq_nrecords() - 1;

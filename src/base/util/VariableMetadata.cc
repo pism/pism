@@ -50,7 +50,8 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
 }
 
 
-VariableMetadata::VariableMetadata(const std::string &name, const UnitSystem &system, unsigned int ndims)
+VariableMetadata::VariableMetadata(const std::string &name, const UnitSystem &system,
+                                   unsigned int ndims)
   : m_n_spatial_dims(ndims),
     m_unit_system(system),
     m_short_name(name),

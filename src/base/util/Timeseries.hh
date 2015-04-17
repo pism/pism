@@ -28,6 +28,7 @@ namespace pism {
 
 class IceGrid;
 class PIO;
+class Time;
 
 //! \brief A general class for reading and accessing time-series.
 /*!

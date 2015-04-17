@@ -33,9 +33,6 @@
 
 namespace pism {
 
-class Time;
-class PIO;
-
 //! @brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
 /*! A NetCDF variable can have any number of attributes, but some of them get
@@ -113,10 +110,10 @@ public:
 protected:
   unsigned int m_n_spatial_dims;
 
+private:
   //! @brief The unit system to use.
   UnitSystem m_unit_system;
 
-private:
   //! string and boolean attributes
   std::map<std::string, std::string> m_strings;
 
@@ -125,8 +122,6 @@ private:
   std::string m_short_name;
   bool m_time_independent;
 };
-
-class IceGrid;
 
 enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
 
@@ -156,6 +151,9 @@ private:
   void init_internal(const std::string &name,
                      const std::vector<double> &z_levels);
 };
+
+class IceGrid;
+class PIO;
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
@@ -192,7 +190,8 @@ public:
 
   std::string get_dimension_name() const;
 private:
-  std::string m_dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
+  //! the name of the NetCDF dimension this timeseries depends on
+  std::string m_dimension_name;
 };
 
 class TimeBoundsMetadata : public TimeseriesMetadata
