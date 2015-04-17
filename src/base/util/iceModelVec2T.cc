@@ -132,7 +132,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   for (unsigned int i = 0; i < dims.size(); ++i) {
     dimname = dims[i];
 
-    AxisType dimtype = nc.inq_dimtype(dimname);
+    AxisType dimtype = nc.inq_dimtype(dimname, m_grid->config.unit_system());
 
     if (dimtype == T_AXIS) {
       time_found = true;

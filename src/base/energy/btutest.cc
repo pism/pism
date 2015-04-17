@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
     std::string time_name = config.get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
     pio.def_time(time_name, grid.time->calendar(),
-                 grid.time->CF_units_string());
+                 grid.time->CF_units_string(), unit_system);
     pio.append_time(time_name, grid.time->end());
 
     btu.define_variables(vars, pio, PISM_DOUBLE);

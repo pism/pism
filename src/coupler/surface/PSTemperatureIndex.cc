@@ -100,7 +100,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
 
     PIO nc(m_grid.com, "netcdf3", m_grid.config.unit_system());
     nc.open(file, PISM_READONLY);
-    n_records = nc.inq_nrecords(short_name, "");
+    n_records = nc.inq_nrecords(short_name, "", m_grid.config.unit_system());
     nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the

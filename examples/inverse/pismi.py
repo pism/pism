@@ -462,7 +462,8 @@ def run():
         pio = PISM.PIO(grid.com, "netcdf3", grid.config.unit_system())
         pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
         pio.def_time(grid.config.get_string("time_dimension_name"),
-                     grid.config.get_string("calendar"), grid.time.units_string())
+                     grid.config.get_string("calendar"), grid.time.units_string(),
+                     grid.config.unit_system())
         pio.append_time(grid.config.get_string("time_dimension_name"), grid.time.current())
         pio.close()
     zeta.write(output_filename)

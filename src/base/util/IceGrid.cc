@@ -259,7 +259,7 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
     assert(output != NULL);
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input(file, var_name, periodicity);
+    grid_info input(file, var_name, output->config.unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
@@ -1088,7 +1088,9 @@ void grid_info::report(MPI_Comm com, const UnitSystem &s, int threshold) const {
              this->t_len, s.convert(this->time, "seconds", "years"));
 }
 
-grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p) {
+grid_info::grid_info(const PIO &file, const std::string &variable,
+                     const UnitSystem &unit_system,
+                     Periodicity p) {
   try {
     bool variable_exists, found_by_standard_name;
     std::string name_found;
@@ -1121,7 +1123,7 @@ grid_info::grid_info(const PIO &file, const std::string &variable, Periodicity p
     for (unsigned int i = 0; i < dims.size(); ++i) {
       std::string dimname = dims[i];
 
-      AxisType dimtype = file.inq_dimtype(dimname);
+      AxisType dimtype = file.inq_dimtype(dimname, unit_system);
 
       switch (dimtype) {
       case X_AXIS:

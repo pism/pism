@@ -114,7 +114,8 @@ if __name__ == '__main__':
     pio = PISM.PIO(grid.com, "netcdf3", grid.config.unit_system())
     pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
     pio.def_time(grid.config.get_string("time_dimension_name"),
-                 "365_day", "seconds since 1-1-1")
+                 "365_day", "seconds since 1-1-1",
+                 grid.config.unit_system())
     pio.append_time(grid.config.get_string("time_dimension_name"), 0.0)
     pio.close()
     vecs.writeall(output_filename)

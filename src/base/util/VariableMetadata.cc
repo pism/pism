@@ -247,7 +247,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
     input_dims = nc.inq_vardims(name_found);
     std::vector<std::string>::iterator j = input_dims.begin();
     while (j != input_dims.end()) {
-      AxisType tmp = nc.inq_dimtype(*j);
+      AxisType tmp = nc.inq_dimtype(*j, var.unit_system());
 
       if (tmp != T_AXIS) {
         ++input_ndims;
@@ -365,7 +365,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              RegriddingFlag flag, bool do_report_range,
                              double default_value, double *output) {
   unsigned int t_length = nc.inq_nrecords(var.get_name(),
-                                          var.get_string("standard_name"));
+                                          var.get_string("standard_name"),
+                                          var.unit_system());
 
   regrid_spatial_variable(var, grid, nc, t_length - 1, flag, do_report_range,
                           default_value, output);

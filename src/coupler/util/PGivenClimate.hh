@@ -151,7 +151,8 @@ protected:
       }
       // else leave standard_name empty
 
-      n_records = nc.inq_nrecords(short_name, standard_name);
+      n_records = nc.inq_nrecords(short_name, standard_name,
+                                  Model::m_grid.config.unit_system());
 
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try

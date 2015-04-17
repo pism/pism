@@ -352,7 +352,8 @@ void SSATestCase::write(const std::string &filename) {
   pio.open(filename, PISM_READWRITE_MOVE);
   pio.def_time(m_config.get_string("time_dimension_name"),
                m_grid->time->calendar(),
-               m_grid->time->CF_units_string());
+               m_grid->time->CF_units_string(),
+               m_config.unit_system());
   pio.append_time(m_config.get_string("time_dimension_name"), 0.0);
 
   m_surface.write(pio);

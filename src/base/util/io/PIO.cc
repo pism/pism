@@ -218,6 +218,7 @@ static void regrid(const IceGrid& grid, const vector<double> &zlevels_out,
 }
 
 static void compute_start_and_count(const PIO& nc,
+                                    const UnitSystem &unit_system,
                                     const string &short_name,
                                     unsigned int t_start, unsigned int t_count,
                                     unsigned int x_start, unsigned int x_count,
@@ -238,7 +239,7 @@ static void compute_start_and_count(const PIO& nc,
   for (unsigned int j = 0; j < ndims; j++) {
     string dimname = dims[j];
 
-    AxisType dimtype = nc.inq_dimtype(dimname);
+    AxisType dimtype = nc.inq_dimtype(dimname, unit_system);
 
     switch (dimtype) {
     case T_AXIS:
@@ -275,7 +276,9 @@ static void compute_start_and_count(const PIO& nc,
  *
  * @return 0 on success
  */
-static bool use_mapped_io(const PIO &nc, const string &var_name) {
+static bool use_mapped_io(const PIO &nc,
+                          const UnitSystem &unit_system,
+                          const string &var_name) {
 
   vector<string> dimnames = nc.inq_vardims(var_name);
 
@@ -284,7 +287,7 @@ static bool use_mapped_io(const PIO &nc, const string &var_name) {
   memory.push_back(Y_AXIS);
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
-    AxisType dimtype = nc.inq_dimtype(dimnames[j]);
+    AxisType dimtype = nc.inq_dimtype(dimnames[j], unit_system);
 
     if (j == 0 && dimtype == T_AXIS) {
       // ignore the time dimension, but only if it is the first
@@ -523,7 +526,8 @@ unsigned int PIO::inq_nrecords() const {
 
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
-unsigned int PIO::inq_nrecords(const string &name, const string &std_name) const {
+unsigned int PIO::inq_nrecords(const string &name, const string &std_name,
+                               const UnitSystem &unit_system) const {
   try {
     bool exists = false, found_by_standard_name = false;
     string name_found;
@@ -537,7 +541,7 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name) const
     m_nc->inq_vardimid(name_found, dims);
 
     for (unsigned int j = 0; j < dims.size(); ++j) {
-      AxisType dimtype = inq_dimtype(dims[j]);
+      AxisType dimtype = inq_dimtype(dims[j], unit_system);
 
       if (dimtype == T_AXIS) {
         return this->inq_dimlen(dims[j]);
@@ -546,7 +550,8 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name) const
 
     return 1;                   // one record
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of records of variable '%s' ('%s') in '%s'", name.c_str(), std_name.c_str(), inq_filename().c_str());
+    e.add_context("getting the number of records of variable '%s' ('%s') in '%s'",
+                  name.c_str(), std_name.c_str(), inq_filename().c_str());
     throw;
   }
   return 0;                     // will never happen
@@ -671,10 +676,11 @@ unsigned int PIO::inq_dimlen(const string &name) const {
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
-AxisType PIO::inq_dimtype(const string &name) const {
+AxisType PIO::inq_dimtype(const string &name,
+                          const UnitSystem &unit_system) const {
   try {
     string axis, standard_name, units;
-    Unit tmp_units(m_unit_system, "1");
+    Unit tmp_units(unit_system, "1");
     bool exists;
 
     m_nc->inq_varid(name, exists);
@@ -689,9 +695,9 @@ AxisType PIO::inq_dimtype(const string &name) const {
 
     // check if it has units compatible with "seconds":
 
-    tmp_units = Unit(m_unit_system, units);
+    tmp_units = Unit(unit_system, units);
 
-    Unit seconds(m_unit_system, "seconds");
+    Unit seconds(unit_system, "seconds");
     if (UnitConverter::are_convertible(tmp_units, seconds)) {
       return T_AXIS;
     }
@@ -843,18 +849,15 @@ void PIO::put_dim(const string &name, const vector<double> &data) const {
   }
 }
 
-void PIO::def_time(const string &name, const string &calendar, const string &units) const {
+void PIO::def_time(const string &name, const string &calendar,
+                   const string &units, const UnitSystem &unit_system) const {
   try {
-    std::map<string,string> attrs;
-
-    bool time_exists;
-    m_nc->inq_varid(name, time_exists);
-    if (time_exists) {
+    if (this->inq_var(name)) {
       return;
     }
 
     // time
-    VariableMetadata time(name, m_unit_system);
+    VariableMetadata time(name, unit_system);
     time.set_string("long_name", "time");
     time.set_string("calendar", calendar);
     time.set_string("units", units);
@@ -984,14 +987,16 @@ void PIO::get_vec(const IceGrid &grid, const string &var_name,
   try {
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
-    compute_start_and_count(*this, var_name,
+    compute_start_and_count(*this,
+                            grid.config.unit_system(),
+                            var_name,
                             t_start, t_count,
                             grid.xs(), grid.xm(),
                             grid.ys(), grid.ym(),
                             0, z_count,
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(*this, var_name);
+    bool mapped_io = use_mapped_io(*this, grid.config.unit_system(), var_name);
     if (mapped_io == true) {
       get_varm_double(var_name, start, count, imap, output);
     } else {
@@ -1054,7 +1059,9 @@ void PIO::put_vec(const IceGrid &grid, const string &var_name,
 
     vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
-    compute_start_and_count(*this, var_name,
+    compute_start_and_count(*this,
+                            grid.config.unit_system(),
+                            var_name,
                             t_length - 1, t_count,
                             grid.xs(), grid.xm(),
                             grid.ys(), grid.ym(),
@@ -1085,7 +1092,7 @@ static LocalInterpCtx* get_interp_context(const PIO& file,
                                           const string &variable_name,
                                           const IceGrid &grid,
                                           const vector<double> &zlevels) {
-  grid_info gi(file, variable_name, grid.periodicity());
+  grid_info gi(file, variable_name, grid.config.unit_system(), grid.periodicity());
 
   return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
 }
@@ -1105,14 +1112,16 @@ void PIO::regrid_vec(const IceGrid &grid, const string &var_name,
     double *buffer = &(lic->buffer[0]);
 
     const unsigned int t_count = 1;
-    compute_start_and_count(*this, var_name,
+    compute_start_and_count(*this,
+                            grid.config.unit_system(),
+                            var_name,
                             t_start, t_count,
                             lic->start[X], lic->count[X],
                             lic->start[Y], lic->count[Y],
                             lic->start[Z], lic->count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(*this, var_name);
+    bool mapped_io = use_mapped_io(*this, grid.config.unit_system(), var_name);
     if (mapped_io == true) {
       get_varm_double(var_name, start, count, imap, buffer);
     } else {
@@ -1152,14 +1161,16 @@ void PIO::regrid_vec_fill_missing(const IceGrid &grid, const string &var_name,
     double *buffer = &(lic->buffer[0]);
     
     const unsigned int t_count = 1;
-    compute_start_and_count(*this, var_name,
+    compute_start_and_count(*this,
+                            grid.config.unit_system(),
+                            var_name,
                             t_start, t_count,
                             lic->start[X], lic->count[X],
                             lic->start[Y], lic->count[Y],
                             lic->start[Z], lic->count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(*this, var_name);
+    bool mapped_io = use_mapped_io(*this, grid.config.unit_system(), var_name);
     if (mapped_io == true) {
       get_varm_double(var_name, start, count, imap, buffer);
     } else {

@@ -123,7 +123,8 @@ protected:
 
       PIO nc(g.com, "netcdf3", g.config.unit_system());
       nc.open(file, PISM_READONLY);
-      ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude");
+      ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
+                                              g.config.unit_system());
       nc.close();
 
       // if -..._period is not set, make n_records the minimum of the

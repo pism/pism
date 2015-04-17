@@ -101,7 +101,8 @@ PISM.verbPrintf(2, context.com, "* Saving results to %s...\n" % output_file)
 pio = PISM.PIO(grid, "netcdf3")
 pio.open(output_file, PISM.PISM_READWRITE_MOVE)
 pio.def_time(grid.config.get_string("time_dimension_name"),
-             grid.config.get_string("calendar"), grid.time.units_string())
+             grid.config.get_string("calendar"), grid.time.units_string(),
+             grid.config.unit_system())
 pio.append_time(grid.config.get_string("time_dimension_name"), grid.time.current())
 pio.close()
 

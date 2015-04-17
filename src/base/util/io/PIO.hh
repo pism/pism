@@ -64,7 +64,8 @@ public:
 
   unsigned int inq_nrecords() const;
 
-  unsigned int inq_nrecords(const std::string &name, const std::string &std_name) const;
+  unsigned int inq_nrecords(const std::string &name, const std::string &std_name,
+                            const UnitSystem &unit_system) const;
 
   void inq_var(const std::string &short_name, const std::string &std_name, bool &exists,
                std::string &result, bool &found_by_standard_name) const;
@@ -77,7 +78,8 @@ public:
 
   unsigned int inq_dimlen(const std::string &name) const;
 
-  AxisType inq_dimtype(const std::string &name) const;
+  AxisType inq_dimtype(const std::string &name,
+                       const UnitSystem &unit_system) const;
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
@@ -97,7 +99,8 @@ public:
 
   void append_time(const std::string &var_name, double value) const;
 
-  void def_time(const std::string &name, const std::string &calendar, const std::string &units) const;
+  void def_time(const std::string &name, const std::string &calendar,
+                const std::string &units, const UnitSystem &unit_system) const;
 
   void append_history(const std::string &history) const;
 

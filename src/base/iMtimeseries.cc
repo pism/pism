@@ -448,7 +448,8 @@ void IceModel::write_extras() {
     nc.open(filename, mode);
     nc.def_time(config.get_string("time_dimension_name"),
                 grid.time->calendar(),
-                grid.time->CF_units_string());
+                grid.time->CF_units_string(),
+                config.unit_system());
     nc.put_att_text(config.get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 

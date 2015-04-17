@@ -526,7 +526,8 @@ void IceModelVec::dump(const char filename[]) const {
   nc.open(filename, PISM_READWRITE_CLOBBER);
   nc.def_time(m_grid->config.get_string("time_dimension_name"),
               m_grid->time->calendar(),
-              m_grid->time->units_string());
+              m_grid->time->units_string(),
+              m_grid->config.unit_system());
   nc.append_time(m_grid->config.get_string("time_dimension_name"),
                  m_grid->time->current());
 
