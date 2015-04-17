@@ -22,10 +22,11 @@
 #include <vector>
 #include <string>
 
-#include "base/util/PISMUnits.hh"
 #include "PISMNCFile.hh"
 
 namespace pism {
+
+class UnitSystem;
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
