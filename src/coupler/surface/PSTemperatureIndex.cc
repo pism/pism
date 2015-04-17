@@ -39,7 +39,7 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
-    ice_surface_temp(g.config.unit_system(), "ice_surface_temp", m_grid) {
+    ice_surface_temp(g.config.unit_system(), "ice_surface_temp") {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;

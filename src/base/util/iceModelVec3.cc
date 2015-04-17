@@ -95,7 +95,7 @@ void IceModelVec3D::allocate(const IceGrid &my_grid, const std::string &my_name,
   m_name = my_name;
 
   m_metadata.push_back(SpatialVariableMetadata(m_grid->config.unit_system(),
-                                         my_name, *m_grid, zlevels));
+                                         my_name, zlevels));
 }
 
 bool IceModelVec3D::isLegalLevel(double z) const {

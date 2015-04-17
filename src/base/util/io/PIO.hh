@@ -157,7 +157,7 @@ public:
                        const double *op) const;
 
   void set_local_extent(unsigned int xs, unsigned int xm,
-                        unsigned int ys, unsigned int ym);
+                        unsigned int ys, unsigned int ym) const;
 
   void read_timeseries(const TimeseriesMetadata &metadata,
                        Time *time,
@@ -193,7 +193,6 @@ private:
   MPI_Comm m_com;
   std::string m_backend_type;
   io::NCFile::Ptr m_nc;
-  int m_xs, m_xm, m_ys, m_ym;
   UnitSystem m_unit_system;
 
   void detect_mode(const std::string &filename);

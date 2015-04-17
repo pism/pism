@@ -34,8 +34,8 @@ namespace surface {
 ///// Elevation-dependent temperature and surface mass balance.
 Elevation::Elevation(const IceGrid &g)
   : SurfaceModel(g),
-    m_climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance", m_grid),
-    m_ice_surface_temp(g.config.unit_system(), "ice_surface_temp", m_grid)
+    m_climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance"),
+    m_ice_surface_temp(g.config.unit_system(), "ice_surface_temp")
 {
   // empty
 }

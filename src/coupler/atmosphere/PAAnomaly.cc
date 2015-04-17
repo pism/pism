@@ -28,8 +28,8 @@ namespace atmosphere {
 
 Anomaly::Anomaly(const IceGrid &g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
-    air_temp(g.config.unit_system(), "air_temp", m_grid),
-    precipitation(g.config.unit_system(), "precipitation", m_grid)
+    air_temp(g.config.unit_system(), "air_temp"),
+    precipitation(g.config.unit_system(), "precipitation")
 {
   option_prefix  = "-atmosphere_anomaly";
 

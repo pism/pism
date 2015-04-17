@@ -25,8 +25,8 @@ namespace atmosphere {
 
 LapseRates::LapseRates(const IceGrid &g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
-    m_precipitation(g.config.unit_system(), "precipitation", g),
-    m_air_temp(g.config.unit_system(), "air_temp", g) {
+    m_precipitation(g.config.unit_system(), "precipitation"),
+    m_air_temp(g.config.unit_system(), "air_temp") {
   m_precip_lapse_rate = 0;
   m_option_prefix     = "-atmosphere_lapse_rate";
 

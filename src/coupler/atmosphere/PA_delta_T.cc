@@ -28,8 +28,8 @@ namespace atmosphere {
 
 Delta_T::Delta_T(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.config.unit_system(), "air_temp", m_grid),
-    precipitation(g.config.unit_system(), "precipitation", m_grid)
+    air_temp(g.config.unit_system(), "air_temp"),
+    precipitation(g.config.unit_system(), "precipitation")
 {
   offset = NULL;
   option_prefix = "-atmosphere_delta_T";

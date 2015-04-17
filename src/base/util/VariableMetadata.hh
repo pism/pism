@@ -133,17 +133,14 @@ enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MI
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
+  SpatialVariableMetadata(const UnitSystem &system, const std::string &name);
   SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
-                    const IceGrid &g);
-  SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
-                    const IceGrid &g, const std::vector<double> &zlevels);
+                          const std::vector<double> &zlevels);
   SpatialVariableMetadata(const SpatialVariableMetadata &other);
   virtual ~SpatialVariableMetadata();
 
   void set_levels(const std::vector<double> &levels);
   const std::vector<double>& get_levels() const;
-
-  const IceGrid& grid() const;
 
   VariableMetadata& get_x();
   VariableMetadata& get_y();
@@ -156,26 +153,28 @@ public:
 private:
   VariableMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
-  const IceGrid *m_grid;
-  void init_internal(const std::string &name, const IceGrid &g,
+  void init_internal(const std::string &name,
                      const std::vector<double> &z_levels);
 };
 
-void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+void regrid_spatial_variable(SpatialVariableMetadata &var,
+                             const IceGrid& grid, const PIO &nc,
                              RegriddingFlag flag, bool do_report_range,
                              double default_value, double *output);
 
-void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+void regrid_spatial_variable(SpatialVariableMetadata &var,
+                             const IceGrid& grid, const PIO &nc,
                              unsigned int t_start, RegriddingFlag flag,
                              bool do_report_range, double default_value,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const PIO &nc, unsigned int time,
-                           double *output);
+                           const IceGrid& grid, const PIO &nc,
+                           unsigned int time, double *output);
 
 void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const PIO &nc, bool use_glaciological_units,
+                            const IceGrid& grid, const PIO &nc,
+                            bool use_glaciological_units,
                             const double *input);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
@@ -188,7 +187,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 class TimeseriesMetadata : public VariableMetadata {
 public:
   TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-               const UnitSystem &system);
+                     const UnitSystem &system);
   virtual ~TimeseriesMetadata();
 
   std::string get_dimension_name() const;
@@ -200,7 +199,7 @@ class TimeBoundsMetadata : public TimeseriesMetadata
 {
 public:
   TimeBoundsMetadata(const std::string &name, const std::string &dimension_name,
-               const UnitSystem &system);
+                     const UnitSystem &system);
   virtual ~TimeBoundsMetadata();
   std::string get_bounds_name() const;
 private:

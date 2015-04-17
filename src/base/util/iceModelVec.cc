@@ -425,12 +425,14 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    regrid_spatial_variable(metadata(0), nc, flag, m_report_range, default_value, tmp_array.get());
+    regrid_spatial_variable(metadata(0), *m_grid, nc,
+                            flag, m_report_range, default_value, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    regrid_spatial_variable(metadata(0), nc, flag, m_report_range, default_value, v_array.get());
+    regrid_spatial_variable(metadata(0), *m_grid,  nc,
+                            flag, m_report_range, default_value, v_array.get());
   }
 }
 
@@ -448,12 +450,12 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    read_spatial_variable(metadata(0), nc, time, tmp_array.get());
+    read_spatial_variable(metadata(0), *m_grid, nc, time, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    read_spatial_variable(metadata(0), nc, time, v_array.get());
+    read_spatial_variable(metadata(0), *m_grid, nc, time, v_array.get());
   }
 }
 
@@ -508,10 +510,12 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
     petsc::VecArray tmp_array(tmp);
 
-    write_spatial_variable(metadata(0), nc, write_in_glaciological_units, tmp_array.get());
+    write_spatial_variable(metadata(0), *m_grid,  nc,
+                           write_in_glaciological_units, tmp_array.get());
   } else {
     petsc::VecArray v_array(m_v);
-    write_spatial_variable(metadata(0), nc, write_in_glaciological_units, v_array.get());
+    write_spatial_variable(metadata(0), *m_grid, nc,
+                           write_in_glaciological_units, v_array.get());
   }
 }
 

@@ -394,8 +394,6 @@ void PIO::detect_mode(const string &filename) {
   if (not m_nc) {
     throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
-
-  m_nc->set_local_extent(m_xs, m_xm, m_ys, m_ym);
 }
 
 std::string PIO::backend_type() const {
@@ -1250,12 +1248,8 @@ void PIO::put_varm_double(const string &variable_name,
 }
 
 void PIO::set_local_extent(unsigned int xs, unsigned int xm,
-                           unsigned int ys, unsigned int ym) {
+                           unsigned int ys, unsigned int ym) const {
   m_nc->set_local_extent(xs, xm, ys, ym);
-  m_xs = xs;
-  m_xm = xm;
-  m_ys = ys;
-  m_ym = ym;
 }
 
 void PIO::read_attributes(const string &variable_name, VariableMetadata &variable) const {

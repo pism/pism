@@ -27,8 +27,8 @@ namespace ocean {
 
 Delta_MBP::Delta_MBP(const IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in),
-    shelfbmassflux(g.config.unit_system(), "shelfbmassflux", m_grid),
-    shelfbtemp(g.config.unit_system(), "shelfbtemp", m_grid)
+    shelfbmassflux(g.config.unit_system(), "shelfbmassflux"),
+    shelfbtemp(g.config.unit_system(), "shelfbtemp")
 {
 
   option_prefix = "-ocean_delta_MBP";

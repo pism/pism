@@ -339,7 +339,7 @@ void IceModelVec2T::update(unsigned int start) {
   for (unsigned int j = 0; j < missing; ++j) {
     {
       petsc::VecArray tmp_array(m_v);
-      regrid_spatial_variable(m_metadata[0], nc, start + j,
+      regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j,
                            CRITICAL, m_report_range, 0.0, tmp_array.get());
     }
 

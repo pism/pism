@@ -131,29 +131,28 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
 
 //! 3D version
 SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
-                                     const IceGrid &g, const std::vector<double> &zlevels)
+                                                 const std::vector<double> &zlevels)
   : VariableMetadata("unnamed", system),
     m_x("x", system),
     m_y("y", system),
     m_z("z", system) {
 
-  init_internal(name, g, zlevels);
+  init_internal(name, zlevels);
 }
 
 //! 2D version
-SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
-                                     const IceGrid &g)
+SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name)
   : VariableMetadata("unnamed", system),
     m_x("x", system),
     m_y("y", system),
     m_z("z", system) {
 
   std::vector<double> z(1, 0.0);
-  init_internal(name, g, z);
+  init_internal(name, z);
 }
 
-void SpatialVariableMetadata::init_internal(const std::string &name, const IceGrid &g,
-                                      const std::vector<double> &z_levels) {
+void SpatialVariableMetadata::init_internal(const std::string &name,
+                                            const std::vector<double> &z_levels) {
   m_x.set_string("axis", "X");
   m_x.set_string("long_name", "X-coordinate in Cartesian system");
   m_x.set_string("standard_name", "projection_x_coordinate");
@@ -173,7 +172,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name, const IceGr
   set_string("grid_mapping", "mapping");
 
   set_name(name);
-  m_grid = &g;
 
   m_zlevels = z_levels;
 
@@ -191,7 +189,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name, const IceGr
 SpatialVariableMetadata::SpatialVariableMetadata(const SpatialVariableMetadata &other)
   : VariableMetadata(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
   m_zlevels             = other.m_zlevels;
-  m_grid                = other.m_grid;
 }
 
 SpatialVariableMetadata::~SpatialVariableMetadata() {
@@ -210,17 +207,14 @@ const std::vector<double>& SpatialVariableMetadata::get_levels() const {
   return m_zlevels;
 }
 
-const IceGrid& SpatialVariableMetadata::grid() const {
-  return *m_grid;
-}
-
-
 //! Read a variable from a file into an array `output`.
 /*! This also converts data from input units to internal units if needed.
  */
 void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const PIO &nc, unsigned int time,
-                           double *output) {
+                           const IceGrid& grid, const PIO &nc,
+                           unsigned int time, double *output) {
+
+  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   // Find the variable:
   std::string name_found;
@@ -283,7 +277,6 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
   const std::vector<double>& zlevels = var.get_levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  const IceGrid& grid = var.grid();
   nc.get_vec(grid, name_found, nlevels, time, output);
 
   std::string input_units = nc.get_att_text(name_found, "units");
@@ -313,8 +306,11 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
   Converts the units if `use_glaciological_units` is `true`.
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
+                            const IceGrid& grid,
                             const PIO &nc, bool use_glaciological_units,
                             const double *input) {
+
+  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   // find or define the variable
   std::string name_found;
@@ -333,7 +329,6 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   const std::vector<double>& zlevels = var.get_levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  const IceGrid& grid = var.grid();
   if (use_glaciological_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
 
@@ -364,22 +359,25 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
     variable was not found in the input file
   - uses the last record in the file
  */
-void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+void regrid_spatial_variable(SpatialVariableMetadata &var,
+                             const IceGrid& grid, const PIO &nc,
                              RegriddingFlag flag, bool do_report_range,
                              double default_value, double *output) {
   unsigned int t_length = nc.inq_nrecords(var.get_name(),
                                           var.get_string("standard_name"));
 
-  regrid_spatial_variable(var, nc, t_length - 1, flag, do_report_range,
+  regrid_spatial_variable(var, grid, nc, t_length - 1, flag, do_report_range,
                           default_value, output);
 }
 
-void regrid_spatial_variable(SpatialVariableMetadata &var, const PIO &nc,
+void regrid_spatial_variable(SpatialVariableMetadata &var,
+                             const IceGrid& grid, const PIO &nc,
                              unsigned int t_start, RegriddingFlag flag,
                              bool do_report_range, double default_value,
                              double *output) {
 
-  const IceGrid& grid = var.grid();
+  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
+
   const UnitSystem& sys = grid.config.unit_system();
   const std::vector<double>& levels = var.get_levels();
   const size_t data_size = grid.xm() * grid.ym() * levels.size();

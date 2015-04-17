@@ -71,7 +71,7 @@ void IceModelVec3Custom::create(const IceGrid &mygrid,
   m_dof = 1;
 
   m_metadata.push_back(SpatialVariableMetadata(m_grid->config.unit_system(),
-                                         m_name, *m_grid, zlevels));
+                                               m_name, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();

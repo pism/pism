@@ -284,7 +284,7 @@ void IceModelVec2::write_impl(const PIO &nc) const {
   assert(m_v != NULL);
 
   // The simplest case:
-  if ((m_dof == 1) && (m_has_ghosts == false)) {
+  if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::write_impl(nc);
     return;
   }
@@ -306,14 +306,15 @@ void IceModelVec2::write_impl(const PIO &nc) const {
     IceModelVec2::get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    write_spatial_variable(m_metadata[j], nc, write_in_glaciological_units, tmp_array.get());
+    write_spatial_variable(m_metadata[j], *m_grid, nc,
+                           write_in_glaciological_units, tmp_array.get());
   }
 }
 
 void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   PetscErrorCode ierr;
 
-  if ((m_dof == 1) && (m_has_ghosts == false)) {
+  if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::read_impl(nc, time);
     return;
   }
@@ -337,7 +338,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
     {
       petsc::VecArray tmp_array(tmp);
-      read_spatial_variable(m_metadata[j], nc, time, tmp_array.get());
+      read_spatial_variable(m_metadata[j], *m_grid, nc, time, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);
@@ -351,8 +352,8 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 }
 
 void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
-                                         double default_value) {
-  if ((m_dof == 1) && (m_has_ghosts == false)) {
+                               double default_value) {
+  if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::regrid_impl(nc, flag, default_value);
     return;
   }
@@ -370,7 +371,8 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   for (unsigned int j = 0; j < m_dof; ++j) {
     {
       petsc::VecArray tmp_array(tmp);
-      regrid_spatial_variable(m_metadata[j], nc, flag, m_report_range, default_value, tmp_array.get());
+      regrid_spatial_variable(m_metadata[j], *m_grid,  nc,
+                              flag, m_report_range, default_value, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);
@@ -625,7 +627,7 @@ void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
 
   if (m_dof == 1) {
     m_metadata.push_back(SpatialVariableMetadata(m_grid->config.unit_system(),
-                                           my_name, *m_grid));
+                                                 my_name));
   } else {
 
     for (unsigned int j = 0; j < m_dof; ++j) {
@@ -634,7 +636,7 @@ void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
       snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
                m_name.c_str(), j);
       m_metadata.push_back(SpatialVariableMetadata(m_grid->config.unit_system(),
-                                             tmp, *m_grid));
+                                                   tmp));
     }
   }
 }

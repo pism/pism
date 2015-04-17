@@ -33,7 +33,7 @@ namespace surface {
 
 TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
-    ice_surface_temp(g.config.unit_system(), temperature_name, g) {
+    ice_surface_temp(g.config.unit_system(), temperature_name) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = m_config.get_double("pdd_factor_snow");
@@ -48,7 +48,8 @@ TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
 
   climatic_mass_balance.create(m_grid, mass_balance_name, WITHOUT_GHOSTS);
   climatic_mass_balance.set_attrs("diagnostic",
-                                  "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                  "instantaneous ice-equivalent surface mass balance"
+                                  " (accumulation/ablation) rate",
                                   "kg m-2 s-1",
                                   "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
