@@ -40,6 +40,9 @@
 
 #include "FEvoR_IO.hh"
 #include "pism_options.hh"
+#include "PISMTime.hh"
+
+#include<iostream>
 
 namespace pism {
 
@@ -75,8 +78,22 @@ PISMFEvoR::~PISMFEvoR() {
 }
 
 PetscErrorCode PISMFEvoR::max_timestep(double t, double &dt, bool &restrict) {
-  // FIXME: put real code here
-  PetscErrorCode ierr = Component_TS::max_timestep(t, dt, restrict); CHKERRQ(ierr);
+  // uses current calander definition of a year
+  double years_per_second = grid.time->convert_time_interval(1., "years");
+  
+  const double m_start_time = grid.time->start();
+  
+  double fevor_step = (double)config.get("fevor_step");
+  fevor_step = fevor_step / years_per_second;
+
+  double fevor_dt = std::fmod(t - m_start_time, fevor_step);
+
+  const double epsilon = 1.0; // 1 second tolerance
+  if (fevor_dt > epsilon) { 
+    restrict = true;
+    dt = fevor_dt;
+  }
+
   return 0;
 }
 
