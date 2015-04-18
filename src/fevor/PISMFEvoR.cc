@@ -102,6 +102,22 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   m_dt = dt;
   PetscErrorCode ierr;
 
+  // determine whether or not to run FEvoR
+  // -------------------------------------
+  bool step_flag = false;
+  const double epsilon = 1.0; // 1 second tolerance
+  // uses current calander definition of a year
+  double years_per_second = grid.time->convert_time_interval(1., "years");
+  const double m_start_time = grid.time->start();
+  
+  double fevor_step = (double)config.get("fevor_step");
+  fevor_step = fevor_step / years_per_second;
+
+  double fevor_dt = std::fmod(m_t + m_dt - m_start_time, fevor_step);
+  if (fevor_dt <= epsilon) {
+    step_flag = true;
+  }
+  
   IceModelVec3 *u = NULL, *v = NULL, *w = NULL;
   ierr = m_stress_balance->get_3d_velocity(u, v, w); CHKERRQ(ierr);
 
@@ -151,9 +167,11 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       assert(grid.x.front() <= m_p_x[i] && m_p_x[i] <= grid.x.back());
       assert(grid.y.front() <= m_p_y[i] && m_p_y[i] <= grid.y.back());
 
-      ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    CHKERRQ(ierr);
-      ierr = evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
-      ierr = evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
+      if (step_flag) {
+        ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    CHKERRQ(ierr);
+        ierr = evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
+        ierr = evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
+      }
 
       // Make sure that the pressure is positive. (Zero pressure
       // probably means that the current particle exited the ice blob.
@@ -161,56 +179,65 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       // to be discarded and replaced by new ones *within* the ice.)
       assert(P >= 0.0);
 
-      /* Indexing: {0, 1, 2,
-       *            3, 4, 5,
-       *            6, 7, 8}
-       */
-      std::vector<double> stress(9,0.0);
-      stress[0] = stress[4] = stress[8] = -P;
-      stress[2] = stress[6] = txz;           
-      stress[5] = stress[7] = tyz;           
-
       ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
       
-      std::vector<double> bulkEdot(9, 0.0);
-      std::vector<double> bulkM(81, 0.0);
-      
-      // http://en.wikipedia.org/wiki/Step_in_Time
-      bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
-                                    m_n_migration_recrystallizations[i],
-                                    m_n_polygonization_recrystallizations[i],
-                                    bulkEdot);
-      
-      std::vector<double> bulkEdot_iso(9, 0.0);
-      std::vector<double> bulkM_iso(81, 0.0);
-      bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
-      
-      if (bulkEdot_iso[2] != 0.0) {
-        m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
-      } else {
-        // If a particle is outside the ice blob, then pressure == 0
-        // and bulkEdot_iso == 0, so we need this special case.
-        m_p_e[i] = 1.0;
-      }
-      
-      // some bounds for the enhancement factor -- in shear only
-      if (m_p_e[i] < 1.0) {
-        m_p_e[i] = 1.0;
-      } else if (m_p_e[i] > 10.0) {
-        m_p_e[i] = 10.0;
-        // upper bound.
+      if (step_flag) {
+        /* Indexing: {0, 1, 2,
+         *            3, 4, 5,
+         *            6, 7, 8}
+         */
+        std::vector<double> stress(9,0.0);
+        stress[0] = stress[4] = stress[8] = -P;
+        stress[2] = stress[6] = txz;           
+        stress[5] = stress[7] = tyz;           
+        
+        std::vector<double> bulkEdot(9, 0.0);
+        std::vector<double> bulkM(81, 0.0);
+        
+        if (step_flag) {
+          // http://en.wikipedia.org/wiki/Step_in_Time
+          bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
+                                                m_n_migration_recrystallizations[i],
+                                                m_n_polygonization_recrystallizations[i],
+                                                bulkEdot);
+        }
+        
+        std::vector<double> bulkEdot_iso(9, 0.0);
+        std::vector<double> bulkM_iso(81, 0.0);
+        
+        if (step_flag) {
+          bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
+        }
+
+        if (bulkEdot_iso[2] != 0.0) {
+          m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
+        } else {
+          // If a particle is outside the ice blob, then pressure == 0
+          // and bulkEdot_iso == 0, so we need this special case.
+          m_p_e[i] = 1.0;
+        }
+        
+        // some bounds for the enhancement factor -- in shear only
+        if (m_p_e[i] < 1.0) {
+          m_p_e[i] = 1.0;
+        } else if (m_p_e[i] > 10.0) {
+          m_p_e[i] = 10.0;
+          // upper bound.
+        }
       }
       
     } // end of the for-loop over particles
+    
+    if (step_flag) {
+      // set the enhancement factor for every grid point from our particle cloud
+      ierr = pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); CHKERRQ(ierr);
 
-    // set the enhancement factor for every grid point from our particle cloud
-    ierr = pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); CHKERRQ(ierr);
-
-    ierr = m_enhancement_factor.update_ghosts(); CHKERRQ(ierr);
+      ierr = m_enhancement_factor.update_ghosts(); CHKERRQ(ierr);
+    }
 
     // update particle positions -- don't want to update until gridded
-    // enhancement factor is updated
+    // enhancement factor is updated (if it is)
     for (unsigned int i = 0; i < n_particles; ++i) {
       double p_u = 0.0,
              p_v = 0.0,
