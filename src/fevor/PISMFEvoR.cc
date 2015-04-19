@@ -51,12 +51,14 @@ PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
     m_packing_dimensions(std::vector<unsigned int>(3, 8)),
     m_d_iso(m_packing_dimensions, 0.0)
-{
+  {
  
   unsigned int n_particles = (unsigned int)config.get("fevor_n_particles");
                 
   m_distributions = std::vector<FEvoR::Distribution>(n_particles, m_d_iso);
-  
+  m_p_avg_stress = std::vector<double>(n_particles * 9, 0.0);
+  m_p_avg_temp = std::vector<double>(n_particles, 0.0);
+
   assert(m_EC != NULL);
   assert(m_stress_balance != NULL);
 
@@ -167,11 +169,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       assert(grid.x.front() <= m_p_x[i] && m_p_x[i] <= grid.x.back());
       assert(grid.y.front() <= m_p_y[i] && m_p_y[i] <= grid.y.back());
 
-      if (step_flag) {
-        ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    CHKERRQ(ierr);
-        ierr = evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
-        ierr = evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
-      }
+      ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    CHKERRQ(ierr);
+      ierr = evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
+      ierr = evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
 
       // Make sure that the pressure is positive. (Zero pressure
       // probably means that the current particle exited the ice blob.
@@ -181,34 +181,46 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
 
       ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
-      
+     
+      m_p_avg_temp[i] += T*m_dt;
+      /* Indexing: {0, 1, 2,
+       *            3, 4, 5,
+       *            6, 7, 8}
+       */
+      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] = -P*m_dt;
+      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = txz*m_dt; 
+      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = tyz*m_dt; 
+
+
+
       if (step_flag) {
+        double fevor_begin = m_t + m_dt - fevor_step;
+        double temp = m_p_avg_temp[i]/fevor_step;
+        m_p_avg_temp[i] = 0.;
         /* Indexing: {0, 1, 2,
          *            3, 4, 5,
          *            6, 7, 8}
          */
         std::vector<double> stress(9,0.0);
-        stress[0] = stress[4] = stress[8] = -P;
-        stress[2] = stress[6] = txz;           
-        stress[5] = stress[7] = tyz;           
-        
+        for (unsigned int s = 0; s < 9; ++s){
+          stress[s] = m_p_avg_stress[i*9+s]/fevor_step;
+          m_p_avg_stress[i*9+s] = 0.;
+        }
+
         std::vector<double> bulkEdot(9, 0.0);
         std::vector<double> bulkM(81, 0.0);
         
-        if (step_flag) {
-          // http://en.wikipedia.org/wiki/Step_in_Time
-          bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
-                                                m_n_migration_recrystallizations[i],
-                                                m_n_polygonization_recrystallizations[i],
-                                                bulkEdot);
-        }
+        assert(temp != 0.);
+        // http://en.wikipedia.org/wiki/Step_in_Time
+        bulkM = m_distributions[i].stepInTime(temp, stress, fevor_begin, fevor_step,
+                                              m_n_migration_recrystallizations[i],
+                                              m_n_polygonization_recrystallizations[i],
+                                              bulkEdot);
         
         std::vector<double> bulkEdot_iso(9, 0.0);
         std::vector<double> bulkM_iso(81, 0.0);
         
-        if (step_flag) {
-          bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
-        }
+        bulkM_iso = m_d_iso.stepInTime(temp, stress, fevor_begin, fevor_step, bulkEdot_iso);
 
         if (bulkEdot_iso[2] != 0.0) {
           m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
@@ -654,6 +666,10 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
 
     // Resize storage for enhancement factors:
     m_p_e.resize(n_particles, 0);
+    // Resize storage for average stress and temperature between fevor steps
+    m_p_avg_stress.resize(n_particles * 9, 0.0);
+    m_p_avg_temp.resize(n_particles, 0.0);
+
   }
   ierr = nc.close(); CHKERRQ(ierr);
 

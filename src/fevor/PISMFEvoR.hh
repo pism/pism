@@ -63,6 +63,11 @@ private:
   StressBalance *m_stress_balance;
   EnthalpyConverter *m_EC;
 
+  // containers for the average stress and temperature from one fevor_step 
+  // to another for every particle!
+  std::vector<double> m_p_avg_stress;
+  std::vector<double> m_p_avg_temp;
+
   std::vector<unsigned int> m_packing_dimensions;
   /* An isotropic distribution for calculating enhancement factor. The
    * enhancement factor is defined as ratio of ice's response relative
