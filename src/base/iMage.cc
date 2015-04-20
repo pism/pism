@@ -297,6 +297,17 @@ void IceModel::ageStep() {
 
         // put solution in IceModelVec3
         system.fine_to_coarse(x, i, j, vWork3d);
+
+        // Ensure that the age of the ice is non-negative.
+        //
+        // FIXME: this is a kludge. We need to ensure that our numerical method has the maximum
+        // principle instead. (We may still need this for correctness, though.)
+        double *column = vWork3d.get_column(i, j);
+        for (unsigned int k = 0; k < grid.Mz(); ++k) {
+          if (column[k] < 0.0) {
+            column[k] = 0.0;
+          }
+        }
       }
     }
   } catch (...) {
