@@ -20,6 +20,8 @@
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
+#include <string>
+
 #include <mpi.h>
 
 #include "pism_memory.hh"
@@ -30,6 +32,7 @@ class UnitSystem;
 class Config;
 class EnthalpyConverter;
 class Time;
+class Profiling;
 
 class Context {
 public:
@@ -40,14 +43,18 @@ public:
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Time> TimePtr;
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Time> ConstTimePtr;
 
-  Context(MPI_Comm, UnitSystemPtr, ConfigPtr,
-          EnthalpyConverterPtr, TimePtr);
+  Context(MPI_Comm com,
+          UnitSystemPtr system, ConfigPtr config,
+          EnthalpyConverterPtr EC, TimePtr time,
+          const std::string &prefix);
 
   MPI_Comm com() const;
   UnitSystemPtr unit_system() const;
   ConstConfigPtr config() const;
   EnthalpyConverterPtr enthalpy_converter() const;
   ConstTimePtr time() const;
+  const std::string& prefix() const;
+  const Profiling& profiling() const;
 
   ConfigPtr config();
   TimePtr time();

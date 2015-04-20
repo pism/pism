@@ -18,6 +18,7 @@
  */
 
 #include "Context.hh"
+#include "Profiling.hh"
 
 namespace pism {
 
@@ -27,8 +28,9 @@ public:
        UnitSystemPtr sys,
        ConfigPtr conf,
        EnthalpyConverterPtr EC,
-       TimePtr t)
-    : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t) {
+       TimePtr t,
+       const std::string &p)
+    : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p) {
     // empty
   }
   MPI_Comm com;
@@ -36,16 +38,19 @@ public:
   ConfigPtr config;
   EnthalpyConverterPtr enthalpy_converter;
   TimePtr time;
+  std::string prefix;
+  Profiling profiling;
 };
 
 Context::Context(MPI_Comm c, UnitSystemPtr sys,
-                 ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t)
-  : m_impl(new Impl(c, sys, conf, EC, t)) {
+                 ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
+                 const std::string &p)
+  : m_impl(new Impl(c, sys, conf, EC, t, p)) {
   // empty
 }
 
 MPI_Comm Context::com() const {
-  return m_impl->com;      
+  return m_impl->com;
 }
 
 Context::UnitSystemPtr Context::unit_system() const {
@@ -65,11 +70,19 @@ Context::EnthalpyConverterPtr Context::enthalpy_converter() const {
 }
 
 Context::TimePtr Context::time() {
-  return m_impl->time;     
+  return m_impl->time;
 }
 
 Context::ConstTimePtr Context::time() const {
-  return m_impl->time;    
+  return m_impl->time;
+}
+
+const std::string& Context::prefix() const {
+  return m_impl->prefix;
+}
+
+const Profiling& Context::profiling() const {
+  return m_impl->profiling;
 }
 
 } // end of namespace pism
