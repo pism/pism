@@ -41,7 +41,7 @@ public:
 
   void initThisColumn(int i, int j, double thickness);
 
-  PetscErrorCode solveThisColumn(std::vector<double> &x);
+  void solveThisColumn(std::vector<double> &x);
 protected:
   const IceModelVec3 &m_age3;
   double m_nu;
@@ -138,7 +138,7 @@ CODE STILL REFLECTS THE OLD SCHEME.
 
 FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
-PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
+void ageSystemCtx::solveThisColumn(std::vector<double> &x) {
 
   TridiagonalSystem &S = *m_solver;
 
@@ -205,8 +205,6 @@ PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
   for (unsigned int k = m_ks + 1; k < x.size(); k++) {
     x[k] = 0.0;
   }
-
-  return 0;
 }
 
 
