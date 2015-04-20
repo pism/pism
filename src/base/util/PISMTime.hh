@@ -197,6 +197,9 @@ protected:
   std::string m_calendar_string;       //!< CF calendar string
 };
 
+//! Create a Time instance by processing command-line options.
+Time::Ptr time_from_options(MPI_Comm com, const Config &config, const UnitSystem &system);
+
 } // end of namespace pism
 
 #endif /* _PISMTIME_H_ */

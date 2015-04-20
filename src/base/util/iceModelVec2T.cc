@@ -146,7 +146,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     TimeseriesMetadata time_dimension(dimname, dimname, m_grid->config.unit_system());
 
     time_dimension.set_string("units", m_grid->time->units_string());
-    io::read_timeseries(m_grid->com, nc, time_dimension, m_grid->time, time);
+    io::read_timeseries(m_grid->com, nc, time_dimension, m_grid->time.get(), time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
@@ -156,7 +156,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         TimeBoundsMetadata tb(bounds_name, dimname, m_grid->config.unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
-        io::read_time_bounds(m_grid->com, nc, tb, m_grid->time, time_bounds);
+        io::read_time_bounds(m_grid->com, nc, tb, m_grid->time.get(), time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval

@@ -21,6 +21,7 @@
 
 #include "PISMConfigInterface.hh"
 #include "PISMTime.hh"
+#include "PISMTime_Calendar.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "base/util/io/PIO.hh"
@@ -58,6 +59,25 @@ std::string calendar_from_options(MPI_Comm com, const Config& config) {
     nc.close();
   }
   return result;
+}
+
+Time::Ptr time_from_options(MPI_Comm com, const Config &config, const UnitSystem &system) {
+  try {
+    std::string calendar = calendar_from_options(com, config);
+
+    if (calendar == "360_day" or
+        calendar == "365_day" or
+        calendar == "noleap" or
+        calendar == "none") {
+      return Time::Ptr(new Time(com, config, calendar, system));
+    } else {
+      return Time::Ptr(new Time_Calendar(com, config, calendar, system));
+    }
+
+  }  catch (RuntimeError &e) {
+    e.add_context("initializing Time from options");
+    throw;
+  }
 }
 
 //! Convert model years into seconds using the year length

@@ -27,10 +27,10 @@
 
 #include "base/util/petscwrappers/DM.hh"
 #include "Profiling.hh"
+#include "PISMTime.hh"
 
 namespace pism {
 
-class Time;
 class Config;
 class PIO;
 class UnitSystem;
@@ -191,7 +191,7 @@ public:
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
   //! The time management object (hides calendar computations).
-  Time *time;
+  Time::Ptr time;
   const Config &config;
   Profiling profiling;
 

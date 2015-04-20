@@ -84,7 +84,7 @@ void CosineYearlyCycle::init() {
     PIO nc(m_grid.com, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
-      A->read(nc, m_grid.time);
+      A->read(nc, m_grid.time.get());
     }
     nc.close();
 

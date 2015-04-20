@@ -87,7 +87,7 @@ protected:
     PIO nc(g.com, "netcdf3");
     nc.open(file, PISM_READONLY);
     {
-      offset->read(nc, g.time);
+      offset->read(nc, g.time.get());
     }
     nc.close();
   }

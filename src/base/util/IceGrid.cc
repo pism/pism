@@ -147,19 +147,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   m_impl->Nx = 0;
   m_impl->Ny = 0;                  // will be set to a correct value in allocate()
 
-  std::string calendar;
-  try {
-    calendar = calendar_from_options(com, config);
-  } catch (RuntimeError &e) {
-    e.add_context("initializing the calendar");
-    throw;
-  }
-
-  if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
-    time = new Time(com, config, calendar, config.unit_system());
-  } else {
-    time = new Time_Calendar(com, config, calendar, config.unit_system());
-  }
+  time = time_from_options(com, config, config.unit_system());
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
 
@@ -260,7 +248,6 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
 
 
 IceGrid::~IceGrid() {
-  delete time;
   gsl_interp_accel_free(m_impl->bsearch_accel);
   delete m_impl;
 }

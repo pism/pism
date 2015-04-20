@@ -90,8 +90,8 @@ void WeatherStation::init() {
   PIO nc(m_grid.com, "netcdf3");
   nc.open(filename, PISM_READONLY);
   {
-    m_precipitation.read(nc, m_grid.time);
-    m_air_temperature.read(nc, m_grid.time);
+    m_precipitation.read(nc, m_grid.time.get());
+    m_air_temperature.read(nc, m_grid.time.get());
   }
   nc.close();
 }
