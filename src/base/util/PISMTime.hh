@@ -25,6 +25,10 @@
 
 namespace pism {
 
+class Config;
+
+std::string calendar_from_options(MPI_Comm com, const Config& config);
+
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
@@ -44,8 +48,6 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
 
   return false;
 }
-
-class Config;
 
 //! \brief Time management class.
 /*!

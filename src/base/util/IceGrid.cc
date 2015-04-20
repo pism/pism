@@ -113,39 +113,6 @@ SpacingType string_to_spacing(const std::string &keyword) {
   }
 }
 
-/**
- * Select a calendar using the "calendar" configuration parameter, the
- * "-calendar" command-line option, or the "calendar" attribute of the
- * "time" variable in the file specified using "-time_file".
- *
- */
-static std::string init_calendar(MPI_Comm com, const Config& config) {
-  // Set the default calendar using the config. parameter or the
-  // "-calendar" option:
-  std::string result = config.get_string("calendar");
-
-  // Check if -time_file was set and override the setting above if the
-  // "calendar" attribute is found.
-  options::String time_file("-time_file", "name of the file specifying the run duration");
-  if (time_file.is_set()) {
-    PIO nc(com, "netcdf3");    // OK to use netcdf3
-
-    nc.open(time_file, PISM_READONLY);
-    {
-      std::string time_name = config.get_string("time_dimension_name");
-      bool time_exists = nc.inq_var(time_name);
-      if (time_exists) {
-        std::string tmp = nc.get_att_text(time_name, "calendar");
-        if (tmp.empty() == false) {
-          result = tmp;
-        }
-      }
-    }
-    nc.close();
-  }
-  return result;
-}
-
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_impl(new Impl) {
 
@@ -182,7 +149,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
 
   std::string calendar;
   try {
-    calendar = init_calendar(com, config);
+    calendar = calendar_from_options(com, config);
   } catch (RuntimeError &e) {
     e.add_context("initializing the calendar");
     throw;
@@ -275,8 +242,8 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
     }
 
     output->set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
-                              input.x_len, input.y_len,
-                              periodicity);
+                                input.x_len, input.y_len,
+                                periodicity);
     output->set_vertical_levels(input.z);
 
     output->time->set_start(input.time);

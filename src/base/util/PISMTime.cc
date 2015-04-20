@@ -16,14 +16,49 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <sstream>
+#include <cassert>
+
 #include "PISMConfigInterface.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
-#include <sstream>
-#include <cassert>
 #include "error_handling.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
+
+/**
+ * Select a calendar using the "calendar" configuration parameter, the
+ * "-calendar" command-line option, or the "calendar" attribute of the
+ * "time" variable in the file specified using "-time_file".
+ *
+ */
+std::string calendar_from_options(MPI_Comm com, const Config& config) {
+  // Set the default calendar using the config. parameter or the
+  // "-calendar" option:
+  std::string result = config.get_string("calendar");
+
+  // Check if -time_file was set and override the setting above if the
+  // "calendar" attribute is found.
+  options::String time_file("-time_file", "name of the file specifying the run duration");
+  if (time_file.is_set()) {
+    PIO nc(com, "netcdf3");    // OK to use netcdf3
+
+    nc.open(time_file, PISM_READONLY);
+    {
+      std::string time_name = config.get_string("time_dimension_name");
+      bool time_exists = nc.inq_var(time_name);
+      if (time_exists) {
+        std::string tmp = nc.get_att_text(time_name, "calendar");
+        if (tmp.empty() == false) {
+          result = tmp;
+        }
+      }
+    }
+    nc.close();
+  }
+  return result;
+}
 
 //! Convert model years into seconds using the year length
 //! corresponding to the current calendar.
