@@ -1007,7 +1007,7 @@ options.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~...,forcing} \index[options]{SB@\surfacemods!\texttt{forcing}} \\
-    NetCDF variables: & \variable{thk} (ice thickness), \\
+    NetCDF variables: & \variable{thk} (ice thickness), \variable{ftt_mask} (mask of zeros and ones; 1 where surface mass flux is adjusted and 0 elsewhere) \\
     C++ class: & \class{PSForceThickness}\\
     \bottomrule
   \end{tabular}
@@ -1022,8 +1022,8 @@ option \texttt{-no_mass}, represents an unmodeled, frequently large,
 violation of the mass continuity equation.
 
 In more detail, let $H_{\text{tar}}$ be the target thickness. Let $H$ be the
-time-dependent model thickness. Note that a surface model~component described
-in this section produces the $M$ term in the mass continuity equation
+time-dependent model thickness. The surface model~component described
+here produces the term $M$ in the mass continuity equation:
 \begin{displaymath}
 \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q}.
 \end{displaymath}
@@ -1037,15 +1037,14 @@ where $\alpha>0$. We are adding mass ($\Delta M>0$) where $H_{\text{tar}} > H$
 and ablating where $H_{\text{tar}} < H$.
 
 Option \fileopt{force_to_thickness_file} identifies the file containing the target ice
-thickness field. A basic run modifying surface model \texttt{given} would
-look like
+thickness field \texttt{thk} and the mask \texttt{ftt_mask}. A basic run modifying surface model \texttt{given} would look like
 \begin{verbatim}
 $ pismr -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
 
-In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp}, as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
-\variable{thk} which will serve as the target thickness. Option
+In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp}, as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains fields
+\variable{thk} which will serve as the target thickness and \variable{ftt_mask} which defines the map plane area where this adjustment is applied. Option
 \intextoption{force_to_thickness_alpha} adjusts the value of $\alpha$, which has a
 default value specified in the \emph{Source Code Browser}
 \url{\PISMBROWSERURL}.
