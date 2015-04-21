@@ -315,6 +315,8 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   LocalMassBalance::DegreeDayFactors  ddf = m_base_ddf;
 
+  m_atmosphere->init_timeseries(ts);
+
   m_atmosphere->begin_pointwise_access();
   list.add(m_air_temp_sd);
   list.add(m_climatic_mass_balance);
@@ -323,8 +325,6 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   list.add(m_melt_rate);
   list.add(m_runoff_rate);
   list.add(m_snow_depth);
-
-  m_atmosphere->init_timeseries(ts);
 
   const double ice_density = m_config.get_double("ice_density");
 
