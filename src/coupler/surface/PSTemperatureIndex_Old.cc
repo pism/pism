@@ -92,7 +92,8 @@ TemperatureIndex_Old::~TemperatureIndex_Old() {
 void TemperatureIndex_Old::init_impl() {
   bool pdd_rand, pdd_rand_repeatable, fausto_params;
 
-  SurfaceModel::init();
+  // call the default implementation (not the interface method init())
+  SurfaceModel::init_impl();
 
   {
     pdd_rand = options::Bool("-pdd_rand",

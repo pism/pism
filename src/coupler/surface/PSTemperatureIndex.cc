@@ -184,7 +184,8 @@ TemperatureIndex::~TemperatureIndex() {
 void TemperatureIndex::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  SurfaceModel::init();
+  // call the default implementation (not the interface method init())
+  SurfaceModel::init_impl();
 
   verbPrintf(2, m_grid.com,
              "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
