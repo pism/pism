@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
 #include <gsl/gsl_math.h>
 
 #include "PALapseRates.hh"
@@ -88,12 +89,16 @@ void LapseRates::mean_annual_temp(IceModelVec2S &result) {
 void LapseRates::begin_pointwise_access() {
   input_model->begin_pointwise_access();
   m_reference_surface.begin_access();
+
+  assert(m_surface != NULL);
   m_surface->begin_access();
 }
 
 void LapseRates::end_pointwise_access() {
   input_model->end_pointwise_access();
   m_reference_surface.end_access();
+
+  assert(m_surface != NULL);
   m_surface->end_access();
 }
 
@@ -114,6 +119,8 @@ void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
 
   m_reference_surface.interp(i, j, usurf);
 
+  assert(m_surface != NULL);
+
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
     result[m] -= m_temp_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
   }
@@ -125,6 +132,8 @@ void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
   input_model->precip_time_series(i, j, result);
 
   m_reference_surface.interp(i, j, usurf);
+
+  assert(m_surface != NULL);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
     result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
