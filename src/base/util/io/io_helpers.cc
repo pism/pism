@@ -156,7 +156,7 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
 }
 
 static void compute_start_and_count(const PIO& nc,
-                                    const UnitSystem &unit_system,
+                                    units::System::Ptr unit_system,
                                     const std::string &short_name,
                                     unsigned int t_start, unsigned int t_count,
                                     unsigned int x_start, unsigned int x_count,
@@ -225,7 +225,7 @@ void define_dimension(const PIO &nc, unsigned long int length,
 }
 
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
-                 const std::string &units, const UnitSystem &unit_system) {
+                 const std::string &units, units::System::Ptr unit_system) {
   try {
     if (nc.inq_var(name)) {
       return;
@@ -299,7 +299,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
  * @return 0 on success
  */
 static bool use_mapped_io(const PIO &nc,
-                          const UnitSystem &unit_system,
+                          units::System::Ptr unit_system,
                           const std::string &var_name) {
 
   std::vector<std::string> dimnames = nc.inq_vardims(var_name);
@@ -684,8 +684,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
 
-  const UnitSystem& sys = var.unit_system();
-  UnitConverter(sys,
+  units::Converter(var.unit_system(),
                 input_units,
                 var.get_string("units")).convert_doubles(output, size);
 }
@@ -727,8 +726,8 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
     for (size_t k = 0; k < data_size; ++k) {
       tmp[k] = input[k];
     }
-    const UnitSystem& sys = var.unit_system();
-    UnitConverter(sys,
+
+    units::Converter(var.unit_system(),
                   var.get_string("units"),
                   var.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
@@ -786,7 +785,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
 
   nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
-  const UnitSystem& sys = var.unit_system();
+  units::System::Ptr sys = var.unit_system();
   const std::vector<double>& levels = var.get_levels();
   const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
@@ -830,7 +829,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
     }
 
     // Convert data:
-    UnitConverter(sys,
+    units::Converter(sys,
                   input_units,
                   var.get_string("units")).convert_doubles(output, data_size);
 
@@ -857,8 +856,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
     }
 
     // If it is optional, fill with the provided default value.
-    // UnitConverter constructor will make sure that units are compatible.
-    UnitConverter c(sys,
+    // units::Converter constructor will make sure that units are compatible.
+    units::Converter c(sys,
                     var.get_string("units"),
                     var.get_string("glaciological_units"));
 
@@ -941,9 +940,9 @@ void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &meta
 
     nc.get_1d_var(name_found, 0, length, data);
 
-    const UnitSystem &system = metadata.unit_system();
+    units::System::Ptr system = metadata.unit_system();
     bool input_has_units = false;
-    Unit internal_units(system, metadata.get_string("units")),
+    units::Unit internal_units(system, metadata.get_string("units")),
       input_units(system, "1");
 
     std::string input_units_string = nc.get_att_text(name_found, "units");
@@ -953,7 +952,7 @@ void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &meta
     } else {
       input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
-      input_units = Unit(system, input_units_string);
+      input_units = units::Unit(system, input_units_string);
       input_has_units = true;
     }
 
@@ -967,7 +966,7 @@ void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &meta
       input_units = internal_units;
     }
 
-    UnitConverter(input_units, internal_units).convert_doubles(&data[0], data.size());
+    units::Converter(input_units, internal_units).convert_doubles(&data[0], data.size());
 
   } catch (RuntimeError &e) {
     e.add_context("reading time-series variable '%s' from '%s'", name.c_str(),
@@ -1001,9 +1000,9 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
     // create a copy of "data":
     std::vector<double> tmp = data;
 
-    const UnitSystem &system = metadata.unit_system();
+    units::System::Ptr system = metadata.unit_system();
     // convert to glaciological units:
-    UnitConverter(system,
+    units::Converter(system,
                   metadata.get_string("units"),
                   metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
@@ -1056,8 +1055,8 @@ void read_time_bounds(MPI_Comm com, const PIO &nc,
   std::string name = metadata.get_name();
 
   try {
-    const UnitSystem &system = metadata.unit_system();
-    Unit internal_units(system, metadata.get_string("units"));
+    units::System::Ptr system = metadata.unit_system();
+    units::Unit internal_units(system, metadata.get_string("units"));
 
     // Find the variable:
     if (not nc.inq_var(name)) {
@@ -1104,7 +1103,7 @@ void read_time_bounds(MPI_Comm com, const PIO &nc,
     }
 
     bool input_has_units = false;
-    Unit input_units(internal_units.get_system(), "1");
+    units::Unit input_units(internal_units.get_system(), "1");
 
     std::string input_units_string = nc.get_att_text(dimension_name, "units");
     input_units_string = time->CF_units_to_PISM_units(input_units_string);
@@ -1112,7 +1111,7 @@ void read_time_bounds(MPI_Comm com, const PIO &nc,
     if (input_units_string.empty() == true) {
       input_has_units = false;
     } else {
-      input_units = Unit(internal_units.get_system(), input_units_string);
+      input_units = units::Unit(internal_units.get_system(), input_units_string);
       input_has_units = true;
     }
 
@@ -1126,7 +1125,7 @@ void read_time_bounds(MPI_Comm com, const PIO &nc,
       input_units = internal_units;
     }
 
-    UnitConverter(input_units, internal_units).convert_doubles(&data[0], data.size());
+    units::Converter(input_units, internal_units).convert_doubles(&data[0], data.size());
 
     // FIXME: check that time intervals described by the time bounds
     // variable are contiguous (without gaps) and stop if they are not.
@@ -1150,8 +1149,8 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
     std::vector<double> tmp = data;
 
     // convert to glaciological units:
-    const UnitSystem &system = metadata.unit_system();
-    UnitConverter(system,
+    units::System::Ptr system = metadata.unit_system();
+    units::Converter(system,
                   metadata.get_string("units"),
                   metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
@@ -1274,7 +1273,7 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
       std::string
         units               = variable.get_string("units"),
         glaciological_units = variable.get_string("glaciological_units");
-      UnitConverter c(variable.unit_system(), units, glaciological_units);
+      units::Converter c(variable.unit_system(), units, glaciological_units);
 
       bounds[0]  = c(bounds[0]);
       bounds[1]  = c(bounds[1]);
@@ -1374,7 +1373,7 @@ void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &
     }
 
     // Read the units.
-    UnitConverter c(variable.unit_system(),
+    units::Converter c(variable.unit_system(),
                     nc.get_att_text(name, "units"),
                     variable.get_string("units"));
 

@@ -52,7 +52,7 @@ PDDMassBalance::PDDMassBalance(const Config& myconfig)
  */
 unsigned int PDDMassBalance::get_timeseries_length(double dt) {
   const unsigned int    NperYear = static_cast<unsigned int>(config.get_double("pdd_max_evals_per_year"));
-  const double dt_years = m_unit_system.convert(dt, "seconds", "years");
+  const double dt_years = units::convert(m_unit_system, dt, "seconds", "years");
 
   return std::max(1U, static_cast<unsigned int>(ceil(NperYear * dt_years)));
 }

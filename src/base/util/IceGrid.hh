@@ -33,7 +33,9 @@ namespace pism {
 
 class Config;
 class PIO;
-class UnitSystem;
+namespace units {
+class System;
+}
 class Vars;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
@@ -47,9 +49,9 @@ class grid_info {
 public:
   grid_info();
   grid_info(const PIO &file, const std::string &variable,
-            const UnitSystem &unit_system,
+            units::System::Ptr unit_system,
             Periodicity p);
-  void report(MPI_Comm com, const UnitSystem &s, int threshold) const;
+  void report(MPI_Comm com, units::System::Ptr s, int threshold) const;
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
   double time,                  //!< current time (seconds)

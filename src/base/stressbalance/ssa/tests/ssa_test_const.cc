@@ -62,12 +62,10 @@ public:
   SSATestCaseConst(MPI_Comm com, Config &c, double q):
     SSATestCase(com, c), basal_q(q)
   {
-    UnitSystem s = c.unit_system();
-
-    L     = s.convert(50.0, "km", "m"); // 50km half-width
+    L     = units::convert(c.unit_system(), 50.0, "km", "m"); // 50km half-width
     H0    = 500;                        // m
     dhdx  = 0.005;                      // pure number
-    nu0   = s.convert(30.0, "MPa year", "Pa s");
+    nu0   = units::convert(c.unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
   };
 
@@ -180,7 +178,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    UnitSystem unit_system;
+    units::System::Ptr unit_system(new units::System);
     DefaultConfig
       config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);

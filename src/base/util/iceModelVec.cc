@@ -920,9 +920,9 @@ void IceModelVec::AccessList::add(const IceModelVec &vec) {
   m_vecs.push_back(&vec);
 }
 
-void convert_vec(Vec v, const UnitSystem system,
+void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2) {
-  UnitConverter c(system, spec1, spec2);
+  units::Converter c(system, spec1, spec2);
 
   // has to be a PetscInt because of the VecGetLocalSize() call
   PetscInt data_size = 0;

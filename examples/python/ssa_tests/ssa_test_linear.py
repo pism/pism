@@ -28,7 +28,7 @@ unit_system = context.config.unit_system()
 L = 50.e3  # // 50km half-width
 H0 = 500  # // m
 dhdx = 0.005  # // pure number, slope of surface & bed
-nu0 = unit_system.convert(30.0, "MPa year", "Pa s")
+nu0 = PISM.convert(unit_system, 30.0, "MPa year", "Pa s")
 tauc0 = 1.e4  # // 1kPa
 
 

@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    UnitSystem unit_system;
+    units::System::Ptr unit_system(new units::System);
     DefaultConfig
       config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);

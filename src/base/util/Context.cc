@@ -25,7 +25,7 @@ namespace pism {
 class Context::Impl {
 public:
   Impl(MPI_Comm c,
-       UnitSystemPtr sys,
+       UnitsSystemPtr sys,
        ConfigPtr conf,
        EnthalpyConverterPtr EC,
        TimePtr t,
@@ -34,7 +34,7 @@ public:
     // empty
   }
   MPI_Comm com;
-  UnitSystemPtr unit_system;
+  UnitsSystemPtr unit_system;
   ConfigPtr config;
   EnthalpyConverterPtr enthalpy_converter;
   TimePtr time;
@@ -42,7 +42,7 @@ public:
   Profiling profiling;
 };
 
-Context::Context(MPI_Comm c, UnitSystemPtr sys,
+Context::Context(MPI_Comm c, UnitsSystemPtr sys,
                  ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
                  const std::string &p)
   : m_impl(new Impl(c, sys, conf, EC, t, p)) {
@@ -53,7 +53,7 @@ MPI_Comm Context::com() const {
   return m_impl->com;
 }
 
-Context::UnitSystemPtr Context::unit_system() const {
+Context::UnitsSystemPtr Context::unit_system() const {
   return m_impl->unit_system;
 }
 

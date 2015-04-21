@@ -31,7 +31,7 @@ namespace pism {
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class NetCDFConfig : public Config {
 public:
-  NetCDFConfig(MPI_Comm com, const std::string &name, const UnitSystem &unit_system);
+  NetCDFConfig(MPI_Comm com, const std::string &name, units::System::Ptr unit_system);
   ~NetCDFConfig();
 
 protected:
@@ -70,7 +70,7 @@ public:
   DefaultConfig(MPI_Comm com,
                       const std::string &variable_name,
                       const std::string &option,
-                      const UnitSystem &unit_system);
+                      units::System::Ptr unit_system);
   ~DefaultConfig();
 
   //! Initialize (use default path if no option was set).

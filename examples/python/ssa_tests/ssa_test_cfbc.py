@@ -40,7 +40,7 @@ context = PISM.Context()
 unit_system = context.config.unit_system()
 
 H0 = 600.          # meters
-V0 = unit_system.convert(300, "m/year", "m/second")
+V0 = PISM.convert(unit_system, 300, "m/year", "m/second")
 C = 2.45e-18     # "typical constant ice parameter"
 T = 400          # time used to compute the calving front location
 

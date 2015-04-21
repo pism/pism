@@ -102,7 +102,7 @@ public:
 
 protected:
   const Config& config;
-  UnitSystem m_unit_system;
+  units::System::Ptr m_unit_system;
   const double seconds_per_day;
 };
 

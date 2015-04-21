@@ -25,12 +25,12 @@
 #include <string>
 #include <mpi.h>
 
+#include "PISMUnits.hh"
 #include "pism_memory.hh"
 
 namespace pism {
 
 class PIO;
-class UnitSystem;
 
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
@@ -38,13 +38,13 @@ public:
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Config> Ptr;
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Config> ConstPtr;
 
-  Config(const UnitSystem &unit_system);
+  Config(units::System::Ptr unit_system);
   virtual ~Config();
 
   enum SetBy {SYSTEM = 0, USER = 1};
 
   // methods implemented in the base class
-  const UnitSystem& unit_system() const;
+  units::System::Ptr unit_system() const;
 
   // Import settings from an override file
   void import_from(const Config &other);

@@ -30,12 +30,12 @@
 namespace pism {
 
 struct Config::Impl {
-  Impl(const UnitSystem &sys)
+  Impl(units::System::Ptr sys)
     : unit_system(sys) {
     // empty
   }
   //! Unit system. @fixme: this should be moved to the Context class.
-  UnitSystem unit_system;
+  units::System::Ptr unit_system;
 
   std::string filename;
 
@@ -47,7 +47,7 @@ struct Config::Impl {
   std::set<std::string> parameters_used;
 };
 
-Config::Config(const UnitSystem &system)
+Config::Config(units::System::Ptr system)
   : m_impl(new Impl(system)) {
   // empty
 }
@@ -56,7 +56,7 @@ Config::~Config() {
   delete m_impl;
 }
 
-const UnitSystem& Config::unit_system() const {
+units::System::Ptr Config::unit_system() const {
   return m_impl->unit_system;
 }
 
@@ -173,7 +173,7 @@ double Config::get_double(const std::string &name) const {
 double Config::get_double(const std::string &name,
                           const std::string &u1, const std::string &u2) const {
   double value = this->get_double(name);
-  return m_impl->unit_system.convert(value, u1, u2);
+  return units::convert(m_impl->unit_system, value, u1, u2);
 }
 
 void Config::set_double(const std::string &name, double value,

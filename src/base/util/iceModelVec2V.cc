@@ -49,7 +49,7 @@ void IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name
   IceModelVec2::create(my_grid, short_name, ghostedp,
                        stencil_width, m_dof);
 
-  UnitSystem sys = m_grid->config.unit_system();
+  units::System::Ptr sys = m_grid->config.unit_system();
 
   m_metadata[0] = SpatialVariableMetadata(sys, "u" + short_name);
   m_metadata[1] = SpatialVariableMetadata(sys, "v" + short_name);

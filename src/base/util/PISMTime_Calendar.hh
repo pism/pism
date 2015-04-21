@@ -29,7 +29,7 @@ class Time_Calendar : public Time
 public:
   Time_Calendar(MPI_Comm c, const Config &conf,
                 const std::string &calendar,
-                const UnitSystem &units_system);
+                units::System::Ptr units_system);
   virtual ~Time_Calendar();
 
   virtual void init();

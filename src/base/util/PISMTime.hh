@@ -67,7 +67,7 @@ class Time
 public:
   Time(MPI_Comm c, const Config &conf,
        const std::string &calendar,
-       const UnitSystem &units_system);
+       units::System::Ptr units_system);
   virtual ~Time();
 
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Time> Ptr;
@@ -188,8 +188,8 @@ protected:
 protected:
   MPI_Comm m_com;
   const Config &m_config;
-  UnitSystem m_unit_system;
-  Unit m_time_units;
+  units::System::Ptr m_unit_system;
+  units::Unit m_time_units;
   double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
@@ -198,7 +198,7 @@ protected:
 };
 
 //! Create a Time instance by processing command-line options.
-Time::Ptr time_from_options(MPI_Comm com, const Config &config, const UnitSystem &system);
+Time::Ptr time_from_options(MPI_Comm com, const Config &config, units::System::Ptr system);
 
 } // end of namespace pism
 

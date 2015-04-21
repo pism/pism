@@ -39,7 +39,7 @@ Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::str
   private_constructor(g->com, name, dimension_name);
 }
 
-Timeseries::Timeseries(MPI_Comm c, const UnitSystem &unit_system,
+Timeseries::Timeseries(MPI_Comm c, units::System::Ptr unit_system,
                        const std::string & name, const std::string & dimension_name)
   : m_dimension(dimension_name, dimension_name, unit_system),
     m_variable(name, dimension_name, unit_system),
@@ -145,7 +145,7 @@ void Timeseries::report_range() {
   min = *std::min_element(m_values.begin(), m_values.end());
   max = *std::max_element(m_values.begin(), m_values.end());
 
-  UnitConverter c(m_variable.unit_system(),
+  units::Converter c(m_variable.unit_system(),
                   m_variable.get_string("units"),
                   m_variable.get_string("glaciological_units"));
   min = c(min);

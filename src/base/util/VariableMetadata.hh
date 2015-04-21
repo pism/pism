@@ -70,7 +70,7 @@ namespace pism {
 
 class VariableMetadata {
 public:
-  VariableMetadata(const std::string &name, const UnitSystem &system, unsigned int ndims = 0);
+  VariableMetadata(const std::string &name, units::System::Ptr system, unsigned int ndims = 0);
   virtual ~VariableMetadata();
 
   // setters
@@ -85,7 +85,7 @@ public:
   void clear_all_strings();
 
   // getters
-  UnitSystem unit_system() const;
+  units::System::Ptr unit_system() const;
 
   double get_double(const std::string &name) const;
   std::vector<double> get_doubles(const std::string &name) const;
@@ -112,7 +112,7 @@ protected:
 
 private:
   //! @brief The unit system to use.
-  UnitSystem m_unit_system;
+  units::System::Ptr m_unit_system;
 
   //! string and boolean attributes
   std::map<std::string, std::string> m_strings;
@@ -126,8 +126,8 @@ private:
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
-  SpatialVariableMetadata(const UnitSystem &system, const std::string &name);
-  SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
+  SpatialVariableMetadata(units::System::Ptr system, const std::string &name);
+  SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
                           const std::vector<double> &zlevels);
   SpatialVariableMetadata(const SpatialVariableMetadata &other);
   virtual ~SpatialVariableMetadata();
@@ -154,7 +154,7 @@ private:
 class TimeseriesMetadata : public VariableMetadata {
 public:
   TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                     const UnitSystem &system);
+                     units::System::Ptr system);
   virtual ~TimeseriesMetadata();
 
   std::string get_dimension_name() const;
@@ -167,7 +167,7 @@ class TimeBoundsMetadata : public TimeseriesMetadata
 {
 public:
   TimeBoundsMetadata(const std::string &name, const std::string &dimension_name,
-                     const UnitSystem &system);
+                     units::System::Ptr system);
   virtual ~TimeBoundsMetadata();
   std::string get_bounds_name() const;
 private:

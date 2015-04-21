@@ -57,8 +57,7 @@ class SSATestCaseCFBC: public SSATestCase {
 public:
   SSATestCaseCFBC(MPI_Comm com, Config &c)
     : SSATestCase(com, c) {
-    UnitSystem s = c.unit_system();
-    V0 = s.convert(300.0, "m/year", "m/second");
+    V0 = units::convert(c.unit_system(), 300.0, "m/year", "m/second");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
   };
@@ -198,7 +197,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    UnitSystem unit_system;
+    units::System::Ptr unit_system(new units::System);
     DefaultConfig
       config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);

@@ -828,7 +828,7 @@ void IceGrid::set_periodicity(Periodicity p) {
 }
 
 double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return config.unit_system().convert(value, unit1, unit2);
+  return units::convert(config.unit_system(), value, unit1, unit2);
 }
 
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
@@ -1015,7 +1015,7 @@ grid_info::grid_info() {
   reset();
 }
 
-void grid_info::report(MPI_Comm com, const UnitSystem &s, int threshold) const {
+void grid_info::report(MPI_Comm com, units::System::Ptr s, int threshold) const {
 
   verbPrintf(threshold, com,
              "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
@@ -1039,11 +1039,11 @@ void grid_info::report(MPI_Comm com, const UnitSystem &s, int threshold) const {
 
   verbPrintf(threshold, com,
              "  t:  %5d points, last time = %.3f years\n\n",
-             this->t_len, s.convert(this->time, "seconds", "years"));
+             this->t_len, convert(s, this->time, "seconds", "years"));
 }
 
 grid_info::grid_info(const PIO &file, const std::string &variable,
-                     const UnitSystem &unit_system,
+                     units::System::Ptr unit_system,
                      Periodicity p) {
   try {
     bool variable_exists, found_by_standard_name;

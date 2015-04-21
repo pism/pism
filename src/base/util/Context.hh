@@ -28,7 +28,10 @@
 
 namespace pism {
 
-class UnitSystem;
+namespace units {
+class System;
+}
+
 class Config;
 class EnthalpyConverter;
 class Time;
@@ -36,7 +39,7 @@ class Profiling;
 
 class Context {
 public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<UnitSystem> UnitSystemPtr;
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<units::System> UnitsSystemPtr;
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Config> ConfigPtr;
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Config> ConstConfigPtr;
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<EnthalpyConverter> EnthalpyConverterPtr;
@@ -44,12 +47,12 @@ public:
   typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Time> ConstTimePtr;
 
   Context(MPI_Comm com,
-          UnitSystemPtr system, ConfigPtr config,
+          UnitsSystemPtr system, ConfigPtr config,
           EnthalpyConverterPtr EC, TimePtr time,
           const std::string &prefix);
 
   MPI_Comm com() const;
-  UnitSystemPtr unit_system() const;
+  UnitsSystemPtr unit_system() const;
   ConstConfigPtr config() const;
   EnthalpyConverterPtr enthalpy_converter() const;
   ConstTimePtr time() const;

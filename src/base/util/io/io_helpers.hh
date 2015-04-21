@@ -25,6 +25,7 @@
 #include <mpi.h>
 
 #include "IO_Flags.hh"
+#include "base/util/PISMUnits.hh"
 
 namespace pism {
 
@@ -35,7 +36,6 @@ class TimeBoundsMetadata;
 class IceGrid;
 class PIO;
 class Time;
-class UnitSystem;
 
 namespace io {
 
@@ -63,7 +63,7 @@ void define_dimension(const PIO &nc, unsigned long int length,
                       const VariableMetadata &metadata);
 
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
-                 const std::string &units, const UnitSystem &unit_system);
+                 const std::string &units, units::System::Ptr unit_system);
 
 void append_time(const PIO &nc, const std::string &name, double value);
 

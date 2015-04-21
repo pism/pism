@@ -77,7 +77,7 @@ class Time;
 class Timeseries {
 public:
   Timeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
-  Timeseries(MPI_Comm com, const UnitSystem &units_system,
+  Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
   
   void read(const PIO &nc, Time *time);

@@ -8,8 +8,8 @@ using pism::SpatialVariableMetadata;
 using pism::petsc::Viewer;
 using pism::Profiling; 
 using pism::Vars;
-using pism::Unit;
-using pism::UnitSystem;
+using pism::units::Unit;
+using pism::units::System;
 using pism::Vector2;
 using pism::StarStencil;
 %}

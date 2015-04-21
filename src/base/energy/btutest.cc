@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    UnitSystem unit_system;
+    units::System::Ptr unit_system(new units::System);
     DefaultConfig
       config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     btu.init(bootstrapping_needed);
     btu.bootstrap();
 
-    double dt_seconds = unit_system.convert(dt_years, "years", "seconds");
+    double dt_seconds = units::convert(unit_system, dt_years, "years", "seconds");
 
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
@@ -195,11 +195,11 @@ int main(int argc, char *argv[]) {
     verbPrintf(2,com,
                "  user set timestep of %.4f years ...\n"
                "  reset to %.4f years to get integer number of steps ... \n",
-               dt_years.value(), unit_system.convert(dt_seconds, "seconds", "years"));
+               dt_years.value(), units::convert(unit_system, dt_seconds, "seconds", "years"));
     MaxTimestep max_dt = btu.max_timestep(0.0);
     verbPrintf(2,com,
                "  BedThermalUnit reports max timestep of %.4f years ...\n",
-               unit_system.convert(max_dt.value(), "seconds", "years"));
+               units::convert(unit_system, max_dt.value(), "seconds", "years"));
 
     // actually do the time-stepping
     verbPrintf(2,com,"  running ...\n");

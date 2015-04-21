@@ -149,10 +149,6 @@
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
 %rename(_verbPrintf) verbPrintf;
 
-// FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to
-// be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
-// following works for now.
-
 // The SWIG built-in typecheck for a const char [] (used, e.g., with overloaded methods) checks that
 // the string is zero length. So we have this bug fix from SWIG developer William Fulton here.
 %typemap(typecheck,noblock=1,precedence=SWIG_TYPECHECK_STRING, fragment="SWIG_AsCharPtrAndSize") const char[] {
@@ -172,10 +168,12 @@
 %ignore pism::Vector2::operator=;
 %include "base/util/Vector2.hh"
 
-%ignore pism::Unit::operator=;
-%shared_ptr(pism::UnitSystem);
-%feature("valuewrapper") pism::UnitSystem;
-%feature("valuewrapper") pism::Unit;
+%ignore pism::units::Unit::operator=;
+%rename(UnitSystem) pism::units::System;
+%rename(UnitConverter) pism::units::Converter;
+%shared_ptr(pism::units::System);
+%feature("valuewrapper") pism::units::System;
+%feature("valuewrapper") pism::units::Unit;
 %include "base/util/PISMUnits.hh"
 
 %include pism_DM.i

@@ -56,7 +56,7 @@ static inline std::string string_strip(std::string input) {
  */
 Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
                              const std::string &calendar_string,
-                             const UnitSystem &units_system)
+                             units::System::Ptr units_system)
   : Time(c, conf, calendar_string, units_system) {
 
   // init_calendar() was called by the constructor of Time.
@@ -74,7 +74,7 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
   }
 
   try {
-    m_time_units = Unit(m_time_units.get_system(), "seconds since " + ref_date);
+    m_time_units = units::Unit(m_time_units.get_system(), "seconds since " + ref_date);
   } catch (RuntimeError &e) {
     e.add_context("setting time units");
     throw;
@@ -216,7 +216,8 @@ void Time_Calendar::init_from_file(const std::string &filename) {
     }
 
     try {
-      m_time_units = Unit(m_time_units.get_system(), "seconds " + time_units.substr(position));
+      m_time_units = units::Unit(m_time_units.get_system(),
+                                 "seconds " + time_units.substr(position));
     }
     catch (RuntimeError &e) {
       e.add_context("processing -time_file %s", filename.c_str());

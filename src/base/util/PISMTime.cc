@@ -61,7 +61,7 @@ std::string calendar_from_options(MPI_Comm com, const Config& config) {
   return result;
 }
 
-Time::Ptr time_from_options(MPI_Comm com, const Config &config, const UnitSystem &system) {
+Time::Ptr time_from_options(MPI_Comm com, const Config &config, units::System::Ptr system) {
   try {
     std::string calendar = calendar_from_options(com, config);
 
@@ -100,8 +100,10 @@ double Time::seconds_to_years(double input) {
 Time::Time(MPI_Comm c,
            const Config &conf,
            const std::string &calendar_string,
-           const UnitSystem &unit_system)
-  : m_com(c), m_config(conf), m_unit_system(unit_system),
+           units::System::Ptr unit_system)
+  : m_com(c),
+    m_config(conf),
+    m_unit_system(unit_system),
     m_time_units(m_unit_system, "seconds") {
 
   init_calendar(calendar_string);
@@ -118,14 +120,14 @@ Time::~Time() {
 void Time::init_calendar(const std::string &calendar_string) {
   m_calendar_string = calendar_string;
 
-  double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
+  double seconds_per_day = convert(m_unit_system, 1.0, "day", "seconds");
   if (calendar_string == "360_day") {
     m_year_length = 360 * seconds_per_day;
   } else if (calendar_string == "365_day" || calendar_string == "noleap") {
     m_year_length = 365 * seconds_per_day;
   } else {
     // use the ~365.2524-day year
-    m_year_length = m_unit_system.convert(1.0, "year", "seconds");
+    m_year_length = convert(m_unit_system, 1.0, "year", "seconds");
   }
 }
 
@@ -391,12 +393,12 @@ void Time::parse_interval_length(const std::string &spec, std::string &keyword, 
     return;
   }
 
-  Unit seconds(m_time_units.get_system(), "seconds"),
+  units::Unit seconds(m_time_units.get_system(), "seconds"),
     one(m_time_units.get_system(), "1"),
     tmp = one;
 
   try {
-    tmp = Unit(m_time_units.get_system(), spec);
+    tmp = units::Unit(m_time_units.get_system(), spec);
   } catch (RuntimeError &e) {
     e.add_context("processing interval length " + spec);
     throw;
@@ -406,15 +408,15 @@ void Time::parse_interval_length(const std::string &spec, std::string &keyword, 
   // latter allows intervals of the form "0.5", which stands for "half
   // of a model year". This also discards interval specs such as "days
   // since 1-1-1", even though "days" is compatible with "seconds".
-  if (UnitConverter::are_convertible(tmp, seconds) == true) {
-    UnitConverter c(tmp, seconds);
+  if (units::are_convertible(tmp, seconds) == true) {
+    units::Converter c(tmp, seconds);
 
     if (result) {
       *result = c(1.0);
     }
 
-  } else if (UnitConverter::are_convertible(tmp, one) == true) {
-    UnitConverter c(tmp, one);
+  } else if (units::are_convertible(tmp, one) == true) {
+    units::Converter c(tmp, one);
 
     if (result) {
       // this is a rather convoluted way of turning a string into a
@@ -545,7 +547,7 @@ double Time::convert_time_interval(double T, const std::string &units) {
   if (units == "year" || units == "years" || units == "yr" || units == "a") {
     return this->seconds_to_years(T); // uses year length here
   }
-  return m_unit_system.convert(T, "seconds", units);
+  return convert(m_unit_system, T, "seconds", units);
 }
 
 } // end of namespace pism

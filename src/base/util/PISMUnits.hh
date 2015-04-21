@@ -27,6 +27,8 @@
 
 namespace pism {
 
+namespace units {
+
 /** @file PISMUnits.hh This file contains thin wrappers around
  * UDUNITS-2 objects. Nothing fancy. The only purpose is to simplify
  * memory management for objects that are stored as data members of
@@ -41,22 +43,23 @@ namespace pism {
  * having a "dangling" pointer.)
  */
 
-class UnitSystem {
+class System {
 public:
-  UnitSystem(const std::string &path = "");
-
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<ut_system> Ptr;
-
-  UnitSystem::Ptr get() const;
-
-  double convert(double input, const std::string &spec1, const std::string &spec2) const;
+  System(const std::string &path = "");
+  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<System> Ptr;
 private:
-  UnitSystem::Ptr m_system;
+  friend class Unit;
+  PISM_SHARED_PTR_NSPACE::shared_ptr<ut_system> m_system;
+  System(const System &);
+  System& operator=(System const &);
 };
+
+double convert(System::Ptr system, double input,
+               const std::string &spec1, const std::string &spec2);
 
 class Unit {
 public:
-  Unit(const UnitSystem &system, const std::string &spec);
+  Unit(System::Ptr system, const std::string &spec);
   Unit(const Unit &other);
   ~Unit();
 
@@ -64,25 +67,34 @@ public:
   std::string format() const;
 
   ut_unit* get() const;
-  UnitSystem get_system() const;
+  System::Ptr get_system() const;
 private:
   void reset();
   ut_unit *m_unit;
-  UnitSystem m_system;
+  System::Ptr m_system;
   std::string m_unit_string;
 };
+
+/** Check if units are convertible without creating a converter.
+ *
+ * @param[in] u1 first Unit instance
+ * @param[in] u2 second Unit instance
+ *
+ * @return true if units are convertible, false otherwise
+ */
+bool are_convertible(const Unit &u1, const Unit &u2);
 
 /** Unit converter.
  * 
  * Throws pism::RuntimeError() if the conversion is not possible.
  *
  */
-class UnitConverter {
+class Converter {
 public:
-  UnitConverter();
-  UnitConverter(const Unit &u1, const Unit &u2);
-  UnitConverter(const UnitSystem &sys, const std::string &u1, const std::string &u2);
-  ~UnitConverter();
+  Converter();
+  Converter(const Unit &u1, const Unit &u2);
+  Converter(System::Ptr sys, const std::string &u1, const std::string &u2);
+  ~Converter();
   /** Convert an array of doubles in place
    *
    * @param[in,out] data array to process
@@ -90,21 +102,14 @@ public:
    */
   void convert_doubles(double *data, size_t length) const;
   double operator()(double input) const;
-
-  /** Check if units are convertible without creating a converter.
-   *
-   * @param[in] u1 first Unit instance
-   * @param[in] u2 second Unit instance
-   *
-   * @return true if units are convertible, false otherwise
-   */
-  static bool are_convertible(const Unit &u1, const Unit &u2);
 private:
   cv_converter *m_converter;
   // hide copy constructor and the assignment operator
-  UnitConverter(const UnitConverter &);
-  UnitConverter& operator=(UnitConverter const &);
+  Converter(const Converter &);
+  Converter& operator=(Converter const &);
 };
+
+} // end of namespace units
 
 } // end of namespace pism
 

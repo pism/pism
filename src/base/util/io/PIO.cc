@@ -263,7 +263,7 @@ unsigned int PIO::inq_nrecords() const {
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
 unsigned int PIO::inq_nrecords(const string &name, const string &std_name,
-                               const UnitSystem &unit_system) const {
+                               units::System::Ptr unit_system) const {
   try {
     bool exists = false, found_by_standard_name = false;
     string name_found;
@@ -413,10 +413,10 @@ unsigned int PIO::inq_dimlen(const string &name) const {
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
 AxisType PIO::inq_dimtype(const string &name,
-                          const UnitSystem &unit_system) const {
+                          units::System::Ptr unit_system) const {
   try {
     string axis, standard_name, units;
-    Unit tmp_units(unit_system, "1");
+    units::Unit tmp_units(unit_system, "1");
     bool exists;
 
     m_nc->inq_varid(name, exists);
@@ -431,10 +431,10 @@ AxisType PIO::inq_dimtype(const string &name,
 
     // check if it has units compatible with "seconds":
 
-    tmp_units = Unit(unit_system, units);
+    tmp_units = units::Unit(unit_system, units);
 
-    Unit seconds(unit_system, "seconds");
-    if (UnitConverter::are_convertible(tmp_units, seconds)) {
+    units::Unit seconds(unit_system, "seconds");
+    if (units::are_convertible(tmp_units, seconds)) {
       return T_AXIS;
     }
 
@@ -448,35 +448,36 @@ AxisType PIO::inq_dimtype(const string &name,
     }
 
     // check the axis attribute:
-    if (axis == "T" || axis == "t") {
+    if (axis == "T" or axis == "t") {
       return T_AXIS;
-    } else if (axis == "X" || axis == "x") {
+    } else if (axis == "X" or axis == "x") {
       return X_AXIS;
-    } else if (axis == "Y" || axis == "y") {
+    } else if (axis == "Y" or axis == "y") {
       return Y_AXIS;
-    } else if (axis == "Z" || axis == "z") {
+    } else if (axis == "Z" or axis == "z") {
       return Z_AXIS;
     }
 
     // check the variable name:
-    if (name == "x" || name == "X" ||
-        name.find("x") == 0 || name.find("X") == 0) {
+    if (name == "x" or name == "X" or
+        name.find("x") == 0 or name.find("X") == 0) {
       return X_AXIS;
-    } else if (name == "y" || name == "Y" ||
-               name.find("y") == 0 || name.find("Y") == 0) {
+    } else if (name == "y" or name == "Y" or
+               name.find("y") == 0 or name.find("Y") == 0) {
       return Y_AXIS;
-    } else if (name == "z" || name == "Z" ||
-               name.find("z") == 0 || name.find("Z") == 0) {
+    } else if (name == "z" or name == "Z" or
+               name.find("z") == 0 or name.find("Z") == 0) {
       return Z_AXIS;
-    } else if (name == "t" || name == "T" || name == "time" ||
-               name.find("t") == 0 || name.find("T") == 0) {
+    } else if (name == "t" or name == "T" or name == "time" or
+               name.find("t") == 0 or name.find("T") == 0) {
       return T_AXIS;
     }
 
     // we have no clue:
     return UNKNOWN_AXIS;
   } catch (RuntimeError &e) {
-    e.add_context("getting the type of dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
+    e.add_context("getting the type of dimension '%s' in '%s'",
+                  name.c_str(), inq_filename().c_str());
     throw;
   }
   return UNKNOWN_AXIS;          // will never happen

@@ -505,7 +505,7 @@ public:
  * @param spec1 source unit specification string
  * @param spec2 destination unit specification string 
  */
-void convert_vec(Vec v, const UnitSystem system,
+void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2);
 
 } // end of namespace pism

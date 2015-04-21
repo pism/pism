@@ -37,7 +37,7 @@ IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
 void IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
   verbPrintf(verbthresh, com, 
              "Using purely plastic till with eps = %10.5e m/year.\n",
-             m_unit_system.convert(m_plastic_regularize, "m/s", "m/year"));
+             units::convert(m_unit_system, m_plastic_regularize, "m/s", "m/year"));
 }
 
 
@@ -84,14 +84,14 @@ void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com
   if (m_pseudo_q == 1.0) {
     verbPrintf(verbthresh, com, 
                "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-               m_unit_system.convert(m_pseudo_u_threshold, "m/s", "m/year"));
+               units::convert(m_unit_system, m_pseudo_u_threshold, "m/s", "m/year"));
   } else {
     verbPrintf(verbthresh, com, 
                "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
                " and u_threshold = %.2f m/year.\n", 
-               m_unit_system.convert(m_plastic_regularize, "m/s", "m/year"),
+               units::convert(m_unit_system, m_plastic_regularize, "m/s", "m/year"),
                m_pseudo_q,
-               m_unit_system.convert(m_pseudo_u_threshold, "m/s", "m/year"));
+               units::convert(m_unit_system, m_pseudo_u_threshold, "m/s", "m/year"));
   }
 }
 

@@ -25,6 +25,8 @@
 
 namespace pism {
 
+namespace units {
+
 class ut_system_deleter {
 public:
   void operator()(ut_system* p) const {
@@ -35,7 +37,7 @@ public:
 /** Initialize the unit system by reading from an XML unit
  * definition file.
  */
-UnitSystem::UnitSystem(const std::string &path) {
+System::System(const std::string &path) {
   ut_system *tmp;
 
   ut_set_error_message_handler(ut_ignore);
@@ -52,11 +54,7 @@ UnitSystem::UnitSystem(const std::string &path) {
   }
   ut_set_error_message_handler(ut_write_to_stderr);
 
-  m_system = UnitSystem::Ptr(tmp, ut_system_deleter());
-}
-
-UnitSystem::Ptr UnitSystem::get() const {
-  return m_system;
+  m_system = PISM_SHARED_PTR_NSPACE::shared_ptr<ut_system>(tmp, ut_system_deleter());
 }
 
 //! \brief Convert a quantity from unit1 to unit2.
@@ -65,17 +63,16 @@ UnitSystem::Ptr UnitSystem::get() const {
  *
  * Please avoid using in computationally-intensive code.
  */
-double UnitSystem::convert(double input,
-                           const std::string &spec1,
-                           const std::string &spec2) const {
-  UnitConverter c(Unit(*this, spec1), Unit(*this, spec2));
+double convert(System::Ptr system, double input,
+               const std::string &spec1, const std::string &spec2) {
+  Converter c(Unit(system, spec1), Unit(system, spec2));
 
   return c(input);
 }
 
-Unit::Unit(const UnitSystem &system, const std::string &spec)
+Unit::Unit(System::Ptr system, const std::string &spec)
   : m_unit(NULL), m_system(system) {
-  m_unit = ut_parse(m_system.get().get(), spec.c_str(), UT_ASCII);
+  m_unit = ut_parse(m_system->m_system.get(), spec.c_str(), UT_ASCII);
   if (m_unit == NULL) {
     std::string message = "unit specification '" + spec + "' is unknown or invalid";
     throw RuntimeError(message);
@@ -130,16 +127,16 @@ ut_unit* Unit::get() const {
   return m_unit;
 }
 
-UnitSystem Unit::get_system() const {
+System::Ptr Unit::get_system() const {
   return m_system;
 }
 
-UnitConverter::UnitConverter() {
+Converter::Converter() {
   m_converter = cv_get_trivial();
 }
 
-UnitConverter::UnitConverter(const UnitSystem &sys,
-                             const std::string &spec1, const std::string &spec2) {
+Converter::Converter(System::Ptr sys,
+                     const std::string &spec1, const std::string &spec2) {
 
   Unit u1(sys, spec1), u2(sys, spec2);
 
@@ -154,7 +151,7 @@ UnitConverter::UnitConverter(const UnitSystem &sys,
   }
 }
 
-UnitConverter::UnitConverter(const Unit &u1, const Unit &u2) {
+Converter::Converter(const Unit &u1, const Unit &u2) {
   if (ut_are_convertible(u1.get(), u2.get()) == 0) {
     std::string message = "cannot convert " + u1.format() + " to " + u2.format();
     throw RuntimeError(message);
@@ -167,21 +164,23 @@ UnitConverter::UnitConverter(const Unit &u1, const Unit &u2) {
   }
 }
 
-bool UnitConverter::are_convertible(const Unit &u1, const Unit &u2) {
+bool are_convertible(const Unit &u1, const Unit &u2) {
   return ut_are_convertible(u1.get(), u2.get()) != 0;
 }
 
-UnitConverter::~UnitConverter() {
+Converter::~Converter() {
   cv_free(m_converter);
   m_converter = NULL;
 }
 
-double UnitConverter::operator()(double input) const {
+double Converter::operator()(double input) const {
   return cv_convert_double(m_converter, input);
 }
 
-void UnitConverter::convert_doubles(double *data, size_t length) const {
+void Converter::convert_doubles(double *data, size_t length) const {
   cv_convert_doubles(m_converter, data, length, data);
 }
+
+} // end of namespace units
 
 } // end of namespace pism

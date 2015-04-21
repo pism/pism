@@ -31,7 +31,7 @@
 
 namespace pism {
 
-VariableMetadata::VariableMetadata(const std::string &name, const UnitSystem &system,
+VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr system,
                                    unsigned int ndims)
   : m_n_spatial_dims(ndims),
     m_unit_system(system),
@@ -67,7 +67,7 @@ bool VariableMetadata::get_time_independent() const {
   return m_time_independent;
 }
 
-UnitSystem VariableMetadata::unit_system() const {
+units::System::Ptr VariableMetadata::unit_system() const {
   return m_unit_system;
 }
 
@@ -112,7 +112,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
 }
 
 //! 3D version
-SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name,
+SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
                                                  const std::vector<double> &zlevels)
   : VariableMetadata("unnamed", system),
     m_x("x", system),
@@ -123,7 +123,7 @@ SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const
 }
 
 //! 2D version
-SpatialVariableMetadata::SpatialVariableMetadata(const UnitSystem &system, const std::string &name)
+SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name)
   : VariableMetadata("unnamed", system),
     m_x("x", system),
     m_y("y", system),
@@ -193,8 +193,8 @@ const std::vector<double>& SpatialVariableMetadata::get_levels() const {
 void VariableMetadata::report_range(MPI_Comm com, double min, double max,
                                     bool found_by_standard_name) {
 
-  // UnitConverter constructor will make sure that units are compatible.
-  UnitConverter c(m_unit_system,
+  // units::Converter constructor will make sure that units are compatible.
+  units::Converter c(m_unit_system,
                   this->get_string("units"),
                   this->get_string("glaciological_units"));
   min = c(min);
@@ -334,17 +334,17 @@ void VariableMetadata::set_string(const std::string &name, const std::string &va
 
   if (name == "units") {
     // create a dummy object to validate the units string
-    Unit tmp(m_unit_system, value);
+    units::Unit tmp(m_unit_system, value);
 
     m_strings[name] = value;
     m_strings["glaciological_units"] = value;
   } else if (name == "glaciological_units") {
     m_strings[name] = value;
 
-    Unit internal(m_unit_system, get_string("units")),
+    units::Unit internal(m_unit_system, get_string("units")),
       glaciological(m_unit_system, value);
 
-    if (not UnitConverter::are_convertible(internal, glaciological)) {
+    if (not units::are_convertible(internal, glaciological)) {
       throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
                                     get_string("units").c_str(), value.c_str());
     }
@@ -413,7 +413,7 @@ void VariableMetadata::report_to_stdout(MPI_Comm com, int verbosity_threshold) c
 }
 
 TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                           const UnitSystem &system)
+                           units::System::Ptr system)
   : VariableMetadata(name, system, 0) {
   m_dimension_name = dimension_name;
 }
@@ -430,7 +430,7 @@ std::string TimeseriesMetadata::get_dimension_name() const {
 /// TimeBoundsMetadata
 
 TimeBoundsMetadata::TimeBoundsMetadata(const std::string &var_name, const std::string &dim_name,
-                           const UnitSystem &system)
+                           units::System::Ptr system)
   : TimeseriesMetadata(var_name, dim_name, system) {
   m_bounds_name    = "nv";      // number of vertexes
 }

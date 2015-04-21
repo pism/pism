@@ -27,7 +27,7 @@
 
 namespace pism {
 
-NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, const UnitSystem &system)
+NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, units::System::Ptr system)
   : Config(system),
     m_com(new_com),
     m_data(name, system) {
@@ -190,7 +190,7 @@ void NetCDFConfig::write_impl(const PIO &nc) const {
 DefaultConfig::DefaultConfig(MPI_Comm com,
                                          const std::string &variable_name,
                                          const std::string &option,
-                                         const UnitSystem &system)
+                                         units::System::Ptr system)
   : NetCDFConfig(com, variable_name, system),
     m_option(option) {
   // empty

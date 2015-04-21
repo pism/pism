@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    UnitSystem unit_system;
+    units::System::Ptr unit_system(new units::System);
     DefaultConfig
       config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
       ierr = VecSet(bedstart, 0.0);
       PISM_CHK(ierr, "VecSet");
       
-      const double peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
+      const double peak_up = units::convert(unit_system, 10, "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
       if (do_uplift == true) {
         petsc::VecArray2D upl(uplift, Mx, My);
