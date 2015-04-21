@@ -650,3 +650,25 @@ def linear_interpolation_test(plot=False):
         plt.show()
 
     assert np.max(np.fabs(F_desired - F_interpolated)) < 1e-16
+
+def context_test():
+    "Test creating and using a Context"
+
+    com = PISM.PETSc.COMM_WORLD
+    system = PISM.UnitSystem("")
+    config = PISM.DefaultConfig(com, "pism_config", "-config", system)
+    config.init_with_default()
+
+    EC = PISM.EnthalpyConverter(config)
+
+    time = PISM.Time(com, config, "360_day", system)
+
+    ctx = PISM.cpp.Context(com, system, config, EC, time, "greenland")
+
+    print ctx.com().Get_size()
+    print ctx.config().get_double("standard_gravity")
+    print ctx.enthalpy_converter().L(273.15)
+    print ctx.time().current()
+    print PISM.convert(ctx.unit_system(), 1, "km", "m")
+    print ctx.prefix()
+
