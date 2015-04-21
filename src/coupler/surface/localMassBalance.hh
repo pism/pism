@@ -101,9 +101,9 @@ public:
                     double &cumulative_smb) = 0;
 
 protected:
-  const Config& config;
+  const Config& m_config;
   units::System::Ptr m_unit_system;
-  const double seconds_per_day;
+  const double m_seconds_per_day;
 };
 
 

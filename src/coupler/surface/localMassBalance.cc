@@ -32,18 +32,18 @@ namespace pism {
 namespace surface {
 
 LocalMassBalance::LocalMassBalance(const Config &myconfig)
-  : config(myconfig), m_unit_system(config.unit_system()),
-    seconds_per_day(86400) {
+  : m_config(myconfig), m_unit_system(m_config.unit_system()),
+    m_seconds_per_day(86400) {
   // empty
 }
 
 PDDMassBalance::PDDMassBalance(const Config& myconfig)
   : LocalMassBalance(myconfig) {
-  precip_as_snow     = config.get_boolean("interpret_precip_as_snow");
-  Tmin               = config.get_double("air_temp_all_precip_as_snow");
-  Tmax               = config.get_double("air_temp_all_precip_as_rain");
-  pdd_threshold_temp = config.get_double("pdd_positive_threshold_temp");
-  refreeze_ice_melt  = config.get_boolean("pdd_refreeze_ice_melt");
+  precip_as_snow     = m_config.get_boolean("interpret_precip_as_snow");
+  Tmin               = m_config.get_double("air_temp_all_precip_as_snow");
+  Tmax               = m_config.get_double("air_temp_all_precip_as_rain");
+  pdd_threshold_temp = m_config.get_double("pdd_positive_threshold_temp");
+  refreeze_ice_melt  = m_config.get_boolean("pdd_refreeze_ice_melt");
 }
 
 
@@ -51,7 +51,7 @@ PDDMassBalance::PDDMassBalance(const Config& myconfig)
     precipitation time-series.
  */
 unsigned int PDDMassBalance::get_timeseries_length(double dt) {
-  const unsigned int    NperYear = static_cast<unsigned int>(config.get_double("pdd_max_evals_per_year"));
+  const unsigned int    NperYear = static_cast<unsigned int>(m_config.get_double("pdd_max_evals_per_year"));
   const double dt_years = units::convert(m_unit_system, dt, "seconds", "years");
 
   return std::max(1U, static_cast<unsigned int>(ceil(NperYear * dt_years)));
@@ -99,7 +99,7 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
  */
 void PDDMassBalance::get_PDDs(double *S, double dt_series,
                               double *T, unsigned int N, double *PDDs) {
-  const double h_days = dt_series / seconds_per_day;
+  const double h_days = dt_series / m_seconds_per_day;
 
   for (unsigned int k = 0; k < N; ++k) {
     PDDs[k] = h_days * CalovGreveIntegrand(S[k], T[k] - pdd_threshold_temp);
@@ -253,7 +253,7 @@ PDDrandMassBalance::~PDDrandMassBalance() {
   guarantee that.
  */
 unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
-  return std::max(static_cast<size_t>(ceil(dt / seconds_per_day)), (size_t)2);
+  return std::max(static_cast<size_t>(ceil(dt / m_seconds_per_day)), (size_t)2);
 }
 
 /** 
@@ -270,7 +270,7 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  */
 void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
                                   double *T, unsigned int N, double *PDDs) {
-  const double h_days = dt_series / seconds_per_day;
+  const double h_days = dt_series / m_seconds_per_day;
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
