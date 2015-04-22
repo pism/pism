@@ -61,11 +61,6 @@ int main(int argc, char *argv[]) {
 
     rheology::FlowLaw *flow_law = NULL;
     rheology::FlowLawFactory ice_factory("sia_", config, &EC);
-
-    std::string flow_law_name = ICE_GPBLD;
-    ice_factory.setType(ICE_GPBLD); // set the default type
-
-    ice_factory.setFromOptions();
     flow_law = ice_factory.create();
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C

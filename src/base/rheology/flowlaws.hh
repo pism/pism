@@ -150,8 +150,6 @@ protected:
     m_ideal_gas_constant,
     m_e,                          // flow enhancement factor
     m_n;                          // power law exponent
-
-  std::string m_prefix;           // option (parameter) prefix
 };
 
 // Helper functions:

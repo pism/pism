@@ -20,6 +20,7 @@
 #include <stdexcept>
 
 #include "flowlaw_factory.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMUnits.hh"
@@ -27,34 +28,6 @@
 
 namespace pism {
 namespace rheology {
-
-FlowLawFactory::FlowLawFactory(const std::string &pre,
-                               const Config &conf,
-                               const EnthalpyConverter *my_EC)
-  : config(conf), EC(my_EC) {
-
-  prefix = pre;
-
-  assert(prefix.empty() == false);
-
-  registerAll();
-
-  setType(ICE_PB);    
-}
-
-FlowLawFactory::~FlowLawFactory()
-{
-}
-
-void FlowLawFactory::registerType(const std::string &name, FlowLawCreator icreate)
-{
-  flow_laws[name] = icreate;
-}
-
-void FlowLawFactory::removeType(const std::string &name) {
-  flow_laws.erase(name);
-}
-
 
 FlowLaw* create_isothermal_glen(const std::string &pre,
                                 const Config &config, const EnthalpyConverter *EC) {
@@ -91,63 +64,60 @@ FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
   return new (GoldsbyKohlstedt)(pre, config, EC);
 }
 
-void FlowLawFactory::registerAll()
-{
-  flow_laws.clear();
-  registerType(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
-  registerType(ICE_PB, &create_pb);
-  registerType(ICE_GPBLD, &create_gpbld);
-  registerType(ICE_HOOKE, &create_hooke);
-  registerType(ICE_ARR, &create_arr);
-  registerType(ICE_ARRWARM, &create_arrwarm);
-  registerType(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
+FlowLawFactory::FlowLawFactory(const std::string &prefix,
+                               const Config &conf,
+                               const EnthalpyConverter *my_EC)
+  : m_config(conf), m_EC(my_EC) {
 
+  m_prefix = prefix;
+
+  assert(not prefix.empty());
+
+  m_flow_laws.clear();
+  add_type(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
+  add_type(ICE_PB, &create_pb);
+  add_type(ICE_GPBLD, &create_gpbld);
+  add_type(ICE_HOOKE, &create_hooke);
+  add_type(ICE_ARR, &create_arr);
+  add_type(ICE_ARRWARM, &create_arrwarm);
+  add_type(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
+
+  set_default_type(m_config.get_string(prefix + "flow_law"));
 }
 
-void FlowLawFactory::setType(const std::string &type)
-{
-  FlowLawCreator r = flow_laws[type];
-  if (not r) {
-    throw RuntimeError::formatted("Selected ice type \"%s\" is not available.\n",
-                                  type.c_str());
+FlowLawFactory::~FlowLawFactory() {
+  // empty
+}
+
+void FlowLawFactory::add_type(const std::string &name, FlowLawCreator icreate) {
+  m_flow_laws[name] = icreate;
+}
+
+void FlowLawFactory::remove_type(const std::string &name) {
+  m_flow_laws.erase(name);
+}
+
+void FlowLawFactory::set_default_type(const std::string &type) {
+  if (m_flow_laws[type] == NULL) {
+    throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available"
+                                  " (prefix=\"%s\").",
+                                  type.c_str(), m_prefix.c_str());
   }
 
-  type_name = type;
-
+  m_type_name = type;
 }
 
-void FlowLawFactory::setFromOptions()
-{
-  {
-    // build the list of choices
-    std::map<std::string,FlowLawCreator>::iterator j = flow_laws.begin();
-    std::vector<std::string> choices;
-    while (j != flow_laws.end()) {
-      choices.push_back(j->first);
-      ++j;
-    }
-
-    options::Keyword type("-" + prefix + "flow_law", "flow law type",
-                          join(choices, ","), type_name);
-
-    if (type.is_set()) {
-      setType(type);
-    }
-  }
-}
-
-FlowLaw* FlowLawFactory::create()
-{
-  // find the function that can create selected ice type:
-  FlowLawCreator r = flow_laws[type_name];
+FlowLaw* FlowLawFactory::create() {
+  // find the function that can create selected flow law:
+  FlowLawCreator r = m_flow_laws[m_type_name];
   if (r == NULL) {
-    throw RuntimeError::formatted("Selected ice type %s is not available,\n"
+    throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available,\n"
                                   "but we shouldn't be able to get here anyway",
-                                  type_name.c_str());
+                                  m_type_name.c_str());
   }
 
   // create an FlowLaw instance:
-  return (*r)(prefix, config, EC);
+  return (*r)(m_prefix, m_config, m_EC);
 }
 
 } // end of namespace rheology

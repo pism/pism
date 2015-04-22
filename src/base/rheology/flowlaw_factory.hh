@@ -44,18 +44,15 @@ public:
                  const Config &conf,
                  const EnthalpyConverter *my_EC);
   ~FlowLawFactory();
-  void setType(const std::string &name);
-  void setFromOptions();
-  void registerType(const std::string &name, FlowLawCreator);
-  void removeType(const std::string &name);
+  void set_default_type(const std::string &name);
+  void add_type(const std::string &name, FlowLawCreator);
+  void remove_type(const std::string &name);
   FlowLaw* create();
 private:
-  void registerAll();
-private:
-  std::string type_name, prefix;
-  std::map<std::string, FlowLawCreator> flow_laws;
-  const Config &config;
-  const EnthalpyConverter *EC;
+  std::string m_type_name, m_prefix;
+  std::map<std::string, FlowLawCreator> m_flow_laws;
+  const Config &m_config;
+  const EnthalpyConverter *m_EC;
 };
 
 

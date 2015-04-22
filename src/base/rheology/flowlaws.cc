@@ -57,10 +57,8 @@ bool FlowLawIsPatersonBuddCold(FlowLaw *flow_law, const Config &config,
   return true;
 }
 
-FlowLaw::FlowLaw(const std::string &pre, const Config &config,
+FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
                  const EnthalpyConverter *my_EC) : m_EC(my_EC), m_e(1) {
-
-  m_prefix = pre;
 
   if (m_EC == NULL) {
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
@@ -72,8 +70,8 @@ FlowLaw::FlowLaw(const std::string &pre, const Config &config,
   m_rho                = config.get_double("ice_density");
   m_beta_CC_grad       = config.get_double("beta_CC") * m_rho * m_standard_gravity;
   m_melting_point_temp = config.get_double("water_melting_point_temperature");
-  m_e                  = config.get_double(m_prefix + "enhancement_factor");
-  m_n                  = config.get_double(m_prefix + "Glen_exponent");
+  m_e                  = config.get_double(prefix + "enhancement_factor");
+  m_n                  = config.get_double(prefix + "Glen_exponent");
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
 

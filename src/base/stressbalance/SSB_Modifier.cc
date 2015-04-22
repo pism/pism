@@ -102,9 +102,6 @@ ConstantInColumn::ConstantInColumn(const IceGrid &g, const EnthalpyConverter &e)
 {
   rheology::FlowLawFactory ice_factory("sia_", m_grid.config, &m_EC);
 
-  ice_factory.setType(m_config.get_string("sia_flow_law"));
-
-  ice_factory.setFromOptions();
   m_flow_law = ice_factory.create();
 }
 

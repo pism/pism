@@ -485,6 +485,12 @@ void Config::set_from_options() {
   this->scalar_from_option("sia_n", "sia_Glen_exponent");
   this->scalar_from_option("ssa_n", "ssa_Glen_exponent");
 
+  this->keyword_from_option("sia_flow_law", "sia_flow_law",
+                            "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb");
+
+  this->keyword_from_option("ssa_flow_law", "ssa_flow_law",
+                            "arr,arrwarm,gpbld,hooke,isothermal_glen,pb");
+
   this->scalar_from_option("sia_e", "sia_enhancement_factor");
   this->scalar_from_option("ssa_e", "ssa_enhancement_factor");
 
