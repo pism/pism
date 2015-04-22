@@ -61,11 +61,11 @@ PBLingleClark::~PBLingleClark() {
   }
 }
 
-void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
                                           const IceModelVec2S &bed_uplift,
                                           const IceModelVec2S &ice_thickness) {
   ice_thickness.put_on_proc0(*m_Hstartp0);
-  bed_elevation.put_on_proc0(*m_bedstartp0);
+  bed.put_on_proc0(*m_bedstartp0);
   bed_uplift.put_on_proc0(*m_upliftp0);
 
   ParallelSection rank0(m_grid.com);

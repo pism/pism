@@ -104,16 +104,16 @@ void BedDef::init() {
 }
 
 //! Initialize using provided bed elevation and uplift.
-void BedDef::init(const IceModelVec2S &bed_elevation,
+void BedDef::init(const IceModelVec2S &bed,
                   const IceModelVec2S &bed_uplift,
                   const IceModelVec2S &ice_thickness) {
-  this->init_with_inputs_impl(bed_elevation, bed_uplift, ice_thickness);
+  this->init_with_inputs_impl(bed, bed_uplift, ice_thickness);
 }
 
-void BedDef::init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+void BedDef::init_with_inputs_impl(const IceModelVec2S &bed,
                                    const IceModelVec2S &bed_uplift,
                                    const IceModelVec2S &ice_thickness) {
-  m_topg.copy_from(bed_elevation);
+  m_topg.copy_from(bed);
   m_uplift.copy_from(bed_uplift);
   // suppress a compiler warning:
   (void) ice_thickness;
