@@ -70,7 +70,7 @@ public:
        units::System::Ptr units_system);
   virtual ~Time();
 
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Time> Ptr;
+  typedef PISM_SHARED_PTR(Time) Ptr;
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);

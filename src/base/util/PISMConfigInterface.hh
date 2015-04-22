@@ -35,8 +35,8 @@ class PIO;
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
 public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Config> Ptr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Config> ConstPtr;
+  typedef PISM_SHARED_PTR(Config) Ptr;
+  typedef PISM_SHARED_PTR(const Config) ConstPtr;
 
   Config(units::System::Ptr unit_system);
   virtual ~Config();

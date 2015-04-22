@@ -431,7 +431,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     std::vector<unsigned int> start, count, imap;
 
-    PISM_SHARED_PTR_NSPACE::shared_ptr<LocalInterpCtx> lic(get_interp_context(nc, var_name, grid, zlevels_out));
+    PISM_SHARED_PTR(LocalInterpCtx) lic(get_interp_context(nc, var_name, grid, zlevels_out));
     assert((bool)lic);
 
     double *buffer = &(lic->buffer[0]);
@@ -481,7 +481,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     std::vector<unsigned int> start, count, imap;
 
-    PISM_SHARED_PTR_NSPACE::shared_ptr<LocalInterpCtx> lic(get_interp_context(nc, var_name, grid, zlevels_out));
+    PISM_SHARED_PTR(LocalInterpCtx) lic(get_interp_context(nc, var_name, grid, zlevels_out));
     assert((bool)lic);
 
     double *buffer = &(lic->buffer[0]);

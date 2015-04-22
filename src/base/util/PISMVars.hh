@@ -52,11 +52,11 @@ public:
 
   std::set<std::string> keys() const;
 
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec> VecPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec2S> Vec2SPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec2V> Vec2VPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec2Int> Vec2IntPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec3> Vec3Ptr;
+  typedef PISM_SHARED_PTR(IceModelVec) VecPtr;
+  typedef PISM_SHARED_PTR(IceModelVec2S) Vec2SPtr;
+  typedef PISM_SHARED_PTR(IceModelVec2V) Vec2VPtr;
+  typedef PISM_SHARED_PTR(IceModelVec2Int) Vec2IntPtr;
+  typedef PISM_SHARED_PTR(IceModelVec3) Vec3Ptr;
 
   void add_shared(VecPtr);
   void add_shared(VecPtr, const std::string &name);

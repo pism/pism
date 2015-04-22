@@ -45,7 +45,7 @@ class IP_SSATaucTaoTikhonovProblemLCL;
 class IP_SSATaucTaoTikhonovProblemLCLListener {
 public:
 
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
+  typedef PISM_SHARED_PTR(IP_SSATaucTaoTikhonovProblemLCLListener) Ptr;
 
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;

@@ -39,12 +39,12 @@ class Profiling;
 
 class Context {
 public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<units::System> UnitsSystemPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Config> ConfigPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Config> ConstConfigPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<EnthalpyConverter> EnthalpyConverterPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Time> TimePtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const Time> ConstTimePtr;
+  typedef PISM_SHARED_PTR(units::System) UnitsSystemPtr;
+  typedef PISM_SHARED_PTR(Config) ConfigPtr;
+  typedef PISM_SHARED_PTR(const Config) ConstConfigPtr;
+  typedef PISM_SHARED_PTR(EnthalpyConverter) EnthalpyConverterPtr;
+  typedef PISM_SHARED_PTR(Time) TimePtr;
+  typedef PISM_SHARED_PTR(const Time) ConstTimePtr;
 
   Context(MPI_Comm com,
           UnitsSystemPtr system, ConfigPtr config,
@@ -63,7 +63,7 @@ public:
   TimePtr time();
 private:
   class Impl;
-  PISM_SHARED_PTR_NSPACE::shared_ptr<Impl> m_impl;
+  PISM_SHARED_PTR(Impl) m_impl;
   // disable copying and assignments
   Context(const Context& other);
   Context & operator=(const Context &);

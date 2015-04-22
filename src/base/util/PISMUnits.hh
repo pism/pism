@@ -46,10 +46,10 @@ namespace units {
 class System {
 public:
   System(const std::string &path = "");
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<System> Ptr;
+  typedef PISM_SHARED_PTR(System) Ptr;
 private:
   friend class Unit;
-  PISM_SHARED_PTR_NSPACE::shared_ptr<ut_system> m_system;
+  PISM_SHARED_PTR(ut_system) m_system;
   System(const System &);
   System& operator=(System const &);
 };

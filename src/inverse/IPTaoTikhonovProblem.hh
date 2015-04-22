@@ -46,7 +46,7 @@ template<class ForwardProblem> class IPTaoTikhonovProblem;
  */
 template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
+  typedef PISM_SHARED_PTR(IPTaoTikhonovProblemListener) Ptr;
 
 
   typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;

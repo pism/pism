@@ -40,8 +40,8 @@ public:
   IceModelVec3Custom();
   virtual ~IceModelVec3Custom();
 
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceModelVec3Custom> Ptr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<const IceModelVec3Custom> ConstPtr;
+  typedef PISM_SHARED_PTR(IceModelVec3Custom) Ptr;
+  typedef PISM_SHARED_PTR(const IceModelVec3Custom) ConstPtr;
 
   virtual void create(const IceGrid &mygrid,
                       const std::string &short_name,

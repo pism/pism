@@ -69,8 +69,8 @@ public:
     }
   };
 
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<ModelCreator> ModelCreatorPtr;
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<ModifierCreator> ModifierCreatorPtr;
+  typedef PISM_SHARED_PTR(ModelCreator) ModelCreatorPtr;
+  typedef PISM_SHARED_PTR(ModifierCreator) ModifierCreatorPtr;
 
   PCFactory<Model,Modifier>(const IceGrid &g)
   : m_grid(g) {}

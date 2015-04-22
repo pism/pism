@@ -32,7 +32,7 @@ class TerminationReason {
 public:
   TerminationReason() :m_reason(0) {};
   
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<TerminationReason> Ptr;
+  typedef PISM_SHARED_PTR(TerminationReason) Ptr;
   
   virtual int reason() {
     return m_reason;

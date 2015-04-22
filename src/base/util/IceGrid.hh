@@ -144,7 +144,7 @@ public:
   IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
 
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<IceGrid> Ptr;
+  typedef PISM_SHARED_PTR(IceGrid) Ptr;
 
   static Ptr Shallow(MPI_Comm c, const Config &config,
                      double Lx, double Ly,

@@ -34,4 +34,7 @@
 #define PISM_SHARED_PTR_NSPACE std
 #endif
 
+#define PISM_SHARED_PTR(TYPE) PISM_SHARED_PTR_NSPACE::shared_ptr<TYPE>
+#define PISM_WEAK_PTR(TYPE) PISM_SHARED_PTR_NSPACE::weak_ptr<TYPE>
+
 #endif /* _PISM_MEMORY_H_ */

@@ -28,8 +28,8 @@ namespace petsc {
 template<typename T>
 class Wrapper {
 public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<Wrapper> Ptr;
-  typedef PISM_SHARED_PTR_NSPACE::weak_ptr<Wrapper> WeakPtr;
+  typedef PISM_SHARED_PTR(Wrapper) Ptr;
+  typedef PISM_WEAK_PTR(Wrapper) WeakPtr;
 
   operator T() const {
     return m_value;

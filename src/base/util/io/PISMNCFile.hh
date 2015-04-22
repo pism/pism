@@ -53,7 +53,7 @@ namespace io {
 class NCFile
 {
 public:
-  typedef PISM_SHARED_PTR_NSPACE::shared_ptr<NCFile> Ptr;
+  typedef PISM_SHARED_PTR(NCFile) Ptr;
 
   NCFile(MPI_Comm com);
   virtual ~NCFile();
