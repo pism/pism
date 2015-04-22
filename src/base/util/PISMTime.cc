@@ -34,7 +34,7 @@ namespace pism {
  * "time" variable in the file specified using "-time_file".
  *
  */
-std::string calendar_from_options(MPI_Comm com, const Config& config) {
+std::string calendar_from_options(MPI_Comm com, const Config &config) {
   // Set the default calendar using the config. parameter or the
   // "-calendar" option:
   std::string result = config.get_string("calendar");
@@ -61,9 +61,9 @@ std::string calendar_from_options(MPI_Comm com, const Config& config) {
   return result;
 }
 
-Time::Ptr time_from_options(MPI_Comm com, const Config &config, units::System::Ptr system) {
+Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System::Ptr system) {
   try {
-    std::string calendar = calendar_from_options(com, config);
+    std::string calendar = calendar_from_options(com, *config);
 
     if (calendar == "360_day" or
         calendar == "365_day" or
@@ -98,7 +98,7 @@ double Time::seconds_to_years(double input) {
 
 
 Time::Time(MPI_Comm c,
-           const Config &conf,
+           Config::ConstPtr conf,
            const std::string &calendar_string,
            units::System::Ptr unit_system)
   : m_com(c),
@@ -108,8 +108,8 @@ Time::Time(MPI_Comm c,
 
   init_calendar(calendar_string);
 
-  m_run_start = years_to_seconds(m_config.get_double("start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config.get_double("run_length_years"));
+  m_run_start = years_to_seconds(m_config->get_double("start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -158,7 +158,7 @@ double Time::end() {
 }
 
 std::string Time::CF_units_string() {
-  return "seconds since " + m_config.get_string("reference_date");
+  return "seconds since " + m_config->get_string("reference_date");
 }
 
 //! \brief Returns the calendar string.
@@ -205,20 +205,20 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) {
 }
 
 bool Time::process_ys(double &result) {
-  options::Real ys("-ys", "Start year", m_config.get_double("start_year"));
+  options::Real ys("-ys", "Start year", m_config->get_double("start_year"));
   result = years_to_seconds(ys);
   return ys.is_set();
 }
 
 bool Time::process_y(double &result) {
-  options::Real y("-y", "Run length, in years", m_config.get_double("run_length_years"));
+  options::Real y("-y", "Run length, in years", m_config->get_double("run_length_years"));
   result = years_to_seconds(y);
   return y.is_set();
 }
 
 bool Time::process_ye(double &result) {
   options::Real ye("-ye", "End year",
-                      m_config.get_double("start_year") + m_config.get_double("run_length_years"));
+                      m_config->get_double("start_year") + m_config->get_double("run_length_years"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }
@@ -261,7 +261,7 @@ void Time::init() {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = increment_date(m_run_start, (int)m_config.get_double("run_length_years"));
+    m_run_end = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
   }
 }
 

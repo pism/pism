@@ -22,6 +22,7 @@
 #include "pism_memory.hh"
 #include "pism_const.hh"
 #include "PISMUnits.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 
@@ -65,7 +66,7 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
 class Time
 {
 public:
-  Time(MPI_Comm c, const Config &conf,
+  Time(MPI_Comm c, Config::ConstPtr conf,
        const std::string &calendar,
        units::System::Ptr units_system);
   virtual ~Time();
@@ -187,7 +188,7 @@ protected:
 
 protected:
   MPI_Comm m_com;
-  const Config &m_config;
+  Config::ConstPtr m_config;
   units::System::Ptr m_unit_system;
   units::Unit m_time_units;
   double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
@@ -198,7 +199,7 @@ protected:
 };
 
 //! Create a Time instance by processing command-line options.
-Time::Ptr time_from_options(MPI_Comm com, const Config &config, units::System::Ptr system);
+Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System::Ptr system);
 
 } // end of namespace pism
 

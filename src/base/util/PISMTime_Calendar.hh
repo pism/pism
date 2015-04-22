@@ -27,7 +27,7 @@ namespace pism {
 class Time_Calendar : public Time
 {
 public:
-  Time_Calendar(MPI_Comm c, const Config &conf,
+  Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
                 const std::string &calendar,
                 units::System::Ptr units_system);
   virtual ~Time_Calendar();

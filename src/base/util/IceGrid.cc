@@ -147,7 +147,7 @@ IceGrid::IceGrid(MPI_Comm c, Config::ConstPtr conf)
   m_impl->Nx = 0;
   m_impl->Ny = 0;                  // will be set to a correct value in allocate()
 
-  time = time_from_options(com, *config, config->unit_system());
+  time = time_from_options(com, config, config->unit_system());
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
 

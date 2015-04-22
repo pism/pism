@@ -54,7 +54,7 @@ static inline std::string string_strip(std::string input) {
 
   for more details about supported calendars.
  */
-Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
+Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
                              const std::string &calendar_string,
                              units::System::Ptr units_system)
   : Time(c, conf, calendar_string, units_system) {
@@ -64,7 +64,7 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
     throw RuntimeError::formatted("unsupported calendar: %s", m_calendar_string.c_str());
   }
 
-  std::string ref_date = m_config.get_string("reference_date");
+  std::string ref_date = m_config->get_string("reference_date");
 
   try {
     parse_date(ref_date, NULL);
@@ -80,8 +80,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config.get_double("start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config.get_double("run_length_years"));
+  m_run_start = increment_date(0, (int)m_config->get_double("start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -101,7 +101,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config.get_double("start_year", "years", "seconds");
+    result = m_config->get_double("start_year", "years", "seconds");
   }
   return ys.is_set();
 }
@@ -117,7 +117,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config.get_double("run_length_years", "years", "seconds");
+    result = m_config->get_double("run_length_years", "years", "seconds");
   }
   return y.is_set();
 }
@@ -135,8 +135,8 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config.get_double("start_year", "years", "seconds") +
-              m_config.get_double("run_length_years", "years", "seconds"));
+    result = (m_config->get_double("start_year", "years", "seconds") +
+              m_config->get_double("run_length_years", "years", "seconds"));
   }
   return ye.is_set();
 }
@@ -168,7 +168,7 @@ void Time_Calendar::init() {
 void Time_Calendar::init_from_file(const std::string &filename) {
   std::vector<double> time, time_bounds;
   std::string time_units, time_bounds_name, new_calendar,
-    time_name = m_config.get_string("time_dimension_name");
+    time_name = m_config->get_string("time_dimension_name");
   bool exists;
 
   TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
