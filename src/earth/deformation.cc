@@ -133,6 +133,10 @@ BedDeformLC::BedDeformLC(const Config &config,
       }
     }
   }
+
+  // Limit the amount of time FFTW is allowed to spend choosing algorithms.
+  fftw_set_timelimit(60.0);
+
   m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
                                    FFTW_FORWARD, FFTW_MEASURE);
   m_dft_inverse = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
