@@ -41,13 +41,13 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
   m_upward_flux.write_in_glaciological_units = true;
 
   // build constant diffusivity for heat equation
-  m_bed_rho = m_config.get_double("bedrock_thermal_density");
-  m_bed_c   = m_config.get_double("bedrock_thermal_specific_heat_capacity");
-  m_bed_k   = m_config.get_double("bedrock_thermal_conductivity");
+  m_bed_rho = m_config->get_double("bedrock_thermal_density");
+  m_bed_c   = m_config->get_double("bedrock_thermal_specific_heat_capacity");
+  m_bed_k   = m_config->get_double("bedrock_thermal_conductivity");
   m_bed_D   = m_bed_k / (m_bed_rho * m_bed_c);
 
-  m_Mbz = (int)m_config.get_double("grid_Mbz");
-  m_Lbz = (int)m_config.get_double("grid_Lbz");
+  m_Mbz = (int)m_config->get_double("grid_Mbz");
+  m_Lbz = (int)m_config->get_double("grid_Lbz");
   m_input_file.clear();
 
   // FIXME: Move the code processing command-line options elsewhere,
@@ -78,7 +78,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
       bool exists = nc.inq_var("litho_temp");
 
       if (exists) {
-        grid_info info(nc, "litho_temp", m_config.unit_system(), m_grid.periodicity());
+        grid_info info(nc, "litho_temp", m_config->unit_system(), m_grid.periodicity());
 
         m_Mbz = info.z_len;
         m_Lbz = -info.z_min;
@@ -166,7 +166,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
 
     if (exists) {
       const unsigned int last_record = nc.inq_nrecords("litho_temp", "",
-                                                       m_config.unit_system()) - 1;
+                                                       m_config->unit_system()) - 1;
       m_temp.read(m_input_file, last_record);
     }
 

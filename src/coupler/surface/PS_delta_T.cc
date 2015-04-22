@@ -29,13 +29,13 @@ namespace surface {
 
 Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
   : PScalarForcing<SurfaceModel,SurfaceModifier>(g, in),
-    climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance"),
-    ice_surface_temp(g.config.unit_system(), "ice_surface_temp") {
+    climatic_mass_balance(g.config->unit_system(), "climatic_mass_balance"),
+    ice_surface_temp(g.config->unit_system(), "ice_surface_temp") {
 
   option_prefix = "-surface_delta_T";
   offset_name   = "delta_T";
 
-  offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
+  offset = new Timeseries(&m_grid, offset_name, m_config->get_string("time_dimension_name"));
 
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "ice-surface temperature offsets");
@@ -91,7 +91,7 @@ void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 }
 
 void Delta_T::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);

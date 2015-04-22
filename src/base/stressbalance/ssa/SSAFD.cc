@@ -237,7 +237,7 @@ void SSAFD::init_impl() {
   nuh_viewer_size = viewer_size;
   view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
-  if (m_config.get_boolean("calving_front_stress_boundary_condition")) {
+  if (m_config->get_boolean("calving_front_stress_boundary_condition")) {
     verbPrintf(2,m_grid.com,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
@@ -252,7 +252,7 @@ void SSAFD::init_impl() {
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
 
-  if (m_config.get_boolean("do_fracture_density")) {
+  if (m_config->get_boolean("do_fracture_density")) {
     fracture_density = m_grid.variables().get_2d_scalar("fracture_density");
   }
 }
@@ -284,13 +284,13 @@ void SSAFD::assemble_rhs() {
 
   const double ice_free_default_velocity = 0.0;
 
-  const double standard_gravity = m_config.get_double("standard_gravity"),
-    rho_ocean = m_config.get_double("sea_water_density"),
-    rho_ice = m_config.get_double("ice_density");
-  const bool use_cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
+  const double standard_gravity = m_config->get_double("standard_gravity"),
+    rho_ocean = m_config->get_double("sea_water_density"),
+    rho_ice = m_config->get_double("ice_density");
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = m_config.get_boolean("ssa_dirichlet_bc");
+  bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
 
   m_b.set(0.0);
 
@@ -497,11 +497,11 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
 
   const double   dx=m_grid.dx(), dy=m_grid.dy();
-  const double   beta_ice_free_bedrock = m_config.get_double("beta_ice_free_bedrock");
-  const bool use_cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
+  const double   beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config.get_boolean("ssa_dirichlet_bc");
+  const bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
 
   // shortcut:
   IceModelVec2V &vel = m_velocity;
@@ -519,19 +519,19 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     list.add(*m_bc_mask);
   }
 
-  const bool sub_gl = m_config.get_boolean("sub_groundingline");
+  const bool sub_gl = m_config->get_boolean("sub_groundingline");
   if (sub_gl) {
     list.add(*m_gl_mask);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
-  bool nu_bedrock_set=m_config.get_boolean("nu_bedrock_set");
+  bool nu_bedrock_set=m_config->get_boolean("nu_bedrock_set");
   if (nu_bedrock_set) {
     list.add(*m_thickness);
     list.add(*m_bed);
     list.add(*m_surface);
   }
-  double nu_bedrock=m_config.get_double("nu_bedrock");
+  double nu_bedrock=m_config->get_double("nu_bedrock");
   double HminFrozen=0.0;
 
   /* matrix assembly loop */
@@ -883,16 +883,16 @@ void SSAFD::solve() {
     try {
       if (k == 0) {
         // default strategy
-        picard_iteration(m_config.get_double("epsilon_ssa"), 1.0);
+        picard_iteration(m_config->get_double("epsilon_ssa"), 1.0);
 
         break;
       } else if (k == 1) {
         // try underrelaxing the iteration
-        const double underrelax = m_config.get_double("ssafd_nuH_iter_failure_underrelaxation");
+        const double underrelax = m_config->get_double("ssafd_nuH_iter_failure_underrelaxation");
         verbPrintf(1, m_grid.com,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
-        picard_iteration(m_config.get_double("epsilon_ssa"), underrelax);
+        picard_iteration(m_config->get_double("epsilon_ssa"), underrelax);
 
         break;
       } else if (k == 2) {
@@ -915,8 +915,8 @@ void SSAFD::solve() {
   }
 
   // Post-process velocities if the user asked for it:
-  if (m_config.get_boolean("brutal_sliding")) {
-    const double brutal_sliding_scaleFactor = m_config.get_double("brutal_sliding_scale");
+  if (m_config->get_boolean("brutal_sliding")) {
+    const double brutal_sliding_scaleFactor = m_config->get_double("brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
     m_velocity.update_ghosts();
@@ -968,8 +968,8 @@ void SSAFD::picard_manager(double nuH_regularization,
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  unsigned int max_iterations = static_cast<int>(m_config.get_double("max_iterations_ssafd"));
-  double ssa_relative_tolerance = m_config.get_double("ssafd_relative_convergence");
+  unsigned int max_iterations = static_cast<int>(m_config->get_double("max_iterations_ssafd"));
+  double ssa_relative_tolerance = m_config->get_double("ssafd_relative_convergence");
   char tempstr[100] = "";
   bool verbose = getVerbosityLevel() >= 2,
     very_verbose = getVerbosityLevel() > 2;
@@ -979,7 +979,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
   m_stdout_ssa.clear();
 
-  bool use_cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
+  bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   if (use_cfbc == true) {
     compute_nuH_staggered_cfbc(nuH, nuH_regularization);
@@ -1122,7 +1122,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 void SSAFD::picard_strategy_regularization() {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
-  double nuH_regularization = m_config.get_double("epsilon_ssa");
+  double nuH_regularization = m_config->get_double("epsilon_ssa");
   unsigned int k = 0, max_tries = 5;
 
   if (nuH_regularization <= 0.0) {
@@ -1280,12 +1280,12 @@ void SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 void SSAFD::fracture_induced_softening() {
-  if (m_config.get_boolean("do_fracture_density") == false) {
+  if (m_config->get_boolean("do_fracture_density") == false) {
     return;
   }
 
   const double
-    epsilon = m_config.get_double("fracture_density_softening_lower_limit"),
+    epsilon = m_config->get_double("fracture_density_softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
   IceModelVec::AccessList list;
@@ -1793,8 +1793,8 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "nuH[0]"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "nuH[1]"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "nuH[0]"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "nuH[1]"));
 
   set_attrs("ice thickness times effective viscosity, i-offset", "",
             "Pa s m", "kPa s m", 0);

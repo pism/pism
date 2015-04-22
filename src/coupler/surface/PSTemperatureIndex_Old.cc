@@ -34,14 +34,14 @@ namespace surface {
 
 TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
-    ice_surface_temp(g.config.unit_system(), temperature_name) {
+    ice_surface_temp(g.config->unit_system(), temperature_name) {
   mbscheme = NULL;
   faustogreve = NULL;
-  base_ddf.snow = m_config.get_double("pdd_factor_snow");
-  base_ddf.ice  = m_config.get_double("pdd_factor_ice");
-  base_ddf.refreezeFrac = m_config.get_double("pdd_refreeze");
-  base_pddStdDev = m_config.get_double("pdd_std_dev");
-  base_pddThresholdTemp = m_config.get_double("pdd_positive_threshold_temp");
+  base_ddf.snow = m_config->get_double("pdd_factor_snow");
+  base_ddf.ice  = m_config->get_double("pdd_factor_ice");
+  base_ddf.refreezeFrac = m_config->get_double("pdd_refreeze");
+  base_pddStdDev = m_config->get_double("pdd_std_dev");
+  base_pddThresholdTemp = m_config->get_double("pdd_positive_threshold_temp");
 
   pdd_annualize = false;
 
@@ -213,7 +213,7 @@ void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
 
 void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
-  const double ice_density = m_config.get_double("ice_density");
+  const double ice_density = m_config->get_double("ice_density");
 
   // to ensure that temperature time series are correct:
   m_atmosphere->update(my_t, my_dt);
@@ -251,8 +251,8 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
     faustogreve->update_temp_mj(*usurf, *lat, *lon);
   }
 
-  const PetscScalar sigmalapserate = m_config.get_double("pdd_std_dev_lapse_lat_rate"),
-                    sigmabaselat   = m_config.get_double("pdd_std_dev_lapse_lat_base");
+  const PetscScalar sigmalapserate = m_config->get_double("pdd_std_dev_lapse_lat_rate"),
+                    sigmabaselat   = m_config->get_double("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
     lat = m_grid.variables().get_2d_scalar("latitude");
     list.add(*lat);
@@ -348,7 +348,7 @@ void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &va
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, temperature_name)) {
-    std::string order = m_grid.config.get_string("output_variable_order");
+    std::string order = m_grid.config->get_string("output_variable_order");
     io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 

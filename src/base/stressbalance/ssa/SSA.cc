@@ -81,7 +81,7 @@ SSA::SSA(const IceGrid &g, const EnthalpyConverter &e)
   m_driving_stress_y = NULL;
   m_gl_mask = NULL;
 
-  strength_extension = new SSAStrengthExtension(m_config);
+  strength_extension = new SSAStrengthExtension(*m_config);
 
   m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   m_taud.set_attrs("diagnostic",
@@ -131,7 +131,7 @@ void SSA::init_impl() {
   verbPrintf(2, m_grid.com,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
   
-  if (m_config.get_boolean("sub_groundingline")) {
+  if (m_config->get_boolean("sub_groundingline")) {
     m_gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
   }
 
@@ -178,7 +178,7 @@ void SSA::init_impl() {
     m_velocity.set(0.0); // default initial guess
   }
 
-  if (m_config.get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
     m_bc_mask = m_grid.variables().get_2d_mask("bc_mask");
     m_bc_values = m_grid.variables().get_2d_vector("vel_ssa_bc");
   }
@@ -218,9 +218,9 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   const double minThickEtaTransform = 5.0; // m
   const double dx=m_grid.dx(), dy=m_grid.dy();
 
-  bool cfbc = m_config.get_boolean("calving_front_stress_boundary_condition");
-  bool compute_surf_grad_inward_ssa = m_config.get_boolean("compute_surf_grad_inward_ssa");
-  bool use_eta = (m_config.get_string("surface_gradient_method") == "eta");
+  bool cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  bool compute_surf_grad_inward_ssa = m_config->get_boolean("compute_surf_grad_inward_ssa");
+  bool use_eta = (m_config->get_string("surface_gradient_method") == "eta");
 
   MaskQuery m(*m_mask);
 
@@ -405,8 +405,8 @@ SSA_taud::SSA_taud(SSA *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "taud_x"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "taud_y"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "taud_x"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "taud_y"));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -435,7 +435,7 @@ SSA_taud_mag::SSA_taud_mag(SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "taud_mag"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "taud_mag"));
 
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);

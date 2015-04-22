@@ -46,10 +46,10 @@ void IP_SSATaucTaoTikhonovProblemLCL::construct() {
   PetscErrorCode ierr;
   const IceGrid &grid = *m_d0.get_grid();
 
-  double stressScale = grid.config.get_double("design_param_tauc_scale");
+  double stressScale = grid.config->get_double("design_param_tauc_scale");
   m_constraintsScale = grid.Lx()*grid.Ly()*4*stressScale;
 
-  m_velocityScale = grid.config.get_double("inv_ssa_velocity_scale", "m/year", "m/second");
+  m_velocityScale = grid.config->get_double("inv_ssa_velocity_scale", "m/year", "m/second");
 
 
   int design_stencil_width = m_d0.get_stencil_width();

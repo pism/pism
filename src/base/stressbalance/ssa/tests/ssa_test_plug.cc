@@ -51,7 +51,7 @@ namespace stressbalance {
 
 class SSATestCasePlug: public SSATestCase {
 public:
-  SSATestCasePlug(MPI_Comm com, Config &c, double n)
+  SSATestCasePlug(MPI_Comm com, Config::Ptr c, double n)
     : SSATestCase(com, c) {
     H0 = 2000.; //m
     L=50.e3; // 50km half-width
@@ -97,18 +97,18 @@ void SSATestCasePlug::initializeSSAModel() {
   // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
-  m_enthalpyconverter = new EnthalpyConverter(m_config);
+  m_enthalpyconverter = new EnthalpyConverter(*m_config);
 
   // Use constant hardness
-  m_config.set_string("ssa_flow_law", "isothermal_glen");
-  m_config.set_double("ice_softness", pow(B0, -glen_n));
+  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_double("ice_softness", pow(B0, -glen_n));
 }
 
 void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
-  m_config.set_double("epsilon_ssa", 0.0);
+  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_double("epsilon_ssa", 0.0);
 
   // Ensure we never use the strength extension.
   m_ssa->strength_extension->set_min_thickness(H0/2);
@@ -157,8 +157,8 @@ void SSATestCasePlug::initializeSSACoefficients() {
 void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
                                               double *u, double *v) {
-  double earth_grav = m_config.get_double("standard_gravity"),
-    ice_rho = m_config.get_double("ice_density");
+  double earth_grav = m_config->get_double("standard_gravity"),
+    ice_rho = m_config->get_double("ice_density");
   double f = ice_rho * earth_grav * H0* dhdx;
   double ynd = y/L;
 
@@ -184,12 +184,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     setVerbosityLevel(5);
 

@@ -59,13 +59,13 @@ namespace stressbalance {
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(MPI_Comm com, Config &c, double q):
+  SSATestCaseConst(MPI_Comm com, Config::Ptr c, double q):
     SSATestCase(com, c), basal_q(q)
   {
-    L     = units::convert(c.unit_system(), 50.0, "km", "m"); // 50km half-width
+    L     = units::convert(c->unit_system(), 50.0, "km", "m"); // 50km half-width
     H0    = 500;                        // m
     dhdx  = 0.005;                      // pure number
-    nu0   = units::convert(c.unit_system(), 30.0, "MPa year", "Pa s");
+    nu0   = units::convert(c->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
   };
 
@@ -92,14 +92,14 @@ void SSATestCaseConst::initializeGrid(int Mx,int My) {
 
 
 void SSATestCaseConst::initializeSSAModel() {
-  m_config.set_boolean("do_pseudo_plastic_till", true);
-  m_config.set_double("pseudo_plastic_q", basal_q);
+  m_config->set_boolean("do_pseudo_plastic_till", true);
+  m_config->set_double("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  m_config.set_boolean("do_pseudo_plastic_till", true);
+  m_config->set_boolean("do_pseudo_plastic_till", true);
 
   // The following is irrelevant because we will force linear rheology later.
-  m_enthalpyconverter = new EnthalpyConverter(m_config);
+  m_enthalpyconverter = new EnthalpyConverter(*m_config);
 }
 
 void SSATestCaseConst::initializeSSACoefficients() {
@@ -109,7 +109,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
 
   // Set constant thickness, tauc
   m_bc_mask.set(MASK_GROUNDED);
@@ -153,10 +153,10 @@ void SSATestCaseConst::initializeSSACoefficients() {
 void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                      double /*x*/, double /*y*/,
                                      double *u, double *v) {
-  double earth_grav = m_config.get_double("standard_gravity"),
-    tauc_threshold_velocity = m_config.get_double("pseudo_plastic_uthreshold",
+  double earth_grav = m_config->get_double("standard_gravity"),
+    tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
                                            "m/year", "m/second"),
-    ice_rho = m_config.get_double("ice_density");
+    ice_rho = m_config->get_double("ice_density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
@@ -180,12 +180,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     setVerbosityLevel(5);
 

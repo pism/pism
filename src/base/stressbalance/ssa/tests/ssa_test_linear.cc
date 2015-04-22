@@ -54,12 +54,12 @@ namespace stressbalance {
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(MPI_Comm com, Config &c)
+  SSATestCaseExp(MPI_Comm com, Config::Ptr c)
     : SSATestCase(com, c) {
-    L     = units::convert(c.unit_system(), 50, "km", "m"); // 50km half-width
+    L     = units::convert(c->unit_system(), 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
     dhdx  = 0.005;                    // pure number
-    nu0   = units::convert(c.unit_system(), 30.0, "MPa year", "Pa s");
+    nu0   = units::convert(c->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // 1kPa
   }
 
@@ -87,11 +87,11 @@ void SSATestCaseExp::initializeGrid(int Mx,int My) {
 
 void SSATestCaseExp::initializeSSAModel() {
   // Use a pseudo-plastic law with linear till
-  m_config.set_boolean("do_pseudo_plastic_till", true);
-  m_config.set_double("pseudo_plastic_q", 1.0);
+  m_config->set_boolean("do_pseudo_plastic_till", true);
+  m_config->set_double("pseudo_plastic_q", 1.0);
 
   // The following is irrelevant because we will force linear rheology later.
-  m_enthalpyconverter = new EnthalpyConverter(m_config);
+  m_enthalpyconverter = new EnthalpyConverter(*m_config);
 }
 
 void SSATestCaseExp::initializeSSACoefficients() {
@@ -101,7 +101,7 @@ void SSATestCaseExp::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(4000*10);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
 
   // Set constants for most coefficients.
   m_thickness.set(H0);
@@ -141,7 +141,7 @@ void SSATestCaseExp::initializeSSACoefficients() {
 
 void SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, double x, double /*y*/,
                                    double *u, double *v) {
-  double tauc_threshold_velocity = m_config.get_double("pseudo_plastic_uthreshold",
+  double tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
                                                        "m/year", "m/second");
   double v0 = m_grid->convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
@@ -168,12 +168,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     setVerbosityLevel(5);
 

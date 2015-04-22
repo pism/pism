@@ -53,7 +53,7 @@ namespace stressbalance {
 class SSATestCase
 {
 public:
-  SSATestCase(MPI_Comm com, Config &c);
+  SSATestCase(MPI_Comm com, Config::Ptr c);
 
   virtual ~SSATestCase();
 
@@ -92,7 +92,7 @@ protected:
                      double avg_u,
                      double avg_v);
   MPI_Comm m_com;
-  Config &m_config;
+  Config::Ptr m_config;
   IceGrid::Ptr m_grid;
 
   // SSA model variables.

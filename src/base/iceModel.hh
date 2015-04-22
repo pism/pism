@@ -41,6 +41,7 @@
 // IceModel owns a bunch of fields, so we have to include this.
 #include "base/util/iceModelVec.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/PISMConfig.hh"
 
 namespace pism {
 
@@ -140,7 +141,7 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, DefaultConfig &config, DefaultConfig &overrides);
+  IceModel(IceGrid &g, DefaultConfig::Ptr config, DefaultConfig::Ptr overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -214,8 +215,8 @@ protected:
 
   IceGrid &grid;
 
-  DefaultConfig &config,           //!< configuration flags and parameters
-    &overrides;                 //!< flags and parameters overriding config, see -config_override
+  DefaultConfig::Ptr config,           //!< configuration flags and parameters
+    overrides;                  //!< flags and parameters overriding config, see -config_override
 
   VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters

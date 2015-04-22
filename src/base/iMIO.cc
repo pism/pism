@@ -101,26 +101,26 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
   bool override_used = options::Bool("-config_override", "use configuration overrides");
   if (override_used) {
-    overrides.update_from(config);
-    overrides.write(nc);
+    overrides->update_from(*config);
+    overrides->write(nc);
   }
 
   // write configuration parameters to the file:
-  config.write(nc);
+  config->write(nc);
 }
 
 
 void IceModel::dumpToFile(const std::string &filename) {
-  PIO nc(grid.com, config.get_string("output_format"));
+  PIO nc(grid.com, config->get_string("output_format"));
 
   grid.profiling.begin("model state dump");
 
   // Prepare the file
-  std::string time_name = config.get_string("time_dimension_name");
+  std::string time_name = config->get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
   io::define_time(nc, time_name, grid.time->calendar(),
                   grid.time->CF_units_string(),
-                  config.unit_system());
+                  config->unit_system());
   io::append_time(nc, time_name, grid.time->current());
 
   // Write metadata *before* variables:
@@ -381,14 +381,14 @@ void IceModel::initFromFile(const std::string &filename) {
     }
   }
 
-  if (config.get_boolean("do_energy") && config.get_boolean("do_cold_ice_methods")) {
+  if (config->get_boolean("do_energy") && config->get_boolean("do_cold_ice_methods")) {
     verbPrintf(3, grid.com,
                "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(T3, Enth3);
   }
 
   // check if the input file has Href; set to 0 if it is not present
-  if (config.get_boolean("part_grid")) {
+  if (config->get_boolean("part_grid")) {
     bool href_exists = nc.inq_var("Href");
 
     if (href_exists == true) {
@@ -402,7 +402,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   // read the age field if present, otherwise set to zero
-  if (config.get_boolean("do_age")) {
+  if (config->get_boolean("do_age")) {
     bool age_exists = nc.inq_var("age");
 
     if (age_exists) {
@@ -474,11 +474,11 @@ void IceModel::regrid(int dimensions) {
     // defaults if user gives no regrid_vars list
     regrid_vars->insert("litho_temp");
 
-    if (config.get_boolean("do_age")) {
+    if (config->get_boolean("do_age")) {
       regrid_vars->insert("age");
     }
 
-    if (config.get_boolean("do_cold_ice_methods")) {
+    if (config->get_boolean("do_cold_ice_methods")) {
       regrid_vars->insert("temp");
     } else {
       regrid_vars->insert("enthalpy");
@@ -717,15 +717,15 @@ void IceModel::write_snapshot() {
              filename, grid.time->date().c_str(),
              grid.time->date(saving_after).c_str());
 
-  PIO nc(grid.com, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config->get_string("output_format"));
 
   if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
-    io::define_time(nc, config.get_string("time_dimension_name"),
+    io::define_time(nc, config->get_string("time_dimension_name"),
                 grid.time->calendar(),
                 grid.time->CF_units_string(),
-                config.unit_system());
+                config->unit_system());
 
     write_metadata(nc, true, true);
 
@@ -737,8 +737,8 @@ void IceModel::write_snapshot() {
 
   unsigned int time_length = 0;
 
-  io::append_time(nc, config.get_string("time_dimension_name"), grid.time->current());
-  time_length = nc.inq_dimlen(config.get_string("time_dimension_name"));
+  io::append_time(nc, config->get_string("time_dimension_name"), grid.time->current());
+  time_length = nc.inq_dimlen(config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
 
@@ -767,7 +767,7 @@ void IceModel::write_snapshot() {
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  backup_interval = config.get_double("backup_interval");
+  backup_interval = config->get_double("backup_interval");
 
   options::String backup_file("-o", "Output file name");
   if (backup_file.is_set()) {
@@ -820,15 +820,15 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(grid.com, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config->get_string("output_format"));
 
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);
-  io::define_time(nc, config.get_string("time_dimension_name"),
+  io::define_time(nc, config->get_string("time_dimension_name"),
               grid.time->calendar(),
               grid.time->CF_units_string(),
-              config.unit_system());
-  io::append_time(nc, config.get_string("time_dimension_name"), grid.time->current());
+              config->unit_system());
+  io::append_time(nc, config->get_string("time_dimension_name"), grid.time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);

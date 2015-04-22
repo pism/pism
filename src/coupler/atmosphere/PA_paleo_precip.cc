@@ -27,13 +27,13 @@ namespace atmosphere {
 
 PaleoPrecip::PaleoPrecip(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.config.unit_system(), "air_temp"),
-    precipitation(g.config.unit_system(), "precipitation")
+    air_temp(g.config->unit_system(), "air_temp"),
+    precipitation(g.config->unit_system(), "precipitation")
 {
   offset = NULL;
   option_prefix = "-atmosphere_paleo_precip";
   offset_name = "delta_T";
-  offset = new Timeseries(&m_grid, offset_name, m_config.get_string("time_dimension_name"));
+  offset = new Timeseries(&m_grid, offset_name, m_config->get_string("time_dimension_name"));
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "air temperature offsets");
   offset->dimension_metadata().set_string("units", m_grid.time->units_string());
@@ -47,7 +47,7 @@ PaleoPrecip::PaleoPrecip(const IceGrid &g, AtmosphereModel* in)
   precipitation.set_string("units", "m / s");
   precipitation.set_string("glaciological_units", "m / year");
 
-  m_precipexpfactor = m_config.get_double("precip_exponential_factor_for_temperature");
+  m_precipexpfactor = m_config->get_double("precip_exponential_factor_for_temperature");
 }
 
 PaleoPrecip::~PaleoPrecip()
@@ -110,7 +110,7 @@ void PaleoPrecip::add_vars_to_output_impl(const std::string &keyword, std::set<s
 void PaleoPrecip::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);

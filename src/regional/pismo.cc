@@ -65,7 +65,7 @@ Instead see the ForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, DefaultConfig &c, DefaultConfig &o)
+  IceRegionalModel(IceGrid &g, DefaultConfig::Ptr c, DefaultConfig::Ptr o)
      : IceModel(g,c,o) {};
 protected:
   virtual void set_vars_from_options();
@@ -159,7 +159,7 @@ void IceRegionalModel::createVecs() {
                        "time-independent basal melt rate in the no-model-strip",
                        "m s-1", "");
 
-  if (config.get_boolean("ssa_dirichlet_bc")) {
+  if (config->get_boolean("ssa_dirichlet_bc")) {
     // remove the bc_mask variable from the dictionary
     grid.variables().remove("bc_mask");
 
@@ -201,7 +201,7 @@ void IceRegionalModel::allocate_stressbalance() {
     return;
   }
 
-  std::string model = config.get_string("stress_balance_model");
+  std::string model = config->get_string("stress_balance_model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
@@ -234,11 +234,11 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     return;
   }
 
-  std::string model = config.get_string("stress_balance_model");
+  std::string model = config->get_string("stress_balance_model");
 
   // only these two use the yield stress (so far):
   if (model == "ssa" || model == "ssa+sia") {
-    std::string yield_stress_model = config.get_string("yield_stress_model");
+    std::string yield_stress_model = config->get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
       basal_yield_stress_model = new ConstantYieldStress(grid);
@@ -276,7 +276,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
-  if (config.get_boolean("ssa_dirichlet_bc")) {
+  if (config->get_boolean("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
     nc.open(filename, PISM_READONLY);
@@ -304,7 +304,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   IceModel::initFromFile(filename);
 
-  if (config.get_boolean("ssa_dirichlet_bc")) {
+  if (config->get_boolean("ssa_dirichlet_bc")) {
       vBCvel.metadata().set_string("pism_intent", "model_state");
   }
 
@@ -328,7 +328,7 @@ void IceRegionalModel::set_vars_from_options() {
                        "pismo has no well-defined semantics without it!");
   }
 
-  if (config.get_boolean("do_cold_ice_methods")) {
+  if (config->get_boolean("do_cold_ice_methods")) {
     throw RuntimeError("pismo does not support the 'cold' mode.");
   }
 }
@@ -463,14 +463,13 @@ int main(int argc, char *argv[]) {
     }
 
     units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
-    print_config(3, com, config);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
+      overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
+    overrides->init();
+    config->init_with_default();
+    config->import_from(*overrides);
+    config->set_from_options();
+    print_config(3, com, *config);
 
     // initialize the ice dynamics model
     IceGrid g(com, config);
@@ -485,7 +484,7 @@ int main(int argc, char *argv[]) {
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed_regional.nc");
 
-    print_unused_parameters(3, com, config);
+    print_unused_parameters(3, com, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

@@ -68,10 +68,13 @@ protected:
 class DefaultConfig : public NetCDFConfig {
 public:
   DefaultConfig(MPI_Comm com,
-                      const std::string &variable_name,
-                      const std::string &option,
-                      units::System::Ptr unit_system);
+                const std::string &variable_name,
+                const std::string &option,
+                units::System::Ptr unit_system);
   ~DefaultConfig();
+
+  typedef PISM_SHARED_PTR(DefaultConfig) Ptr;
+  typedef PISM_SHARED_PTR(const DefaultConfig) ConstPtr;
 
   //! Initialize (use default path if no option was set).
   void init_with_default();

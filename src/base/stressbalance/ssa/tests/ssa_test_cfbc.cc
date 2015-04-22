@@ -55,9 +55,9 @@ static double u_exact(double V0, double H0, double C, double x) {
 
 class SSATestCaseCFBC: public SSATestCase {
 public:
-  SSATestCaseCFBC(MPI_Comm com, Config &c)
+  SSATestCaseCFBC(MPI_Comm com, Config::Ptr c)
     : SSATestCase(com, c) {
-    V0 = units::convert(c.unit_system(), 300.0, "m/year", "m/second");
+    V0 = units::convert(c->unit_system(), 300.0, "m/year", "m/second");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
   };
@@ -100,13 +100,13 @@ void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
 
 void SSATestCaseCFBC::initializeSSAModel() {
 
-  m_config.set_double("ice_softness", pow(1.9e8, -m_config.get_double("ssa_Glen_exponent")));
-  m_config.set_boolean("compute_surf_grad_inward_ssa", false);
-  m_config.set_boolean("calving_front_stress_boundary_condition", true);
-  m_config.set_string("ssa_flow_law", "isothermal_glen");
-  m_config.set_string("output_variable_order", "zyx");
+  m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("ssa_Glen_exponent")));
+  m_config->set_boolean("compute_surf_grad_inward_ssa", false);
+  m_config->set_boolean("calving_front_stress_boundary_condition", true);
+  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_string("output_variable_order", "zyx");
 
-  m_enthalpyconverter = new EnthalpyConverter(m_config);
+  m_enthalpyconverter = new EnthalpyConverter(*m_config);
 }
 
 void SSATestCaseCFBC::initializeSSACoefficients() {
@@ -125,8 +125,8 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   list.add(m_bc_values);
   list.add(m_ice_mask);
 
-  double ocean_rho = m_config.get_double("sea_water_density"),
-    ice_rho = m_config.get_double("ice_density");
+  double ocean_rho = m_config->get_double("sea_water_density"),
+    ice_rho = m_config->get_double("ice_density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -199,12 +199,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     setVerbosityLevel(5);
 

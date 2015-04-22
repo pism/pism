@@ -50,8 +50,8 @@ namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, DefaultConfig &conf,
-                           DefaultConfig &conf_overrides, int mytest)
+IceCompModel::IceCompModel(IceGrid &g, DefaultConfig::Ptr conf,
+                           DefaultConfig::Ptr conf_overrides, int mytest)
   : IceModel(g, conf, conf_overrides) {
 
   // note lots of defaults are set by the IceModel constructor
@@ -62,20 +62,20 @@ IceCompModel::IceCompModel(IceGrid &g, DefaultConfig &conf,
   bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
-  config.set_double("sia_enhancement_factor", 1.0);
+  config->set_double("sia_enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  config.set_double("bed_smoother_range", 0.0);
+  config->set_double("bed_smoother_range", 0.0);
 
   // set values of flags in run()
-  config.set_boolean("do_mass_conserve", true);
-  config.set_boolean("include_bmr_in_continuity", false);
+  config->set_boolean("do_mass_conserve", true);
+  config->set_boolean("include_bmr_in_continuity", false);
 
   if (testname == 'V') {
-    config.set_string("ssa_flow_law", "isothermal_glen");
-    config.set_double("ice_softness", pow(1.9e8, -config.get_double("sia_Glen_exponent")));
+    config->set_string("ssa_flow_law", "isothermal_glen");
+    config->set_double("ice_softness", pow(1.9e8, -config->get_double("sia_Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
-    config.set_string("sia_flow_law", "arr");
+    config->set_string("sia_flow_law", "arr");
   }
 }
 
@@ -139,8 +139,8 @@ void IceCompModel::set_grid_defaults() {
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    config.set_double("grid_Mbz", 2);
-    config.set_double("grid_Lbz", 1000);
+    config->set_double("grid_Mbz", 2);
+    config->set_double("grid_Lbz", 1000);
     Lx = 1000e3;
     Ly = Lx;
     Lz = 4000;
@@ -181,49 +181,49 @@ void IceCompModel::setFromOptions() {
   // options should be able to override parameter values set here.
 
   if (testname == 'H') {
-    config.set_string("bed_deformation_model", "iso");
+    config->set_string("bed_deformation_model", "iso");
   } else
-    config.set_string("bed_deformation_model", "none");
+    config->set_string("bed_deformation_model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
-    config.set_boolean("do_energy", true);
+    config->set_boolean("do_energy", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
-    config.set_double("global_min_allowed_temp", 0.0);
-    config.set_double("max_low_temp_count", 1000000);
+    config->set_double("global_min_allowed_temp", 0.0);
+    config->set_double("max_low_temp_count", 1000000);
   } else
-    config.set_boolean("do_energy", false);
+    config->set_boolean("do_energy", false);
 
-  config.set_boolean("is_dry_simulation", true);
+  config->set_boolean("is_dry_simulation", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
-    config.set_boolean("temperature_allow_above_melting", false);
+    config->set_boolean("temperature_allow_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    config.set_boolean("temperature_allow_above_melting", true);
+    config->set_boolean("temperature_allow_above_melting", true);
   }
 
   if (testname == 'V') {
     // no sub-shelf melting
-    config.set_boolean("include_bmr_in_continuity", false);
+    config->set_boolean("include_bmr_in_continuity", false);
 
     // this test is isothermal
-    config.set_boolean("do_energy", false);
+    config->set_boolean("do_energy", false);
 
     // do not use the SIA stress balance
-    config.set_boolean("do_sia", false);
+    config->set_boolean("do_sia", false);
 
     // do use the SSA solver
-    config.set_string("stress_balance_model", "ssa");
+    config->set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
-    config.set_boolean("is_dry_simulation", false);
+    config->set_boolean("is_dry_simulation", false);
 
-    config.set_boolean("ssa_dirichlet_bc", true);
+    config->set_boolean("ssa_dirichlet_bc", true);
   }
 
-  config.set_boolean("do_cold_ice_methods", true);
+  config->set_boolean("do_cold_ice_methods", true);
 
   IceModel::setFromOptions();
 }
@@ -235,7 +235,7 @@ void IceCompModel::allocate_enthalpy_converter() {
   }
 
   // allocate the "special" enthalpy converter;
-  EC = new ColdEnthalpyConverter(config);
+  EC = new ColdEnthalpyConverter(*config);
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {
@@ -250,9 +250,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     if (testname == 'K') {
       verbPrintf(1,grid.com,
                  "setting material properties of bedrock to those of ice in Test K\n");
-      config.set_double("bedrock_thermal_density", config.get_double("ice_density"));
-      config.set_double("bedrock_thermal_conductivity", config.get_double("ice_thermal_conductivity"));
-      config.set_double("bedrock_thermal_specific_heat_capacity", config.get_double("ice_specific_heat_capacity"));
+      config->set_double("bedrock_thermal_density", config->get_double("ice_density"));
+      config->set_double("bedrock_thermal_conductivity", config->get_double("ice_thermal_conductivity"));
+      config->set_double("bedrock_thermal_specific_heat_capacity", config->get_double("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
       verbPrintf(1,grid.com,
@@ -265,9 +265,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    config.set_double("bedrock_thermal_density", config.get_double("ice_density"));
-    config.set_double("bedrock_thermal_conductivity", config.get_double("ice_thermal_conductivity"));
-    config.set_double("bedrock_thermal_specific_heat_capacity", config.get_double("ice_specific_heat_capacity"));
+    config->set_double("bedrock_thermal_density", config->get_double("ice_density"));
+    config->set_double("bedrock_thermal_conductivity", config->get_double("ice_thermal_conductivity"));
+    config->set_double("bedrock_thermal_specific_heat_capacity", config->get_double("ice_specific_heat_capacity"));
   }
 
   btu = new energy::BTU_Verification(grid, testname, bedrock_is_ice_forK);
@@ -282,7 +282,7 @@ void IceCompModel::allocate_stressbalance() {
   }
 
   if (testname == 'E') {
-    config.set_boolean("sia_sliding_verification_mode", true);
+    config->set_boolean("sia_sliding_verification_mode", true);
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC);
     SIAFD *sia = new SIAFD(grid, *EC);
 
@@ -298,7 +298,7 @@ void IceCompModel::allocate_stressbalance() {
 
     rheology::FlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
-    if (FlowLawIsPatersonBuddCold(ice, config, EC) == false) {
+    if (FlowLawIsPatersonBuddCold(ice, *config, EC) == false) {
       verbPrintf(1, grid.com,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
     }
@@ -309,9 +309,9 @@ void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = config.get_double("ice_density") / config.get_double("lithosphere_density");  // for simple isostasy
+  f = config->get_double("ice_density") / config->get_double("lithosphere_density");  // for simple isostasy
 
-  std::string bed_def_model = config.get_string("bed_deformation_model");
+  std::string bed_def_model = config->get_string("bed_deformation_model");
 
   if ((testname == 'H') && bed_def_model != "iso") {
     verbPrintf(1,grid.com,
@@ -380,7 +380,7 @@ void IceCompModel::set_vars_from_options() {
 void IceCompModel::initTestABCDEH() {
   double     A0, T0, H, accum, dummy1, dummy2, dummy3;
 
-  rheology::PatersonBuddCold tgaIce("sia_", config, EC);
+  rheology::PatersonBuddCold tgaIce("sia_", *config, EC);
 
   const double time = grid.time->current();
 
@@ -472,7 +472,7 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  rheology::PatersonBuddCold tgaIce("sia_", config, EC);
+  rheology::PatersonBuddCold tgaIce("sia_", *config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -695,10 +695,10 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   }
 
   double
-    seawater_density = config.get_double("sea_water_density"),
-    ice_density      = config.get_double("ice_density"),
-    Glen_n           = config.get_double("sia_Glen_exponent"),
-    standard_gravity = config.get_double("standard_gravity");
+    seawater_density = config->get_double("sea_water_density"),
+    ice_density      = config->get_double("ice_density"),
+    Glen_n           = config->get_double("sia_Glen_exponent"),
+    standard_gravity = config->get_double("standard_gravity");
 
   // area of grid square in square km:
   const double   a = grid.dx() * grid.dy() * 1e-3 * 1e-3;
@@ -870,7 +870,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
 void IceCompModel::additionalAtStartTimestep() {
 
   if (exactOnly == true && testname != 'K') {
-    dt_force = config.get_double("maximum_time_step_years", "years", "seconds");
+    dt_force = config->get_double("maximum_time_step_years", "years", "seconds");
   }
 
   if (testname == 'F' || testname == 'G') {
@@ -978,7 +978,7 @@ void IceCompModel::reportErrors() {
   rheology::FlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
-      not FlowLawIsPatersonBuddCold(flow_law, config, EC)) {
+      not FlowLawIsPatersonBuddCold(flow_law, *config, EC)) {
     verbPrintf(1, grid.com,
                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                "   for reported errors in test %c to be meaningful!\n",
@@ -989,7 +989,7 @@ void IceCompModel::reportErrors() {
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
-  TimeseriesMetadata err("N", "N", grid.config.unit_system());
+  TimeseriesMetadata err("N", "N", grid.config->unit_system());
 
   err.set_string("units", "1");
 

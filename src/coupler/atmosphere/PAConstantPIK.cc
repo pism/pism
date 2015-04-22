@@ -30,7 +30,7 @@ namespace atmosphere {
 
 PIK::PIK(const IceGrid &g)
   : AtmosphereModel(g),
-    m_air_temp_snapshot(g.config.unit_system(), "air_temp_snapshot") {
+    m_air_temp_snapshot(g.config->unit_system(), "air_temp_snapshot") {
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
@@ -105,7 +105,7 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   if (set_contains(vars, "air_temp_snapshot")) {
-    std::string order = m_grid.config.get_string("output_variable_order");
+    std::string order = m_grid.config->get_string("output_variable_order");
     io::define_spatial_variable(m_air_temp_snapshot, m_grid, nc, nctype, order, false);
   }
 

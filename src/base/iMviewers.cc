@@ -31,7 +31,7 @@
 namespace pism {
 
 void IceModel::view_field(const IceModelVec *field) {
-  unsigned int viewer_size = (unsigned int)config.get_double("viewer_size");
+  unsigned int viewer_size = (unsigned int)config->get_double("viewer_size");
 
   unsigned int dims = field->get_ndims();
 
@@ -108,9 +108,9 @@ void IceModel::update_viewers() {
 //! Initialize run-time diagnostic viewers.
 void IceModel::init_viewers() {
 
-  int viewer_size = (int)config.get_double("viewer_size");
+  int viewer_size = (int)config->get_double("viewer_size");
   options::Integer("-view_size", "specifies desired viewer size", viewer_size);
-  config.set_double("viewer_size", viewer_size);
+  config->set_double("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
   map_viewers = options::StringSet("-view_map", 

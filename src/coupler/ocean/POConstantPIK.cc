@@ -32,8 +32,8 @@ namespace ocean {
 
 PIK::PIK(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.config.unit_system(), "shelfbmassflux"),
-    m_shelfbtemp(g.config.unit_system(), "shelfbtemp")
+    m_shelfbmassflux(g.config->unit_system(), "shelfbmassflux"),
+    m_shelfbtemp(g.config->unit_system(), "shelfbtemp")
 {
   m_shelfbmassflux.set_string("pism_intent", "climate_state");
   m_shelfbmassflux.set_string("long_name",
@@ -46,7 +46,7 @@ PIK::PIK(const IceGrid &g)
                         "absolute temperature at ice shelf base");
   m_shelfbtemp.set_string("units", "Kelvin");
 
-  m_meltfactor = m_config.get_double("ocean_pik_melt_factor");
+  m_meltfactor = m_config->get_double("ocean_pik_melt_factor");
 }
 
 PIK::~PIK() {
@@ -82,10 +82,10 @@ void PIK::sea_level_elevation_impl(double &result) {
 
 void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double
-    T0          = m_config.get_double("water_melting_point_temperature"), // K
-    beta_CC     = m_config.get_double("beta_CC"),
-    g           = m_config.get_double("standard_gravity"),
-    ice_density = m_config.get_double("ice_density");
+    T0          = m_config->get_double("water_melting_point_temperature"), // K
+    beta_CC     = m_config->get_double("beta_CC"),
+    g           = m_config->get_double("standard_gravity"),
+    ice_density = m_config->get_double("ice_density");
 
   const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -106,9 +106,9 @@ void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
  */
 void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   const double
-    L                 = m_config.get_double("water_latent_heat_fusion"),
-    sea_water_density = m_config.get_double("sea_water_density"),
-    ice_density       = m_config.get_double("ice_density"),
+    L                 = m_config->get_double("water_latent_heat_fusion"),
+    sea_water_density = m_config->get_double("sea_water_density"),
+    ice_density       = m_config->get_double("ice_density"),
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
@@ -158,7 +158,7 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) {
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
     io::define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);

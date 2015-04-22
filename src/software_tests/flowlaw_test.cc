@@ -49,15 +49,16 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     units::System::Ptr unit_system(new units::System);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
-    overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
 
-    EnthalpyConverter EC(config);
+    overrides.init();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
+
+    EnthalpyConverter EC(*config);
 
     rheology::FlowLaw *flow_law = NULL;
     rheology::FlowLawFactory ice_factory("sia_", config, &EC);

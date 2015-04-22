@@ -123,7 +123,7 @@ void SSAFD_Regional::init() {
 
   verbPrintf(2,m_grid.com,"  using the regional version of the SSA solver...\n");
 
-  if (m_config.get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
     verbPrintf(2,m_grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 }

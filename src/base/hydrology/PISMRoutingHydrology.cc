@@ -30,7 +30,7 @@ namespace hydrology {
 Routing::Routing(const IceGrid &g)
     : Hydrology(g)
 {
-  m_stripwidth = m_config.get_double("hydrology_null_strip_width");
+  m_stripwidth = m_config->get_double("hydrology_null_strip_width");
 
   // these variables are also set to zero every time init() is called
   m_ice_free_land_loss_cumulative      = 0.0;
@@ -127,7 +127,7 @@ void Routing::init_bwat() {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i file, otherwise with constant value
 
-  const PetscReal bwatdefault = m_config.get_double("bootstrapping_bwat_value_no_var");
+  const PetscReal bwatdefault = m_config->get_double("bootstrapping_bwat_value_no_var");
 
   bool bootstrap = false;
   int start = 0;
@@ -233,7 +233,7 @@ This method does no reporting at stdout; the calling routine can do that.
 void Routing::boundary_mass_changes(IceModelVec2S &newthk,
                                              double &icefreelost, double &oceanlost,
                                              double &negativegain, double &nullstriplost) {
-  double fresh_water_density = m_config.get_double("fresh_water_density");
+  double fresh_water_density = m_config->get_double("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
 
   const IceModelVec2S *cellarea = m_grid.variables().get_2d_scalar("cell_area");
@@ -309,7 +309,7 @@ Calls subglacial_water_pressure() method to get water pressure.
 void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
 
   const double
-    rg = m_config.get_double("fresh_water_density") * m_config.get_double("standard_gravity");
+    rg = m_config->get_double("fresh_water_density") * m_config->get_double("standard_gravity");
 
   const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
@@ -399,10 +399,10 @@ Also returns the maximum over all staggered points of \f$ K W \f$.
 void Routing::conductivity_staggered(IceModelVec2Stag &result,
                                                         double &maxKW) {
   const double
-    k     = m_config.get_double("hydrology_hydraulic_conductivity"),
-    alpha = m_config.get_double("hydrology_thickness_power_in_flux"),
-    beta  = m_config.get_double("hydrology_gradient_power_in_flux"),
-    rg    = m_config.get_double("standard_gravity") * m_config.get_double("fresh_water_density");
+    k     = m_config->get_double("hydrology_hydraulic_conductivity"),
+    alpha = m_config->get_double("hydrology_thickness_power_in_flux"),
+    beta  = m_config->get_double("hydrology_gradient_power_in_flux"),
+    rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water_density");
   if (alpha < 1.0) {
     throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
   }
@@ -475,12 +475,12 @@ At the current state of the code, this is a diagnostic calculation only.
 void Routing::wall_melt(IceModelVec2S &result) {
 
   const double
-    k     = m_config.get_double("hydrology_hydraulic_conductivity"),
-    L     = m_config.get_double("water_latent_heat_fusion"),
-    alpha = m_config.get_double("hydrology_thickness_power_in_flux"),
-    beta  = m_config.get_double("hydrology_gradient_power_in_flux"),
-    rhow  = m_config.get_double("standard_gravity"),
-    g     = m_config.get_double("fresh_water_density"),
+    k     = m_config->get_double("hydrology_hydraulic_conductivity"),
+    L     = m_config->get_double("water_latent_heat_fusion"),
+    alpha = m_config->get_double("hydrology_thickness_power_in_flux"),
+    beta  = m_config->get_double("hydrology_gradient_power_in_flux"),
+    rhow  = m_config->get_double("standard_gravity"),
+    g     = m_config->get_double("fresh_water_density"),
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
@@ -548,7 +548,7 @@ have valid ghosts.
 Calls subglacial_water_pressure() method to get water pressure.
  */
 void Routing::velocity_staggered(IceModelVec2Stag &result) {
-  const double  rg = m_config.get_double("standard_gravity") * m_config.get_double("fresh_water_density");
+  const double  rg = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water_density");
   double dbdx, dbdy, dPdx, dPdy;
 
   subglacial_water_pressure(m_R);  // R=P; yes, it updates ghosts
@@ -621,9 +621,9 @@ void Routing::adaptive_for_W_evolution(double t_current, double t_end, double ma
                                                 double &maxV_result, double &maxD_result,
                                                 double &dtCFL_result, double &dtDIFFW_result) {
   const double
-    dtmax = m_config.get_double("hydrology_maximum_time_step_years",
+    dtmax = m_config->get_double("hydrology_maximum_time_step_years",
                        "years", "seconds"),
-    rg    = m_config.get_double("standard_gravity") * m_config.get_double("fresh_water_density");
+    rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water_density");
 
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
@@ -655,8 +655,8 @@ call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
 void Routing::raw_update_Wtil(double hdt) {
-  const double tillwat_max = m_config.get_double("hydrology_tillwat_max"),
-               C           = m_config.get_double("hydrology_tillwat_decay_rate");
+  const double tillwat_max = m_config->get_double("hydrology_tillwat_max"),
+               C           = m_config->get_double("hydrology_tillwat_decay_rate");
 
   IceModelVec::AccessList list;
   list.add(m_Wtil);
@@ -677,7 +677,7 @@ void Routing::raw_update_W(double hdt) {
   const double
     wux  = 1.0 / (m_grid.dx() * m_grid.dx()),
     wuy  = 1.0 / (m_grid.dy() * m_grid.dy()),
-    rg   = m_config.get_double("standard_gravity") * m_config.get_double("fresh_water_density");
+    rg   = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water_density");
   double divadflux, diffW;
 
   IceModelVec::AccessList list;
@@ -728,7 +728,7 @@ void Routing::update_impl(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
-  if (m_config.get_double("hydrology_tillwat_max") < 0.0) {
+  if (m_config->get_double("hydrology_tillwat_max") < 0.0) {
     throw RuntimeError("hydrology::Routing: hydrology_tillwat_max is negative.\n"
                        "This is not allowed.");
   }
@@ -817,8 +817,8 @@ Routing_bwatvel::Routing_bwatvel(Routing *m)
 
   // set metadata:
   m_dof = 2;
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "bwatvel[0]"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config.unit_system(), "bwatvel[1]"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "bwatvel[0]"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.config->unit_system(), "bwatvel[1]"));
 
   set_attrs("velocity of water in subglacial layer, i-offset", "",
             "m s-1", "m year-1", 0);

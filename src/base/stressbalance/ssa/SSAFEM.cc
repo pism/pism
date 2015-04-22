@@ -40,9 +40,9 @@ SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
   PetscErrorCode ierr;
 
   m_dirichletScale = 1.0;
-  m_ocean_rho = m_config.get_double("sea_water_density");
-  m_earth_grav = m_config.get_double("standard_gravity");
-  m_beta_ice_free_bedrock = m_config.get_double("beta_ice_free_bedrock");
+  m_ocean_rho = m_config->get_double("sea_water_density");
+  m_earth_grav = m_config->get_double("standard_gravity");
+  m_beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid.com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
@@ -172,7 +172,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason() {
 TerminationReason::Ptr SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
-  m_epsilon_ssa = m_config.get_double("epsilon_ssa");
+  m_epsilon_ssa = m_config->get_double("epsilon_ssa");
 
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {
@@ -247,13 +247,13 @@ void SSAFEM::cacheQuadPtValues() {
   double
     *Enth_q[4];
 
-  double ice_density = m_config.get_double("ice_density");
+  double ice_density = m_config->get_double("ice_density");
 
   for (unsigned int q=0; q<Quadrature::Nq; q++) {
     Enth_q[q] = new double[m_grid.Mz()];
   }
 
-  GeometryCalculator gc(sea_level, m_config);
+  GeometryCalculator gc(sea_level, *m_config);
 
   IceModelVec::AccessList list;
   list.add(*m_enthalpy);

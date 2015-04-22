@@ -43,7 +43,7 @@ namespace stressbalance {
 
 class SSATestCaseI: public SSATestCase {
 public:
-  SSATestCaseI(MPI_Comm com, Config &c)
+  SSATestCaseI(MPI_Comm com, Config::Ptr c)
     : SSATestCase(com,c) {
     // empty
   }
@@ -78,12 +78,12 @@ void SSATestCaseI::initializeGrid(int Mx,int My) {
 
 
 void SSATestCaseI::initializeSSAModel() {
-  m_enthalpyconverter = new EnthalpyConverter(m_config);
+  m_enthalpyconverter = new EnthalpyConverter(*m_config);
 
-  m_config.set_boolean("do_pseudo_plastic_till", false);
+  m_config->set_boolean("do_pseudo_plastic_till", false);
 
-  m_config.set_string("ssa_flow_law", "isothermal_glen");
-  m_config.set_double("ice_softness", pow(B_schoof, -m_config.get_double("ssa_Glen_exponent")));
+  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_double("ice_softness", pow(B_schoof, -m_config->get_double("ssa_Glen_exponent")));
 }
 
 void SSATestCaseI::initializeSSACoefficients() {
@@ -94,14 +94,14 @@ void SSATestCaseI::initializeSSACoefficients() {
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config.set_boolean("compute_surf_grad_inward_ssa", true);
-  m_config.set_double("epsilon_ssa", 0.0);  // don't use this lower bound
+  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_double("epsilon_ssa", 0.0);  // don't use this lower bound
 
   IceModelVec::AccessList list;
   list.add(m_tauc);
 
-  double standard_gravity = m_config.get_double("standard_gravity"),
-    ice_rho = m_config.get_double("ice_density");
+  double standard_gravity = m_config->get_double("standard_gravity"),
+    ice_rho = m_config->get_double("ice_density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -171,12 +171,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     setVerbosityLevel(5);
 

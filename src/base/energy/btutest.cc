@@ -80,10 +80,6 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
-      overrides(com, "pism_overrides", "-config_override", unit_system);
 
     verbosityLevelFromOptions();
     verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
@@ -117,17 +113,21 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2,com,
                "btutest tests BedThermalUnit and IceModelVec3BTU\n");
+    units::System::Ptr unit_system(new units::System);
+    DefaultConfig
+      overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
 
     // read the config option database:
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
-    config.set_string("calendar", "none");
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
+    config->set_string("calendar", "none");
 
     // when IceGrid constructor is called, these settings are used
-    config.set_double("start_year", 0.0);
-    config.set_double("run_length_years", 1.0);
+    config->set_double("start_year", 0.0);
+    config->set_double("run_length_years", 1.0);
 
     // create grid and set defaults
     IceGrid grid(com, config);
@@ -139,8 +139,8 @@ int main(int argc, char *argv[]) {
       My = Mx;
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
-    config.set_double("grid_Mbz", 11);
-    config.set_double("grid_Lbz", 1000);
+    config->set_double("grid_Mbz", 11);
+    config->set_double("grid_Lbz", 1000);
 
     verbPrintf(2,com,
                "  initializing IceGrid from options ...\n");
@@ -256,9 +256,9 @@ int main(int argc, char *argv[]) {
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid.com, grid.config.get_string("output_format"));
+    PIO pio(grid.com, grid.config->get_string("output_format"));
 
-    std::string time_name = config.get_string("time_dimension_name");
+    std::string time_name = config->get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
     io::define_time(pio, time_name, grid.time->calendar(),
                     grid.time->CF_units_string(), unit_system);

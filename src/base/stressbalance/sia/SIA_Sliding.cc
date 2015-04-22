@@ -33,7 +33,7 @@ SIA_Sliding::SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e)
   m_verification_mode = false;
   m_eisII_experiment = "";
 
-  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
@@ -63,11 +63,11 @@ void SIA_Sliding::init_impl() {
 
   ShallowStressBalance::init_impl();
 
-  m_standard_gravity  = m_config.get_double("standard_gravity");
-  m_verification_mode = m_config.get_boolean("sia_sliding_verification_mode");
+  m_standard_gravity  = m_config->get_double("standard_gravity");
+  m_verification_mode = m_config->get_boolean("sia_sliding_verification_mode");
 
-  if (m_config.is_set("EISMINT_II_experiment")) {
-    m_eisII_experiment = m_config.get_string("EISMINT_II_experiment");
+  if (m_config->is_set("EISMINT_II_experiment")) {
+    m_eisII_experiment = m_config->get_string("EISMINT_II_experiment");
   }
 }
 
@@ -111,9 +111,9 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
 
   compute_surface_gradient(h_x, h_y);
 
-  double mu_sliding = m_config.get_double("mu_sliding"),
-    minimum_temperature_for_sliding = m_config.get_double("minimum_temperature_for_sliding"),
-    ice_rho = m_config.get_double("ice_density");
+  double mu_sliding = m_config->get_double("mu_sliding"),
+    minimum_temperature_for_sliding = m_config->get_double("minimum_temperature_for_sliding"),
+    ice_rho = m_config->get_double("ice_density");
 
   const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
 
@@ -210,8 +210,8 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
                                           double H, double T,
                                           double /*alpha*/, double mu,
                                           double min_T) const {
-  double ice_rho = m_config.get_double("ice_density"),
-    beta_CC_grad = m_config.get_double("beta_CC") * ice_rho * m_config.get_double("standard_gravity"),
+  double ice_rho = m_config->get_double("ice_density"),
+    beta_CC_grad = m_config->get_double("beta_CC") * ice_rho * m_config->get_double("standard_gravity"),
     secpera = m_grid.convert(1.0, "year", "seconds");
 
   if (m_verification_mode) {
@@ -268,7 +268,7 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
 
 void SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  const std::string method = m_config.get_string("surface_gradient_method");
+  const std::string method = m_config->get_string("surface_gradient_method");
 
   if (method == "eta") {
 

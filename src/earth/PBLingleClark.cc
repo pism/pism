@@ -37,14 +37,14 @@ PBLingleClark::PBLingleClark(const IceGrid &g)
   m_bedstartp0 = m_topg_initial.allocate_proc0_copy();
   m_upliftp0   = m_topg_initial.allocate_proc0_copy();
 
-  bool use_elastic_model = m_config.get_boolean("bed_def_lc_elastic_model");
+  bool use_elastic_model = m_config->get_boolean("bed_def_lc_elastic_model");
 
   m_bdLC = NULL;
 
   ParallelSection rank0(m_grid.com);
   try {
     if (m_grid.rank() == 0) {
-      m_bdLC = new BedDeformLC(m_config, use_elastic_model,
+      m_bdLC = new BedDeformLC(*m_config, use_elastic_model,
                                m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
                                4,     // use Z = 4 for now; to reduce global drift?
                                *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
@@ -149,7 +149,7 @@ void PBLingleClark::correct_topg() {
              input_file->c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
   topg_tmp.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                      "m", "bedrock_altitude");
@@ -189,7 +189,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config.get_double("bed_def_interval_years", "years", "seconds") &&
+  if ((dt_beddef < m_config->get_double("bed_def_interval_years", "years", "seconds") &&
        t_final < m_grid.time->end()) ||
       dt_beddef < 1e-12) {
     return;

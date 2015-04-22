@@ -45,7 +45,7 @@ namespace stressbalance {
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(MPI_Comm com, Config &c)
+  SSATestCaseJ(MPI_Comm com, Config::Ptr c)
     : SSATestCase(com, c) {
     // empty
   }
@@ -71,10 +71,10 @@ void SSATestCaseJ::initializeGrid(int Mx,int My) {
 }
 
 void SSATestCaseJ::initializeSSAModel() {
-  m_config.set_boolean("do_pseudo_plastic_till", false);
+  m_config->set_boolean("do_pseudo_plastic_till", false);
 
-  m_enthalpyconverter = new EnthalpyConverter(m_config);
-  m_config.set_string("ssa_flow_law", "isothermal_glen");
+  m_enthalpyconverter = new EnthalpyConverter(*m_config);
+  m_config->set_string("ssa_flow_law", "isothermal_glen");
 }
 
 void SSATestCaseJ::initializeSSACoefficients() {
@@ -86,8 +86,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
-  double ocean_rho = m_config.get_double("sea_water_density"),
-    ice_rho = m_config.get_double("ice_density");
+  double ocean_rho = m_config->get_double("sea_water_density"),
+    ice_rho = m_config->get_double("ice_density");
   const double nu0 = m_grid->convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
@@ -159,12 +159,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     setVerbosityLevel(5);
 

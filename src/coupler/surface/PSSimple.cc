@@ -32,8 +32,8 @@ namespace surface {
 ///// Simple PISM surface model.
 Simple::Simple(const IceGrid &g)
   : SurfaceModel(g),
-    climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance"),
-    ice_surface_temp(g.config.unit_system(), "ice_surface_temp") {
+    climatic_mass_balance(g.config->unit_system(), "climatic_mass_balance"),
+    ice_surface_temp(g.config->unit_system(), "ice_surface_temp") {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
@@ -80,7 +80,7 @@ void Simple::update_impl(double my_t, double my_dt) {
 
 void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_atmosphere->mean_precipitation(result);
-  result.scale(m_config.get_double("ice_density"));
+  result.scale(m_config->get_double("ice_density"));
 }
 
 void Simple::ice_surface_temperature_impl(IceModelVec2S &result) {
@@ -97,7 +97,7 @@ void Simple::add_vars_to_output_impl(const std::string &keyword, std::set<std::s
 }
 
 void Simple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);

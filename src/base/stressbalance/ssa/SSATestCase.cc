@@ -33,7 +33,7 @@ namespace stressbalance {
 void SSATestCase::buildSSACoefficients()
 {
 
-  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   // ice surface elevation
   m_surface.create(*m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -79,15 +79,15 @@ void SSATestCase::buildSSACoefficients()
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(0).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
   m_bc_values.metadata(0).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
-  m_bc_values.metadata(0).set_double("_FillValue", m_config.get_double("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(0).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(1).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
   m_bc_values.metadata(1).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
-  m_bc_values.metadata(1).set_double("_FillValue", m_config.get_double("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(1).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
 
   m_bc_values.write_in_glaciological_units = true;
-  m_bc_values.set(m_config.get_double("fill_value", "m/year", "m/s"));
+  m_bc_values.set(m_config->get_double("fill_value", "m/year", "m/s"));
 
   // grounded_dragging_floating integer mask
   m_ice_mask.create(*m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
@@ -124,7 +124,7 @@ void SSATestCase::buildSSACoefficients()
   m_melange_back_pressure.set(0.0);
 }
 
-SSATestCase::SSATestCase(MPI_Comm com, Config &c)
+SSATestCase::SSATestCase(MPI_Comm com, Config::Ptr c)
   : m_com(com), m_config(c), m_enthalpyconverter(NULL), m_ssa(NULL)
 {
   // empty
@@ -176,8 +176,8 @@ void SSATestCase::report(const std::string &testname) {
   double gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
-  if (m_config.get_boolean("do_pseudo_plastic_till") &&
-      m_config.get_double("pseudo_plastic_q") != 1.0) {
+  if (m_config->get_boolean("do_pseudo_plastic_till") &&
+      m_config->get_double("pseudo_plastic_q") != 1.0) {
     verbPrintf(1,m_grid->com,
                "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
@@ -255,9 +255,9 @@ void SSATestCase::report_netcdf(const std::string &testname,
                                 double max_v,
                                 double avg_u,
                                 double avg_v) {
-  TimeseriesMetadata err("N", "N", m_grid->config.unit_system());
+  TimeseriesMetadata err("N", "N", m_grid->config->unit_system());
   unsigned int start;
-  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->config.unit_system());
+  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->config->unit_system());
 
   options::String filename("-report_file", "NetCDF error report file");
 
@@ -349,13 +349,13 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->config.get_string("output_format"));
+  PIO pio(m_grid->com, m_grid->config->get_string("output_format"));
   pio.open(filename, PISM_READWRITE_MOVE);
-  io::define_time(pio, m_config.get_string("time_dimension_name"),
+  io::define_time(pio, m_config->get_string("time_dimension_name"),
                   m_grid->time->calendar(),
                   m_grid->time->CF_units_string(),
-                  m_config.unit_system());
-  io::append_time(pio, m_config.get_string("time_dimension_name"), 0.0);
+                  m_config->unit_system());
+  io::append_time(pio, m_config->get_string("time_dimension_name"), 0.0);
 
   m_surface.write(pio);
   m_thickness.write(pio);

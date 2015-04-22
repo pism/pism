@@ -96,7 +96,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
 
   double result = -1.0;  // result value if not do_age
 
-  if (not config.get_boolean("do_age")) {
+  if (not config->get_boolean("do_age")) {
     return result;  // leave now
   }
 
@@ -225,11 +225,11 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = config.get_boolean("do_energy");
-  const int log10scalevol  = static_cast<int>(config.get_double("summary_vol_scale_factor_log10")),
-            log10scalearea = static_cast<int>(config.get_double("summary_area_scale_factor_log10"));
-  const std::string tunitstr = config.get_string("summary_time_unit_name");
-  const bool use_calendar = config.get_boolean("summary_time_use_calendar");
+  const bool do_energy = config->get_boolean("do_energy");
+  const int log10scalevol  = static_cast<int>(config->get_double("summary_vol_scale_factor_log10")),
+            log10scalearea = static_cast<int>(config->get_double("summary_area_scale_factor_log10"));
+  const std::string tunitstr = config->get_string("summary_time_unit_name");
+  const bool use_calendar = config->get_boolean("summary_time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
@@ -323,7 +323,7 @@ double IceModel::compute_ice_volume() {
   }
 
   // Add the volume of the ice in Href:
-  if (config.get_boolean("part_grid")) {
+  if (config->get_boolean("part_grid")) {
     list.add(vHref);
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -339,8 +339,8 @@ double IceModel::compute_ice_volume() {
 double IceModel::compute_sealevel_volume() {
   double volume = 0.0;
   MaskQuery mask(vMask);
-  double ocean_rho = config.get_double("sea_water_density");
-  double ice_rho = config.get_double("ice_density");
+  double ocean_rho = config->get_double("sea_water_density");
+  double ice_rho = config->get_double("ice_density");
 
   assert (ocean != NULL);
   double sea_level = ocean->sea_level_elevation();
@@ -620,7 +620,7 @@ double IceModel::compute_ice_enthalpy() {
   loop.check();
 
   // FIXME: use cell_area.
-  enthalpy_sum *= config.get_double("ice_density") * (grid.dx() * grid.dy());
+  enthalpy_sum *= config->get_double("ice_density") * (grid.dx() * grid.dy());
 
   return GlobalSum(grid.com, enthalpy_sum);
 }

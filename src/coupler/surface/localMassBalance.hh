@@ -66,7 +66,7 @@ public:
       refreezeFrac;  //!< fraction of melted snow which refreezes as ice
   };
 
-  LocalMassBalance(const Config &myconfig);
+  LocalMassBalance(Config::ConstPtr myconfig);
   virtual ~LocalMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt) = 0;
@@ -101,7 +101,7 @@ public:
                     double &cumulative_smb) = 0;
 
 protected:
-  const Config& m_config;
+  Config::ConstPtr m_config;
   units::System::Ptr m_unit_system;
   const double m_seconds_per_day;
 };
@@ -116,7 +116,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(const Config& myconfig);
+  PDDMassBalance(Config::ConstPtr myconfig);
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -160,7 +160,7 @@ protected:
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(const Config& myconfig,
+  PDDrandMassBalance(Config::ConstPtr myconfig,
                      bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
@@ -205,7 +205,7 @@ public:
 
 protected:
   const IceGrid &m_grid;
-  const Config &m_config;
+  Config::ConstPtr m_config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
   IceModelVec2S m_temp_mj;

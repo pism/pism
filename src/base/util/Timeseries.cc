@@ -32,9 +32,9 @@
 namespace pism {
 
 Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
-  : m_dimension(dimension_name, dimension_name, g->config.unit_system()),
-    m_variable(name, dimension_name, g->config.unit_system()),
-    m_bounds(dimension_name + "_bounds", dimension_name, g->config.unit_system())
+  : m_dimension(dimension_name, dimension_name, g->config->unit_system()),
+    m_variable(name, dimension_name, g->config->unit_system()),
+    m_bounds(dimension_name + "_bounds", dimension_name, g->config->unit_system())
 {
   private_constructor(g->com, name, dimension_name);
 }
@@ -303,7 +303,7 @@ int Timeseries::length() {
 DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
   : Timeseries(g, name, dimension_name) {
 
-  buffer_size = (size_t)g->config.get_double("timeseries_buffer_size");
+  buffer_size = (size_t)g->config->get_double("timeseries_buffer_size");
   m_start = 0;
   rate_of_change = false;
   m_dimension.set_string("calendar", g->time->calendar());

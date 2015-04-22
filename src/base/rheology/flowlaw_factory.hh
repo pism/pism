@@ -23,6 +23,7 @@
 #include <string>
 
 #include "flowlaws.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace rheology {
@@ -41,7 +42,7 @@ typedef FlowLaw*(*FlowLawCreator)(const std::string &,
 class FlowLawFactory {
 public:
   FlowLawFactory(const std::string &prefix,
-                 const Config &conf,
+                 Config::ConstPtr conf,
                  const EnthalpyConverter *my_EC);
   ~FlowLawFactory();
   void set_default_type(const std::string &name);
@@ -51,7 +52,7 @@ public:
 private:
   std::string m_type_name, m_prefix;
   std::map<std::string, FlowLawCreator> m_flow_laws;
-  const Config &m_config;
+  Config::ConstPtr m_config;
   const EnthalpyConverter *m_EC;
 };
 

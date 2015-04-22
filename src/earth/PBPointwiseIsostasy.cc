@@ -27,7 +27,7 @@ namespace bed {
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(const IceGrid &g)
   : BedDef(g) {
-  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config.get_double("grid_max_stencil_width"));
+  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
 }
 
 PBPointwiseIsostasy::~PBPointwiseIsostasy() {
@@ -65,7 +65,7 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config.get_double("bed_def_interval_years", "years", "seconds") &&
+  if ((dt_beddef < m_config->get_double("bed_def_interval_years", "years", "seconds") &&
        t_final < m_grid.time->end()) ||
       dt_beddef < 1e-12) {
     return;
@@ -73,8 +73,8 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
 
   m_t_beddef_last = t_final;
 
-  const double lithosphere_density = m_config.get_double("lithosphere_density"),
-    ice_density = m_config.get_double("ice_density"),
+  const double lithosphere_density = m_config->get_double("lithosphere_density"),
+    ice_density = m_config->get_double("ice_density"),
     f = ice_density / lithosphere_density;
 
   //! Our goal: topg = topg_last - f*(thk - thk_last)

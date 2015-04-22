@@ -179,7 +179,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
   m_theta_ocean->average(m_t, m_dt);
   m_salinity_ocean->average(m_t, m_dt);
 
-  Constants c(m_config);
+  Constants c(*m_config);
 
   const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -212,7 +212,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  m_shelfbmassflux.scale(m_config.get_double("ice_density"));
+  m_shelfbmassflux.scale(m_config->get_double("ice_density"));
 }
 
 

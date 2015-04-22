@@ -30,10 +30,10 @@
 namespace pism {
 namespace surface {
 
-PDDMassBalance_Old::PDDMassBalance_Old(const Config& myconfig) : LocalMassBalance_Old(myconfig) {
-  precip_as_snow = config.get_boolean("interpret_precip_as_snow");
-  Tmin = config.get_double("air_temp_all_precip_as_snow");
-  Tmax = config.get_double("air_temp_all_precip_as_rain");
+PDDMassBalance_Old::PDDMassBalance_Old(Config::ConstPtr  myconfig) : LocalMassBalance_Old(myconfig) {
+  precip_as_snow = config->get_boolean("interpret_precip_as_snow");
+  Tmin = config->get_double("air_temp_all_precip_as_snow");
+  Tmax = config->get_double("air_temp_all_precip_as_rain");
 
   secpera = 3.15569259747e7;
 }
@@ -45,7 +45,7 @@ PDDMassBalance_Old::PDDMassBalance_Old(const Config& myconfig) : LocalMassBalanc
 */
 void PDDMassBalance_Old::getNForTemperatureSeries(double /* t */,
                                                   double dt, int &N) {
-  int    NperYear = static_cast<int>(config.get_double("pdd_max_evals_per_year"));
+  int    NperYear = static_cast<int>(config->get_double("pdd_max_evals_per_year"));
   double dt_years = dt / secpera;
   N = (int) ceil((NperYear - 1) * (dt_years) + 1);
   if (N < 3) {
@@ -258,7 +258,7 @@ void PDDMassBalance_Old::getMassFluxesFromPDDs(const LocalMassBalance_Old::Degre
   which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
   wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
 */
-PDDrandMassBalance_Old::PDDrandMassBalance_Old(const Config& myconfig, bool repeatable)
+PDDrandMassBalance_Old::PDDrandMassBalance_Old(Config::ConstPtr  myconfig, bool repeatable)
   : PDDMassBalance_Old(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
   gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
@@ -313,17 +313,17 @@ double PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(double pddStdD
 FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(const IceGrid &g)
   : grid(g), config(g.config) {
 
-  beta_ice_w = config.get_double("pdd_fausto_beta_ice_w");
-  beta_snow_w = config.get_double("pdd_fausto_beta_snow_w");
+  beta_ice_w = config->get_double("pdd_fausto_beta_ice_w");
+  beta_snow_w = config->get_double("pdd_fausto_beta_snow_w");
 
-  T_c = config.get_double("pdd_fausto_T_c");
-  T_w = config.get_double("pdd_fausto_T_w");
-  beta_ice_c = config.get_double("pdd_fausto_beta_ice_c");
-  beta_snow_c = config.get_double("pdd_fausto_beta_snow_c");
+  T_c = config->get_double("pdd_fausto_T_c");
+  T_w = config->get_double("pdd_fausto_T_w");
+  beta_ice_c = config->get_double("pdd_fausto_beta_ice_c");
+  beta_snow_c = config->get_double("pdd_fausto_beta_snow_c");
 
-  fresh_water_density = config.get_double("fresh_water_density");
-  ice_density = config.get_double("ice_density");
-  pdd_fausto_latitude_beta_w = config.get_double("pdd_fausto_latitude_beta_w");
+  fresh_water_density = config->get_double("fresh_water_density");
+  ice_density = config->get_double("ice_density");
+  pdd_fausto_latitude_beta_w = config->get_double("pdd_fausto_latitude_beta_w");
 
   temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   temp_mj.set_attrs("internal",
@@ -377,10 +377,10 @@ void FaustoGrevePDDObject_Old::update_temp_mj(const IceModelVec2S &surfelev,
                                               const IceModelVec2S &lon) {
 
   const double
-    d_mj     = config.get_double("snow_temp_fausto_d_mj"),      // K
-    gamma_mj = config.get_double("snow_temp_fausto_gamma_mj"),  // K m-1
-    c_mj     = config.get_double("snow_temp_fausto_c_mj"),      // K (degN)-1
-    kappa_mj = config.get_double("snow_temp_fausto_kappa_mj");  // K (degW)-1
+    d_mj     = config->get_double("snow_temp_fausto_d_mj"),      // K
+    gamma_mj = config->get_double("snow_temp_fausto_gamma_mj"),  // K m-1
+    c_mj     = config->get_double("snow_temp_fausto_c_mj"),      // K (degN)-1
+    kappa_mj = config->get_double("snow_temp_fausto_kappa_mj");  // K (degW)-1
   
   IceModelVec::AccessList list;
   list.add(surfelev);

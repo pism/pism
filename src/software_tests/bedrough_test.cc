@@ -47,12 +47,12 @@ int main(int argc, char *argv[]) {
   try {
     units::System::Ptr unit_system(new units::System);
     DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
       overrides(com, "pism_overrides", "-config_override", unit_system);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
     overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    config->init_with_default();
+    config->import_from(overrides);
+    config->set_from_options();
 
     double Lx = 1200e3;
     IceGrid grid(com, config);
@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
     usurf.set(1000.0);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
-    config.set_double("Glen_exponent", 3.0);
-    config.set_double("bed_smoother_range", 50.0e3);
+    config->set_double("Glen_exponent", 3.0);
+    config->set_double("bed_smoother_range", 50.0e3);
     stressbalance::BedSmoother smoother(grid, 1);
     smoother.preprocess_bed(topg);
     int Nx,Ny;

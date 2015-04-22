@@ -63,16 +63,15 @@ int main(int argc, char *argv[]) {
     }
 
     units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
-    print_config(3, com, config);
+    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
+      overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
+    overrides->init();
+    config->init_with_default();
+    config->import_from(*overrides);
+    config->set_from_options();
+    print_config(3, com, *config);
 
-    config.set_string("calendar", "none");
+    config->set_string("calendar", "none");
 
     IceGrid g(com, config);
     IceEISModel m(g, config, overrides);
@@ -86,7 +85,7 @@ int main(int argc, char *argv[]) {
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed.nc");
 
-    print_unused_parameters(3, com, config);
+    print_unused_parameters(3, com, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

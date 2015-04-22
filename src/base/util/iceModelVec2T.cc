@@ -133,7 +133,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   for (unsigned int i = 0; i < dims.size(); ++i) {
     dimname = dims[i];
 
-    AxisType dimtype = nc.inq_dimtype(dimname, m_grid->config.unit_system());
+    AxisType dimtype = nc.inq_dimtype(dimname, m_grid->config->unit_system());
 
     if (dimtype == T_AXIS) {
       time_found = true;
@@ -143,7 +143,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   if (time_found) {
     // we're found the time dimension
-    TimeseriesMetadata time_dimension(dimname, dimname, m_grid->config.unit_system());
+    TimeseriesMetadata time_dimension(dimname, dimname, m_grid->config->unit_system());
 
     time_dimension.set_string("units", m_grid->time->units_string());
     io::read_timeseries(m_grid->com, nc, time_dimension, m_grid->time.get(), time);
@@ -153,7 +153,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     if (time.size() > 1) {
       if (bounds_name.empty() == false) {
         // read time bounds data from a file
-        TimeBoundsMetadata tb(bounds_name, dimname, m_grid->config.unit_system());
+        TimeBoundsMetadata tb(bounds_name, dimname, m_grid->config->unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
         io::read_time_bounds(m_grid->com, nc, tb, m_grid->time.get(), time_bounds);

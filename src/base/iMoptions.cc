@@ -45,31 +45,31 @@ void IceModel::setFromOptions() {
   verbPrintf(3, grid.com,
              "Processing physics-related command-line options...\n");
 
-  config.set_from_options();
+  config->set_from_options();
 
   id = options::Integer("-id", "Specifies the sounding row", id);
   jd = options::Integer("-jd", "Specifies the sounding column", jd);
 
   // Set global attributes using the config database:
-  global_attributes.set_string("title", config.get_string("run_title"));
-  global_attributes.set_string("institution", config.get_string("institution"));
+  global_attributes.set_string("title", config->get_string("run_title"));
+  global_attributes.set_string("institution", config->get_string("institution"));
   global_attributes.set_string("command", pism_args_string());
 
   // warn about some option combinations
 
-  if (config.get_double("maximum_time_step_years") <= 0) {
+  if (config->get_double("maximum_time_step_years") <= 0) {
     throw RuntimeError("maximum_time_step_years has to be greater than 0.");
   }
   
-  if (config.get_boolean("do_mass_conserve") == false &&
-      config.get_boolean("do_skip")) {
+  if (config->get_boolean("do_mass_conserve") == false &&
+      config->get_boolean("do_skip")) {
     verbPrintf(2, grid.com,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
                "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
-  if (config.get_string("calving_methods").find("thickness_calving") != std::string::npos &&
-      config.get_boolean("part_grid") == false) {
+  if (config->get_string("calving_methods").find("thickness_calving") != std::string::npos &&
+      config->get_boolean("part_grid") == false) {
     verbPrintf(2, grid.com,
                "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
                "              without application of partially filled grid cell scheme (-part_grid)\n"
@@ -80,7 +80,7 @@ void IceModel::setFromOptions() {
   // implements an option e.g. described in \ref Greve that is the
   // enhancement factor is coupled to the age of the ice with
   // e = 1 (A < 11'000 years), e = 3 otherwise
-  if (config.get_boolean("e_age_coupling")) {
+  if (config->get_boolean("e_age_coupling")) {
     verbPrintf(2, grid.com,
                "  setting age-dependent enhancement factor: "
                "e=1 if A<11'000 years, e=3 otherwise\n");
@@ -142,7 +142,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
 
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
-    std::string tmp = config.get_string("output_medium");
+    std::string tmp = config->get_string("output_medium");
     std::istringstream keywords(tmp);
 
     // split the list; note that this also removes any duplicate entries
@@ -153,7 +153,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     }
   } else if (keyword == "big") {
     // add all the variables listed in the config file ("big" size):
-    std::string tmp = config.get_string("output_big");
+    std::string tmp = config->get_string("output_big");
     std::istringstream keywords(tmp);
 
     // split the list; note that this also removes any duplicate entries
@@ -163,12 +163,12 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
       }
     }
 
-    if (not config.get_boolean("do_age")) {
+    if (not config->get_boolean("do_age")) {
       result.erase("age");
     }
   }
 
-  if (config.get_boolean("do_age")) {
+  if (config->get_boolean("do_age")) {
     result.insert("age");
   }
 

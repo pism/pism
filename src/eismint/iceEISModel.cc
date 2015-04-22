@@ -33,34 +33,34 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid &g, DefaultConfig &conf, DefaultConfig &conf_overrides)
+IceEISModel::IceEISModel(IceGrid &g, DefaultConfig::Ptr conf, DefaultConfig::Ptr conf_overrides)
   : IceModel(g, conf, conf_overrides) {
   m_experiment = 'A';
 
   // the following flag must be here in constructor because
   // IceModel::createVecs() uses it non-polythermal methods; can be
   // overridden by the command-line option "-energy enthalpy"
-  config.set_boolean("do_cold_ice_methods", true);
+  config->set_boolean("do_cold_ice_methods", true);
 
   // see EISMINT II description; choose no ocean interaction,
-  config.set_boolean("is_dry_simulation", true);
+  config->set_boolean("is_dry_simulation", true);
 
   // purely SIA, and E=1
-  config.set_double("sia_enhancement_factor", 1.0);
+  config->set_double("sia_enhancement_factor", 1.0);
 
   // none use bed smoothing & bed roughness parameterization
-  config.set_double("bed_smoother_range", 0.0);
+  config->set_double("bed_smoother_range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
-  config.set_boolean("include_bmr_in_continuity", false);
+  config->set_boolean("include_bmr_in_continuity", false);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  config.set_double("bedrock_thermal_density", config.get_double("ice_density"));
-  config.set_double("bedrock_thermal_conductivity", config.get_double("ice_thermal_conductivity"));
-  config.set_double("bedrock_thermal_specific_heat_capacity", config.get_double("ice_specific_heat_capacity"));
+  config->set_double("bedrock_thermal_density", config->get_double("ice_density"));
+  config->set_double("bedrock_thermal_conductivity", config->get_double("ice_thermal_conductivity"));
+  config->set_double("bedrock_thermal_specific_heat_capacity", config->get_double("ice_specific_heat_capacity"));
 }
 
 void IceEISModel::set_grid_defaults() {
@@ -85,7 +85,7 @@ void IceEISModel::setFromOptions() {
     }
 
     m_experiment = name[0];
-    config.set_string("EISMINT_II_experiment", name);
+    config->set_string("EISMINT_II_experiment", name);
   }
 
   IceModel::setFromOptions();

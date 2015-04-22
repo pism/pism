@@ -31,8 +31,8 @@ namespace pism {
 namespace ocean {
 Constant::Constant(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.config.unit_system(), "shelfbmassflux"),
-    m_shelfbtemp(g.config.unit_system(), "shelfbtemp") {
+    m_shelfbmassflux(g.config->unit_system(), "shelfbmassflux"),
+    m_shelfbtemp(g.config->unit_system(), "shelfbtemp") {
 
   m_mymeltrate = 0.0;
   m_meltrate_set = false;
@@ -63,7 +63,7 @@ void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!m_config.get_boolean("is_dry_simulation")) {
+  if (!m_config->get_boolean("is_dry_simulation")) {
     verbPrintf(2, m_grid.com, "* Initializing the constant ocean model...\n");
   }
 
@@ -90,10 +90,10 @@ void Constant::sea_level_elevation_impl(double &result) {
 }
 
 void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
-  const double T0 = m_config.get_double("water_melting_point_temperature"), // K
-    beta_CC       = m_config.get_double("beta_CC"),
-    g             = m_config.get_double("standard_gravity"),
-    ice_density   = m_config.get_double("ice_density");
+  const double T0 = m_config->get_double("water_melting_point_temperature"), // K
+    beta_CC       = m_config->get_double("beta_CC"),
+    g             = m_config->get_double("standard_gravity"),
+    ice_density   = m_config->get_double("ice_density");
 
   const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
 
@@ -112,8 +112,8 @@ void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
 //! basal heat flux rate converts to mass flux.
 void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   double
-    L           = m_config.get_double("water_latent_heat_fusion"),
-    ice_density = m_config.get_double("ice_density"),
+    L           = m_config->get_double("water_latent_heat_fusion"),
+    ice_density = m_config->get_double("ice_density"),
     meltrate    = 0.0;
 
   if (m_meltrate_set) {
@@ -123,7 +123,7 @@ void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   } else {
 
     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-    meltrate = m_config.get_double("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
+    meltrate = m_config->get_double("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
 
   }
 
@@ -140,7 +140,7 @@ void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string>
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
     io::define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);

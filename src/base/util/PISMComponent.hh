@@ -25,6 +25,7 @@
 
 #include "MaxTimestep.hh"
 #include "base/util/io/IO_Flags.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 
@@ -136,7 +137,7 @@ protected:
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 protected:
   const IceGrid &m_grid;
-  const Config &m_config;
+  Config::ConstPtr m_config;
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

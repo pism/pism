@@ -32,7 +32,7 @@ namespace stressbalance {
 SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
   : SSB_Modifier(g, e) {
 
-  const unsigned int WIDE_STENCIL = m_config.get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {
@@ -181,7 +181,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 */
 void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  const std::string method = m_config.get_string("surface_gradient_method");
+  const std::string method = m_config->get_string("surface_gradient_method");
 
   if (method == "eta") {
 
@@ -557,19 +557,19 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   std::vector<double> delta_ij(m_grid.Mz());
 
   const double enhancement_factor = m_flow_law->enhancement_factor();
-  double ice_grain_size = m_config.get_double("ice_grain_size");
+  double ice_grain_size = m_config->get_double("ice_grain_size");
 
-  bool compute_grain_size_using_age = m_config.get_boolean("compute_grain_size_using_age");
+  bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
 
   // some flow laws use grain size, and even need age to update grain size
-  if (compute_grain_size_using_age && (!m_config.get_boolean("do_age"))) {
+  if (compute_grain_size_using_age && (!m_config->get_boolean("do_age"))) {
     throw RuntimeError("SIAFD::compute_diffusive_flux(): do_age not set but\n"
                        "age is needed for grain-size-based flow law");
   }
 
   const bool use_age = (FlowLawUsesGrainSize(m_flow_law) &&
                         compute_grain_size_using_age &&
-                        m_config.get_boolean("do_age"));
+                        m_config->get_boolean("do_age"));
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must

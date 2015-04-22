@@ -118,13 +118,13 @@ protected:
     m_bc_period = (unsigned int)period;
 
     if (not m_reference_surface.was_created()) {
-      unsigned int buffer_size = (unsigned int) Mod::m_config.get_double("climate_forcing_buffer_size"),
+      unsigned int buffer_size = (unsigned int) Mod::m_config->get_double("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
       PIO nc(g.com, "netcdf3");
       nc.open(file, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
-                                              g.config.unit_system());
+                                              g.config->unit_system());
       nc.close();
 
       // if -..._period is not set, make n_records the minimum of the
@@ -144,7 +144,7 @@ protected:
       m_reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
-      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config.get_double("climate_forcing_evaluations_per_year"));
+      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config->get_double("climate_forcing_evaluations_per_year"));
     }
 
     verbPrintf(2, g.com,

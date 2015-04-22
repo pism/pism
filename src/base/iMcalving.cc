@@ -127,7 +127,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
 
   MaskQuery mask(vMask);
 
-  const double ice_density = config.get_double("ice_density");
+  const double ice_density = config->get_double("ice_density");
   const bool
     update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
     use_Href = Href.was_created() && Href_old.was_created();

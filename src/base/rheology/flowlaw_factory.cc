@@ -65,7 +65,7 @@ FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
 }
 
 FlowLawFactory::FlowLawFactory(const std::string &prefix,
-                               const Config &conf,
+                               Config::ConstPtr conf,
                                const EnthalpyConverter *my_EC)
   : m_config(conf), m_EC(my_EC) {
 
@@ -82,7 +82,7 @@ FlowLawFactory::FlowLawFactory(const std::string &prefix,
   add_type(ICE_ARRWARM, &create_arrwarm);
   add_type(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
 
-  set_default_type(m_config.get_string(prefix + "flow_law"));
+  set_default_type(m_config->get_string(prefix + "flow_law"));
 }
 
 FlowLawFactory::~FlowLawFactory() {
@@ -117,7 +117,7 @@ FlowLaw* FlowLawFactory::create() {
   }
 
   // create an FlowLaw instance:
-  return (*r)(m_prefix, m_config, m_EC);
+  return (*r)(m_prefix, *m_config, m_EC);
 }
 
 } // end of namespace rheology

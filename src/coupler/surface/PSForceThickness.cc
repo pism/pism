@@ -34,13 +34,13 @@ namespace surface {
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(const IceGrid &g, SurfaceModel *input)
   : SurfaceModifier(g, input),
-    m_climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance"),
-    m_climatic_mass_balance_original(g.config.unit_system(), "climatic_mass_balance_original"),
-    m_ice_surface_temp(g.config.unit_system(), "ice_surface_temp") {
+    m_climatic_mass_balance(g.config->unit_system(), "climatic_mass_balance"),
+    m_climatic_mass_balance_original(g.config->unit_system(), "climatic_mass_balance_original"),
+    m_ice_surface_temp(g.config->unit_system(), "ice_surface_temp") {
 
-  m_alpha = m_config.get_double("force_to_thickness_alpha", "yr-1", "s-1");
-  m_alpha_ice_free_factor = m_config.get_double("force_to_thickness_ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = m_config.get_double("force_to_thickness_ice_free_thickness_threshold");
+  m_alpha = m_config->get_double("force_to_thickness_alpha", "yr-1", "s-1");
+  m_alpha_ice_free_factor = m_config->get_double("force_to_thickness_ice_free_alpha_factor");
+  m_ice_free_thickness_threshold = m_config->get_double("force_to_thickness_ice_free_thickness_threshold");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -280,7 +280,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   verbPrintf(5, m_grid.com,
              "    updating surface mass balance using -force_to_thickness mechanism ...");
 
-  double ice_density = m_config.get_double("ice_density");
+  double ice_density = m_config->get_double("ice_density");
 
   const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2Int &mask = *m_grid.variables().get_2d_mask("mask");
@@ -348,7 +348,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
 }
 
 void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);

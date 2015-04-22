@@ -25,6 +25,7 @@
 
 #include "pism_memory.hh"
 
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/petscwrappers/DM.hh"
 #include "Profiling.hh"
 #include "PISMTime.hh"
@@ -141,24 +142,24 @@ private:
 */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, const Config &config);
+  IceGrid(MPI_Comm c, Config::ConstPtr config);
   ~IceGrid();
 
   typedef PISM_SHARED_PTR(IceGrid) Ptr;
 
-  static Ptr Shallow(MPI_Comm c, const Config &config,
+  static Ptr Shallow(MPI_Comm c, Config::ConstPtr config,
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My, Periodicity p);
 
-  static Ptr Create(MPI_Comm c, const Config &config,
+  static Ptr Create(MPI_Comm c, Config::ConstPtr config,
                     double Lx, double Ly,
                     double x0, double y0,
                     const std::vector<double> &z,
                     unsigned int Mx, unsigned int My,
                     Periodicity p);
 
-  static Ptr Create(MPI_Comm c, const Config &config);
+  static Ptr Create(MPI_Comm c, Config::ConstPtr config);
 
   static void FromFile(const PIO &file, const std::string &var_name, Periodicity p,
                        IceGrid *output);
@@ -174,7 +175,7 @@ public:
   void set_vertical_levels(double Lz, unsigned int Mz,
                            SpacingType spacing);
 
-  // static Ptr Bootstrapping(MPI_Comm c, const Config &config,
+  // static Ptr Bootstrapping(MPI_Comm c, Config::ConstPtr config,
   //                          const std::string &filename);
 
   petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
@@ -194,7 +195,7 @@ public:
   double convert(double, const std::string &, const std::string &) const;
   //! The time management object (hides calendar computations).
   Time::Ptr time;
-  const Config &config;
+  Config::ConstPtr config;
   Profiling profiling;
 
   //! Starting x-index of a processor sub-domain

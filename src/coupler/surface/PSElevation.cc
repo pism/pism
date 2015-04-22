@@ -35,8 +35,8 @@ namespace surface {
 ///// Elevation-dependent temperature and surface mass balance.
 Elevation::Elevation(const IceGrid &g)
   : SurfaceModel(g),
-    m_climatic_mass_balance(g.config.unit_system(), "climatic_mass_balance"),
-    m_ice_surface_temp(g.config.unit_system(), "ice_surface_temp")
+    m_climatic_mass_balance(g.config->unit_system(), "climatic_mass_balance"),
+    m_ice_surface_temp(g.config->unit_system(), "ice_surface_temp")
 {
   // empty
 }
@@ -239,7 +239,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   loop.check();
 
   // convert from m/s ice equivalent to kg m-2 s-1:
-  result.scale(m_config.get_double("ice_density"));
+  result.scale(m_config->get_double("ice_density"));
 }
 
 void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
@@ -283,7 +283,7 @@ void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std
 }
 
 void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config.get_string("output_variable_order");
+  std::string order = m_grid.config->get_string("output_variable_order");
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {

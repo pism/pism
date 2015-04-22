@@ -48,8 +48,8 @@ EigenCalving::EigenCalving(const IceGrid &g,
                            "minor principal component of horizontal strain-rate",
                            "1/s", "", 1);
 
-  m_K = m_config.get_double("eigen_calving_K");
-  m_restrict_timestep = m_config.get_boolean("cfl_eigen_calving");
+  m_K = m_config->get_double("eigen_calving_K");
+  m_restrict_timestep = m_config->get_boolean("cfl_eigen_calving");
 }
 
 EigenCalving::~EigenCalving() {
