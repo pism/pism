@@ -585,6 +585,9 @@ void IceModel::allocate_enthalpy_converter() {
     return;
   }
 
+  verbPrintf(2, grid.com,
+             "# Allocating an enthalpy converter...\n");
+
   if (config.get_boolean("use_linear_in_temperature_heat_capacity")) {
     EC = new varcEnthalpyConverter(config);
   } else if (config.get_boolean("use_Kirchhoff_law")) {
@@ -602,6 +605,9 @@ void IceModel::allocate_stressbalance() {
   if (stress_balance != NULL) {
     return;
   }
+
+  verbPrintf(2, grid.com,
+             "# Allocating a stress balance model...\n");
 
   std::string model = config.get_string("stress_balance_model");
 
@@ -644,6 +650,9 @@ void IceModel::allocate_iceberg_remover() {
     return;
   }
 
+  verbPrintf(2, grid.com,
+             "# Allocating an iceberg remover (part of a calving model)...\n");
+
   if (config.get_boolean("kill_icebergs")) {
 
     // this will throw an exception on failure
@@ -662,6 +671,9 @@ void IceModel::allocate_bedrock_thermal_unit() {
     return;
   }
 
+  verbPrintf(2, grid.com,
+             "# Allocating an bedrock thermal layer model...\n");
+
   btu = new energy::BedThermalUnit(grid);
 }
 
@@ -675,6 +687,9 @@ void IceModel::allocate_subglacial_hydrology() {
   if (subglacial_hydrology != NULL) { // indicates it has already been allocated
     return;
   }
+
+  verbPrintf(2, grid.com,
+             "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
     subglacial_hydrology = new NullTransport(grid);
@@ -694,6 +709,9 @@ void IceModel::allocate_basal_yield_stress() {
   if (basal_yield_stress_model != NULL) {
     return;
   }
+
+  verbPrintf(2, grid.com,
+             "# Allocating a basal yield stress model...\n");
 
   std::string model = config.get_string("stress_balance_model");
 
@@ -760,6 +778,10 @@ void IceModel::allocate_couplers() {
   atmosphere::AtmosphereModel *atmosphere;
 
   if (surface == NULL) {
+
+    verbPrintf(2, grid.com,
+             "# Allocating a surface process model or coupler...\n");
+
     surface = ps.create();
     external_surface_model = false;
 
@@ -768,6 +790,9 @@ void IceModel::allocate_couplers() {
   }
 
   if (ocean == NULL) {
+    verbPrintf(2, grid.com,
+             "# Allocating an ocean model or coupler...\n");
+
     ocean = po.create();
     external_ocean_model = false;
   }
@@ -940,21 +965,26 @@ void IceModel::init_calving() {
 void IceModel::allocate_bed_deformation() {
   std::string model = config.get_string("bed_deformation_model");
 
-  if (beddef == NULL) {
-    if (model == "none") {
-      beddef = new bed::PBNull(grid);
-      return;
-    }
+  if (beddef != NULL) {
+    return;
+  }
 
-    if (model == "iso") {
-      beddef = new bed::PBPointwiseIsostasy(grid);
-      return;
-    }
+  verbPrintf(2, grid.com,
+             "# Allocating a bed deformation model...\n");
 
-    if (model == "lc") {
-      beddef = new bed::PBLingleClark(grid);
-      return;
-    }
+  if (model == "none") {
+    beddef = new bed::PBNull(grid);
+    return;
+  }
+
+  if (model == "iso") {
+    beddef = new bed::PBPointwiseIsostasy(grid);
+    return;
+  }
+
+  if (model == "lc") {
+    beddef = new bed::PBLingleClark(grid);
+    return;
   }
 }
 
