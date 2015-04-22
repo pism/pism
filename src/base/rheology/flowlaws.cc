@@ -43,13 +43,13 @@ bool FlowLawUsesGrainSize(FlowLaw *flow_law) {
 
 // Rather than make this part of the base class, we just check at some reference values.
 bool FlowLawIsPatersonBuddCold(FlowLaw *flow_law, const Config &config,
-                                  const EnthalpyConverter *EC) {
+                               const EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
-  PatersonBuddCold cpb(PETSC_COMM_SELF, "sia_", config, EC); // This is unmodified cold Paterson-Budd
+  PatersonBuddCold cpb("sia_", config, EC); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
     const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
-                    right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
+      right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
     if (fabs((left - right)/left)>1.0e-15) {
       return false;
     }
@@ -57,8 +57,8 @@ bool FlowLawIsPatersonBuddCold(FlowLaw *flow_law, const Config &config,
   return true;
 }
 
-FlowLaw::FlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
-                       const EnthalpyConverter *my_EC) : m_EC(my_EC), m_e(1), m_com(c) {
+FlowLaw::FlowLaw(const std::string &pre, const Config &config,
+                 const EnthalpyConverter *my_EC) : m_EC(my_EC), m_e(1) {
 
   m_prefix = pre;
 
@@ -98,7 +98,7 @@ double FlowLaw::softness_parameter_paterson_budd(double T_pa) const {
 
 //! The flow law itself.
 double FlowLaw::flow(double stress, double enthalpy,
-                           double pressure, double /* gs */) const {
+                     double pressure, double /* gs */) const {
   return softness_parameter(enthalpy, pressure) * pow(stress, m_n-1);
 }
 
@@ -107,8 +107,8 @@ double FlowLaw::hardness_parameter(double E, double p) const {
 }
 
 void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
-                                       const IceModelVec3  &enthalpy,
-                                       IceModelVec2S &result) const {
+                                    const IceModelVec3  &enthalpy,
+                                    IceModelVec2S &result) const {
 
   const IceGrid *grid = thickness.get_grid();
 
@@ -141,8 +141,8 @@ void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
 //! B(E, p)\f$. See comment for hardness_parameter().
 /*! Note E[0], ..., E[kbelowH] must be valid.  */
 double FlowLaw::averaged_hardness(double thickness, int kbelowH,
-                                     const double *zlevels,
-                                     const double *enthalpy) const {
+                                  const double *zlevels,
+                                  const double *enthalpy) const {
   double B = 0;
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
@@ -188,26 +188,26 @@ double FlowLaw::averaged_hardness(double thickness, int kbelowH,
 
 
 /*!
-This constructor just sets flow law factor for nonzero water content, from
-\ref AschwandenBlatter and \ref LliboutryDuval1985.
- */
-GPBLD::GPBLD(MPI_Comm c, const std::string &pre,
-                   const Config &config, const EnthalpyConverter *my_EC)
-  : FlowLaw(c, pre, config, my_EC) {
+  This constructor just sets flow law factor for nonzero water content, from
+  \ref AschwandenBlatter and \ref LliboutryDuval1985.
+*/
+GPBLD::GPBLD(const std::string &pre,
+             const Config &config, const EnthalpyConverter *my_EC)
+  : FlowLaw(pre, config, my_EC) {
   T_0              = config.get_double("water_melting_point_temperature");    // K
   water_frac_coeff = config.get_double("gpbld_water_frac_coeff");
   water_frac_observed_limit
-                   = config.get_double("gpbld_water_frac_observed_limit");
+    = config.get_double("gpbld_water_frac_observed_limit");
 }
 
 //! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
 /*!
-This is a modification of Glen-Paterson-Budd ice, which is PatersonBudd.  In particular, if
-\f$A()\f$ is the softness factor for PatersonBudd, if \f$E\f$ is the enthalpy, and \f$p\f$ is
-the pressure then the softness we compute is
-   \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
-The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by pressure_adjusted_temperature().
- */
+  This is a modification of Glen-Paterson-Budd ice, which is PatersonBudd.  In particular, if
+  \f$A()\f$ is the softness factor for PatersonBudd, if \f$E\f$ is the enthalpy, and \f$p\f$ is
+  the pressure then the softness we compute is
+  \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
+  The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by pressure_adjusted_temperature().
+*/
 double GPBLD::softness_parameter(double enthalpy, double pressure) const {
   const double E_s = m_EC->enthalpy_cts(pressure);
   if (enthalpy < E_s) {       // cold ice
@@ -232,14 +232,14 @@ double PatersonBudd::softness_parameter(double E, double pressure) const {
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
 double PatersonBudd::flow(double stress, double E,
-                           double pressure, double gs) const {
+                          double pressure, double gs) const {
   double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, gs);
 }
 
 //! The flow law (temperature-dependent version).
 double PatersonBudd::flow_from_temp(double stress, double temp,
-                                        double pressure, double /*gs*/) const {
+                                    double pressure, double /*gs*/) const {
   // pressure-adjusted temperature:
   const double T_pa = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
   return softness_parameter_from_temp(T_pa) * pow(stress, m_n-1);
@@ -247,18 +247,18 @@ double PatersonBudd::flow_from_temp(double stress, double temp,
 
 // IsothermalGlen
 
-IsothermalGlen::IsothermalGlen(MPI_Comm c, const std::string &pre,
-                                     const Config &config, const EnthalpyConverter *my_EC)
-  : PatersonBudd(c, pre, config, my_EC) {
+IsothermalGlen::IsothermalGlen(const std::string &pre,
+                               const Config &config, const EnthalpyConverter *my_EC)
+  : PatersonBudd(pre, config, my_EC) {
   m_softness_A = config.get_double("ice_softness");
   m_hardness_B = pow(m_softness_A, m_hardness_power);
 }
 
 // Hooke
 
-Hooke::Hooke(MPI_Comm c, const std::string &pre,
-                   const Config &config, const EnthalpyConverter *my_EC)
-  : PatersonBudd(c, pre, config, my_EC) {
+Hooke::Hooke(const std::string &pre,
+             const Config &config, const EnthalpyConverter *my_EC)
+  : PatersonBudd(pre, config, my_EC) {
   m_Q_Hooke  = config.get_double("Hooke_Q");
   m_A_Hooke  = config.get_double("Hooke_A");
   m_C_Hooke  = config.get_double("Hooke_C");
@@ -268,65 +268,65 @@ Hooke::Hooke(MPI_Comm c, const std::string &pre,
 
 double Hooke::softness_parameter_from_temp(double T_pa) const {
   return m_A_Hooke * exp(-m_Q_Hooke/(m_ideal_gas_constant * T_pa)
-                        + 3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));
+                         + 3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));
 }
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedt::GoldsbyKohlstedt(MPI_Comm c, const std::string &pre,
-                     const Config &config, const EnthalpyConverter *my_EC)
-  : FlowLaw(c, pre, config, my_EC) {
+GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &pre,
+                                   const Config &config, const EnthalpyConverter *my_EC)
+  : FlowLaw(pre, config, my_EC) {
 
   m_V_act_vol    = -13.e-6;  // m^3/mol
   m_d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
   //--- dislocation creep ---
   m_disl_crit_temp=258.0,    // Kelvin
-  //disl_A_cold=4.0e5,                  // MPa^{-4.0} s^{-1}
-  //disl_A_warm=6.0e28,                 // MPa^{-4.0} s^{-1}
-  m_disl_A_cold=4.0e-19,     // Pa^{-4.0} s^{-1}
-  m_disl_A_warm=6.0e4,       // Pa^{-4.0} s^{-1} (GK)
-  m_disl_n=4.0,              // stress exponent
-  m_disl_Q_cold=60.e3,       // J/mol Activation energy
-  m_disl_Q_warm=180.e3;      // J/mol Activation energy (GK)
+    //disl_A_cold=4.0e5,                  // MPa^{-4.0} s^{-1}
+    //disl_A_warm=6.0e28,                 // MPa^{-4.0} s^{-1}
+    m_disl_A_cold=4.0e-19,     // Pa^{-4.0} s^{-1}
+    m_disl_A_warm=6.0e4,       // Pa^{-4.0} s^{-1} (GK)
+    m_disl_n=4.0,              // stress exponent
+    m_disl_Q_cold=60.e3,       // J/mol Activation energy
+    m_disl_Q_warm=180.e3;      // J/mol Activation energy (GK)
   //--- grain boundary sliding ---
   m_gbs_crit_temp=255.0,     // Kelvin
-  //gbs_A_cold=3.9e-3,                  // MPa^{-1.8} m^{1.4} s^{-1}
-  //gbs_A_warm=3.e26,                   // MPa^{-1.8} m^{1.4} s^{-1}
-  m_gbs_A_cold=6.1811e-14,   // Pa^{-1.8} m^{1.4} s^{-1}
-  m_gbs_A_warm=4.7547e15,    // Pa^{-1.8} m^{1.4} s^{-1}
-  m_gbs_n=1.8,               // stress exponent
-  m_gbs_Q_cold=49.e3,        // J/mol Activation energy
-  m_gbs_Q_warm=192.e3,       // J/mol Activation energy
-  m_p_grain_sz_exp=1.4;      // from Peltier
+    //gbs_A_cold=3.9e-3,                  // MPa^{-1.8} m^{1.4} s^{-1}
+    //gbs_A_warm=3.e26,                   // MPa^{-1.8} m^{1.4} s^{-1}
+    m_gbs_A_cold=6.1811e-14,   // Pa^{-1.8} m^{1.4} s^{-1}
+    m_gbs_A_warm=4.7547e15,    // Pa^{-1.8} m^{1.4} s^{-1}
+    m_gbs_n=1.8,               // stress exponent
+    m_gbs_Q_cold=49.e3,        // J/mol Activation energy
+    m_gbs_Q_warm=192.e3,       // J/mol Activation energy
+    m_p_grain_sz_exp=1.4;      // from Peltier
   //--- easy slip (basal) ---
   //basal_A=5.5e7,                      // MPa^{-2.4} s^{-1}
   m_basal_A=2.1896e-7,       // Pa^{-2.4} s^{-1}
-  m_basal_n=2.4,             // stress exponent
-  m_basal_Q=60.e3;           // J/mol Activation energy
+    m_basal_n=2.4,             // stress exponent
+    m_basal_Q=60.e3;           // J/mol Activation energy
   //--- diffusional flow ---
   m_diff_crit_temp=258.0,    // when to use enhancement factor
-  m_diff_V_m=1.97e-5,        // Molar volume (m^3/mol)
-  m_diff_D_0v=9.10e-4,       // Preexponential volume diffusion (m^2/s)
-  m_diff_Q_v=59.4e3,         // activation energy, vol. diff. (J/mol)
-  m_diff_D_0b=5.8e-4,        // preexponential grain boundary coeff.
-  m_diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
-  m_diff_delta=9.04e-10;     // grain boundary width (m)
+    m_diff_V_m=1.97e-5,        // Molar volume (m^3/mol)
+    m_diff_D_0v=9.10e-4,       // Preexponential volume diffusion (m^2/s)
+    m_diff_Q_v=59.4e3,         // activation energy, vol. diff. (J/mol)
+    m_diff_D_0b=5.8e-4,        // preexponential grain boundary coeff.
+    m_diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
+    m_diff_delta=9.04e-10;     // grain boundary width (m)
 }
 
 double GoldsbyKohlstedt::flow(double stress, double E,
-                                 double pressure, double grainsize) const {
+                              double pressure, double grainsize) const {
   double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
 
 void GoldsbyKohlstedt::effective_viscosity(double, double,
-                                              double *, double *) const {
+                                           double *, double *) const {
   throw std::runtime_error("GoldsbyKohlstedt::effective_viscosity is not implemented");
 }
 
 double GoldsbyKohlstedt::averaged_hardness(double, int,
-                                              const double *,
-                                              const double *) const {
+                                           const double *,
+                                           const double *) const {
 
   throw std::runtime_error("double GoldsbyKohlstedt::averaged_hardness is not implemented");
 
@@ -366,7 +366,7 @@ double GoldsbyKohlstedt::softness_parameter(double , double) const {
   of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
 */
 double GoldsbyKohlstedt::flow_from_temp(double stress, double temp,
-                                    double pressure, double gs) const {
+                                        double pressure, double gs) const {
   double eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
   if (fabs(stress) < 1e-10) {
@@ -454,10 +454,10 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
 }
 /*****************/
 
-GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(MPI_Comm c, const std::string &pre,
-                                                         const Config &config,
-                                                         const EnthalpyConverter *my_EC)
-  : GoldsbyKohlstedt(c, pre, config, my_EC) {
+GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(const std::string &pre,
+                                                   const Config &config,
+                                                   const EnthalpyConverter *my_EC)
+  : GoldsbyKohlstedt(pre, config, my_EC) {
   m_d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
 }
 
@@ -485,12 +485,12 @@ double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, doub
   // Grain Boundary Sliding
   if (T > m_gbs_crit_temp) {
     eps_gbs = m_gbs_A_warm *
-              (pow(stress, m_gbs_n-1) / pow(m_d_grain_size_stripped, m_p_grain_sz_exp)) *
-              exp(-m_gbs_Q_warm/RT);
+      (pow(stress, m_gbs_n-1) / pow(m_d_grain_size_stripped, m_p_grain_sz_exp)) *
+      exp(-m_gbs_Q_warm/RT);
   } else {
     eps_gbs = m_gbs_A_cold *
-              (pow(stress, m_gbs_n-1) / pow(m_d_grain_size_stripped, m_p_grain_sz_exp)) *
-              exp(-m_gbs_Q_cold/RT);
+      (pow(stress, m_gbs_n-1) / pow(m_d_grain_size_stripped, m_p_grain_sz_exp)) *
+      exp(-m_gbs_Q_cold/RT);
   }
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);

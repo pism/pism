@@ -28,11 +28,10 @@
 namespace pism {
 namespace rheology {
 
-FlowLawFactory::FlowLawFactory(MPI_Comm c,
-                                     const std::string &pre,
-                                     const Config &conf,
-                                     const EnthalpyConverter *my_EC)
-  : com(c), config(conf), EC(my_EC) {
+FlowLawFactory::FlowLawFactory(const std::string &pre,
+                               const Config &conf,
+                               const EnthalpyConverter *my_EC)
+  : config(conf), EC(my_EC) {
 
   prefix = pre;
 
@@ -57,39 +56,39 @@ void FlowLawFactory::removeType(const std::string &name) {
 }
 
 
-FlowLaw* create_isothermal_glen(MPI_Comm com,const std::string &pre,
-                                             const Config &config, const EnthalpyConverter *EC) {
-  return new (IsothermalGlen)(com, pre, config, EC);
-}
-
-FlowLaw* create_pb(MPI_Comm com,const std::string &pre,
+FlowLaw* create_isothermal_glen(const std::string &pre,
                                 const Config &config, const EnthalpyConverter *EC) {
-  return new (PatersonBudd)(com, pre, config, EC);
+  return new (IsothermalGlen)(pre, config, EC);
 }
 
-FlowLaw* create_gpbld(MPI_Comm com,const std::string &pre,
-                                   const Config &config, const EnthalpyConverter *EC) {
-  return new (GPBLD)(com, pre, config, EC);
+FlowLaw* create_pb(const std::string &pre,
+                   const Config &config, const EnthalpyConverter *EC) {
+  return new (PatersonBudd)(pre, config, EC);
 }
 
-FlowLaw* create_hooke(MPI_Comm com,const std::string &pre,
-                                   const Config &config, const EnthalpyConverter *EC) {
-  return new (Hooke)(com, pre, config, EC);
+FlowLaw* create_gpbld(const std::string &pre,
+                      const Config &config, const EnthalpyConverter *EC) {
+  return new (GPBLD)(pre, config, EC);
 }
 
-FlowLaw* create_arr(MPI_Comm com,const std::string &pre,
-                                 const Config &config, const EnthalpyConverter *EC) {
-  return new (PatersonBuddCold)(com, pre, config, EC);
+FlowLaw* create_hooke(const std::string &pre,
+                      const Config &config, const EnthalpyConverter *EC) {
+  return new (Hooke)(pre, config, EC);
 }
 
-FlowLaw* create_arrwarm(MPI_Comm com,const std::string &pre,
-                                     const Config &config, const EnthalpyConverter *EC) {
-  return new (PatersonBuddWarm)(com, pre, config, EC);
+FlowLaw* create_arr(const std::string &pre,
+                    const Config &config, const EnthalpyConverter *EC) {
+  return new (PatersonBuddCold)(pre, config, EC);
 }
 
-FlowLaw* create_goldsby_kohlstedt(MPI_Comm com,const std::string &pre,
-                                               const Config &config, const EnthalpyConverter *EC) {
-  return new (GoldsbyKohlstedt)(com, pre, config, EC);
+FlowLaw* create_arrwarm(const std::string &pre,
+                        const Config &config, const EnthalpyConverter *EC) {
+  return new (PatersonBuddWarm)(pre, config, EC);
+}
+
+FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
+                                  const Config &config, const EnthalpyConverter *EC) {
+  return new (GoldsbyKohlstedt)(pre, config, EC);
 }
 
 void FlowLawFactory::registerAll()
@@ -148,7 +147,7 @@ FlowLaw* FlowLawFactory::create()
   }
 
   // create an FlowLaw instance:
-  return (*r)(com, prefix, config, EC);
+  return (*r)(prefix, config, EC);
 }
 
 } // end of namespace rheology

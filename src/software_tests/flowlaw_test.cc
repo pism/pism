@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     EnthalpyConverter EC(config);
 
     rheology::FlowLaw *flow_law = NULL;
-    rheology::FlowLawFactory ice_factory(com, "sia_", config, &EC);
+    rheology::FlowLawFactory ice_factory("sia_", config, &EC);
 
     std::string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type

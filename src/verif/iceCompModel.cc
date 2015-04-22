@@ -380,7 +380,7 @@ void IceCompModel::set_vars_from_options() {
 void IceCompModel::initTestABCDEH() {
   double     A0, T0, H, accum, dummy1, dummy2, dummy3;
 
-  rheology::PatersonBuddCold tgaIce(grid.com, "sia_", config, EC);
+  rheology::PatersonBuddCold tgaIce("sia_", config, EC);
 
   const double time = grid.time->current();
 
@@ -472,7 +472,7 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  rheology::PatersonBuddCold tgaIce(grid.com, "sia_", config, EC);
+  rheology::PatersonBuddCold tgaIce("sia_", config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant

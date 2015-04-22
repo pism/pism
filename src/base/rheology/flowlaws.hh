@@ -67,9 +67,9 @@ namespace rheology {
 */
 class FlowLaw {
 public:
-  FlowLaw(MPI_Comm c, const std::string &prefix,
-             const Config &config,
-             const EnthalpyConverter *EC);
+  FlowLaw(const std::string &prefix,
+          const Config &config,
+          const EnthalpyConverter *EC);
   virtual ~FlowLaw() {}
 
   //! \brief Computes the regularized effective viscosity and its derivative with respect to the
@@ -151,13 +151,12 @@ protected:
     m_e,                          // flow enhancement factor
     m_n;                          // power law exponent
 
-  MPI_Comm m_com;
   std::string m_prefix;           // option (parameter) prefix
 };
 
 // Helper functions:
 bool FlowLawIsPatersonBuddCold(FlowLaw *, const Config &,
-                                  const EnthalpyConverter*);
+                               const EnthalpyConverter*);
 bool FlowLawUsesGrainSize(FlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
@@ -167,9 +166,9 @@ bool FlowLawUsesGrainSize(FlowLaw *);
 */
 class GPBLD : public FlowLaw {
 public:
-  GPBLD(MPI_Comm c, const std::string &prefix,
-           const Config &config,
-           const EnthalpyConverter *EC);
+  GPBLD(const std::string &prefix,
+        const Config &config,
+        const EnthalpyConverter *EC);
   virtual ~GPBLD() {}
 
   virtual double softness_parameter(double enthalpy,
@@ -184,10 +183,10 @@ protected:
 //! Derived class of FlowLaw for Paterson-Budd (1982)-Glen ice.
 class PatersonBudd : public FlowLaw {
 public:
-  PatersonBudd(MPI_Comm c, const std::string &prefix,
-                const Config &config,
-                const EnthalpyConverter *my_EC)
-    : FlowLaw(c, prefix, config, my_EC) {
+  PatersonBudd(const std::string &prefix,
+               const Config &config,
+               const EnthalpyConverter *my_EC)
+    : FlowLaw(prefix, config, my_EC) {
   }
   virtual ~PatersonBudd() {}
 
@@ -217,9 +216,9 @@ protected:
 //! Isothermal Glen ice allowing extra customization.
 class IsothermalGlen : public PatersonBudd {
 public:
-  IsothermalGlen(MPI_Comm c, const std::string &prefix,
-                    const Config &config,
-                    const EnthalpyConverter *my_EC);
+  IsothermalGlen(const std::string &prefix,
+                 const Config &config,
+                 const EnthalpyConverter *my_EC);
   virtual ~IsothermalGlen() {}
 
   virtual double averaged_hardness(double, int,
@@ -255,9 +254,9 @@ protected:
 //! The Hooke flow law.
 class Hooke : public PatersonBudd {
 public:
-  Hooke(MPI_Comm c, const std::string &prefix,
-           const Config &config,
-           const EnthalpyConverter *EC);
+  Hooke(const std::string &prefix,
+        const Config &config,
+        const EnthalpyConverter *EC);
   virtual ~Hooke() {}
   virtual std::string name() const {
     return "Hooke";
@@ -272,10 +271,10 @@ protected:
 //! Cold case of Paterson-Budd
 class PatersonBuddCold : public PatersonBudd {
 public:
-  PatersonBuddCold(MPI_Comm c, const std::string &prefix,
+  PatersonBuddCold(const std::string &prefix,
                    const Config &config,
                    const EnthalpyConverter *my_EC)
-    : PatersonBudd(c, prefix, config, my_EC) {}
+    : PatersonBudd(prefix, config, my_EC) {}
   virtual ~PatersonBuddCold() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
@@ -311,9 +310,9 @@ protected:
 //! Warm case of Paterson-Budd
 class PatersonBuddWarm : public PatersonBuddCold {
 public:
-  PatersonBuddWarm(MPI_Comm c, const std::string &prefix,
-                       const Config &config, const EnthalpyConverter *my_EC)
-    : PatersonBuddCold(c, prefix, config, my_EC) {}
+  PatersonBuddWarm(const std::string &prefix,
+                   const Config &config, const EnthalpyConverter *my_EC)
+    : PatersonBuddCold(prefix, config, my_EC) {}
   virtual ~PatersonBuddWarm() {}
 
   virtual std::string name() const {
@@ -346,9 +345,9 @@ struct GKparts {
 */
 class GoldsbyKohlstedt : public FlowLaw {
 public:
-  GoldsbyKohlstedt(MPI_Comm c, const std::string &prefix,
-                      const Config &config,
-                      const EnthalpyConverter *my_EC);
+  GoldsbyKohlstedt(const std::string &prefix,
+                   const Config &config,
+                   const EnthalpyConverter *my_EC);
 
   virtual double flow(double stress, double E,
                       double pressure, double grainsize) const;
@@ -393,8 +392,8 @@ protected:
 */
 class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
-  GoldsbyKohlstedtStripped(MPI_Comm c, const std::string &prefix,
-                              const Config &config, const EnthalpyConverter *my_EC);
+  GoldsbyKohlstedtStripped(const std::string &prefix,
+                           const Config &config, const EnthalpyConverter *my_EC);
   virtual std::string name() const {
     return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
   }

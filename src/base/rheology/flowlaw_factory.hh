@@ -35,14 +35,14 @@ namespace rheology {
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
-typedef FlowLaw*(*FlowLawCreator)(MPI_Comm, const std::string &,
-                                        const Config &, const EnthalpyConverter*);
+typedef FlowLaw*(*FlowLawCreator)(const std::string &,
+                                  const Config &, const EnthalpyConverter*);
 
 class FlowLawFactory {
 public:
-  FlowLawFactory(MPI_Comm, const std::string &prefix,
-                    const Config &conf,
-                    const EnthalpyConverter *my_EC);
+  FlowLawFactory(const std::string &prefix,
+                 const Config &conf,
+                 const EnthalpyConverter *my_EC);
   ~FlowLawFactory();
   void setType(const std::string &name);
   void setFromOptions();
@@ -52,7 +52,6 @@ public:
 private:
   void registerAll();
 private:
-  MPI_Comm com;
   std::string type_name, prefix;
   std::map<std::string, FlowLawCreator> flow_laws;
   const Config &config;
