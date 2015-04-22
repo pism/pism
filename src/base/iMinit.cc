@@ -672,7 +672,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
   }
 
   verbPrintf(2, grid.com,
-             "# Allocating an bedrock thermal layer model...\n");
+             "# Allocating a bedrock thermal layer model...\n");
 
   btu = new energy::BedThermalUnit(grid);
 }
