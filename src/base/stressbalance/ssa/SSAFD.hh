@@ -34,7 +34,7 @@ class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(const IceGrid &g, const EnthalpyConverter &e);
+  SSAFD(const IceGrid &g, EnthalpyConverter::Ptr e);
   virtual ~SSAFD();
 
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
@@ -124,7 +124,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(const IceGrid &, const EnthalpyConverter &);
+SSA * SSAFDFactory(const IceGrid &, EnthalpyConverter::Ptr);
 
 } // end of namespace stressbalance
 } // end of namespace pism

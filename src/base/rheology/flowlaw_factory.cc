@@ -30,43 +30,43 @@ namespace pism {
 namespace rheology {
 
 FlowLaw* create_isothermal_glen(const std::string &pre,
-                                const Config &config, const EnthalpyConverter *EC) {
+                                const Config &config, EnthalpyConverter::Ptr EC) {
   return new (IsothermalGlen)(pre, config, EC);
 }
 
 FlowLaw* create_pb(const std::string &pre,
-                   const Config &config, const EnthalpyConverter *EC) {
+                   const Config &config, EnthalpyConverter::Ptr EC) {
   return new (PatersonBudd)(pre, config, EC);
 }
 
 FlowLaw* create_gpbld(const std::string &pre,
-                      const Config &config, const EnthalpyConverter *EC) {
+                      const Config &config, EnthalpyConverter::Ptr EC) {
   return new (GPBLD)(pre, config, EC);
 }
 
 FlowLaw* create_hooke(const std::string &pre,
-                      const Config &config, const EnthalpyConverter *EC) {
+                      const Config &config, EnthalpyConverter::Ptr EC) {
   return new (Hooke)(pre, config, EC);
 }
 
 FlowLaw* create_arr(const std::string &pre,
-                    const Config &config, const EnthalpyConverter *EC) {
+                    const Config &config, EnthalpyConverter::Ptr EC) {
   return new (PatersonBuddCold)(pre, config, EC);
 }
 
 FlowLaw* create_arrwarm(const std::string &pre,
-                        const Config &config, const EnthalpyConverter *EC) {
+                        const Config &config, EnthalpyConverter::Ptr EC) {
   return new (PatersonBuddWarm)(pre, config, EC);
 }
 
 FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
-                                  const Config &config, const EnthalpyConverter *EC) {
+                                  const Config &config, EnthalpyConverter::Ptr EC) {
   return new (GoldsbyKohlstedt)(pre, config, EC);
 }
 
 FlowLawFactory::FlowLawFactory(const std::string &prefix,
                                Config::ConstPtr conf,
-                               const EnthalpyConverter *my_EC)
+                               EnthalpyConverter::Ptr my_EC)
   : m_config(conf), m_EC(my_EC) {
 
   m_prefix = prefix;

@@ -81,7 +81,6 @@ IceModel::IceModel(IceGrid &g, DefaultConfig::Ptr conf, DefaultConfig::Ptr conf_
   ocean   = NULL;
   beddef  = NULL;
 
-  EC  = NULL;
   btu = NULL;
 
   iceberg_remover             = NULL;
@@ -169,7 +168,6 @@ IceModel::~IceModel() {
 
   delete subglacial_hydrology;
   delete basal_yield_stress_model;
-  delete EC;
   delete btu;
 
   delete iceberg_remover;

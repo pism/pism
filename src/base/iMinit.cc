@@ -581,20 +581,14 @@ void IceModel::set_vars_from_options() {
 //! \brief Decide which enthalpy converter to use.
 void IceModel::allocate_enthalpy_converter() {
 
-  if (EC != NULL) {
+  if ((bool)EC) {
     return;
   }
 
   verbPrintf(2, grid.com,
              "# Allocating an enthalpy converter...\n");
 
-  if (config->get_boolean("use_linear_in_temperature_heat_capacity")) {
-    EC = new varcEnthalpyConverter(*config);
-  } else if (config->get_boolean("use_Kirchhoff_law")) {
-    EC = new KirchhoffEnthalpyConverter(*config);
-  } else {
-    EC = new EnthalpyConverter(*config);
-  }
+  EC = enthalpy_converter_from_options(*config);
 }
 
 //! \brief Decide which stress balance model to use.
@@ -613,16 +607,16 @@ void IceModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(grid, *EC);
+    sliding = new ZeroSliding(grid, EC);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(grid, *EC);
+    sliding = new PrescribedSliding(grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
     std::string method = config->get_string("ssa_method");
 
     if (method == "fem") {
-      sliding = new SSAFEM(grid, *EC);
+      sliding = new SSAFEM(grid, EC);
     } else if (method == "fd") {
-      sliding = new SSAFD(grid, *EC);
+      sliding = new SSAFD(grid, EC);
     } else {
       throw RuntimeError::formatted("invalid ssa method: %s", method.c_str());
     }
@@ -633,9 +627,9 @@ void IceModel::allocate_stressbalance() {
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(grid, *EC);
+    modifier = new ConstantInColumn(grid, EC);
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
-    modifier = new SIAFD(grid, *EC);
+    modifier = new SIAFD(grid, EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }

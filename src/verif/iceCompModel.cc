@@ -230,12 +230,12 @@ void IceCompModel::setFromOptions() {
 
 void IceCompModel::allocate_enthalpy_converter() {
 
-  if (EC != NULL) {
+  if ((bool)EC) {
     return;
   }
 
   // allocate the "special" enthalpy converter;
-  EC = new ColdEnthalpyConverter(*config);
+  EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {
@@ -283,8 +283,8 @@ void IceCompModel::allocate_stressbalance() {
 
   if (testname == 'E') {
     config->set_boolean("sia_sliding_verification_mode", true);
-    ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC);
-    SIAFD *sia = new SIAFD(grid, *EC);
+    ShallowStressBalance *ssb = new SIA_Sliding(grid, EC);
+    SIAFD *sia = new SIAFD(grid, EC);
 
     stress_balance = new StressBalance(grid, ssb, sia);
   } else {

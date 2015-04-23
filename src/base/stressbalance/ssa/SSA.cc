@@ -68,7 +68,7 @@ double SSAStrengthExtension::get_min_thickness() const {
 }
 
 
-SSA::SSA(const IceGrid &g, const EnthalpyConverter &e)
+SSA::SSA(const IceGrid &g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e)
 {
   m_mask = NULL;
@@ -104,7 +104,7 @@ SSA::SSA(const IceGrid &g, const EnthalpyConverter &e)
   m_da = m_velocity_global.get_dm();
 
   {
-    rheology::FlowLawFactory ice_factory("ssa_", m_config, &m_EC);
+    rheology::FlowLawFactory ice_factory("ssa_", m_config, m_EC);
     ice_factory.remove_type(ICE_GOLDSBY_KOHLSTEDT);
     m_flow_law = ice_factory.create();
   }
@@ -234,7 +234,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double pressure = m_EC.pressure(thk(i,j)); // FIXME issue #15
+    const double pressure = m_EC->pressure(thk(i,j)); // FIXME issue #15
     if (pressure <= 0.0) {
       result(i,j).u = 0.0;
       result(i,j).v = 0.0;

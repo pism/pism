@@ -42,6 +42,7 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/PISMConfig.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 
@@ -80,7 +81,6 @@ class BedDef;
 // forward declarations
 class DefaultConfig;
 class IceGrid;
-class EnthalpyConverter;
 class YieldStress;
 class Diagnostic;
 class TSDiagnostic;
@@ -148,7 +148,7 @@ public:
   virtual void grid_setup();
 
   const IceGrid& get_grid() const; // FIXME: rename grid to m_grid and this to grid().
-  const EnthalpyConverter& enthalpy_converter() const;
+  EnthalpyConverter::Ptr  enthalpy_converter() const;
 
   virtual void allocate_submodels();
   virtual void allocate_enthalpy_converter();
@@ -225,7 +225,7 @@ protected:
   hydrology::Hydrology   *subglacial_hydrology;
   YieldStress *basal_yield_stress_model;
 
-  EnthalpyConverter *EC;
+  EnthalpyConverter::Ptr EC;
   energy::BedThermalUnit *btu;
 
   calving::IcebergRemover     *iceberg_remover;

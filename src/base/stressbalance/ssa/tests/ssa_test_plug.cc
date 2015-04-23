@@ -97,7 +97,7 @@ void SSATestCasePlug::initializeSSAModel() {
   // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
-  m_enthalpyconverter = new EnthalpyConverter(*m_config);
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
   // Use constant hardness
   m_config->set_string("ssa_flow_law", "isothermal_glen");

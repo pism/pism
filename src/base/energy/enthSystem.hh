@@ -22,12 +22,12 @@
 #include <vector>
 
 #include "base/columnSystem.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 
 class Config;
 class IceModelVec3;
-class EnthalpyConverter;
 
 namespace energy {
 
@@ -48,7 +48,7 @@ public:
                 const IceModelVec3 &v3,
                 const IceModelVec3 &w3,
                 const IceModelVec3 &strain_heating3,
-                const EnthalpyConverter &EC);
+                EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
   void initThisColumn(int i, int j, bool my_ismarginal,
@@ -101,7 +101,7 @@ protected:
   bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
 
   const IceModelVec3 &m_Enth3, &m_strain_heating3;
-  const EnthalpyConverter &m_EC;  // conductivity has known dependence on T, not enthalpy
+  EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();
   double compute_lambda();

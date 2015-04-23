@@ -22,13 +22,13 @@
 #include <petscsys.h>
 
 #include "base/util/PISMUnits.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 
 class IceModelVec2S;
 class IceModelVec3;
 
-class EnthalpyConverter;
 class Config;
 
 // This uses the definition of squared second invariant from Hutter and several others, namely the output is
@@ -69,7 +69,7 @@ class FlowLaw {
 public:
   FlowLaw(const std::string &prefix,
           const Config &config,
-          const EnthalpyConverter *EC);
+          EnthalpyConverter::Ptr EC);
   virtual ~FlowLaw() {}
 
   //! \brief Computes the regularized effective viscosity and its derivative with respect to the
@@ -137,7 +137,7 @@ protected:
   double m_rho,          //!< ice density
     m_beta_CC_grad, //!< Clausius-Clapeyron gradient
     m_melting_point_temp;  //!< for water, 273.15 K
-  const EnthalpyConverter *m_EC;
+  EnthalpyConverter::Ptr m_EC;
 
   double softness_parameter_paterson_budd(double T_pa) const;
 
@@ -154,7 +154,7 @@ protected:
 
 // Helper functions:
 bool FlowLawIsPatersonBuddCold(FlowLaw *, const Config &,
-                               const EnthalpyConverter*);
+                               EnthalpyConverter::Ptr);
 bool FlowLawUsesGrainSize(FlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
@@ -166,7 +166,7 @@ class GPBLD : public FlowLaw {
 public:
   GPBLD(const std::string &prefix,
         const Config &config,
-        const EnthalpyConverter *EC);
+        EnthalpyConverter::Ptr EC);
   virtual ~GPBLD() {}
 
   virtual double softness_parameter(double enthalpy,
@@ -183,8 +183,8 @@ class PatersonBudd : public FlowLaw {
 public:
   PatersonBudd(const std::string &prefix,
                const Config &config,
-               const EnthalpyConverter *my_EC)
-    : FlowLaw(prefix, config, my_EC) {
+               EnthalpyConverter::Ptr EC)
+    : FlowLaw(prefix, config, EC) {
   }
   virtual ~PatersonBudd() {}
 
@@ -216,7 +216,7 @@ class IsothermalGlen : public PatersonBudd {
 public:
   IsothermalGlen(const std::string &prefix,
                  const Config &config,
-                 const EnthalpyConverter *my_EC);
+                 EnthalpyConverter::Ptr EC);
   virtual ~IsothermalGlen() {}
 
   virtual double averaged_hardness(double, int,
@@ -254,7 +254,7 @@ class Hooke : public PatersonBudd {
 public:
   Hooke(const std::string &prefix,
         const Config &config,
-        const EnthalpyConverter *EC);
+        EnthalpyConverter::Ptr EC);
   virtual ~Hooke() {}
   virtual std::string name() const {
     return "Hooke";
@@ -271,8 +271,8 @@ class PatersonBuddCold : public PatersonBudd {
 public:
   PatersonBuddCold(const std::string &prefix,
                    const Config &config,
-                   const EnthalpyConverter *my_EC)
-    : PatersonBudd(prefix, config, my_EC) {}
+                   EnthalpyConverter::Ptr EC)
+    : PatersonBudd(prefix, config, EC) {}
   virtual ~PatersonBuddCold() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
@@ -309,8 +309,8 @@ protected:
 class PatersonBuddWarm : public PatersonBuddCold {
 public:
   PatersonBuddWarm(const std::string &prefix,
-                   const Config &config, const EnthalpyConverter *my_EC)
-    : PatersonBuddCold(prefix, config, my_EC) {}
+                   const Config &config, EnthalpyConverter::Ptr EC)
+    : PatersonBuddCold(prefix, config, EC) {}
   virtual ~PatersonBuddWarm() {}
 
   virtual std::string name() const {
@@ -345,7 +345,7 @@ class GoldsbyKohlstedt : public FlowLaw {
 public:
   GoldsbyKohlstedt(const std::string &prefix,
                    const Config &config,
-                   const EnthalpyConverter *my_EC);
+                   EnthalpyConverter::Ptr EC);
 
   virtual double flow(double stress, double E,
                       double pressure, double grainsize) const;
@@ -391,7 +391,7 @@ protected:
 class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
   GoldsbyKohlstedtStripped(const std::string &prefix,
-                           const Config &config, const EnthalpyConverter *my_EC);
+                           const Config &config, EnthalpyConverter::Ptr EC);
   virtual std::string name() const {
     return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
   }

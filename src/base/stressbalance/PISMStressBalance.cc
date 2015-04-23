@@ -368,7 +368,7 @@ void StressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
 
   const rheology::FlowLaw *flow_law = m_shallow_stress_balance->flow_law();
-  const EnthalpyConverter &EC = m_shallow_stress_balance->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = m_shallow_stress_balance->enthalpy_converter();
 
   const IceModelVec3
     &u = m_modifier->velocity_u(),
@@ -460,7 +460,7 @@ void StressBalance::compute_volumetric_strain_heating() {
 
       for (int k = 0; k <= ks; ++k) {
         double dz,
-          pressure = EC.pressure(H - m_grid.z(k)),
+          pressure = EC->pressure(H - m_grid.z(k)),
           B        = flow_law->hardness_parameter(E_ij[k], pressure);
 
         double u_z = 0.0, v_z = 0.0,

@@ -58,10 +58,10 @@ int main(int argc, char *argv[]) {
     config->import_from(overrides);
     config->set_from_options();
 
-    EnthalpyConverter EC(*config);
+    EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
     rheology::FlowLaw *flow_law = NULL;
-    rheology::FlowLawFactory ice_factory("sia_", config, &EC);
+    rheology::FlowLawFactory ice_factory("sia_", config, EC);
     flow_law = ice_factory.create();
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
                omega0  = 0.005,  // some laws use liquid fraction; used w TpaC[3]
                sigma[] = {1e4, 5e4, 1e5, 1.5e5};
 
-    double     p       = EC.pressure(depth),
-               Tm      = EC.melting_temperature(p);
+    double     p       = EC->pressure(depth),
+               Tm      = EC->melting_temperature(p);
 
     printf("flow law:   \"%s\"\n", flow_law->name().c_str());
     printf("pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)\n",
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
         double T     = Tm + TpaC[j],
                omega = (j == 3) ? omega0 : 0.0;
 
-        double E = EC.enthalpy(T, omega, p);
+        double E = EC->enthalpy(T, omega, p);
         double flowcoeff = flow_law->flow(sigma[i], E, p, gs);
 
         printf("    %10.2e   %10.3f  %9.3f = %10.6e\n",

@@ -99,7 +99,7 @@ void SSATestCaseConst::initializeSSAModel() {
   m_config->set_boolean("do_pseudo_plastic_till", true);
 
   // The following is irrelevant because we will force linear rheology later.
-  m_enthalpyconverter = new EnthalpyConverter(*m_config);
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 }
 
 void SSATestCaseConst::initializeSSACoefficients() {

@@ -481,7 +481,7 @@ IceModelVec::Ptr IceModel_temp::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
 
-  const EnthalpyConverter &EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
@@ -500,7 +500,7 @@ IceModelVec::Ptr IceModel_temp::compute() {
       Enthij = enthalpy->get_column(i,j);
       for (unsigned int k=0; k <m_grid.Mz(); ++k) {
         const double depth = (*thickness)(i,j) - m_grid.z(k);
-        Tij[k] = EC.temperature(Enthij[k], EC.pressure(depth));
+        Tij[k] = EC->temperature(Enthij[k], EC->pressure(depth));
       }
     }
   } catch (...) {
@@ -537,7 +537,7 @@ IceModelVec::Ptr IceModel_temp_pa::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 
-  const EnthalpyConverter &EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
@@ -556,12 +556,12 @@ IceModelVec::Ptr IceModel_temp_pa::compute() {
       Enthij = enthalpy->get_column(i,j);
       for (unsigned int k=0; k < m_grid.Mz(); ++k) {
         const double depth = (*thickness)(i,j) - m_grid.z(k),
-          p = EC.pressure(depth);
-        Tij[k] = EC.pressure_adjusted_temperature(Enthij[k], p);
+          p = EC->pressure(depth);
+        Tij[k] = EC->pressure_adjusted_temperature(Enthij[k], p);
 
         if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
           // is 273.15
-          if (EC.is_temperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
+          if (EC->is_temperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
             Tij[k] = melting_point_temp;
           }
         }
@@ -600,7 +600,7 @@ IceModelVec::Ptr IceModel_temppabase::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
 
-  const EnthalpyConverter &EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
 
   const double *Enthij; // columns of these values
 
@@ -617,12 +617,12 @@ IceModelVec::Ptr IceModel_temppabase::compute() {
       Enthij = enthalpy->get_column(i,j);
 
       const double depth = (*thickness)(i,j),
-        p = EC.pressure(depth);
-      (*result)(i,j) = EC.pressure_adjusted_temperature(Enthij[0], p);
+        p = EC->pressure(depth);
+      (*result)(i,j) = EC->pressure_adjusted_temperature(Enthij[0], p);
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
         // is 273.15
-        if (EC.is_temperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
+        if (EC->is_temperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
           (*result)(i,j) = melting_point_temp;
         }
       }
@@ -723,7 +723,7 @@ IceModelVec::Ptr IceModel_tempbase::compute() {
 
   IceModelVec::Ptr enth = IceModel_enthalpybase(model).compute();
 
-  const EnthalpyConverter &EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
 
   IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(enth);
 
@@ -743,9 +743,9 @@ IceModelVec::Ptr IceModel_tempbase::compute() {
       const int i = p.i(), j = p.j();
 
       double depth = (*thickness)(i,j),
-        pressure = EC.pressure(depth);
+        pressure = EC->pressure(depth);
       if (mask.icy(i, j)) {
-        (*result)(i,j) = EC.temperature((*result)(i,j), pressure);
+        (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
         (*result)(i,j) = m_grid.config->get_double("fill_value");
       }
@@ -777,7 +777,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute() {
   IceModelVec::Ptr enth = IceModel_enthalpysurf(model).compute();
   IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(enth);
 
-  const EnthalpyConverter &EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
 
   // result contains surface enthalpy; note that it is allocated by
   // IceModel_enthalpysurf::compute().
@@ -787,14 +787,14 @@ IceModelVec::Ptr IceModel_tempsurf::compute() {
   list.add(*thickness);
 
   double depth = 1.0,
-    pressure = EC.pressure(depth);
+    pressure = EC->pressure(depth);
   ParallelSection loop(m_grid.com);
   try {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*thickness)(i,j) > 1) {
-        (*result)(i,j) = EC.temperature((*result)(i,j), pressure);
+        (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
         (*result)(i,j) = m_grid.config->get_double("fill_value");
       }
@@ -927,7 +927,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
   result->metadata(0) = m_vars[0];
 
   double *Enth = NULL;
-  EnthalpyConverter *EC = model->EC;
+  EnthalpyConverter::Ptr EC = model->EC;
 
   MaskQuery mask(model->vMask);
 

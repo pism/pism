@@ -78,7 +78,7 @@ void SSATestCaseI::initializeGrid(int Mx,int My) {
 
 
 void SSATestCaseI::initializeSSAModel() {
-  m_enthalpyconverter = new EnthalpyConverter(*m_config);
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
   m_config->set_boolean("do_pseudo_plastic_till", false);
 

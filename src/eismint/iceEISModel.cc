@@ -103,12 +103,12 @@ void IceEISModel::allocate_stressbalance() {
 
   ShallowStressBalance *my_stress_balance;
 
-  SSB_Modifier *modifier = new SIAFD(grid, *EC);
+  SSB_Modifier *modifier = new SIAFD(grid, EC);
 
   if (m_experiment == 'G' || m_experiment == 'H') {
-    my_stress_balance = new SIA_Sliding(grid, *EC);
+    my_stress_balance = new SIA_Sliding(grid, EC);
   } else {
-    my_stress_balance = new ZeroSliding(grid, *EC);
+    my_stress_balance = new ZeroSliding(grid, EC);
   }
 
   // ~StressBalance() will de-allocate my_stress_balance and modifier.

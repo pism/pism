@@ -37,7 +37,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
                              const IceModelVec3 &v3,
                              const IceModelVec3 &w3,
                              const IceModelVec3 &strain_heating3,
-                             const EnthalpyConverter &EC)
+                             EnthalpyConverter::Ptr EC)
 : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
   m_Enth3(Enth3),
   m_strain_heating3(strain_heating3),
@@ -83,7 +83,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   }
 
   // check if c(T) is a constant function:
-  if (EC.c(260) != EC.c(270)) {
+  if (EC->c(260) != EC->c(270)) {
     m_c_depends_on_T = true;
   } else {
     m_c_depends_on_T = false;
@@ -144,11 +144,11 @@ void enthSystemCtx::compute_enthalpy_CTS() {
   for (unsigned int k = 0; k <= m_ks; k++) {
     const double
       depth = m_ice_thickness - k * m_dz,
-      p = m_EC.pressure(depth); // FIXME issue #15
-    m_Enth_s[k] = m_EC.enthalpy_cts(p);
+      p = m_EC->pressure(depth); // FIXME issue #15
+    m_Enth_s[k] = m_EC->enthalpy_cts(p);
   }
 
-  const double Es_air = m_EC.enthalpy_cts(m_p_air);
+  const double Es_air = m_EC->enthalpy_cts(m_p_air);
   for (unsigned int k = m_ks+1; k < m_Enth_s.size(); k++) {
     m_Enth_s[k] = Es_air;
   }
@@ -310,10 +310,10 @@ void enthSystemCtx::assemble_R() {
       if (m_Enth[k] < m_Enth_s[k]) {
         // cold case
         const double depth = m_ice_thickness - k * m_dz;
-        double T = m_EC.temperature(m_Enth[k],
-                                   m_EC.pressure(depth)); // FIXME: issue #15
+        double T = m_EC->temperature(m_Enth[k],
+                                   m_EC->pressure(depth)); // FIXME: issue #15
 
-        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC.c(T)) * m_R_factor;
+        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC->c(T)) * m_R_factor;
       } else {
         // temperate case
         m_R[k] = m_R_temp;

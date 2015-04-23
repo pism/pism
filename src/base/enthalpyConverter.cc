@@ -19,6 +19,7 @@
 #include "base/util/pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/varcEnthalpyConverter.hh"
 
 #include "base/util/error_handling.hh"
 
@@ -437,11 +438,11 @@ EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config) {
   EnthalpyConverter *EC = NULL;
 
   if (config.get_boolean("use_linear_in_temperature_heat_capacity")) {
-    EC = new varcEnthalpyConverter(*config);
+    EC = new varcEnthalpyConverter(config);
   } else if (config.get_boolean("use_Kirchhoff_law")) {
-    EC = new KirchhoffEnthalpyConverter(*config);
+    EC = new KirchhoffEnthalpyConverter(config);
   } else {
-    EC = new EnthalpyConverter(*config);
+    EC = new EnthalpyConverter(config);
   }
 
   return EnthalpyConverter::Ptr(EC);

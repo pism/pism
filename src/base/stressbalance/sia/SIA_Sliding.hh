@@ -32,7 +32,7 @@ namespace stressbalance {
  */
 class SIA_Sliding : public ShallowStressBalance {
 public:
-  SIA_Sliding(const IceGrid &g, const EnthalpyConverter &e);
+  SIA_Sliding(const IceGrid &g, EnthalpyConverter::Ptr e);
 
   virtual ~SIA_Sliding();
 

@@ -47,7 +47,7 @@ const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
 Verification::Verification(const IceGrid &g,
-                           EnthalpyConverter *EC, int test)
+                           EnthalpyConverter::Ptr EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
 }

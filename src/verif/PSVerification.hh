@@ -21,22 +21,22 @@
 #define _PSVERIFICATION_H_
 
 #include "coupler/surface/PSFormulas.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
-class EnthalpyConverter;
 namespace surface {
 
 //! Climate inputs for verification tests.
 class Verification : public PSFormulas {
 public:
-  Verification(const IceGrid &g, EnthalpyConverter *EC, int test);
+  Verification(const IceGrid &g, EnthalpyConverter::Ptr EC, int test);
   ~Verification();
 private:
   void init_impl();
   MaxTimestep max_timestep_impl(double t);
   void update_impl(PetscReal t, PetscReal dt);
   int m_testname;
-  EnthalpyConverter *m_EC;
+  EnthalpyConverter::Ptr m_EC;
   void update_ABCDEH(double t);
   void update_FG(double t);
   void update_KO();

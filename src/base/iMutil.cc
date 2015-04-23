@@ -220,8 +220,8 @@ const IceGrid& IceModel::get_grid() const {
   return grid;
 }
 
-const EnthalpyConverter& IceModel::enthalpy_converter() const {
-  return *EC;
+EnthalpyConverter::Ptr IceModel::enthalpy_converter() const {
+  return EC;
 }
 
 } // end of namespace pism

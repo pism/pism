@@ -21,11 +21,11 @@
 
 #include "base/util/iceModelVec.hh"
 #include "base/util/PISMComponent.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 
 class Vars;
-class EnthalpyConverter;
 
 namespace rheology {
 class FlowLaw;
@@ -36,7 +36,7 @@ namespace stressbalance {
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(const IceGrid &g, const EnthalpyConverter &e);
+  SSB_Modifier(const IceGrid &g, EnthalpyConverter::Ptr e);
   virtual ~SSB_Modifier();
 
   virtual void init();
@@ -60,7 +60,7 @@ public:
   rheology::FlowLaw* flow_law();
 protected:
   rheology::FlowLaw *m_flow_law;
-  const EnthalpyConverter &m_EC;
+  EnthalpyConverter::Ptr m_EC;
   double m_D_max;
   IceModelVec2Stag m_diffusive_flux;
   IceModelVec3 m_u, m_v, m_strain_heating;
@@ -70,7 +70,7 @@ protected:
 //! The trivial Shallow Stress Balance modifier.
 class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(const IceGrid &g, const EnthalpyConverter &e);
+  ConstantInColumn(const IceGrid &g, EnthalpyConverter::Ptr e);
   virtual ~ConstantInColumn();
 
   virtual void init();

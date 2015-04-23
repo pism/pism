@@ -91,7 +91,7 @@ void SSATestCaseExp::initializeSSAModel() {
   m_config->set_double("pseudo_plastic_q", 1.0);
 
   // The following is irrelevant because we will force linear rheology later.
-  m_enthalpyconverter = new EnthalpyConverter(*m_config);
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 }
 
 void SSATestCaseExp::initializeSSACoefficients() {

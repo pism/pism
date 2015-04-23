@@ -350,8 +350,8 @@ int main(int argc, char *argv[]) {
 
     setVerbosityLevel(5);
 
-    ColdEnthalpyConverter EC(*config);
-    rheology::PatersonBuddCold ice("sia_", *config, &EC);
+    EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
+    rheology::PatersonBuddCold ice("sia_", *config, EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;
@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
     StressBalance stress_balance(grid, no_sliding, sia);
 
     // fill the fields:
-    setInitStateF(grid, EC,
+    setInitStateF(grid, *EC,
                   &bed_topography, &vMask, &ice_surface_elevation, &ice_thickness,
                   &enthalpy);
 

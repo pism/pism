@@ -96,7 +96,7 @@ protected:
   IceGrid::Ptr m_grid;
 
   // SSA model variables.
-  EnthalpyConverter *m_enthalpyconverter;
+  EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
   IceModelVec2S  m_surface, m_thickness, m_bed, m_tauc, m_melange_back_pressure;

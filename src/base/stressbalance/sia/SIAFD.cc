@@ -29,7 +29,7 @@
 namespace pism {
 namespace stressbalance {
 
-SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
+SIAFD::SIAFD(const IceGrid &g, EnthalpyConverter::Ptr e)
   : SSB_Modifier(g, e) {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
@@ -66,7 +66,7 @@ SIAFD::SIAFD(const IceGrid &g, const EnthalpyConverter &e)
   m_second_to_kiloyear = m_grid.convert(1, "second", "1000 years");
 
   {
-    rheology::FlowLawFactory ice_factory("sia_", m_config, &m_EC);
+    rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
     m_flow_law = ice_factory.create();
   }
 }
@@ -656,7 +656,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           double depth = thk - m_grid.z(k); // FIXME issue #15
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
-          const double pressure = m_EC.pressure(depth);
+          const double pressure = m_EC->pressure(depth);
 
           double flow;
           if (use_age) {

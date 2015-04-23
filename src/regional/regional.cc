@@ -26,7 +26,7 @@
 namespace pism {
 namespace stressbalance {
 
-SIAFD_Regional::SIAFD_Regional(const IceGrid &g, const EnthalpyConverter &e)
+SIAFD_Regional::SIAFD_Regional(const IceGrid &g, EnthalpyConverter::Ptr e)
   : SIAFD(g, e) {
   // empty
 }
@@ -108,7 +108,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   }
 }
 
-SSAFD_Regional::SSAFD_Regional(const IceGrid &g, const EnthalpyConverter &e)
+SSAFD_Regional::SSAFD_Regional(const IceGrid &g, EnthalpyConverter::Ptr e)
   : SSAFD(g, e) {
   // empty
 }
@@ -147,7 +147,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double pressure = m_EC.pressure((*thkstore)(i,j));
+    double pressure = m_EC->pressure((*thkstore)(i,j));
     if (pressure <= 0) {
       pressure = 0;
     }

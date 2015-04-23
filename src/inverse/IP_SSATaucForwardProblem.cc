@@ -29,7 +29,7 @@
 namespace pism {
 namespace inverse {
 
-IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(const IceGrid &g, const EnthalpyConverter &e,
+IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(const IceGrid &g, EnthalpyConverter::Ptr e,
                                                    IPDesignVariableParameterization &tp)
   : SSAFEM(g, e),
     m_zeta(NULL),

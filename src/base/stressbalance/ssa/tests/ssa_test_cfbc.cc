@@ -106,7 +106,7 @@ void SSATestCaseCFBC::initializeSSAModel() {
   m_config->set_string("ssa_flow_law", "isothermal_glen");
   m_config->set_string("output_variable_order", "zyx");
 
-  m_enthalpyconverter = new EnthalpyConverter(*m_config);
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 }
 
 void SSATestCaseCFBC::initializeSSACoefficients() {

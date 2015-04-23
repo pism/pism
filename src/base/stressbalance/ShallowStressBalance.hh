@@ -21,6 +21,7 @@
 
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 namespace rheology {
@@ -28,7 +29,6 @@ class FlowLaw;
 }
 
 class IceGrid;
-class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
 class Diagnostic;
 class TSDiagnostic;
@@ -38,7 +38,7 @@ namespace stressbalance {
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
 public:
-  ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e);
+  ShallowStressBalance(const IceGrid &g, EnthalpyConverter::Ptr e);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -78,7 +78,7 @@ public:
 
   const rheology::FlowLaw* flow_law();
 
-  const EnthalpyConverter& enthalpy_converter();
+  EnthalpyConverter::Ptr enthalpy_converter();
 
   const IceBasalResistancePlasticLaw* sliding_law();
 protected:
@@ -90,7 +90,7 @@ protected:
   double sea_level;
   IceBasalResistancePlasticLaw *basal_sliding_law;
   rheology::FlowLaw *m_flow_law;
-  const EnthalpyConverter &m_EC;
+  EnthalpyConverter::Ptr m_EC;
 
   IceModelVec2V m_velocity;
   const IceModelVec2V *m_bc_values;
@@ -106,7 +106,7 @@ protected:
 */
 class ZeroSliding : public ShallowStressBalance {
 public:
-  ZeroSliding(const IceGrid &g, const EnthalpyConverter &e);
+  ZeroSliding(const IceGrid &g, EnthalpyConverter::Ptr e);
   virtual ~ZeroSliding();
   
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
@@ -123,7 +123,7 @@ protected:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(const IceGrid &g, const EnthalpyConverter &e);
+  PrescribedSliding(const IceGrid &g, EnthalpyConverter::Ptr e);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
   virtual void init();

@@ -34,7 +34,7 @@ namespace stressbalance {
 
 using pism::mask::ice_free;
 
-ShallowStressBalance::ShallowStressBalance(const IceGrid &g, const EnthalpyConverter &e)
+ShallowStressBalance::ShallowStressBalance(const IceGrid &g, EnthalpyConverter::Ptr e)
   : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
   m_bc_values = NULL;
@@ -90,7 +90,7 @@ const rheology::FlowLaw* ShallowStressBalance::flow_law() {
   return m_flow_law;
 }
 
-const EnthalpyConverter& ShallowStressBalance::enthalpy_converter() {
+EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() {
   return m_EC;
 }
 
@@ -132,11 +132,11 @@ void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic
 }
 
 
-ZeroSliding::ZeroSliding(const IceGrid &g, const EnthalpyConverter &e)
+ZeroSliding::ZeroSliding(const IceGrid &g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  rheology::FlowLawFactory ice_factory("sia_", m_config, &m_EC);
+  rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
   m_flow_law = ice_factory.create();
 }
 
@@ -566,7 +566,7 @@ IceModelVec::Ptr SSB_taub_mag::compute() {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(const IceGrid &g, const EnthalpyConverter &e)
+PrescribedSliding::PrescribedSliding(const IceGrid &g, EnthalpyConverter::Ptr e)
   : ZeroSliding(g, e) {
   // empty
 }

@@ -33,7 +33,7 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
+SSAFEM::SSAFEM(const IceGrid &g, EnthalpyConverter::Ptr e)
   : SSA(g, e), m_element_index(g), m_quadrature(m_grid, 1.0),
     m_quadrature_vector(m_grid, 1.0) {
 
@@ -101,7 +101,7 @@ SSAFEM::SSAFEM(const IceGrid &g, const EnthalpyConverter &e)
   m_coefficients.resize(fem::Quadrature::Nq * nElements);
 }
 
-SSA* SSAFEMFactory(const IceGrid &g, const EnthalpyConverter &ec) {
+SSA* SSAFEMFactory(const IceGrid &g, EnthalpyConverter::Ptr ec) {
   return new SSAFEM(g, ec);
 }
 
