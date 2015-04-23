@@ -110,7 +110,6 @@ Also, please don't expect all your questions to be answered here.  Write to us w
 \normalspacing
 This table lists required dependencies for PISM alphabetically.
 \bigskip
-\newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
 
 \begin{center}
   \begin{tabular}{lll}
@@ -157,7 +156,7 @@ The following Python packages are needed to do all the examples in the \emph{Use
     \multicolumn{2}{c}{\textbf{Recommended Python Package}} & \textbf{Comment}\\
     \midrule
     matplotlib & \url{http://matplotlib.sourceforge.net/} & used in some scripts \\
-    netcdf4-python & \url{https://github.com/Unidata/netcdf4-python} & used in \emph{most} scripts \\
+    netcdf4-python & \url{https://pypi.python.org/pypi/netCDF4/1.1.7} & used in \emph{most} scripts \\
     numpy & \url{http://numpy.scipy.org/} & used in \emph{most} scripts \\
    \bottomrule
   \end{tabular}
@@ -195,7 +194,7 @@ All of these are recommended as they satisfy requirements for building or runnin
     \texttt{libproj-dev} & used to compute ice area and volume \\
     \texttt{python-dev} & (helps with scripts\dots perhaps not essential) \\
     \texttt{python-pyproj} & used in some pre-processing scripts \\
-    \texttt{libx11-dev} & X windows is useful to get graphics through PETSC \\
+    \texttt{libx11-dev} & X windows is useful to get graphics through PETSc \\
     \midrule
     \texttt{libblas-dev} & BLAS is required by PETSc \\
     \texttt{liblapack-dev} & LAPACK is required by PETSc \\
@@ -245,7 +244,7 @@ From now on, this manual assumes the use of the \texttt{bash} shell.
  (= \emph{Fastest Fourier Transform in the West}) library}\index{FFTW
     (\emph{Fastest Fourier Transform in the West})} for the
   deformation of the solid earth (bed) under ice loads.  Install FFTW version
-  3.x or check that it is installed already.
+  3.1 or later, or check that it is installed already.
 
 \item You will need a version of \href{http://www.mcs.anl.gov/mpi/}{MPI (=
     \emph{Message Passing Interface})}.\index{MPI (\emph{Message Passing
@@ -424,12 +423,20 @@ This describes a successful PISM installation on a Cray XK6m-200 at ARSC (\url{h
   modules allows compilers to find headers and libraries.)
 \begin{verbatim}
 module swap PrgEnv-pgi PrgEnv-gnu
-module load petsc/3.3.00
+# netcdf-hdf5parallel/4.2.0 requires GCC 4.7
+module swap gcc/4.9.0 gcc/4.7.1
+
+for module in \
+    fftw/3.3.4.0 \
+    petsc/3.3.00 \
+    netcdf-hdf5parallel/4.2.0 \
+    gsl/1.15.gnu;
+do
+    module load $module
+done
+
+# petsc/3.3.00 does not work with the default tpsl
 module swap tpsl/1.2.00 tpsl/1.3.00
-module load hdf5-parallel/1.8.8
-module load netcdf-hdf5parallel/4.2.0
-module load fftw/3.3.0.2
-module load parallel-netcdf/1.3.1
 \end{verbatim}
 \item Cray does not provide modules for GSL, UDUNITS-2, and CMake, but your system administrators can install them for you.
 \item Get PISM sources and create a build directory
@@ -438,16 +445,10 @@ git clone git://github.com/pism/pism.git
 mkdir pism/build
 cd pism/build
 \end{verbatim}
-\item
-Create a text file \texttt{pism_config.cmake} in the build directory you
-created. It should contain the following, though with replacement of
-\begin{itemize}
-\item ``\texttt{/path/to/gsl/}'' with the GSL install location,
-\item ``\texttt{/path/to/udunits2/}'' with the UDUNITS-2 install location,
-\item ``\texttt{/path/to/libexpat.a}'' with the expat library location
-  (if your UDUNITS-2 installation requires it)
-\item ``\texttt{\$ENV\{HOME\}/pism/}'' with the desired PISM install directory.
-\end{itemize}
+\item Create a text file \texttt{pism_config.cmake} in the build
+  directory you created. It should contain the following, edited to
+  reflect locations of libraries on your system and the desired PISM
+  install location.
 
 \begin{verbatim}
 # Compiler
@@ -466,31 +467,18 @@ set (Pism_LINK_STATICALLY ON CACHE BOOL "")
 
 # No Proj.4 on fish.arsc.edu
 set (Pism_USE_PROJ4 OFF CACHE BOOL "")
+# No TAO on fish.arsc.edu
 set (Pism_USE_TAO OFF CACHE BOOL "")
+# No PNetCDF on fish (alas)
+set (Pism_USE_PNETCDF OFF CACHE BOOL "" FORCE)
 
 # Set the custom GSL location
-set (GSL_LIBRARIES
- "/path/to/gsl/lib/libgsl.a;/path/to/gsl/lib/libgslcblas.a"
- CACHE STRING "" FORCE)
-set (GSL_INCLUDES "/path/to/gsl/include"
- CACHE STRING "" FORCE)
+set (GSL_LIBRARIES "/path/to/libgsl.a;/path/to/libgslcblas.a" CACHE STRING "" FORCE)
+set (GSL_INCLUDES  "/path/to/gsl/include" CACHE STRING "" FORCE)
 
-# Set custom UDUNITS2 location
-set (UDUNITS2_LIBRARIES "/path/to/udunits2/lib/libudunits2.a;/path/to/libexpat.s"
- CACHE STRING "" FORCE)
-set (UDUNITS2_INCLUDES "/path/to/udunits2/include"
- CACHE STRING "" FORCE)
-
-# NETCDF (a work-around for a Cray bug)
-execute_process(COMMAND nc-config --cflags OUTPUT_VARIABLE NETCDF_CFLAGS
- OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND nc-config --libs OUTPUT_VARIABLE NETCDF_LDFLAGS
- OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-set (CMAKE_CXX_FLAGS "${NETCDF_CFLAGS} ${CMAKE_CXX_FLAGS}"
- CACHE STRING "C++ compiler flags" FORCE)
-set (CMAKE_EXE_LINKER_FLAGS "${NETCDF_LDFLAGS} ${CMAKE_EXE_LINKER_FLAGS}"
- CACHE STRING "C++ executable linker flags" FORCE)
+# Set the custom UDUNITS2 location
+set (UDUNITS2_LIBRARIES "/path/to/libudunits2.a;/path/to/libexpat.a" CACHE STRING "" FORCE)
+set (UDUNITS2_INCLUDES  "/path/to/udunits2/include" CACHE STRING "" FORCE)
 \end{verbatim}
 \item Configure and build PISM:
 \begin{verbatim}
@@ -656,18 +644,18 @@ $ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,velsurf_mag -display :0
 \noindent Also \texttt{-draw_pause 0.1} or similar may be needed if the figures
 are refreshing too fast.
 
-\item Run a basic suite of software tests.  To do this, you need to be in PISM's
-build directory, and the cmake flag \texttt{Pism_BUILD_EXTRA_EXECS} should be
-\texttt{ON}.  Then do:
+\item Run a basic suite of software tests. To do this, make sure that
+  NCO and Python packages \texttt{numpy} and \texttt{netcdf4-python}
+  are installed. Also, the CMake flag \texttt{Pism_BUILD_EXTRA_EXECS}
+  should be \texttt{ON}. Then run:
 \begin{verbatim}
 $ make test
 \end{verbatim}
-The message at the bottom should say ``\texttt{100\% tests passed, 0 tests
-failed out of XX}'' or similar.  These tests use NCO and require
-Python packages \texttt{numpy} and \texttt{netcdf4-python}.  Feel free to
-send the output of \texttt{make test} to
-\href{mailto:help@pism-docs.org}{help@pism-docs.org} if any failed tests cannot
-be resolved.
+  \noindent in the build directory. The message at the bottom should
+  say ``\texttt{100\% tests passed, 0 tests failed out of XX}'' or
+  similar. Feel free to send the output of \texttt{make test} to
+  \href{mailto:help@pism-docs.org}{help@pism-docs.org} if any failed
+  tests cannot be resolved.
 \end{enumerate}
 
 \subsubsection*{Next steps}
@@ -691,7 +679,7 @@ the PISM directory and \texttt{make install} in your build directory.
 If you're lucky, you might be able to install all the Python packages mentioned
 in section \ref{sec:prerequisites} using a package manager. On the other hand,
 the Python packages below are not currently available in Debian package
-repositories. They are easy to install using Python \texttt{setuptools},
+repositories. They are easy to install using Python \texttt{setuptools} or \texttt{pip},
 however; these tools are included with recent versions of Python.
 
 \subsubsection*{Python module \texttt{netCDF4}, from package
@@ -702,21 +690,27 @@ You can skip this paragraph if you have
 
 To install \texttt{netcdf4-python} providing the \texttt{netCDF4} module needed
 by PISM scripts, download a tarball from the project homepage
-\url{http://code.google.com/p/netcdf4-python/}.
+\url{https://github.com/Unidata/netcdf4-python}.
 
 \begin{verbatim}
-$  wget http://netcdf4-python.googlecode.com/files/netCDF4-NUMBER.tar.gz
-$  tar -xvf netCDF4-NUMBER.tar.gz
+$  wget https://pypi.python.org/packages/source/n/netCDF4/netCDF4-VERSION.tar.gz
+$  tar -xzvf netCDF4-VERSION.tar.gz
 \end{verbatim}
 Enter the directory you just untarred and install:
 \begin{verbatim}
-$  cd netCDF4-NUMBER/
+$  cd netCDF4-VERSION/
 $  sudo python setup.py install
 \end{verbatim}
 assuming that NetCDF was installed in the \texttt{/usr/} tree. If you
 are using python installed via MacPorts, you can get netdf4-python by doing
 \begin{verbatim}
 $  sudo port install py-netcdf4
+\end{verbatim}
+% $
+
+Alternatively you can use \href{https://pip.pypa.io/en/stable/}{pip}:
+\begin{verbatim}
+pip install netCDF4
 \end{verbatim}
 
 The scripts in directories \texttt{util/}, \texttt{examples/...}, and so on,
