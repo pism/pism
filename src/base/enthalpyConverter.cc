@@ -433,5 +433,18 @@ double KirchhoffEnthalpyConverter::L_impl(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
+EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config) {
+  EnthalpyConverter *EC = NULL;
+
+  if (config.get_boolean("use_linear_in_temperature_heat_capacity")) {
+    EC = new varcEnthalpyConverter(*config);
+  } else if (config.get_boolean("use_Kirchhoff_law")) {
+    EC = new KirchhoffEnthalpyConverter(*config);
+  } else {
+    EC = new EnthalpyConverter(*config);
+  }
+
+  return EnthalpyConverter::Ptr(EC);
+}
 
 } // end of namespace pism

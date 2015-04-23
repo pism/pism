@@ -19,6 +19,8 @@
 #ifndef __enthalpyConverter_hh
 #define __enthalpyConverter_hh
 
+#include "base/util/pism_memory.hh"
+
 namespace pism {
 
 class Config;
@@ -49,7 +51,9 @@ class EnthalpyConverter {
 public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter();
-  
+
+  typedef PISM_SHARED_PTR(EnthalpyConverter) Ptr;
+
   bool is_temperate(double E, double P) const;
 
   double temperature(double E, double P) const;
@@ -145,6 +149,7 @@ private:
   double m_c_w;
 };
 
+EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config);
 
 } // end of namespace pism
 
