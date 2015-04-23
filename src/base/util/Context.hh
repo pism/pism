@@ -46,6 +46,9 @@ public:
   typedef PISM_SHARED_PTR(Time) TimePtr;
   typedef PISM_SHARED_PTR(const Time) ConstTimePtr;
 
+  typedef PISM_SHARED_PTR(Context) Ptr;
+  typedef PISM_SHARED_PTR(const Context) ConstPtr;
+
   Context(MPI_Comm com,
           UnitsSystemPtr system, ConfigPtr config,
           EnthalpyConverterPtr EC, TimePtr time,
