@@ -416,7 +416,7 @@ Installing PISM on Cray systems deserves special mention for two reasons:
 \item building on a Cray requires static linking
 \item Cray uses non-standard locations for libraries and header files
 \end{itemize}
-This describes a successful PISM installation on a Cray XK6m at ARSC (\url{http://www.arsc.edu/}).
+This describes a successful PISM installation on a Cray XK6m-200 at ARSC (\url{http://www.arsc.edu/arsc/support/howtos/usingfish/}).
 
 \begin{enumerate}
 \item Load appropriate modules. You may need to set module versions; note that
@@ -503,8 +503,14 @@ Notes:
 \item Setting \texttt{Pism_LOOK_FOR_LIBRARIES} to ``off'' lets the module
   system manage all necessary compile flags. (This is only necessary on systems
   that install libraries in non-standard locations.)
-\item When \texttt{Pism_LOOK_FOR_LIBRARIES} is ``off'', all optional PISM features are enabled by default. This is why we need to explicitly disable \texttt{Proj.4} and \texttt{TAO}.
-\item \texttt{Pism_EXTERNAL_LIBS} and \texttt{include_directories} can be used to specify locations of libraries other than GSL, if necessary.
+\item To set PROJ.4 location manually, set variables
+  \texttt{PROJ4_INCLUDES} and \texttt{PROJ4_LIBRARIES} and makes sure
+  \texttt{Pism_USE_PROJ4} is set to \texttt{ON}.
+\item To set PnetCDF location manually, set \texttt{PNETCDF_INCLUDES},
+  \texttt{PNETCDF_LIBRARIES}, and \texttt{Pism_USE_PNETCDF}.
+\item To set parallel HDF5 location manually, set
+  \texttt{HDF5_C_INCLUDE_DIR}, \texttt{HDF5_LIBRARIES},
+  \texttt{HDF5_HL_LIBRARIES}, and \texttt{Pism_USE_PARALLEL_HDF5}.
 \item Extra compiler flags can be added by setting \texttt{CMAKE_CXX_FLAGS}, extra linker flags -- \mbox{\texttt{CMAKE_EXE_LINKER_FLAGS}}.
 \end{itemize}
 \end{enumerate}
