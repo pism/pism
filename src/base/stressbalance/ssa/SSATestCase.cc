@@ -125,8 +125,7 @@ void SSATestCase::buildSSACoefficients()
 }
 
 SSATestCase::SSATestCase(MPI_Comm com, Config::Ptr c)
-  : m_com(com), m_config(c), m_enthalpyconverter(NULL), m_ssa(NULL)
-{
+  : m_com(com), m_config(c), m_ssa(NULL) {
   // empty
 }
 
