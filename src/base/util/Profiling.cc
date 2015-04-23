@@ -48,7 +48,8 @@ void Profiling::begin(const char * name) const {
 void Profiling::end(const char * name) const {
   PetscLogEvent event = 0;
   if (m_events.find(name) == m_events.end()) {
-    abort();                    // should never happen
+    throw RuntimeError::formatted("cannot end event \"%s\" because it was not started",
+                                  name);
   } else {
     event = m_events[name];
   }
