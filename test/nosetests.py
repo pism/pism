@@ -672,3 +672,33 @@ def pism_context_test():
     print PISM.convert(ctx.unit_system(), 1, "km", "m")
     print ctx.prefix()
 
+def flowlaw_test():
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
+    EC = PISM.EnthalpyConverter(ctx.config())
+    ff = PISM.FlowLawFactory("sia_", ctx.config(), EC)
+    law = ff.create()
+
+    TpaC = [-30, -5, 0, 0]
+    depth = 2000
+    gs = 1e-3
+    omega0 = 0.005
+    sigma = [1e4, 5e4, 1e5, 1.5e5]
+
+    p = EC.pressure(depth)
+    Tm = EC.melting_temperature(p)
+
+    print "flow law:   \"%s\"" % law.name()
+    print "pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)" % (p, depth)
+    print "flowtable:"
+    print "  (dev stress)   (abs temp) (liq frac) =   (flow)"
+
+    for i in range(4):
+        for j in range(4):
+            T = Tm + TpaC[j]
+            if j == 3:
+                omega = omega0
+            else:
+                omega = 0.0
+            E = EC.enthalpy(T, omega, p)
+            flowcoeff = law.flow(sigma[i], E, p, gs)
+            print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega, flowcoeff)
