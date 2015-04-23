@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 %module(directors="1") cpp
+%feature("autodoc", "2");
 
 /* Don't warn about nested classes (325) and methods that can't be
  * wrapped under the present name, i.e. methods that require %rename.
