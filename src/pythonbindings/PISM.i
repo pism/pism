@@ -198,6 +198,7 @@
 %include "base/util/PISMTime.hh"
 
 %include "base/util/Profiling.hh"
+%shared_ptr(pism::Context);
 %include "base/util/Context.hh"
 
 %include pism_IceGrid.i
