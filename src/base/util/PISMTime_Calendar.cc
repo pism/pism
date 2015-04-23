@@ -57,7 +57,8 @@ static inline std::string string_strip(std::string input) {
 Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
                              const std::string &calendar_string,
                              units::System::Ptr units_system)
-  : Time(c, conf, calendar_string, units_system) {
+  : Time(conf, calendar_string, units_system),
+    m_com(c) {
 
   // init_calendar() was called by the constructor of Time.
   if (pism_is_valid_calendar_name(m_calendar_string) == false) {

@@ -66,7 +66,7 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
 class Time
 {
 public:
-  Time(MPI_Comm c, Config::ConstPtr conf,
+  Time(Config::ConstPtr conf,
        const std::string &calendar,
        units::System::Ptr units_system);
   virtual ~Time();
@@ -187,7 +187,6 @@ protected:
   double seconds_to_years(double input);
 
 protected:
-  MPI_Comm m_com;
   Config::ConstPtr m_config;
   units::System::Ptr m_unit_system;
   units::Unit m_time_units;

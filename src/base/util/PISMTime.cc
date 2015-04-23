@@ -69,7 +69,7 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
         calendar == "365_day" or
         calendar == "noleap" or
         calendar == "none") {
-      return Time::Ptr(new Time(com, config, calendar, system));
+      return Time::Ptr(new Time(config, calendar, system));
     } else {
       return Time::Ptr(new Time_Calendar(com, config, calendar, system));
     }
@@ -97,12 +97,10 @@ double Time::seconds_to_years(double input) {
 }
 
 
-Time::Time(MPI_Comm c,
-           Config::ConstPtr conf,
+Time::Time(Config::ConstPtr conf,
            const std::string &calendar_string,
            units::System::Ptr unit_system)
-  : m_com(c),
-    m_config(conf),
+  : m_config(conf),
     m_unit_system(unit_system),
     m_time_units(m_unit_system, "seconds") {
 

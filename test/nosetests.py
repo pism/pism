@@ -651,8 +651,8 @@ def linear_interpolation_test(plot=False):
 
     assert np.max(np.fabs(F_desired - F_interpolated)) < 1e-16
 
-def context_test():
-    "Test creating and using a Context"
+def pism_context_test():
+    "Test creating and using a C++-level Context"
 
     com = PISM.PETSc.COMM_WORLD
     system = PISM.UnitSystem("")
@@ -661,7 +661,7 @@ def context_test():
 
     EC = PISM.EnthalpyConverter(config)
 
-    time = PISM.Time(com, config, "360_day", system)
+    time = PISM.Time(config, "360_day", system)
 
     ctx = PISM.cpp.Context(com, system, config, EC, time, "greenland")
 
