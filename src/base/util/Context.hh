@@ -72,6 +72,9 @@ private:
   Context & operator=(const Context &);
 };
 
+//! Create a default context using options.
+Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix);
+
 } // end of namespace pism
 
 #endif /* _CONTEXT_H_ */

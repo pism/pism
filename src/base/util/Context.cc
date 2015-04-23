@@ -19,6 +19,10 @@
 
 #include "Context.hh"
 #include "Profiling.hh"
+#include "PISMUnits.hh"
+#include "PISMConfig.hh"
+#include "PISMTime.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 
@@ -84,5 +88,26 @@ const std::string& Context::prefix() const {
 const Profiling& Context::profiling() const {
   return m_impl->profiling;
 }
+
+Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
+  // unit system
+  units::System::Ptr sys(new units::System);
+
+  // configuration parameters
+  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
+    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
+  overrides->init();
+  config->init_with_default();
+  config->import_from(*overrides);
+  config->set_from_options();
+  print_config(3, com, *config);
+
+  Time::Ptr time = time_from_options(com, config, sys);
+
+  EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
+
+  return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
+}
+
 
 } // end of namespace pism
