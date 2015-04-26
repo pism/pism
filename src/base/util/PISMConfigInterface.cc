@@ -177,7 +177,7 @@ double Config::get_double(const std::string &name,
 }
 
 void Config::set_double(const std::string &name, double value,
-                        Config::SetBy flag) {
+                        Config::SettingFlag flag) {
   if (flag == USER) {
     m_impl->parameters_set_by_user.insert(name);
   }
@@ -196,7 +196,7 @@ std::string Config::get_string(const std::string &name) const {
 
 void Config::set_string(const std::string &name,
                         const std::string &value,
-                        Config::SetBy flag) {
+                        Config::SettingFlag flag) {
   if (flag == USER) {
     m_impl->parameters_set_by_user.insert(name);
   }
@@ -214,7 +214,7 @@ bool Config::get_boolean(const std::string& name) const {
 }
 
 void Config::set_boolean(const std::string& name, bool value,
-                         Config::SetBy flag) {
+                         Config::SettingFlag flag) {
   if (flag == USER) {
     m_impl->parameters_set_by_user.insert(name);
   }

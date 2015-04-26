@@ -41,7 +41,17 @@ public:
   Config(units::System::Ptr unit_system);
   virtual ~Config();
 
-  enum SetBy {SYSTEM = 0, USER = 1};
+  //! Flag used by `set_...()` methods.
+  /** Meanings:
+   *
+   * - `DEFAULT`: set the default value; has no effect if a parameter was set by a user at the time
+   *   of the call
+   * - `FORCE`: forcibly set a parameter; unconditionally overrides previous values
+   * - `USER`: forcibly set a parameter; unconditionally overrides previous values and marks this
+   *   parameter as set by the user. This affects future `set_...()` calls using the `DEFAULT` flag
+   *   value and results of `parameters_set_by_user()`.
+   */
+  enum SettingFlag {DEFAULT = 0, FORCE = 1, USER = 2};
 
   // methods implemented in the base class
   units::System::Ptr unit_system() const;
@@ -72,21 +82,21 @@ public:
 
   double get_double(const std::string &name) const;
   double get_double(const std::string &name, const std::string &u1, const std::string &u2) const;
-  void set_double(const std::string &name, double value, SetBy flag = SYSTEM);
+  void set_double(const std::string &name, double value, SettingFlag flag = FORCE);
 
   // strings
   typedef std::map<std::string, std::string> Strings;
   Strings all_strings() const;
 
   std::string get_string(const std::string &name) const;
-  void set_string(const std::string &name, const std::string &value, SetBy flag = SYSTEM);
+  void set_string(const std::string &name, const std::string &value, SettingFlag flag = FORCE);
 
   // booleans
   typedef std::map<std::string, bool> Booleans;
   Booleans all_booleans() const;
 
   bool get_boolean(const std::string& name) const;
-  void set_boolean(const std::string& name, bool value, SetBy flag = SYSTEM);
+  void set_boolean(const std::string& name, bool value, SettingFlag flag = FORCE);
 
   // Implementations
 protected:
