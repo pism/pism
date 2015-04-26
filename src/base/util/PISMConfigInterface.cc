@@ -178,8 +178,16 @@ double Config::get_double(const std::string &name,
 
 void Config::set_double(const std::string &name, double value,
                         Config::SettingFlag flag) {
+  std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
+
   if (flag == USER) {
-    m_impl->parameters_set_by_user.insert(name);
+    set_by_user.insert(name);
+  }
+
+  // stop if we're setting the default value and this parameter was set by user already
+  if (flag == DEFAULT and
+      set_by_user.find(name) != set_by_user.end()) {
+    return;
   }
 
   this->set_double_impl(name, value);
@@ -197,8 +205,16 @@ std::string Config::get_string(const std::string &name) const {
 void Config::set_string(const std::string &name,
                         const std::string &value,
                         Config::SettingFlag flag) {
+  std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
+
   if (flag == USER) {
-    m_impl->parameters_set_by_user.insert(name);
+    set_by_user.insert(name);
+  }
+
+  // stop if we're setting the default value and this parameter was set by user already
+  if (flag == DEFAULT and
+      set_by_user.find(name) != set_by_user.end()) {
+    return;
   }
 
   this->set_string_impl(name, value);
@@ -215,8 +231,16 @@ bool Config::get_boolean(const std::string& name) const {
 
 void Config::set_boolean(const std::string& name, bool value,
                          Config::SettingFlag flag) {
+  std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
+
   if (flag == USER) {
-    m_impl->parameters_set_by_user.insert(name);
+    set_by_user.insert(name);
+  }
+
+  // stop if we're setting the default value and this parameter was set by user already
+  if (flag == DEFAULT and
+      set_by_user.find(name) != set_by_user.end()) {
+    return;
   }
 
   this->set_boolean_impl(name, value);
