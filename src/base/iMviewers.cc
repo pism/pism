@@ -22,7 +22,7 @@
 
 #include "iceModel.hh"
 
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"

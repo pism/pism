@@ -53,14 +53,23 @@ public:
    */
   enum SettingFlag {DEFAULT = 0, FORCE = 1, USER = 2};
 
+  //! Flag used by `get_...()` methods.
+  /** Meanings:
+   *
+   * - `REMEMBER_THIS_USE` (the default): add the name of a parameter to the list of parameters used
+   *    by a model run.
+
+   * - `FORGET_THIS_USE`: don't add the name of a parameter to the list of used parameters. This is
+   *    necessary to be able to get the current value of a parameter to be used as the default when
+   *    processing a command-line option.
+   */
+  enum UseFlag {REMEMBER_THIS_USE = 0, FORGET_THIS_USE = 1};
+
   // methods implemented in the base class
   units::System::Ptr unit_system() const;
 
   // Import settings from an override file
   void import_from(const Config &other);
-  // Update settings stored in an "override" config to make sure that when we save an override
-  // config it contains values that were used by a run.
-  void update_from(const Config &other);
 
   const std::set<std::string>& parameters_set_by_user() const;
   const std::set<std::string>& parameters_used() const;
@@ -80,22 +89,24 @@ public:
   typedef std::map<std::string, double> Doubles;
   Doubles all_doubles() const;
 
-  double get_double(const std::string &name) const;
-  double get_double(const std::string &name, const std::string &u1, const std::string &u2) const;
+  double get_double(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  double get_double(const std::string &name,
+                    const std::string &u1, const std::string &u2,
+                    UseFlag flag = REMEMBER_THIS_USE) const;
   void set_double(const std::string &name, double value, SettingFlag flag = FORCE);
 
   // strings
   typedef std::map<std::string, std::string> Strings;
   Strings all_strings() const;
 
-  std::string get_string(const std::string &name) const;
+  std::string get_string(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_string(const std::string &name, const std::string &value, SettingFlag flag = FORCE);
 
   // booleans
   typedef std::map<std::string, bool> Booleans;
   Booleans all_booleans() const;
 
-  bool get_boolean(const std::string& name) const;
+  bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_boolean(const std::string& name, bool value, SettingFlag flag = FORCE);
 
   // Implementations
@@ -117,22 +128,38 @@ protected:
 
   virtual bool get_boolean_impl(const std::string& name) const = 0;
   virtual void set_boolean_impl(const std::string& name, bool value) = 0;
-protected:
-  // Set parameters by ptocessing a command-line option
-  void parameter_from_options(const std::string &name);
-  void boolean_from_option(const std::string &option, const std::string &parameter);
-  void scalar_from_option(const std::string &option, const std::string &parameter);
-  void string_from_option(const std::string &option, const std::string &parameter);
-  void keyword_from_option(const std::string &option, const std::string &parameter,
-                           const std::string &choices);
-
-  void set_from_options();
 private:
   struct Impl;
   Impl *m_impl;
 };
 
+//! Set configuration parameters using command-line options.
+void set_config_from_options(Config &config);
+
+//! Set one parameter using command-line options.
+void set_parameter_from_options(Config &config, const std::string &name);
+
+//! Set one boolean parameter using command-line options.
+void set_boolean_from_option(Config &config,
+                             const std::string &option,const std::string &parameter);
+
+//! Set one scalar parameter using command-line options.
+void set_scalar_from_option(Config &config,
+                            const std::string &option, const std::string &parameter);
+
+//! Set one free-form string parameter using command-line options.
+void set_string_from_option(Config &config,
+                            const std::string &option, const std::string &parameter);
+
+//! Set one keyword parameter using command-line options.
+void set_keyword_from_option(Config &config,
+                             const std::string &option, const std::string &parameter,
+                             const std::string &choices);
+
+//! Report configuration parameters to `stdout`.
 void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config);
+
+//! Report unused configuration parameters to `stdout`.
 void print_unused_parameters(int verbosity_threshhold, MPI_Comm com, const Config &config);
 
 } // end of namespace pism

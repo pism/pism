@@ -29,7 +29,7 @@
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
 #include "coupler/PISMOcean.hh"
@@ -45,7 +45,7 @@ void IceModel::setFromOptions() {
   verbPrintf(3, m_grid.com,
              "Processing physics-related command-line options...\n");
 
-  config->set_from_options();
+  set_config_from_options(*config);
 
   id = options::Integer("-id", "Specifies the sounding row", id);
   jd = options::Integer("-jd", "Specifies the sounding column", jd);

@@ -40,7 +40,7 @@
 #include "base/stressbalance/ssa/SSAFD.hh"
 #include "base/stressbalance/ssa/SSAFEM.hh"
 #include "base/util/Mask.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"

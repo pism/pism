@@ -36,7 +36,7 @@
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
@@ -49,10 +49,9 @@
 
 namespace pism {
 
-IceModel::IceModel(IceGrid &g, DefaultConfig::Ptr conf, DefaultConfig::Ptr conf_overrides)
+IceModel::IceModel(IceGrid &g, Config::Ptr conf)
   : m_grid(g),
     config(conf),
-    overrides(conf_overrides),
     global_attributes("PISM_GLOBAL", g.config->unit_system()),
     mapping("mapping", g.config->unit_system()),
     run_stats("run_stats", g.config->unit_system()),

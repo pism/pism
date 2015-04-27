@@ -80,11 +80,11 @@ int main(int argc, char *argv[]) {
     overrides->init();
     config->init_with_default();
     config->import_from(*overrides);
-    config->set_from_options();
+    set_config_from_options(*config);
     print_config(3, com, *config);
 
     IceGrid g(com, config);
-    IceModel m(g, config, overrides);
+    IceModel m(g, config);
 
     m.init();
 

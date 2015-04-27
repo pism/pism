@@ -25,7 +25,7 @@
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/error_handling.hh"
 #include "coupler/PISMOcean.hh"

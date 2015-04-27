@@ -27,7 +27,7 @@
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
 
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 using namespace pism;
 

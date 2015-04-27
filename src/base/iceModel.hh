@@ -41,7 +41,7 @@
 // IceModel owns a bunch of fields, so we have to include this.
 #include "base/util/iceModelVec.hh"
 #include "base/util/MaxTimestep.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/enthalpyConverter.hh"
 
 namespace pism {
@@ -79,7 +79,6 @@ class BedDef;
 }
 
 // forward declarations
-class DefaultConfig;
 class IceGrid;
 class YieldStress;
 class Diagnostic;
@@ -141,7 +140,7 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, DefaultConfig::Ptr config, DefaultConfig::Ptr overrides);
+  IceModel(IceGrid &g, Config::Ptr config);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -215,8 +214,8 @@ protected:
 
   IceGrid &m_grid;
 
-  DefaultConfig::Ptr config,           //!< configuration flags and parameters
-    overrides;                  //!< flags and parameters overriding config, see -config_override
+  //! Configuration flags and parameters
+  Config::Ptr config;
 
   VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters

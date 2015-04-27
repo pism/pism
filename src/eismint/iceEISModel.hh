@@ -32,7 +32,7 @@ namespace pism {
 */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(IceGrid &g, DefaultConfig::Ptr config, DefaultConfig::Ptr overrides);
+  IceEISModel(IceGrid &g, Config::Ptr config);
   virtual void setFromOptions();
   virtual void set_vars_from_options();
   virtual void allocate_stressbalance();

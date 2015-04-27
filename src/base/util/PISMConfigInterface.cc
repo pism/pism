@@ -120,35 +120,6 @@ void Config::import_from(const Config &other) {
   }
 }
 
-//! @brief Update values from the other config variable, overwriting present values but avoiding
-//! adding new ones.
-void Config::update_from(const Config &other) {
-  Doubles doubles = other.all_doubles();
-  Strings strings = other.all_strings();
-  Booleans booleans = other.all_booleans();
-
-  Doubles::const_iterator i;
-  for (i = doubles.begin(); i != doubles.end(); ++i) {
-    if (this->is_set(i->first)) {
-      this->set_double(i->first, i->second, USER);
-    }
-  }
-
-  Strings::const_iterator j;
-  for (j = strings.begin(); j != strings.end(); ++j) {
-    if (this->is_set(j->first)) {
-      this->set_string(j->first, j->second, USER);
-    }
-  }
-
-  Booleans::const_iterator k;
-  for (k = booleans.begin(); k != booleans.end(); ++k) {
-    if (this->is_set(k->first)) {
-      this->set_boolean(k->first, k->second, USER);
-    }
-  }
-}
-
 const std::set<std::string>& Config::parameters_set_by_user() const {
   return m_impl->parameters_set_by_user;
 }
@@ -165,14 +136,17 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
-double Config::get_double(const std::string &name) const {
-  m_impl->parameters_used.insert(name);
+double Config::get_double(const std::string &name, UseFlag flag) const {
+  if (flag == REMEMBER_THIS_USE) {
+    m_impl->parameters_used.insert(name);
+  }
   return this->get_double_impl(name);
 }
 
 double Config::get_double(const std::string &name,
-                          const std::string &u1, const std::string &u2) const {
-  double value = this->get_double(name);
+                          const std::string &u1, const std::string &u2,
+                          UseFlag flag) const {
+  double value = this->get_double(name, flag);
   return units::convert(m_impl->unit_system, value, u1, u2);
 }
 
@@ -197,8 +171,10 @@ Config::Strings Config::all_strings() const {
   return this->all_strings_impl();
 }
 
-std::string Config::get_string(const std::string &name) const {
-  m_impl->parameters_used.insert(name);
+std::string Config::get_string(const std::string &name, UseFlag flag) const {
+  if (flag == REMEMBER_THIS_USE) {
+    m_impl->parameters_used.insert(name);
+  }
   return this->get_string_impl(name);
 }
 
@@ -224,8 +200,10 @@ Config::Booleans Config::all_booleans() const {
   return this->all_booleans_impl();
 }
 
-bool Config::get_boolean(const std::string& name) const {
-  m_impl->parameters_used.insert(name);
+bool Config::get_boolean(const std::string& name, UseFlag flag) const {
+  if (flag == REMEMBER_THIS_USE) {
+    m_impl->parameters_used.insert(name);
+  }
   return this->get_boolean_impl(name);
 }
 
@@ -343,10 +321,12 @@ void print_unused_parameters(int verbosity_threshhold, MPI_Comm com,
   - if none, does nothing.
 
 */
-void Config::boolean_from_option(const std::string &name, const std::string &flag) {
+void set_boolean_from_option(Config &config, const std::string &name, const std::string &flag) {
 
-  bool foo    = options::Bool("-" + name, get_string_impl(flag + "_doc"));
-  bool no_foo = options::Bool("-no_" + name, get_string_impl(flag + "_doc"));
+  bool foo    = options::Bool("-" + name,
+                              config.get_string(flag + "_doc", Config::FORGET_THIS_USE));
+  bool no_foo = options::Bool("-no_" + name,
+                              config.get_string(flag + "_doc", Config::FORGET_THIS_USE));
 
   if (foo and no_foo) {
     throw RuntimeError::formatted("Inconsistent command-line options: both -%s and -no_%s are set.\n",
@@ -354,11 +334,11 @@ void Config::boolean_from_option(const std::string &name, const std::string &fla
   }
 
   if (foo) {
-    set_boolean(flag, true, USER);
+    config.set_boolean(flag, true, Config::USER);
   }
 
   if (no_foo) {
-    set_boolean(flag, false, USER);
+    config.set_boolean(flag, false, Config::USER);
   }
 }
 
@@ -372,22 +352,22 @@ void Config::boolean_from_option(const std::string &name, const std::string &fla
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void Config::scalar_from_option(const std::string &name, const std::string &parameter) {
+void set_scalar_from_option(Config &config, const std::string &name, const std::string &parameter) {
   options::Real option("-" + name,
-                       get_string_impl(parameter + "_doc"),
-                       get_double_impl(parameter));
+                       config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+                       config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    this->set_double(parameter, option, USER);
+    config.set_double(parameter, option, Config::USER);
   }
 }
 
-void Config::string_from_option(const std::string &name, const std::string &parameter) {
+void set_string_from_option(Config &config, const std::string &name, const std::string &parameter) {
 
   options::String value("-" + name,
-                        get_string_impl(parameter + "_doc"),
-                        get_string_impl(parameter));
+                        config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+                        config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
-    this->set_string(parameter, value, USER);
+    config.set_string(parameter, value, Config::USER);
   }
 }
 
@@ -397,62 +377,62 @@ void Config::string_from_option(const std::string &name, const std::string &para
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-void Config::keyword_from_option(const std::string &name,
-                                 const std::string &parameter,
-                                 const std::string &choices) {
+void set_keyword_from_option(Config &config, const std::string &name,
+                             const std::string &parameter,
+                             const std::string &choices) {
 
   options::Keyword keyword("-" + name,
-                           this->get_string_impl(parameter + "_doc"),
+                           config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                            choices,
-                           this->get_string_impl(parameter));
+                           config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {
-    this->set_string(parameter, keyword, USER);
+    config.set_string(parameter, keyword, Config::USER);
   }
 }
 
-void Config::parameter_from_options(const std::string &name) {
+void set_parameter_from_options(Config &config, const std::string &name) {
 
-  if (not this->is_set(name + "_option")) {
+  if (not config.is_set(name + "_option")) {
     return;
   }
 
-  std::string option = this->get_string(name + "_option");
+  std::string option = config.get_string(name + "_option");
 
   std::string type = "string";
-  if (this->is_set(name + "_type")) {
+  if (config.is_set(name + "_type")) {
     // will get marked as "used", but that's OK
-    type = this->get_string(name + "_type");
+    type = config.get_string(name + "_type");
   }
 
   if (type == "string") {
-    this->string_from_option(option, name);
+    set_string_from_option(config, option, name);
   } else if (type == "boolean") {
-    this->boolean_from_option(option, name);
+    set_boolean_from_option(config, option, name);
   } else if (type == "scalar") {
-    this->scalar_from_option(option, name);
+    set_scalar_from_option(config, option, name);
   } else if (type == "keyword") {
     // will be marked as "used" and will fail if not set
-    std::string choices = this->get_string(name + "_choices");
+    std::string choices = config.get_string(name + "_choices");
 
-    this->keyword_from_option(option, name, choices);
+    set_keyword_from_option(config, option, name, choices);
   } else {
     throw RuntimeError::formatted("parameter type \"%s\" is invalid", type.c_str());
   }
 }
 
-void Config::set_from_options() {
+void set_config_from_options(Config &config) {
 
-  this->keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy");
-  this->keyword_from_option("z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
+  set_keyword_from_option(config, "periodicity", "grid_periodicity", "none,x,y,xy");
+  set_keyword_from_option(config, "z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
 
   // Energy modeling
-  this->boolean_from_option("use_Kirchhoff_law", "use_Kirchhoff_law");
-  this->boolean_from_option("varc", "use_linear_in_temperature_heat_capacity");
-  this->boolean_from_option("vark",
+  set_boolean_from_option(config, "use_Kirchhoff_law", "use_Kirchhoff_law");
+  set_boolean_from_option(config, "varc", "use_linear_in_temperature_heat_capacity");
+  set_boolean_from_option(config, "vark",
                             "use_temperature_dependent_thermal_conductivity");
 
-  this->boolean_from_option("bmr_in_cont", "include_bmr_in_continuity");
+  set_boolean_from_option(config, "bmr_in_cont", "include_bmr_in_continuity");
 
   {
     options::Keyword energy("-energy",
@@ -461,156 +441,156 @@ void Config::set_from_options() {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        this->set_boolean("do_energy", false, USER);
+        config.set_boolean("do_energy", false, Config::USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        this->set_boolean("do_cold_ice_methods", true, USER);
+        config.set_boolean("do_cold_ice_methods", true, Config::USER);
       } else if (energy == "cold") {
-        this->set_boolean("do_energy", true, USER);
-        this->set_boolean("do_cold_ice_methods", true, USER);
+        config.set_boolean("do_energy", true, Config::USER);
+        config.set_boolean("do_cold_ice_methods", true, Config::USER);
       } else if (energy == "enthalpy") {
-        this->set_boolean("do_energy", true, USER);
-        this->set_boolean("do_cold_ice_methods", false, USER);
+        config.set_boolean("do_energy", true, Config::USER);
+        config.set_boolean("do_cold_ice_methods", false, Config::USER);
       } else {
-        assert(false and "this can't happen: options::Keyword validates its input");
+        throw RuntimeError("this can't happen: options::Keyword validates input");
       }
     }
   }
 
   // at bootstrapping, choose whether the method uses smb as upper boundary for
   // vertical velocity
-  this->keyword_from_option("boot_temperature_heuristic",
+  set_keyword_from_option(config, "boot_temperature_heuristic",
                             "bootstrapping_temperature_heuristic", "smb,quartic_guess");
 
-  this->scalar_from_option("low_temp", "global_min_allowed_temp");
-  this->scalar_from_option("max_low_temps", "max_low_temp_count");
+  set_scalar_from_option(config, "low_temp", "global_min_allowed_temp");
+  set_scalar_from_option(config, "max_low_temps", "max_low_temp_count");
 
   // Sub-models
-  this->boolean_from_option("age", "do_age");
-  this->boolean_from_option("mass", "do_mass_conserve");
+  set_boolean_from_option(config, "age", "do_age");
+  set_boolean_from_option(config, "mass", "do_mass_conserve");
 
   // hydrology
-  this->keyword_from_option("hydrology", "hydrology_model",
+  set_keyword_from_option(config, "hydrology", "hydrology_model",
                             "null,routing,distributed");
-  this->boolean_from_option("hydrology_use_const_bmelt",
+  set_boolean_from_option(config, "hydrology_use_const_bmelt",
                             "hydrology_use_const_bmelt");
-  this->scalar_from_option("hydrology_const_bmelt",
+  set_scalar_from_option(config, "hydrology_const_bmelt",
                            "hydrology_const_bmelt");
-  this->scalar_from_option("hydrology_tillwat_max",
+  set_scalar_from_option(config, "hydrology_tillwat_max",
                            "hydrology_tillwat_max");
-  this->scalar_from_option("hydrology_tillwat_decay_rate",
+  set_scalar_from_option(config, "hydrology_tillwat_decay_rate",
                            "hydrology_tillwat_decay_rate");
-  this->scalar_from_option("hydrology_hydraulic_conductivity",
+  set_scalar_from_option(config, "hydrology_hydraulic_conductivity",
                            "hydrology_hydraulic_conductivity");
-  this->scalar_from_option("hydrology_thickness_power_in_flux",
+  set_scalar_from_option(config, "hydrology_thickness_power_in_flux",
                            "hydrology_thickness_power_in_flux");
-  this->scalar_from_option("hydrology_gradient_power_in_flux",
+  set_scalar_from_option(config, "hydrology_gradient_power_in_flux",
                            "hydrology_gradient_power_in_flux");
   // additional to hydrology::Routing, these apply to hydrology::Distributed:
-  this->scalar_from_option("hydrology_roughness_scale",
+  set_scalar_from_option(config, "hydrology_roughness_scale",
                            "hydrology_roughness_scale");
-  this->scalar_from_option("hydrology_cavitation_opening_coefficient",
+  set_scalar_from_option(config, "hydrology_cavitation_opening_coefficient",
                            "hydrology_cavitation_opening_coefficient");
-  this->scalar_from_option("hydrology_creep_closure_coefficient",
+  set_scalar_from_option(config, "hydrology_creep_closure_coefficient",
                            "hydrology_creep_closure_coefficient");
-  this->scalar_from_option("hydrology_regularizing_porosity",
+  set_scalar_from_option(config, "hydrology_regularizing_porosity",
                            "hydrology_regularizing_porosity");
 
   // Time-stepping
-  this->keyword_from_option("calendar", "calendar",
+  set_keyword_from_option(config, "calendar", "calendar",
                             "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none");
 
-  this->scalar_from_option("adapt_ratio",
+  set_scalar_from_option(config, "adapt_ratio",
                            "adaptive_timestepping_ratio");
 
-  this->scalar_from_option("timestep_hit_multiples",
+  set_scalar_from_option(config, "timestep_hit_multiples",
                            "timestep_hit_multiples");
 
-  this->boolean_from_option("count_steps", "count_time_steps");
-  this->scalar_from_option("max_dt", "maximum_time_step_years");
+  set_boolean_from_option(config, "count_steps", "count_time_steps");
+  set_scalar_from_option(config, "max_dt", "maximum_time_step_years");
 
 
   // SIA-related
-  this->scalar_from_option("bed_smoother_range", "bed_smoother_range");
+  set_scalar_from_option(config, "bed_smoother_range", "bed_smoother_range");
 
-  this->keyword_from_option("gradient", "surface_gradient_method",
+  set_keyword_from_option(config, "gradient", "surface_gradient_method",
                             "eta,haseloff,mahaffy");
 
   // rheology-related
-  this->scalar_from_option("sia_n", "sia_Glen_exponent");
-  this->scalar_from_option("ssa_n", "ssa_Glen_exponent");
+  set_scalar_from_option(config, "sia_n", "sia_Glen_exponent");
+  set_scalar_from_option(config, "ssa_n", "ssa_Glen_exponent");
 
-  this->keyword_from_option("sia_flow_law", "sia_flow_law",
+  set_keyword_from_option(config, "sia_flow_law", "sia_flow_law",
                             "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb");
 
-  this->keyword_from_option("ssa_flow_law", "ssa_flow_law",
+  set_keyword_from_option(config, "ssa_flow_law", "ssa_flow_law",
                             "arr,arrwarm,gpbld,hooke,isothermal_glen,pb");
 
-  this->scalar_from_option("sia_e", "sia_enhancement_factor");
-  this->scalar_from_option("ssa_e", "ssa_enhancement_factor");
+  set_scalar_from_option(config, "sia_e", "sia_enhancement_factor");
+  set_scalar_from_option(config, "ssa_e", "ssa_enhancement_factor");
 
-  this->boolean_from_option("e_age_coupling", "e_age_coupling");
+  set_boolean_from_option(config, "e_age_coupling", "e_age_coupling");
 
   // This parameter is used by the Goldsby-Kohlstedt flow law.
-  this->scalar_from_option("ice_grain_size", "ice_grain_size");
+  set_scalar_from_option(config, "ice_grain_size", "ice_grain_size");
 
-  this->boolean_from_option("grain_size_age_coupling",
+  set_boolean_from_option(config, "grain_size_age_coupling",
                             "compute_grain_size_using_age");
 
   // SSA
   // Decide on the algorithm for solving the SSA
-  this->keyword_from_option("ssa_method", "ssa_method", "fd,fem");
+  set_keyword_from_option(config, "ssa_method", "ssa_method", "fd,fem");
 
-  this->scalar_from_option("ssa_eps",  "epsilon_ssa");
-  this->scalar_from_option("ssa_maxi", "max_iterations_ssafd");
-  this->scalar_from_option("ssa_rtol", "ssafd_relative_convergence");
+  set_scalar_from_option(config, "ssa_eps",  "epsilon_ssa");
+  set_scalar_from_option(config, "ssa_maxi", "max_iterations_ssafd");
+  set_scalar_from_option(config, "ssa_rtol", "ssafd_relative_convergence");
 
-  this->scalar_from_option("ssafd_nuH_iter_failure_underrelaxation", "ssafd_nuH_iter_failure_underrelaxation");
+  set_scalar_from_option(config, "ssafd_nuH_iter_failure_underrelaxation", "ssafd_nuH_iter_failure_underrelaxation");
 
-  this->boolean_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc");
-  this->boolean_from_option("cfbc", "calving_front_stress_boundary_condition");
+  set_boolean_from_option(config, "ssa_dirichlet_bc", "ssa_dirichlet_bc");
+  set_boolean_from_option(config, "cfbc", "calving_front_stress_boundary_condition");
 
   // Basal sliding fiddles
-  this->boolean_from_option("brutal_sliding", "brutal_sliding");
-  this->scalar_from_option("brutal_sliding_scale","brutal_sliding_scale");
+  set_boolean_from_option(config, "brutal_sliding", "brutal_sliding");
+  set_scalar_from_option(config, "brutal_sliding_scale","brutal_sliding_scale");
 
-  this->scalar_from_option("sliding_scale_factor_reduces_tauc",
+  set_scalar_from_option(config, "sliding_scale_factor_reduces_tauc",
                            "sliding_scale_factor_reduces_tauc");
 
   // SSA Inversion
 
-  this->keyword_from_option("inv_method","inv_ssa_method",
+  set_keyword_from_option(config, "inv_method","inv_ssa_method",
                             "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
 
-  this->keyword_from_option("inv_design_param",
+  set_keyword_from_option(config, "inv_design_param",
                             "inv_design_param","ident,trunc,square,exp");
 
-  this->scalar_from_option("inv_target_misfit","inv_target_misfit");
+  set_scalar_from_option(config, "inv_target_misfit","inv_target_misfit");
 
-  this->scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight");
-  this->scalar_from_option("tikhonov_atol","tikhonov_atol");
-  this->scalar_from_option("tikhonov_rtol","tikhonov_rtol");
-  this->scalar_from_option("tikhonov_ptol","tikhonov_ptol");
+  set_scalar_from_option(config, "tikhonov_penalty","tikhonov_penalty_weight");
+  set_scalar_from_option(config, "tikhonov_atol","tikhonov_atol");
+  set_scalar_from_option(config, "tikhonov_rtol","tikhonov_rtol");
+  set_scalar_from_option(config, "tikhonov_ptol","tikhonov_ptol");
 
-  this->keyword_from_option("inv_state_func",
+  set_keyword_from_option(config, "inv_state_func",
                             "inv_state_func",
                             "meansquare,log_ratio,log_relative");
-  this->keyword_from_option("inv_design_func",
+  set_keyword_from_option(config, "inv_design_func",
                             "inv_design_func","sobolevH1,tv");
 
-  this->scalar_from_option("inv_design_cL2","inv_design_cL2");
-  this->scalar_from_option("inv_design_cH1","inv_design_cH1");
-  this->scalar_from_option("inv_ssa_tv_exponent","inv_ssa_tv_exponent");
-  this->scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale");
+  set_scalar_from_option(config, "inv_design_cL2","inv_design_cL2");
+  set_scalar_from_option(config, "inv_design_cH1","inv_design_cH1");
+  set_scalar_from_option(config, "inv_ssa_tv_exponent","inv_ssa_tv_exponent");
+  set_scalar_from_option(config, "inv_log_ratio_scale","inv_log_ratio_scale");
 
   // Basal strength
-  this->scalar_from_option("till_cohesion", "till_cohesion");
-  this->scalar_from_option("till_reference_void_ratio",
+  set_scalar_from_option(config, "till_cohesion", "till_cohesion");
+  set_scalar_from_option(config, "till_reference_void_ratio",
                            "till_reference_void_ratio");
-  this->scalar_from_option("till_compressibility_coefficient",
+  set_scalar_from_option(config, "till_compressibility_coefficient",
                            "till_compressibility_coefficient");
-  this->scalar_from_option("till_effective_fraction_overburden",
+  set_scalar_from_option(config, "till_effective_fraction_overburden",
                            "till_effective_fraction_overburden");
-  this->scalar_from_option("till_log_factor_transportable_water",
+  set_scalar_from_option(config, "till_log_factor_transportable_water",
                            "till_log_factor_transportable_water");
 
   // read the comma-separated list of four values
@@ -620,26 +600,26 @@ void Config::set_from_options() {
       throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
                                     (int)topg_to_phi->size());
     }
-    this->set_boolean("till_use_topg_to_phi", true);
-    this->set_double("till_topg_to_phi_phi_min", topg_to_phi[0]);
-    this->set_double("till_topg_to_phi_phi_max", topg_to_phi[1]);
-    this->set_double("till_topg_to_phi_topg_min", topg_to_phi[2]);
-    this->set_double("till_topg_to_phi_topg_max", topg_to_phi[3]);
+    config.set_boolean("till_use_topg_to_phi", true);
+    config.set_double("till_topg_to_phi_phi_min", topg_to_phi[0]);
+    config.set_double("till_topg_to_phi_phi_max", topg_to_phi[1]);
+    config.set_double("till_topg_to_phi_topg_min", topg_to_phi[2]);
+    config.set_double("till_topg_to_phi_topg_max", topg_to_phi[3]);
   }
 
-  this->boolean_from_option("tauc_slippery_grounding_lines",
+  set_boolean_from_option(config, "tauc_slippery_grounding_lines",
                             "tauc_slippery_grounding_lines");
-  this->boolean_from_option("tauc_add_transportable_water",
+  set_boolean_from_option(config, "tauc_add_transportable_water",
                             "tauc_add_transportable_water");
 
-  this->keyword_from_option("yield_stress", "yield_stress_model",
+  set_keyword_from_option(config, "yield_stress", "yield_stress_model",
                             "constant,mohr_coulomb");
 
   // all basal strength models use this in ice-free areas
-  this->scalar_from_option("high_tauc", "high_tauc");
+  set_scalar_from_option(config, "high_tauc", "high_tauc");
 
   // controls regularization of plastic basal sliding law
-  this->scalar_from_option("plastic_reg", "plastic_regularization");
+  set_scalar_from_option(config, "plastic_reg", "plastic_regularization");
 
   // "friction angle" in degrees. We allow -plastic_phi without an
   // argument: MohrCoulombYieldStress interprets that as "set
@@ -647,71 +627,71 @@ void Config::set_from_options() {
   // file or an override file".
   bool plastic_phi_set = options::Bool("-plastic_phi", "use constant till_phi");
   if (plastic_phi_set) {
-    this->scalar_from_option("plastic_phi", "default_till_phi");
+    set_scalar_from_option(config, "plastic_phi", "default_till_phi");
   }
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
-  this->boolean_from_option("pseudo_plastic", "do_pseudo_plastic_till");
+  set_boolean_from_option(config, "pseudo_plastic", "do_pseudo_plastic_till");
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
-  this->scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q");
+  set_scalar_from_option(config, "pseudo_plastic_q", "pseudo_plastic_q");
 
   // threshold; at this velocity tau_c is basal shear stress
-  this->scalar_from_option("pseudo_plastic_uthreshold",
+  set_scalar_from_option(config, "pseudo_plastic_uthreshold",
                            "pseudo_plastic_uthreshold");
 
-  this->boolean_from_option("subgl", "sub_groundingline");
+  set_boolean_from_option(config, "subgl", "sub_groundingline");
 
   // Ice shelves
-  this->boolean_from_option("part_grid", "part_grid");
+  set_boolean_from_option(config, "part_grid", "part_grid");
 
-  this->boolean_from_option("part_grid_reduce_frontal_thickness",
+  set_boolean_from_option(config, "part_grid_reduce_frontal_thickness",
                             "part_grid_reduce_frontal_thickness");
 
-  this->boolean_from_option("part_redist", "part_redist");
+  set_boolean_from_option(config, "part_redist", "part_redist");
 
-  this->scalar_from_option("nu_bedrock", "nu_bedrock");
+  set_scalar_from_option(config, "nu_bedrock", "nu_bedrock");
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    this->set_boolean("nu_bedrock_set", true, USER);
+    config.set_boolean("nu_bedrock_set", true, Config::USER);
   }
 
   // fracture density
-  this->boolean_from_option("fractures", "do_fracture_density");
-  this->boolean_from_option("write_fd_fields", "write_fd_fields");
-  this->scalar_from_option("fracture_softening",
+  set_boolean_from_option(config, "fractures", "do_fracture_density");
+  set_boolean_from_option(config, "write_fd_fields", "write_fd_fields");
+  set_scalar_from_option(config, "fracture_softening",
                            "fracture_density_softening_lower_limit");
 
   // Calving
-  this->string_from_option("calving", "calving_methods");
+  set_string_from_option(config, "calving", "calving_methods");
 
-  this->scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold");
+  set_scalar_from_option(config, "thickness_calving_threshold", "thickness_calving_threshold");
 
   // evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
-  this->boolean_from_option("cfl_eigen_calving", "cfl_eigen_calving");
-  this->scalar_from_option("eigen_calving_K", "eigen_calving_K");
+  set_boolean_from_option(config, "cfl_eigen_calving", "cfl_eigen_calving");
+  set_scalar_from_option(config, "eigen_calving_K", "eigen_calving_K");
 
-  this->boolean_from_option("kill_icebergs", "kill_icebergs");
+  set_boolean_from_option(config, "kill_icebergs", "kill_icebergs");
 
   // Output
-  this->keyword_from_option("o_order", "output_variable_order",
+  set_keyword_from_option(config, "o_order", "output_variable_order",
                             "xyz,yxz,zyx");
 
-  this->keyword_from_option("o_format", "output_format",
+  set_keyword_from_option(config, "o_format", "output_format",
                             "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5");
 
-  this->scalar_from_option("summary_vol_scale_factor_log10",
+  set_scalar_from_option(config, "summary_vol_scale_factor_log10",
                            "summary_vol_scale_factor_log10");
-  this->scalar_from_option("summary_area_scale_factor_log10",
+  set_scalar_from_option(config, "summary_area_scale_factor_log10",
                            "summary_area_scale_factor_log10");
 
   // Metadata
-  this->string_from_option("title", "run_title");
-  this->string_from_option("institution", "institution");
+  set_string_from_option(config, "title", "run_title");
+  set_string_from_option(config, "institution", "institution");
 
   // Skipping
-  this->boolean_from_option("skip", "do_skip");
-  this->scalar_from_option("skip_max", "skip_max");
+  set_boolean_from_option(config, "skip", "do_skip");
+  set_scalar_from_option(config, "skip_max", "skip_max");
 
   // Shortcuts
 
@@ -719,51 +699,51 @@ void Config::set_from_options() {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    this->set_boolean("calving_front_stress_boundary_condition", true, USER);
-    this->set_boolean("part_grid", true, USER);
-    this->set_boolean("part_redist", true, USER);
-    this->set_boolean("kill_icebergs", true, USER);
-    this->set_boolean("sub_groundingline", true, USER);
+    config.set_boolean("calving_front_stress_boundary_condition", true, Config::USER);
+    config.set_boolean("part_grid", true, Config::USER);
+    config.set_boolean("part_redist", true, Config::USER);
+    config.set_boolean("kill_icebergs", true, Config::USER);
+    config.set_boolean("sub_groundingline", true, Config::USER);
   }
 
-  if (this->get_string("calving_methods").find("eigen_calving") != std::string::npos) {
-    this->set_boolean("part_grid", true, USER);
+  if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
+    config.set_boolean("part_grid", true, Config::USER);
     // eigen-calving requires a wider stencil:
-    this->set_double("grid_max_stencil_width", 3);
+    config.set_double("grid_max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
-  if (this->get_string("calving_methods").empty() == false) {
-    this->set_boolean("kill_icebergs", true, USER);
+  if (config.get_string("calving_methods").empty() == false) {
+    config.set_boolean("kill_icebergs", true, Config::USER);
   }
 
   // kill_icebergs requires part_grid
-  if (this->get_boolean("kill_icebergs")) {
-    this->set_boolean("part_grid", true, USER);
+  if (config.get_boolean("kill_icebergs")) {
+    config.set_boolean("part_grid", true, Config::USER);
   }
 
-  this->keyword_from_option("stress_balance", "stress_balance_model",
+  set_keyword_from_option(config, "stress_balance", "stress_balance_model",
                             "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia");
 
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
-    this->set_string("stress_balance_model", "none", USER);
-    this->set_boolean("do_energy", false, USER);
-    this->set_boolean("do_age", false, USER);
+    config.set_string("stress_balance_model", "none", Config::USER);
+    config.set_boolean("do_energy", false, Config::USER);
+    config.set_boolean("do_age", false, Config::USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 
-  this->keyword_from_option("bed_def",
+  set_keyword_from_option(config, "bed_def",
                             "bed_deformation_model", "none,iso,lc");
-  this->boolean_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model");
+  set_boolean_from_option(config, "bed_def_lc_elastic_model", "bed_def_lc_elastic_model");
 
-  this->boolean_from_option("dry", "is_dry_simulation");
+  set_boolean_from_option(config, "dry", "is_dry_simulation");
 
-  this->boolean_from_option("clip_shelf_base_salinity",
+  set_boolean_from_option(config, "clip_shelf_base_salinity",
                             "ocean_three_equation_model_clip_salinity");
 
-  this->scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor");
+  set_scalar_from_option(config, "meltfactor_pik", "ocean_pik_melt_factor");
 
   // old options
   options::deprecated("-sliding_scale_brutal",
@@ -781,5 +761,6 @@ void Config::set_from_options() {
   options::deprecated("-no_energy", "-energy none");
   options::deprecated("-cold", "-energy cold");
 }
+
 
 } // end of namespace pism

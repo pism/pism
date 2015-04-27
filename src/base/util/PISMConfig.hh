@@ -59,12 +59,13 @@ protected:
 protected:
   MPI_Comm m_com;
   VariableMetadata m_data;
+private:
   //! @brief the name of the file this config database was initialized from
   std::string m_config_filename;
-
-  bool m_options_left_set;
 };
 
+//! @brief Default PISM configuration database: uses NetCDF files; can be initialized from a file
+//! specified using a command-line option.
 class DefaultConfig : public NetCDFConfig {
 public:
   DefaultConfig(MPI_Comm com,
@@ -80,9 +81,6 @@ public:
   void init_with_default();
   //! Initialize (leave empty if no option was set).
   void init();
-
-  // make set_from_options() public
-  using Config::set_from_options;
 private:
   void init(bool use_default_path);
   std::string m_option;

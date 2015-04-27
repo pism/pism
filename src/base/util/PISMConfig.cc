@@ -31,7 +31,6 @@ NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, units::Sys
   : Config(system),
     m_com(new_com),
     m_data(name, system) {
-  m_options_left_set = options::Bool("-options_left", "report on unused options");
 }
 
 NetCDFConfig::~NetCDFConfig() {
@@ -186,11 +185,12 @@ void NetCDFConfig::write_impl(const PIO &nc) const {
   }
 }
 
+
 //! Config that respects command-line options and stores data in a NetCDF variable.
 DefaultConfig::DefaultConfig(MPI_Comm com,
-                                         const std::string &variable_name,
-                                         const std::string &option,
-                                         units::System::Ptr system)
+                             const std::string &variable_name,
+                             const std::string &option,
+                             units::System::Ptr system)
   : NetCDFConfig(com, variable_name, system),
     m_option(option) {
   // empty
@@ -202,8 +202,8 @@ DefaultConfig::~DefaultConfig() {
 
 void DefaultConfig::init(bool use_default_path) {
   options::String file(m_option,
-                           "Name of the file to read " + m_data.get_name() + " from",
-                           PISM_DefaultConfigFile);
+                       "Name of the file to read " + m_data.get_name() + " from",
+                       PISM_DefaultConfigFile);
   if (use_default_path or file.is_set()) {
     this->read(m_com, file);
     verbPrintf(2, m_com, "Reading configuration parameters (%s) from file '%s'.\n",

@@ -33,7 +33,7 @@
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/error_handling.hh"
@@ -98,12 +98,6 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
   }
 
   io::write_global_attributes(nc, global_attributes);
-
-  bool override_used = options::Bool("-config_override", "use configuration overrides");
-  if (override_used) {
-    overrides->update_from(*config);
-    overrides->write(nc);
-  }
 
   // write configuration parameters to the file:
   config->write(nc);

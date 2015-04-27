@@ -99,7 +99,7 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   overrides->init();
   config->init_with_default();
   config->import_from(*overrides);
-  config->set_from_options();
+  set_config_from_options(*config);
   print_config(3, com, *config);
 
   Time::Ptr time = time_from_options(com, config, sys);

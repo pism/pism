@@ -23,7 +23,7 @@
 #include "base/stressbalance/sia/SIAFD.hh"
 #include "base/stressbalance/sia/SIA_Sliding.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
@@ -33,8 +33,8 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid &g, DefaultConfig::Ptr conf, DefaultConfig::Ptr conf_overrides)
-  : IceModel(g, conf, conf_overrides) {
+IceEISModel::IceEISModel(IceGrid &g, Config::Ptr conf)
+  : IceModel(g, conf) {
   m_experiment = 'A';
 
   // the following flag must be here in constructor because

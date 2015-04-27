@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     overrides->init();
     config->init_with_default();
     config->import_from(*overrides);
-    config->set_from_options();
+    set_config_from_options(*config);
     print_config(3, com, *config);
 
     config->set_boolean("use_eta_transformation", false);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     // actually construct and run one of the derived classes of IceModel
     // run derived class for compensatory source SIA solutions
     // (i.e. compensatory accumulation or compensatory heating)
-    IceCompModel m(g, config, overrides, testname[0]);
+    IceCompModel m(g, config, testname[0]);
 
     m.init();
 

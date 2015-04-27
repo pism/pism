@@ -28,7 +28,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 #include "earth/PISMBedDef.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 

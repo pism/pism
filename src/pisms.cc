@@ -68,13 +68,13 @@ int main(int argc, char *argv[]) {
     overrides->init();
     config->init_with_default();
     config->import_from(*overrides);
-    config->set_from_options();
+    set_config_from_options(*config);
     print_config(3, com, *config);
 
     config->set_string("calendar", "none");
 
     IceGrid g(com, config);
-    IceEISModel m(g, config, overrides);
+    IceEISModel m(g, config);
 
     m.init();
 

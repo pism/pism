@@ -50,9 +50,8 @@ namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, DefaultConfig::Ptr conf,
-                           DefaultConfig::Ptr conf_overrides, int mytest)
-  : IceModel(g, conf, conf_overrides) {
+IceCompModel::IceCompModel(IceGrid &g, Config::Ptr conf, int mytest)
+  : IceModel(g, conf) {
 
   // note lots of defaults are set by the IceModel constructor
 

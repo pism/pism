@@ -45,7 +45,7 @@ static char help[] =
 
 #include "base/util/pism_const.hh"
 #include "base/util/Context.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "deformation.hh"
 #include "base/util/pism_options.hh"
 
