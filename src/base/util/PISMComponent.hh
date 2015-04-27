@@ -115,7 +115,7 @@ public:
   void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                        std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  const IceGrid& get_grid() const;
+  const IceGrid& grid() const;
 
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,

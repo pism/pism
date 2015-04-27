@@ -86,7 +86,7 @@ template <class Model>
 class Diag : public Diagnostic {
 public:
   Diag(Model *m)
-    : Diagnostic(m->get_grid()), model(m) {}
+    : Diagnostic(m->grid()), model(m) {}
 protected:
   Model *model;
 };
@@ -135,7 +135,7 @@ template <class Model>
 class TSDiag : public TSDiagnostic {
 public:
   TSDiag(Model *m)
-    : TSDiagnostic(m->get_grid()), model(m) {
+    : TSDiagnostic(m->grid()), model(m) {
     m_time_units = m_grid.time->CF_units_string();
     m_time_dimension_name = m_grid.config->get_string("time_dimension_name");
   }

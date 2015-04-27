@@ -216,7 +216,7 @@ void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   // empty
 }
 
-const IceGrid& IceModel::get_grid() const {
+const IceGrid& IceModel::grid() const {
   return m_grid;
 }
 

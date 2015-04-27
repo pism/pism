@@ -65,7 +65,7 @@ void Component::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
   (void)ts_dict;
 }
 
-const IceGrid& Component::get_grid() const {
+const IceGrid& Component::grid() const {
   return m_grid;
 }
 

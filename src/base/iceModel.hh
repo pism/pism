@@ -147,7 +147,7 @@ public:
   // see iMinit.cc
   virtual void grid_setup();
 
-  const IceGrid& get_grid() const; // FIXME: rename grid to m_grid and this to grid().
+  const IceGrid& grid() const;
   EnthalpyConverter::Ptr  enthalpy_converter() const;
 
   virtual void allocate_submodels();
