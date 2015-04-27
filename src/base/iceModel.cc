@@ -49,9 +49,10 @@
 
 namespace pism {
 
-IceModel::IceModel(IceGrid &g, Config::Ptr conf)
+IceModel::IceModel(IceGrid &g, Context::Ptr ctx)
   : m_grid(g),
-    config(conf),
+    config(ctx->config()),
+    m_ctx(ctx),
     global_attributes("PISM_GLOBAL", g.config()->unit_system()),
     mapping("mapping", g.config()->unit_system()),
     run_stats("run_stats", g.config()->unit_system()),

@@ -66,7 +66,7 @@ Instead see the ForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, Config::Ptr c)
+  IceRegionalModel(IceGrid &g, Context::Ptr c)
      : IceModel(g,c) {};
 protected:
   virtual void set_vars_from_options();
@@ -468,7 +468,7 @@ int main(int argc, char *argv[]) {
 
     // initialize the ice dynamics model
     IceGrid g(com, config);
-    IceRegionalModel m(g, config);
+    IceRegionalModel m(g, ctx);
 
     m.init();
 

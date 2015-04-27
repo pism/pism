@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     IceGrid g(com, config);
-    IceModel m(g, config);
+    IceModel m(g, ctx);
 
     m.init();
 

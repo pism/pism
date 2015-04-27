@@ -41,6 +41,7 @@
 // IceModel owns a bunch of fields, so we have to include this.
 #include "base/util/iceModelVec.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/Context.hh"
 #include "base/enthalpyConverter.hh"
 
 namespace pism {
@@ -141,7 +142,7 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, Config::Ptr config);
+  IceModel(IceGrid &g, Context::Ptr context);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -217,6 +218,7 @@ protected:
 
   //! Configuration flags and parameters
   Config::Ptr config;
+  Context::Ptr m_ctx;
 
   VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters

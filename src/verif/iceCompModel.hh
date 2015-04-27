@@ -42,7 +42,7 @@ protected:
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, Config::Ptr config, int mytest);
+  IceCompModel(IceGrid &g, Context::Ptr ctx, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:

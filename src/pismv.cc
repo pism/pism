@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     // actually construct and run one of the derived classes of IceModel
     // run derived class for compensatory source SIA solutions
     // (i.e. compensatory accumulation or compensatory heating)
-    IceCompModel m(g, config, testname[0]);
+    IceCompModel m(g, ctx, testname[0]);
 
     m.init();
 

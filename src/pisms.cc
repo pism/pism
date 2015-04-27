@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     config->set_string("calendar", "none");
 
     IceGrid g(com, config);
-    IceEISModel m(g, config);
+    IceEISModel m(g, ctx);
 
     m.init();
 

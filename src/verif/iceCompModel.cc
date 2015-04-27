@@ -43,15 +43,16 @@
 #include "earth/PISMBedDef.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/Context.hh"
 #include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, Config::Ptr conf, int mytest)
-  : IceModel(g, conf) {
+IceCompModel::IceCompModel(IceGrid &g, Context::Ptr ctx, int mytest)
+  : IceModel(g, ctx) {
 
   // note lots of defaults are set by the IceModel constructor
 
