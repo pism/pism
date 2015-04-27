@@ -149,6 +149,9 @@ public:
   virtual void grid_setup();
 
   const IceGrid& grid() const;
+
+  Context::Ptr ctx() const;
+
   EnthalpyConverter::Ptr  enthalpy_converter() const;
 
   virtual void allocate_submodels();

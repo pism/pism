@@ -216,8 +216,14 @@ void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   // empty
 }
 
+//! Return the grid used by this model.
 const IceGrid& IceModel::grid() const {
   return m_grid;
+}
+
+//! Return the context this model is running in.
+Context::Ptr IceModel::ctx() const {
+  return m_ctx;
 }
 
 EnthalpyConverter::Ptr IceModel::enthalpy_converter() const {
