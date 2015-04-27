@@ -52,11 +52,11 @@ namespace pism {
 IceModel::IceModel(IceGrid &g, Config::Ptr conf)
   : m_grid(g),
     config(conf),
-    global_attributes("PISM_GLOBAL", g.config->unit_system()),
-    mapping("mapping", g.config->unit_system()),
-    run_stats("run_stats", g.config->unit_system()),
-    extra_bounds("time_bounds", config->get_string("time_dimension_name"), g.config->unit_system()),
-    timestamp("timestamp", config->get_string("time_dimension_name"), g.config->unit_system()) {
+    global_attributes("PISM_GLOBAL", g.config()->unit_system()),
+    mapping("mapping", g.config()->unit_system()),
+    run_stats("run_stats", g.config()->unit_system()),
+    extra_bounds("time_bounds", config->get_string("time_dimension_name"), g.config()->unit_system()),
+    timestamp("timestamp", config->get_string("time_dimension_name"), g.config()->unit_system()) {
 
   extra_bounds.set_string("units", m_grid.time->units_string());
 

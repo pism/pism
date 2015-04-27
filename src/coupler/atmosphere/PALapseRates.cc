@@ -27,8 +27,8 @@ namespace atmosphere {
 
 LapseRates::LapseRates(const IceGrid &g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
-    m_precipitation(g.config->unit_system(), "precipitation"),
-    m_air_temp(g.config->unit_system(), "air_temp") {
+    m_precipitation(g.config()->unit_system(), "precipitation"),
+    m_air_temp(g.config()->unit_system(), "air_temp") {
   m_precip_lapse_rate = 0;
   m_option_prefix     = "-atmosphere_lapse_rate";
 
@@ -147,7 +147,7 @@ void LapseRates::temp_snapshot(IceModelVec2S &result) {
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config->get_string("output_variable_order");
+  std::string order = m_grid.config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(m_air_temp, m_grid, nc, nctype, order, true);

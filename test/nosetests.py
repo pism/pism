@@ -176,7 +176,7 @@ def create_modeldata_test():
     grid = create_dummy_grid()
     md = PISM.model.ModelData(grid)
 
-    md2 = PISM.model.ModelData(grid, config=grid.config)
+    md2 = PISM.model.ModelData(grid, config=grid.config())
 
 
 def grid_from_file_test():
@@ -189,11 +189,11 @@ def grid_from_file_test():
     output_file = "test_grid_from_file.nc"
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.config.get_string("time_dimension_name"),
-                     grid.config.get_string("calendar"),
+    PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
+                     grid.config().get_string("calendar"),
                      grid.time.units_string(),
-                     grid.config.unit_system())
-    PISM.append_time(pio, grid.config.get_string("time_dimension_name"), grid.time.current())
+                     grid.config().unit_system())
+    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time.current())
     pio.close()
 
     enthalpy.write(output_file)
@@ -397,11 +397,11 @@ def modelvecs_test():
     output_file = "test_ModelVecs.nc"
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.config.get_string("time_dimension_name"),
-                     grid.config.get_string("calendar"),
+    PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
+                     grid.config().get_string("calendar"),
                      grid.time.units_string(),
-                     grid.config.unit_system())
-    PISM.append_time(pio, grid.config.get_string("time_dimension_name"), grid.time.current())
+                     grid.config().unit_system())
+    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time.current())
     pio.close()
 
     vecs.write(output_file)

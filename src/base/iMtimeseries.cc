@@ -240,7 +240,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
+    PIO nc(m_grid.com, m_grid.config()->get_string("output_format"));
     std::string time_name = config->get_string("time_dimension_name");
     bool time_exists;
 
@@ -434,7 +434,7 @@ void IceModel::write_extras() {
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid.com);
 
-  PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
+  PIO nc(m_grid.com, m_grid.config()->get_string("output_format"));
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending

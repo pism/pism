@@ -32,8 +32,8 @@ namespace ocean {
 
 PIK::PIK(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.config->unit_system(), "shelfbmassflux"),
-    m_shelfbtemp(g.config->unit_system(), "shelfbtemp")
+    m_shelfbmassflux(g.config()->unit_system(), "shelfbmassflux"),
+    m_shelfbtemp(g.config()->unit_system(), "shelfbtemp")
 {
   m_shelfbmassflux.set_string("pism_intent", "climate_state");
   m_shelfbmassflux.set_string("long_name",
@@ -158,7 +158,7 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) {
-  std::string order = m_grid.config->get_string("output_variable_order");
+  std::string order = m_grid.config()->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
     io::define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);

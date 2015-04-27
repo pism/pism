@@ -711,7 +711,7 @@ void IceModel::write_snapshot() {
              filename, m_grid.time->date().c_str(),
              m_grid.time->date(saving_after).c_str());
 
-  PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
+  PIO nc(m_grid.com, m_grid.config()->get_string("output_format"));
 
   if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
@@ -814,7 +814,7 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
+  PIO nc(m_grid.com, m_grid.config()->get_string("output_format"));
 
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);

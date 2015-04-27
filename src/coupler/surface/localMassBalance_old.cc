@@ -311,7 +311,7 @@ double PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(double pddStdD
 
 
 FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(const IceGrid &g)
-  : grid(g), config(g.config) {
+  : grid(g), config(g.config()) {
 
   beta_ice_w = config->get_double("pdd_fausto_beta_ice_w");
   beta_snow_w = config->get_double("pdd_fausto_beta_snow_w");

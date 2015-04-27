@@ -123,9 +123,9 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
-  m_tikhonov_atol = grid.config->get_double("tikhonov_atol");
-  m_tikhonov_rtol = grid.config->get_double("tikhonov_rtol");
-  m_tikhonov_ptol = grid.config->get_double("tikhonov_ptol");
+  m_tikhonov_atol = grid.config()->get_double("tikhonov_atol");
+  m_tikhonov_rtol = grid.config()->get_double("tikhonov_rtol");
+  m_tikhonov_ptol = grid.config()->get_double("tikhonov_ptol");
 }
 
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {

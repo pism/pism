@@ -117,8 +117,8 @@ tauc_guess_const = None
 
 
 def testi_tauc(grid, tauc):
-    standard_gravity = grid.config.get_double("standard_gravity")
-    ice_density = grid.config.get_double("ice_density")
+    standard_gravity = grid.config().get_double("standard_gravity")
+    ice_density = grid.config().get_double("ice_density")
     f = ice_density * standard_gravity * H0_schoof * slope
 
     with PISM.vec.Access(comm=tauc):
@@ -174,8 +174,8 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         testi_tauc(self.modeldata.grid, vecs.tauc)
 
         grid = self.grid
-        standard_gravity = grid.config.get_double("standard_gravity")
-        ice_density = grid.config.get_double("ice_density")
+        standard_gravity = grid.config().get_double("standard_gravity")
+        ice_density = grid.config().get_double("ice_density")
         f = ice_density * standard_gravity * H0_schoof * slope
 
         vecs.ssa_driving_stress_y.set(0)
@@ -283,10 +283,10 @@ if __name__ == "__main__":
     # Setup the output file.
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.config.get_string("time_dimension_name"),
-                     grid.config.get_string("calendar"), grid.time.units_string(),
-                     grid.config.unit_system())
-    PISM.append_time(pio, grid.config.get_string("time_dimension_name"), grid.time.current())
+    PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
+                     grid.config().get_string("calendar"), grid.time.units_string(),
+                     grid.config().unit_system())
+    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time.current())
     pio.close()
     zeta0.write(output_file)
 

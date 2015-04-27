@@ -40,7 +40,7 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
-    ice_surface_temp(g.config->unit_system(), "ice_surface_temp") {
+    ice_surface_temp(g.config()->unit_system(), "ice_surface_temp") {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;
@@ -101,7 +101,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
 
     PIO nc(m_grid.com, "netcdf3");
     nc.open(file, PISM_READONLY);
-    n_records = nc.inq_nrecords(short_name, "", m_grid.config->unit_system());
+    n_records = nc.inq_nrecords(short_name, "", m_grid.config()->unit_system());
     nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the
@@ -462,7 +462,7 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
 void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    std::string order = m_grid.config->get_string("output_variable_order");
+    std::string order = m_grid.config()->get_string("output_variable_order");
     io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 

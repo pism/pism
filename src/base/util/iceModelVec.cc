@@ -462,7 +462,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
 void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
-  std::string order = m_grid->config->get_string("output_variable_order");
+  std::string order = m_grid->config()->get_string("output_variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
     io::define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
                             order, write_in_glaciological_units);
@@ -522,14 +522,14 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO nc(m_grid->com, m_grid->config->get_string("output_format"));
+  PIO nc(m_grid->com, m_grid->config()->get_string("output_format"));
 
   nc.open(filename, PISM_READWRITE_CLOBBER);
-  io::define_time(nc, m_grid->config->get_string("time_dimension_name"),
+  io::define_time(nc, m_grid->config()->get_string("time_dimension_name"),
                   m_grid->time->calendar(),
                   m_grid->time->units_string(),
-                  m_grid->config->unit_system());
-  io::append_time(nc, m_grid->config->get_string("time_dimension_name"),
+                  m_grid->config()->unit_system());
+  io::append_time(nc, m_grid->config()->get_string("time_dimension_name"),
                   m_grid->time->current());
 
   define(nc, PISM_DOUBLE);
@@ -815,7 +815,7 @@ std::vector<double> IceModelVec::norm_all(int n) const {
 
 void IceModelVec::write(const std::string &filename) const {
 
-  PIO nc(m_grid->com, m_grid->config->get_string("output_format"));
+  PIO nc(m_grid->com, m_grid->config()->get_string("output_format"));
 
   // We expect the file to be present and ready to write into.
   nc.open(filename, PISM_READWRITE);

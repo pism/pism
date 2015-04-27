@@ -34,7 +34,7 @@ namespace surface {
 
 TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
-    ice_surface_temp(g.config->unit_system(), temperature_name) {
+    ice_surface_temp(g.config()->unit_system(), temperature_name) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = m_config->get_double("pdd_factor_snow");
@@ -348,7 +348,7 @@ void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &va
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, temperature_name)) {
-    std::string order = m_grid.config->get_string("output_variable_order");
+    std::string order = m_grid.config()->get_string("output_variable_order");
     io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
   }
 

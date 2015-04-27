@@ -253,9 +253,9 @@ void SSATestCase::report_netcdf(const std::string &testname,
                                 double max_v,
                                 double avg_u,
                                 double avg_v) {
-  TimeseriesMetadata err("N", "N", m_grid->config->unit_system());
+  TimeseriesMetadata err("N", "N", m_grid->config()->unit_system());
   unsigned int start;
-  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->config->unit_system());
+  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->config()->unit_system());
 
   options::String filename("-report_file", "NetCDF error report file");
 
@@ -347,7 +347,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->config->get_string("output_format"));
+  PIO pio(m_grid->com, m_grid->config()->get_string("output_format"));
   pio.open(filename, PISM_READWRITE_MOVE);
   io::define_time(pio, m_config->get_string("time_dimension_name"),
                   m_grid->time->calendar(),

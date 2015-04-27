@@ -63,7 +63,7 @@ def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
     grid = mask.get_grid()
-    high_tauc = grid.config.get_double("high_tauc")
+    high_tauc = grid.config().get_double("high_tauc")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         mq = PISM.MaskQuery(mask)

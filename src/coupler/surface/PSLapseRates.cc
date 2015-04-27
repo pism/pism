@@ -26,8 +26,8 @@ namespace surface {
 
 LapseRates::LapseRates(const IceGrid &g, SurfaceModel* in)
   : PLapseRates<SurfaceModel,SurfaceModifier>(g, in),
-    m_climatic_mass_balance(g.config->unit_system(), "climatic_mass_balance"),
-    m_ice_surface_temp(g.config->unit_system(), "ice_surface_temp") {
+    m_climatic_mass_balance(g.config()->unit_system(), "climatic_mass_balance"),
+    m_ice_surface_temp(g.config()->unit_system(), "ice_surface_temp") {
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
 
@@ -100,7 +100,7 @@ void LapseRates::add_vars_to_output_impl(const std::string &keyword,
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config->get_string("output_variable_order");
+  std::string order = m_grid.config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);

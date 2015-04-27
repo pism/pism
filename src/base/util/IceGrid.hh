@@ -196,7 +196,7 @@ public:
   double convert(double, const std::string &, const std::string &) const;
   //! The time management object (hides calendar computations).
   Time::Ptr time;
-  Config::ConstPtr config;
+  Config::ConstPtr config() const;
   Profiling profiling;
 
   //! Starting x-index of a processor sub-domain
@@ -246,6 +246,9 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
+
+  // FIXME: remove this
+  Config::ConstPtr m_config;
 
   void check_parameters();
 

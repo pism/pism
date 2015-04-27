@@ -227,7 +227,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.get_grid()
-    high_tauc = grid.config.get_double("high_tauc")
+    high_tauc = grid.config().get_double("high_tauc")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         mq = PISM.MaskQuery(mask)
@@ -461,10 +461,10 @@ def run():
     if not append_mode:
         pio = PISM.PIO(grid.com, "netcdf3")
         pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
-        PISM.define_time(pio, grid.config.get_string("time_dimension_name"),
-                         grid.config.get_string("calendar"), grid.time.units_string(),
-                         grid.config.unit_system())
-        PISM.append_time(pio, grid.config.get_string("time_dimension_name"), grid.time.current())
+        PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
+                         grid.config().get_string("calendar"), grid.time.units_string(),
+                         grid.config().unit_system())
+        PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time.current())
         pio.close()
     zeta.write(output_filename)
 

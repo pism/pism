@@ -27,8 +27,8 @@ namespace atmosphere {
 
 PaleoPrecip::PaleoPrecip(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.config->unit_system(), "air_temp"),
-    precipitation(g.config->unit_system(), "precipitation")
+    air_temp(g.config()->unit_system(), "air_temp"),
+    precipitation(g.config()->unit_system(), "precipitation")
 {
   offset = NULL;
   option_prefix = "-atmosphere_paleo_precip";
@@ -110,7 +110,7 @@ void PaleoPrecip::add_vars_to_output_impl(const std::string &keyword, std::set<s
 void PaleoPrecip::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_grid.config->get_string("output_variable_order");
+  std::string order = m_grid.config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);

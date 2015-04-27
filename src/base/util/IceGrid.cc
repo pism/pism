@@ -114,7 +114,7 @@ SpacingType string_to_spacing(const std::string &keyword) {
 }
 
 IceGrid::IceGrid(MPI_Comm c, Config::ConstPtr conf)
-  : config(conf), com(c), m_impl(new Impl) {
+  : com(c), m_impl(new Impl), m_config(conf) {
 
   MPI_Comm_rank(com, &m_impl->rank);
   MPI_Comm_size(com, &m_impl->size);
@@ -130,24 +130,24 @@ IceGrid::IceGrid(MPI_Comm c, Config::ConstPtr conf)
   m_impl->xm = 0;
   m_impl->ym = 0;
 
-  std::string word = config->get_string("grid_periodicity");
+  std::string word = m_config->get_string("grid_periodicity");
   m_impl->periodicity = string_to_periodicity(word);
 
-  unsigned int tmp_Mz = config->get_double("grid_Mz");
-  double tmp_Lz = config->get_double("grid_Lz");
-  SpacingType spacing = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
+  unsigned int tmp_Mz = m_config->get_double("grid_Mz");
+  double tmp_Lz = m_config->get_double("grid_Lz");
+  SpacingType spacing = string_to_spacing(m_config->get_string("grid_ice_vertical_spacing"));
   set_vertical_levels(tmp_Lz, tmp_Mz, spacing);
 
-  m_impl->Lx  = config->get_double("grid_Lx");
-  m_impl->Ly  = config->get_double("grid_Ly");
+  m_impl->Lx  = m_config->get_double("grid_Lx");
+  m_impl->Ly  = m_config->get_double("grid_Ly");
 
-  m_impl->Mx  = static_cast<int>(config->get_double("grid_Mx"));
-  m_impl->My  = static_cast<int>(config->get_double("grid_My"));
+  m_impl->Mx  = static_cast<int>(m_config->get_double("grid_Mx"));
+  m_impl->My  = static_cast<int>(m_config->get_double("grid_My"));
 
   m_impl->Nx = 0;
   m_impl->Ny = 0;                  // will be set to a correct value in allocate()
 
-  time = time_from_options(com, config, config->unit_system());
+  time = time_from_options(com, m_config, m_config->unit_system());
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
 
@@ -214,11 +214,11 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
     assert(output != NULL);
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input(file, var_name, output->config->unit_system(), periodicity);
+    grid_info input(file, var_name, output->config()->unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
-      double Lz = output->config->get_double("grid_Lz");
+      double Lz = output->config()->get_double("grid_Lz");
       verbPrintf(3, output->com,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
@@ -276,7 +276,7 @@ which may not even be a grid created by this routine).
 void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
                                   SpacingType spacing) {
 
-  double lambda = config->get_double("grid_lambda");
+  double lambda = m_config->get_double("grid_lambda");
 
   if (new_Mz < 2) {
     throw RuntimeError("IceGrid::set_vertical_levels(): Mz must be at least 2.");
@@ -476,7 +476,7 @@ void IceGrid::allocate() {
 
   ownership_ranges_from_options();
 
-  unsigned int max_stencil_width = (unsigned int)config->get_double("grid_max_stencil_width");
+  unsigned int max_stencil_width = (unsigned int)m_config->get_double("grid_max_stencil_width");
 
   try {
     petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
@@ -785,8 +785,8 @@ void IceGrid::check_parameters() {
   const long int two_to_thirty_two = 4294967296L;
   const long int Mx_long = m_impl->Mx, My_long = m_impl->My, Mz_long = Mz();
   if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
-      ((config->get_string("output_format") == "netcdf3") ||
-       (config->get_string("output_format") == "pnetcdf"))) {
+      ((m_config->get_string("output_format") == "netcdf3") ||
+       (m_config->get_string("output_format") == "pnetcdf"))) {
     throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
                                   "Each 3D variable requires %lu Mb.\n"
                                   "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
@@ -823,12 +823,16 @@ Periodicity IceGrid::periodicity() const {
   return m_impl->periodicity;
 }
 
+Config::ConstPtr IceGrid::config() const {
+  return m_config;
+}
+
 void IceGrid::set_periodicity(Periodicity p) {
   m_impl->periodicity = p;
 }
 
 double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return units::convert(config->unit_system(), value, unit1, unit2);
+  return units::convert(m_config->unit_system(), value, unit1, unit2);
 }
 
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {

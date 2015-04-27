@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid.com, grid.config->get_string("output_format"));
+    PIO pio(grid.com, grid.config()->get_string("output_format"));
 
     std::string time_name = config->get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
