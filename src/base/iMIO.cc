@@ -61,12 +61,12 @@ void  IceModel::writeFiles(const std::string &default_filename) {
   options::String filename("-o", "Output file name", default_filename);
 
   if (!ends_with(filename, ".nc")) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
   if (get_output_size("-o_size") != "none") {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "Writing model state to file `%s'\n", filename->c_str());
     dumpToFile(filename);
   }
@@ -111,17 +111,17 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
 
 void IceModel::dumpToFile(const std::string &filename) {
-  PIO nc(grid.com, config->get_string("output_format"));
+  PIO nc(m_grid.com, config->get_string("output_format"));
 
-  grid.profiling.begin("model state dump");
+  m_grid.profiling.begin("model state dump");
 
   // Prepare the file
   std::string time_name = config->get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
-  io::define_time(nc, time_name, grid.time->calendar(),
-                  grid.time->CF_units_string(),
+  io::define_time(nc, time_name, m_grid.time->calendar(),
+                  m_grid.time->CF_units_string(),
                   config->unit_system());
-  io::append_time(nc, time_name, grid.time->current());
+  io::append_time(nc, time_name, m_grid.time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);
@@ -130,7 +130,7 @@ void IceModel::dumpToFile(const std::string &filename) {
 
   nc.close();
 
-  grid.profiling.end("model state dump");
+  m_grid.profiling.end("model state dump");
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
@@ -145,8 +145,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     std::set<std::string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
 
-      if (grid.variables().is_available(*i)) {
-        v = grid.variables().get(*i);
+      if (m_grid.variables().is_available(*i)) {
+        v = m_grid.variables().get(*i);
         // It has dedicated storage.
         if (*i == "mask") {
           v->define(nc, PISM_BYTE); // use the default data type
@@ -220,8 +220,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   std::set<std::string> vars_copy = vars;
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
-    if (grid.variables().is_available(*i)) {
-      grid.variables().get(*i)->write(nc);
+    if (m_grid.variables().is_available(*i)) {
+      m_grid.variables().get(*i)->write(nc);
 
       // note that it only erases variables that were found (and
       // saved)
@@ -304,12 +304,12 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
   if (!vars.empty()) {
     int threshold = 3;
-    verbPrintf(threshold, grid.com,
+    verbPrintf(threshold, m_grid.com,
                "PISM WARNING: the following variables were *not* written by PISM core (IceModel): ");
     for (i = vars.begin(); i != vars.end(); ++i) {
-      verbPrintf(threshold, grid.com, "%s ", i->c_str());
+      verbPrintf(threshold, m_grid.com, "%s ", i->c_str());
     }
-    verbPrintf(threshold, grid.com, "\n");
+    verbPrintf(threshold, m_grid.com, "\n");
   }
 }
 
@@ -342,9 +342,9 @@ void IceModel::write_model_state(const PIO &nc) {
   box from the same input file.
 */
 void IceModel::initFromFile(const std::string &filename) {
-  PIO nc(grid.com, "guess_mode");
+  PIO nc(m_grid.com, "guess_mode");
 
-  verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
+  verbPrintf(2, m_grid.com, "initializing from NetCDF file '%s'...\n",
              filename.c_str());
 
   nc.open(filename, PISM_READONLY);
@@ -353,12 +353,12 @@ void IceModel::initFromFile(const std::string &filename) {
   unsigned int last_record = nc.inq_nrecords() - 1;
 
   // Read the model state, mapping and climate_steady variables:
-  std::set<std::string> vars = grid.variables().keys();
+  std::set<std::string> vars = m_grid.variables().keys();
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
     // FIXME: remove const_cast. This is bad.
-    IceModelVec *var = const_cast<IceModelVec*>(grid.variables().get(*i));
+    IceModelVec *var = const_cast<IceModelVec*>(m_grid.variables().get(*i));
     SpatialVariableMetadata &m = var->metadata();
 
     std::string
@@ -382,7 +382,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   if (config->get_boolean("do_energy") && config->get_boolean("do_cold_ice_methods")) {
-    verbPrintf(3, grid.com,
+    verbPrintf(3, m_grid.com,
                "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(T3, Enth3);
   }
@@ -394,7 +394,7 @@ void IceModel::initFromFile(const std::string &filename) {
     if (href_exists == true) {
       vHref.read(filename, last_record);
     } else {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
                  filename.c_str());
       vHref.set(0.0);
@@ -408,7 +408,7 @@ void IceModel::initFromFile(const std::string &filename) {
     if (age_exists) {
       age3.read(filename, last_record);
     } else {
-      verbPrintf(2,grid.com,
+      verbPrintf(2,m_grid.com,
                  "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
                  "  Setting it to zero...\n",
                  filename.c_str());
@@ -464,10 +464,10 @@ void IceModel::regrid(int dimensions) {
   }
 
   if (dimensions != 0) {
-    verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",
+    verbPrintf(2, m_grid.com, "regridding %dD variables from file %s ...\n",
                dimensions, regrid_file->c_str());
   } else {
-    verbPrintf(2, grid.com, "regridding from file %s ...\n",regrid_file->c_str());
+    verbPrintf(2, m_grid.com, "regridding from file %s ...\n",regrid_file->c_str());
   }
 
   if (regrid_vars->empty()) {
@@ -498,12 +498,12 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
 
-    if (not grid.variables().is_available(*i)) {
+    if (not m_grid.variables().is_available(*i)) {
       continue;
     }
 
     // FIXME: remove const_cast. This is bad.
-    IceModelVec *v = const_cast<IceModelVec*>(grid.variables().get(*i));
+    IceModelVec *v = const_cast<IceModelVec*>(m_grid.variables().get(*i));
     SpatialVariableMetadata &m = v->metadata();
 
     if (v->get_ndims() != ndims) {
@@ -512,7 +512,7 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
 
     std::string pism_intent = m.get_string("pism_intent");
     if (pism_intent != "model_state") {
-      verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
+      verbPrintf(2, m_grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
                  i->c_str());
       continue;
     }
@@ -530,10 +530,10 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
     if (v == &this->ice_thickness) {
       Range thk_range = ice_thickness.range();
 
-      if (thk_range.max >= grid.Lz() + 1e-6) {
+      if (thk_range.max >= m_grid.Lz() + 1e-6) {
         throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
                                       "exceeds the height of the computational domain (%f meters).",
-                                      thk_range.max, grid.Lz());
+                                      thk_range.max, m_grid.Lz());
       }
     }
 
@@ -557,7 +557,7 @@ void IceModel::init_enthalpy(const std::string &filename,
     liqfrac_exists  = false,
     enthalpy_exists = false;
 
-  PIO nc(grid.com, "guess_mode");
+  PIO nc(m_grid.com, "guess_mode");
   nc.open(filename, PISM_READONLY);
   enthalpy_exists = nc.inq_var("enthalpy");
   temp_exists     = nc.inq_var("temp");
@@ -598,12 +598,12 @@ void IceModel::init_enthalpy(const std::string &filename,
         liqfrac.read(filename, last_record);
       }
 
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Computing enthalpy using ice temperature,"
                  "  liquid water fraction and thickness...\n");
       compute_enthalpy(temp, liqfrac, Enth3);
     } else {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Computing enthalpy using ice temperature and thickness...\n");
       compute_enthalpy_cold(temp, Enth3);
     }
@@ -642,7 +642,7 @@ void IceModel::init_snapshots() {
   }
 
   try {
-    grid.time->parse_times(save_times, snapshot_times);    
+    m_grid.time->parse_times(save_times, snapshot_times);    
   } catch (RuntimeError &e) {
     e.add_context("parsing the -save_times argument");
     throw;
@@ -659,19 +659,19 @@ void IceModel::init_snapshots() {
   if (split) {
     split_snapshots = true;
   } else if (!ends_with(snapshots_filename, ".nc")) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
   }
 
   if (split) {
-    verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ",
+    verbPrintf(2, m_grid.com, "saving snapshots to '%s+year.nc'; ",
                snapshots_filename.c_str());
   } else {
-    verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
+    verbPrintf(2, m_grid.com, "saving snapshots to '%s'; ",
                snapshots_filename.c_str());
   }
 
-  verbPrintf(2, grid.com, "times requested: %s\n", save_times->c_str());
+  verbPrintf(2, m_grid.com, "times requested: %s\n", save_times->c_str());
 }
 
   //! Writes a snapshot of the model state (if necessary)
@@ -689,11 +689,11 @@ void IceModel::write_snapshot() {
   }
 
   // do we need to save *now*?
-  if ((grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
+  if ((m_grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
     saving_after = snapshot_times[current_snapshot];
 
     while ((current_snapshot < snapshot_times.size()) &&
-           (snapshot_times[current_snapshot] <= grid.time->current())) {
+           (snapshot_times[current_snapshot] <= m_grid.time->current())) {
       current_snapshot++;
     }
   } else {
@@ -707,24 +707,24 @@ void IceModel::write_snapshot() {
   if (split_snapshots) {
     snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             snapshots_filename.c_str(), grid.time->date().c_str());
+             snapshots_filename.c_str(), m_grid.time->date().c_str());
   } else {
     strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
-             filename, grid.time->date().c_str(),
-             grid.time->date(saving_after).c_str());
+             filename, m_grid.time->date().c_str(),
+             m_grid.time->date(saving_after).c_str());
 
-  PIO nc(grid.com, grid.config->get_string("output_format"));
+  PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
 
   if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
     io::define_time(nc, config->get_string("time_dimension_name"),
-                grid.time->calendar(),
-                grid.time->CF_units_string(),
+                m_grid.time->calendar(),
+                m_grid.time->CF_units_string(),
                 config->unit_system());
 
     write_metadata(nc, true, true);
@@ -737,7 +737,7 @@ void IceModel::write_snapshot() {
 
   unsigned int time_length = 0;
 
-  io::append_time(nc, config->get_string("time_dimension_name"), grid.time->current());
+  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time->current());
   time_length = nc.inq_dimlen(config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
@@ -745,9 +745,9 @@ void IceModel::write_snapshot() {
   {
     // find out how much time passed since the beginning of the run
     double wall_clock_hours;
-    ParallelSection rank0(grid.com);
+    ParallelSection rank0(m_grid.com);
     try {
-      if (grid.rank() == 0) {
+      if (m_grid.rank() == 0) {
         wall_clock_hours = (GetTime() - start_time) / 3600.0;
       }
     } catch (...) {
@@ -755,7 +755,7 @@ void IceModel::write_snapshot() {
     }
     rank0.check();
 
-    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid.com);
 
     io::write_timeseries(nc, timestamp, static_cast<size_t>(time_length - 1),
                         wall_clock_hours);
@@ -789,9 +789,9 @@ void IceModel::init_backups() {
 void IceModel::write_backup() {
   double wall_clock_hours;
 
-  ParallelSection rank0(grid.com);
+  ParallelSection rank0(m_grid.com);
   try {
-    if (grid.rank() == 0) {
+    if (m_grid.rank() == 0) {
       wall_clock_hours = (GetTime() - start_time) / 3600.0;
     }
   } catch (...) {
@@ -799,7 +799,7 @@ void IceModel::write_backup() {
   }
   rank0.check();
 
-  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid.com);
 
   if (wall_clock_hours - last_backup_time < backup_interval) {
     return;
@@ -808,27 +808,27 @@ void IceModel::write_backup() {
   last_backup_time = wall_clock_hours;
 
   // create a history string:
-  std::string date_str = pism_timestamp(grid.com);
+  std::string date_str = pism_timestamp(m_grid.com);
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
-           grid.time->date().c_str(), wall_clock_hours);
+           m_grid.time->date().c_str(), wall_clock_hours);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
              backup_filename.c_str(), wall_clock_hours);
 
   stampHistory(tmp);
 
-  PIO nc(grid.com, grid.config->get_string("output_format"));
+  PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
 
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);
   io::define_time(nc, config->get_string("time_dimension_name"),
-              grid.time->calendar(),
-              grid.time->CF_units_string(),
+              m_grid.time->calendar(),
+              m_grid.time->CF_units_string(),
               config->unit_system());
-  io::append_time(nc, config->get_string("time_dimension_name"), grid.time->current());
+  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);

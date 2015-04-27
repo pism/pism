@@ -97,10 +97,10 @@ private:
 void IceRegionalModel::set_no_model_strip(double strip) {
 
   IceModelVec::AccessList list(no_model_mask);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (in_null_strip(grid, i, j, strip) == true) {
+    if (in_null_strip(m_grid, i, j, strip) == true) {
       no_model_mask(i, j) = 1;
     } else {
       no_model_mask(i, j) = 0;
@@ -117,11 +117,11 @@ void IceRegionalModel::createVecs() {
 
   IceModel::createVecs();
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed for surfaceGradientSIA() action
-  no_model_mask.create(grid, "no_model_mask", WITH_GHOSTS, 2);
+  no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS, 2);
   no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
                           "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
                           "", ""); // no units and no standard name
@@ -134,36 +134,36 @@ void IceRegionalModel::createVecs() {
   no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   no_model_mask.set_time_independent(true);
   no_model_mask.set(NMMASK_NORMAL);
-  grid.variables().add(no_model_mask);
+  m_grid.variables().add(no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
-  usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2);
+  usurfstore.create(m_grid, "usurfstore", WITH_GHOSTS, 2);
   usurfstore.set_attrs("model_state", // ensures that it gets written at the end of the run
                        "saved surface elevation for use to keep surface gradient constant in no_model strip",
                        "m",
                        ""); //  no standard name
-  grid.variables().add(usurfstore);
+  m_grid.variables().add(usurfstore);
 
   // stencil width of 1 needed for differentiation
-  thkstore.create(grid, "thkstore", WITH_GHOSTS, 1);
+  thkstore.create(m_grid, "thkstore", WITH_GHOSTS, 1);
   thkstore.set_attrs("model_state", // ensures that it gets written at the end of the run
                      "saved ice thickness for use to keep driving stress constant in no_model strip",
                      "m",
                      ""); //  no standard name
-  grid.variables().add(thkstore);
+  m_grid.variables().add(thkstore);
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.
-  bmr_stored.create(grid, "bmr_stored", WITH_GHOSTS, 2);
+  bmr_stored.create(m_grid, "bmr_stored", WITH_GHOSTS, 2);
   bmr_stored.set_attrs("internal",
                        "time-independent basal melt rate in the no-model-strip",
                        "m s-1", "");
 
   if (config->get_boolean("ssa_dirichlet_bc")) {
     // remove the bc_mask variable from the dictionary
-    grid.variables().remove("bc_mask");
+    m_grid.variables().remove("bc_mask");
 
-    grid.variables().add(no_model_mask, "bc_mask");
+    m_grid.variables().add(no_model_mask, "bc_mask");
   }
 }
 
@@ -186,10 +186,10 @@ void IceRegionalModel::model_state_setup() {
                         0.0);
 
   if (strip_km.is_set()) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
                strip_km.value());
-    set_no_model_strip(grid.convert(strip_km, "km", "m"));
+    set_no_model_strip(m_grid.convert(strip_km, "km", "m"));
   }
 }
 
@@ -205,26 +205,26 @@ void IceRegionalModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(grid, EC);
+    sliding = new ZeroSliding(m_grid, EC);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(grid, EC);
+    sliding = new PrescribedSliding(m_grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD_Regional(grid, EC);
+    sliding = new SSAFD_Regional(m_grid, EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(grid, EC);
+    modifier = new ConstantInColumn(m_grid, EC);
   } else if (model == "prescribed_sliding+sia" || model == "ssa+sia") {
-    modifier = new SIAFD_Regional(grid, EC);
+    modifier = new SIAFD_Regional(m_grid, EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(grid, sliding, modifier);
+  stress_balance = new StressBalance(m_grid, sliding, modifier);
 }
 
 
@@ -241,9 +241,9 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config->get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(grid);
+      basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new RegionalDefaultYieldStress(grid, subglacial_hydrology);
+      basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -262,7 +262,7 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 
 
 void IceRegionalModel::initFromFile(const std::string &filename) {
-  PIO nc(grid.com, "guess_mode");
+  PIO nc(m_grid.com, "guess_mode");
 
   bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
 
@@ -270,7 +270,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
     no_model_mask.metadata().set_string("pism_intent", "internal");
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
              filename.c_str());
 
@@ -286,7 +286,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
     if (! (u_ssa_exists && v_ssa_exists)) {
       vBCvel.metadata().set_string("pism_intent", "internal");
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
                  "              This may be overridden by the -regrid_file option.\n",
                  filename.c_str());
@@ -382,7 +382,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(vWork3d);
   list.add(Enth3);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) < 0.5) {
@@ -392,7 +392,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
     double *new_enthalpy = vWork3d.get_column(i, j);
     double *old_enthalpy = Enth3.get_column(i, j);
 
-    for (unsigned int k = 0; k < grid.Mz(); ++k) {
+    for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
       new_enthalpy[k] = old_enthalpy[k];
     }
   }
@@ -400,7 +400,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
   list.add(basal_melt_rate);
   list.add(bmr_stored);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) < 0.5) {

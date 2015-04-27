@@ -159,12 +159,12 @@ void IceModel::init_diagnostics() {
 void IceModel::list_diagnostics() {
   PetscErrorCode ierr;
 
-  ierr = PetscPrintf(grid.com, "\n");
+  ierr = PetscPrintf(m_grid.com, "\n");
   PISM_CHK(ierr, "PetscPrintf");
 
   // quantities with dedicated storage
   {
-    std::set<std::string> list = grid.variables().keys();
+    std::set<std::string> list = m_grid.variables().keys();
 
     if (beddef != NULL) {
       beddef->add_vars_to_output("big", list);
@@ -196,7 +196,7 @@ void IceModel::list_diagnostics() {
 
     for (unsigned int d = 3; d > 1; --d) {
 
-      ierr = PetscPrintf(grid.com,
+      ierr = PetscPrintf(m_grid.com,
                          "======== Available %dD quantities with dedicated storage ========\n",
                          d);
       PISM_CHK(ierr, "PetscPrintf");
@@ -205,8 +205,8 @@ void IceModel::list_diagnostics() {
       for (j = list.begin(); j != list.end(); ++j) {
         const IceModelVec *v = NULL;
 
-        if (grid.variables().is_available(*j)) {
-          v = grid.variables().get(*j);
+        if (m_grid.variables().is_available(*j)) {
+          v = m_grid.variables().get(*j);
         }
 
         if (v != NULL && v->get_ndims() == d) {
@@ -222,7 +222,7 @@ void IceModel::list_diagnostics() {
             units = glaciological_units;
           }
 
-          ierr = PetscPrintf(grid.com,
+          ierr = PetscPrintf(m_grid.com,
                              "   Name: %s [%s]\n"
                              "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
           PISM_CHK(ierr, "PetscPrintf");
@@ -235,7 +235,7 @@ void IceModel::list_diagnostics() {
   // 2D and 3D diagnostics
   for (unsigned int d = 3; d > 1; --d) {
 
-    ierr = PetscPrintf(grid.com,
+    ierr = PetscPrintf(m_grid.com,
                        "======== Available %dD diagnostic quantities ========\n",
                        d);
     PISM_CHK(ierr, "PetscPrintf");
@@ -254,7 +254,7 @@ void IceModel::list_diagnostics() {
 
       if (diag->get_metadata().get_n_spatial_dimensions() == d) {
 
-        ierr = PetscPrintf(grid.com, "   Name: %s [%s]\n", name.c_str(), units.c_str());
+        ierr = PetscPrintf(m_grid.com, "   Name: %s [%s]\n", name.c_str(), units.c_str());
         PISM_CHK(ierr, "PetscPrintf");
 
         for (int k = 0; k < diag->get_nvars(); ++k) {
@@ -262,11 +262,11 @@ void IceModel::list_diagnostics() {
 
           std::string long_name = var.get_string("long_name");
 
-          ierr = PetscPrintf(grid.com, "      -  %s\n", long_name.c_str());
+          ierr = PetscPrintf(m_grid.com, "      -  %s\n", long_name.c_str());
           PISM_CHK(ierr, "PetscPrintf");
         }
 
-        ierr = PetscPrintf(grid.com, "\n");
+        ierr = PetscPrintf(m_grid.com, "\n");
         PISM_CHK(ierr, "PetscPrintf");
       }
 
@@ -275,7 +275,7 @@ void IceModel::list_diagnostics() {
   }
 
   // scalar time-series
-  ierr = PetscPrintf(grid.com, "======== Available time-series ========\n");
+  ierr = PetscPrintf(m_grid.com, "======== Available time-series ========\n");
   PISM_CHK(ierr, "PetscPrintf");
 
   std::map<std::string, TSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -291,7 +291,7 @@ void IceModel::list_diagnostics() {
       units = glaciological_units;
     }
 
-    ierr = PetscPrintf(grid.com,
+    ierr = PetscPrintf(m_grid.com,
                        "   Name: %s [%s]\n"
                        "      -  %s\n\n",
                        name.c_str(), units.c_str(), long_name.c_str());

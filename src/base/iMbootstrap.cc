@@ -59,7 +59,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
 
   regrid(3);
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "bootstrapping 3D variables...\n");
 
   // Fill 3D fields using heuristics:
@@ -67,72 +67,72 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
     // set the initial age of the ice if appropriate
     if (config->get_boolean("do_age")) {
       if (age_revision == age3.get_state_counter()) {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    " - setting initial age to %.4f years\n",
                    config->get_double("initial_age_of_ice_years"));
         age3.set(config->get_double("initial_age_of_ice_years", "years", "seconds"));
 
       } else {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    " - age of the ice was set already\n");
       }
     }
 
     if (config->get_boolean("do_cold_ice_methods") == true) {
       if (temperature_revision == T3.get_state_counter()) {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    "getting surface B.C. from couplers...\n");
         init_step_couplers();
 
         // this call will set ice temperature
         putTempAtDepth();
       } else {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    " - ice temperature was set already\n");
       }
 
       // make sure that enthalpy gets initialized:
       compute_enthalpy_cold(T3, Enth3);
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
 
     } else {
       // enthalpy mode
       if (enthalpy_revision == Enth3.get_state_counter()) {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    "getting surface B.C. from couplers...\n");
         init_step_couplers();
 
         // this call will set ice enthalpy
         putTempAtDepth();
       } else {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    " - ice enthalpy was set already\n");
       }
     }
   } // end of heuristics
 
-  verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename.c_str());
+  verbPrintf(2, m_grid.com, "done reading %s; bootstrapping done\n",filename.c_str());
 }
 
 void IceModel::bootstrap_2d(const std::string &filename) {
 
-  PIO nc(grid.com, "guess_mode");
+  PIO nc(m_grid.com, "guess_mode");
   nc.open(filename, PISM_READONLY);
 
-  verbPrintf(2, grid.com, 
+  verbPrintf(2, m_grid.com, 
              "bootstrapping by PISM default method from file %s\n", filename.c_str());
 
   // report on resulting computational box, rescale grid
-  verbPrintf(2, grid.com, 
+  verbPrintf(2, m_grid.com, 
              "  rescaling computational box for ice from -i file and\n"
              "    user options to dimensions:\n"
              "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-             (grid.x0() - grid.Lx())/1000.0,
-             (grid.x0() + grid.Lx())/1000.0,
-             (grid.y0() - grid.Ly())/1000.0,
-             (grid.y0() + grid.Ly())/1000.0,
-             grid.Lz());
+             (m_grid.x0() - m_grid.Lx())/1000.0,
+             (m_grid.x0() + m_grid.Lx())/1000.0,
+             (m_grid.y0() - m_grid.Ly())/1000.0,
+             (m_grid.y0() + m_grid.Ly())/1000.0,
+             m_grid.Lz());
 
   std::string usurf_name;
   bool usurf_found = false, mask_found = false, usurf_found_by_std_name = false;
@@ -152,16 +152,16 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   // setting to default values appropriately
 
   if (mask_found) {
-    verbPrintf(2, grid.com, 
+    verbPrintf(2, m_grid.com, 
                "  WARNING: 'mask' found; IGNORING IT!\n");
   }
 
   if (usurf_found) {
-    verbPrintf(2, grid.com, 
+    verbPrintf(2, m_grid.com, 
                "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
   }
 
-  verbPrintf(2, grid.com, 
+  verbPrintf(2, m_grid.com, 
              "  reading 2D model state variables by regridding ...\n");
 
   vLongitude.regrid(filename, OPTIONAL);
@@ -185,10 +185,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   {
     Range thk_range = ice_thickness.range();
 
-    if (thk_range.max >= grid.Lz() + 1e-6) {
+    if (thk_range.max >= m_grid.Lz() + 1e-6) {
       throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
-                                    thk_range.max, grid.Lz());
+                                    thk_range.max, m_grid.Lz());
     }
   }
 
@@ -219,10 +219,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   // check if Lz is valid
   Range thk_range = ice_thickness.range();
 
-  if (thk_range.max > grid.Lz()) {
+  if (thk_range.max > m_grid.Lz()) {
     throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_range.max, grid.Lz());
+                                  thk_range.max, m_grid.Lz());
   }
 }
 
@@ -295,7 +295,7 @@ bootstrap temperature profile in the bedrock.
 */
 void IceModel::putTempAtDepth() {
 
-  verbPrintf(2, grid.com, " - filling ice temperatures using surface temps (and %s)\n",
+  verbPrintf(2, m_grid.com, " - filling ice temperatures using surface temps (and %s)\n",
              (config->get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
               ? "quartic guess sans smb" : "mass balance for velocity estimate"));
 
@@ -334,15 +334,15 @@ void IceModel::putTempAtDepth() {
   list.add(geothermal_flux);
   list.add(*result);
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double HH = ice_thickness(i,j),
         Ts = ice_surface_temp(i,j),
         gg = geothermal_flux(i,j);
-      const unsigned int ks = grid.kBelowHeight(HH);
+      const unsigned int ks = m_grid.kBelowHeight(HH);
 
       double *T = result->get_column(i, j);
 
@@ -351,7 +351,7 @@ void IceModel::putTempAtDepth() {
         const double mm = climatic_mass_balance(i,j);
         if (mm <= 0.0) { // negative or zero surface mass balance case: linear
           for (unsigned int k = 0; k < ks; k++) {
-            const double z = grid.z(k),
+            const double z = m_grid.z(k),
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = gg / ice_k * (HH - z) + Ts;
             T[k] = std::min(Tpmp,T[k]);
@@ -361,7 +361,7 @@ void IceModel::putTempAtDepth() {
             gamma0 = sqrt(mm * HH / (2.0 * KK));
 
           for (unsigned int k = 0; k < ks; k++) {
-            const double z = grid.z(k),
+            const double z = m_grid.z(k),
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
             T[k] = std::min(Tpmp,T[k]);
@@ -371,7 +371,7 @@ void IceModel::putTempAtDepth() {
         const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
           alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
         for (unsigned int k = 0; k < ks; k++) {
-          const double depth = HH - grid.z(k),
+          const double depth = HH - m_grid.z(k),
             Tpmp = melting_point_temp - beta_CC_grad * depth,
             d2 = depth * depth;
           T[k] = std::min(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
@@ -379,14 +379,14 @@ void IceModel::putTempAtDepth() {
       }
 
       // above ice
-      for (unsigned int k = ks; k < grid.Mz(); k++) {
+      for (unsigned int k = ks; k < m_grid.Mz(); k++) {
         T[k] = Ts;
       }
 
       // convert to enthalpy if that's what we are calculating
       if (do_cold == false) {
-        for (unsigned int k = 0; k < grid.Mz(); ++k) {
-          const double depth = HH - grid.z(k);
+        for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
+          const double depth = HH - m_grid.z(k);
           const double pressure = EC->pressure(depth);
           // reuse T to store enthalpy; assume that the ice is cold
           T[k]= EC->enthalpy_permissive(T[k], 0.0, pressure);

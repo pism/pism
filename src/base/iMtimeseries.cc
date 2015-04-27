@@ -67,7 +67,7 @@ void IceModel::init_timeseries() {
   save_ts = true;
 
   try {
-    grid.time->parse_times(times, ts_times);  
+    m_grid.time->parse_times(times, ts_times);  
   } catch (RuntimeError &e) {
     e.add_context("parsing the -ts_times argument");
     throw;
@@ -77,15 +77,15 @@ void IceModel::init_timeseries() {
     throw RuntimeError("no argument for -ts_times option.");
   }
 
-  verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
+  verbPrintf(2, m_grid.com, "saving scalar time-series to '%s'; ",
              ts_file->c_str());
 
-  verbPrintf(2, grid.com, "times requested: %s\n", times->c_str());
+  verbPrintf(2, m_grid.com, "times requested: %s\n", times->c_str());
 
   current_ts = 0;
 
   if (vars.is_set()) {
-    verbPrintf(2, grid.com, "variables requested: %s\n", vars.to_string().c_str());
+    verbPrintf(2, m_grid.com, "variables requested: %s\n", vars.to_string().c_str());
     ts_vars = vars;
   } else {
     std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -95,7 +95,7 @@ void IceModel::init_timeseries() {
     }
   }
 
-  PIO nc(grid.com, "netcdf3");      // Use NetCDF-3 to write time-series.
+  PIO nc(m_grid.com, "netcdf3");      // Use NetCDF-3 to write time-series.
   nc.open(ts_file, mode);
 
   if (append == true) {
@@ -112,9 +112,9 @@ void IceModel::init_timeseries() {
       }
 
       if (current_ts > 0) {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    "skipping times before the last record in %s (at %s)\n",
-                   ts_file->c_str(), grid.time->date(time_max).c_str());
+                   ts_file->c_str(), m_grid.time->date(time_max).c_str());
       }
     }
   }
@@ -132,7 +132,7 @@ void IceModel::init_timeseries() {
   }
 
   // ignore times before (and including) the beginning of the run:
-  while (current_ts < ts_times.size() && ts_times[current_ts] < grid.time->start()) {
+  while (current_ts < ts_times.size() && ts_times[current_ts] < m_grid.time->start()) {
     current_ts++;
   }
 
@@ -165,7 +165,7 @@ void IceModel::write_timeseries() {
   }
 
   // return if did not yet reach the time we need to save at
-  if (ts_times[current_ts] > grid.time->current()) {
+  if (ts_times[current_ts] > m_grid.time->current()) {
     return;
   }
 
@@ -173,13 +173,13 @@ void IceModel::write_timeseries() {
     TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
-      diag->update(grid.time->current() - dt, grid.time->current());
+      diag->update(m_grid.time->current() - dt, m_grid.time->current());
     }
   }
 
 
   // Interpolate to put them on requested times:
-  for (; current_ts < ts_times.size() && ts_times[current_ts] <= grid.time->current(); current_ts++) {
+  for (; current_ts < ts_times.size() && ts_times[current_ts] <= m_grid.time->current(); current_ts++) {
 
     // the very first time (current_ts == 0) defines the left endpoint of the
     // first time interval; we don't write a report at that time
@@ -225,7 +225,7 @@ void IceModel::init_extras() {
   }
 
   try {
-    grid.time->parse_times(times, extra_times);
+    m_grid.time->parse_times(times, extra_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -extra_times argument");
     throw;
@@ -240,7 +240,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(grid.com, grid.config->get_string("output_format"));
+    PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
     std::string time_name = config->get_string("time_dimension_name");
     bool time_exists;
 
@@ -256,9 +256,9 @@ void IceModel::init_extras() {
       }
 
       if (next_extra > 0) {
-        verbPrintf(2, grid.com,
+        verbPrintf(2, m_grid.com,
                    "skipping times before the last record in %s (at %s)\n",
-                   extra_filename.c_str(), grid.time->date(time_max).c_str());
+                   extra_filename.c_str(), m_grid.time->date(time_max).c_str());
       }
 
       // discard requested times before the beginning of the run
@@ -279,37 +279,37 @@ void IceModel::init_extras() {
 
   if (split) {
     split_extra = true;
-    verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
+    verbPrintf(2, m_grid.com, "saving spatial time-series to '%s+year.nc'; ",
                extra_filename.c_str());
   } else {
     if (!ends_with(extra_filename, ".nc")) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
                  extra_filename.c_str());
     }
-    verbPrintf(2, grid.com, "saving spatial time-series to '%s'; ",
+    verbPrintf(2, m_grid.com, "saving spatial time-series to '%s'; ",
                extra_filename.c_str());
   }
 
-  verbPrintf(2, grid.com, "times requested: %s\n", times->c_str());
+  verbPrintf(2, m_grid.com, "times requested: %s\n", times->c_str());
 
   if (extra_times.size() > 500) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
   if (vars.is_set()) {
-    verbPrintf(2, grid.com, "variables requested: %s\n", vars.to_string().c_str());
+    verbPrintf(2, m_grid.com, "variables requested: %s\n", vars.to_string().c_str());
     extra_vars = vars;
   } else {
-    verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
+    verbPrintf(2, m_grid.com, "PISM WARNING: -extra_vars was not set."
                " Writing model_state, mapping and climate_steady variables...\n");
 
-    std::set<std::string> vars_set = grid.variables().keys();
+    std::set<std::string> vars_set = m_grid.variables().keys();
 
     std::set<std::string>::iterator i;
     for (i = vars_set.begin(); i != vars_set.end(); ++i) {
-      const SpatialVariableMetadata &m = grid.variables().get(*i)->metadata();
+      const SpatialVariableMetadata &m = m_grid.variables().get(*i)->metadata();
 
       std::string intent = m.get_string("pism_intent");
 
@@ -328,7 +328,7 @@ void IceModel::init_extras() {
   } // end of the else clause after "if (extra_vars_set)"
 
   if (extra_vars.size() == 0) {
-    verbPrintf(2, grid.com, 
+    verbPrintf(2, m_grid.com, 
                "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n");
   }
 }
@@ -349,8 +349,8 @@ void IceModel::write_extras() {
 
   // do we need to save *now*?
   if (next_extra < extra_times.size() &&
-      (grid.time->current() >= extra_times[next_extra] ||
-       fabs(grid.time->current() - extra_times[next_extra]) < 1.0)) {
+      (m_grid.time->current() >= extra_times[next_extra] ||
+       fabs(m_grid.time->current() - extra_times[next_extra]) < 1.0)) {
     // the condition above is "true" if we passed a requested time or got to
     // within 1 second from it
 
@@ -358,8 +358,8 @@ void IceModel::write_extras() {
 
     // update next_extra
     while (next_extra < extra_times.size() &&
-           (extra_times[next_extra] <= grid.time->current() ||
-            fabs(grid.time->current() - extra_times[next_extra]) < 1.0)) {
+           (extra_times[next_extra] <= m_grid.time->current() ||
+            fabs(m_grid.time->current() - extra_times[next_extra]) < 1.0)) {
       next_extra++;
     }
 
@@ -386,12 +386,12 @@ void IceModel::write_extras() {
 
     // This line re-initializes last_extra (the correct value is not known at
     // the time init_extras() is calles).
-    last_extra = grid.time->current();
+    last_extra = m_grid.time->current();
 
     return;
   }
 
-  if (saving_after < grid.time->start()) {
+  if (saving_after < m_grid.time->start()) {
     // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
     // also that PISM writes a backup file at year 2500 and gets stopped.
     //
@@ -405,26 +405,26 @@ void IceModel::write_extras() {
     return;
   }
 
-  grid.profiling.begin("extra_file reporting");
+  m_grid.profiling.begin("extra_file reporting");
 
   if (split_extra) {
     extra_file_is_ready = false;        // each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             extra_filename.c_str(), grid.time->date().c_str());
+             extra_filename.c_str(), m_grid.time->date().c_str());
   } else {
     strncpy(filename, extra_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
-  verbPrintf(3, grid.com, 
+  verbPrintf(3, m_grid.com, 
              "\nsaving spatial time-series to %s at %s\n\n",
-             filename, grid.time->date().c_str());
+             filename, m_grid.time->date().c_str());
 
   // find out how much time passed since the beginning of the run
   double wall_clock_hours;
 
-  ParallelSection rank0(grid.com);
+  ParallelSection rank0(m_grid.com);
   try {
-    if (grid.rank() == 0) {
+    if (m_grid.rank() == 0) {
       wall_clock_hours = (GetTime() - start_time) / 3600.0;
     }
   } catch (...) {
@@ -432,9 +432,9 @@ void IceModel::write_extras() {
   }
   rank0.check();
 
-  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid.com);
 
-  PIO nc(grid.com, grid.config->get_string("output_format"));
+  PIO nc(m_grid.com, m_grid.config->get_string("output_format"));
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
@@ -448,8 +448,8 @@ void IceModel::write_extras() {
     // Prepare the file:
     nc.open(filename, mode);
     io::define_time(nc, config->get_string("time_dimension_name"),
-                    grid.time->calendar(),
-                    grid.time->CF_units_string(),
+                    m_grid.time->calendar(),
+                    m_grid.time->CF_units_string(),
                     config->unit_system());
     nc.put_att_text(config->get_string("time_dimension_name"),
                     "bounds", "time_bounds");
@@ -462,7 +462,7 @@ void IceModel::write_extras() {
     nc.open(filename, PISM_READWRITE);
   }
 
-  double      current_time = grid.time->current();
+  double      current_time = m_grid.time->current();
   std::string time_name    = config->get_string("time_dimension_name");
 
   io::append_time(nc, time_name, current_time);
@@ -487,7 +487,7 @@ void IceModel::write_extras() {
 
   last_extra = current_time;
 
-  grid.profiling.end("extra_file reporting");
+  m_grid.profiling.end("extra_file reporting");
 }
 
 static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t) {

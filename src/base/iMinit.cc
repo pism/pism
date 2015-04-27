@@ -69,10 +69,10 @@ void IceModel::set_grid_defaults() {
   // deduced from a bootstrapping file, so we check if these options
   // are set and stop if they are not.
   options::Integer
-    Mx("-Mx", "grid size in X direction", grid.Mx()),
-    My("-My", "grid size in Y direction", grid.My()),
-    Mz("-Mz", "grid size in vertical direction", grid.Mz());
-  options::Real Lz("-Lz", "height of the computational domain", grid.Lz());
+    Mx("-Mx", "grid size in X direction", m_grid.Mx()),
+    My("-My", "grid size in Y direction", m_grid.My()),
+    Mz("-Mz", "grid size in vertical direction", m_grid.Mz());
+  options::Real Lz("-Lz", "height of the computational domain", m_grid.Lz());
 
   if (not (Mx.is_set() and My.is_set() and Mz.is_set() and Lz.is_set())) {
     throw RuntimeError("All of -bootstrap, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
@@ -90,7 +90,7 @@ void IceModel::set_grid_defaults() {
   // Use a bootstrapping file to set some grid parameters (they can be
   // overridden later, in IceModel::set_grid_from_options()).
 
-  PIO nc(grid.com, "netcdf3"); // OK to use netcdf3, we read very little data here.
+  PIO nc(m_grid.com, "netcdf3"); // OK to use netcdf3, we read very little data here.
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -116,7 +116,7 @@ void IceModel::set_grid_defaults() {
       }
 
       if (grid_info_found) {
-        input = grid_info(nc, names[i], config->unit_system(), grid.periodicity());
+        input = grid_info(nc, names[i], config->unit_system(), m_grid.periodicity());
         break;
       }
     }
@@ -139,26 +139,26 @@ void IceModel::set_grid_defaults() {
     bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
       io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(grid.com, 4);
+      mapping.report_to_stdout(m_grid.com, 4);
     }
     nc.close();
   }
 
   // Set the grid center and horizontal extent:
-  grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
+  m_grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys = options::Bool("-ys", "starting time");
   if (not ys) {
     if (input.t_len > 0) {
-      grid.time->set_start(input.time);
-      verbPrintf(2, grid.com,
+      m_grid.time->set_start(input.time);
+      verbPrintf(2, m_grid.com,
                  "  time t = %s found; setting current time\n",
-                 grid.time->date().c_str());
+                 m_grid.time->date().c_str());
     }
   }
 
-  grid.time->init();
+  m_grid.time->init();
 
 }
 
@@ -169,15 +169,15 @@ void IceModel::set_grid_defaults() {
 void IceModel::set_grid_from_options() {
 
   double
-    x0 = grid.x0(),
-    y0 = grid.y0(),
-    Lx = grid.Lx(),
-    Ly = grid.Ly(),
-    Lz = grid.Lz();
+    x0 = m_grid.x0(),
+    y0 = m_grid.y0(),
+    Lx = m_grid.Lx(),
+    Ly = m_grid.Ly(),
+    Lz = m_grid.Lz();
   int
-    Mx = grid.Mx(),
-    My = grid.My(),
-    Mz = grid.Mz();
+    Mx = m_grid.Mx(),
+    My = m_grid.My(),
+    Mz = m_grid.Mz();
   SpacingType spacing = QUADRATIC; // irrelevant (it is reset below)
 
   // Process options:
@@ -244,8 +244,8 @@ void IceModel::set_grid_from_options() {
   //
   // Note that grid.periodicity() includes the result of processing
   // the -periodicity option.
-  grid.set_size_and_extent(x0, y0, Lx, Ly, Mx, My, grid.periodicity());
-  grid.set_vertical_levels(Lz, Mz, spacing);
+  m_grid.set_size_and_extent(x0, y0, Lx, Ly, Mx, My, m_grid.periodicity());
+  m_grid.set_vertical_levels(Lz, Mz, spacing);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
   // filled. We're ready to call grid.allocate().
@@ -267,7 +267,7 @@ void IceModel::set_grid_from_options() {
  */
 void IceModel::grid_setup() {
 
-  verbPrintf(3, grid.com,
+  verbPrintf(3, m_grid.com,
              "Setting up the computational grid...\n");
 
   // Check if we are initializing from a PISM output file:
@@ -275,7 +275,7 @@ void IceModel::grid_setup() {
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
   if (input_file.is_set() and not bootstrap) {
-    PIO nc(grid.com, "guess_mode");
+    PIO nc(m_grid.com, "guess_mode");
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
@@ -290,14 +290,14 @@ void IceModel::grid_setup() {
     bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
       io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(grid.com, 4);
+      mapping.report_to_stdout(m_grid.com, 4);
     }
 
     nc.close();
 
     // If it's missing, print a warning
     if (source.empty()) {
-      verbPrintf(1, grid.com,
+      verbPrintf(1, m_grid.com,
                  "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
                  "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
                  "     ncatted -a source,global,c,c,PISM %s\n",
@@ -305,7 +305,7 @@ void IceModel::grid_setup() {
     } else if (source.find("PISM") == std::string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
-      verbPrintf(1, grid.com,
+      verbPrintf(1, m_grid.com,
                  "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
                  "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
                  input_file->c_str());
@@ -322,7 +322,7 @@ void IceModel::grid_setup() {
       var_exists = nc.inq_var(names[i]);
 
       if (var_exists == true) {
-        IceGrid::FromFile(nc, names[i], grid.periodicity(), &grid);
+        IceGrid::FromFile(nc, names[i], m_grid.periodicity(), &m_grid);
         break;
       }
     }
@@ -337,20 +337,20 @@ void IceModel::grid_setup() {
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
-    options::ignored(grid.com, "-Mx");
-    options::ignored(grid.com, "-My");
-    options::ignored(grid.com, "-Mz");
-    options::ignored(grid.com, "-Mbz");
-    options::ignored(grid.com, "-Lx");
-    options::ignored(grid.com, "-Ly");
-    options::ignored(grid.com, "-Lz");
-    options::ignored(grid.com, "-z_spacing");
+    options::ignored(m_grid.com, "-Mx");
+    options::ignored(m_grid.com, "-My");
+    options::ignored(m_grid.com, "-Mz");
+    options::ignored(m_grid.com, "-Mbz");
+    options::ignored(m_grid.com, "-Lx");
+    options::ignored(m_grid.com, "-Ly");
+    options::ignored(m_grid.com, "-Lz");
+    options::ignored(m_grid.com, "-z_spacing");
   } else {
     set_grid_defaults();
     set_grid_from_options();
   }
 
-  grid.allocate();
+  m_grid.allocate();
 }
 
 //! Sets the starting values of model state variables.
@@ -400,8 +400,8 @@ void IceModel::model_state_setup() {
   // bed elevation and uplift.
   if (beddef) {
     beddef->init();
-    grid.variables().add(beddef->bed_elevation());
-    grid.variables().add(beddef->uplift());
+    m_grid.variables().add(beddef->bed_elevation());
+    m_grid.variables().add(beddef->uplift());
   }
 
   if (stress_balance) {
@@ -419,7 +419,7 @@ void IceModel::model_state_setup() {
     if (bootstrapping_needed == true) {
       // update surface and ocean models so that we can get the
       // temperature at the top of the bedrock
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "getting surface B.C. from couplers...\n");
       init_step_couplers();
 
@@ -441,7 +441,7 @@ void IceModel::model_state_setup() {
 
   if (climatic_mass_balance_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Trying to read cumulative climatic mass balance from '%s'...\n",
                  input_file->c_str());
       climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -452,7 +452,7 @@ void IceModel::model_state_setup() {
 
   if (grounded_basal_flux_2D_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Trying to read cumulative grounded basal flux from '%s'...\n",
                  input_file->c_str());
       grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -463,7 +463,7 @@ void IceModel::model_state_setup() {
 
   if (floating_basal_flux_2D_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Trying to read cumulative floating basal flux from '%s'...\n",
                  input_file->c_str());
       floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -474,7 +474,7 @@ void IceModel::model_state_setup() {
 
   if (nonneg_flux_2D_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Trying to read cumulative nonneg flux from '%s'...\n",
                  input_file->c_str());
       nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -484,7 +484,7 @@ void IceModel::model_state_setup() {
   }
 
   if (input_file.is_set()) {
-    PIO nc(grid.com, "netcdf3");
+    PIO nc(m_grid.com, "netcdf3");
 
     nc.open(input_file, PISM_READONLY);
     bool run_stats_exists = nc.inq_var("run_stats");
@@ -537,20 +537,20 @@ void IceModel::model_state_setup() {
     pr   = config->get_boolean("part_redist"),
     ki   = config->get_boolean("kill_icebergs");
   if (pg || pr || ki) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "* PISM-PIK mass/geometry methods are in use:  ");
 
     if (pg)   {
-      verbPrintf(2, grid.com, "part_grid,");
+      verbPrintf(2, m_grid.com, "part_grid,");
     }
     if (pr)   {
-      verbPrintf(2, grid.com, "part_redist,");
+      verbPrintf(2, m_grid.com, "part_redist,");
     }
     if (ki)   {
-      verbPrintf(2, grid.com, "kill_icebergs");
+      verbPrintf(2, m_grid.com, "kill_icebergs");
     }
 
-    verbPrintf(2, grid.com, "\n");
+    verbPrintf(2, m_grid.com, "\n");
   }
 
   stampHistoryCommand();
@@ -565,7 +565,7 @@ void IceModel::model_state_setup() {
  */
 void IceModel::set_vars_from_options() {
 
-  verbPrintf(3, grid.com,
+  verbPrintf(3, m_grid.com,
              "Setting initial values of model state variables...\n");
 
   options::String input_file("-i", "Specifies the input file");
@@ -585,7 +585,7 @@ void IceModel::allocate_enthalpy_converter() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating an enthalpy converter...\n");
 
   EC = enthalpy_converter_from_options(*config);
@@ -600,23 +600,23 @@ void IceModel::allocate_stressbalance() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating a stress balance model...\n");
 
   std::string model = config->get_string("stress_balance_model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(grid, EC);
+    sliding = new ZeroSliding(m_grid, EC);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(grid, EC);
+    sliding = new PrescribedSliding(m_grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
     std::string method = config->get_string("ssa_method");
 
     if (method == "fem") {
-      sliding = new SSAFEM(grid, EC);
+      sliding = new SSAFEM(m_grid, EC);
     } else if (method == "fd") {
-      sliding = new SSAFD(grid, EC);
+      sliding = new SSAFD(m_grid, EC);
     } else {
       throw RuntimeError::formatted("invalid ssa method: %s", method.c_str());
     }
@@ -627,15 +627,15 @@ void IceModel::allocate_stressbalance() {
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(grid, EC);
+    modifier = new ConstantInColumn(m_grid, EC);
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
-    modifier = new SIAFD(grid, EC);
+    modifier = new SIAFD(m_grid, EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(grid, sliding, modifier);
+  stress_balance = new StressBalance(m_grid, sliding, modifier);
 }
 
 void IceModel::allocate_iceberg_remover() {
@@ -644,13 +644,13 @@ void IceModel::allocate_iceberg_remover() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating an iceberg remover (part of a calving model)...\n");
 
   if (config->get_boolean("kill_icebergs")) {
 
     // this will throw an exception on failure
-    iceberg_remover = new calving::IcebergRemover(grid);
+    iceberg_remover = new calving::IcebergRemover(m_grid);
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
@@ -665,10 +665,10 @@ void IceModel::allocate_bedrock_thermal_unit() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating a bedrock thermal layer model...\n");
 
-  btu = new energy::BedThermalUnit(grid);
+  btu = new energy::BedThermalUnit(m_grid);
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -682,15 +682,15 @@ void IceModel::allocate_subglacial_hydrology() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
-    subglacial_hydrology = new NullTransport(grid);
+    subglacial_hydrology = new NullTransport(m_grid);
   } else if (hydrology_model == "routing") {
-    subglacial_hydrology = new Routing(grid);
+    subglacial_hydrology = new Routing(m_grid);
   } else if (hydrology_model == "distributed") {
-    subglacial_hydrology = new Distributed(grid, stress_balance);
+    subglacial_hydrology = new Distributed(m_grid, stress_balance);
   } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
                                   "has value '%s'", hydrology_model.c_str());
@@ -704,7 +704,7 @@ void IceModel::allocate_basal_yield_stress() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating a basal yield stress model...\n");
 
   std::string model = config->get_string("stress_balance_model");
@@ -714,9 +714,9 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config->get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(grid);
+      basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new MohrCoulombYieldStress(grid, subglacial_hydrology);
+      basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -735,10 +735,10 @@ void IceModel::allocate_submodels() {
   // FIXME: someday we will have an "energy balance" sub-model...
   if (config->get_boolean("do_energy") == true) {
     if (config->get_boolean("do_cold_ice_methods") == false) {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {
-      verbPrintf(2, grid.com,
+      verbPrintf(2, m_grid.com,
                  "* Using the temperature-based energy balance model...\n");
     }
   }
@@ -766,14 +766,14 @@ void IceModel::allocate_submodels() {
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
-  atmosphere::Factory pa(grid);
-  surface::Factory ps(grid);
-  ocean::Factory po(grid);
+  atmosphere::Factory pa(m_grid);
+  surface::Factory ps(m_grid);
+  ocean::Factory po(m_grid);
   atmosphere::AtmosphereModel *atmosphere;
 
   if (surface == NULL) {
 
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
              "# Allocating a surface process model or coupler...\n");
 
     surface = ps.create();
@@ -784,7 +784,7 @@ void IceModel::allocate_couplers() {
   }
 
   if (ocean == NULL) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
              "# Allocating an ocean model or coupler...\n");
 
     ocean = po.create();
@@ -795,7 +795,7 @@ void IceModel::allocate_couplers() {
 //! Initializes atmosphere and ocean couplers.
 void IceModel::init_couplers() {
 
-  verbPrintf(3, grid.com,
+  verbPrintf(3, m_grid.com,
              "Initializing boundary models...\n");
 
   assert(surface != NULL);
@@ -812,8 +812,8 @@ void IceModel::init_couplers() {
 void IceModel::init_step_couplers() {
 
   const double
-    now               = grid.time->current(),
-    one_year_from_now = grid.time->increment_date(now, 1.0);
+    now               = m_grid.time->current(),
+    one_year_from_now = m_grid.time->increment_date(now, 1.0);
 
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);
@@ -845,11 +845,11 @@ void IceModel::allocate_internal_objects() {
   for (int j = 0; j < nWork2d; j++) {
     char namestr[30];
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    vWork2d[j].create(grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
+    vWork2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
   }
 
   // 3d work vectors
-  vWork3d.create(grid,"work_vector_3d",WITHOUT_GHOSTS);
+  vWork3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
   vWork3d.set_attrs("internal",
                     "e.g. new values of temperature or age or enthalpy during time step",
                     "", "");
@@ -859,7 +859,7 @@ void IceModel::allocate_internal_objects() {
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
 void IceModel::misc_setup() {
 
-  verbPrintf(3, grid.com, "Finishing initialization...\n");
+  verbPrintf(3, m_grid.com, "Finishing initialization...\n");
 
   output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
                                         "medium");
@@ -905,7 +905,7 @@ void IceModel::init_calving() {
   if (methods.find("ocean_kill") != methods.end()) {
 
     if (ocean_kill_calving == NULL) {
-      ocean_kill_calving = new calving::OceanKill(grid);
+      ocean_kill_calving = new calving::OceanKill(m_grid);
     }
 
     ocean_kill_calving->init();
@@ -915,7 +915,7 @@ void IceModel::init_calving() {
   if (methods.find("thickness_calving") != methods.end()) {
 
     if (thickness_threshold_calving == NULL) {
-      thickness_threshold_calving = new calving::CalvingAtThickness(grid);
+      thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
     }
 
     thickness_threshold_calving->init();
@@ -926,7 +926,7 @@ void IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (eigen_calving == NULL) {
-      eigen_calving = new calving::EigenCalving(grid, stress_balance);
+      eigen_calving = new calving::EigenCalving(m_grid, stress_balance);
     }
 
     eigen_calving->init();
@@ -935,7 +935,7 @@ void IceModel::init_calving() {
 
   if (methods.find("float_kill") != methods.end()) {
     if (float_kill_calving == NULL) {
-      float_kill_calving = new calving::FloatKill(grid);
+      float_kill_calving = new calving::FloatKill(m_grid);
     }
 
     float_kill_calving->init();
@@ -950,7 +950,7 @@ void IceModel::init_calving() {
   }
 
   if (unused.empty() == false) {
-    verbPrintf(2, grid.com,
+    verbPrintf(2, m_grid.com,
                "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
                unused.c_str());
   }
@@ -963,21 +963,21 @@ void IceModel::allocate_bed_deformation() {
     return;
   }
 
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "# Allocating a bed deformation model...\n");
 
   if (model == "none") {
-    beddef = new bed::PBNull(grid);
+    beddef = new bed::PBNull(m_grid);
     return;
   }
 
   if (model == "iso") {
-    beddef = new bed::PBPointwiseIsostasy(grid);
+    beddef = new bed::PBPointwiseIsostasy(m_grid);
     return;
   }
 
   if (model == "lc") {
-    beddef = new bed::PBLingleClark(grid);
+    beddef = new bed::PBLingleClark(m_grid);
     return;
   }
 }

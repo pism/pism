@@ -65,9 +65,9 @@ IceEISModel::IceEISModel(IceGrid &g, DefaultConfig::Ptr conf, DefaultConfig::Ptr
 
 void IceEISModel::set_grid_defaults() {
   double Lx = 750e3;
-  grid.set_extent(0.0, 0.0, Lx, Lx);
+  m_grid.set_extent(0.0, 0.0, Lx, Lx);
 
-  grid.time->init();
+  m_grid.time->init();
 }
 
 void IceEISModel::setFromOptions() {
@@ -103,16 +103,16 @@ void IceEISModel::allocate_stressbalance() {
 
   ShallowStressBalance *my_stress_balance;
 
-  SSB_Modifier *modifier = new SIAFD(grid, EC);
+  SSB_Modifier *modifier = new SIAFD(m_grid, EC);
 
   if (m_experiment == 'G' || m_experiment == 'H') {
-    my_stress_balance = new SIA_Sliding(grid, EC);
+    my_stress_balance = new SIA_Sliding(m_grid, EC);
   } else {
-    my_stress_balance = new ZeroSliding(grid, EC);
+    my_stress_balance = new ZeroSliding(m_grid, EC);
   }
 
   // ~StressBalance() will de-allocate my_stress_balance and modifier.
-  stress_balance = new StressBalance(grid, my_stress_balance, modifier);
+  stress_balance = new StressBalance(m_grid, my_stress_balance, modifier);
 
 }
 
@@ -120,11 +120,11 @@ void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (surface == NULL) {
-    surface = new surface::EISMINTII(grid, m_experiment);
+    surface = new surface::EISMINTII(m_grid, m_experiment);
   }
 
   if (ocean == NULL) {
-    ocean = new ocean::Constant(grid);
+    ocean = new ocean::Constant(m_grid);
   }
 }
 
@@ -140,10 +140,10 @@ void IceEISModel::generateTroughTopography(IceModelVec2S &result) {
 
   IceModelVec::AccessList list;
   list.add(result);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double nsd = i * grid.dx(), ewd = j * grid.dy();
+    const double nsd = i * m_grid.dx(), ewd = j * m_grid.dy();
     if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
         (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
       result(i,j) = 1000.0 - std::max(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
@@ -163,10 +163,10 @@ void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
 
   IceModelVec::AccessList list;
   list.add(result);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double nsd = i * grid.dx(), ewd = j * grid.dy();
+    const double nsd = i * m_grid.dx(), ewd = j * m_grid.dy();
     result(i,j) = fabs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
 }
@@ -176,12 +176,12 @@ void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
 void IceEISModel::set_vars_from_options() {
 
   // initialize from EISMINT II formulas
-  verbPrintf(2, grid.com,
+  verbPrintf(2, m_grid.com,
              "initializing variables from EISMINT II experiment %c formulas... \n",
              m_experiment);
 
   IceModelVec2S tmp;
-  tmp.create(grid, "topg", WITHOUT_GHOSTS);
+  tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
 
   // set bed topography
   {

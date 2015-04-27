@@ -35,7 +35,7 @@ namespace pism {
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
 void IceModel::calculateFractureDensity() {
-  const double dx = grid.dx(), dy = grid.dy(), Mx = grid.Mx(), My = grid.My();
+  const double dx = m_grid.dx(), dy = m_grid.dy(), Mx = m_grid.Mx(), My = m_grid.My();
 
   IceModelVec2S
     &vFDnew = vWork2d[0],
@@ -113,7 +113,7 @@ void IceModel::calculateFractureDensity() {
     healThreshold = fractures[3];
   }
 
-  verbPrintf(3, grid.com,
+  verbPrintf(3, m_grid.com,
              "PISM-PIK INFO: fracture density is found with parameters:\n"
              " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
              gamma, initThreshold, gammaheal, healThreshold, soft_residual);
@@ -136,7 +136,7 @@ void IceModel::calculateFractureDensity() {
 
   bool fd2d_scheme = options::Bool("-scheme_fd2d", "scheme fd2d");
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     tempFD=0;
@@ -164,7 +164,7 @@ void IceModel::calculateFractureDensity() {
       } else if (uvel>=-dx*vvel/dy && vvel<=0.0) { //8
         tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
       } else {
-        verbPrintf(3,grid.com,
+        verbPrintf(3,m_grid.com,
                    "######### missing case of angle %f of %f and %f at %d, %d \n",
                    atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
       }
@@ -310,7 +310,7 @@ void IceModel::calculateFractureDensity() {
       //fracture age since fracturing occured
       vFAnew(i,j) -= dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
       vFAnew(i,j) -= dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
-      vFAnew(i,j)+= dt/grid.convert(1.0, "year", "seconds");
+      vFAnew(i,j)+= dt/m_grid.convert(1.0, "year", "seconds");
       if (sigmat > initThreshold) {
         vFAnew(i,j) = 0.0;
       }

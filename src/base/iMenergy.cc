@@ -63,15 +63,15 @@ void IceModel::energyStep() {
   //   enthalpyAndDrainageStep()
   get_bed_top_temp(bedtoptemp);
 
-  grid.profiling.begin("BTU");
+  m_grid.profiling.begin("BTU");
   btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
-  grid.profiling.end("BTU");
+  m_grid.profiling.end("BTU");
 
   if (config->get_boolean("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-    grid.profiling.begin("temp step");
+    m_grid.profiling.begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
-    grid.profiling.end("temp step");
+    m_grid.profiling.end("temp step");
 
     vWork3d.update_ghosts(T3);
 
@@ -84,15 +84,15 @@ void IceModel::energyStep() {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
-    grid.profiling.begin("enth step");
+    m_grid.profiling.begin("enth step");
     enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
-    grid.profiling.end("enth step");
+    m_grid.profiling.end("enth step");
 
     vWork3d.update_ghosts(Enth3);
 
-    gLiquifiedVol = GlobalSum(grid.com, myLiquifiedVol);
+    gLiquifiedVol = GlobalSum(m_grid.com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
-      verbPrintf(1,grid.com,
+      verbPrintf(1,m_grid.com,
                  "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
                  gLiquifiedVol / 1.0e9);
     }
@@ -101,9 +101,9 @@ void IceModel::energyStep() {
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   CFLviolcount = countCFLViolations();
 
-  gVertSacrCount = GlobalSum(grid.com, myVertSacrCount);
+  gVertSacrCount = GlobalSum(m_grid.com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx() * grid.My()));
+    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (m_grid.Mx() * m_grid.My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
         getVerbosityLevel() > 2) {
@@ -113,7 +113,7 @@ void IceModel::energyStep() {
     }
   }
 
-  gBulgeCount = GlobalSum(grid.com, myBulgeCount);
+  gBulgeCount = GlobalSum(m_grid.com, myBulgeCount);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
@@ -155,7 +155,7 @@ void IceModel::combine_basal_melt_rate() {
   list.add(basal_melt_rate);
   list.add(shelfbmassflux);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double lambda = 1.0;      // 1.0 corresponds to the grounded case
@@ -203,9 +203,9 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   list.add(ice_thickness);
   list.add(vMask);
   list.add(ice_surface_temp);
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.grounded(i,j)) {

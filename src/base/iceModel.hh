@@ -213,7 +213,7 @@ public:
                                IO_Type nctype);
 protected:
 
-  IceGrid &grid;
+  IceGrid &m_grid;
 
   DefaultConfig::Ptr config,           //!< configuration flags and parameters
     overrides;                  //!< flags and parameters overriding config, see -config_override

@@ -66,13 +66,13 @@ double IceModel::max_timestep_cfl_3d() {
 
   // update global max of abs of velocities for CFL; only velocities under surface
   double max_u = 0.0, max_v = 0.0, max_w = 0.0;
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j)) {
-        const int ks = grid.kBelowHeight(ice_thickness(i, j));
+        const int ks = m_grid.kBelowHeight(ice_thickness(i, j));
         const double
           *u = u3.get_column(i, j),
           *v = v3.get_column(i, j),
@@ -85,7 +85,7 @@ double IceModel::max_timestep_cfl_3d() {
           max_u = std::max(max_u, absu);
           max_v = std::max(max_v, absv);
           max_w = std::max(max_w, fabs(w[k]));
-          const double denom = fabs(absu / grid.dx()) + fabs(absv / grid.dy());
+          const double denom = fabs(absu / m_grid.dx()) + fabs(absv / m_grid.dy());
           if (denom > 0.0) {
             max_dt = std::min(max_dt, 1.0 / denom);
           }
@@ -97,11 +97,11 @@ double IceModel::max_timestep_cfl_3d() {
   }
   loop.check();
 
-  gmaxu = GlobalMax(grid.com, max_u);
-  gmaxv = GlobalMax(grid.com, max_v);
-  gmaxw = GlobalMax(grid.com, max_w);
+  gmaxu = GlobalMax(m_grid.com, max_u);
+  gmaxv = GlobalMax(m_grid.com, max_v);
+  gmaxw = GlobalMax(m_grid.com, max_w);
 
-  return GlobalMin(grid.com, max_dt);
+  return GlobalMin(m_grid.com, max_dt);
 }
 
 
@@ -123,13 +123,13 @@ double IceModel::max_timestep_cfl_2d() {
   const IceModelVec2V &vel = stress_balance->advective_velocity();
 
   const double
-    dx = grid.dx(),
-    dy = grid.dy();
+    dx = m_grid.dx(),
+    dy = m_grid.dy();
 
   IceModelVec::AccessList list;
   list.add(vel);
   list.add(vMask);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -140,7 +140,7 @@ double IceModel::max_timestep_cfl_2d() {
     }
   }
 
-  return GlobalMin(grid.com, max_dt);
+  return GlobalMin(m_grid.com, max_dt);
 }
 
 
@@ -159,8 +159,8 @@ double IceModel::max_timestep_diffusivity() {
 
   if (D_max > 0.0) {
     const double
-      dx = grid.dx(),
-      dy = grid.dy(),
+      dx = m_grid.dx(),
+      dy = m_grid.dy(),
       adaptive_timestepping_ratio = config->get_double("adaptive_timestepping_ratio"),
       grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
@@ -214,11 +214,11 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
 void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
   const bool update_3d = (skipCountDown == 0);
-  const double time_to_end = grid.time->end() - grid.time->current();
+  const double time_to_end = m_grid.time->end() - m_grid.time->current();
 
   // FIXME: we should probably create a std::vector<const Component_TS*>
   // (or similar) and iterate over that instead.
-  const double current_time = grid.time->current();
+  const double current_time = m_grid.time->current();
   std::map<std::string, double> dt_restrictions;
 
   // Always consider the maximum allowed time-step length.
@@ -334,8 +334,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       double
         next_time = timestep_hit_multiples_last_time;
 
-      while (grid.time->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
-        next_time = grid.time->increment_date(next_time, timestep_hit_multiples);
+      while (m_grid.time->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
+        next_time = m_grid.time->increment_date(next_time, timestep_hit_multiples);
       }
 
       if (next_time > current_time && next_time <= current_time + dt_result + epsilon) {
@@ -401,8 +401,8 @@ It is handled by temperatureAgeStep(), not here.
 unsigned int IceModel::countCFLViolations() {
 
   const double
-    CFL_x = grid.dx() / dt_TempAge,
-    CFL_y = grid.dy() / dt_TempAge;
+    CFL_x = m_grid.dx() / dt_TempAge,
+    CFL_y = m_grid.dy() / dt_TempAge;
 
   const IceModelVec3
     &u3 = stress_balance->velocity_u(),
@@ -414,12 +414,12 @@ unsigned int IceModel::countCFLViolations() {
   list.add(v3);
 
   unsigned int CFL_violation_count = 0;
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const int fks = grid.kBelowHeight(ice_thickness(i,j));
+      const int fks = m_grid.kBelowHeight(ice_thickness(i,j));
 
       const double
         *u = u3.get_column(i, j),
@@ -440,7 +440,7 @@ unsigned int IceModel::countCFLViolations() {
   }
   loop.check();
 
-  return (unsigned int)GlobalMax(grid.com, CFL_violation_count);
+  return (unsigned int)GlobalMax(m_grid.com, CFL_violation_count);
 }
 
 } // end of namespace pism

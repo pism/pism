@@ -43,7 +43,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
                                           double *Texcess, double *bwat) {
 
   const double
-    darea      = grid.dx() * grid.dy(),
+    darea      = m_grid.dx() * m_grid.dy(),
     dvol       = darea * dz,
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
@@ -188,8 +188,8 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
     &v3 = stress_balance->velocity_v(),
     &w3 = stress_balance->velocity_w();
 
-  energy::tempSystemCtx system(grid.z(), "temperature",
-                               grid.dx(), grid.dy(), dt_TempAge,
+  energy::tempSystemCtx system(m_grid.z(), "temperature",
+                               m_grid.dx(), m_grid.dy(), dt_TempAge,
                                *config,
                                T3, u3, v3, w3, strain_heating3);
 
@@ -217,9 +217,9 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   const double thickness_threshold = config->get_double("energy_advection_ice_thickness_threshold");
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // if isMarginal then only do vertical conduction for ice; ignore advection
@@ -245,7 +245,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         system.solveThisColumn(x);
 
         if (viewOneColumn && (i == id && j == jd)) {
-          ierr = PetscPrintf(grid.com,
+          ierr = PetscPrintf(m_grid.com,
                              "\n"
                              "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                              i, j);
@@ -279,8 +279,8 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                              " proc %d; mask=%d; w=%f m/year]]\n",
-                             Tnew[k], i, j, k, grid.rank(), vMask.as_int(i, j),
-                             grid.convert(system.w(k), "m/s", "m/year"));
+                             Tnew[k], i, j, k, m_grid.rank(), vMask.as_int(i, j),
+                             m_grid.convert(system.w(k), "m/s", "m/year"));
           PISM_CHK(ierr, "PetscPrintf");
 
           myLowTempCount++;
@@ -314,8 +314,8 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                              " proc %d; mask=%d; w=%f]]\n",
-                             Tnew[0],i,j,grid.rank(),vMask.as_int(i,j),
-                             grid.convert(system.w(0), "m/s", "m/year"));
+                             Tnew[0],i,j,m_grid.rank(),vMask.as_int(i,j),
+                             m_grid.convert(system.w(0), "m/s", "m/year"));
           PISM_CHK(ierr, "PetscPrintf");
 
           myLowTempCount++;

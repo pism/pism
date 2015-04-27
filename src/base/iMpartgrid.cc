@@ -93,7 +93,7 @@ double IceModel::get_threshold_thickness(StarStencil<int> M,
       const double
         H0 = 600.0,                   // 600 m
         V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
-        mslope = 2.4511e-18 * grid.dx() / (H0 * V0);
+        mslope = 2.4511e-18 * m_grid.dx() / (H0 * V0);
       H_threshold -= 0.8*mslope*pow(H_average, 5);
     }
   }
@@ -119,7 +119,7 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
   bool done = false;
   for (int i = 0; not done and i < max_loopcount; ++i) {
     residual_redistribution_iteration(H_residual, done);
-    verbPrintf(4, grid.com, "redistribution loopcount = %d\n", i);
+    verbPrintf(4, m_grid.com, "redistribution loopcount = %d\n", i);
   }
 }
 
@@ -147,7 +147,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     list.add(ice_thickness);
     list.add(vHref);
     list.add(H_residual);
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (H_residual(i,j) <= 0.0) {
@@ -222,7 +222,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     list.add(ice_surface_elevation);
     list.add(bed_topography);
     list.add(vMask);
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (vHref(i,j) <= 0.0) {
@@ -247,7 +247,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         vHref(i, j) = 0.0;
       }
       if (ice_thickness(i, j)<0) {
-        verbPrintf(1, grid.com,
+        verbPrintf(1, m_grid.com,
                    "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
                    "  H_threshold: %f\n"
                    "  coverage_ratio: %f\n"
@@ -261,7 +261,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
   }
 
   // check if redistribution should be run once more
-  remaining_residual_thickness_global = GlobalSum(grid.com, remaining_residual_thickness);
+  remaining_residual_thickness_global = GlobalSum(m_grid.com, remaining_residual_thickness);
 
   if (remaining_residual_thickness_global > 0.0) {
     done = false;

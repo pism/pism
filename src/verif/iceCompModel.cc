@@ -83,9 +83,9 @@ void IceCompModel::createVecs() {
 
   IceModel::createVecs();
 
-  vHexactL.create(grid, "HexactL", WITH_GHOSTS, 2);
+  vHexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
 
-  strain_heating3_comp.create(grid,"strain_heating_comp", WITHOUT_GHOSTS);
+  strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
   strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
                                  "W m-3", "");
 }
@@ -102,9 +102,9 @@ void IceCompModel::set_grid_defaults() {
   double Lx = 0.0, Ly = 0.0, Lz = 0.0;
 
   unsigned int
-    Mx = grid.Mx(),
-    My = grid.My(),
-    Mz = grid.Mz();
+    Mx = m_grid.Mx(),
+    My = m_grid.My(),
+    Mz = m_grid.Mz();
 
   switch (testname) {
   case 'A':
@@ -150,30 +150,30 @@ void IceCompModel::set_grid_defaults() {
   case 'V':
     My = 3;             // it's a flow-line setup
     Lx = 500e3;            // 500 km long
-    Ly = grid.Ly();
-    Lz = grid.Lz();
+    Ly = m_grid.Ly();
+    Lz = m_grid.Lz();
     periodicity = Y_PERIODIC;
     break;
   default:
     throw RuntimeError("desired test not implemented\n");
   }
 
-  grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
-  grid.set_vertical_levels(Lz, Mz, spacing);
+  m_grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
+  m_grid.set_vertical_levels(Lz, Mz, spacing);
 
-  grid.time->init();
+  m_grid.time->init();
 }
 
 void IceCompModel::setFromOptions() {
 
-  verbPrintf(2, grid.com, "starting Test %c ...\n", testname);
+  verbPrintf(2, m_grid.com, "starting Test %c ...\n", testname);
 
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
   bool flag = options::Bool("-eo", "exact only");
   if (flag) {
     exactOnly = true;
-    verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
+    verbPrintf(1,m_grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
   }
 
   // These ifs are here (and not in the constructor or later) because
@@ -248,14 +248,14 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
   if (biiSet == true) {
     if (testname == 'K') {
-      verbPrintf(1,grid.com,
+      verbPrintf(1,m_grid.com,
                  "setting material properties of bedrock to those of ice in Test K\n");
       config->set_double("bedrock_thermal_density", config->get_double("ice_density"));
       config->set_double("bedrock_thermal_conductivity", config->get_double("ice_thermal_conductivity"));
       config->set_double("bedrock_thermal_specific_heat_capacity", config->get_double("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
-      verbPrintf(1,grid.com,
+      verbPrintf(1,m_grid.com,
                  "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
     }
   }
@@ -270,7 +270,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     config->set_double("bedrock_thermal_specific_heat_capacity", config->get_double("ice_specific_heat_capacity"));
   }
 
-  btu = new energy::BTU_Verification(grid, testname, bedrock_is_ice_forK);
+  btu = new energy::BTU_Verification(m_grid, testname, bedrock_is_ice_forK);
 }
 
 void IceCompModel::allocate_stressbalance() {
@@ -283,10 +283,10 @@ void IceCompModel::allocate_stressbalance() {
 
   if (testname == 'E') {
     config->set_boolean("sia_sliding_verification_mode", true);
-    ShallowStressBalance *ssb = new SIA_Sliding(grid, EC);
-    SIAFD *sia = new SIAFD(grid, EC);
+    ShallowStressBalance *ssb = new SIA_Sliding(m_grid, EC);
+    SIAFD *sia = new SIAFD(m_grid, EC);
 
-    stress_balance = new StressBalance(grid, ssb, sia);
+    stress_balance = new StressBalance(m_grid, ssb, sia);
   } else {
     IceModel::allocate_stressbalance();
   }
@@ -299,7 +299,7 @@ void IceCompModel::allocate_stressbalance() {
     rheology::FlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
     if (FlowLawIsPatersonBuddCold(ice, *config, EC) == false) {
-      verbPrintf(1, grid.com,
+      verbPrintf(1, m_grid.com,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
     }
   }
@@ -314,7 +314,7 @@ void IceCompModel::allocate_bed_deformation() {
   std::string bed_def_model = config->get_string("bed_deformation_model");
 
   if ((testname == 'H') && bed_def_model != "iso") {
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "IceCompModel WARNING: Test H should be run with option\n"
                "  '-bed_def iso'  for the reported errors to be correct.\n");
   }
@@ -322,8 +322,8 @@ void IceCompModel::allocate_bed_deformation() {
 
 void IceCompModel::allocate_couplers() {
   // Climate will always come from verification test formulas.
-  surface = new surface::Verification(grid, EC, testname);
-  ocean   = new ocean::Constant(grid);
+  surface = new surface::Verification(m_grid, EC, testname);
+  ocean   = new ocean::Constant(m_grid);
 }
 
 void IceCompModel::set_vars_from_options() {
@@ -333,12 +333,12 @@ void IceCompModel::set_vars_from_options() {
 
   strain_heating3_comp.set(0.0);
 
-  verbPrintf(3,grid.com,
+  verbPrintf(3,m_grid.com,
              "initializing Test %c from formulas ...\n",testname);
 
   // all have no uplift
   IceModelVec2S bed_uplift;
-  bed_uplift.create(grid, "uplift", WITHOUT_GHOSTS);
+  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
   bed_uplift.set(0);
   beddef->set_uplift(bed_uplift);
 
@@ -382,7 +382,7 @@ void IceCompModel::initTestABCDEH() {
 
   rheology::PatersonBuddCold tgaIce("sia_", *config, EC);
 
-  const double time = grid.time->current();
+  const double time = m_grid.time->current();
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -395,13 +395,13 @@ void IceCompModel::initTestABCDEH() {
 
   IceModelVec::AccessList list(ice_thickness);
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = grid.x(i), yy = grid.y(j),
-        r = radius(grid, i, j);
+      double xx = m_grid.x(i), yy = m_grid.y(j),
+        r = radius(m_grid, i, j);
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -440,7 +440,7 @@ void IceCompModel::initTestABCDEH() {
 
   {
     IceModelVec2S bed_topography;
-    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
     if (testname == 'H') {
       bed_topography.copy_from(ice_thickness);
@@ -484,16 +484,16 @@ void IceCompModel::initTestL() {
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
-  const int MM = grid.xm() * grid.ym();
+  const int MM = m_grid.xm() * m_grid.ym();
 
   std::vector<rgrid> rrv(MM);  // destructor at end of scope
   int k = 0;
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     rrv[k].i = i;
     rrv[k].j = j;
-    rrv[k].r = radius(grid, i,j);
+    rrv[k].r = radius(m_grid, i,j);
 
     k += 1;
   }
@@ -510,19 +510,19 @@ void IceCompModel::initTestL() {
   ierr = exactL_list(&rr[0], MM, &HH[0], &bb[0], &aa[0]);
   switch (ierr) {
      case TESTL_NOT_DONE:
-       verbPrintf(1,grid.com,
+       verbPrintf(1,m_grid.com,
           "\n\nTest L ERROR: exactL_list() returns 'NOT_DONE' ...\n\n\n",ierr);
        break;
      case TESTL_NOT_DECREASING:
-       verbPrintf(1,grid.com,
+       verbPrintf(1,m_grid.com,
           "\n\nTest L ERROR: exactL_list() returns 'NOT_DECREASING' ...\n\n\n",ierr);
        break;
      case TESTL_INVALID_METHOD:
-       verbPrintf(1,grid.com,
+       verbPrintf(1,m_grid.com,
           "\n\nTest L ERROR: exactL_list() returns 'INVALID_METHOD' ...\n\n\n",ierr);
        break;
      case TESTL_NO_LIST:
-       verbPrintf(1,grid.com,
+       verbPrintf(1,m_grid.com,
           "\n\nTest L ERROR: exactL_list() returns 'NO_LIST' ...\n\n\n",ierr);
        break;
      default:
@@ -534,7 +534,7 @@ void IceCompModel::initTestL() {
 
   {
     IceModelVec2S bed_topography;
-    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
     IceModelVec::AccessList list;
     list.add(ice_thickness);
@@ -559,10 +559,10 @@ void IceCompModel::reset_thickness_tests_AE() {
 
   IceModelVec::AccessList list(ice_thickness);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (radius(grid, i, j) > LforAE) {
+    if (radius(m_grid, i, j) > LforAE) {
       ice_thickness(i, j) = 0;
     }
   }
@@ -575,16 +575,16 @@ void IceCompModel::reset_thickness_tests_AE() {
 void IceCompModel::fillSolnTestABCDH() {
   double     H, accum;
 
-  const double time = grid.time->current();
+  const double time = m_grid.time->current();
 
   IceModelVec::AccessList list(ice_thickness);
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double r = radius(grid, i, j);
+      double r = radius(m_grid, i, j);
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -619,7 +619,7 @@ void IceCompModel::fillSolnTestABCDH() {
 
   {
     IceModelVec2S bed_topography;
-    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
     if (testname == 'H') {
       bed_topography.copy_from(ice_thickness);
@@ -644,10 +644,10 @@ void IceCompModel::fillSolnTestE() {
   list.add(ice_thickness);
   list.add(vel_adv);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = grid.x(i), yy = grid.y(j);
+    double xx = m_grid.x(i), yy = m_grid.y(j);
     exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
     ice_thickness(i,j) = H;
     vel_adv(i,j)    = bvel;
@@ -673,7 +673,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
                                                    double &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
 
-  const double time = grid.time->current();
+  const double time = m_grid.time->current();
   double
     Hexact     = 0.0,
     vol        = 0.0,
@@ -701,20 +701,20 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     standard_gravity = config->get_double("standard_gravity");
 
   // area of grid square in square km:
-  const double   a = grid.dx() * grid.dy() * 1e-3 * 1e-3;
+  const double   a = m_grid.dx() * m_grid.dy() * 1e-3 * 1e-3;
   const double   m = (2.0 * Glen_n + 2.0) / Glen_n;
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(m_grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i,j) > 0) {
         area += a;
         vol += a * ice_thickness(i,j) * 1e-3;
       }
-      double xx = grid.x(i), yy = grid.y(j),
-        r = radius(grid, i,j);
+      double xx = m_grid.x(i), yy = m_grid.y(j),
+        r = radius(m_grid, i,j);
       switch (testname) {
       case 'A':
         exactA(r,&Hexact,&dummy);
@@ -765,7 +765,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         {
           double
             H0 = 600.0,
-            v0 = grid.convert(300.0, "m/year", "m/second"),
+            v0 = m_grid.convert(300.0, "m/year", "m/second"),
             Q0 = H0 * v0,
             B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
@@ -781,8 +781,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         areaexact += a;
         volexact += a * Hexact * 1e-3;
       }
-      if (i == ((int)grid.Mx() - 1)/2 and
-          j == ((int)grid.My() - 1)/2) {
+      if (i == ((int)m_grid.Mx() - 1)/2 and
+          j == ((int)m_grid.My() - 1)/2) {
         domeH = ice_thickness(i,j);
         domeHexact = Hexact;
       }
@@ -799,21 +799,21 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
-  gvolexact = GlobalSum(grid.com, volexact);
-  gdomeHexact = GlobalMax(grid.com, domeHexact);
-  gareaexact = GlobalSum(grid.com, areaexact);
+  gvolexact = GlobalSum(m_grid.com, volexact);
+  gdomeHexact = GlobalMax(m_grid.com, domeHexact);
+  gareaexact = GlobalSum(m_grid.com, areaexact);
 
-  gvol = GlobalSum(grid.com, vol);
-  garea = GlobalSum(grid.com, area);
+  gvol = GlobalSum(m_grid.com, vol);
+  garea = GlobalSum(m_grid.com, area);
   volerr = fabs(gvol - gvolexact);
   areaerr = fabs(garea - gareaexact);
 
-  gmaxHerr = GlobalMax(grid.com, Herr);
-  gavHerr = GlobalSum(grid.com, avHerr);
-  gavHerr = gavHerr/(grid.Mx()*grid.My());
-  gmaxetaerr = GlobalMax(grid.com, etaerr);
+  gmaxHerr = GlobalMax(m_grid.com, Herr);
+  gavHerr = GlobalSum(m_grid.com, avHerr);
+  gavHerr = gavHerr/(m_grid.Mx()*m_grid.My());
+  gmaxetaerr = GlobalMax(m_grid.com, etaerr);
 
-  gdomeH = GlobalMax(grid.com, domeH);
+  gdomeH = GlobalMax(m_grid.com, domeH);
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
@@ -836,11 +836,11 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
   list.add(ice_thickness);
 
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i,j) > 0.0) {
-      double xx = grid.x(i), yy = grid.y(j);
+      double xx = m_grid.x(i), yy = m_grid.y(j);
       exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
       // compute maximum errors
       const double uberr = fabs(vel_adv(i,j).u - ubexact);
@@ -853,12 +853,12 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
     }
   }
 
-  gmaxuberr = GlobalMax(grid.com, maxuberr);
-  gmaxvberr = GlobalMax(grid.com, maxvberr);
+  gmaxuberr = GlobalMax(m_grid.com, maxuberr);
+  gmaxvberr = GlobalMax(m_grid.com, maxvberr);
 
-  gmaxvecerr = GlobalMax(grid.com, maxvecerr);
-  gavvecerr = GlobalSum(grid.com, avvecerr);
-  gavvecerr = gavvecerr/(grid.Mx()*grid.My());
+  gmaxvecerr = GlobalMax(m_grid.com, maxvecerr);
+  gavvecerr = GlobalSum(m_grid.com, avvecerr);
+  gavvecerr = gavvecerr/(m_grid.Mx()*m_grid.My());
 
   const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),
                     ypeak = 450e3 * sin(25.0*(M_PI/180.0));
@@ -979,21 +979,21 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *config, EC)) {
-    verbPrintf(1, grid.com,
+    verbPrintf(1, m_grid.com,
                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                "   for reported errors in test %c to be meaningful!\n",
                testname);
   }
 
-  verbPrintf(1,grid.com,
+  verbPrintf(1,m_grid.com,
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
-  TimeseriesMetadata err("N", "N", grid.config->unit_system());
+  TimeseriesMetadata err("N", "N", m_grid.config->unit_system());
 
   err.set_string("units", "1");
 
-  PIO nc(grid.com, "netcdf3"); // OK to use netcdf3
+  PIO nc(m_grid.com, "netcdf3"); // OK to use netcdf3
 
   options::String report_file("-report_file", "NetCDF error report file");
   bool append = options::Bool("-append", "Append the NetCDF error report");
@@ -1004,7 +1004,7 @@ void IceCompModel::reportErrors() {
   }
 
   if (report_file.is_set()) {
-    verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", report_file->c_str());
+    verbPrintf(2,m_grid.com, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
     nc.open(report_file, mode);
@@ -1018,11 +1018,11 @@ void IceCompModel::reportErrors() {
     // Always write grid parameters:
     err.set_name("dx");
     err.set_string("units", "meters");
-    io::write_timeseries(nc, err, (size_t)start, grid.dx());
+    io::write_timeseries(nc, err, (size_t)start, m_grid.dx());
     err.set_name("dy");
-    io::write_timeseries(nc, err, (size_t)start, grid.dy());
+    io::write_timeseries(nc, err, (size_t)start, m_grid.dy());
     err.set_name("dz");
-    io::write_timeseries(nc, err, (size_t)start, grid.dz_max());
+    io::write_timeseries(nc, err, (size_t)start, m_grid.dz_max());
 
     // Always write the test name:
     err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1036,10 +1036,10 @@ void IceCompModel::reportErrors() {
                 maxetaerr, centerHerr;
     computeGeometryErrors(volexact,areaexact,domeHexact,
                           volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");  // no longer reporting centerHerr
     const double   m = (2.0 * flow_law->exponent() + 2.0) / flow_law->exponent();
-    verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                100*volerr/volexact, maxHerr, avHerr,
                maxetaerr/pow(domeHexact,m));
 
@@ -1072,9 +1072,9 @@ void IceCompModel::reportErrors() {
     double maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr;
     computeTemperatureErrors(maxTerr, avTerr);
     computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr);
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "temp      :        maxT         avT    basemaxT     baseavT\n");  // no longer reporting   basecenterT
-    verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, basemaxTerr, baseavTerr);
 
     if (report_file.is_set()) {
@@ -1099,9 +1099,9 @@ void IceCompModel::reportErrors() {
   } else if ((testname == 'K') || (testname == 'O')) {
     double maxTerr, avTerr, maxTberr, avTberr;
     computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "temp      :        maxT         avT       maxTb        avTb\n");
-    verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, maxTberr, avTberr);
 
     if (report_file.is_set()) {
@@ -1129,9 +1129,9 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     double max_strain_heating_error, av_strain_heating_error;
     compute_strain_heating_errors(max_strain_heating_error, av_strain_heating_error);
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "Sigma     :      maxSig       avSig\n");
-    verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
+    verbPrintf(1,m_grid.com, "           %12.6f%12.6f\n",
                max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
     if (report_file.is_set()) {
@@ -1152,10 +1152,10 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     double maxUerr, avUerr, maxWerr, avWerr;
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
-    verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
-               grid.convert(maxUerr, "m/second", "m/year"), grid.convert(avUerr, "m/second", "m/year"), grid.convert(maxWerr, "m/second", "m/year"), grid.convert(avWerr, "m/second", "m/year"));
+    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+               m_grid.convert(maxUerr, "m/second", "m/year"), m_grid.convert(avUerr, "m/second", "m/year"), m_grid.convert(maxWerr, "m/second", "m/year"), m_grid.convert(avWerr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1184,12 +1184,12 @@ void IceCompModel::reportErrors() {
     double exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     computeBasalVelocityErrors(exactmaxspeed,
                                maxvecerr,avvecerr,maxuberr,maxvberr);
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
-    verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
-               grid.convert(maxvecerr, "m/second", "m/year"), grid.convert(avvecerr, "m/second", "m/year"),
+    verbPrintf(1,m_grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
+               m_grid.convert(maxvecerr, "m/second", "m/year"), m_grid.convert(avvecerr, "m/second", "m/year"),
                (avvecerr/exactmaxspeed)*100.0,
-               grid.convert(maxuberr, "m/second", "m/year"), grid.convert(maxvberr, "m/second", "m/year"));
+               m_grid.convert(maxuberr, "m/second", "m/year"), m_grid.convert(maxvberr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1217,16 +1217,16 @@ void IceCompModel::reportErrors() {
     double maxbmelterr, minbmelterr;
     computeBasalMeltRateErrors(maxbmelterr, minbmelterr);
     if (maxbmelterr != minbmelterr) {
-      verbPrintf(1,grid.com,
+      verbPrintf(1,m_grid.com,
                  "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
                  "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-                 grid.convert(maxbmelterr, "m/second", "m/year"),
-                 grid.convert(minbmelterr, "m/second", "m/year"));
+                 m_grid.convert(maxbmelterr, "m/second", "m/year"),
+                 m_grid.convert(minbmelterr, "m/second", "m/year"));
     }
-    verbPrintf(1,grid.com,
+    verbPrintf(1,m_grid.com,
                "basal melt:  max\n");
-    verbPrintf(1,grid.com, "           %11.5f\n",
-               grid.convert(maxbmelterr, "m/second", "m/year"));
+    verbPrintf(1,m_grid.com, "           %11.5f\n",
+               m_grid.convert(maxbmelterr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1241,7 +1241,7 @@ void IceCompModel::reportErrors() {
     nc.close();
   }
 
-  verbPrintf(1,grid.com, "NUM ERRORS DONE\n");
+  verbPrintf(1,m_grid.com, "NUM ERRORS DONE\n");
 }
 
 //! \brief Initialize test V.
@@ -1277,13 +1277,13 @@ void IceCompModel::test_V_init() {
   {
     // initialize the bed topography
     IceModelVec2S bed_topography;
-    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
     bed_topography.set(-1000);
     beddef->set_elevation(bed_topography);
   }
 
   // set SSA boundary conditions:
-  double upstream_velocity = grid.convert(300.0, "m/year", "m/second"),
+  double upstream_velocity = m_grid.convert(300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
   IceModelVec::AccessList list;
@@ -1291,7 +1291,7 @@ void IceCompModel::test_V_init() {
   list.add(vBCMask);
   list.add(vBCvel);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {
