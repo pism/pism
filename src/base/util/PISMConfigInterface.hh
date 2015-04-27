@@ -119,6 +119,7 @@ protected:
   virtual void set_boolean_impl(const std::string& name, bool value) = 0;
 protected:
   // Set parameters by ptocessing a command-line option
+  void parameter_from_options(const std::string &name);
   void boolean_from_option(const std::string &option, const std::string &parameter);
   void scalar_from_option(const std::string &option, const std::string &parameter);
   void string_from_option(const std::string &option, const std::string &parameter);

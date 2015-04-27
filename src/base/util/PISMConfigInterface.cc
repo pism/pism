@@ -411,6 +411,36 @@ void Config::keyword_from_option(const std::string &name,
   }
 }
 
+void Config::parameter_from_options(const std::string &name) {
+
+  if (not this->is_set(name + "_option")) {
+    return;
+  }
+
+  std::string option = this->get_string(name + "_option");
+
+  std::string type = "string";
+  if (this->is_set(name + "_type")) {
+    // will get marked as "used", but that's OK
+    type = this->get_string(name + "_type");
+  }
+
+  if (type == "string") {
+    this->string_from_option(option, name);
+  } else if (type == "boolean") {
+    this->boolean_from_option(option, name);
+  } else if (type == "scalar") {
+    this->scalar_from_option(option, name);
+  } else if (type == "keyword") {
+    // will be marked as "used" and will fail if not set
+    std::string choices = this->get_string(name + "_choices");
+
+    this->keyword_from_option(option, name, choices);
+  } else {
+    throw RuntimeError::formatted("parameter type \"%s\" is invalid", type.c_str());
+  }
+}
+
 void Config::set_from_options() {
 
   this->keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy");
