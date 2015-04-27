@@ -42,6 +42,9 @@ namespace pism {
   FIXME: energyStats should use cell_area(i,j).
  */
 double IceModel::compute_temperate_base_fraction(double ice_area) {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   double result = 0.0, meltarea = 0.0;
   const double a = m_grid.dx() * m_grid.dy() * 1e-3 * 1e-3; // area unit (km^2)
 
@@ -376,6 +379,9 @@ double IceModel::compute_sealevel_volume() {
 
 //! Computes the temperate ice volume, in m^3.
 double  IceModel::compute_ice_volume_temperate() {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   double volume = 0.0;
 
   IceModelVec::AccessList list;
@@ -417,6 +423,9 @@ double  IceModel::compute_ice_volume_temperate() {
 
 //! Computes the cold ice volume, in m^3.
 double IceModel::compute_ice_volume_cold() {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   double volume = 0.0;
 
   IceModelVec::AccessList list;
@@ -479,6 +488,9 @@ double IceModel::compute_ice_area() {
 
 //! Computes area of basal ice which is temperate, in m^2.
 double IceModel::compute_ice_area_temperate() {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   double area = 0.0;
   IceModelVec2S &Enthbase = vWork2d[0];
 
@@ -512,6 +524,9 @@ double IceModel::compute_ice_area_temperate() {
 
 //! Computes area of basal ice which is cold, in m^2.
 double IceModel::compute_ice_area_cold() {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   double area = 0.0;
   IceModelVec2S &Enthbase = vWork2d[0];
 

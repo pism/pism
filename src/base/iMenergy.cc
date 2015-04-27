@@ -197,6 +197,8 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   IceModelVec::AccessList list;
   list.add(bed_topography);
   list.add(result);

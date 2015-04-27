@@ -578,21 +578,10 @@ void IceModel::set_vars_from_options() {
   }
 }
 
-//! \brief Decide which enthalpy converter to use.
-void IceModel::allocate_enthalpy_converter() {
-
-  if ((bool)EC) {
-    return;
-  }
-
-  verbPrintf(2, m_grid.com,
-             "# Allocating an enthalpy converter...\n");
-
-  EC = enthalpy_converter_from_options(*config);
-}
-
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   using namespace pism::stressbalance;
 
@@ -742,9 +731,6 @@ void IceModel::allocate_submodels() {
                  "* Using the temperature-based energy balance model...\n");
     }
   }
-
-  // this has to go first:
-  allocate_enthalpy_converter();
 
   allocate_iceberg_remover();
 

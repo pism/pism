@@ -51,6 +51,8 @@ Because Enth3 gets set, does ghost communication to finish.
  */
 void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVec3 &result) {
 
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   IceModelVec::AccessList list;
   list.add(temperature);
   list.add(result);
@@ -81,6 +83,8 @@ Because Enth3 gets set, does ghost communication to finish.
 void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
                                 const IceModelVec3 &liquid_water_fraction,
                                 IceModelVec3 &result) {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   IceModelVec::AccessList list;
   list.add(temperature);
@@ -113,6 +117,8 @@ Does not communicate ghosts for IceModelVec3 result
  */
 void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                                              IceModelVec3 &result) {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
@@ -154,6 +160,8 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
  * Does not communicate ghosts for IceModelVec3 result.
  */
 void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   result.set_name("cts");
   result.metadata(0).set_name("cts");
@@ -197,7 +205,9 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                        double* liquifiedVol,
                                        unsigned int *bulgeCount) {
 
-  assert(config->get_boolean("do_cold_ice_methods") == false);
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
+ assert(config->get_boolean("do_cold_ice_methods") == false);
 
   // essentially physical constants:
   const double

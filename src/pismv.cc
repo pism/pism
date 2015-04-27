@@ -44,6 +44,33 @@ static inline char pism_toupper(char c)
     return (char)std::toupper(c);
 }
 
+
+//! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
+Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
+  // unit system
+  units::System::Ptr sys(new units::System);
+
+  // configuration parameters
+  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
+    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
+  overrides->init();
+  config->init_with_default();
+  config->import_from(*overrides);
+
+  config->set_string("calendar", "none");
+
+  set_config_from_options(*config);
+
+  print_config(3, com, *config);
+
+  Time::Ptr time = time_from_options(com, config, sys);
+
+  EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
+
+  return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
+}
+
+
 int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
 
@@ -77,13 +104,10 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    Context::Ptr ctx = context_from_options(com, "pismv");
+    Context::Ptr ctx = pismv_context(com, "pismv");
     Config::Ptr config = ctx->config();
 
     config->set_boolean("use_eta_transformation", false);
-    // this value is used by the Time instance owned by IceGrid. We'll have to allocate Context
-    // differently once that is removed.
-    config->set_string("calendar", "none");
 
     IceGrid g(com, config);
 

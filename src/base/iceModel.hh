@@ -152,10 +152,7 @@ public:
 
   Context::Ptr ctx() const;
 
-  EnthalpyConverter::Ptr  enthalpy_converter() const;
-
   virtual void allocate_submodels();
-  virtual void allocate_enthalpy_converter();
   virtual void allocate_stressbalance();
   virtual void allocate_bed_deformation();
   virtual void allocate_bedrock_thermal_unit();
@@ -230,7 +227,6 @@ protected:
   hydrology::Hydrology   *subglacial_hydrology;
   YieldStress *basal_yield_stress_model;
 
-  EnthalpyConverter::Ptr EC;
   energy::BedThermalUnit *btu;
 
   calving::IcebergRemover     *iceberg_remover;

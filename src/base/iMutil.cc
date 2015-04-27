@@ -226,8 +226,4 @@ Context::Ptr IceModel::ctx() const {
   return m_ctx;
 }
 
-EnthalpyConverter::Ptr IceModel::enthalpy_converter() const {
-  return EC;
-}
-
 } // end of namespace pism

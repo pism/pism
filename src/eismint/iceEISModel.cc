@@ -102,6 +102,8 @@ void IceEISModel::allocate_stressbalance() {
     return;
   }
 
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   ShallowStressBalance *my_stress_balance;
 
   SSB_Modifier *modifier = new SIAFD(m_grid, EC);

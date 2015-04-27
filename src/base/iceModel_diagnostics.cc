@@ -481,7 +481,7 @@ IceModelVec::Ptr IceModel_temp::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
 
-  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
@@ -537,7 +537,7 @@ IceModelVec::Ptr IceModel_temp_pa::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
 
-  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
@@ -600,7 +600,7 @@ IceModelVec::Ptr IceModel_temppabase::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3 *enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
 
-  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   const double *Enthij; // columns of these values
 
@@ -723,7 +723,7 @@ IceModelVec::Ptr IceModel_tempbase::compute() {
 
   IceModelVec::Ptr enth = IceModel_enthalpybase(model).compute();
 
-  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(enth);
 
@@ -777,7 +777,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute() {
   IceModelVec::Ptr enth = IceModel_enthalpysurf(model).compute();
   IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(enth);
 
-  EnthalpyConverter::Ptr EC = model->enthalpy_converter();
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   // result contains surface enthalpy; note that it is allocated by
   // IceModel_enthalpysurf::compute().
@@ -867,6 +867,8 @@ IceModelVec::Ptr IceModel_tempicethk::compute() {
   list.add(model->Enth3);
   list.add(model->ice_thickness);
 
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+
   ParallelSection loop(m_grid.com);
   try {
     for (Points p(m_grid); p; p.next()) {
@@ -879,15 +881,15 @@ IceModelVec::Ptr IceModel_tempicethk::compute() {
         const unsigned int ks = m_grid.kBelowHeight(ice_thickness);
 
         for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
-          double pressure = model->EC->pressure(ice_thickness - m_grid.z(k));
+          double pressure = EC->pressure(ice_thickness - m_grid.z(k));
 
-          if (model->EC->is_temperate(Enth[k], pressure)) {
+          if (EC->is_temperate(Enth[k], pressure)) {
             temperate_ice_thickness += m_grid.z(k+1) - m_grid.z(k);
           }
         }
 
-        double pressure = model->EC->pressure(ice_thickness - m_grid.z(ks));
-        if (model->EC->is_temperate(Enth[ks], pressure)) {
+        double pressure = EC->pressure(ice_thickness - m_grid.z(ks));
+        if (EC->is_temperate(Enth[ks], pressure)) {
           temperate_ice_thickness += ice_thickness - m_grid.z(ks);
         }
 
@@ -927,7 +929,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
   result->metadata(0) = m_vars[0];
 
   double *Enth = NULL;
-  EnthalpyConverter::Ptr EC = model->EC;
+  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   MaskQuery mask(model->vMask);
 

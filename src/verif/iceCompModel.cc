@@ -228,16 +228,6 @@ void IceCompModel::setFromOptions() {
   IceModel::setFromOptions();
 }
 
-void IceCompModel::allocate_enthalpy_converter() {
-
-  if ((bool)EC) {
-    return;
-  }
-
-  // allocate the "special" enthalpy converter;
-  EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
-}
-
 void IceCompModel::allocate_bedrock_thermal_unit() {
 
   if (btu != NULL) {
@@ -281,6 +271,8 @@ void IceCompModel::allocate_stressbalance() {
     return;
   }
 
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   if (testname == 'E') {
     config->set_boolean("sia_sliding_verification_mode", true);
     ShallowStressBalance *ssb = new SIA_Sliding(m_grid, EC);
@@ -321,6 +313,8 @@ void IceCompModel::allocate_bed_deformation() {
 }
 
 void IceCompModel::allocate_couplers() {
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   // Climate will always come from verification test formulas.
   surface = new surface::Verification(m_grid, EC, testname);
   ocean   = new ocean::Constant(m_grid);
@@ -379,6 +373,8 @@ void IceCompModel::set_vars_from_options() {
 
 void IceCompModel::initTestABCDEH() {
   double     A0, T0, H, accum, dummy1, dummy2, dummy3;
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   rheology::PatersonBuddCold tgaIce("sia_", *config, EC);
 
@@ -469,6 +465,8 @@ struct rgridReverseSort {
 void IceCompModel::initTestL() {
   int ierr;
   double     A0, T0;
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   assert(testname == 'L');
 
@@ -974,6 +972,8 @@ void IceCompModel::reportErrors() {
   if (dont_report) {
     return;
   }
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   rheology::FlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
   if ((testname == 'F' or testname == 'G') and

@@ -52,7 +52,6 @@ public:
   virtual void allocate_stressbalance();
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_bed_deformation();
-  virtual void allocate_enthalpy_converter();
   virtual void allocate_couplers();
   virtual void set_vars_from_options(); // called by IceModel::model_state_setup()
 

@@ -202,6 +202,8 @@ void IceRegionalModel::allocate_stressbalance() {
     return;
   }
 
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   std::string model = config->get_string("stress_balance_model");
 
   ShallowStressBalance *sliding = NULL;
