@@ -29,6 +29,7 @@ static char help[] =
 #include "base/util/pism_options.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/Context.hh"
 
 using namespace pism;
 
@@ -74,14 +75,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    units::System::Ptr unit_system(new units::System);
-    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
-      overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
-    overrides->init();
-    config->init_with_default();
-    config->import_from(*overrides);
-    set_config_from_options(*config);
-    print_config(3, com, *config);
+    Context::Ptr ctx = context_from_options(com, "pismr");
+    Config::Ptr config = ctx->config();
 
     IceGrid g(com, config);
     IceModel m(g, config);

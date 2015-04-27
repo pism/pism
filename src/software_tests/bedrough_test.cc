@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "btutest");
+    Context::Ptr ctx = context_from_options(com, "bedrough_test");
     Config::Ptr config = ctx->config();
 
     double Lx = 1200e3;

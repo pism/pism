@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "btutest");
+    Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
     Config::Ptr config = ctx->config();
 
     setVerbosityLevel(5);
