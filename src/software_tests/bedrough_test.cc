@@ -22,7 +22,7 @@ static char help[] = "\nBEDROUGH_TEST\n"
   "  from Matlab/Octave code exampletheta.m in src/base/bedroughplay.  Also\n"
   "  used in PISM software (regression) test.\n\n";
 
-#include "base/util/PISMConfig.hh"
+#include "base/util/Context.hh"
 #include <cmath>
 #include <cstdio>
 #include "base/util/pism_options.hh"
@@ -45,14 +45,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
-    overrides.init();
-    config->init_with_default();
-    config->import_from(overrides);
-    config->set_from_options();
+    Context::Ptr ctx = context_from_options(com, "btutest");
+    Config::Ptr config = ctx->config();
 
     double Lx = 1200e3;
     IceGrid grid(com, config);

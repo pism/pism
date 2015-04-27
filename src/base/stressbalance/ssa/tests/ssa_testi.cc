@@ -28,7 +28,7 @@ static char help[] =
 #include "base/stressbalance/ssa/SSAFD.hh"
 #include "base/stressbalance/ssa/SSAFEM.hh"
 #include "base/stressbalance/ssa/SSATestCase.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/Context.hh"
 #include "base/util/VariableMetadata.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/iceModelVec.hh"
@@ -169,14 +169,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
-    overrides.init();
-    config->init_with_default();
-    config->import_from(overrides);
-    config->set_from_options();
+    Context::Ptr ctx = context_from_options(com, "ssa_testi");
+    Config::Ptr config = ctx->config();
 
     setVerbosityLevel(5);
 

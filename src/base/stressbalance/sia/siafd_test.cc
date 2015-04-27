@@ -31,7 +31,7 @@ static char help[] =
 #include "base/stressbalance/ShallowStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/Context.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/VariableMetadata.hh"
@@ -310,13 +310,8 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
-    overrides.init();
-    config->init_with_default();
-    config->import_from(overrides);
-    config->set_from_options();
+    Context::Ptr ctx = context_from_options(com, "btutest");
+    Config::Ptr config = ctx->config();
 
     config->set_boolean("compute_grain_size_using_age", false);
 

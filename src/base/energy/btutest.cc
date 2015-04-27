@@ -26,13 +26,14 @@ static char help[] =
 #include "bedrockThermalUnit.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMVars.hh"
-#include "base/util/PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 #include "../../verif/tests/exactTestK.h"
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/Context.hh"
 
 namespace pism {
 namespace energy {
@@ -113,18 +114,13 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2,com,
                "btutest tests BedThermalUnit and IceModelVec3BTU\n");
-    units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system));
+    Context::Ptr ctx = context_from_options(com, "btutest");
+    Config::Ptr config = ctx->config();
 
-    // read the config option database:
-    overrides.init();
-    config->init_with_default();
-    config->import_from(overrides);
-    config->set_from_options();
+    // this is used by the Time instance allocated later. Note that once we switch to using
+    // ctx->time() we'll have to do this differently (i.e. allocate Context using a custom
+    // btutest-specific function).
     config->set_string("calendar", "none");
-
     // when IceGrid constructor is called, these settings are used
     config->set_double("start_year", 0.0);
     config->set_double("run_length_years", 1.0);
@@ -187,7 +183,7 @@ int main(int argc, char *argv[]) {
     btu.init(bootstrapping_needed);
     btu.bootstrap();
 
-    double dt_seconds = units::convert(unit_system, dt_years, "years", "seconds");
+    double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");
 
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
@@ -195,11 +191,11 @@ int main(int argc, char *argv[]) {
     verbPrintf(2,com,
                "  user set timestep of %.4f years ...\n"
                "  reset to %.4f years to get integer number of steps ... \n",
-               dt_years.value(), units::convert(unit_system, dt_seconds, "seconds", "years"));
+               dt_years.value(), units::convert(ctx->unit_system(), dt_seconds, "seconds", "years"));
     MaxTimestep max_dt = btu.max_timestep(0.0);
     verbPrintf(2,com,
                "  BedThermalUnit reports max timestep of %.4f years ...\n",
-               units::convert(unit_system, max_dt.value(), "seconds", "years"));
+               units::convert(ctx->unit_system(), max_dt.value(), "seconds", "years"));
 
     // actually do the time-stepping
     verbPrintf(2,com,"  running ...\n");
@@ -261,7 +257,7 @@ int main(int argc, char *argv[]) {
     std::string time_name = config->get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
     io::define_time(pio, time_name, grid.time->calendar(),
-                    grid.time->CF_units_string(), unit_system);
+                    grid.time->CF_units_string(), ctx->unit_system());
     io::append_time(pio, time_name, grid.time->end());
 
     btu.define_variables(vars, pio, PISM_DOUBLE);
