@@ -44,6 +44,7 @@ static char help[] =
 #include <petscdraw.h>
 
 #include "base/util/pism_const.hh"
+#include "base/util/Context.hh"
 #include "base/util/PISMConfig.hh"
 #include "deformation.hh"
 #include "base/util/pism_options.hh"
@@ -66,67 +67,57 @@ int main(int argc, char *argv[]) {
 
   com = PETSC_COMM_WORLD;
   MPI_Comm_rank(com, &rank);
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    units::System::Ptr unit_system(new units::System);
-    DefaultConfig
-      config(com, "pism_config", "-config", unit_system),
-      overrides(com, "pism_overrides", "-config_override", unit_system);
-    overrides.init();
-    config.init_with_default();
-    config.import_from(overrides);
-    config.set_from_options();
+    Context::Ptr ctx = context_from_options(com, "tryLCbd");
+    Config::Ptr config = ctx->config();
 
     pism::petsc::DM da2;
     petsc::Vec H, bed, Hstart, bedstart, uplift;
-    
+
     bool
       include_elastic = false,
       do_uplift       = false;
     double H0         = 1000.0; // ice disc load thickness
 
-    if (argc >= 2) {
-      // FIXME:  should use PETSC-style options
-      switch (argv[1][0]) {
-        case '1':
-          include_elastic = false;
-          do_uplift       = false;
-          H0              = 1000.0;
-          break;
-        case '2':
-          include_elastic = true;
-          do_uplift       = false;
-          H0              = 1000.0;
-          break;
-        case '3':
-          include_elastic = false;
-          do_uplift       = true;
-          H0              = 0.0;
-          break;
-        case '4':
-          include_elastic = true;
-          do_uplift       = true;
-          H0              = 1000.0;
-          break;
-        default:
-          break; // accept default which is scenario 1
-      }
+    options::Keyword scenario("-scenario",
+                              "chooses a scenario",
+                              "1,2,3,4", "1");
+
+    if (scenario == "1") {
+      include_elastic = false;
+      do_uplift       = false;
+      H0              = 1000.0;
+    } else if (scenario == "2") {
+      include_elastic = true;
+      do_uplift       = false;
+      H0              = 1000.0;
+    } else if (scenario == "3") {
+      include_elastic = false;
+      do_uplift       = true;
+      H0              = 0.0;
+    } else if (scenario == "4") {
+      include_elastic = true;
+      do_uplift       = true;
+      H0              = 1000.0;
+    } else {
+      // this can't happen (options::Keyword validates its input), but still
+      throw RuntimeError::formatted("invalid scenario %s", scenario->c_str());
     }
+
     const double R0 = 1000.0e3;          // ice disc load radius
     const double tfinalyears = 150.0e3;  // total run time
 
-    // FIXME: should accept options here
-    const int
-      Mx = 193, 
-      My = 129;
+    options::Integer Mx("-Mx", "grid size in the X direction", 193);
+    options::Integer My("-My", "grid size in the Y direction", 129);
 
-    const double
-      Lx = 3000.0e3, 
-      Ly = 2000.0e3;
+    options::Real Lx("-Lx", "grid half-width in the X direction", 3000.0e3);
+    options::Real Ly("-Ly", "grid half-width in the Y direction", 2000.0e3);
+
     const int Z = 2;
     const double dtyears = 100.0;
-    
+
     if (rank == 0) { // only runs on proc 0; all sequential
       // allocate the variables needed before BedDeformLC can work:
       ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, H.rawptr());
@@ -141,7 +132,7 @@ int main(int argc, char *argv[]) {
       ierr = VecDuplicate(H, uplift.rawptr());
       PISM_CHK(ierr, "VecDuplicate");
 
-      // in order to show bed elevation as a picture, create a da 
+      // in order to show bed elevation as a picture, create a da
 #if PETSC_VERSION_LT(3,5,0)
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
@@ -216,8 +207,8 @@ int main(int argc, char *argv[]) {
 
       ierr = VecSet(bedstart, 0.0);
       PISM_CHK(ierr, "VecSet");
-      
-      const double peak_up = units::convert(unit_system, 10, "mm/year", "m/s");  // 10 mm/year
+
+      const double peak_up = units::convert(ctx->unit_system(), 10, "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
       if (do_uplift == true) {
         petsc::VecArray2D upl(uplift, Mx, My);
@@ -225,7 +216,7 @@ int main(int argc, char *argv[]) {
           for (int j=0; j<My; j++) {
             const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
             if (r < 1.5 * R0) {
-              upl(i, j) = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0; 
+              upl(i, j) = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0;
             } else {
               upl(i, j) = 0.0;
             }
@@ -239,18 +230,18 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
 
-      pism::bed::BedDeformLC bdlc(config,
+      pism::bed::BedDeformLC bdlc(*config,
                                   include_elastic, Mx, My, dx, dy, Z,
                                   Hstart, bedstart, uplift, H, bed);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
-      
+
       ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n");
       PISM_CHK(ierr, "PetscPrintf");
 
       bdlc.uplift_init();
-      
+
       ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n");
       PISM_CHK(ierr, "PetscPrintf");
 
