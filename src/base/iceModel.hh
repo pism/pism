@@ -40,11 +40,12 @@
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "base/util/iceModelVec.hh"
-#include "base/util/MaxTimestep.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/enthalpyConverter.hh"
 
 namespace pism {
+
+class MaxTimestep;
 
 namespace ocean {
 class OceanModel;
