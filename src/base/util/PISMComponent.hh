@@ -25,6 +25,7 @@
 
 #include "base/util/io/IO_Flags.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMUnits.hh"
 
 namespace pism {
 
@@ -133,8 +134,12 @@ protected:
   virtual void regrid(const std::string &module_name, IceModelVec &variable,
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 protected:
+  //! grid used by this component
   const IceGrid &m_grid;
+  //! configuration database used by this component
   Config::ConstPtr m_config;
+  //! unit system used by this component
+  units::System::Ptr m_sys;
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

@@ -33,7 +33,7 @@
 namespace pism {
 
 Component::Component(const IceGrid &g)
-  : m_grid(g), m_config(g.ctx()->config()) {
+  : m_grid(g), m_config(g.ctx()->config()), m_sys(g.ctx()->unit_system()) {
   // empty
 }
 
