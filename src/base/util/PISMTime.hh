@@ -188,8 +188,8 @@ protected:
   double seconds_to_years(double input) const;
 
 protected:
-  Config::ConstPtr m_config;
-  units::System::Ptr m_unit_system;
+  const Config::ConstPtr m_config;
+  const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
   double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time

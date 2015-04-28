@@ -42,7 +42,6 @@ public:
                                     double *drag, double *ddrag) const;
 protected:
   double m_plastic_regularize;
-  units::System::Ptr m_unit_system;
 };
 
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{

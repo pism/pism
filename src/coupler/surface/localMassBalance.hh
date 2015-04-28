@@ -104,8 +104,8 @@ public:
                     double &cumulative_smb) = 0;
 
 protected:
-  Config::ConstPtr m_config;
-  units::System::Ptr m_unit_system;
+  const Config::ConstPtr m_config;
+  const units::System::Ptr m_unit_system;
   const double m_seconds_per_day;
 };
 
@@ -208,7 +208,7 @@ public:
 
 protected:
   const IceGrid &m_grid;
-  Config::ConstPtr m_config;
+  const Config::ConstPtr m_config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
   IceModelVec2S m_temp_mj;

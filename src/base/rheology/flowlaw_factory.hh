@@ -52,7 +52,7 @@ public:
 private:
   std::string m_type_name, m_prefix;
   std::map<std::string, FlowLawCreator> m_flow_laws;
-  Config::ConstPtr m_config;
+  const Config::ConstPtr m_config;
   EnthalpyConverter::Ptr m_EC;
 };
 

@@ -104,7 +104,7 @@ public:
                                      double &smb_rate) = 0;
 
 protected:
-  Config::ConstPtr  config;
+  const Config::ConstPtr  config;
 };
 
 
@@ -209,7 +209,7 @@ public:
 
 protected:
   const IceGrid &grid;
-  Config::ConstPtr config;
+  const Config::ConstPtr config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
   IceModelVec2S temp_mj;

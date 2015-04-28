@@ -137,9 +137,9 @@ protected:
   //! grid used by this component
   const IceGrid &m_grid;
   //! configuration database used by this component
-  Config::ConstPtr m_config;
+  const Config::ConstPtr m_config;
   //! unit system used by this component
-  units::System::Ptr m_sys;
+  const units::System::Ptr m_sys;
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

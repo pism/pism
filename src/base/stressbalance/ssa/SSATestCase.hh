@@ -93,9 +93,9 @@ protected:
                      double avg_u,
                      double avg_v);
   MPI_Comm m_com;
-  Config::Ptr m_config;
+  const Config::Ptr m_config;
   IceGrid::Ptr m_grid;
-  Context::Ptr m_ctx;
+  const Context::Ptr m_ctx;
 
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;

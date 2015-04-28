@@ -99,7 +99,7 @@ protected:
   IceModelVec2S topgsmooth;
 
   const IceGrid &grid;
-  Config::ConstPtr config;
+  const Config::ConstPtr config;
   IceModelVec2S maxtl, C2, C3, C4;
 
   int Nx, Ny;  //!< number of grid points to smooth over; e.g.
