@@ -38,7 +38,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "schoofs_theta"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "schoofs_theta"));
 
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
             "1", "", 0);
@@ -63,7 +63,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "topgsmooth"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "topgsmooth"));
   set_attrs("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -83,7 +83,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "thksmooth"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "thksmooth"));
   set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -111,7 +111,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "diffusivity"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "diffusivity"));
 
   set_attrs("diffusivity of SIA mass continuity equation", "",
             "m2 s-1", "m2 s-1", 0);
@@ -133,8 +133,8 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "diffusivity_i"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "diffusivity_j"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "diffusivity_i"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "diffusivity_j"));
 
   set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)", "",
             "m2 s-1", "m2 s-1", 0);
@@ -160,8 +160,8 @@ SIAFD_h_x::SIAFD_h_x(SIAFD *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "h_x_i"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "h_x_j"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "h_x_i"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "h_x_j"));
 
   set_attrs("the x-component of the surface gradient, i-offset", "",
             "", "", 0);
@@ -191,8 +191,8 @@ SIAFD_h_y::SIAFD_h_y(SIAFD *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "h_y_i"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "h_y_j"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "h_y_i"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "h_y_j"));
 
   set_attrs("the y-component of the surface gradient, i-offset", "",
             "", "", 0);

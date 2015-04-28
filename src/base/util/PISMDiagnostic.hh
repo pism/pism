@@ -75,10 +75,16 @@ public:
                  const std::string &my_glaciological_units,
                  int N = 0);
 protected:
-  const IceGrid &m_grid;                //!< the grid
-  int m_dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  IO_Type m_output_datatype;      //!< data type to use in the file
-  std::vector<SpatialVariableMetadata> m_vars; //!< metadata corresponding to NetCDF variables
+  //! the grid
+  const IceGrid &m_grid;
+  //! the unit system
+  const units::System::Ptr m_sys;
+  //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
+  int m_dof;
+  //! data type to use in the file
+  IO_Type m_output_datatype;
+  //! metadata corresponding to NetCDF variables
+  std::vector<SpatialVariableMetadata> m_vars;
 };
 
 //! A template derived from Diagnostic, adding a "Model".
@@ -95,7 +101,7 @@ protected:
 class TSDiagnostic {
 public:
   TSDiagnostic(const IceGrid &g)
-    : m_grid(g), m_ts(NULL) {
+    : m_grid(g), m_sys(g.ctx()->unit_system()), m_ts(NULL) {
   }
 
   virtual ~TSDiagnostic() {
@@ -127,7 +133,10 @@ public:
   }
 
 protected:
-  const IceGrid &m_grid;                //!< the grid
+  //! the grid
+  const IceGrid &m_grid;
+  //! the unit system
+  const units::System::Ptr m_sys;
   DiagnosticTimeseries *m_ts;
 };
 

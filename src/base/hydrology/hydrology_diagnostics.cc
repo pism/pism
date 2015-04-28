@@ -24,7 +24,7 @@ namespace hydrology {
 
 Hydrology_bwat::Hydrology_bwat(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "bwat"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "bwat"));
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
 
@@ -39,7 +39,7 @@ IceModelVec::Ptr Hydrology_bwat::compute() {
 
 Hydrology_bwp::Hydrology_bwp(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "bwp"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "bwp"));
   set_attrs("pressure of transportable water in subglacial layer", "", "Pa", "Pa", 0);
 }
 
@@ -56,7 +56,7 @@ IceModelVec::Ptr Hydrology_bwp::compute() {
 
 Hydrology_bwprel::Hydrology_bwprel(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "bwprel"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "bwprel"));
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
   m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
@@ -95,7 +95,7 @@ IceModelVec::Ptr Hydrology_bwprel::compute() {
 
 Hydrology_effbwp::Hydrology_effbwp(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "effbwp"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "effbwp"));
   set_attrs("effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)",
             "", "Pa", "Pa", 0);
 }
@@ -120,7 +120,7 @@ IceModelVec::Ptr Hydrology_effbwp::compute() {
 
 Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "hydrobmelt"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "hydrobmelt"));
   set_attrs("the version of bmelt seen by the hydrology model",
             "", "m s-1", "m/year", 0);
 }
@@ -141,7 +141,7 @@ IceModelVec::Ptr Hydrology_hydrobmelt::compute() {
 
 Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "hydroinput"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "hydroinput"));
   set_attrs("total water input into subglacial hydrology layer",
             "", "m s-1", "m/year", 0);
 }
@@ -162,7 +162,7 @@ IceModelVec::Ptr Hydrology_hydroinput::compute() {
 
 Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m)
   : Diag<Hydrology>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "wallmelt"));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "wallmelt"));
   set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water",
             "", "m s-1", "m/year", 0);
 }
