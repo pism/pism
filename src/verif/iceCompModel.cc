@@ -1152,10 +1152,14 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     double maxUerr, avUerr, maxWerr, avWerr;
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
-    verbPrintf(1,m_grid.com,
+    verbPrintf(1, m_grid.com,
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
-    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
-               m_grid.convert(maxUerr, "m/second", "m/year"), m_grid.convert(avUerr, "m/second", "m/year"), m_grid.convert(maxWerr, "m/second", "m/year"), m_grid.convert(avWerr, "m/second", "m/year"));
+    verbPrintf(1, m_grid.com,
+               "           %12.6f%12.6f%12.6f%12.6f\n",
+               m_grid.convert(maxUerr, "m/second", "m/year"),
+               m_grid.convert(avUerr, "m/second", "m/year"),
+               m_grid.convert(maxWerr, "m/second", "m/year"),
+               m_grid.convert(avWerr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
