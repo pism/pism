@@ -21,6 +21,7 @@
 #include "base/util/error_handling.hh"
 #include "hydrology_diagnostics.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace hydrology {

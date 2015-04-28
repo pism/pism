@@ -23,6 +23,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "hydrology_diagnostics.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace hydrology {

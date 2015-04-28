@@ -32,6 +32,7 @@
 #include "base/util/error_handling.hh"
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 

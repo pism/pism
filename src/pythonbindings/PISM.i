@@ -47,6 +47,7 @@
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMConfig.hh"
 
+#include "base/util/MaxTimestep.hh"
 #include "base/util/Context.hh"
 %}
 

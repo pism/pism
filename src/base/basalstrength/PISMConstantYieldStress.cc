@@ -21,6 +21,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/IceGrid.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 

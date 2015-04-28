@@ -25,6 +25,7 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {

@@ -23,19 +23,16 @@
 #include <set>
 #include <map>
 
-#include "MaxTimestep.hh"
 #include "base/util/io/IO_Flags.hh"
 #include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 
+class MaxTimestep;
 class PIO;
 class IceGrid;
-class Config;
-class SpatialVariableMetadata;
 class Diagnostic;
 class TSDiagnostic;
-class Vars;
 class IceModelVec;
 
 //! \brief A class defining a common interface for most PISM sub-models.

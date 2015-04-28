@@ -24,6 +24,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace calving {

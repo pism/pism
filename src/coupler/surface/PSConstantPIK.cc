@@ -23,6 +23,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {

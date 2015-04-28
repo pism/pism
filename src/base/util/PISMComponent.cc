@@ -28,6 +28,7 @@
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "PISMConfigInterface.hh"
+#include "MaxTimestep.hh"
 
 namespace pism {
 

@@ -21,6 +21,7 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace bed {

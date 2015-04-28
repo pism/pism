@@ -31,6 +31,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 

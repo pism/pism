@@ -36,6 +36,7 @@ static char help[] =
 #include "base/util/Context.hh"
 #include "base/util/PISMConfig.hh"
 #include "base/enthalpyConverter.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {

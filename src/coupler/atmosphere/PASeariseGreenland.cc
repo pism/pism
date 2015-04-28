@@ -33,6 +33,7 @@
 #include "base/util/PISMConfigInterface.hh"
 
 #include "base/util/error_handling.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {
