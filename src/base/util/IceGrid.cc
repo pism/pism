@@ -218,7 +218,7 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
-      double Lz = output->config()->get_double("grid_Lz");
+      double Lz = output->ctx()->config()->get_double("grid_Lz");
       verbPrintf(3, output->com,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
@@ -814,10 +814,6 @@ petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
 
 Periodicity IceGrid::periodicity() const {
   return m_impl->periodicity;
-}
-
-Config::ConstPtr IceGrid::config() const {
-  return m_impl->ctx->config();
 }
 
 Context::ConstPtr IceGrid::ctx() const {

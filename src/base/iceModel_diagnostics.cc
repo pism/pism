@@ -309,7 +309,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
   m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "hardav"));
 
   // choice to use SSA power; see #285
-  const double power = 1.0 / m_grid.config()->get_double("ssa_Glen_exponent");
+  const double power = 1.0 / m_grid.ctx()->config()->get_double("ssa_Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 
@@ -317,12 +317,12 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
             unitstr, unitstr, 0);
 
   m_vars[0].set_double("valid_min", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 //! \brief Computes vertically-averaged ice hardness.
 IceModelVec::Ptr IceModel_hardav::compute() {
-  const double fillval = m_grid.config()->get_double("fill_value");
+  const double fillval = m_grid.ctx()->config()->get_double("fill_value");
   double *Eij; // columns of enthalpy values
 
   const rheology::FlowLaw *flow_law = model->stress_balance->get_stressbalance()->flow_law();
@@ -524,8 +524,8 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
 }
 
 IceModelVec::Ptr IceModel_temp_pa::compute() {
-  bool cold_mode = m_grid.config()->get_boolean("do_cold_ice_methods");
-  double melting_point_temp = m_grid.config()->get_double("water_melting_point_temperature");
+  bool cold_mode = m_grid.ctx()->config()->get_boolean("do_cold_ice_methods");
+  double melting_point_temp = m_grid.ctx()->config()->get_double("water_melting_point_temperature");
 
   // update vertical levels (in case the m_grid was extended
   m_vars[0].set_levels(m_grid.z());
@@ -590,8 +590,8 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m)
 
 IceModelVec::Ptr IceModel_temppabase::compute() {
 
-  bool cold_mode = m_grid.config()->get_boolean("do_cold_ice_methods");
-  double melting_point_temp = m_grid.config()->get_double("water_melting_point_temperature");
+  bool cold_mode = m_grid.ctx()->config()->get_boolean("do_cold_ice_methods");
+  double melting_point_temp = m_grid.ctx()->config()->get_double("water_melting_point_temperature");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "temp_pa_base", WITHOUT_GHOSTS);
@@ -645,7 +645,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m)
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_enthalpysurf::compute() {
@@ -654,7 +654,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute() {
   result->create(m_grid, "enthalpysurf", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  double fill_value = m_grid.config()->get_double("fill_value");
+  double fill_value = m_grid.ctx()->config()->get_double("fill_value");
 
   // compute levels corresponding to 1 m below the ice surface:
 
@@ -689,7 +689,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m)
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_enthalpybase::compute() {
@@ -700,7 +700,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute() {
 
   model->Enth3.getHorSlice(*result, 0.0);  // z=0 slice
 
-  result->mask_by(model->ice_thickness, m_grid.config()->get_double("fill_value"));
+  result->mask_by(model->ice_thickness, m_grid.ctx()->config()->get_double("fill_value"));
 
   return result;
 }
@@ -714,7 +714,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m)
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempbase::compute() {
@@ -747,7 +747,7 @@ IceModelVec::Ptr IceModel_tempbase::compute() {
       if (mask.icy(i, j)) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
-        (*result)(i,j) = m_grid.config()->get_double("fill_value");
+        (*result)(i,j) = m_grid.ctx()->config()->get_double("fill_value");
       }
     }
   } catch (...) {
@@ -767,7 +767,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempsurf::compute() {
@@ -796,7 +796,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute() {
       if ((*thickness)(i,j) > 1) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
-        (*result)(i,j) = m_grid.config()->get_double("fill_value");
+        (*result)(i,j) = m_grid.ctx()->config()->get_double("fill_value");
       }
     }
   } catch (...) {
@@ -828,7 +828,7 @@ IceModelVec::Ptr IceModel_liqfrac::compute() {
   result->create(m_grid, "liqfrac", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = m_grid.config()->get_boolean("do_cold_ice_methods");
+  bool cold_mode = m_grid.ctx()->config()->get_boolean("do_cold_ice_methods");
 
   if (cold_mode) {
     result->set(0.0);
@@ -848,7 +848,7 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m)
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempicethk::compute() {
@@ -896,7 +896,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute() {
         (*result)(i,j) = temperate_ice_thickness;
       } else {
         // ice-free
-        (*result)(i,j) = m_grid.config()->get_double("fill_value");
+        (*result)(i,j) = m_grid.ctx()->config()->get_double("fill_value");
       }
     }
   } catch (...) {
@@ -916,7 +916,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m)
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
 }
 
 /*!
@@ -933,7 +933,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
 
   MaskQuery mask(model->vMask);
 
-  const double fill_value = m_grid.config()->get_double("fill_value");
+  const double fill_value = m_grid.ctx()->config()->get_double("fill_value");
 
   IceModelVec::AccessList list;
   list.add(model->vMask);
@@ -1155,7 +1155,7 @@ void IceModel_imass::update(double a, double b) {
 
   double value = model->compute_ice_volume();
 
-  m_ts->append(value * m_grid.config()->get_double("ice_density"), a, b);
+  m_ts->append(value * m_grid.ctx()->config()->get_double("ice_density"), a, b);
 }
 
 
@@ -1176,7 +1176,7 @@ void IceModel_dimassdt::update(double a, double b) {
 
   double value = model->compute_ice_volume();
 
-  m_ts->append(value * m_grid.config()->get_double("ice_density"), a, b);
+  m_ts->append(value * m_grid.ctx()->config()->get_double("ice_density"), a, b);
 }
 
 
@@ -1549,7 +1549,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
 
   m_vars[0].set_double("valid_min",  m_grid.convert(-1e6, "m/year", "m/s"));
   m_vars[0].set_double("valid_max",  m_grid.convert( 1e6, "m/year", "m/s"));
-  m_vars[0].set_double("_FillValue", m_grid.config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
   m_vars[0].set_string("cell_methods", "time: mean");
 
   last_ice_thickness.create(m_grid, "last_ice_thickness", WITHOUT_GHOSTS);

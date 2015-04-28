@@ -606,10 +606,10 @@ void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
   m_dof  = my_dof;
   m_grid = &my_grid;
 
-  if ((m_dof != 1) || (stencil_width > m_grid->config()->get_double("grid_max_stencil_width"))) {
+  if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_double("grid_max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
   } else {
-    m_da_stencil_width = m_grid->config()->get_double("grid_max_stencil_width");
+    m_da_stencil_width = m_grid->ctx()->config()->get_double("grid_max_stencil_width");
   }
 
   // initialize the da member:

@@ -377,7 +377,7 @@ static void get_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
 static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_name,
                     unsigned int z_count, const double *input) {
   try {
-    unsigned int t_length = nc.inq_dimlen(grid.config()->get_string("time_dimension_name"));
+    unsigned int t_length = nc.inq_dimlen(grid.ctx()->config()->get_string("time_dimension_name"));
 
     assert(t_length >= 1);
 
@@ -392,7 +392,7 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
                             0, z_count,
                             start, count, imap);
 
-    if (grid.config()->get_string("output_variable_order") == "xyz") {
+    if (grid.ctx()->config()->get_string("output_variable_order") == "xyz") {
       // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
       // orders in the memory and in NetCDF files are the same.
       nc.put_vara_double(var_name, start, count, input);
@@ -557,7 +557,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     t = "";
 
   if (not var.get_time_independent()) {
-    t = grid.config()->get_string("time_dimension_name");
+    t = grid.ctx()->config()->get_string("time_dimension_name");
   }
 
   nc.redef();

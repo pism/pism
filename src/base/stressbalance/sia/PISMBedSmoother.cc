@@ -28,7 +28,7 @@ namespace pism {
 namespace stressbalance {
 
 BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
-    : grid(g), config(g.config()) {
+    : grid(g), config(g.ctx()->config()) {
 
   {
     // allocate Vecs that live on all procs; all have to be as "wide" as any of

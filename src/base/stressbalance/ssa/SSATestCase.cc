@@ -347,7 +347,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->config()->get_string("output_format"));
+  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
   pio.open(filename, PISM_READWRITE_MOVE);
   io::define_time(pio, m_config->get_string("time_dimension_name"),
                   m_grid->ctx()->time()->calendar(),

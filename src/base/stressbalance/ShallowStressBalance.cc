@@ -426,8 +426,8 @@ IceModelVec::Ptr SSB_taud::compute() {
   const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid.variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_grid.config()->get_double("standard_gravity"),
-    ice_density = m_grid.config()->get_double("ice_density");
+  double standard_gravity = m_grid.ctx()->config()->get_double("standard_gravity"),
+    ice_density = m_grid.ctx()->config()->get_double("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*result);

@@ -35,8 +35,8 @@ namespace atmosphere {
 
 WeatherStation::WeatherStation(const IceGrid &g)
   : AtmosphereModel(g),
-    m_precipitation(&g, "precipitation", g.config()->get_string("time_dimension_name")),
-    m_air_temperature(&g, "air_temp", g.config()->get_string("time_dimension_name")),
+    m_precipitation(&g, "precipitation", g.ctx()->config()->get_string("time_dimension_name")),
+    m_air_temperature(&g, "air_temp", g.ctx()->config()->get_string("time_dimension_name")),
     m_precip_metadata(g.ctx()->unit_system(), "precipitation"),
     m_air_temp_metadata(g.ctx()->unit_system(), "air_temp")
 {
@@ -172,7 +172,7 @@ void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
 
 void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config()->get_string("output_variable_order");
+  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units

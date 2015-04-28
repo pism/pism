@@ -348,7 +348,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
 }
 
 void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.config()->get_string("output_variable_order");
+  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);

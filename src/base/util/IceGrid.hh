@@ -194,8 +194,8 @@ public:
 
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
-  //! The time management object (hides calendar computations).
-  Config::ConstPtr config() const;
+
+  //! Context this grid belongs to.
   Context::ConstPtr ctx() const;
 
   //! Starting x-index of a processor sub-domain
