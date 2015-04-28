@@ -39,7 +39,7 @@ Delta_P::Delta_P(const IceGrid &g, AtmosphereModel* in)
   offset->metadata().set_string("glaciological_units", "m / year");
   offset->metadata().set_string("long_name",
                                     "precipitation offsets, units of ice-equivalent thickness");
-  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time()->units_string());
 
 
   air_temp.set_string("pism_intent", "diagnostic");

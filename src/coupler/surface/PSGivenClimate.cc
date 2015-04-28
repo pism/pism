@@ -76,7 +76,7 @@ void Given::init_impl() {
 
   // read time-independent data right away:
   if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {
-    update(m_grid.time->current(), 0); // dt is irrelevant
+    update(m_grid.time()->current(), 0); // dt is irrelevant
   }
 }
 

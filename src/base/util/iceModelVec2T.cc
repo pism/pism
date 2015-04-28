@@ -145,8 +145,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     // we're found the time dimension
     TimeseriesMetadata time_dimension(dimname, dimname, m_grid->config()->unit_system());
 
-    time_dimension.set_string("units", m_grid->time->units_string());
-    io::read_timeseries(m_grid->com, nc, time_dimension, m_grid->time.get(), time);
+    time_dimension.set_string("units", m_grid->time()->units_string());
+    io::read_timeseries(m_grid->com, nc, time_dimension, m_grid->time().get(), time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
@@ -156,7 +156,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         TimeBoundsMetadata tb(bounds_name, dimname, m_grid->config()->unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
-        io::read_time_bounds(m_grid->com, nc, tb, m_grid->time.get(), time_bounds);
+        io::read_time_bounds(m_grid->com, nc, tb, m_grid->time().get(), time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -325,10 +325,10 @@ void IceModelVec2T::update(unsigned int start) {
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
                metadata().get_string("long_name").c_str(), m_name.c_str(), missing,
-               m_grid->time->date(time_bounds[start*2]).c_str(),
-               m_grid->time->date(time_bounds[start*2 + 1]).c_str(),
-               m_grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
-               m_grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
+               m_grid->time()->date(time_bounds[start*2]).c_str(),
+               m_grid->time()->date(time_bounds[start*2 + 1]).c_str(),
+               m_grid->time()->date(time_bounds[(start + missing - 1)*2]).c_str(),
+               m_grid->time()->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
     m_report_range = false;
   } else {
     m_report_range = true;
@@ -347,7 +347,7 @@ void IceModelVec2T::update(unsigned int start) {
     verbPrintf(5, m_grid->com, " %s: reading entry #%02d, year %s...\n",
                m_name.c_str(),
                start + j,
-               m_grid->time->date(time[start + j]).c_str());
+               m_grid->time()->date(time[start + j]).c_str());
 
     set_record(kept + j);
   }
@@ -501,7 +501,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   std::vector<double> times_requested(ts_length);
   if (m_period != 0) {
     for (unsigned int k = 0; k < ts_length; ++k) {
-      times_requested[k] = m_grid->time->mod(ts[k] - m_reference_time, m_period);
+      times_requested[k] = m_grid->time()->mod(ts[k] - m_reference_time, m_period);
     }
   } else {
     for (unsigned int k = 0; k < ts_length; ++k) {

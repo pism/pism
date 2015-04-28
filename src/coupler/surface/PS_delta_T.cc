@@ -39,7 +39,7 @@ Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
 
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "ice-surface temperature offsets");
-  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time()->units_string());
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",

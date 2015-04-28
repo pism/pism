@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "pismr");
     Config::Ptr config = ctx->config();
 
-    IceGrid g(com, config);
+    IceGrid g(ctx);
     IceModel m(g, ctx);
 
     m.init();

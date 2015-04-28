@@ -47,7 +47,7 @@ public:
 protected:
   virtual void update_impl(double my_t, double my_dt)
   {
-    Mod::m_t  = Mod::m_grid.time->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_t  = Mod::m_grid.time()->mod(my_t - bc_reference_time, bc_period);
     Mod::m_dt = my_dt;
 
     Mod::input_model->update(my_t, my_dt);
@@ -87,7 +87,7 @@ protected:
     PIO nc(g.com, "netcdf3");
     nc.open(file, PISM_READONLY);
     {
-      offset->read(nc, g.time.get());
+      offset->read(nc, g.time().get());
     }
     nc.close();
   }

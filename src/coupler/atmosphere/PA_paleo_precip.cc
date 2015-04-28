@@ -36,7 +36,7 @@ PaleoPrecip::PaleoPrecip(const IceGrid &g, AtmosphereModel* in)
   offset = new Timeseries(&m_grid, offset_name, m_config->get_string("time_dimension_name"));
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "air temperature offsets");
-  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time()->units_string());
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");

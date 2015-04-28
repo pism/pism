@@ -37,31 +37,6 @@ def context_missing_attribute_test():
     except AttributeError:
         return True
 
-
-def init_config_twice_test():
-    "Test initializing the config twice"
-    ctx = PISM.Context()
-    ctx._config = None          # re-set config
-
-    system = PISM.UnitSystem("")
-    overrides = PISM.DefaultConfig(ctx.com, "pism_overrides",
-                                   "-config_override", system)
-
-    # use the overrides keyword argument
-    ctx.init_config(overrides=overrides)
-    config = ctx.config
-
-    # start over and don't use overrides this time
-    ctx._config = None          # re-set config
-    config = ctx.config         # this should initialize config
-
-    try:
-        ctx.init_config()       # initialize again; this should fail
-        return False
-    except RuntimeError:
-        return True
-
-
 def create_grid_test():
     "Test the creation of the IceGrid object"
     create_dummy_grid()
@@ -191,9 +166,9 @@ def grid_from_file_test():
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
                      grid.config().get_string("calendar"),
-                     grid.time.units_string(),
+                     grid.time().units_string(),
                      grid.config().unit_system())
-    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time.current())
+    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time().current())
     pio.close()
 
     enthalpy.write(output_file)
@@ -399,9 +374,9 @@ def modelvecs_test():
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
                      grid.config().get_string("calendar"),
-                     grid.time.units_string(),
+                     grid.time().units_string(),
                      grid.config().unit_system())
-    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time.current())
+    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time().current())
     pio.close()
 
     vecs.write(output_file)

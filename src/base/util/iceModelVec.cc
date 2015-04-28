@@ -526,11 +526,11 @@ void IceModelVec::dump(const char filename[]) const {
 
   nc.open(filename, PISM_READWRITE_CLOBBER);
   io::define_time(nc, m_grid->config()->get_string("time_dimension_name"),
-                  m_grid->time->calendar(),
-                  m_grid->time->units_string(),
+                  m_grid->time()->calendar(),
+                  m_grid->time()->units_string(),
                   m_grid->config()->unit_system());
   io::append_time(nc, m_grid->config()->get_string("time_dimension_name"),
-                  m_grid->time->current());
+                  m_grid->time()->current());
 
   define(nc, PISM_DOUBLE);
   write(nc);

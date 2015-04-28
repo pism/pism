@@ -66,7 +66,7 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
   if ((dt_beddef < m_config->get_double("bed_def_interval_years", "years", "seconds") &&
-       t_final < m_grid.time->end()) ||
+       t_final < m_grid.time()->end()) ||
       dt_beddef < 1e-12) {
     return;
   }

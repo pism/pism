@@ -55,12 +55,12 @@ static double u_exact(double V0, double H0, double C, double x) {
 
 class SSATestCaseCFBC: public SSATestCase {
 public:
-  SSATestCaseCFBC(MPI_Comm com, Config::Ptr c)
-    : SSATestCase(com, c) {
-    V0 = units::convert(c->unit_system(), 300.0, "m/year", "m/second");
+  SSATestCaseCFBC(Context::Ptr ctx)
+    : SSATestCase(ctx) {
+    V0 = units::convert(ctx->unit_system(), 300.0, "m/year", "m/second");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
-  };
+  }
 
   virtual void write_nuH(const std::string &filename);
 
@@ -93,9 +93,9 @@ void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
 
   double halfWidth = 250.0e3;  // 500.0 km length
   double Lx = halfWidth, Ly = halfWidth;
-  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
-                          0.0, 0.0, // center: (x0,y0)
-                          Mx, My, Y_PERIODIC);
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, Y_PERIODIC);
 }
 
 void SSATestCaseCFBC::initializeSSAModel() {
@@ -198,7 +198,6 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
-    Config::Ptr config = ctx->config();
 
     setVerbosityLevel(5);
 
@@ -226,7 +225,7 @@ int main(int argc, char *argv[]) {
 
     SSAFactory ssafactory = SSAFDFactory;
 
-    SSATestCaseCFBC testcase(com, config);
+    SSATestCaseCFBC testcase(ctx);
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("V");

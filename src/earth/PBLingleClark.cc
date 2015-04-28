@@ -190,7 +190,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
   if ((dt_beddef < m_config->get_double("bed_def_interval_years", "years", "seconds") &&
-       t_final < m_grid.time->end()) ||
+       t_final < m_grid.time()->end()) ||
       dt_beddef < 1e-12) {
     return;
   }
@@ -204,7 +204,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   try {
     if (m_grid.rank() == 0) {  // only processor zero does the step
       m_bdLC->step(dt_beddef, // time step, in seconds
-                   t_final - m_grid.time->start()); // time since the start of the run, in seconds
+                   t_final - m_grid.time()->start()); // time since the start of the run, in seconds
     }
   } catch (...) {
     rank0.failed();

@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     // differently once that is removed.
     config->set_string("calendar", "none");
 
-    IceGrid g(com, config);
+    IceGrid g(ctx);
     IceEISModel m(g, ctx);
 
     m.init();

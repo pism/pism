@@ -907,7 +907,7 @@ void define_timeseries(const TimeseriesMetadata& var,
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &metadata,
-                     Time *time, std::vector<double> &data) {
+                     const Time *time, std::vector<double> &data) {
   std::string name = metadata.get_name();
 
   try {
@@ -1050,7 +1050,7 @@ void define_time_bounds(const TimeBoundsMetadata& var,
 
 void read_time_bounds(MPI_Comm com, const PIO &nc,
                       const TimeBoundsMetadata &metadata,
-                      Time *time, std::vector<double> &data) {
+                      const Time *time, std::vector<double> &data) {
   
   std::string name = metadata.get_name();
 

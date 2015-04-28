@@ -40,12 +40,12 @@ WeatherStation::WeatherStation(const IceGrid &g)
     m_precip_metadata(g.config()->unit_system(), "precipitation"),
     m_air_temp_metadata(g.config()->unit_system(), "air_temp")
 {
-  m_precipitation.dimension_metadata().set_string("units", m_grid.time->units_string());
+  m_precipitation.dimension_metadata().set_string("units", m_grid.time()->units_string());
   m_precipitation.metadata().set_string("units", "m / second");
   m_precipitation.metadata().set_string("long_name",
                                             "ice-equivalent precipitation rate");
 
-  m_air_temperature.dimension_metadata().set_string("units", m_grid.time->units_string());
+  m_air_temperature.dimension_metadata().set_string("units", m_grid.time()->units_string());
   m_air_temperature.metadata().set_string("units", "Kelvin");
   m_air_temperature.metadata().set_string("long_name",
                                               "near-surface air temperature");
@@ -90,8 +90,8 @@ void WeatherStation::init() {
   PIO nc(m_grid.com, "netcdf3");
   nc.open(filename, PISM_READONLY);
   {
-    m_precipitation.read(nc, m_grid.time.get());
-    m_air_temperature.read(nc, m_grid.time.get());
+    m_precipitation.read(nc, m_grid.time().get());
+    m_air_temperature.read(nc, m_grid.time().get());
   }
   nc.close();
 }

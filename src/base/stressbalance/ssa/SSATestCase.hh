@@ -20,6 +20,7 @@
 #define _SSATESTCASE_H_
 
 #include "SSA.hh"
+#include "base/util/Context.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/PISMVars.hh"
@@ -53,7 +54,7 @@ namespace stressbalance {
 class SSATestCase
 {
 public:
-  SSATestCase(MPI_Comm com, Config::Ptr c);
+  SSATestCase(Context::Ptr ctx);
 
   virtual ~SSATestCase();
 
@@ -94,6 +95,7 @@ protected:
   MPI_Comm m_com;
   Config::Ptr m_config;
   IceGrid::Ptr m_grid;
+  Context::Ptr m_ctx;
 
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;

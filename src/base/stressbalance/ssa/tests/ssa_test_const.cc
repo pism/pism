@@ -59,13 +59,13 @@ namespace stressbalance {
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(MPI_Comm com, Config::Ptr c, double q):
-    SSATestCase(com, c), basal_q(q)
+  SSATestCaseConst(Context::Ptr ctx, double q):
+    SSATestCase(ctx), basal_q(q)
   {
-    L     = units::convert(c->unit_system(), 50.0, "km", "m"); // 50km half-width
+    L     = units::convert(ctx->unit_system(), 50.0, "km", "m"); // 50km half-width
     H0    = 500;                        // m
     dhdx  = 0.005;                      // pure number
-    nu0   = units::convert(c->unit_system(), 30.0, "MPa year", "Pa s");
+    nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
   };
 
@@ -85,9 +85,9 @@ protected:
 
 void SSATestCaseConst::initializeGrid(int Mx,int My) {
   double Lx=L, Ly = L;
-  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
-                          0.0, 0.0, // center: (x0,y0)
-                          Mx, My, NOT_PERIODIC);
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, NOT_PERIODIC);
 }
 
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseConst testcase(com,config,basal_q);
+    SSATestCaseConst testcase(ctx, basal_q);
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("const");

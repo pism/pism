@@ -43,8 +43,8 @@ namespace stressbalance {
 
 class SSATestCaseI: public SSATestCase {
 public:
-  SSATestCaseI(MPI_Comm com, Config::Ptr c)
-    : SSATestCase(com,c) {
+  SSATestCaseI(Context::Ptr ctx)
+    : SSATestCase(ctx) {
     // empty
   }
 
@@ -71,7 +71,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 void SSATestCaseI::initializeGrid(int Mx,int My) {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
   double Lx = std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
-  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
                             0.0, 0.0, // center: (x0,y0)
                             Mx, My, NOT_PERIODIC);
 }
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseI testcase(com, config);
+    SSATestCaseI testcase(ctx);
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("I");

@@ -68,7 +68,7 @@ int IceModel::endOfTimeStepHook() {
     char str[TEMPORARY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
-             m_grid.time->date().c_str());
+             m_grid.time()->date().c_str());
     stampHistory(str);
     // Tell the caller that the user requested an early termination of
     // the run.
@@ -78,7 +78,7 @@ int IceModel::endOfTimeStepHook() {
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%s.nc",
-             m_grid.time->date().c_str());
+             m_grid.time()->date().c_str());
     verbPrintf(1, m_grid.com, 
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
@@ -128,7 +128,7 @@ void IceModel::update_run_stats() {
   proc_hours = m_grid.size() * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
-  mypph = m_grid.convert(m_grid.time->current() - m_grid.time->start(), "seconds", "years") / proc_hours;
+  mypph = m_grid.convert(m_grid.time()->current() - m_grid.time()->start(), "seconds", "years") / proc_hours;
 
   MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, m_grid.com);
 

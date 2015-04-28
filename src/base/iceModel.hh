@@ -147,6 +147,7 @@ public:
 
   // see iMinit.cc
   virtual void grid_setup();
+  virtual void time_setup();
 
   const IceGrid& grid() const;
 

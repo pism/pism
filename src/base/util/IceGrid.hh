@@ -25,6 +25,7 @@
 
 #include "pism_memory.hh"
 
+#include "base/util/Context.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/petscwrappers/DM.hh"
 #include "Profiling.hh"
@@ -32,7 +33,6 @@
 
 namespace pism {
 
-class Config;
 class PIO;
 namespace units {
 class System;
@@ -142,25 +142,25 @@ private:
 */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, Config::ConstPtr config);
+  IceGrid(Context::Ptr ctx);
   ~IceGrid();
 
   typedef PISM_SHARED_PTR(IceGrid) Ptr;
   typedef PISM_SHARED_PTR(const IceGrid) ConstPtr;
 
-  static Ptr Shallow(MPI_Comm c, Config::ConstPtr config,
+  static Ptr Shallow(Context::Ptr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My, Periodicity p);
 
-  static Ptr Create(MPI_Comm c, Config::ConstPtr config,
+  static Ptr Create(Context::Ptr ctx,
                     double Lx, double Ly,
                     double x0, double y0,
                     const std::vector<double> &z,
                     unsigned int Mx, unsigned int My,
                     Periodicity p);
 
-  static Ptr Create(MPI_Comm c, Config::ConstPtr config);
+  static Ptr Create(Context::Ptr ctx);
 
   static void FromFile(const PIO &file, const std::string &var_name, Periodicity p,
                        IceGrid *output);
@@ -195,7 +195,7 @@ public:
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
   //! The time management object (hides calendar computations).
-  Time::Ptr time;
+  Time::ConstPtr time() const;
   Config::ConstPtr config() const;
   Profiling profiling;
 
@@ -246,9 +246,6 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
-
-  // FIXME: remove this
-  Config::ConstPtr m_config;
 
   void check_parameters();
 

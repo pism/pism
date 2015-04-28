@@ -34,6 +34,8 @@ static char help[] =
 #include "base/util/error_handling.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Context.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 namespace energy {
@@ -62,7 +64,7 @@ void BTU_Test::bootstrap() {
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF = 0.0; // Test K:  use Tb[k], ignore FF
-        exactK(m_grid.time->start(), z, &Tb[k], &FF, 0);
+        exactK(m_grid.time()->start(), z, &Tb[k], &FF, 0);
       }
     }
   }
@@ -70,6 +72,36 @@ void BTU_Test::bootstrap() {
 
 } // end of namespace energy
 } // end of namespace pism
+
+//! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
+pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
+  using namespace pism;
+
+  // unit system
+  units::System::Ptr sys(new units::System);
+
+  // configuration parameters
+  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
+    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
+  overrides->init();
+  config->init_with_default();
+  config->import_from(*overrides);
+
+  config->set_string("calendar", "none");
+  // when IceGrid constructor is called, these settings are used
+  config->set_double("start_year", 0.0);
+  config->set_double("run_length_years", 1.0);
+
+  set_config_from_options(*config);
+
+  print_config(3, com, *config);
+
+  Time::Ptr time = time_from_options(com, config, sys);
+
+  EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
+
+  return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
+}
 
 int main(int argc, char *argv[]) {
 
@@ -114,19 +146,11 @@ int main(int argc, char *argv[]) {
 
     verbPrintf(2,com,
                "btutest tests BedThermalUnit and IceModelVec3BTU\n");
-    Context::Ptr ctx = context_from_options(com, "btutest");
+    Context::Ptr ctx = btutest_context(com, "btutest");
     Config::Ptr config = ctx->config();
 
-    // this is used by the Time instance allocated later. Note that once we switch to using
-    // ctx->time() we'll have to do this differently (i.e. allocate Context using a custom
-    // btutest-specific function).
-    config->set_string("calendar", "none");
-    // when IceGrid constructor is called, these settings are used
-    config->set_double("start_year", 0.0);
-    config->set_double("run_length_years", 1.0);
-
     // create grid and set defaults
-    IceGrid grid(com, config);
+    IceGrid grid(ctx);
     double
       Lx = 1500e3,
       Ly = Lx;
@@ -153,7 +177,7 @@ int main(int argc, char *argv[]) {
     grid.set_vertical_levels(Lz, Mz, EQUAL);
 
     // complete grid initialization based on user options
-    grid.time->init();
+    ctx->time()->init();
     grid.allocate();
 
     // allocate tools and IceModelVecs
@@ -186,8 +210,8 @@ int main(int argc, char *argv[]) {
     double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");
 
     // worry about time step
-    int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
-    dt_seconds = (grid.time->end() - grid.time->start()) / (double)N;
+    int  N = (int)ceil((ctx->time()->end() - ctx->time()->start()) / dt_seconds);
+    dt_seconds = (ctx->time()->end() - ctx->time()->start()) / (double)N;
     verbPrintf(2,com,
                "  user set timestep of %.4f years ...\n"
                "  reset to %.4f years to get integer number of steps ... \n",
@@ -201,7 +225,7 @@ int main(int argc, char *argv[]) {
     verbPrintf(2,com,"  running ...\n");
     for (int n = 0; n < N; n++) {
       // time at start of time-step
-      const double time = grid.time->start() + dt_seconds * (double)n;
+      const double time = ctx->time()->start() + dt_seconds * (double)n;
 
       // compute exact ice temperature at z=0 at time y
       IceModelVec::AccessList list(bedtoptemp);
@@ -226,10 +250,10 @@ int main(int argc, char *argv[]) {
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT
-    exactK(grid.time->end(), 0.0, &TT, &FF, 0);
+    exactK(ctx->time()->end(), 0.0, &TT, &FF, 0);
     verbPrintf(2,com,
                "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
-               grid.time->end_date().c_str(), FF);
+               ctx->time()->end_date().c_str(), FF);
 
     // compute numerical error
     double maxghferr, avghferr;
@@ -256,9 +280,9 @@ int main(int argc, char *argv[]) {
 
     std::string time_name = config->get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
-    io::define_time(pio, time_name, grid.time->calendar(),
-                    grid.time->CF_units_string(), ctx->unit_system());
-    io::append_time(pio, time_name, grid.time->end());
+    io::define_time(pio, time_name, ctx->time()->calendar(),
+                    ctx->time()->CF_units_string(), ctx->unit_system());
+    io::append_time(pio, time_name, ctx->time()->end());
 
     btu.define_variables(vars, pio, PISM_DOUBLE);
     btu.write_variables(vars, pio);

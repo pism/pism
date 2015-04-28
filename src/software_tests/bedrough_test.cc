@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     double Lx = 1200e3;
-    IceGrid grid(com, config);
+    IceGrid grid(ctx);
     grid.set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
     grid.allocate();
 

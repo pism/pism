@@ -45,8 +45,8 @@ namespace stressbalance {
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(MPI_Comm com, Config::Ptr c)
-    : SSATestCase(com, c) {
+  SSATestCaseJ(Context::Ptr ctx)
+    : SSATestCase(ctx) {
     // empty
   }
 
@@ -65,9 +65,9 @@ void SSATestCaseJ::initializeGrid(int Mx,int My) {
 
   double halfWidth = 300.0e3;  // 300.0 km half-width
   double Lx = halfWidth, Ly = halfWidth;
-  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
-                          0.0, 0.0, // center: (x0,y0)
-                          Mx, My, XY_PERIODIC);
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, XY_PERIODIC);
 }
 
 void SSATestCaseJ::initializeSSAModel() {
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseJ testcase(com,config);
+    SSATestCaseJ testcase(ctx);
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("J");

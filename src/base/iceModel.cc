@@ -59,7 +59,7 @@ IceModel::IceModel(IceGrid &g, Context::Ptr ctx)
     extra_bounds("time_bounds", config->get_string("time_dimension_name"), g.config()->unit_system()),
     timestamp("timestamp", config->get_string("time_dimension_name"), g.config()->unit_system()) {
 
-  extra_bounds.set_string("units", m_grid.time->units_string());
+  extra_bounds.set_string("units", m_grid.time()->units_string());
 
   timestamp.set_string("units", "hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
@@ -126,7 +126,7 @@ void IceModel::reset_counters() {
   dt_force        = 0.0;
   skipCountDown   = 0;
 
-  timestep_hit_multiples_last_time = m_grid.time->current();
+  timestep_hit_multiples_last_time = m_grid.time()->current();
 
   grounded_basal_ice_flux_cumulative = 0;
   nonneg_rule_flux_cumulative        = 0;
@@ -614,7 +614,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth && basal_yield_stress_model) {
     m_grid.profiling.begin("basal yield stress");
-    basal_yield_stress_model->update(m_grid.time->current(), dt);
+    basal_yield_stress_model->update(m_grid.time()->current(), dt);
     m_grid.profiling.end("basal yield stress");
     basal_yield_stress.copy_from(basal_yield_stress_model->basal_material_yield_stress());
     stdout_flags += "y";
@@ -663,11 +663,11 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li Update surface and ocean models.
   m_grid.profiling.begin("surface");
-  surface->update(m_grid.time->current(), dt);
+  surface->update(m_grid.time()->current(), dt);
   m_grid.profiling.end("surface");
 
   m_grid.profiling.begin("ocean");
-  ocean->update(m_grid.time->current(),   dt);
+  ocean->update(m_grid.time()->current(),   dt);
   m_grid.profiling.end("ocean");
 
   dt_TempAge += dt;
@@ -705,7 +705,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   m_grid.profiling.begin("basal hydrology");
-  subglacial_hydrology->update(m_grid.time->current(), dt);
+  subglacial_hydrology->update(m_grid.time()->current(), dt);
   m_grid.profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
@@ -756,7 +756,7 @@ void IceModel::step(bool do_mass_continuity,
     int topg_state_counter = bed_topography.get_state_counter();
 
     m_grid.profiling.begin("bed deformation");
-    beddef->update(m_grid.time->current(), dt);
+    beddef->update(m_grid.time()->current(), dt);
     m_grid.profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
@@ -771,10 +771,10 @@ void IceModel::step(bool do_mass_continuity,
   additionalAtEndTimestep();
 
   // Done with the step; now adopt the new time.
-  m_grid.time->step(dt);
+  m_ctx->time()->step(dt);
 
   if (do_energy_step) {
-    t_TempAge = m_grid.time->current();
+    t_TempAge = m_grid.time()->current();
     dt_TempAge = 0.0;
   }
 
@@ -795,7 +795,7 @@ void IceModel::step(bool do_mass_continuity,
  */
 void IceModel::run_to(double run_end) {
 
-  m_grid.time->set_end(run_end);
+  m_ctx->time()->set_end(run_end);
 
   run();
 }
@@ -830,14 +830,14 @@ void IceModel::run() {
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
   summary(do_energy);  // report starting state
 
-  t_TempAge = m_grid.time->current();
+  t_TempAge = m_grid.time()->current();
   dt_TempAge = 0.0;
 
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
   // will terminate
   m_grid.profiling.stage_begin("time-stepping loop");
-  while (m_grid.time->current() < m_grid.time->end()) {
+  while (m_grid.time()->current() < m_grid.time()->end()) {
 
     stdout_flags.erase();  // clear it out
     dt_force = -1.0;
@@ -883,7 +883,7 @@ void IceModel::run() {
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
                stepcount,
-               m_grid.convert(m_grid.time->end() - m_grid.time->start(), "seconds", "years")/(double)stepcount);
+               m_grid.convert(m_grid.time()->end() - m_grid.time()->start(), "seconds", "years")/(double)stepcount);
   }
 }
 
@@ -908,6 +908,7 @@ void IceModel::init() {
 
   //! 1) Initialize the computational grid:
   grid_setup();
+  time_setup();
 
   //! 2) Process the options:
   setFromOptions();

@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
     config->set_boolean("use_eta_transformation", false);
 
-    IceGrid g(com, config);
+    IceGrid g(ctx);
 
     // determine test (and whether to report error)
     std::string testname = options::String("-test", "Specifies PISM verification test", "A");

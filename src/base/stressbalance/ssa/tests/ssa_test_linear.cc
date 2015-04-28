@@ -54,12 +54,12 @@ namespace stressbalance {
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(MPI_Comm com, Config::Ptr c)
-    : SSATestCase(com, c) {
-    L     = units::convert(c->unit_system(), 50, "km", "m"); // 50km half-width
+  SSATestCaseExp(Context::Ptr ctx)
+    : SSATestCase(ctx) {
+    L     = units::convert(ctx->unit_system(), 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
     dhdx  = 0.005;                    // pure number
-    nu0   = units::convert(c->unit_system(), 30.0, "MPa year", "Pa s");
+    nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // 1kPa
   }
 
@@ -79,7 +79,7 @@ protected:
 
 void SSATestCaseExp::initializeGrid(int Mx,int My) {
   double Lx=L, Ly = L;
-  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
                             0.0, 0.0, // center: (x0,y0)
                             Mx, My, NOT_PERIODIC);
 }
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseExp testcase(com,config);
+    SSATestCaseExp testcase(ctx);
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("linear");

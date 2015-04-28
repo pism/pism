@@ -51,14 +51,16 @@ namespace stressbalance {
 
 class SSATestCasePlug: public SSATestCase {
 public:
-  SSATestCasePlug(MPI_Comm com, Config::Ptr c, double n)
-    : SSATestCase(com, c) {
-    H0 = 2000.; //m
-    L=50.e3; // 50km half-width
-    dhdx = 0.001; // pure number, slope of surface & bed
-    tauc0 = 0.; // No basal shear stress
-    B0 = 3.7e8; // Pa s^{1/3}; hardness
-               // given on p. 239 of Schoof; why so big?
+  SSATestCasePlug(Context::Ptr ctx, double n)
+    : SSATestCase(ctx) {
+    H0    = 2000.;              //m
+    L     = 50.e3;              // 50km half-width
+    dhdx  = 0.001;              // pure number, slope of surface & bed
+    tauc0 = 0.;                 // No basal shear stress
+
+    // Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big?
+    B0           = 3.7e8;
+
     this->glen_n = n;
   }
 
@@ -87,9 +89,9 @@ protected:
 
 void SSATestCasePlug::initializeGrid(int Mx,int My) {
   double Lx=L, Ly = L;
-  m_grid = IceGrid::Shallow(m_com, m_config, Lx, Ly,
-                          0.0, 0.0, // center: (x0,y0)
-                          Mx, My, NOT_PERIODIC);
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, NOT_PERIODIC);
 }
 
 
@@ -225,7 +227,7 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCasePlug testcase(com,config,glen_n);
+    SSATestCasePlug testcase(ctx, glen_n);
     testcase.init(Mx,My,ssafactory);
     testcase.run();
     testcase.report("plug");

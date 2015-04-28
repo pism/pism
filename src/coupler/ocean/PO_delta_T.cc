@@ -37,7 +37,7 @@ Delta_T::Delta_T(const IceGrid &g, OceanModel* in)
 
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "ice-shelf-base temperature offsets");
-  offset->dimension_metadata().set_string("units", m_grid.time->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.time()->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",

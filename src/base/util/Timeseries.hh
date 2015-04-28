@@ -80,7 +80,7 @@ public:
   Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
   
-  void read(const PIO &nc, Time *time);
+  void read(const PIO &nc, const Time *time);
   void write(const PIO &nc);
   double operator()(double time);
   double operator[](unsigned int j) const;

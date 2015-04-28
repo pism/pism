@@ -114,7 +114,7 @@ void GivenTH::init_impl() {
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
-    update(m_grid.time->current(), 0); // dt is irrelevant
+    update(m_grid.time()->current(), 0); // dt is irrelevant
   }
 }
 

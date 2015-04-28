@@ -112,10 +112,10 @@ void IceModel::dumpToFile(const std::string &filename) {
   // Prepare the file
   std::string time_name = config->get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
-  io::define_time(nc, time_name, m_grid.time->calendar(),
-                  m_grid.time->CF_units_string(),
+  io::define_time(nc, time_name, m_grid.time()->calendar(),
+                  m_grid.time()->CF_units_string(),
                   config->unit_system());
-  io::append_time(nc, time_name, m_grid.time->current());
+  io::append_time(nc, time_name, m_grid.time()->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);
@@ -636,7 +636,7 @@ void IceModel::init_snapshots() {
   }
 
   try {
-    m_grid.time->parse_times(save_times, snapshot_times);    
+    m_grid.time()->parse_times(save_times, snapshot_times);    
   } catch (RuntimeError &e) {
     e.add_context("parsing the -save_times argument");
     throw;
@@ -683,11 +683,11 @@ void IceModel::write_snapshot() {
   }
 
   // do we need to save *now*?
-  if ((m_grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
+  if ((m_grid.time()->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
     saving_after = snapshot_times[current_snapshot];
 
     while ((current_snapshot < snapshot_times.size()) &&
-           (snapshot_times[current_snapshot] <= m_grid.time->current())) {
+           (snapshot_times[current_snapshot] <= m_grid.time()->current())) {
       current_snapshot++;
     }
   } else {
@@ -701,15 +701,15 @@ void IceModel::write_snapshot() {
   if (split_snapshots) {
     snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             snapshots_filename.c_str(), m_grid.time->date().c_str());
+             snapshots_filename.c_str(), m_grid.time()->date().c_str());
   } else {
     strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
   verbPrintf(2, m_grid.com,
              "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
-             filename, m_grid.time->date().c_str(),
-             m_grid.time->date(saving_after).c_str());
+             filename, m_grid.time()->date().c_str(),
+             m_grid.time()->date(saving_after).c_str());
 
   PIO nc(m_grid.com, m_grid.config()->get_string("output_format"));
 
@@ -717,8 +717,8 @@ void IceModel::write_snapshot() {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
     io::define_time(nc, config->get_string("time_dimension_name"),
-                m_grid.time->calendar(),
-                m_grid.time->CF_units_string(),
+                m_grid.time()->calendar(),
+                m_grid.time()->CF_units_string(),
                 config->unit_system());
 
     write_metadata(nc, true, true);
@@ -731,7 +731,7 @@ void IceModel::write_snapshot() {
 
   unsigned int time_length = 0;
 
-  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time->current());
+  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time()->current());
   time_length = nc.inq_dimlen(config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
@@ -806,7 +806,7 @@ void IceModel::write_backup() {
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
-           m_grid.time->date().c_str(), wall_clock_hours);
+           m_grid.time()->date().c_str(), wall_clock_hours);
 
   verbPrintf(2, m_grid.com,
              "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
@@ -819,10 +819,10 @@ void IceModel::write_backup() {
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);
   io::define_time(nc, config->get_string("time_dimension_name"),
-              m_grid.time->calendar(),
-              m_grid.time->CF_units_string(),
+              m_grid.time()->calendar(),
+              m_grid.time()->CF_units_string(),
               config->unit_system());
-  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time->current());
+  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time()->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);
