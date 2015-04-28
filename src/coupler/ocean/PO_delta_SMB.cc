@@ -36,7 +36,7 @@ Delta_SMB::Delta_SMB(const IceGrid &g, OceanModel* in)
   offset = new Timeseries(&m_grid, offset_name, m_config->get_string("time_dimension_name"));
 
   offset->metadata().set_string("units", "m s-1");
-  offset->dimension_metadata().set_string("units", m_grid.time()->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
   offset->metadata().set_string("long_name",
                                     "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
 

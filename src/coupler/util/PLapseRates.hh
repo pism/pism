@@ -47,7 +47,7 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) {
     // "Periodize" the climate:
-    t = Mod::m_grid.time()->mod(t - m_bc_reference_time, m_bc_period);
+    t = Mod::m_grid.ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
     MaxTimestep input_max_dt = Mod::input_model->max_timestep(t);
     MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
@@ -65,7 +65,7 @@ protected:
     double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
-    my_t = Mod::m_grid.time()->mod(my_t - m_bc_reference_time,  m_bc_period);
+    my_t = Mod::m_grid.ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
         (fabs(my_dt - dt) < 1e-12)) {

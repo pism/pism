@@ -130,7 +130,7 @@ void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
 
 //! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl() {
-  m_t_beddef_last = m_grid.time()->start();
+  m_t_beddef_last = m_grid.ctx()->time()->start();
 
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;

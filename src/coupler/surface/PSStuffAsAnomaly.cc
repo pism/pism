@@ -109,7 +109,7 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
     input_model->ice_surface_mass_flux(mass_flux);
 
     // if we are at the beginning of the run...
-    if (m_t < m_grid.time()->start() + 1) { // this is goofy, but time-steps are
+    if (m_t < m_grid.ctx()->time()->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
       temp_0.copy_from(temp);

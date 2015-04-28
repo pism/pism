@@ -104,7 +104,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
   }
 
   const double a = m_grid.dx() * m_grid.dy() * 1e-3 * 1e-3, // area unit (km^2)
-    currtime = m_grid.time()->current(); // seconds
+    currtime = m_grid.ctx()->time()->current(); // seconds
 
   MaskQuery mask(vMask);
 
@@ -270,7 +270,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     char tempstr[90]    = "",
          velunitstr[90] = "";
 
-    const double major_dt = m_grid.time()->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
+    const double major_dt = m_grid.ctx()->time()->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
     if (mass_cont_sub_counter <= 1) {
       snprintf(tempstr,90, " (dt=%.5f)", major_dt);
     } else {
@@ -285,9 +285,9 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     if (use_calendar) {
-      snprintf(tempstr,90, "%s", m_grid.time()->date().c_str());
+      snprintf(tempstr,90, "%s", m_grid.ctx()->time()->date().c_str());
     } else {
-      snprintf(tempstr,90, "%.3f", m_grid.time()->convert_time_interval(m_grid.time()->current(), tunitstr));
+      snprintf(tempstr,90, "%.3f", m_grid.ctx()->time()->convert_time_interval(m_grid.ctx()->time()->current(), tunitstr));
     }
 
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());

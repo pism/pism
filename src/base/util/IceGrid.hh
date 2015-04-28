@@ -195,7 +195,6 @@ public:
   // FIXME: these should be moved into a "Context" class
   double convert(double, const std::string &, const std::string &) const;
   //! The time management object (hides calendar computations).
-  Time::ConstPtr time() const;
   Config::ConstPtr config() const;
   Context::ConstPtr ctx() const;
 

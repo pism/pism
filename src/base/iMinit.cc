@@ -154,7 +154,7 @@ void IceModel::set_grid_defaults() {
       m_ctx->time()->set_start(input.time);
       verbPrintf(2, m_grid.com,
                  "  time t = %s found; setting current time\n",
-                 m_grid.time()->date().c_str());
+                 m_grid.ctx()->time()->date().c_str());
     }
   }
 
@@ -355,6 +355,8 @@ void IceModel::grid_setup() {
 
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
+  Time::Ptr time = m_ctx->time();
+
   // Check if we are initializing from a PISM output file:
   options::String input_file("-i", "Specifies a PISM input file");
 
@@ -362,16 +364,23 @@ void IceModel::time_setup() {
     PIO nc(m_grid.com, "guess_mode");
 
     nc.open(input_file, PISM_READONLY);
-    double time = 0.0;
+    double T = 0.0;
     nc.inq_dim_limits(m_ctx->config()->get_string("time_dimension_name"),
-                      NULL, &time);
+                      NULL, &T);
     nc.close();
 
     // Set the default starting time to be equal to the last time saved in the input file
-    m_ctx->time()->set_start(time);
+    time->set_start(T);
   }
 
-  m_ctx->time()->init();
+  time->init();
+
+  verbPrintf(2, m_grid.com,
+             "   time interval (length)   [%s, %s]  (%s years, using the '%s' calendar)\n",
+             time->start_date().c_str(),
+             time->end_date().c_str(),
+             time->run_length().c_str(),
+             time->calendar().c_str());
 }
 
 //! Sets the starting values of model state variables.
@@ -819,8 +828,8 @@ void IceModel::init_couplers() {
 void IceModel::init_step_couplers() {
 
   const double
-    now               = m_grid.time()->current(),
-    one_year_from_now = m_grid.time()->increment_date(now, 1.0);
+    now               = m_grid.ctx()->time()->current(),
+    one_year_from_now = m_grid.ctx()->time()->increment_date(now, 1.0);
 
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);

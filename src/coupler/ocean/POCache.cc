@@ -33,7 +33,7 @@ namespace ocean {
 Cache::Cache(const IceGrid &g, OceanModel* in)
   : OceanModifier(g, in) {
 
-  m_next_update_time = m_grid.time()->current();
+  m_next_update_time = m_grid.ctx()->time()->current();
   m_update_interval_years = 10;
 
   m_shelf_base_mass_flux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
@@ -77,7 +77,7 @@ void Cache::init_impl() {
   }
 
   m_update_interval_years = update_interval;
-  m_next_update_time = m_grid.time()->current();
+  m_next_update_time = m_grid.ctx()->time()->current();
 }
 
 void Cache::update_impl(double my_t, double my_dt) {
@@ -89,14 +89,14 @@ void Cache::update_impl(double my_t, double my_dt) {
       fabs(my_t - m_next_update_time) < 1.0) {
 
     double
-      one_year_from_now = m_grid.time()->increment_date(my_t, 1.0),
+      one_year_from_now = m_grid.ctx()->time()->increment_date(my_t, 1.0),
       update_dt         = one_year_from_now - my_t;
 
     assert(update_dt > 0.0);
 
     input_model->update(my_t, update_dt);
 
-    m_next_update_time = m_grid.time()->increment_date(m_next_update_time,
+    m_next_update_time = m_grid.ctx()->time()->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
     m_sea_level = input_model->sea_level_elevation();
@@ -173,7 +173,7 @@ MaxTimestep Cache::max_timestep_impl(double t) {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < 1.0) {
-    double update_time_after_next = m_grid.time()->increment_date(m_next_update_time,
+    double update_time_after_next = m_grid.ctx()->time()->increment_date(m_next_update_time,
                                                                 m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;

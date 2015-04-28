@@ -350,8 +350,8 @@ void SSATestCase::write(const std::string &filename) {
   PIO pio(m_grid->com, m_grid->config()->get_string("output_format"));
   pio.open(filename, PISM_READWRITE_MOVE);
   io::define_time(pio, m_config->get_string("time_dimension_name"),
-                  m_grid->time()->calendar(),
-                  m_grid->time()->CF_units_string(),
+                  m_grid->ctx()->time()->calendar(),
+                  m_grid->ctx()->time()->CF_units_string(),
                   m_grid->ctx()->unit_system());
   io::append_time(pio, m_config->get_string("time_dimension_name"), 0.0);
 

@@ -182,7 +182,7 @@ protected:
   virtual void update_internal(double my_t, double my_dt)
   {
     // "Periodize" the climate:
-    my_t = Model::m_grid.time()->mod(my_t - bc_reference_time, bc_period);
+    my_t = Model::m_grid.ctx()->time()->mod(my_t - bc_reference_time, bc_period);
 
     if ((fabs(my_t - Model::m_t) < 1e-12) &&
         (fabs(my_dt - Model::m_dt) < 1e-12)) {

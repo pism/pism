@@ -525,12 +525,13 @@ void IceModelVec::dump(const char filename[]) const {
   PIO nc(m_grid->com, m_grid->config()->get_string("output_format"));
 
   nc.open(filename, PISM_READWRITE_CLOBBER);
-  io::define_time(nc, m_grid->config()->get_string("time_dimension_name"),
-                  m_grid->time()->calendar(),
-                  m_grid->time()->units_string(),
+  io::define_time(nc,
+                  m_grid->config()->get_string("time_dimension_name"),
+                  m_grid->ctx()->time()->calendar(),
+                  m_grid->ctx()->time()->units_string(),
                   m_grid->ctx()->unit_system());
   io::append_time(nc, m_grid->config()->get_string("time_dimension_name"),
-                  m_grid->time()->current());
+                  m_grid->ctx()->time()->current());
 
   define(nc, PISM_DOUBLE);
   write(nc);

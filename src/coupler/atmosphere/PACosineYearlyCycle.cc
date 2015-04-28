@@ -74,7 +74,7 @@ void CosineYearlyCycle::init() {
                          m_config->get_string("time_dimension_name"));
       A->metadata().set_string("units", "1");
       A->metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
-      A->dimension_metadata().set_string("units", m_grid.time()->units_string());
+      A->dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
     }
 
     verbPrintf(2, m_grid.com,
@@ -84,7 +84,7 @@ void CosineYearlyCycle::init() {
     PIO nc(m_grid.com, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
-      A->read(nc, m_grid.time().get());
+      A->read(nc, m_grid.ctx()->time().get());
     }
     nc.close();
 
@@ -108,8 +108,8 @@ void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
 
 void CosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
-    julyday_fraction = m_grid.time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = m_grid.time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
+    julyday_fraction = m_grid.ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
+    T                = m_grid.ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   double scaling = 1.0;

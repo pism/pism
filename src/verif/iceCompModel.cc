@@ -378,7 +378,7 @@ void IceCompModel::initTestABCDEH() {
 
   rheology::PatersonBuddCold tgaIce("sia_", *config, EC);
 
-  const double time = m_grid.time()->current();
+  const double time = m_grid.ctx()->time()->current();
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -573,7 +573,7 @@ void IceCompModel::reset_thickness_tests_AE() {
 void IceCompModel::fillSolnTestABCDH() {
   double     H, accum;
 
-  const double time = m_grid.time()->current();
+  const double time = m_grid.ctx()->time()->current();
 
   IceModelVec::AccessList list(ice_thickness);
 
@@ -671,7 +671,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
                                                    double &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
 
-  const double time = m_grid.time()->current();
+  const double time = m_grid.ctx()->time()->current();
   double
     Hexact     = 0.0,
     vol        = 0.0,

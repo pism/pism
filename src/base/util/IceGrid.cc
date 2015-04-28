@@ -633,13 +633,7 @@ void IceGrid::report_parameters() const {
                Mz(), dz_min(), dz_max());
   }
 
-  // report on time axis
   //   FIXME:  this could use pism_config:summary_time_unit_name instead of fixed "years"
-  verbPrintf(2, com,
-             "   time interval (length)   [%s, %s]  (%s years, using the '%s' calendar)\n",
-             time()->start_date().c_str(), time()->end_date().c_str(),
-             time()->run_length().c_str(), time()->calendar().c_str());
-
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   {
     verbPrintf(3, com,
@@ -654,8 +648,8 @@ void IceGrid::report_parameters() const {
                "            Mx = %d, My = %d, Mz = %d, \n",
                m_impl->Mx, m_impl->My, Mz());
     verbPrintf(3, com,
-               "            dx = %6.3f km, dy = %6.3f km, year = %s, \n",
-               m_impl->dx/1000.0, m_impl->dy/1000.0, time()->date().c_str());
+               "            dx = %6.3f km, dy = %6.3f km, \n",
+               m_impl->dx/1000.0, m_impl->dy/1000.0);
     verbPrintf(3, com,
                "            Nx = %d, Ny = %d]\n",
                m_impl->Nx, m_impl->Ny);
@@ -828,10 +822,6 @@ Config::ConstPtr IceGrid::config() const {
 
 Context::ConstPtr IceGrid::ctx() const {
   return m_impl->ctx;
-}
-
-Time::ConstPtr IceGrid::time() const {
-  return m_impl->ctx->time();
 }
   
 void IceGrid::set_periodicity(Periodicity p) {

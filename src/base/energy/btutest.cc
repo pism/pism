@@ -64,7 +64,7 @@ void BTU_Test::bootstrap() {
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF = 0.0; // Test K:  use Tb[k], ignore FF
-        exactK(m_grid.time()->start(), z, &Tb[k], &FF, 0);
+        exactK(m_grid.ctx()->time()->start(), z, &Tb[k], &FF, 0);
       }
     }
   }

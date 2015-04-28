@@ -157,7 +157,7 @@ void TemperatureIndex_Old::init_impl() {
 
   // if -pdd_annualize is set, update mass balance immediately (at the
   // beginning of the run)
-  next_pdd_update = m_grid.time()->current();
+  next_pdd_update = m_grid.ctx()->time()->current();
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
@@ -202,7 +202,7 @@ void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
     if (my_t + my_dt > next_pdd_update) {
       verbPrintf(3, m_grid.com,
                  "  Updating mass balance for one year starting at %1.1f...\n",
-                 m_grid.time()->date(my_t).c_str());
+                 m_grid.ctx()->time()->date(my_t).c_str());
       update_internal(my_t, one_year);
       next_pdd_update = my_t + one_year;
     }
@@ -229,7 +229,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
 
   // time since the beginning of the year, in seconds
-  const PetscScalar tseries = m_grid.time()->mod(my_t, one_year),
+  const PetscScalar tseries = m_grid.ctx()->time()->mod(my_t, one_year),
     dtseries = my_dt / ((PetscScalar) (Nseries - 1));
 
   // times for the air temperature time-series, in years:

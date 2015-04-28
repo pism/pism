@@ -446,8 +446,8 @@ int main(int argc, char *argv[]) {
 
     pio.open(output_file, PISM_READWRITE_MOVE);
     io::define_time(pio, config->get_string("time_dimension_name"),
-                    grid.time()->calendar(),
-                    grid.time()->CF_units_string(),
+                    grid.ctx()->time()->calendar(),
+                    grid.ctx()->time()->CF_units_string(),
                     unit_system);
     io::append_time(pio, config->get_string("time_dimension_name"), 0.0);
     pio.close();

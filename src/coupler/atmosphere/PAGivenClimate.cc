@@ -71,7 +71,7 @@ void Given::init() {
 
   // read time-independent data right away:
   if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {
-    update(m_grid.time()->current(), 0); // dt is irrelevant
+    update(m_grid.ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 

@@ -1708,7 +1708,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
                                        "Save the linear system to an ASCII .m file. Sets the file prefix.",
                                        "SSAFD_" + namepart);
 
-  double year = m_grid.convert(m_grid.time()->current(), "seconds", "years");
+  double year = m_grid.convert(m_grid.ctx()->time()->current(), "seconds", "years");
   char file_name[TEMPORARY_STRING_LENGTH];
   snprintf(file_name, TEMPORARY_STRING_LENGTH, "%s_y%.0f.m", prefix.c_str(), year);
 

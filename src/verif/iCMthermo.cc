@@ -97,7 +97,7 @@ void IceCompModel::initTestFG() {
         ice_thickness(i, j) = H;
 
       } else {
-        bothexact(m_grid.time()->current(), r, &(m_grid.z()[0]), Mz, ApforG,
+        bothexact(m_grid.ctx()->time()->current(), r, &(m_grid.z()[0]), Mz, ApforG,
                   &H, &accum, &T[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
         ice_thickness(i, j) = H;
 
@@ -146,7 +146,7 @@ void IceCompModel::getCompSourcesTestFG() {
                   &dummy0, &accum, &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0],
                   &strain_heating_C[0]);
       } else {
-        bothexact(m_grid.time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
+        bothexact(m_grid.ctx()->time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
                   &dummy0, &accum, &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0],
                   &strain_heating_C[0]);
       }
@@ -217,7 +217,7 @@ void IceCompModel::fillSolnTestFG() {
         ice_thickness(i, j)   = H;
 
       } else {
-        bothexact(m_grid.time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
+        bothexact(m_grid.ctx()->time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
                   &H, &accum, &T[0], &Uradial[0], &w[0], &strain_heating[0], &strain_heating_C[0]);
         ice_thickness(i, j)   = H;
 
@@ -280,7 +280,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
                     &junk0, &junk1, &Tex[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
           break;
         case 'G':
-          bothexact(m_grid.time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
+          bothexact(m_grid.ctx()->time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
                     &junk0, &junk1, &Tex[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
           break;
         default:
@@ -334,11 +334,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   switch (testname) {
     case 'K':
       for (unsigned int k = 0; k < m_grid.Mz(); k++) {
-        exactK(m_grid.time()->current(), m_grid.z(k), &Tex[k], &FF,
+        exactK(m_grid.ctx()->time()->current(), m_grid.z(k), &Tex[k], &FF,
                (bedrock_is_ice_forK==true));
       }
       for (unsigned int k = 0; k < Mbz; k++) {
-        exactK(m_grid.time()->current(), zblevels[k], &Tbex[k], &FF,
+        exactK(m_grid.ctx()->time()->current(), zblevels[k], &Tbex[k], &FF,
                (bedrock_is_ice_forK==true));
       }
       break;
@@ -424,7 +424,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
         } else {
           r=std::max(r, 1.0);
           z=0.0;
-          bothexact(m_grid.time()->current(), r, &z, 1, ApforG,
+          bothexact(m_grid.ctx()->time()->current(), r, &z, 1, ApforG,
                     &dummy5, &dummy, &Texact, &dummy1, &dummy2, &dummy3, &dummy4);
         }
         break;
@@ -495,7 +495,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
                     &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0], &strain_heating_exact[0], &dummy4[0]);
           break;
         case 'G':
-          bothexact(m_grid.time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
+          bothexact(m_grid.ctx()->time()->current(), r, &(m_grid.z()[0]), m_grid.Mz(), ApforG,
                     &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0], &strain_heating_exact[0], &dummy4[0]);
           break;
         default:
@@ -559,7 +559,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
                     &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
           break;
         case 'G':
-          bothexact(m_grid.time()->current(), r, &ice_thickness(i, j), 1, ApforG,
+          bothexact(m_grid.ctx()->time()->current(), r, &ice_thickness(i, j), 1, ApforG,
                     &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
           break;
         default:
@@ -628,7 +628,7 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
   switch (testname) {
     case 'K':
       for (unsigned int k=0; k<m_grid.Mz(); k++) {
-        exactK(m_grid.time()->current(), m_grid.z(k), &Tcol[k], &FF,
+        exactK(m_grid.ctx()->time()->current(), m_grid.z(k), &Tcol[k], &FF,
                (bedrock_is_ice_forK==true));
       }
       break;
@@ -727,7 +727,7 @@ void BTU_Verification::bootstrap() {
   switch (m_testname) {
     case 'K':
       for (unsigned int k = 0; k < m_Mbz; k++) {
-        if (exactK(m_grid.time()->current(), zlevels[k], &Tbcol[k], &FF,
+        if (exactK(m_grid.ctx()->time()->current(), zlevels[k], &Tbcol[k], &FF,
                    (m_bedrock_is_ice==true))) {
           throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                         zlevels[k]);

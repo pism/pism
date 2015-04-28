@@ -1575,7 +1575,7 @@ IceModelVec::Ptr IceModel_dHdt::compute() {
     list.add(last_ice_thickness);
     list.add(model->ice_thickness);
 
-    double dt = m_grid.time()->current() - last_report_time;
+    double dt = m_grid.ctx()->time()->current() - last_report_time;
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -1599,7 +1599,7 @@ void IceModel_dHdt::update_cumulative() {
     last_ice_thickness(i, j) = model->ice_thickness(i, j);
   }
 
-  last_report_time = m_grid.time()->current();
+  last_report_time = m_grid.ctx()->time()->current();
 }
 
 IceModel_ivolg::IceModel_ivolg(IceModel *m)

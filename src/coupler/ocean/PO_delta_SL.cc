@@ -39,7 +39,7 @@ Delta_SL::Delta_SL(const IceGrid &g, OceanModel* in)
 
   offset->metadata().set_string("units", "m");
   offset->metadata().set_string("long_name", "sea level elevation offsets");
-  offset->dimension_metadata().set_string("units", m_grid.time()->units_string());
+  offset->dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",

@@ -70,7 +70,7 @@ void Given::init_impl() {
 
   // read time-independent data right away:
   if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {
-    update(m_grid.time()->current(), 0); // dt is irrelevant
+    update(m_grid.ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 

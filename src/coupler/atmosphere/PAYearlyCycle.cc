@@ -167,14 +167,14 @@ void YearlyCycle::mean_annual_temp(IceModelVec2S &result) {
 void YearlyCycle::init_timeseries(const std::vector<double> &ts) {
   // constants related to the standard yearly cycle
   const double
-    julyday_fraction = m_grid.time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
+    julyday_fraction = m_grid.ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
 
   size_t N = ts.size();
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    double tk = m_grid.time()->year_fraction(ts[k]) - julyday_fraction;
+    double tk = m_grid.ctx()->time()->year_fraction(ts[k]) - julyday_fraction;
 
     m_ts_times[k] = ts[k];
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
@@ -196,8 +196,8 @@ void YearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) {
 
 void YearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
-    julyday_fraction = m_grid.time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = m_grid.time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
+    julyday_fraction = m_grid.ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
+    T                = m_grid.ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   IceModelVec::AccessList list;

@@ -238,7 +238,7 @@ void TemperatureIndex::init_impl() {
              input_file.c_str());
   m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
 
-  m_next_balance_year_start = compute_next_balance_year_start(m_grid.time()->current());
+  m_next_balance_year_start = compute_next_balance_year_start(m_grid.ctx()->time()->current());
 }
 
 MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
@@ -250,13 +250,13 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
   double
     balance_year_start_day = m_config->get_double("pdd_balance_year_start_day"),
     one_day                = m_grid.convert(1.0, "days", "seconds"),
-    year_start             = m_grid.time()->calendar_year_start(time),
+    year_start             = m_grid.ctx()->time()->calendar_year_start(time),
     balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
   if (balance_year_start > time) {
     return balance_year_start;
   }
-  return m_grid.time()->increment_date(balance_year_start, 1);
+  return m_grid.ctx()->time()->increment_date(balance_year_start, 1);
 }
 
 
@@ -399,7 +399,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
           if (ts[k] >= next_snow_depth_reset) {
             m_snow_depth(i,j)       = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
-              next_snow_depth_reset = m_grid.time()->increment_date(next_snow_depth_reset, 1);
+              next_snow_depth_reset = m_grid.ctx()->time()->increment_date(next_snow_depth_reset, 1);
             }
           }
 
@@ -428,7 +428,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   m_atmosphere->end_pointwise_access();
 
-  m_next_balance_year_start = compute_next_balance_year_start(m_grid.time()->current());
+  m_next_balance_year_start = compute_next_balance_year_start(m_grid.ctx()->time()->current());
 }
 
 
