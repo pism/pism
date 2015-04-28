@@ -72,6 +72,7 @@ public:
   virtual ~Time();
 
   typedef PISM_SHARED_PTR(Time) Ptr;
+  typedef PISM_SHARED_PTR(const Time) ConstPtr;
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
@@ -84,17 +85,17 @@ public:
   void step(double delta_t);
 
   //! \brief Current time, in seconds.
-  double current();
+  double current() const;
 
-  double start();
+  double start() const;
 
-  double end();
+  double end() const;
 
   //! \brief Returns the calendar string.
-  std::string calendar();
+  std::string calendar() const;
 
   //! \brief Returns the length of the current run, in years.
-  std::string run_length();
+  std::string run_length() const;
 
   // Virtual methods:
 
@@ -103,67 +104,67 @@ public:
 
   void init_calendar(const std::string &calendar);
 
-  void parse_times(const std::string &spec, std::vector<double> &result);
+  void parse_times(const std::string &spec, std::vector<double> &result) const;
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
    * This units string is saved in the output file. Always contains a reference
    * date, even if it is not used by PISM.
    */
-  virtual std::string CF_units_string();
+  virtual std::string CF_units_string() const;
 
   //! \brief Internal time units.
   /*!
    * May or may not contain a reference date. (The base class Time does not
    * use the reference date, while Time_Calendar does.)
    */
-  virtual std::string units_string();
+  virtual std::string units_string() const;
 
-  virtual std::string CF_units_to_PISM_units(const std::string &input);
+  virtual std::string CF_units_to_PISM_units(const std::string &input) const;
 
   //! \brief Returns time since the origin modulo period.
-  virtual double mod(double time, unsigned int period_years);
+  virtual double mod(double time, unsigned int period_years) const;
 
   //! \brief Returns the fraction of a year passed since the last beginning of
   //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
-  virtual double year_fraction(double T);
+  virtual double year_fraction(double T) const;
 
   //! \brief Convert the day number to the year fraction.
-  virtual double day_of_the_year_to_day_fraction(unsigned int day);
+  virtual double day_of_the_year_to_day_fraction(unsigned int day) const;
 
   //! \brief Returns the model time in seconds corresponding to the
   //! beginning of the year `T` falls into.
-  virtual double calendar_year_start(double T);
+  virtual double calendar_year_start(double T) const;
 
   //! Increment time `T` by a given amount and return resulting model
   //! time in seconds.
-  virtual double increment_date(double T, int years);
+  virtual double increment_date(double T, int years) const;
 
   //! \brief Returns the date corresponding to time T.
-  virtual std::string date(double T);
+  virtual std::string date(double T) const;
 
   //! \brief Returns current time, in years. Only for reporting.
-  virtual std::string date();
+  virtual std::string date() const;
 
 #if (PISM_DEBUG==1)
   //! \brief Returns current time, in years. Only for debugging.
-  virtual double current_years() {
+  virtual double current_years() const {
     return seconds_to_years(current());
   }
 #endif
 
   //! Date corresponding to the beginning of the run.
-  virtual std::string start_date();
+  virtual std::string start_date() const;
 
   //! Date corresponding to the end of the run.
-  virtual std::string end_date();
+  virtual std::string end_date() const;
 
   //! @brief Convert time interval from seconds to given units. Handle
   //! 'years' using the year length corresponding to the calendar.
-  virtual double convert_time_interval(double T, const std::string &units);
+  virtual double convert_time_interval(double T, const std::string &units) const;
 
 protected:
-  void parse_list(const std::string &spec, std::vector<double> &result);
+  void parse_list(const std::string &spec, std::vector<double> &result) const;
 
   virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
@@ -171,20 +172,20 @@ protected:
 
   virtual void compute_times(double time_start, double delta, double time_end,
                              const std::string &keyword,
-                             std::vector<double> &result);
+                             std::vector<double> &result) const;
 
   void compute_times_simple(double time_start, double delta, double time_end,
-                            std::vector<double> &result);
+                            std::vector<double> &result) const;
 
-  virtual void parse_range(const std::string &spec, std::vector<double> &result);
+  virtual void parse_range(const std::string &spec, std::vector<double> &result) const;
 
-  virtual void parse_date(const std::string &spec, double *result);
+  virtual void parse_date(const std::string &spec, double *result) const;
 
   virtual void parse_interval_length(const std::string &spec, std::string &keyword,
-                                     double *result);
+                                     double *result) const;
 
-  double years_to_seconds(double input);
-  double seconds_to_years(double input);
+  double years_to_seconds(double input) const;
+  double seconds_to_years(double input) const;
 
 protected:
   Config::ConstPtr m_config;

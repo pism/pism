@@ -246,12 +246,12 @@ void Time_Calendar::init_from_file(const std::string &filename) {
   nc.close();
 }
 
-double Time_Calendar::mod(double time, unsigned int) {
+double Time_Calendar::mod(double time, unsigned int) const {
   // This class does not support the "mod" operation.
   return time;
 }
 
-double Time_Calendar::year_fraction(double T) {
+double Time_Calendar::year_fraction(double T) const {
   int year, month, day, hour, minute;
   double second, year_start, next_year_start;
 
@@ -276,7 +276,7 @@ double Time_Calendar::year_fraction(double T) {
   return (T - year_start) / (next_year_start - year_start);
 }
 
-std::string Time_Calendar::date(double T) {
+std::string Time_Calendar::date(double T) const {
   char tmp[256];
   int year, month, day, hour, minute;
   double second;
@@ -290,19 +290,19 @@ std::string Time_Calendar::date(double T) {
   return std::string(tmp);
 }
 
-std::string Time_Calendar::date() {
+std::string Time_Calendar::date() const {
   return this->date(m_time_in_seconds);
 }
 
-std::string Time_Calendar::start_date() {
+std::string Time_Calendar::start_date() const {
   return this->date(m_run_start);
 }
 
-std::string Time_Calendar::end_date() {
+std::string Time_Calendar::end_date() const {
   return this->date(m_run_end);
 }
 
-double Time_Calendar::calendar_year_start(double T) {
+double Time_Calendar::calendar_year_start(double T) const {
   int year, month, day, hour, minute;
   double second, result;
 
@@ -323,7 +323,7 @@ double Time_Calendar::calendar_year_start(double T) {
 
 
 // FIXME: this feeds invalid dates to utInvCalendar2_cal! (step 1 year from Feb 29...)
-double Time_Calendar::increment_date(double T, int years) {
+double Time_Calendar::increment_date(double T, int years) const {
   int year, month, day, hour, minute;
   double second, result;
 
@@ -373,7 +373,7 @@ double Time_Calendar::increment_date(double T, int years) {
  *
  * @return 0 on success, 1 otherwise
  */
-void Time_Calendar::parse_date(const std::string &input, double *result) {
+void Time_Calendar::parse_date(const std::string &input, double *result) const {
   int errcode, dummy;
   calcalcs_cal *cal = NULL;
   std::vector<int> numbers;
@@ -453,7 +453,8 @@ void Time_Calendar::parse_date(const std::string &input, double *result) {
   }
 }
 
-void Time_Calendar::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
+void Time_Calendar::parse_interval_length(const std::string &spec,
+                                          std::string &keyword, double *result) const {
 
   Time::parse_interval_length(spec, keyword, result);
 
@@ -469,7 +470,7 @@ void Time_Calendar::parse_interval_length(const std::string &spec, std::string &
 }
 
 
-void Time_Calendar::compute_times_monthly(std::vector<double> &result) {
+void Time_Calendar::compute_times_monthly(std::vector<double> &result) const {
   int errcode;
 
   int year, month, day, hour, minute;
@@ -511,7 +512,7 @@ void Time_Calendar::compute_times_monthly(std::vector<double> &result) {
   }
 }
 
-void Time_Calendar::compute_times_yearly(std::vector<double> &result) {
+void Time_Calendar::compute_times_yearly(std::vector<double> &result) const {
   int errcode;
 
   int year, month, day, hour, minute;
@@ -549,7 +550,7 @@ void Time_Calendar::compute_times_yearly(std::vector<double> &result) {
 
 void Time_Calendar::compute_times(double time_start, double delta, double time_end,
                                   const std::string &keyword,
-                                  std::vector<double> &result) {
+                                  std::vector<double> &result) const {
   if (keyword == "simple") {
     compute_times_simple(time_start, delta, time_end, result);
   } else if (keyword == "monthly") {

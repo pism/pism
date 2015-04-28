@@ -36,27 +36,27 @@ public:
 
   virtual void init_from_file(const std::string &filename);
 
-  virtual double mod(double time, unsigned int);
+  virtual double mod(double time, unsigned int) const;
 
-  virtual double year_fraction(double T);
+  virtual double year_fraction(double T) const;
 
-  virtual std::string date(double T);
+  virtual std::string date(double T) const;
 
-  virtual std::string date();
+  virtual std::string date() const;
 
-  virtual std::string start_date();
+  virtual std::string start_date() const;
 
-  virtual std::string end_date();
+  virtual std::string end_date() const;
 
-  virtual std::string units_string() {
+  virtual std::string units_string() const {
     return CF_units_string();
   }
 
-  virtual std::string CF_units_string() {
+  virtual std::string CF_units_string() const {
     return m_time_units.format();
   }
 
-  virtual std::string CF_units_to_PISM_units(const std::string &input) {
+  virtual std::string CF_units_to_PISM_units(const std::string &input) const {
     return input;               // return unchanged CF units
   }
 
@@ -64,27 +64,27 @@ public:
     return true;
   }
 
-  virtual double calendar_year_start(double T);
+  virtual double calendar_year_start(double T) const;
 
-  virtual double increment_date(double T, int years);
+  virtual double increment_date(double T, int years) const;
 
 protected:
   virtual void compute_times(double time_start, double delta, double time_end,
                              const std::string &keyword,
-                             std::vector<double> &result);
+                             std::vector<double> &result) const;
 
   virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
   virtual bool process_ye(double &result);
 
-  virtual void parse_date(const std::string &spec, double *result);
+  virtual void parse_date(const std::string &spec, double *result) const;
 
   virtual void parse_interval_length(const std::string &spec,
-                                     std::string &keyword, double *result);
+                                     std::string &keyword, double *result) const;
 
-  void compute_times_monthly(std::vector<double> &result);
+  void compute_times_monthly(std::vector<double> &result) const;
 
-  void compute_times_yearly(std::vector<double> &result);
+  void compute_times_yearly(std::vector<double> &result) const;
 private:
   MPI_Comm m_com;
   // Hide copy constructor / assignment operator.
