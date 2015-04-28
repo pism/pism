@@ -405,7 +405,9 @@ void IceModel::write_extras() {
     return;
   }
 
-  m_grid.profiling.begin("extra_file reporting");
+  const Profiling &profiling = m_grid.ctx()->profiling();
+
+  profiling.begin("extra_file reporting");
 
   if (split_extra) {
     extra_file_is_ready = false;        // each time-series record is written to a separate file
@@ -487,7 +489,7 @@ void IceModel::write_extras() {
 
   last_extra = current_time;
 
-  m_grid.profiling.end("extra_file reporting");
+  profiling.end("extra_file reporting");
 }
 
 static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t) {

@@ -826,6 +826,10 @@ Config::ConstPtr IceGrid::config() const {
   return m_impl->ctx->config();
 }
 
+Context::ConstPtr IceGrid::ctx() const {
+  return m_impl->ctx;
+}
+
 Time::ConstPtr IceGrid::time() const {
   return m_impl->ctx->time();
 }

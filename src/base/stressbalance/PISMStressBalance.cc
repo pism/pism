@@ -82,28 +82,30 @@ void StressBalance::update(bool fast, double sea_level,
   // Tell the ShallowStressBalance object about the current sea level:
   m_shallow_stress_balance->set_sea_level_elevation(sea_level);
 
-  try {
-    m_grid.profiling.begin("SSB");
-    m_shallow_stress_balance->update(fast, melange_back_pressure);
-    m_grid.profiling.end("SSB");
+  const Profiling &profiling = m_grid.ctx()->profiling();
 
-    m_grid.profiling.begin("SB modifier");
+  try {
+    profiling.begin("SSB");
+    m_shallow_stress_balance->update(fast, melange_back_pressure);
+    profiling.end("SSB");
+
+    profiling.begin("SB modifier");
     const IceModelVec2V &velocity_2d = m_shallow_stress_balance->velocity();
     m_modifier->update(velocity_2d, fast);
-    m_grid.profiling.end("SB modifier");
+    profiling.end("SB modifier");
 
     if (fast == false) {
 
       const IceModelVec3 &u = m_modifier->velocity_u();
       const IceModelVec3 &v = m_modifier->velocity_v();
 
-      m_grid.profiling.begin("SB strain heat");
+      profiling.begin("SB strain heat");
       this->compute_volumetric_strain_heating();
-      m_grid.profiling.end("SB strain heat");
+      profiling.end("SB strain heat");
 
-      m_grid.profiling.begin("SB vert. vel.");
+      profiling.begin("SB vert. vel.");
       this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
-      m_grid.profiling.end("SB vert. vel.");
+      profiling.end("SB vert. vel.");
     }
   }
   catch (RuntimeError &e) {

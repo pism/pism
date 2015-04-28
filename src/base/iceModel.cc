@@ -596,6 +596,8 @@ void IceModel::step(bool do_mass_continuity,
                               bool do_age,
                               bool do_skip) {
 
+  const Profiling &profiling = m_grid.ctx()->profiling();
+
   //! \li call additionalAtStartTimestep() to let derived classes do more
   additionalAtStartTimestep();  // might set dt_force,maxdt_temporary
 
@@ -613,9 +615,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth && basal_yield_stress_model) {
-    m_grid.profiling.begin("basal yield stress");
+    profiling.begin("basal yield stress");
     basal_yield_stress_model->update(m_grid.time()->current(), dt);
-    m_grid.profiling.end("basal yield stress");
+    profiling.end("basal yield stress");
     basal_yield_stress.copy_from(basal_yield_stress_model->basal_material_yield_stress());
     stdout_flags += "y";
   } else {
@@ -636,11 +638,11 @@ void IceModel::step(bool do_mass_continuity,
   ocean->melange_back_pressure_fraction(melange_back_pressure);
 
   try {
-    m_grid.profiling.begin("stress balance");
+    profiling.begin("stress balance");
     stress_balance->update(updateAtDepth == false,
                            sea_level,
                            melange_back_pressure);
-    m_grid.profiling.end("stress balance");
+    profiling.end("stress balance");
   } catch (RuntimeError &e) {
     options::String output_file("-o", "output file name",
                                 "output.nc", options::DONT_ALLOW_EMPTY);
@@ -662,13 +664,13 @@ void IceModel::step(bool do_mass_continuity,
   max_timestep(dt, skipCountDown);
 
   //! \li Update surface and ocean models.
-  m_grid.profiling.begin("surface");
+  profiling.begin("surface");
   surface->update(m_grid.time()->current(), dt);
-  m_grid.profiling.end("surface");
+  profiling.end("surface");
 
-  m_grid.profiling.begin("ocean");
+  profiling.begin("ocean");
   ocean->update(m_grid.time()->current(),   dt);
-  m_grid.profiling.end("ocean");
+  profiling.end("ocean");
 
   dt_TempAge += dt;
   // IceModel::dt,dtTempAge are now set correctly according to
@@ -678,9 +680,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the age of the ice (if appropriate)
   if (do_age && updateAtDepth) {
-    m_grid.profiling.begin("age");
+    profiling.begin("age");
     ageStep();
-    m_grid.profiling.end("age");
+    profiling.end("age");
     stdout_flags += "a";
   } else {
     stdout_flags += "$";
@@ -690,9 +692,9 @@ void IceModel::step(bool do_mass_continuity,
   //!  energy model based (especially) on the new velocity field; see
   //!  energyStep()
   if (do_energy_step) { // do the energy step
-    m_grid.profiling.begin("energy");
+    profiling.begin("energy");
     energyStep();
-    m_grid.profiling.end("energy");
+    profiling.end("energy");
     stdout_flags += "E";
   } else {
     stdout_flags += "$";
@@ -704,24 +706,24 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
-  m_grid.profiling.begin("basal hydrology");
+  profiling.begin("basal hydrology");
   subglacial_hydrology->update(m_grid.time()->current(), dt);
-  m_grid.profiling.end("basal hydrology");
+  profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
   if (config->get_boolean("do_fracture_density")) {
-    m_grid.profiling.begin("fracture density");
+    profiling.begin("fracture density");
     calculateFractureDensity();
-    m_grid.profiling.end("fracture density");
+    profiling.end("fracture density");
   }
 
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
-    m_grid.profiling.begin("mass transport");
+    profiling.begin("mass transport");
     massContExplicitStep();
     updateSurfaceElevationAndMask(); // update h and mask
-    m_grid.profiling.end("mass transport");
+    profiling.end("mass transport");
 
     // Note that there are three adaptive time-stepping criteria. Two of them
     // (using max. diffusion and 2D CFL) are limiting the mass-continuity
@@ -743,9 +745,9 @@ void IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
-  m_grid.profiling.begin("calving");
+  profiling.begin("calving");
   do_calving();
-  m_grid.profiling.end("calving");
+  profiling.end("calving");
 
   Href_cleanup();
 
@@ -755,9 +757,9 @@ void IceModel::step(bool do_mass_continuity,
     const IceModelVec2S &bed_topography = beddef->bed_elevation();
     int topg_state_counter = bed_topography.get_state_counter();
 
-    m_grid.profiling.begin("bed deformation");
+    profiling.begin("bed deformation");
     beddef->update(m_grid.time()->current(), dt);
-    m_grid.profiling.end("bed deformation");
+    profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
       stdout_flags += "b";
@@ -810,6 +812,8 @@ void IceModel::run_to(double run_end) {
  * @return 0 on success
  */
 void IceModel::run() {
+  const Profiling &profiling = m_grid.ctx()->profiling();
+
   bool do_mass_conserve = config->get_boolean("do_mass_conserve");
   bool do_energy = config->get_boolean("do_energy");
   bool do_age = config->get_boolean("do_age");
@@ -836,7 +840,7 @@ void IceModel::run() {
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
   // will terminate
-  m_grid.profiling.stage_begin("time-stepping loop");
+  profiling.stage_begin("time-stepping loop");
   while (m_grid.time()->current() < m_grid.time()->end()) {
 
     stdout_flags.erase();  // clear it out
@@ -853,12 +857,12 @@ void IceModel::run() {
     summary(show_step);
 
     // writing these fields here ensures that we do it after the last time-step
-    m_grid.profiling.begin("I/O during run");
+    profiling.begin("I/O during run");
     write_snapshot();
     write_timeseries();
     write_extras();
     write_backup();
-    m_grid.profiling.end("I/O during run");
+    profiling.end("I/O during run");
 
     update_viewers();
 
@@ -870,7 +874,7 @@ void IceModel::run() {
     }
   } // end of the time-stepping loop
 
-  m_grid.profiling.stage_end("time-stepping loop");
+  profiling.stage_end("time-stepping loop");
 
   options::Integer pause_time("-pause", "Pause after the run, seconds", 0);
   if (pause_time > 0) {
@@ -893,8 +897,9 @@ Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
 void IceModel::init() {
+  const Profiling &profiling = m_grid.ctx()->profiling();
 
-  m_grid.profiling.begin("initialization");
+  profiling.begin("initialization");
 
   // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
   // make it wait for a connection.
@@ -943,7 +948,7 @@ void IceModel::init() {
   // across all processors.
   start_time = GlobalMax(m_grid.com, GetTime());
 
-  m_grid.profiling.end("initialization");
+  profiling.end("initialization");
 }
 
 // FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)

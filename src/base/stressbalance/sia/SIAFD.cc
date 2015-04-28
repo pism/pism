@@ -118,27 +118,29 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 
   const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
 
+  const Profiling &profiling = m_grid.ctx()->profiling();
+
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > m_bed_state_counter) {
-    m_grid.profiling.begin("SIA bed smoother");
+    profiling.begin("SIA bed smoother");
     m_bed_smoother->preprocess_bed(*bed);
-    m_grid.profiling.end("SIA bed smoother");
+    profiling.end("SIA bed smoother");
     m_bed_state_counter = bed->get_state_counter();
   }
 
-  m_grid.profiling.begin("SIA gradient");
+  profiling.begin("SIA gradient");
   compute_surface_gradient(h_x, h_y);
-  m_grid.profiling.end("SIA gradient");
+  profiling.end("SIA gradient");
 
-  m_grid.profiling.begin("SIA flux");
+  profiling.begin("SIA flux");
   compute_diffusive_flux(h_x, h_y, m_diffusive_flux, fast);
-  m_grid.profiling.end("SIA flux");
+  profiling.end("SIA flux");
 
   if (!fast) {
-    m_grid.profiling.begin("SIA 3D hor. vel.");
+    profiling.begin("SIA 3D hor. vel.");
     compute_3d_horizontal_velocity(h_x, h_y, vel_input, m_u, m_v);
-    m_grid.profiling.end("SIA 3D hor. vel.");
+    profiling.end("SIA 3D hor. vel.");
   }
 }
 

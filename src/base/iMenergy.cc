@@ -51,6 +51,8 @@ namespace pism {
 */
 void IceModel::energyStep() {
 
+  const Profiling &profiling = m_grid.ctx()->profiling();
+
   unsigned int
     myVertSacrCount = 0,
     myBulgeCount    = 0,
@@ -63,15 +65,15 @@ void IceModel::energyStep() {
   //   enthalpyAndDrainageStep()
   get_bed_top_temp(bedtoptemp);
 
-  m_grid.profiling.begin("BTU");
+  profiling.begin("BTU");
   btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
-  m_grid.profiling.end("BTU");
+  profiling.end("BTU");
 
   if (config->get_boolean("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-    m_grid.profiling.begin("temp step");
+    profiling.begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
-    m_grid.profiling.end("temp step");
+    profiling.end("temp step");
 
     vWork3d.update_ghosts(T3);
 
@@ -84,9 +86,9 @@ void IceModel::energyStep() {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
-    m_grid.profiling.begin("enth step");
+    profiling.begin("enth step");
     enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
-    m_grid.profiling.end("enth step");
+    profiling.end("enth step");
 
     vWork3d.update_ghosts(Enth3);
 

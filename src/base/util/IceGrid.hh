@@ -197,7 +197,7 @@ public:
   //! The time management object (hides calendar computations).
   Time::ConstPtr time() const;
   Config::ConstPtr config() const;
-  Profiling profiling;
+  Context::ConstPtr ctx() const;
 
   //! Starting x-index of a processor sub-domain
   int xs() const;
