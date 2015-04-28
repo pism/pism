@@ -56,10 +56,6 @@ Config::~Config() {
   delete m_impl;
 }
 
-units::System::Ptr Config::unit_system() const {
-  return m_impl->unit_system;
-}
-
 void Config::read(MPI_Comm com, const std::string &file) {
 
   PIO nc(com, "netcdf3"); // OK to use netcdf3

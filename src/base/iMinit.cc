@@ -116,7 +116,7 @@ void IceModel::set_grid_defaults() {
       }
 
       if (grid_info_found) {
-        input = grid_info(nc, names[i], config->unit_system(), m_grid.periodicity());
+        input = grid_info(nc, names[i], m_ctx->unit_system(), m_grid.periodicity());
         break;
       }
     }

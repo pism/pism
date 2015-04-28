@@ -116,7 +116,7 @@ void IceModel::dumpToFile(const std::string &filename) {
   nc.open(filename, PISM_READWRITE_MOVE);
   io::define_time(nc, time_name, m_grid.time()->calendar(),
                   m_grid.time()->CF_units_string(),
-                  config->unit_system());
+                  m_ctx->unit_system());
   io::append_time(nc, time_name, m_grid.time()->current());
 
   // Write metadata *before* variables:
@@ -721,7 +721,7 @@ void IceModel::write_snapshot() {
     io::define_time(nc, config->get_string("time_dimension_name"),
                 m_grid.time()->calendar(),
                 m_grid.time()->CF_units_string(),
-                config->unit_system());
+                m_ctx->unit_system());
 
     write_metadata(nc, true, true);
 
@@ -823,7 +823,7 @@ void IceModel::write_backup() {
   io::define_time(nc, config->get_string("time_dimension_name"),
               m_grid.time()->calendar(),
               m_grid.time()->CF_units_string(),
-              config->unit_system());
+              m_ctx->unit_system());
   io::append_time(nc, config->get_string("time_dimension_name"), m_grid.time()->current());
 
   // Write metadata *before* variables:

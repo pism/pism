@@ -405,8 +405,8 @@ SSA_taud::SSA_taud(SSA *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taud_x"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taud_y"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taud_x"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taud_y"));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -435,7 +435,7 @@ SSA_taud_mag::SSA_taud_mag(SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taud_mag"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taud_mag"));
 
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);

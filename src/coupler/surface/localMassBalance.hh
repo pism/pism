@@ -61,12 +61,15 @@ public:
     Degree day factors convert positive degree days (=PDDs) into amount of melt.
   */
   struct DegreeDayFactors {
-    double  snow, //!< m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
-      ice,  //!< m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
-      refreezeFrac;  //!< fraction of melted snow which refreezes as ice
+    //! m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
+    double snow;
+    //! m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
+    double ice;
+    //! fraction of melted snow which refreezes as ice
+    double refreezeFrac;
   };
 
-  LocalMassBalance(Config::ConstPtr myconfig);
+  LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system);
   virtual ~LocalMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt) = 0;
@@ -116,7 +119,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(Config::ConstPtr myconfig);
+  PDDMassBalance(Config::ConstPtr myconfig, units::System::Ptr system);
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -160,7 +163,7 @@ protected:
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(Config::ConstPtr myconfig,
+  PDDrandMassBalance(Config::ConstPtr myconfig, units::System::Ptr system,
                      bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 

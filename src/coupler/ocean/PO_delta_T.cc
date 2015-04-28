@@ -27,8 +27,8 @@ namespace ocean {
 
 Delta_T::Delta_T(const IceGrid &g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in),
-    shelfbmassflux(g.config()->unit_system(), "shelfbmassflux"),
-    shelfbtemp(g.config()->unit_system(), "shelfbtemp") {
+    shelfbmassflux(g.ctx()->unit_system(), "shelfbmassflux"),
+    shelfbtemp(g.ctx()->unit_system(), "shelfbtemp") {
 
   option_prefix = "-ocean_delta_T";
   offset_name   = "delta_T";

@@ -34,7 +34,7 @@ namespace surface {
 
 TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
-    ice_surface_temp(g.config()->unit_system(), temperature_name) {
+    ice_surface_temp(g.ctx()->unit_system(), temperature_name) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = m_config->get_double("pdd_factor_snow");

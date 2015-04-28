@@ -397,8 +397,8 @@ SSB_taud::SSB_taud(ShallowStressBalance *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taud_x"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taud_y"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taud_x"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taud_y"));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -454,7 +454,7 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taud_mag"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taud_mag"));
 
   set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -482,8 +482,8 @@ SSB_taub::SSB_taub(ShallowStressBalance *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taub_x"));
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taub_y"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taub_x"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taub_y"));
 
   set_attrs("X-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -537,7 +537,7 @@ SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "taub_mag"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "taub_mag"));
 
   set_attrs("magnitude of the basal shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -597,7 +597,7 @@ void PrescribedSliding::init() {
 SSB_beta::SSB_beta(ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_grid.config()->unit_system(), "beta"));
+  m_vars.push_back(SpatialVariableMetadata(m_grid.ctx()->unit_system(), "beta"));
 
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }

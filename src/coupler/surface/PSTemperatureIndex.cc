@@ -40,7 +40,7 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
-    ice_surface_temp(g.config()->unit_system(), "ice_surface_temp") {
+    ice_surface_temp(g.ctx()->unit_system(), "ice_surface_temp") {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;
@@ -75,12 +75,14 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
   options::Integer sd_ref_year("-pdd_sd_reference_year",
                                "Standard deviation data reference year", 0);
 
+  units::System::Ptr system = g.ctx()->unit_system();
+
   if (m_randomized_repeatable) {
-    m_mbscheme = new PDDrandMassBalance(m_config, true);
+    m_mbscheme = new PDDrandMassBalance(m_config, system, true);
   } else if (m_randomized) {
-    m_mbscheme = new PDDrandMassBalance(m_config, false);
+    m_mbscheme = new PDDrandMassBalance(m_config, system, false);
   } else {
-    m_mbscheme = new PDDMassBalance(m_config);
+    m_mbscheme = new PDDMassBalance(m_config, system);
   }
 
   if (m_use_fausto_params) {
@@ -101,7 +103,7 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
 
     PIO nc(m_grid.com, "netcdf3");
     nc.open(file, PISM_READONLY);
-    n_records = nc.inq_nrecords(short_name, "", m_grid.config()->unit_system());
+    n_records = nc.inq_nrecords(short_name, "", m_grid.ctx()->unit_system());
     nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the

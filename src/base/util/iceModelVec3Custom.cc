@@ -70,7 +70,7 @@ void IceModelVec3Custom::create(const IceGrid &mygrid,
 
   m_dof = 1;
 
-  m_metadata.push_back(SpatialVariableMetadata(m_grid->config()->unit_system(),
+  m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
                                                m_name, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 

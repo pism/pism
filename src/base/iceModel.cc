@@ -53,13 +53,13 @@ IceModel::IceModel(IceGrid &g, Context::Ptr ctx)
   : m_grid(g),
     config(ctx->config()),
     m_ctx(ctx),
-    global_attributes("PISM_GLOBAL", g.config()->unit_system()),
-    mapping("mapping", g.config()->unit_system()),
-    run_stats("run_stats", g.config()->unit_system()),
-    extra_bounds("time_bounds", config->get_string("time_dimension_name"), g.config()->unit_system()),
-    timestamp("timestamp", config->get_string("time_dimension_name"), g.config()->unit_system()) {
+    global_attributes("PISM_GLOBAL", ctx->unit_system()),
+    mapping("mapping", ctx->unit_system()),
+    run_stats("run_stats", ctx->unit_system()),
+    extra_bounds("time_bounds", config->get_string("time_dimension_name"), ctx->unit_system()),
+    timestamp("timestamp", config->get_string("time_dimension_name"), ctx->unit_system()) {
 
-  extra_bounds.set_string("units", m_grid.time()->units_string());
+  extra_bounds.set_string("units", m_ctx->time()->units_string());
 
   timestamp.set_string("units", "hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
@@ -126,7 +126,7 @@ void IceModel::reset_counters() {
   dt_force        = 0.0;
   skipCountDown   = 0;
 
-  timestep_hit_multiples_last_time = m_grid.time()->current();
+  timestep_hit_multiples_last_time = m_ctx->time()->current();
 
   grounded_basal_ice_flux_cumulative = 0;
   nonneg_rule_flux_cumulative        = 0;
@@ -598,6 +598,8 @@ void IceModel::step(bool do_mass_continuity,
 
   const Profiling &profiling = m_grid.ctx()->profiling();
 
+  double current_time = m_ctx->time()->current();
+
   //! \li call additionalAtStartTimestep() to let derived classes do more
   additionalAtStartTimestep();  // might set dt_force,maxdt_temporary
 
@@ -616,7 +618,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth && basal_yield_stress_model) {
     profiling.begin("basal yield stress");
-    basal_yield_stress_model->update(m_grid.time()->current(), dt);
+    basal_yield_stress_model->update(current_time, dt);
     profiling.end("basal yield stress");
     basal_yield_stress.copy_from(basal_yield_stress_model->basal_material_yield_stress());
     stdout_flags += "y";
@@ -665,11 +667,11 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
-  surface->update(m_grid.time()->current(), dt);
+  surface->update(current_time, dt);
   profiling.end("surface");
 
   profiling.begin("ocean");
-  ocean->update(m_grid.time()->current(),   dt);
+  ocean->update(current_time,   dt);
   profiling.end("ocean");
 
   dt_TempAge += dt;
@@ -707,7 +709,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   profiling.begin("basal hydrology");
-  subglacial_hydrology->update(m_grid.time()->current(), dt);
+  subglacial_hydrology->update(current_time, dt);
   profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
@@ -758,7 +760,7 @@ void IceModel::step(bool do_mass_continuity,
     int topg_state_counter = bed_topography.get_state_counter();
 
     profiling.begin("bed deformation");
-    beddef->update(m_grid.time()->current(), dt);
+    beddef->update(current_time, dt);
     profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
@@ -776,7 +778,7 @@ void IceModel::step(bool do_mass_continuity,
   m_ctx->time()->step(dt);
 
   if (do_energy_step) {
-    t_TempAge = m_grid.time()->current();
+    t_TempAge = m_ctx->time()->current();
     dt_TempAge = 0.0;
   }
 
@@ -834,14 +836,14 @@ void IceModel::run() {
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
   summary(do_energy);  // report starting state
 
-  t_TempAge = m_grid.time()->current();
+  t_TempAge = m_ctx->time()->current();
   dt_TempAge = 0.0;
 
   // main loop for time evolution
-  // IceModel::step calls grid.time->step(dt), ensuring that this while loop
+  // IceModel::step calls Time::step(dt), ensuring that this while loop
   // will terminate
   profiling.stage_begin("time-stepping loop");
-  while (m_grid.time()->current() < m_grid.time()->end()) {
+  while (m_ctx->time()->current() < m_ctx->time()->end()) {
 
     stdout_flags.erase();  // clear it out
     dt_force = -1.0;
@@ -887,7 +889,7 @@ void IceModel::run() {
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
                stepcount,
-               m_grid.convert(m_grid.time()->end() - m_grid.time()->start(), "seconds", "years")/(double)stepcount);
+               m_grid.convert(m_ctx->time()->end() - m_ctx->time()->start(), "seconds", "years")/(double)stepcount);
   }
 }
 

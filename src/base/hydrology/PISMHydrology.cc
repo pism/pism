@@ -99,7 +99,7 @@ void Hydrology::init() {
 
     PIO nc(m_grid.com, "netcdf3");
     nc.open(itb_file, PISM_READONLY);
-    unsigned int n_records = nc.inq_nrecords("inputtobed", "", m_grid.config()->unit_system());
+    unsigned int n_records = nc.inq_nrecords("inputtobed", "", m_grid.ctx()->unit_system());
     nc.close();
 
     // if -..._period is not set, make n_records the minimum of the

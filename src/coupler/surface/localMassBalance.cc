@@ -31,14 +31,14 @@
 namespace pism {
 namespace surface {
 
-LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig)
-  : m_config(myconfig), m_unit_system(m_config->unit_system()),
+LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
+  : m_config(myconfig), m_unit_system(system),
     m_seconds_per_day(86400) {
   // empty
 }
 
-PDDMassBalance::PDDMassBalance(Config::ConstPtr myconfig)
-  : LocalMassBalance(myconfig) {
+PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr system)
+  : LocalMassBalance(config, system) {
   precip_as_snow     = m_config->get_boolean("interpret_precip_as_snow");
   Tmin               = m_config->get_double("air_temp_all_precip_as_snow");
   Tmax               = m_config->get_double("air_temp_all_precip_as_rain");
@@ -225,9 +225,9 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr myconfig,
+PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
                                        bool repeatable)
-  : PDDMassBalance(myconfig) {
+  : PDDMassBalance(config, system) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
   gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
 }

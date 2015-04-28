@@ -989,7 +989,7 @@ void IceCompModel::reportErrors() {
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
-  TimeseriesMetadata err("N", "N", m_grid.config()->unit_system());
+  TimeseriesMetadata err("N", "N", m_grid.ctx()->unit_system());
 
   err.set_string("units", "1");
 

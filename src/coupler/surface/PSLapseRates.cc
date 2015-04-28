@@ -26,8 +26,8 @@ namespace surface {
 
 LapseRates::LapseRates(const IceGrid &g, SurfaceModel* in)
   : PLapseRates<SurfaceModel,SurfaceModifier>(g, in),
-    m_climatic_mass_balance(g.config()->unit_system(), "climatic_mass_balance"),
-    m_ice_surface_temp(g.config()->unit_system(), "ice_surface_temp") {
+    m_climatic_mass_balance(g.ctx()->unit_system(), "climatic_mass_balance"),
+    m_ice_surface_temp(g.ctx()->unit_system(), "ice_surface_temp") {
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
 

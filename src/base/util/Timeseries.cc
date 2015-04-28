@@ -32,9 +32,9 @@
 namespace pism {
 
 Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
-  : m_dimension(dimension_name, dimension_name, g->config()->unit_system()),
-    m_variable(name, dimension_name, g->config()->unit_system()),
-    m_bounds(dimension_name + "_bounds", dimension_name, g->config()->unit_system())
+  : m_dimension(dimension_name, dimension_name, g->ctx()->unit_system()),
+    m_variable(name, dimension_name, g->ctx()->unit_system()),
+    m_bounds(dimension_name + "_bounds", dimension_name, g->ctx()->unit_system())
 {
   private_constructor(g->com, name, dimension_name);
 }

@@ -36,7 +36,7 @@ class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const Config &config);
   virtual ~IceBasalResistancePlasticLaw();
-  virtual void print_info(int verbthresh, MPI_Comm com) const;
+  virtual void print_info(int verbthresh, MPI_Comm com, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
@@ -49,7 +49,7 @@ class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const Config &config);
   virtual ~IceBasalResistancePseudoPlasticLaw();
-  virtual void print_info(int verbthresh, MPI_Comm com) const;
+  virtual void print_info(int verbthresh, MPI_Comm com, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;

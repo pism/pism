@@ -58,15 +58,11 @@ public:
    *
    * - `REMEMBER_THIS_USE` (the default): add the name of a parameter to the list of parameters used
    *    by a model run.
-
    * - `FORGET_THIS_USE`: don't add the name of a parameter to the list of used parameters. This is
    *    necessary to be able to get the current value of a parameter to be used as the default when
    *    processing a command-line option.
    */
   enum UseFlag {REMEMBER_THIS_USE = 0, FORGET_THIS_USE = 1};
-
-  // methods implemented in the base class
-  units::System::Ptr unit_system() const;
 
   // Import settings from an override file
   void import_from(const Config &other);
@@ -77,8 +73,6 @@ public:
   void read(MPI_Comm com, const std::string &filename);
   void write(MPI_Comm com, const std::string &filename, bool append = true) const;
   std::string filename() const;
-
-  // end of methods implemented in the base class
 
   void read(const PIO &nc);
   void write(const PIO &nc) const;

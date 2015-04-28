@@ -450,9 +450,9 @@ void IceModel::write_extras() {
     // Prepare the file:
     nc.open(filename, mode);
     io::define_time(nc, config->get_string("time_dimension_name"),
-                    m_grid.time()->calendar(),
-                    m_grid.time()->CF_units_string(),
-                    config->unit_system());
+                    m_ctx->time()->calendar(),
+                    m_ctx->time()->CF_units_string(),
+                    m_ctx->unit_system());
     nc.put_att_text(config->get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
@@ -464,7 +464,7 @@ void IceModel::write_extras() {
     nc.open(filename, PISM_READWRITE);
   }
 
-  double      current_time = m_grid.time()->current();
+  double      current_time = m_ctx->time()->current();
   std::string time_name    = config->get_string("time_dimension_name");
 
   io::append_time(nc, time_name, current_time);

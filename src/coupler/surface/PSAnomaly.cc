@@ -27,8 +27,8 @@ namespace surface {
 
 Anomaly::Anomaly(const IceGrid &g, SurfaceModel* in)
   : PGivenClimate<SurfaceModifier,SurfaceModel>(g, in),
-    climatic_mass_balance(g.config()->unit_system(), "climatic_mass_balance"),
-    ice_surface_temp(g.config()->unit_system(), "ice_surface_temp") {
+    climatic_mass_balance(g.ctx()->unit_system(), "climatic_mass_balance"),
+    ice_surface_temp(g.ctx()->unit_system(), "ice_surface_temp") {
 
   option_prefix  = "-surface_anomaly";
 

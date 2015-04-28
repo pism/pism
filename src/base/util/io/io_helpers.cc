@@ -348,7 +348,7 @@ static void get_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
     std::vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
     compute_start_and_count(nc,
-                            grid.config()->unit_system(),
+                            grid.ctx()->unit_system(),
                             var_name,
                             t_start, t_count,
                             grid.xs(), grid.xm(),
@@ -356,7 +356,7 @@ static void get_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
                             0, z_count,
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(nc, grid.config()->unit_system(), var_name);
+    bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
     if (mapped_io == true) {
       nc.get_varm_double(var_name, start, count, imap, output);
     } else {
@@ -384,7 +384,7 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
     std::vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
     compute_start_and_count(nc,
-                            grid.config()->unit_system(),
+                            grid.ctx()->unit_system(),
                             var_name,
                             t_length - 1, t_count,
                             grid.xs(), grid.xm(),
@@ -417,7 +417,7 @@ static LocalInterpCtx* get_interp_context(const PIO& file,
                                           const std::string &variable_name,
                                           const IceGrid &grid,
                                           const std::vector<double> &zlevels) {
-  grid_info gi(file, variable_name, grid.config()->unit_system(), grid.periodicity());
+  grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.periodicity());
 
   return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
 }
@@ -438,7 +438,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
 
     const unsigned int t_count = 1;
     compute_start_and_count(nc,
-                            grid.config()->unit_system(),
+                            grid.ctx()->unit_system(),
                             var_name,
                             t_start, t_count,
                             lic->start[X], lic->count[X],
@@ -446,7 +446,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
                             lic->start[Z], lic->count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(nc, grid.config()->unit_system(), var_name);
+    bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
     if (mapped_io == true) {
       nc.get_varm_double(var_name, start, count, imap, buffer);
     } else {
@@ -488,7 +488,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
     
     const unsigned int t_count = 1;
     compute_start_and_count(nc,
-                            grid.config()->unit_system(),
+                            grid.ctx()->unit_system(),
                             var_name,
                             t_start, t_count,
                             lic->start[X], lic->count[X],
@@ -496,7 +496,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
                             lic->start[Z], lic->count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(nc, grid.config()->unit_system(), var_name);
+    bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
     if (mapped_io == true) {
       nc.get_varm_double(var_name, start, count, imap, buffer);
     } else {

@@ -214,7 +214,7 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
     assert(output != NULL);
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input(file, var_name, output->config()->unit_system(), periodicity);
+    grid_info input(file, var_name, output->ctx()->unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {

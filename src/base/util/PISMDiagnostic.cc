@@ -59,7 +59,7 @@ void Diagnostic::set_zlevels(std::vector<double> &zlevels) {
 //! Get a metadata object corresponding to variable number N.
 SpatialVariableMetadata Diagnostic::get_metadata(int N) {
   if (N >= m_dof) {
-    return SpatialVariableMetadata(m_grid.config()->unit_system(), "missing");
+    return SpatialVariableMetadata(m_grid.ctx()->unit_system(), "missing");
   }
 
   return m_vars[N];

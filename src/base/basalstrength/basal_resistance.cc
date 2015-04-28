@@ -25,8 +25,7 @@ namespace pism {
 
 /* Purely plastic */
 
-IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
-  : m_unit_system(config.unit_system()) {
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config) {
   m_plastic_regularize = config.get_double("plastic_regularization", "m/year", "m/second");
 }
 
@@ -34,10 +33,11 @@ IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
   // empty
 }
 
-void IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
+void IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com,
+                                              units::System::Ptr system) const {
   verbPrintf(verbthresh, com, 
              "Using purely plastic till with eps = %10.5e m/year.\n",
-             units::convert(m_unit_system, m_plastic_regularize, "m/s", "m/year"));
+             units::convert(system, m_plastic_regularize, "m/s", "m/year"));
 }
 
 
@@ -79,19 +79,20 @@ IceBasalResistancePseudoPlasticLaw::~IceBasalResistancePseudoPlasticLaw() {
   // empty
 }
 
-void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
+void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com,
+                                                    units::System::Ptr system) const {
 
   if (m_pseudo_q == 1.0) {
     verbPrintf(verbthresh, com, 
                "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-               units::convert(m_unit_system, m_pseudo_u_threshold, "m/s", "m/year"));
+               units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
   } else {
     verbPrintf(verbthresh, com, 
                "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
                " and u_threshold = %.2f m/year.\n", 
-               units::convert(m_unit_system, m_plastic_regularize, "m/s", "m/year"),
+               units::convert(system, m_plastic_regularize, "m/s", "m/year"),
                m_pseudo_q,
-               units::convert(m_unit_system, m_pseudo_u_threshold, "m/s", "m/year"));
+               units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
   }
 }
 
