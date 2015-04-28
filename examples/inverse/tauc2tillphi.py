@@ -77,7 +77,7 @@ class BasalTillStrength:
         Nmin = 1e45
         with PISM.vec.Access(nocomm=[mask, thickness, bwat, bmr, tillphi], comm=tauc):
             mq = PISM.MaskQuery(mask)
-            GHOSTS = int(self.grid.config().get_double("grid_max_stencil_width"))
+            GHOSTS = int(self.grid.ctx().config().get_double("grid_max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
                 if mq.floating_ice(i, j):
                     tauc[i, j] = 0
@@ -110,7 +110,7 @@ class BasalTillStrength:
             vars.append(tillphi_prev)
         with PISM.vec.Access(nocomm=vars, comm=tillphi):
             mq = PISM.MaskQuery(mask)
-            GHOSTS = int(self.grid.config().get_double("grid_max_stencil_width"))
+            GHOSTS = int(self.grid.ctx().config().get_double("grid_max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
                 if mq.floating_ice(i, j):
                     if not tillphi_prev is None:
@@ -232,10 +232,10 @@ basal_till.updateTillPhi_algebraic(ice_mask, thickness, bwat, bmr, tauc, tillphi
 
 pio = PISM.PIO(grid.com, "netcdf3")
 pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
-                 grid.config().get_string("calendar"), grid.time().units_string(),
-                 grid.config().unit_system())
-PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time().current())
+PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
+                 grid.ctx().config().get_string("calendar"), grid.ctx().time().units_string(),
+                 grid.ctx().unit_system())
+PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), grid.ctx().time().current())
 pio.close()
 
 # Save time & command line

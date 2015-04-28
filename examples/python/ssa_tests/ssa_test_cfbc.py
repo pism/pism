@@ -37,7 +37,7 @@ usage of SSA_TEST_CFBC:
 """
 
 context = PISM.Context()
-unit_system = context.config.unit_system()
+unit_system = context.unit_system
 
 H0 = 600.          # meters
 V0 = PISM.convert(unit_system, 300, "m/year", "m/second")

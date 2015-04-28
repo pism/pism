@@ -82,11 +82,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
   units::System::Ptr sys(new units::System);
 
   // configuration parameters
-  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
-    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
-  overrides->init();
-  config->init_with_default();
-  config->import_from(*overrides);
+  Config::Ptr config = config_from_options(com, sys);
 
   config->set_string("calendar", "none");
   // when IceGrid constructor is called, these settings are used

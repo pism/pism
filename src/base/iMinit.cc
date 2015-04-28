@@ -363,20 +363,23 @@ void IceModel::time_setup() {
   if (input_file.is_set()) {
     PIO nc(m_grid.com, "guess_mode");
 
-    nc.open(input_file, PISM_READONLY);
-    double T = 0.0;
-    nc.inq_dim_limits(m_ctx->config()->get_string("time_dimension_name"),
-                      NULL, &T);
-    nc.close();
+    std::string time_name = m_ctx->config()->get_string("time_dimension_name");
 
-    // Set the default starting time to be equal to the last time saved in the input file
-    time->set_start(T);
+    nc.open(input_file, PISM_READONLY);
+    unsigned int time_length = nc.inq_dimlen(time_name);
+    if (time_length > 0) {
+      double T = 0.0;
+      // Set the default starting time to be equal to the last time saved in the input file
+      nc.inq_dim_limits(time_name, NULL, &T);
+      time->set_start(T);
+    }
+    nc.close();
   }
 
   time->init();
 
   verbPrintf(2, m_grid.com,
-             "   time interval (length)   [%s, %s]  (%s years, using the '%s' calendar)\n",
+             "* Setting time: [%s, %s]  (%s years, using the '%s' calendar)\n",
              time->start_date().c_str(),
              time->end_date().c_str(),
              time->run_length().c_str(),

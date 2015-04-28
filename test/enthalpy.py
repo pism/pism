@@ -16,13 +16,15 @@ class EnthalpyTest(object):
 
         grid = self.grid
 
+        sys = grid.ctx().unit_system()
+
         self.Lx = 1e5
         self.Ly = 1e5
         self.Lz = 1000.0
         self.Mx = 3
         self.My = 3
         self.Mz = Mz
-        self.dt = grid.convert(dt, "years", "seconds")
+        self.dt = PISM.convert(sys, dt, "years", "seconds")
 
         PISM.model.initGrid(grid, self.Lx, self.Ly, self.Lz,
                             self.Mx, self.My, self.Mz,

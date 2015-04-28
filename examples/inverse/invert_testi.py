@@ -117,8 +117,8 @@ tauc_guess_const = None
 
 
 def testi_tauc(grid, tauc):
-    standard_gravity = grid.config().get_double("standard_gravity")
-    ice_density = grid.config().get_double("ice_density")
+    standard_gravity = grid.ctx().config().get_double("standard_gravity")
+    ice_density = grid.ctx().config().get_double("ice_density")
     f = ice_density * standard_gravity * H0_schoof * slope
 
     with PISM.vec.Access(comm=tauc):
@@ -174,8 +174,8 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         testi_tauc(self.modeldata.grid, vecs.tauc)
 
         grid = self.grid
-        standard_gravity = grid.config().get_double("standard_gravity")
-        ice_density = grid.config().get_double("ice_density")
+        standard_gravity = grid.ctx().config().get_double("standard_gravity")
+        ice_density = grid.ctx().config().get_double("ice_density")
         f = ice_density * standard_gravity * H0_schoof * slope
 
         vecs.ssa_driving_stress_y.set(0)
@@ -272,9 +272,10 @@ if __name__ == "__main__":
         from PISM.invert.sipletools import PISMLocalVector as PLV
         stencil_width = 1
         forward_problem = solver.forward_problem
+        sys = grid.ctx().unit_system()
         d = PLV(PISM.vec.randVectorS(grid, 1e5, stencil_width))
         r = PLV(PISM.vec.randVectorV(grid,
-                                     grid.convert(1.0, "m/year", "m/second"),
+                                     PISM.convert(sys, 1.0, "m/year", "m/second"),
                                      stencil_width))
         (domainIP, rangeIP) = forward_problem.testTStar(PLV(zeta0), d, r, 3)
         siple.reporting.msg("domainip %g rangeip %g", domainIP, rangeIP)
@@ -284,13 +285,13 @@ if __name__ == "__main__":
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio,
-                     grid.config().get_string("time_dimension_name"),
-                     grid.config().get_string("calendar"),
-                     grid.time().units_string(),
-                     grid.config().unit_system())
+                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("calendar"),
+                     grid.ctx().time().units_string(),
+                     grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.config().get_string("time_dimension_name"),
-                     grid.time().current())
+                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().time().current())
     pio.close()
     zeta0.write(output_file)
 
@@ -342,7 +343,8 @@ if __name__ == "__main__":
     u_i_a = tz2.communicate(u_i)
     u_obs_a = tz2.communicate(u_obs)
 
-    secpera = grid.convert(1.0, "year", "seconds")
+    sys = grid.ctx().unit_system()
+    secpera = PISM.convert(sys, 1.0, "year", "seconds")
 
     if do_final_plot and (not tauc_a is None):
         y = grid.y()

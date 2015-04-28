@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     # Build the grid.
     grid = PISM.Context().newgrid()
-    config = grid.config()
+    config = grid.ctx().config()
     PISM.util.PISM.model.initGrid(grid, Lx, Ly, Lz, Mx, My, Mz, PISM.NOT_PERIODIC)
     vecs = PISM.model.ModelVecs(grid.variables())
     vecs.add(PISM.model.createIceSurfaceVec(grid))
@@ -93,7 +93,7 @@ if __name__ == '__main__':
             thickness[i, j] = t
 
     # Compute mask and surface elevation from geometry variables.
-    gc = PISM.GeometryCalculator(sea_level, grid.config())
+    gc = PISM.GeometryCalculator(sea_level, grid.ctx().config())
     gc.compute(bed, thickness, vecs.mask, vecs.surface_altitude)
 
     tauc = vecs.tauc
@@ -113,10 +113,10 @@ if __name__ == '__main__':
 
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
+    PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
                      "365_day", "seconds since 1-1-1",
-                     grid.config().unit_system())
-    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), 0.0)
+                     grid.ctx().unit_system())
+    PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), 0.0)
     pio.close()
     vecs.writeall(output_filename)
     PISM.util.writeProvenance(output_filename)

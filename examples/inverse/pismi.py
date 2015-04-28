@@ -81,7 +81,8 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
             d = self.toproczero(data.zeta_step)
         zeta = self.toproczero(data.zeta)
 
-        secpera = self.grid.convert(1.0, "year", "second")
+        sys = self.grid.ctx().unit_system()
+        secpera = PISM.convert(sys, 1.0, "year", "second")
 
         if self.grid.rank() == 0:
             import matplotlib.pyplot as pp
@@ -227,7 +228,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.get_grid()
-    high_tauc = grid.config().get_double("high_tauc")
+    high_tauc = grid.ctx().config().get_double("high_tauc")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         mq = PISM.MaskQuery(mask)
@@ -461,10 +462,10 @@ def run():
     if not append_mode:
         pio = PISM.PIO(grid.com, "netcdf3")
         pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
-        PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
-                         grid.config().get_string("calendar"), grid.time().units_string(),
-                         grid.config().unit_system())
-        PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time().current())
+        PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
+                         grid.ctx().config().get_string("calendar"), grid.ctx().time().units_string(),
+                         grid.ctx().unit_system())
+        PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), grid.ctx().time().current())
         pio.close()
     zeta.write(output_filename)
 
@@ -550,9 +551,10 @@ def run():
     r_mag = PISM.IceModelVec2S()
     r_mag.create(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
 
+    sys = grid.ctx().unit_system()
     r_mag.set_attrs("diagnostic", "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
                     "m s-1", "inv_ssa_residual", 0)
-    r_mag.metadata().set_double("_FillValue", grid.convert(-0.01, 'm/year', 'm/s'))
+    r_mag.metadata().set_double("_FillValue", PISM.convert(sys, -0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_double("valid_min", 0.0)
     r_mag.metadata().set_string("glaciological_units", "m year-1")
     r_mag.write_in_glaciological_units = True

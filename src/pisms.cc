@@ -33,6 +33,26 @@ static char help[] =
 
 using namespace pism;
 
+Context::Ptr pisms_context(MPI_Comm com) {
+  // unit system
+  units::System::Ptr sys(new units::System);
+
+  // configuration parameters
+  Config::Ptr config = config_from_options(com, sys);
+
+  config->set_string("calendar", "none");
+
+  set_config_from_options(*config);
+
+  print_config(3, com, *config);
+
+  Time::Ptr time = time_from_options(com, config, sys);
+
+  EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
+
+  return Context::Ptr(new Context(com, sys, config, EC, time, "pisms"));
+}
+
 int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
@@ -63,12 +83,8 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    Context::Ptr ctx = context_from_options(com, "pisms");
+    Context::Ptr ctx = pisms_context(com);
     Config::Ptr config = ctx->config();
-
-    // this value is used by the Time instance owned by IceGrid. We'll have to allocate Context
-    // differently once that is removed.
-    config->set_string("calendar", "none");
 
     IceGrid g(ctx);
     IceEISModel m(g, ctx);

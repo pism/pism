@@ -228,25 +228,26 @@ if __name__ == '__main__':
         vecs.markForWriting(vel_surface_observed)
         final_velocity = vel_surface_observed
 
+    sys = grid.ctx().unit_system()
     # Add the misfit weight.
     if misfit_weight_type == "fast":
         misfit_weight = fastIceMisfitWeight(modeldata, vel_ssa,
-                                            grid.convert(fast_ice_speed, "m/year", "m/second"))
+                                            PISM.convert(sys, fast_ice_speed, "m/year", "m/second"))
     else:
         misfit_weight = groundedIceMisfitWeight(modeldata)
     modeldata.vecs.add(misfit_weight, writing=True)
 
     if not noise is None:
         u_noise = PISM.vec.randVectorV(grid, noise / math.sqrt(2), final_velocity.get_stencil_width())
-        final_velocity.add(grid.convert(1.0, "m/year", "m/second"),
+        final_velocity.add(PISM.convert(sys, 1.0, "m/year", "m/second"),
                            u_noise)
 
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file_name, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.config().get_string("time_dimension_name"),
-                     grid.config().get_string("calendar"), grid.time().units_string(),
-                     grid.config().unit_system())
-    PISM.append_time(pio, grid.config().get_string("time_dimension_name"), grid.time().current())
+    PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("calendar"), grid.ctx().time().units_string(),
+                     grid.ctx().unit_system())
+    PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), grid.ctx().time().current())
     pio.close()
 
     vecs.write(output_file_name)

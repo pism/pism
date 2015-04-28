@@ -127,6 +127,8 @@ private:
   Impl *m_impl;
 };
 
+Config::Ptr config_from_options(MPI_Comm com, units::System::Ptr unit_system);
+
 //! Set configuration parameters using command-line options.
 void set_config_from_options(Config &config);
 

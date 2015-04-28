@@ -27,6 +27,10 @@
 #include "pism_options.hh"
 #include "error_handling.hh"
 
+// include an implementation header so that we can allocate a DefaultConfig instance in
+// config_from_options()
+#include "PISMConfig.hh"
+
 namespace pism {
 
 struct Config::Impl {
@@ -758,5 +762,17 @@ void set_config_from_options(Config &config) {
   options::deprecated("-cold", "-energy cold");
 }
 
+//! Create a configuration database using command-line options.
+Config::Ptr config_from_options(MPI_Comm com, units::System::Ptr sys) {
+
+  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
+    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
+  overrides->init();
+  config->init_with_default();
+  config->import_from(*overrides);
+  set_config_from_options(*config);
+
+  return config;
+}
 
 } // end of namespace pism

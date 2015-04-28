@@ -23,7 +23,7 @@ import PISM
 import math
 
 context = PISM.Context()
-unit_system = context.config.unit_system()
+unit_system = context.unit_system
 
 L = 50.e3  # // 50km half-width
 H0 = 500  # // m
@@ -86,8 +86,9 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     def exactSolution(self, i, j, x, y):
         tauc_threshold_velocity = self.config.get_double("pseudo_plastic_uthreshold",
-                                                  "m/year", "m/second")
-        v0 = self.grid.convert(100, "m/year", "m/second")
+                                                         "m/year", "m/second")
+        sys = self.grid.ctx().unit_system()
+        v0 = PISM.convert(sys, 100, "m/year", "m/second")
         alpha = math.sqrt((tauc0 / tauc_threshold_velocity) / (4 * nu0 * H0))
         return [v0 * math.exp(-alpha * (x - L)), 0]
 

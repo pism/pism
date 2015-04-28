@@ -94,16 +94,13 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   units::System::Ptr sys(new units::System);
 
   // configuration parameters
-  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
-    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
-  overrides->init();
-  config->init_with_default();
-  config->import_from(*overrides);
-  set_config_from_options(*config);
+  Config::Ptr config = config_from_options(com, sys);
   print_config(3, com, *config);
 
+  // time manager
   Time::Ptr time = time_from_options(com, config, sys);
 
+  // enthalpy converter
   EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
 
   return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
