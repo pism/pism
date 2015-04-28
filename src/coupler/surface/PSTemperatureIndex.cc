@@ -40,7 +40,7 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(const IceGrid &g)
   : SurfaceModel(g),
-    ice_surface_temp(g.ctx()->unit_system(), "ice_surface_temp") {
+    ice_surface_temp(m_sys, "ice_surface_temp") {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;
@@ -75,14 +75,12 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
   options::Integer sd_ref_year("-pdd_sd_reference_year",
                                "Standard deviation data reference year", 0);
 
-  units::System::Ptr system = g.ctx()->unit_system();
-
   if (m_randomized_repeatable) {
-    m_mbscheme = new PDDrandMassBalance(m_config, system, true);
+    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, true);
   } else if (m_randomized) {
-    m_mbscheme = new PDDrandMassBalance(m_config, system, false);
+    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, false);
   } else {
-    m_mbscheme = new PDDMassBalance(m_config, system);
+    m_mbscheme = new PDDMassBalance(m_config, m_sys);
   }
 
   if (m_use_fausto_params) {

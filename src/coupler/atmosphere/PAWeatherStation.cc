@@ -38,8 +38,8 @@ WeatherStation::WeatherStation(const IceGrid &g)
   : AtmosphereModel(g),
     m_precipitation(&g, "precipitation", g.ctx()->config()->get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", g.ctx()->config()->get_string("time_dimension_name")),
-    m_precip_metadata(g.ctx()->unit_system(), "precipitation"),
-    m_air_temp_metadata(g.ctx()->unit_system(), "air_temp")
+    m_precip_metadata(m_sys, "precipitation"),
+    m_air_temp_metadata(m_sys, "air_temp")
 {
   m_precipitation.dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
   m_precipitation.metadata().set_string("units", "m / second");

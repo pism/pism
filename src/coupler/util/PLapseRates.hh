@@ -124,7 +124,7 @@ protected:
       PIO nc(g.com, "netcdf3");
       nc.open(file, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
-                                              g.ctx()->unit_system());
+                                              Mod::m_sys);
       nc.close();
 
       // if -..._period is not set, make n_records the minimum of the

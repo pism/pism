@@ -29,8 +29,8 @@ namespace surface {
 
 Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
   : PScalarForcing<SurfaceModel,SurfaceModifier>(g, in),
-    climatic_mass_balance(g.ctx()->unit_system(), "climatic_mass_balance"),
-    ice_surface_temp(g.ctx()->unit_system(), "ice_surface_temp") {
+    climatic_mass_balance(m_sys, "climatic_mass_balance"),
+    ice_surface_temp(m_sys, "ice_surface_temp") {
 
   option_prefix = "-surface_delta_T";
   offset_name   = "delta_T";

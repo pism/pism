@@ -27,8 +27,8 @@ namespace atmosphere {
 
 Frac_P::Frac_P(const IceGrid &g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(g.ctx()->unit_system(), "air_temp"),
-    precipitation(g.ctx()->unit_system(), "precipitation")
+    air_temp(m_sys, "air_temp"),
+    precipitation(m_sys, "precipitation")
 {
   offset = NULL;
 

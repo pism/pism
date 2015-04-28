@@ -32,8 +32,8 @@ namespace pism {
 namespace ocean {
 Constant::Constant(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.ctx()->unit_system(), "shelfbmassflux"),
-    m_shelfbtemp(g.ctx()->unit_system(), "shelfbtemp") {
+    m_shelfbmassflux(m_sys, "shelfbmassflux"),
+    m_shelfbtemp(m_sys, "shelfbtemp") {
 
   m_mymeltrate = 0.0;
   m_meltrate_set = false;

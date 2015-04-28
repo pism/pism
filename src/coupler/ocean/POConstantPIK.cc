@@ -33,8 +33,8 @@ namespace ocean {
 
 PIK::PIK(const IceGrid &g)
   : OceanModel(g),
-    m_shelfbmassflux(g.ctx()->unit_system(), "shelfbmassflux"),
-    m_shelfbtemp(g.ctx()->unit_system(), "shelfbtemp")
+    m_shelfbmassflux(m_sys, "shelfbmassflux"),
+    m_shelfbtemp(m_sys, "shelfbtemp")
 {
   m_shelfbmassflux.set_string("pism_intent", "climate_state");
   m_shelfbmassflux.set_string("long_name",

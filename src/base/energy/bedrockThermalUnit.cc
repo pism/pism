@@ -79,7 +79,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
       bool exists = nc.inq_var("litho_temp");
 
       if (exists) {
-        grid_info info(nc, "litho_temp", m_grid.ctx()->unit_system(), m_grid.periodicity());
+        grid_info info(nc, "litho_temp", m_sys, m_grid.periodicity());
 
         m_Mbz = info.z_len;
         m_Lbz = -info.z_min;
@@ -166,8 +166,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
     bool exists = nc.inq_var("litho_temp");
 
     if (exists) {
-      const unsigned int last_record = nc.inq_nrecords("litho_temp", "",
-                                                       m_grid.ctx()->unit_system()) - 1;
+      const unsigned int last_record = nc.inq_nrecords("litho_temp", "", m_sys) - 1;
       m_temp.read(m_input_file, last_record);
     }
 

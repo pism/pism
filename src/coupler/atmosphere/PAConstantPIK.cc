@@ -31,7 +31,7 @@ namespace atmosphere {
 
 PIK::PIK(const IceGrid &g)
   : AtmosphereModel(g),
-    m_air_temp_snapshot(g.ctx()->unit_system(), "air_temp_snapshot") {
+    m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 

@@ -33,8 +33,8 @@ namespace surface {
 ///// Simple PISM surface model.
 Simple::Simple(const IceGrid &g)
   : SurfaceModel(g),
-    climatic_mass_balance(g.ctx()->unit_system(), "climatic_mass_balance"),
-    ice_surface_temp(g.ctx()->unit_system(), "ice_surface_temp") {
+    climatic_mass_balance(m_sys, "climatic_mass_balance"),
+    ice_surface_temp(m_sys, "ice_surface_temp") {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
