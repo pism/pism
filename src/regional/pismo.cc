@@ -190,7 +190,7 @@ void IceRegionalModel::model_state_setup() {
     verbPrintf(2, m_grid.com,
                "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
                strip_km.value());
-    set_no_model_strip(m_grid.convert(strip_km, "km", "m"));
+    set_no_model_strip(units::convert(m_sys, strip_km, "km", "m"));
   }
 }
 

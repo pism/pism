@@ -75,7 +75,7 @@ protected:
     bc_period = (unsigned int)period;
 
     if (bc_reference_year.is_set()) {
-      bc_reference_time = g.convert(bc_reference_year, "years", "seconds");
+      bc_reference_time = units::convert(Mod::m_sys, bc_reference_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }

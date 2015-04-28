@@ -458,7 +458,8 @@ void IceModelVec2T::interp(double my_t) {
  */
 void IceModelVec2T::average(double my_t, double my_dt) {
 
-  double dt_years = m_grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
+  double dt_years = units::convert(m_grid->ctx()->unit_system(),
+                                   my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
   // if only one record, nothing to do
   if (time.size() == 1) {

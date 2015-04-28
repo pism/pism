@@ -212,7 +212,7 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
                                           double min_T) const {
   double ice_rho = m_config->get_double("ice_density"),
     beta_CC_grad = m_config->get_double("beta_CC") * ice_rho * m_config->get_double("standard_gravity"),
-    secpera = m_grid.convert(1.0, "year", "seconds");
+    secpera = units::convert(m_sys, 1.0, "year", "seconds");
 
   if (m_verification_mode) {
     // test 'E' mode

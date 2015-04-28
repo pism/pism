@@ -113,7 +113,7 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
-    T_ocean           = m_grid.convert(-1.7, "Celsius", "Kelvin");   //Default in PISM-PIK
+    T_ocean           = units::convert(m_sys, -1.7, "Celsius", "Kelvin");   //Default in PISM-PIK
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 

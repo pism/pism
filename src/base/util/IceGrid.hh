@@ -192,9 +192,6 @@ public:
 
   unsigned int kBelowHeight(double height) const;
 
-  // FIXME: these should be moved into a "Context" class
-  double convert(double, const std::string &, const std::string &) const;
-
   //! Context this grid belongs to.
   Context::ConstPtr ctx() const;
 

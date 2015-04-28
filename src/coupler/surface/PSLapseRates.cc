@@ -70,11 +70,11 @@ void LapseRates::init_impl() {
              "   ice-equivalent surface mass balance lapse rate: %3.3f m/year per km\n",
              m_temp_lapse_rate, m_smb_lapse_rate);
 
-  m_temp_lapse_rate = m_grid.convert(m_temp_lapse_rate, "K/km", "K/m");
+  m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
   // convert from [m/year / km] to [kg m-2 / year / km]
   m_smb_lapse_rate *= m_config->get_double("ice_density");
-  m_smb_lapse_rate = m_grid.convert(m_smb_lapse_rate,
+  m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
                                     "(kg m-2) / year / km", "(kg m-2) / s / m");
 }
 

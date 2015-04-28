@@ -53,6 +53,7 @@ IceModel::IceModel(IceGrid &g, Context::Ptr ctx)
   : m_grid(g),
     config(ctx->config()),
     m_ctx(ctx),
+    m_sys(ctx->unit_system()),
     global_attributes("PISM_GLOBAL", ctx->unit_system()),
     mapping("mapping", ctx->unit_system()),
     run_stats("run_stats", ctx->unit_system()),
@@ -419,8 +420,8 @@ void IceModel::createVecs() {
                      "m s-1", "", 1);
     for (int j = 0; j < 2; ++j) {
       vBCvel.metadata(j).set_string("glaciological_units", "m year-1");
-      vBCvel.metadata(j).set_double("valid_min",  m_grid.convert(-1e6, "m/year", "m/second"));
-      vBCvel.metadata(j).set_double("valid_max",  m_grid.convert( 1e6, "m/year", "m/second"));
+      vBCvel.metadata(j).set_double("valid_min",  units::convert(m_sys, -1e6, "m/year", "m/second"));
+      vBCvel.metadata(j).set_double("valid_max",  units::convert(m_sys,  1e6, "m/year", "m/second"));
       vBCvel.metadata(j).set_double("_FillValue", config->get_double("fill_value", "m/year", "m/s"));
     }
     //just for diagnostics...
@@ -889,7 +890,7 @@ void IceModel::run() {
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
                stepcount,
-               m_grid.convert(m_ctx->time()->end() - m_ctx->time()->start(), "seconds", "years")/(double)stepcount);
+               units::convert(m_sys, m_ctx->time()->end() - m_ctx->time()->start(), "seconds", "years")/(double)stepcount);
   }
 }
 

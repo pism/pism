@@ -824,10 +824,6 @@ void IceGrid::set_periodicity(Periodicity p) {
   m_impl->periodicity = p;
 }
 
-double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
-  return units::convert(m_impl->ctx->unit_system(), value, unit1, unit2);
-}
-
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
 
   verbPrintf(3, com,

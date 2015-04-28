@@ -106,7 +106,7 @@ protected:
     }
 
     if (reference_year.is_set()) {
-      m_bc_reference_time = Model::m_grid.convert(reference_year, "years", "seconds");
+      m_bc_reference_time = units::convert(Model::m_sys, reference_year, "years", "seconds");
     } else {
       m_bc_reference_time = 0;
     }

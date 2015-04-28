@@ -119,7 +119,7 @@ void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 
   if (m_meltrate_set) {
 
-    meltrate = m_grid.convert(m_mymeltrate, "m year-1", "m s-1");
+    meltrate = units::convert(m_sys, m_mymeltrate, "m year-1", "m s-1");
 
   } else {
 

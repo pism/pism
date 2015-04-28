@@ -280,7 +280,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                              "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                              " proc %d; mask=%d; w=%f m/year]]\n",
                              Tnew[k], i, j, k, m_grid.rank(), vMask.as_int(i, j),
-                             m_grid.convert(system.w(k), "m/s", "m/year"));
+                             units::convert(m_sys, system.w(k), "m/s", "m/year"));
           PISM_CHK(ierr, "PetscPrintf");
 
           myLowTempCount++;
@@ -315,7 +315,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                              "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                              " proc %d; mask=%d; w=%f]]\n",
                              Tnew[0],i,j,m_grid.rank(),vMask.as_int(i,j),
-                             m_grid.convert(system.w(0), "m/s", "m/year"));
+                             units::convert(m_sys, system.w(0), "m/s", "m/year"));
           PISM_CHK(ierr, "PetscPrintf");
 
           myLowTempCount++;

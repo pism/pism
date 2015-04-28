@@ -128,7 +128,9 @@ void IceModel::update_run_stats() {
   proc_hours = m_grid.size() * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
-  mypph = m_grid.convert(m_grid.ctx()->time()->current() - m_grid.ctx()->time()->start(), "seconds", "years") / proc_hours;
+  mypph = units::convert(m_sys,
+                         m_grid.ctx()->time()->current() - m_grid.ctx()->time()->start(),
+                         "seconds", "years") / proc_hours;
 
   MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, m_grid.com);
 

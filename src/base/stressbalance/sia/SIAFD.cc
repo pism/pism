@@ -63,7 +63,7 @@ SIAFD::SIAFD(const IceGrid &g, EnthalpyConverter::Ptr e)
   // bed smoother
   m_bed_smoother = new BedSmoother(m_grid, WIDE_STENCIL);
 
-  m_second_to_kiloyear = m_grid.convert(1, "second", "1000 years");
+  m_second_to_kiloyear = units::convert(m_sys, 1, "second", "1000 years");
 
   {
     rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);

@@ -45,11 +45,11 @@ void EISMINTII::init_impl() {
              m_experiment);
 
   // EISMINT II specified values for parameters
-  m_S_b = m_grid.convert(1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
+  m_S_b = units::convert(m_sys, 1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
   m_S_T = 1.67e-2 * 1e-3;       // K/m  Temp gradient
 
   // these are for A,E,G,H,I,K:
-  m_M_max = m_grid.convert(0.5, "m/year", "m/s"); // Max accumulation
+  m_M_max = units::convert(m_sys, 0.5, "m/year", "m/s"); // Max accumulation
   m_R_el  = 450.0e3;            // Distance to equil line (SMB=0)
   m_T_min = 238.15;
 
@@ -61,7 +61,7 @@ void EISMINTII::init_impl() {
   case 'J':
   case 'L':                     // supposed to start from end of experiment A (for C;
     //   resp I and K for J and L) and:
-    m_M_max = m_grid.convert(0.25, "m/year", "m/s");
+    m_M_max = units::convert(m_sys, 0.25, "m/year", "m/s");
     m_R_el  = 425.0e3;
     break;
   case 'D':                     // supposed to start from end of experiment A and:
@@ -76,27 +76,27 @@ void EISMINTII::init_impl() {
   m_T_min = options::Real("-Tmin", "T min, Kelvin", m_T_min);
 
   options::Real Mmax("-Mmax", "Maximum accumulation, m/year",
-                     m_grid.convert(m_M_max, "m/s", "m/year"));
+                     units::convert(m_sys, m_M_max, "m/s", "m/year"));
   if (Mmax.is_set()) {
-    m_M_max = m_grid.convert(Mmax, "m/year", "m/second");
+    m_M_max = units::convert(m_sys, Mmax, "m/year", "m/second");
   }
 
   options::Real Sb("-Sb", "radial gradient of accumulation rate, (m/year)/km",
-                   m_grid.convert(m_S_b,   "m/second/m", "m/year/km"));
+                   units::convert(m_sys, m_S_b,   "m/second/m", "m/year/km"));
   if (Sb.is_set()) {
-    m_S_b = m_grid.convert(Sb, "m/year/km", "m/second/m");
+    m_S_b = units::convert(m_sys, Sb, "m/year/km", "m/second/m");
   }
 
   options::Real ST("-ST", "radial gradient of surface temperature, K/km",
-                   m_grid.convert(m_S_T, "K/m", "K/km"));
+                   units::convert(m_sys, m_S_T, "K/m", "K/km"));
   if (ST.is_set()) {
-    m_S_T = m_grid.convert(ST, "K/km", "K/m");
+    m_S_T = units::convert(m_sys, ST, "K/km", "K/m");
   }
 
   options::Real Rel("-Rel", "radial distance to equilibrium line, km",
-                    m_grid.convert(m_R_el, "m", "km"));
+                    units::convert(m_sys, m_R_el, "m", "km"));
   if (Rel.is_set()) {
-    m_R_el = m_grid.convert(Rel, "km", "m");
+    m_R_el = units::convert(m_sys, Rel, "km", "m");
   }
 
   initialize_using_formulas();

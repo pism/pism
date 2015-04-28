@@ -128,7 +128,7 @@ protected:
     options::Integer ref_year(option_prefix + "_reference_year",
                               "Boundary condition reference year", 0);
     if (ref_year.is_set()) {
-      bc_reference_time = Model::m_grid.convert(ref_year, "years", "seconds");
+      bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }

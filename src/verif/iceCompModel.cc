@@ -763,7 +763,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         {
           double
             H0 = 600.0,
-            v0 = m_grid.convert(300.0, "m/year", "m/second"),
+            v0 = units::convert(m_sys, 300.0, "m/year", "m/second"),
             Q0 = H0 * v0,
             B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
@@ -1156,10 +1156,10 @@ void IceCompModel::reportErrors() {
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
     verbPrintf(1, m_grid.com,
                "           %12.6f%12.6f%12.6f%12.6f\n",
-               m_grid.convert(maxUerr, "m/second", "m/year"),
-               m_grid.convert(avUerr, "m/second", "m/year"),
-               m_grid.convert(maxWerr, "m/second", "m/year"),
-               m_grid.convert(avWerr, "m/second", "m/year"));
+               units::convert(m_sys, maxUerr, "m/second", "m/year"),
+               units::convert(m_sys, avUerr, "m/second", "m/year"),
+               units::convert(m_sys, maxWerr, "m/second", "m/year"),
+               units::convert(m_sys, avWerr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1188,12 +1188,15 @@ void IceCompModel::reportErrors() {
     double exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     computeBasalVelocityErrors(exactmaxspeed,
                                maxvecerr,avvecerr,maxuberr,maxvberr);
-    verbPrintf(1,m_grid.com,
+    verbPrintf(1, m_grid.com,
                "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
-    verbPrintf(1,m_grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
-               m_grid.convert(maxvecerr, "m/second", "m/year"), m_grid.convert(avvecerr, "m/second", "m/year"),
+    verbPrintf(1, m_grid.com,
+               "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
+               units::convert(m_sys, maxvecerr, "m/second", "m/year"),
+               units::convert(m_sys, avvecerr, "m/second", "m/year"),
                (avvecerr/exactmaxspeed)*100.0,
-               m_grid.convert(maxuberr, "m/second", "m/year"), m_grid.convert(maxvberr, "m/second", "m/year"));
+               units::convert(m_sys, maxuberr, "m/second", "m/year"),
+               units::convert(m_sys, maxvberr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1224,13 +1227,13 @@ void IceCompModel::reportErrors() {
       verbPrintf(1,m_grid.com,
                  "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
                  "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-                 m_grid.convert(maxbmelterr, "m/second", "m/year"),
-                 m_grid.convert(minbmelterr, "m/second", "m/year"));
+                 units::convert(m_sys, maxbmelterr, "m/second", "m/year"),
+                 units::convert(m_sys, minbmelterr, "m/second", "m/year"));
     }
     verbPrintf(1,m_grid.com,
                "basal melt:  max\n");
     verbPrintf(1,m_grid.com, "           %11.5f\n",
-               m_grid.convert(maxbmelterr, "m/second", "m/year"));
+               units::convert(m_sys, maxbmelterr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1287,7 +1290,7 @@ void IceCompModel::test_V_init() {
   }
 
   // set SSA boundary conditions:
-  double upstream_velocity = m_grid.convert(300.0, "m/year", "m/second"),
+  double upstream_velocity = units::convert(m_sys, 300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
   IceModelVec::AccessList list;

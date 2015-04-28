@@ -69,7 +69,7 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
   if (m_smoothing_range > 0.0) {
     verbPrintf(2, grid.com,
                "* Initializing bed smoother object with %.3f km half-width ...\n",
-               grid.convert(m_smoothing_range, "m", "km"));
+               units::convert(grid.ctx()->unit_system(), m_smoothing_range, "m", "km"));
   }
 
   // Make sure that Nx and Ny are initialized. In most cases SIAFD::update() will call

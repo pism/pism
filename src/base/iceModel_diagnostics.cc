@@ -1547,8 +1547,8 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
-  m_vars[0].set_double("valid_min",  m_grid.convert(-1e6, "m/year", "m/s"));
-  m_vars[0].set_double("valid_max",  m_grid.convert( 1e6, "m/year", "m/s"));
+  m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m/year", "m/s"));
+  m_vars[0].set_double("valid_max",  units::convert(m_sys,  1e6, "m/year", "m/s"));
   m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
   m_vars[0].set_string("cell_methods", "time: mean");
 
@@ -1568,7 +1568,7 @@ IceModelVec::Ptr IceModel_dHdt::compute() {
   result->write_in_glaciological_units = true;
 
   if (gsl_isnan(last_report_time)) {
-    result->set(m_grid.convert(2e6, "m/year", "m/s"));
+    result->set(units::convert(m_sys, 2e6, "m/year", "m/s"));
   } else {
     IceModelVec::AccessList list;
     list.add(*result);

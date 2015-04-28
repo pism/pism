@@ -96,6 +96,7 @@ protected:
   const Config::Ptr m_config;
   IceGrid::Ptr m_grid;
   const Context::Ptr m_ctx;
+  const units::System::Ptr m_sys;
 
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;

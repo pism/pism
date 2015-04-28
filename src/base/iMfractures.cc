@@ -136,6 +136,8 @@ void IceModel::calculateFractureDensity() {
 
   bool fd2d_scheme = options::Bool("-scheme_fd2d", "scheme fd2d");
 
+  const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
+
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -310,7 +312,7 @@ void IceModel::calculateFractureDensity() {
       //fracture age since fracturing occured
       vFAnew(i,j) -= dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
       vFAnew(i,j) -= dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
-      vFAnew(i,j)+= dt/m_grid.convert(1.0, "year", "seconds");
+      vFAnew(i,j)+= dt / one_year;
       if (sigmat > initThreshold) {
         vFAnew(i,j) = 0.0;
       }

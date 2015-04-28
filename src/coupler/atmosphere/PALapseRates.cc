@@ -71,9 +71,9 @@ void LapseRates::init() {
              "   precipitation lapse rate:   %3.3f m/year per km\n",
              m_temp_lapse_rate, m_precip_lapse_rate);
 
-  m_temp_lapse_rate = m_grid.convert(m_temp_lapse_rate, "K/km", "K/m");
+  m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
-  m_precip_lapse_rate = m_grid.convert(m_precip_lapse_rate, "m/year / km", "m/s / m");
+  m_precip_lapse_rate = units::convert(m_sys, m_precip_lapse_rate, "m/year / km", "m/s / m");
 }
 
 void LapseRates::mean_precipitation(IceModelVec2S &result) {

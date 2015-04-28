@@ -77,13 +77,13 @@ void SSATestCase::buildSSACoefficients()
                      "Y-component of the SSA velocity boundary conditions",
                      "m s-1", "", 1);
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(0).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
-  m_bc_values.metadata(0).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
   m_bc_values.metadata(0).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(1).set_double("valid_min", m_grid->convert(-1e6, "m/year", "m/second"));
-  m_bc_values.metadata(1).set_double("valid_max", m_grid->convert( 1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
   m_bc_values.metadata(1).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
 
   m_bc_values.write_in_glaciological_units = true;
@@ -125,7 +125,8 @@ void SSATestCase::buildSSACoefficients()
 }
 
 SSATestCase::SSATestCase(Context::Ptr ctx)
-  : m_com(ctx->com()), m_config(ctx->config()), m_ctx(ctx), m_ssa(NULL) {
+  : m_com(ctx->com()), m_config(ctx->config()), m_ctx(ctx),
+    m_sys(ctx->unit_system()), m_ssa(NULL) {
   // empty
 }
 
@@ -228,22 +229,22 @@ void SSATestCase::report(const std::string &testname) {
              "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
   verbPrintf(1,m_grid->com,
              "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
-             m_grid->convert(gmaxvecerr, "m/second", "m/year"),
+             units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
              (gavvecerr/gexactvelmax)*100.0,
-             m_grid->convert(gmaxuerr, "m/second", "m/year"),
-             m_grid->convert(gmaxverr, "m/second", "m/year"),
-             m_grid->convert(gavuerr, "m/second", "m/year"),
-             m_grid->convert(gavverr, "m/second", "m/year"));
+             units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
+             units::convert(m_sys, gmaxverr, "m/second", "m/year"),
+             units::convert(m_sys, gavuerr, "m/second", "m/year"),
+             units::convert(m_sys, gavverr, "m/second", "m/year"));
 
   verbPrintf(1,m_grid->com, "NUM ERRORS DONE\n");
 
   report_netcdf(testname,
-                m_grid->convert(gmaxvecerr, "m/second", "m/year"),
+                units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
                 (gavvecerr/gexactvelmax)*100.0,
-                m_grid->convert(gmaxuerr, "m/second", "m/year"),
-                m_grid->convert(gmaxverr, "m/second", "m/year"),
-                m_grid->convert(gavuerr, "m/second", "m/year"),
-                m_grid->convert(gavverr, "m/second", "m/year"));
+                units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
+                units::convert(m_sys, gmaxverr, "m/second", "m/year"),
+                units::convert(m_sys, gavuerr, "m/second", "m/year"),
+                units::convert(m_sys, gavverr, "m/second", "m/year"));
 }
 
 void SSATestCase::report_netcdf(const std::string &testname,

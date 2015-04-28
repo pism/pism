@@ -259,6 +259,7 @@ static void setInitStateF(IceGrid &grid,
 
 static void reportErrors(const Config &config,
                          const IceGrid &grid,
+                         units::System::Ptr unit_system,
                          const IceModelVec2S &thickness,
                          const IceModelVec3 &u_sia,
                          const IceModelVec3 &v_sia,
@@ -288,10 +289,10 @@ static void reportErrors(const Config &config,
   verbPrintf(1,grid.com,
              "surf vels :     maxUvec      avUvec        maxW         avW\n");
   verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
-             grid.convert(maxUerr, "m/s", "m/year"),
-             grid.convert(avUerr,  "m/s", "m/year"),
-             grid.convert(maxWerr, "m/s", "m/year"),
-             grid.convert(avWerr,  "m/s", "m/year"));
+             units::convert(unit_system, maxUerr, "m/s", "m/year"),
+             units::convert(unit_system, avUerr,  "m/s", "m/year"),
+             units::convert(unit_system, maxWerr, "m/s", "m/year"),
+             units::convert(unit_system, avWerr,  "m/s", "m/year"));
 }
 
 } // end of namespace pism
@@ -438,7 +439,7 @@ int main(int argc, char *argv[]) {
 
     const IceModelVec3 &sigma = stress_balance.volumetric_strain_heating();
 
-    reportErrors(*config, grid,
+    reportErrors(*config, grid, unit_system,
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:

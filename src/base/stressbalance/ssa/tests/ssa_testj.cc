@@ -88,7 +88,7 @@ void SSATestCaseJ::initializeSSACoefficients() {
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = m_config->get_double("sea_water_density"),
     ice_rho = m_config->get_double("ice_density");
-  const double nu0 = m_grid->convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a

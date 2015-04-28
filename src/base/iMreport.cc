@@ -113,7 +113,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
   list.add(ice_thickness);
   list.add(age3);
 
-  const double one_year = m_grid.convert(1.0, "year", "seconds");
+  const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
   double original_ice_volume = 0.0;
 
   // compute local original volume
@@ -291,7 +291,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
-    const double maxvel = m_grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
+    const double maxvel = units::convert(m_sys, gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
 
     verbPrintf(2,m_grid.com,
                "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",

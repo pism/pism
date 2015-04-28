@@ -256,7 +256,7 @@ MaxTimestep EigenCalving::max_timestep() {
   }
 
   // About 9 hours which corresponds to 10000 km/year on a 10 km grid
-  double dt_min = m_grid.convert(0.001, "years", "seconds");
+  double dt_min = units::convert(m_sys, 0.001, "years", "seconds");
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -340,15 +340,15 @@ MaxTimestep EigenCalving::max_timestep() {
   }
 
   double denom = calving_rate_max / m_grid.dx();
-  const double epsilon = m_grid.convert(0.001 / (m_grid.dx() + m_grid.dy()), "seconds", "years");
+  const double epsilon = units::convert(m_sys, 0.001 / (m_grid.dx() + m_grid.dy()), "seconds", "years");
 
   double dt = 1.0 / (denom + epsilon);
 
   verbPrintf(2, m_grid.com,
              "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
-             m_grid.convert(calving_rate_max, "m/s", "m/year"),
-             m_grid.convert(dt, "seconds", "years"),
-             m_grid.convert(calving_rate_mean, "m/s", "m/year"),
+             units::convert(m_sys, calving_rate_max, "m/s", "m/year"),
+             units::convert(m_sys, dt, "seconds", "years"),
+             units::convert(m_sys, calving_rate_mean, "m/s", "m/year"),
              (int)calving_rate_counter);
 
   return MaxTimestep(std::max(dt, dt_min));

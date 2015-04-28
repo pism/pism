@@ -220,6 +220,7 @@ protected:
   //! Configuration flags and parameters
   Config::Ptr config;
   Context::Ptr m_ctx;
+  const units::System::Ptr m_sys;
 
   VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters

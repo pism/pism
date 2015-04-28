@@ -176,7 +176,7 @@ MaxTimestep TemperatureIndex_Old::max_timestep(PetscReal my_t) {
   MaxTimestep max_dt;
   if (pdd_annualize) {
     if (fabs(my_t - next_pdd_update) < 1e-12) {
-      max_dt = MaxTimestep(m_grid.convert(1.0, "years", "seconds"));
+      max_dt = MaxTimestep(units::convert(m_sys, 1.0, "years", "seconds"));
     } else {
       max_dt = MaxTimestep(next_pdd_update - my_t);
     }
@@ -189,7 +189,7 @@ MaxTimestep TemperatureIndex_Old::max_timestep(PetscReal my_t) {
 
 void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
 
-  PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
+  PetscReal one_year = units::convert(m_sys, 1.0, "years", "seconds");
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
@@ -227,7 +227,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   int Nseries = 0;
   mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries);
 
-  PetscReal one_year = m_grid.convert(1.0, "years", "seconds");
+  PetscReal one_year = units::convert(m_sys, 1.0, "years", "seconds");
 
   // time since the beginning of the year, in seconds
   const PetscScalar tseries = m_grid.ctx()->time()->mod(my_t, one_year),

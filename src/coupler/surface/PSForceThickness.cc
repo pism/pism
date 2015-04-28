@@ -96,7 +96,7 @@ void ForceThickness::init_impl() {
 
   options::Real ftt_alpha("-force_to_thickness_alpha",
                           "Specifies the value of force-to-thickness alpha in per-year units",
-                          m_grid.convert(m_alpha, "s-1", "yr-1"));
+                          units::convert(m_sys, m_alpha, "s-1", "yr-1"));
 
   m_alpha_ice_free_factor = options::Real("-force_to_thickness_ice_free_alpha_factor",
                                           "Set the multiplicative factor for alpha to use in ice-free areas",
@@ -111,14 +111,14 @@ void ForceThickness::init_impl() {
   // is given in a^{-1}
   if (ftt_alpha.is_set()) {
     verbPrintf(3, m_grid.com, "    option -force_to_thickness_alpha seen\n");
-    m_alpha = m_grid.convert(ftt_alpha, "yr-1", "s-1");
+    m_alpha = units::convert(m_sys, ftt_alpha, "yr-1", "s-1");
   }
 
   verbPrintf(2, m_grid.com,
              "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
              "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-             m_grid.convert(m_alpha, "s-1", "yr-1"),
-             m_alpha_ice_free_factor * m_grid.convert(m_alpha, "s-1", "yr-1"),
+             units::convert(m_sys, m_alpha, "s-1", "yr-1"),
+             m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "yr-1"),
              m_ice_free_thickness_threshold);
 
   // m_input_file now contains name of -force_to_thickness file; now check
@@ -325,7 +325,7 @@ Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
 MaxTimestep ForceThickness::max_timestep_impl(double my_t) {
-  double max_dt = m_grid.convert(2.0 / m_alpha, "years", "seconds");
+  double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
   MaxTimestep input_max_dt = input_model->max_timestep(my_t);
 
   return std::min(input_max_dt, MaxTimestep(max_dt));

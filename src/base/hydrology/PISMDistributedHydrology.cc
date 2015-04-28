@@ -64,12 +64,12 @@ void Distributed::init() {
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
   {
-    m_stripwidth = m_grid.convert(m_stripwidth, "m", "km");
+    m_stripwidth = units::convert(m_sys, m_stripwidth, "m", "km");
     options::Real hydrology_null_strip("-hydrology_null_strip",
                                        "set the width, in km, of the strip around the edge "
                                        "of the computational domain in which hydrology is inactivated",
                                        m_stripwidth);
-    m_stripwidth = m_grid.convert(hydrology_null_strip, "km", "m");
+    m_stripwidth = units::convert(m_sys, hydrology_null_strip, "km", "m");
   }
 
   bool init_P_from_steady = options::Bool("-init_P_from_steady",
@@ -308,12 +308,12 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
 
   verbPrintf(4, m_grid.com,
              "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-             m_grid.convert(maxV_result, "m/second", "m/year"),
-             m_grid.convert(dtCFL,       "seconds",  "years"),
-             m_grid.convert(dtDIFFW,     "seconds",  "years"),
-             m_grid.convert(dtDIFFP,     "seconds",  "years"),
-             m_grid.convert(dt_result,   "seconds",  "years"),
-             m_grid.convert(t_current,   "seconds",  "years"));
+             units::convert(m_sys, maxV_result, "m/second", "m/year"),
+             units::convert(m_sys, dtCFL,       "seconds",  "years"),
+             units::convert(m_sys, dtDIFFW,     "seconds",  "years"),
+             units::convert(m_sys, dtDIFFP,     "seconds",  "years"),
+             units::convert(m_sys, dt_result,   "seconds",  "years"),
+             units::convert(m_sys, t_current,   "seconds",  "years"));
 }
 
 
@@ -482,7 +482,7 @@ void Distributed::update_impl(double icet, double icedt) {
   verbPrintf(2, m_grid.com,
              "  'distributed' hydrology took %d hydrology sub-steps"
              " with average dt = %.6f years\n",
-             hydrocount, m_grid.convert(m_dt/hydrocount, "seconds", "years"));
+             hydrocount, units::convert(m_sys, m_dt/hydrocount, "seconds", "years"));
   verbPrintf(3, m_grid.com,
              "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,"
              "  max D = %.2e m^2 s-1)\n",

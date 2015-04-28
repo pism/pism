@@ -93,7 +93,7 @@ void Hydrology::init() {
 
   if (itb_file.is_set()) {
     m_inputtobed_period = itb_period_years;
-    m_inputtobed_reference_time = m_grid.convert(itb_reference_year, "years", "seconds");
+    m_inputtobed_reference_time = units::convert(m_sys, itb_reference_year, "years", "seconds");
 
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
 

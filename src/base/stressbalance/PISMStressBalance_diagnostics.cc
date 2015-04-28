@@ -119,7 +119,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid.convert(m_grid.ctx()->config()->get_double("fill_value"),
+  m_vars[0].set_double("_FillValue", units::convert(m_sys, m_grid.ctx()->config()->get_double("fill_value"),
                                          "m/year", "m/s"));
   m_vars[0].set_double("valid_min", 0.0);
 }
@@ -364,12 +364,12 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
   set_attrs("y-component of the horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 1);
 
-  m_vars[0].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
   m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
-  m_vars[1].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[1].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
   m_vars[1].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
@@ -425,8 +425,8 @@ PSB_wvel::PSB_wvel(StressBalance *m)
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
 }
 
 IceModelVec::Ptr PSB_wvel::compute() {
@@ -514,8 +514,8 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
 
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
   m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
@@ -559,8 +559,8 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m)
 
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
   m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
@@ -608,12 +608,12 @@ PSB_velbase::PSB_velbase(StressBalance *m)
   set_attrs("y-component of the horizontal velocity of ice at the base of ice", "",
             "m s-1", "m year-1", 1);
 
-  m_vars[0].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
   m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
-  m_vars[1].set_double("valid_min", m_grid.convert(-1e6, "m/year", "m/second"));
-  m_vars[1].set_double("valid_max", m_grid.convert(1e6, "m/year", "m/second"));
+  m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
   m_vars[1].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
