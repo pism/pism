@@ -39,7 +39,7 @@ void PBPointwiseIsostasy::init_impl() {
 
   BedDef::init_impl();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the pointwise isostasy bed deformation model...\n");
 
   const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");

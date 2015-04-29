@@ -65,7 +65,7 @@ void Constant::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (!m_config->get_boolean("is_dry_simulation")) {
-    verbPrintf(2, m_grid.com, "* Initializing the constant ocean model...\n");
+    m_log->message(2, "* Initializing the constant ocean model...\n");
   }
 
   options::Real meltrate("-shelf_base_melt_rate",
@@ -74,7 +74,7 @@ void Constant::init_impl() {
 
   if (meltrate.is_set()) {
     m_mymeltrate = meltrate;
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "    - option '-shelf_base_melt_rate' seen, "
                "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
                m_mymeltrate);

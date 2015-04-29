@@ -62,7 +62,7 @@ void Delta_MBP::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com, "* Initializing melange back pressure fraction forcing...\n");
+  m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
 
   init_internal();
 }

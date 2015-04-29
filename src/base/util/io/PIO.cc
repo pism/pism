@@ -146,9 +146,11 @@ void PIO::detect_mode(const string &filename) {
 
     if (m_nc) {
       m_backend_type = modes[j];
+#if (PISM_DEBUG==1)
       verbPrintf(3, m_com,
                  "  - Using the %s backend to read from %s...\n",
                  modes[j].c_str(), filename.c_str());
+#endif
       break;
     }
   }
@@ -166,7 +168,7 @@ void PIO::open(const string &filename, IO_Mode mode) {
   try {
 
     if (mode == PISM_READONLY || mode == PISM_READWRITE) {
-      if (not m_nc && m_backend_type == "guess_mode") {
+      if (not m_nc and m_backend_type == "guess_mode") {
         detect_mode(filename);
       }
     }

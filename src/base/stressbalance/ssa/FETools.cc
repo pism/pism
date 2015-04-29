@@ -25,6 +25,7 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -526,7 +527,7 @@ DirichletData::DirichletData()
 
 DirichletData::~DirichletData() {
   if (m_indices != NULL) {
-    verbPrintf(1, m_indices->get_grid()->com,
+    m_indices->get_grid()->ctx()->log()->message(1,
                "Warning: DirichletData destructing with IceModelVecs still accessed."
                " Looks like DirichletData::finish() was not called.");
   }

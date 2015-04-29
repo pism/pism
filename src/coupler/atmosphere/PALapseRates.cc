@@ -56,7 +56,7 @@ void LapseRates::init() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  [using air temperature and precipitation lapse corrections]\n");
 
   init_internal();
@@ -66,7 +66,7 @@ void LapseRates::init() {
                                     " in m/year per km",
                                     m_precip_lapse_rate);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "   air temperature lapse rate: %3.3f K per km\n"
              "   precipitation lapse rate:   %3.3f m/year per km\n",
              m_temp_lapse_rate, m_precip_lapse_rate);

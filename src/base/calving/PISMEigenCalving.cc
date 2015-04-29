@@ -59,7 +59,7 @@ EigenCalving::~EigenCalving() {
 
 void EigenCalving::init() {
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the 'eigen-calving' mechanism...\n");
 
   if (fabs(m_grid.dx() - m_grid.dy()) / std::min(m_grid.dx(), m_grid.dy()) > 1e-2) {
@@ -344,7 +344,7 @@ MaxTimestep EigenCalving::max_timestep() {
 
   double dt = 1.0 / (denom + epsilon);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
              units::convert(m_sys, calving_rate_max, "m/s", "m/year"),
              units::convert(m_sys, dt, "seconds", "years"),

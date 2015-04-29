@@ -114,7 +114,7 @@ void SSAFEM::init_impl() {
 
   SSA::init_impl();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  [using the SNES-based finite element method implementation]\n");
 
   // process command-line options
@@ -125,7 +125,7 @@ void SSAFEM::init_impl() {
                                      m_dirichletScale);
 
   }
-  
+
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
   // into IceModelVec2V "velocity". We use that field as an initial guess.
   // If we are not restarting from a PISM file, "velocity" is identically zero,
@@ -775,7 +775,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   char file_name[PETSC_MAX_PATH_LEN];
   snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
              file_name);
 

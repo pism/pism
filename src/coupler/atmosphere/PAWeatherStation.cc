@@ -69,7 +69,7 @@ void WeatherStation::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the constant-in-space atmosphere model\n"
              "  for use with scalar data from one weather station\n"
              "  combined with lapse rate corrections...\n");
@@ -84,15 +84,15 @@ void WeatherStation::init() {
     throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  - Reading air temperature and precipitation from '%s'...\n",
              filename->c_str());
 
   PIO nc(m_grid.com, "netcdf3");
   nc.open(filename, PISM_READONLY);
   {
-    m_precipitation.read(nc, m_grid.ctx()->time().get());
-    m_air_temperature.read(nc, m_grid.ctx()->time().get());
+    m_precipitation.read(nc, *m_grid.ctx()->time(), *m_grid.ctx()->log());
+    m_air_temperature.read(nc, *m_grid.ctx()->time(), *m_grid.ctx()->log());
   }
   nc.close();
 }

@@ -60,7 +60,7 @@ void Delta_T::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
 
   init_internal();

@@ -34,7 +34,7 @@ NullTransport::~NullTransport() {
 }
 
 void NullTransport::init() {
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
   Hydrology::init();
 }

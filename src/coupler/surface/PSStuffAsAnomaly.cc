@@ -75,7 +75,7 @@ void StuffAsAnomaly::init_impl() {
 
   find_pism_input(input_file, do_regrid, start);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the 'turn_into_anomaly' modifier\n"
              "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
              "  read from '%s'.\n", input_file.c_str());

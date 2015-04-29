@@ -65,7 +65,7 @@ void Delta_T::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing ice-surface temperature forcing using scalar offsets...\n");
 
   init_internal();

@@ -58,7 +58,7 @@ void PIK::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the constant (PIK) ocean model...\n");
 
   m_meltfactor = options::Real("-meltfactor_pik",
@@ -138,7 +138,7 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
     // compute ocean_heat_flux according to beckmann_goosse03
     // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
     double ocean_heat_flux = m_meltfactor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
-    
+
     // TODO: T_ocean -> field!
 
     // shelfbmassflux is positive if ice is freezing on; here it is always negative:

@@ -110,7 +110,7 @@ SSA::SSA(const IceGrid &g, EnthalpyConverter::Ptr e)
   }
 }
 
-SSA::~SSA() { 
+SSA::~SSA() {
   if (m_flow_law != NULL) {
     delete m_flow_law;
     m_flow_law = NULL;
@@ -127,10 +127,10 @@ void SSA::init_impl() {
 
   ShallowStressBalance::init_impl();
 
-  verbPrintf(2,m_grid.com,"* Initializing the SSA stress balance...\n");
-  verbPrintf(2, m_grid.com,
+  m_log->message(2, "* Initializing the SSA stress balance...\n");
+  m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
-  
+
   if (m_config->get_boolean("sub_groundingline")) {
     m_gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
   }
@@ -148,7 +148,7 @@ void SSA::init_impl() {
 
   m_bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
   m_enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
-  
+
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   options::String input_file("-i", "PISM input file");
@@ -169,7 +169,7 @@ void SSA::init_impl() {
     nc.close();
 
     if (u_ssa_found && v_ssa_found && (not dont_read_initial_guess)) {
-      verbPrintf(3,m_grid.com,"Reading u_ssa and v_ssa...\n");
+      m_log->message(3, "Reading u_ssa and v_ssa...\n");
 
       m_velocity.read(input_file, start);
     }

@@ -28,6 +28,8 @@
 
 namespace pism {
 
+class Logger;
+
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class NetCDFConfig : public Config {
 public:
@@ -78,11 +80,11 @@ public:
   typedef PISM_SHARED_PTR(const DefaultConfig) ConstPtr;
 
   //! Initialize (use default path if no option was set).
-  void init_with_default();
+  void init_with_default(const Logger &log);
   //! Initialize (leave empty if no option was set).
-  void init();
+  void init(const Logger &log);
 private:
-  void init(bool use_default_path);
+  void init(const Logger &log, bool use_default_path);
   std::string m_option;
 };
 

@@ -39,9 +39,9 @@ EISMINTII::~EISMINTII() {
 
 void EISMINTII::init_impl() {
 
-  verbPrintf(2, m_grid.com, 
+  m_log->message(2,
              "setting parameters for surface mass balance"
-             " and temperature in EISMINT II experiment %c ... \n", 
+             " and temperature in EISMINT II experiment %c ... \n",
              m_experiment);
 
   // EISMINT II specified values for parameters

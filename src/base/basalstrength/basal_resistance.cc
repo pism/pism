@@ -20,6 +20,7 @@
 #include "base/util/pism_const.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -33,11 +34,11 @@ IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
   // empty
 }
 
-void IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com,
+void IceBasalResistancePlasticLaw::print_info(const Logger &log,
+                                              int threshold,
                                               units::System::Ptr system) const {
-  verbPrintf(verbthresh, com, 
-             "Using purely plastic till with eps = %10.5e m/year.\n",
-             units::convert(system, m_plastic_regularize, "m/s", "m/year"));
+  log.message(threshold, "Using purely plastic till with eps = %10.5e m/year.\n",
+               units::convert(system, m_plastic_regularize, "m/s", "m/year"));
 }
 
 
@@ -79,20 +80,21 @@ IceBasalResistancePseudoPlasticLaw::~IceBasalResistancePseudoPlasticLaw() {
   // empty
 }
 
-void IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com,
+void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
+                                                    int threshold,
                                                     units::System::Ptr system) const {
 
   if (m_pseudo_q == 1.0) {
-    verbPrintf(verbthresh, com, 
-               "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-               units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
+    log.message(threshold,
+                 "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
+                 units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
   } else {
-    verbPrintf(verbthresh, com, 
-               "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
-               " and u_threshold = %.2f m/year.\n", 
-               units::convert(system, m_plastic_regularize, "m/s", "m/year"),
-               m_pseudo_q,
-               units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
+    log.message(threshold,
+                 "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
+                 " and u_threshold = %.2f m/year.\n", 
+                 units::convert(system, m_plastic_regularize, "m/s", "m/year"),
+                 m_pseudo_q,
+                 units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
   }
 }
 

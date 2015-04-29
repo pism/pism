@@ -36,7 +36,7 @@ FloatKill::~FloatKill() {
 }
 
 void FloatKill::init() {
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the 'calving at the grounding line' mechanism...\n");
 }
 

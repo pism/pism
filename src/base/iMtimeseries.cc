@@ -68,7 +68,7 @@ void IceModel::init_timeseries() {
   save_ts = true;
 
   try {
-    m_grid.ctx()->time()->parse_times(times, ts_times);  
+    m_grid.ctx()->time()->parse_times(times, ts_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -ts_times argument");
     throw;
@@ -78,15 +78,15 @@ void IceModel::init_timeseries() {
     throw RuntimeError("no argument for -ts_times option.");
   }
 
-  verbPrintf(2, m_grid.com, "saving scalar time-series to '%s'; ",
+  m_log->message(2, "saving scalar time-series to '%s'; ",
              ts_file->c_str());
 
-  verbPrintf(2, m_grid.com, "times requested: %s\n", times->c_str());
+  m_log->message(2, "times requested: %s\n", times->c_str());
 
   current_ts = 0;
 
   if (vars.is_set()) {
-    verbPrintf(2, m_grid.com, "variables requested: %s\n", vars.to_string().c_str());
+    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
     ts_vars = vars;
   } else {
     std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -113,7 +113,7 @@ void IceModel::init_timeseries() {
       }
 
       if (current_ts > 0) {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    "skipping times before the last record in %s (at %s)\n",
                    ts_file->c_str(), m_grid.ctx()->time()->date(time_max).c_str());
       }
@@ -257,7 +257,7 @@ void IceModel::init_extras() {
       }
 
       if (next_extra > 0) {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    "skipping times before the last record in %s (at %s)\n",
                    extra_filename.c_str(), m_grid.ctx()->time()->date(time_max).c_str());
       }
@@ -280,30 +280,30 @@ void IceModel::init_extras() {
 
   if (split) {
     split_extra = true;
-    verbPrintf(2, m_grid.com, "saving spatial time-series to '%s+year.nc'; ",
+    m_log->message(2, "saving spatial time-series to '%s+year.nc'; ",
                extra_filename.c_str());
   } else {
     if (!ends_with(extra_filename, ".nc")) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
                  extra_filename.c_str());
     }
-    verbPrintf(2, m_grid.com, "saving spatial time-series to '%s'; ",
+    m_log->message(2, "saving spatial time-series to '%s'; ",
                extra_filename.c_str());
   }
 
-  verbPrintf(2, m_grid.com, "times requested: %s\n", times->c_str());
+  m_log->message(2, "times requested: %s\n", times->c_str());
 
   if (extra_times.size() > 500) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
   if (vars.is_set()) {
-    verbPrintf(2, m_grid.com, "variables requested: %s\n", vars.to_string().c_str());
+    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
     extra_vars = vars;
   } else {
-    verbPrintf(2, m_grid.com, "PISM WARNING: -extra_vars was not set."
+    m_log->message(2, "PISM WARNING: -extra_vars was not set."
                " Writing model_state, mapping and climate_steady variables...\n");
 
     std::set<std::string> vars_set = m_grid.variables().keys();
@@ -329,7 +329,7 @@ void IceModel::init_extras() {
   } // end of the else clause after "if (extra_vars_set)"
 
   if (extra_vars.size() == 0) {
-    verbPrintf(2, m_grid.com, 
+    m_log->message(2,
                "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n");
   }
 }
@@ -418,7 +418,7 @@ void IceModel::write_extras() {
     strncpy(filename, extra_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
-  verbPrintf(3, m_grid.com, 
+  m_log->message(3,
              "\nsaving spatial time-series to %s at %s\n\n",
              filename, m_grid.ctx()->time()->date().c_str());
 

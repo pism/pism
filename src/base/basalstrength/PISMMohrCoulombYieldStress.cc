@@ -154,7 +154,7 @@ void MohrCoulombYieldStress::init_impl() {
     }
   }
 
-  verbPrintf(2, m_grid.com, "* Initializing the default basal yield stress model...\n");
+  m_log->message(2, "* Initializing the default basal yield stress model...\n");
 
   options::Real
     plastic_phi("-plastic_phi", "constant in space till friction angle",
@@ -162,8 +162,8 @@ void MohrCoulombYieldStress::init_impl() {
 
   options::RealList
     topg_to_phi_option("-topg_to_phi",
-                "Turn on, and specify, the till friction angle parameterization"
-                " based on bedrock elevation (topg)");
+                       "Turn on, and specify, the till friction angle parameterization"
+                       " based on bedrock elevation (topg)");
 
   bool bootstrap = false;
   int start = 0;
@@ -176,8 +176,8 @@ void MohrCoulombYieldStress::init_impl() {
 
   if (topg_to_phi_option.is_set()) {
 
-    verbPrintf(2, m_grid.com,
-               "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
+    m_log->message(2,
+                 "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
     if (use_input_file) {
 
@@ -188,10 +188,10 @@ void MohrCoulombYieldStress::init_impl() {
       nc.close();
 
       if (tillphi_present) {
-        verbPrintf(2, m_grid.com,
-                   "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
-                   "              present in the input file '%s'!\n",
-                   m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str());
+        m_log->message(2,
+                     "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
+                     "              present in the input file '%s'!\n",
+                     m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str());
       }
     }
 
@@ -203,14 +203,14 @@ void MohrCoulombYieldStress::init_impl() {
     double topg_min = topg_to_phi_option[2];
     double topg_max = topg_to_phi_option[3];
 
-    verbPrintf(2, m_grid.com,
-               "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-               "            /  %5.2f                                 for   topg < %.f\n"
-               "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-               "            \\  %5.2f                                 for   %.f < topg\n",
-               phi_min, topg_min,
-               phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
-               phi_max, topg_max);
+    m_log->message(2,
+                 "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
+                 "            /  %5.2f                                 for   topg < %.f\n"
+                 "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+                 "            \\  %5.2f                                 for   %.f < topg\n",
+                 phi_min, topg_min,
+                 phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
+                 phi_max, topg_max);
 
   } else if (use_input_file) {
     if (bootstrap) {
@@ -229,9 +229,9 @@ void MohrCoulombYieldStress::init_impl() {
   regrid("MohrCoulombYieldStress", m_till_phi);
 
   options::String tauc_to_phi_file("-tauc_to_phi",
-                              "Turn on, and specify, the till friction angle computation"
-                              " which uses basal yield stress (tauc) and the rest of the model state",
-                              "", options::ALLOW_EMPTY);
+                                   "Turn on, and specify, the till friction angle computation"
+                                   " which uses basal yield stress (tauc) and the rest of the model state",
+                                   "", options::ALLOW_EMPTY);
 
   if (tauc_to_phi_file.is_set()) {
 
@@ -248,9 +248,9 @@ void MohrCoulombYieldStress::init_impl() {
       }
     }
 
-    verbPrintf(2, m_grid.com,
-               "  Will compute till friction angle (tillphi) as a function"
-               " of the yield stress (tauc)...\n");
+    m_log->message(2,
+                 "  Will compute till friction angle (tillphi) as a function"
+                 " of the yield stress (tauc)...\n");
 
     m_tauc_to_phi = true;
 
@@ -298,7 +298,7 @@ void MohrCoulombYieldStress::write_variables_impl(const std::set<std::string> &v
 /*!
 Updates yield stress  @f$ \tau_c @f$  based on modeled till water layer thickness
 from a Hydrology object.  We implement the Mohr-Coulomb criterion allowing
-a (typically small) till cohesion  @f$ c_0 @f$ 
+a (typically small) till cohesion  @f$ c_0 @f$
 and by expressing the coefficient as the tangent of a till friction angle
  @f$ \varphi @f$ :
     @f[   \tau_c = c_0 + (\tan \varphi) N_{til}. @f]

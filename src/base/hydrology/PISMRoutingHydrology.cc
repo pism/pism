@@ -96,7 +96,7 @@ Routing::~Routing() {
 
 
 void Routing::init() {
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
   //   otherwise from -i file, otherwise with constant value
@@ -798,11 +798,11 @@ void Routing::update_impl(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  'routing' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
              hydrocount, units::convert(m_sys, m_dt/hydrocount, "seconds", "years"));
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "  (hydrology info: dt = %.2f s,  max |V| = %.2e m s-1,  max D = %.2e m^2 s-1)\n",
              m_dt/hydrocount, maxV, maxD);
 

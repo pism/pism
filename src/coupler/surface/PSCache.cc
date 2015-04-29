@@ -71,7 +71,7 @@ void Cache::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the 'caching' surface model modifier...\n");
 
   update_interval = options::Integer("-surface_cache_update_interval",

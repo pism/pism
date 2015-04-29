@@ -635,6 +635,9 @@ def pism_context_test():
 
     com = PISM.PETSc.COMM_WORLD
     system = PISM.UnitSystem("")
+
+    logger = PISM.Logger(com, 2)
+
     config = PISM.DefaultConfig(com, "pism_config", "-config", system)
     config.init_with_default()
 
@@ -642,7 +645,7 @@ def pism_context_test():
 
     time = PISM.Time(config, "360_day", system)
 
-    ctx = PISM.cpp.Context(com, system, config, EC, time, "greenland")
+    ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
     print ctx.com().Get_size()
     print ctx.config().get_double("standard_gravity")

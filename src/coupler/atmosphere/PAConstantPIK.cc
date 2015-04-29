@@ -145,7 +145,7 @@ void PIK::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the constant-in-time atmosphere model PIK.\n"
              "  It reads a precipitation field directly from the file and holds it constant.\n"
              "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
@@ -154,7 +154,7 @@ void PIK::init() {
   find_pism_input(m_input_file, do_regrid, start);
 
   // read snow precipitation rate and air_temps from file
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "    from %s ... \n",
              m_input_file.c_str());

@@ -34,6 +34,8 @@ namespace energy {
 BedThermalUnit::BedThermalUnit(const IceGrid &g)
     : Component_TS(g) {
 
+  const Logger &log = *g.ctx()->log();
+
   m_upward_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
   // PROPOSED standard_name = lithosphere_upward_heat_flux
   m_upward_flux.set_attrs("diagnostic", "upward geothermal flux at bedrock surface",
@@ -67,8 +69,8 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
 
     if (input_file.is_set() and not boot) {
       m_input_file = input_file;
-      options::ignored(m_grid.com, "-Mbz");
-      options::ignored(m_grid.com, "-Lbz");
+      options::ignored(log, "-Mbz");
+      options::ignored(log, "-Lbz");
 
       // If we're initializing from a file we need to get the number of bedrock
       // levels and the depth of the bed thermal layer from it:
@@ -94,7 +96,7 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
       // Bootstrapping
 
       if (Mbz_option.is_set() && m_Mbz == 1) {
-        options::ignored(m_grid.com, "-Lbz");
+        options::ignored(log, "-Lbz");
         m_Lbz = 0;
       } else if (Mbz_option.is_set() ^ Lbz.is_set()) {
         throw RuntimeError("please specify both -Mbz and -Lbz");
@@ -149,12 +151,12 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2,m_grid.com,
+  m_log->message(2,
              "* Initializing the bedrock thermal unit... setting constants...\n");
 
   // If we're using a minimal model, then we're done:
   if (!m_temp.was_created()) {
-    verbPrintf(2,m_grid.com,
+    m_log->message(2,
                "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
     return;
   }
@@ -217,7 +219,7 @@ void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
 void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (m_temp.was_created()) {
     if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {
-      m_temp.write(nc); 
+      m_temp.write(nc);
     }
   }
 }
@@ -257,7 +259,7 @@ Because there is no advection, the simplest centered implicit (backward Euler) s
 \anchor bedrockeqn
 \f[ -R_b T_{k-1}^{n+1} + \left(1 + 2 R_b\right) T_k^{n+1} - R_b T_{k+1}^{n+1}
          = T_k^n, \tag{bedrockeqn} \f]
-where 
+where
   \f[ R_b = \frac{k_b \Delta t}{\rho_b c_b \Delta z^2}. \f]
 This is unconditionally stable for a pure bedrock problem, and has a maximum principle, without any further qualification [\ref MortonMayers].
 
@@ -398,7 +400,7 @@ void BedThermalUnit::bootstrap() {
     return;
   }
 
-  verbPrintf(2,m_grid.com,
+  m_log->message(2,
              "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
              "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
 

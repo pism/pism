@@ -67,7 +67,7 @@ void Given::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the surface model reading temperature at the top of the ice\n"
              "  and ice surface mass flux from a file...\n");
 

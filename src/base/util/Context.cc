@@ -110,8 +110,8 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   Logger::Ptr logger = logger_from_options(com);
 
   // configuration parameters
-  Config::Ptr config = config_from_options(com, sys);
-  print_config(3, com, *config);
+  Config::Ptr config = config_from_options(com, *logger, sys);
+  print_config(*logger, 3, *config);
 
   // time manager
   Time::Ptr time = time_from_options(com, config, sys);

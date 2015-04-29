@@ -228,7 +228,7 @@ void SSAFD::init_impl() {
                        "An explicit driving stress was specified instead and cannot be used.");
   }
 
-  verbPrintf(2,m_grid.com,
+  m_log->message(2, 
              "  [using the KSP-based finite difference implementation]\n");
 
   // options
@@ -238,7 +238,7 @@ void SSAFD::init_impl() {
   view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
   if (m_config->get_boolean("calving_front_stress_boundary_condition")) {
-    verbPrintf(2,m_grid.com,
+    m_log->message(2, 
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
 
@@ -889,7 +889,7 @@ void SSAFD::solve() {
       } else if (k == 1) {
         // try underrelaxing the iteration
         const double underrelax = m_config->get_double("ssafd_nuH_iter_failure_underrelaxation");
-        verbPrintf(1, m_grid.com,
+        m_log->message(1, 
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
         picard_iteration(m_config->get_double("epsilon_ssa"), underrelax);
@@ -938,7 +938,7 @@ void SSAFD::picard_iteration(double nuH_regularization,
 
       m_default_pc_failure_count += 1;
 
-      verbPrintf(1, m_grid.com,
+      m_log->message(1, 
                  "  re-trying using the Additive Schwarz preconditioner...\n");
 
       pc_setup_asm();
@@ -1024,7 +1024,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     if (reason < 0) {
       // KSP diverged
-      verbPrintf(1, m_grid.com,
+      m_log->message(1, 
                  "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
                  reason, KSPConvergedReasons[reason]);
 
@@ -1074,7 +1074,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
       // assume that high verbosity shows interest in immediate
       // feedback about SSA iterations
-      verbPrintf(2, m_grid.com, m_stdout_ssa.c_str());
+      m_log->message(2, m_stdout_ssa);
 
       m_stdout_ssa.clear();
     }
@@ -1132,7 +1132,7 @@ void SSAFD::picard_strategy_regularization() {
 
   while (k < max_tries) {
     m_velocity.copy_from(m_velocity_old);
-    verbPrintf(1, m_grid.com,
+    m_log->message(1, 
                "  re-trying with nuH_regularization multiplied by %8.2f...\n",
                DEFAULT_EPSILON_MULTIPLIER_SSA);
 
@@ -1686,7 +1686,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   // write a file with a fixed filename; avoid zillions of files
   std::string filename = "SSAFD_" + namepart + ".petsc";
-  verbPrintf(1, m_grid.com,
+  m_log->message(1, 
              "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
 
   petsc::Viewer viewer;       // will be destroyed automatically
@@ -1712,7 +1712,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
   char file_name[TEMPORARY_STRING_LENGTH];
   snprintf(file_name, TEMPORARY_STRING_LENGTH, "%s_y%.0f.m", prefix.c_str(), year);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2, 
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
              file_name);
 

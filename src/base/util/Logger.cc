@@ -58,6 +58,14 @@ void Logger::message(int threshold, const char format[], ...) const {
   message_impl(buffer);
 }
 
+void Logger::message(int threshold, const std::string &buffer) const {
+  if ((not m_impl->enabled) or threshold > m_impl->threshold) {
+    return;
+  }
+
+  message_impl(buffer.c_str());
+}
+
 void Logger::message_impl(const char buffer[]) const {
   verbPrintf(1, m_impl->com, buffer);
 }
@@ -79,7 +87,7 @@ void Logger::enable() {
 Logger::Ptr logger_from_options(MPI_Comm com) {
   Logger::Ptr result(new Logger(com, 2));
 
-  options::Integer verbosity("-verbosity", "set logger verbosity threshold",
+  options::Integer verbosity("-verbose", "set logger verbosity threshold",
                              2);
 
   result->set_threshold(verbosity);

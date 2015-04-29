@@ -61,12 +61,12 @@ void  IceModel::writeFiles(const std::string &default_filename) {
   options::String filename("-o", "Output file name", default_filename);
 
   if (!ends_with(filename, ".nc")) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
   if (get_output_size("-o_size") != "none") {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "Writing model state to file `%s'\n", filename->c_str());
     dumpToFile(filename);
   }
@@ -298,14 +298,14 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   // FIXME: we need a way of figuring out if a sub-model did or did not write
   // something.
 
-  if (!vars.empty()) {
+  if (not vars.empty()) {
     int threshold = 3;
-    verbPrintf(threshold, m_grid.com,
+    m_log->message(threshold,
                "PISM WARNING: the following variables were *not* written by PISM core (IceModel): ");
     for (i = vars.begin(); i != vars.end(); ++i) {
-      verbPrintf(threshold, m_grid.com, "%s ", i->c_str());
+      m_log->message(threshold, "%s ", i->c_str());
     }
-    verbPrintf(threshold, m_grid.com, "\n");
+    m_log->message(threshold, "\n");
   }
 }
 
@@ -340,7 +340,7 @@ void IceModel::write_model_state(const PIO &nc) {
 void IceModel::initFromFile(const std::string &filename) {
   PIO nc(m_grid.com, "guess_mode");
 
-  verbPrintf(2, m_grid.com, "initializing from NetCDF file '%s'...\n",
+  m_log->message(2, "initializing from NetCDF file '%s'...\n",
              filename.c_str());
 
   nc.open(filename, PISM_READONLY);
@@ -378,7 +378,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   if (config->get_boolean("do_energy") && config->get_boolean("do_cold_ice_methods")) {
-    verbPrintf(3, m_grid.com,
+    m_log->message(3,
                "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(T3, Enth3);
   }
@@ -390,7 +390,7 @@ void IceModel::initFromFile(const std::string &filename) {
     if (href_exists == true) {
       vHref.read(filename, last_record);
     } else {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
                  filename.c_str());
       vHref.set(0.0);
@@ -404,7 +404,7 @@ void IceModel::initFromFile(const std::string &filename) {
     if (age_exists) {
       age3.read(filename, last_record);
     } else {
-      verbPrintf(2,m_grid.com,
+      m_log->message(2,
                  "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
                  "  Setting it to zero...\n",
                  filename.c_str());
@@ -446,7 +446,7 @@ void IceModel::regrid(int dimensions) {
            dimensions == 3)) {
     throw RuntimeError("dimensions can only be 0, 2 or 3");
   }
-  
+
   options::String regrid_file("-regrid_file", "Specifies the file to regrid from");
 
   options::StringSet regrid_vars("-regrid_vars",
@@ -460,10 +460,10 @@ void IceModel::regrid(int dimensions) {
   }
 
   if (dimensions != 0) {
-    verbPrintf(2, m_grid.com, "regridding %dD variables from file %s ...\n",
+    m_log->message(2, "regridding %dD variables from file %s ...\n",
                dimensions, regrid_file->c_str());
   } else {
-    verbPrintf(2, m_grid.com, "regridding from file %s ...\n",regrid_file->c_str());
+    m_log->message(2, "regridding from file %s ...\n",regrid_file->c_str());
   }
 
   if (regrid_vars->empty()) {
@@ -508,7 +508,7 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
 
     std::string pism_intent = m.get_string("pism_intent");
     if (pism_intent != "model_state") {
-      verbPrintf(2, m_grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
+      m_log->message(2, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
                  i->c_str());
       continue;
     }
@@ -594,12 +594,12 @@ void IceModel::init_enthalpy(const std::string &filename,
         liqfrac.read(filename, last_record);
       }
 
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Computing enthalpy using ice temperature,"
                  "  liquid water fraction and thickness...\n");
       compute_enthalpy(temp, liqfrac, Enth3);
     } else {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Computing enthalpy using ice temperature and thickness...\n");
       compute_enthalpy_cold(temp, Enth3);
     }
@@ -638,7 +638,7 @@ void IceModel::init_snapshots() {
   }
 
   try {
-    m_grid.ctx()->time()->parse_times(save_times, snapshot_times);    
+    m_grid.ctx()->time()->parse_times(save_times, snapshot_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -save_times argument");
     throw;
@@ -655,19 +655,19 @@ void IceModel::init_snapshots() {
   if (split) {
     split_snapshots = true;
   } else if (!ends_with(snapshots_filename, ".nc")) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
   }
 
   if (split) {
-    verbPrintf(2, m_grid.com, "saving snapshots to '%s+year.nc'; ",
+    m_log->message(2, "saving snapshots to '%s+year.nc'; ",
                snapshots_filename.c_str());
   } else {
-    verbPrintf(2, m_grid.com, "saving snapshots to '%s'; ",
+    m_log->message(2, "saving snapshots to '%s'; ",
                snapshots_filename.c_str());
   }
 
-  verbPrintf(2, m_grid.com, "times requested: %s\n", save_times->c_str());
+  m_log->message(2, "times requested: %s\n", save_times->c_str());
 }
 
   //! Writes a snapshot of the model state (if necessary)
@@ -708,7 +708,7 @@ void IceModel::write_snapshot() {
     strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
              filename, m_grid.ctx()->time()->date().c_str(),
              m_grid.ctx()->time()->date(saving_after).c_str());
@@ -810,7 +810,7 @@ void IceModel::write_backup() {
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
            m_grid.ctx()->time()->date().c_str(), wall_clock_hours);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
              backup_filename.c_str(), wall_clock_hours);
 

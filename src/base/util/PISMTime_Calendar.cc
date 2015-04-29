@@ -30,6 +30,7 @@
 #include "PISMConfigInterface.hh"
 #include "VariableMetadata.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -143,22 +144,22 @@ bool Time_Calendar::process_ye(double &result) {
 }
 
 
-void Time_Calendar::init() {
+void Time_Calendar::init(const Logger &log) {
 
-  Time::init();
+  Time::init(log);
 
   options::String time_file("-time_file", "Reads time information from a file");
 
   if (time_file.is_set()) {
-    verbPrintf(2, m_com,
-               "* Setting time from '%s'...\n",
-               time_file->c_str());
+    log.message(2, 
+                "* Setting time from '%s'...\n",
+                time_file->c_str());
 
-    options::ignored(m_com, "-y");
-    options::ignored(m_com, "-ys");
-    options::ignored(m_com, "-ye");
+    options::ignored(log, "-y");
+    options::ignored(log, "-ys");
+    options::ignored(log, "-ye");
 
-    init_from_file(time_file);
+    init_from_file(time_file, log);
   }
 }
 
@@ -166,7 +167,7 @@ void Time_Calendar::init() {
 /*!
  * This allows running PISM for the duration of the available forcing.
  */
-void Time_Calendar::init_from_file(const std::string &filename) {
+void Time_Calendar::init_from_file(const std::string &filename, const Logger &log) {
   std::vector<double> time, time_bounds;
   std::string time_units, time_bounds_name, new_calendar,
     time_name = m_config->get_string("time_dimension_name");
@@ -232,11 +233,11 @@ void Time_Calendar::init_from_file(const std::string &filename) {
     TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
     bounds.set_string("units", m_time_units.format());
 
-    io::read_time_bounds(m_com, nc, bounds, this, time);
+    io::read_time_bounds(nc, bounds, *this, log, time);
   } else {
     // use the time axis
 
-    io::read_timeseries(m_com, nc, time_axis, this, time);
+    io::read_timeseries(nc, time_axis, *this, log, time);
   }
 
   m_run_start       = time.front();

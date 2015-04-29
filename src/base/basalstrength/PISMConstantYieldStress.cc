@@ -35,7 +35,7 @@ ConstantYieldStress::~ConstantYieldStress () {
 }
 
 void ConstantYieldStress::init_impl() {
-  verbPrintf(2, m_grid.com, "* Initializing the constant basal yield stress model...\n");
+  m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 
   std::string filename;
   int start = 0;

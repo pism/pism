@@ -41,7 +41,7 @@ YearlyCycle::YearlyCycle(const IceGrid &g)
   m_air_temp_mean_annual.create(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS);
   m_air_temp_mean_annual.set_attrs("diagnostic",
                                    "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
-                                   "K", 
+                                   "K",
                                    "");  // no CF standard_name ??
   m_air_temp_mean_annual.metadata().set_string("source", m_reference);
 
@@ -53,9 +53,9 @@ YearlyCycle::YearlyCycle(const IceGrid &g)
   m_air_temp_mean_july.metadata().set_string("source", m_reference);
 
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  m_precipitation.set_attrs("climate_state", 
+  m_precipitation.set_attrs("climate_state",
                             "mean annual ice-equivalent precipitation rate",
-                            "m s-1", 
+                            "m s-1",
                             ""); // no CF standard_name ??
   m_precipitation.metadata().set_string("glaciological_units", "m year-1");
   m_precipitation.write_in_glaciological_units = true;
@@ -86,7 +86,7 @@ void YearlyCycle::init() {
 void YearlyCycle::init_internal(const std::string &input_filename, bool do_regrid,
                                             unsigned int start) {
   // read precipitation rate from file
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "      from %s ... \n",
              input_filename.c_str());

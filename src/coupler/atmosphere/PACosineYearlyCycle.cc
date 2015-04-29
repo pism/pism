@@ -46,7 +46,7 @@ void CosineYearlyCycle::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
 
 
@@ -60,7 +60,7 @@ void CosineYearlyCycle::init() {
                        "using the -atmosphere_yearly_cycle_file option.");
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  Reading mean annual air temperature, mean July air temperature, and\n"
              "  precipitation fields from '%s'...\n", input_file->c_str());
 
@@ -78,14 +78,14 @@ void CosineYearlyCycle::init() {
       A->dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
     }
 
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
                scaling_file->c_str());
 
     PIO nc(m_grid.com, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
-      A->read(nc, m_grid.ctx()->time().get());
+      A->read(nc, *m_grid.ctx()->time(), *m_grid.ctx()->log());
     }
     nc.close();
 

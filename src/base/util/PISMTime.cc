@@ -221,7 +221,9 @@ bool Time::process_ye(double &result) {
   return ye.is_set();
 }
 
-void Time::init() {
+void Time::init(const Logger &log) {
+
+  (void) log;
 
   double y_seconds, ys_seconds, ye_seconds;
 

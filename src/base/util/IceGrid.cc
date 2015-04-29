@@ -29,6 +29,7 @@
 #include "error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -213,13 +214,15 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
   try {
     assert(output != NULL);
 
+    const Logger &log = *output->ctx()->log();
+
     // The following call may fail because var_name does not exist. (And this is fatal!)
     grid_info input(file, var_name, output->ctx()->unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
       double Lz = output->ctx()->config()->get_double("grid_Lz");
-      verbPrintf(3, output->com,
+      log.message(3,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
                  var_name.c_str(), file.inq_filename().c_str(), Lz);
@@ -606,29 +609,31 @@ void IceGrid::compute_horizontal_coordinates() {
 //! \brief Report grid parameters.
 void IceGrid::report_parameters() const {
 
-  verbPrintf(2, com, "computational domain and grid:\n");
+  const Logger &log = *this->ctx()->log();
+
+  log.message(2, "computational domain and grid:\n");
 
   // report on grid
-  verbPrintf(2, com,
+  log.message(2,
              "                grid size   %d x %d x %d\n",
              m_impl->Mx, m_impl->My, Mz());
 
   // report on computational box
-  verbPrintf(2, com,
+  log.message(2,
              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
              2*m_impl->Lx/1000.0, 2*m_impl->Ly/1000.0, Lz());
 
   // report on grid cell dims
-  verbPrintf(2, com,
+  log.message(2,
              "     horizontal grid cell   %.2f km x %.2f km\n",
              m_impl->dx/1000.0, m_impl->dy/1000.0);
 
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
-    verbPrintf(2, com,
+    log.message(2,
                "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
                dz_min());
   } else {
-    verbPrintf(2, com,
+    log.message(2,
                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
                Mz(), dz_min(), dz_max());
   }
@@ -636,35 +641,35 @@ void IceGrid::report_parameters() const {
   //   FIXME:  this could use pism_config:summary_time_unit_name instead of fixed "years"
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   {
-    verbPrintf(3, com,
+    log.message(3,
                "  IceGrid parameters:\n");
-    verbPrintf(3, com,
+    log.message(3,
                "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
                m_impl->Lx/1000.0, m_impl->Ly/1000.0, Lz());
-    verbPrintf(3, com,
+    log.message(3,
                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
                m_impl->x0/1000.0, m_impl->y0/1000.0);
-    verbPrintf(3, com,
+    log.message(3,
                "            Mx = %d, My = %d, Mz = %d, \n",
                m_impl->Mx, m_impl->My, Mz());
-    verbPrintf(3, com,
+    log.message(3,
                "            dx = %6.3f km, dy = %6.3f km, \n",
                m_impl->dx/1000.0, m_impl->dy/1000.0);
-    verbPrintf(3, com,
+    log.message(3,
                "            Nx = %d, Ny = %d]\n",
                m_impl->Nx, m_impl->Ny);
 
   }
 
   {
-    verbPrintf(5, com,
+    log.message(5,
                "  REALLY verbose output on IceGrid:\n");
-    verbPrintf(5, com,
+    log.message(5,
                "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
     for (unsigned int k=0; k < Mz(); k++) {
-      verbPrintf(5, com, " %5.4f, ", m_impl->z[k]);
+      log.message(5, " %5.4f, ", m_impl->z[k]);
     }
-    verbPrintf(5, com, "\n");
+    log.message(5, "\n");
   }
 }
 
@@ -826,7 +831,7 @@ void IceGrid::set_periodicity(Periodicity p) {
 
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
 
-  verbPrintf(3, com,
+  ctx()->log()->message(3,
              "* Creating a DM with dof=%d and stencil_width=%d...\n",
              da_dof, stencil_width);
 
@@ -1008,9 +1013,9 @@ grid_info::grid_info() {
   reset();
 }
 
-void grid_info::report(MPI_Comm com, units::System::Ptr s, int threshold) const {
+void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) const {
 
-  verbPrintf(threshold, com,
+  log.message(threshold,
              "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
              this->x_len,
              (this->x0 - this->Lx)/1000.0,
@@ -1018,7 +1023,7 @@ void grid_info::report(MPI_Comm com, units::System::Ptr s, int threshold) const 
              this->x0/1000.0,
              this->Lx/1000.0);
 
-  verbPrintf(threshold, com,
+  log.message(threshold,
              "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
              this->y_len,
              (this->y0 - this->Ly)/1000.0,
@@ -1026,11 +1031,11 @@ void grid_info::report(MPI_Comm com, units::System::Ptr s, int threshold) const 
              this->y0/1000.0,
              this->Ly/1000.0);
 
-  verbPrintf(threshold, com,
+  log.message(threshold,
              "  z:  %5d points, [%10.3f, %10.3f] m\n",
              this->z_len, this->z_min, this->z_max);
 
-  verbPrintf(threshold, com,
+  log.message(threshold,
              "  t:  %5d points, last time = %.3f years\n\n",
              this->t_len, convert(s, this->time, "seconds", "years"));
 }

@@ -35,7 +35,7 @@ namespace pism {
 template <class Model, class Mod>
 class PLapseRates : public Mod {
 public:
-  PLapseRates(const IceGrid &g, Model* in) 
+  PLapseRates(const IceGrid &g, Model* in)
     : Mod(g, in) {
     m_temp_lapse_rate = 0.0;
   }
@@ -147,7 +147,7 @@ protected:
       m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config->get_double("climate_forcing_evaluations_per_year"));
     }
 
-    verbPrintf(2, g.com,
+    Mod::m_log->message(2,
                "    reading reference surface elevation from %s ...\n",
                file->c_str());
 

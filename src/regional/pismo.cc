@@ -118,7 +118,7 @@ void IceRegionalModel::createVecs() {
 
   IceModel::createVecs();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2, 
              "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed for surfaceGradientSIA() action
@@ -187,7 +187,7 @@ void IceRegionalModel::model_state_setup() {
                         0.0);
 
   if (strip_km.is_set()) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2, 
                "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
                strip_km.value());
     set_no_model_strip(units::convert(m_sys, strip_km, "km", "m"));
@@ -273,7 +273,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
     no_model_mask.metadata().set_string("pism_intent", "internal");
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2, 
              "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
              filename.c_str());
 
@@ -289,7 +289,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
     if (! (u_ssa_exists && v_ssa_exists)) {
       vBCvel.metadata().set_string("pism_intent", "internal");
-      verbPrintf(2, m_grid.com,
+      m_log->message(2, 
                  "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
                  "              This may be overridden by the -regrid_file option.\n",
                  filename.c_str());
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]) {
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed_regional.nc");
 
-    print_unused_parameters(3, com, *config);
+    print_unused_parameters(*ctx->log(), 3, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

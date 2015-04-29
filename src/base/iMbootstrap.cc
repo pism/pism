@@ -34,7 +34,7 @@
 namespace pism {
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
-/*! 
+/*!
 This procedure is called by the base class when option `-bootstrap` is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
@@ -59,7 +59,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
 
   regrid(3);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "bootstrapping 3D variables...\n");
 
   // Fill 3D fields using heuristics:
@@ -67,52 +67,52 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
     // set the initial age of the ice if appropriate
     if (config->get_boolean("do_age")) {
       if (age_revision == age3.get_state_counter()) {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    " - setting initial age to %.4f years\n",
                    config->get_double("initial_age_of_ice_years"));
         age3.set(config->get_double("initial_age_of_ice_years", "years", "seconds"));
 
       } else {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    " - age of the ice was set already\n");
       }
     }
 
     if (config->get_boolean("do_cold_ice_methods") == true) {
       if (temperature_revision == T3.get_state_counter()) {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    "getting surface B.C. from couplers...\n");
         init_step_couplers();
 
         // this call will set ice temperature
         putTempAtDepth();
       } else {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    " - ice temperature was set already\n");
       }
 
       // make sure that enthalpy gets initialized:
       compute_enthalpy_cold(T3, Enth3);
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
 
     } else {
       // enthalpy mode
       if (enthalpy_revision == Enth3.get_state_counter()) {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    "getting surface B.C. from couplers...\n");
         init_step_couplers();
 
         // this call will set ice enthalpy
         putTempAtDepth();
       } else {
-        verbPrintf(2, m_grid.com,
+        m_log->message(2,
                    " - ice enthalpy was set already\n");
       }
     }
   } // end of heuristics
 
-  verbPrintf(2, m_grid.com, "done reading %s; bootstrapping done\n",filename.c_str());
+  m_log->message(2, "done reading %s; bootstrapping done\n",filename.c_str());
 }
 
 void IceModel::bootstrap_2d(const std::string &filename) {
@@ -120,11 +120,11 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   PIO nc(m_grid.com, "guess_mode");
   nc.open(filename, PISM_READONLY);
 
-  verbPrintf(2, m_grid.com, 
+  m_log->message(2,
              "bootstrapping by PISM default method from file %s\n", filename.c_str());
 
   // report on resulting computational box, rescale grid
-  verbPrintf(2, m_grid.com, 
+  m_log->message(2,
              "  rescaling computational box for ice from -i file and\n"
              "    user options to dimensions:\n"
              "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
@@ -152,16 +152,16 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   // setting to default values appropriately
 
   if (mask_found) {
-    verbPrintf(2, m_grid.com, 
+    m_log->message(2,
                "  WARNING: 'mask' found; IGNORING IT!\n");
   }
 
   if (usurf_found) {
-    verbPrintf(2, m_grid.com, 
+    m_log->message(2,
                "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
   }
 
-  verbPrintf(2, m_grid.com, 
+  m_log->message(2,
              "  reading 2D model state variables by regridding ...\n");
 
   vLongitude.regrid(filename, OPTIONAL);
@@ -230,7 +230,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
 /*!
 In bootstrapping we need to determine initial values for the temperature within
 the ice (and the bedrock).  There are various data available at bootstrapping,
-but not the 3D temperature field needed as initial values for the temperature.  Here 
+but not the 3D temperature field needed as initial values for the temperature.  Here
 we take a "guess" based on an assumption of steady state and a simple model of
 the vertical velocity in the column.  The rule is certainly heuristic but it
 seems to work well anyway.
@@ -295,7 +295,7 @@ bootstrap temperature profile in the bedrock.
 */
 void IceModel::putTempAtDepth() {
 
-  verbPrintf(2, m_grid.com, " - filling ice temperatures using surface temps (and %s)\n",
+  m_log->message(2, " - filling ice temperatures using surface temps (and %s)\n",
              (config->get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
               ? "quartic guess sans smb" : "mass balance for velocity estimate"));
 

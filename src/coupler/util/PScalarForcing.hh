@@ -80,14 +80,14 @@ protected:
       bc_reference_time = 0;
     }
 
-    verbPrintf(2, g.com,
+    Mod::m_log->message(2,
                "  reading %s data from forcing file %s...\n",
                offset->short_name.c_str(), file->c_str());
 
     PIO nc(g.com, "netcdf3");
     nc.open(file, PISM_READONLY);
     {
-      offset->read(nc, g.ctx()->time().get());
+      offset->read(nc, *g.ctx()->time(), *g.ctx()->log());
     }
     nc.close();
   }

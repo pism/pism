@@ -33,7 +33,8 @@
 namespace pism {
 
 Component::Component(const IceGrid &g)
-  : m_grid(g), m_config(g.ctx()->config()), m_sys(g.ctx()->unit_system()) {
+  : m_grid(g), m_config(g.ctx()->config()), m_sys(g.ctx()->unit_system()),
+    m_log(g.ctx()->log()) {
   // empty
 }
 
@@ -142,7 +143,7 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
   if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
       (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  %s: regridding '%s' from file '%s' ...\n",
                module_name.c_str(),
                m.get_string("short_name").c_str(), regrid_file->c_str());

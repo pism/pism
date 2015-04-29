@@ -29,6 +29,7 @@ namespace pism {
 class IceGrid;
 class PIO;
 class Time;
+class Logger;
 
 //! \brief A general class for reading and accessing time-series.
 /*!
@@ -55,10 +56,6 @@ class Time;
   ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
   CHKERRQ(ierr);
   
-  ierr = verbPrintf(2, grid.com, 
-  "  reading delta T data from forcing file %s...\n", dT_file);
-  CHKERRQ(ierr);
-         
   ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
 
@@ -80,7 +77,7 @@ public:
   Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
   
-  void read(const PIO &nc, const Time *time);
+  void read(const PIO &nc, const Time &time_manager, const Logger &log);
   void write(const PIO &nc);
   double operator()(double time);
   double operator[](unsigned int j) const;
@@ -105,7 +102,7 @@ protected:
   std::vector<double> m_time_bounds;
 private:
   void private_constructor(MPI_Comm com, const std::string &name, const std::string &dimension_name);
-  void report_range();
+  void report_range(const Logger &log);
 };
 
 //! A class for storing and writing diagnostic time-series.

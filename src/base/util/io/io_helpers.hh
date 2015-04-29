@@ -36,6 +36,7 @@ class TimeBoundsMetadata;
 class IceGrid;
 class PIO;
 class Time;
+class Logger;
 
 namespace io {
 
@@ -79,8 +80,8 @@ void define_timeseries(const TimeseriesMetadata& var,
 void define_time_bounds(const TimeBoundsMetadata& var,
                         const PIO &nc, IO_Type nctype, bool);
 
-void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &metadata,
-                     const Time *time, std::vector<double> &data);
+void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
+                     const Time &time, const Logger &log, std::vector<double> &data);
 
 void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
                       size_t t_start, const std::vector<double> &data,
@@ -90,9 +91,9 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
                       size_t t_start, double data,
                       IO_Type nctype = PISM_DOUBLE);
 
-void read_time_bounds(MPI_Comm com, const PIO &nc,
+void read_time_bounds(const PIO &nc,
                       const TimeBoundsMetadata &metadata,
-                      const Time *time, std::vector<double> &data);
+                      const Time &time, const Logger &log, std::vector<double> &data);
 
 void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
                        size_t t_start, std::vector<double> &data,

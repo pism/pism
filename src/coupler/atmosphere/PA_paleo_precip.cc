@@ -61,7 +61,7 @@ void PaleoPrecip::init() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing paleo-precipitation correction using temperature offsets...\n");
 
   init_internal();

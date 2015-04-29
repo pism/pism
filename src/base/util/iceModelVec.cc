@@ -28,6 +28,7 @@
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -415,7 +416,7 @@ void IceModelVec::set_attrs(const std::string &my_pism_intent,
  */
 void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
                               double default_value) {
-  verbPrintf(3, m_grid->com, "  Regridding %s...\n", m_name.c_str());
+  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
     throw RuntimeError("This method (IceModelVec::regrid_impl)"
@@ -440,7 +441,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
 void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 
-  verbPrintf(3, m_grid->com, "  Reading %s...\n", m_name.c_str());
+  m_grid->ctx()->log()->message(3, "  Reading %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
     throw RuntimeError("This method (IceModelVec::read_impl) only supports"
@@ -497,7 +498,7 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 //! Writes an IceModelVec to a NetCDF file.
 void IceModelVec::write_impl(const PIO &nc) const {
 
-  verbPrintf(3, m_grid->com, "  Writing %s...\n", m_name.c_str());
+  m_grid->ctx()->log()->message(3, "  Writing %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
     throw RuntimeError("This method (IceModelVec::write_impl) only supports"

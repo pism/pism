@@ -143,7 +143,7 @@ void BedDef::init_impl() {
 
   if (input_given) {
     // read bed elevation and uplift rate from file
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "    reading bed topography and bed uplift rate\n"
                "    from %s ... \n",
                input_file.c_str());

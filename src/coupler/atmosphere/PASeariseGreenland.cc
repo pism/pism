@@ -52,7 +52,7 @@ void SeaRISEGreenland::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
              "  air temperature parameterization and using stored time-independent precipitation...\n");
 
@@ -66,7 +66,7 @@ void SeaRISEGreenland::init() {
   m_precip_filename = precip_file;
 
   if (precip_file.is_set()) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  * Option '-atmosphere_searise_greenland %s' is set...\n",
                m_precip_filename.c_str());
 
@@ -103,7 +103,7 @@ void SeaRISEGreenland::update_impl(double my_t, double my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  const double 
+  const double
     d_ma     = m_config->get_double("snow_temp_fausto_d_ma"),      // K
     gamma_ma = m_config->get_double("snow_temp_fausto_gamma_ma"),  // K m-1
     c_ma     = m_config->get_double("snow_temp_fausto_c_ma"),      // K (degN)-1

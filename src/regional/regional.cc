@@ -39,7 +39,7 @@ void SIAFD_Regional::init() {
 
   SIAFD::init();
 
-  verbPrintf(2, m_grid.com, "  using the regional version of the SIA solver...\n");
+  m_log->message(2, "  using the regional version of the SIA solver...\n");
 }
 
 void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
@@ -97,7 +97,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
 
     // y-component, j-offset
     if (nmm(i, j) > 0.5 || nmm(i, j + 1) > 0.5) {
-        
+
       if (j < 0 || j + 1 > My - 1) {
         h_y(i, j, 1) = 0.0;
       } else {
@@ -121,10 +121,10 @@ void SSAFD_Regional::init() {
 
   SSAFD::init();
 
-  verbPrintf(2,m_grid.com,"  using the regional version of the SSA solver...\n");
+  m_log->message(2, "  using the regional version of the SSA solver...\n");
 
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
-    verbPrintf(2,m_grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
+    m_log->message(2, "  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 }
 
@@ -177,12 +177,12 @@ void RegionalDefaultYieldStress::init() {
   setVerbosityLevel(1);
   MohrCoulombYieldStress::init();
   setVerbosityLevel(v);
-  verbPrintf(2,m_grid.com,
+  m_log->message(2,
              "  using the regional version with strong till in no_model_mask==1 area ...\n");
 }
 
 const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
-  
+
   // do whatever you normally do
   const IceModelVec2S &result = MohrCoulombYieldStress::basal_material_yield_stress();
 

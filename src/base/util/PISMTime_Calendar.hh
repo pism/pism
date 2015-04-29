@@ -32,9 +32,9 @@ public:
                 units::System::Ptr units_system);
   virtual ~Time_Calendar();
 
-  virtual void init();
+  virtual void init(const Logger &log);
 
-  virtual void init_from_file(const std::string &filename);
+  virtual void init_from_file(const std::string &filename, const Logger &log);
 
   virtual double mod(double time, unsigned int) const;
 

@@ -38,6 +38,7 @@ namespace units {
 class System;
 }
 class Vars;
+class Logger;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -52,7 +53,7 @@ public:
   grid_info(const PIO &file, const std::string &variable,
             units::System::Ptr unit_system,
             Periodicity p);
-  void report(MPI_Comm com, units::System::Ptr s, int threshold) const;
+  void report(const Logger &log, int threshold, units::System::Ptr s) const;
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
   double time,                  //!< current time (seconds)

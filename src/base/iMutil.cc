@@ -48,12 +48,12 @@ void IceModel::additionalAtEndTimestep() {
 
 //! Catch signals -USR1, -USR2 and -TERM.
 /*!
-Signal `SIGTERM` makes PISM end, saving state under original `-o` name 
-(or default name).  We also add an indication to the history attribute 
+Signal `SIGTERM` makes PISM end, saving state under original `-o` name
+(or default name).  We also add an indication to the history attribute
 of the output NetCDF file.
 
 Signal `SIGUSR1` makes PISM save state under a filename based on the
-the name of the executable (e.g. `pismr` or `pismv`) and the current 
+the name of the executable (e.g. `pismr` or `pismv`) and the current
 model year.  In addition the time series (`-ts_file`, etc.) is flushed out
 There is no indication of these actions in the history attribute of the output (`-o`)
 NetCDF file because there is no effect on it, but there is an indication at `stdout`.
@@ -61,12 +61,12 @@ NetCDF file because there is no effect on it, but there is an indication at `std
 Signal `SIGUSR2` makes PISM flush time-series, without saving model state.
  */
 int IceModel::endOfTimeStepHook() {
-  
+
   if (pism_signal == SIGTERM) {
-    verbPrintf(1, m_grid.com, 
+    m_log->message(1,
        "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
     char str[TEMPORARY_STRING_LENGTH];
-    snprintf(str, sizeof(str), 
+    snprintf(str, sizeof(str),
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
              m_grid.ctx()->time()->date().c_str());
     stampHistory(str);
@@ -74,12 +74,12 @@ int IceModel::endOfTimeStepHook() {
     // the run.
     return 1;
   }
-  
+
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%s.nc",
              m_grid.ctx()->time()->date().c_str());
-    verbPrintf(1, m_grid.com, 
+    m_log->message(1,
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
     pism_signal = 0;
@@ -90,7 +90,7 @@ int IceModel::endOfTimeStepHook() {
   }
 
   if (pism_signal == SIGUSR2) {
-    verbPrintf(1, m_grid.com, 
+    m_log->message(1,
        "\ncaught signal SIGUSR2:  Flushing time series.\n\n");
     pism_signal = 0;
 
@@ -104,10 +104,10 @@ int IceModel::endOfTimeStepHook() {
 
 //! Build a history string from the command which invoked PISM.
 void  IceModel::stampHistoryCommand() {
-  
+
   char startstr[TEMPORARY_STRING_LENGTH];
 
-  snprintf(startstr, sizeof(startstr), 
+  snprintf(startstr, sizeof(startstr),
            "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid.size());
   stampHistory(std::string(startstr));
 
@@ -122,7 +122,7 @@ void IceModel::update_run_stats() {
   double wall_clock_hours, proc_hours, mypph;
 
   double current_time = GlobalMax(m_grid.com, GetTime());
-  
+
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
   proc_hours = m_grid.size() * wall_clock_hours;
@@ -141,7 +141,7 @@ void IceModel::update_run_stats() {
   PISM_CHK(ierr, "PetscGetFlops");
 
   double flops = GlobalSum(m_grid.com, my_flops);
-  
+
   run_stats.set_double("wall_clock_hours", wall_clock_hours);
   run_stats.set_double("processor_hours", proc_hours);
   run_stats.set_double("model_years_per_processor_hour", mypph);
@@ -193,7 +193,7 @@ void  IceModel::stampHistory(const std::string &str) {
 
   global_attributes.set_string("history",
                                history + global_attributes.get_string("history"));
-  
+
 }
 
 //! Check if the thickness of the ice is too large and extend the grid if necessary.

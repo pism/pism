@@ -60,7 +60,7 @@ Distributed::~Distributed() {
 }
 
 void Distributed::init() {
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
   {
@@ -92,14 +92,14 @@ void Distributed::init() {
   m_null_strip_loss_cumulative         = 0.0;
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  option -init_P_from_steady seen ...\n"
                "  initializing P from P(W) formula which applies in steady state\n");
     P_from_W_steady(m_P);
   }
 
   if (hydrology_velbase_mag_file.is_set()) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  reading velbase_mag for 'distributed' hydrology from '%s'.\n",
                hydrology_velbase_mag_file->c_str());
     m_velbase_mag.regrid(hydrology_velbase_mag_file, CRITICAL_FILL_MISSING, 0.0);
@@ -306,7 +306,7 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
     PtoCFLratio = 1.0;
   }
 
-  verbPrintf(4, m_grid.com,
+  m_log->message(4,
              "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
              units::convert(m_sys, maxV_result, "m/second", "m/year"),
              units::convert(m_sys, dtCFL,       "seconds",  "years"),
@@ -479,11 +479,11 @@ void Distributed::update_impl(double icet, double icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  'distributed' hydrology took %d hydrology sub-steps"
              " with average dt = %.6f years\n",
              hydrocount, units::convert(m_sys, m_dt/hydrocount, "seconds", "years"));
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,"
              "  max D = %.2e m^2 s-1)\n",
              m_dt/hydrocount, cumratio/hydrocount, maxV, maxD);

@@ -43,6 +43,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/Context.hh"
 #include "base/enthalpyConverter.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -221,6 +222,7 @@ protected:
   Config::Ptr config;
   Context::Ptr m_ctx;
   const units::System::Ptr m_sys;
+  Logger::ConstPtr m_log;
 
   VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters

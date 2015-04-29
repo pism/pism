@@ -21,6 +21,7 @@
 
 #include "pism_options.hh"
 #include "error_handling.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 namespace options {
@@ -283,13 +284,13 @@ void deprecated(const std::string &old_name, const std::string &new_name) {
 }
 
 //! Print a warning telling the user that an option was ignored.
-void ignored(MPI_Comm com, const std::string &name) {
+void ignored(const Logger &log, const std::string &name) {
 
   String option(name, "no description", "default");
 
   if (option.is_set()) {
-    verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
-               name.c_str());
+    log.message(1, "PISM WARNING: ignoring command-line option '%s'.\n",
+                name.c_str());
   }
 }
 

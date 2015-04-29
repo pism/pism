@@ -63,7 +63,7 @@ void Delta_SL::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com, "* Initializing sea level forcing...\n");
+  m_log->message(2, "* Initializing sea level forcing...\n");
 
   init_internal();
 }

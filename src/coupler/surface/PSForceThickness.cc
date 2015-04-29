@@ -82,7 +82,7 @@ void ForceThickness::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing force-to-thickness mass-balance modifier...\n");
 
   options::String input_file("-force_to_thickness_file",
@@ -110,11 +110,11 @@ void ForceThickness::init_impl() {
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
   if (ftt_alpha.is_set()) {
-    verbPrintf(3, m_grid.com, "    option -force_to_thickness_alpha seen\n");
+    m_log->message(3, "    option -force_to_thickness_alpha seen\n");
     m_alpha = units::convert(m_sys, ftt_alpha, "yr-1", "s-1");
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
              "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
              units::convert(m_sys, m_alpha, "s-1", "yr-1"),
@@ -129,7 +129,7 @@ void ForceThickness::init_impl() {
   mask_exists = nc.inq_var("ftt_mask");
   nc.close();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading target thickness 'thk' from %s ...\n"
              "    (this field will appear in output file as 'ftt_target_thk')\n",
              m_input_file.c_str());
@@ -154,7 +154,7 @@ void ForceThickness::init_impl() {
   }
 
   if (mask_exists) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
                m_input_file.c_str());
     m_ftt_mask.regrid(m_input_file, CRITICAL);
@@ -277,7 +277,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   // get the surface mass balance result from the next level up
   input_model->ice_surface_mass_flux(result);
 
-  verbPrintf(5, m_grid.com,
+  m_log->message(5,
              "    updating surface mass balance using -force_to_thickness mechanism ...");
 
   double ice_density = m_config->get_double("ice_density");

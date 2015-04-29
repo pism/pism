@@ -139,7 +139,7 @@ void IceModel::set_grid_defaults() {
     bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
       io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(m_grid.com, 4);
+      mapping.report_to_stdout(*m_log, 4);
     }
     nc.close();
   }
@@ -152,13 +152,13 @@ void IceModel::set_grid_defaults() {
   if (not ys) {
     if (input.t_len > 0) {
       m_ctx->time()->set_start(input.time);
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "  time t = %s found; setting current time\n",
                  m_grid.ctx()->time()->date().c_str());
     }
   }
 
-  m_ctx->time()->init();
+  m_ctx->time()->init(*m_ctx->log());
 }
 
 //! Initalizes the grid from options.
@@ -266,7 +266,7 @@ void IceModel::set_grid_from_options() {
  */
 void IceModel::grid_setup() {
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "Setting up the computational grid...\n");
 
   // Check if we are initializing from a PISM output file:
@@ -289,14 +289,14 @@ void IceModel::grid_setup() {
     bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
       io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(m_grid.com, 4);
+      mapping.report_to_stdout(*m_log, 4);
     }
 
     nc.close();
 
     // If it's missing, print a warning
     if (source.empty()) {
-      verbPrintf(1, m_grid.com,
+      m_log->message(1,
                  "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
                  "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
                  "     ncatted -a source,global,c,c,PISM %s\n",
@@ -304,7 +304,7 @@ void IceModel::grid_setup() {
     } else if (source.find("PISM") == std::string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
-      verbPrintf(1, m_grid.com,
+      m_log->message(1,
                  "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
                  "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
                  input_file->c_str());
@@ -336,14 +336,14 @@ void IceModel::grid_setup() {
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
-    options::ignored(m_grid.com, "-Mx");
-    options::ignored(m_grid.com, "-My");
-    options::ignored(m_grid.com, "-Mz");
-    options::ignored(m_grid.com, "-Mbz");
-    options::ignored(m_grid.com, "-Lx");
-    options::ignored(m_grid.com, "-Ly");
-    options::ignored(m_grid.com, "-Lz");
-    options::ignored(m_grid.com, "-z_spacing");
+    options::ignored(*m_log, "-Mx");
+    options::ignored(*m_log, "-My");
+    options::ignored(*m_log, "-Mz");
+    options::ignored(*m_log, "-Mbz");
+    options::ignored(*m_log, "-Lx");
+    options::ignored(*m_log, "-Ly");
+    options::ignored(*m_log, "-Lz");
+    options::ignored(*m_log, "-z_spacing");
   } else {
     set_grid_defaults();
     set_grid_from_options();
@@ -375,9 +375,9 @@ void IceModel::time_setup() {
     nc.close();
   }
 
-  time->init();
+  time->init(*m_log);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Setting time: [%s, %s]  (%s years, using the '%s' calendar)\n",
              time->start_date().c_str(),
              time->end_date().c_str(),
@@ -451,7 +451,7 @@ void IceModel::model_state_setup() {
     if (bootstrapping_needed == true) {
       // update surface and ocean models so that we can get the
       // temperature at the top of the bedrock
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "getting surface B.C. from couplers...\n");
       init_step_couplers();
 
@@ -473,7 +473,7 @@ void IceModel::model_state_setup() {
 
   if (climatic_mass_balance_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Trying to read cumulative climatic mass balance from '%s'...\n",
                  input_file->c_str());
       climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -484,7 +484,7 @@ void IceModel::model_state_setup() {
 
   if (grounded_basal_flux_2D_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Trying to read cumulative grounded basal flux from '%s'...\n",
                  input_file->c_str());
       grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -495,7 +495,7 @@ void IceModel::model_state_setup() {
 
   if (floating_basal_flux_2D_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Trying to read cumulative floating basal flux from '%s'...\n",
                  input_file->c_str());
       floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -506,7 +506,7 @@ void IceModel::model_state_setup() {
 
   if (nonneg_flux_2D_cumulative.was_created()) {
     if (input_file.is_set()) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Trying to read cumulative nonneg flux from '%s'...\n",
                  input_file->c_str());
       nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
@@ -569,20 +569,20 @@ void IceModel::model_state_setup() {
     pr   = config->get_boolean("part_redist"),
     ki   = config->get_boolean("kill_icebergs");
   if (pg || pr || ki) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "* PISM-PIK mass/geometry methods are in use:  ");
 
     if (pg)   {
-      verbPrintf(2, m_grid.com, "part_grid,");
+      m_log->message(2, "part_grid,");
     }
     if (pr)   {
-      verbPrintf(2, m_grid.com, "part_redist,");
+      m_log->message(2, "part_redist,");
     }
     if (ki)   {
-      verbPrintf(2, m_grid.com, "kill_icebergs");
+      m_log->message(2, "kill_icebergs");
     }
 
-    verbPrintf(2, m_grid.com, "\n");
+    m_log->message(2, "\n");
   }
 
   stampHistoryCommand();
@@ -597,7 +597,7 @@ void IceModel::model_state_setup() {
  */
 void IceModel::set_vars_from_options() {
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "Setting initial values of model state variables...\n");
 
   options::String input_file("-i", "Specifies the input file");
@@ -621,7 +621,7 @@ void IceModel::allocate_stressbalance() {
     return;
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "# Allocating a stress balance model...\n");
 
   std::string model = config->get_string("stress_balance_model");
@@ -665,7 +665,7 @@ void IceModel::allocate_iceberg_remover() {
     return;
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "# Allocating an iceberg remover (part of a calving model)...\n");
 
   if (config->get_boolean("kill_icebergs")) {
@@ -686,7 +686,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
     return;
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "# Allocating a bedrock thermal layer model...\n");
 
   btu = new energy::BedThermalUnit(m_grid);
@@ -703,7 +703,7 @@ void IceModel::allocate_subglacial_hydrology() {
     return;
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
@@ -725,7 +725,7 @@ void IceModel::allocate_basal_yield_stress() {
     return;
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "# Allocating a basal yield stress model...\n");
 
   std::string model = config->get_string("stress_balance_model");
@@ -756,10 +756,10 @@ void IceModel::allocate_submodels() {
   // FIXME: someday we will have an "energy balance" sub-model...
   if (config->get_boolean("do_energy") == true) {
     if (config->get_boolean("do_cold_ice_methods") == false) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "* Using the temperature-based energy balance model...\n");
     }
   }
@@ -791,7 +791,7 @@ void IceModel::allocate_couplers() {
 
   if (surface == NULL) {
 
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
     surface = ps.create();
@@ -802,7 +802,7 @@ void IceModel::allocate_couplers() {
   }
 
   if (ocean == NULL) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
     ocean = po.create();
@@ -813,7 +813,7 @@ void IceModel::allocate_couplers() {
 //! Initializes atmosphere and ocean couplers.
 void IceModel::init_couplers() {
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "Initializing boundary models...\n");
 
   assert(surface != NULL);
@@ -841,7 +841,7 @@ void IceModel::init_step_couplers() {
 
   assert(ocean != NULL);
   max_dt = std::min(max_dt, ocean->max_timestep(now));
-  
+
   // Do not take time-steps shorter than 1 second
   if (max_dt.value() < 1.0) {
     max_dt = MaxTimestep(1.0);
@@ -877,7 +877,7 @@ void IceModel::allocate_internal_objects() {
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
 void IceModel::misc_setup() {
 
-  verbPrintf(3, m_grid.com, "Finishing initialization...\n");
+  m_log->message(3, "Finishing initialization...\n");
 
   output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
                                         "medium");
@@ -968,7 +968,7 @@ void IceModel::init_calving() {
   }
 
   if (unused.empty() == false) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
                unused.c_str());
   }
@@ -981,7 +981,7 @@ void IceModel::allocate_bed_deformation() {
     return;
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "# Allocating a bed deformation model...\n");
 
   if (model == "none") {

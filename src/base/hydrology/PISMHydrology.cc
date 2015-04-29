@@ -59,7 +59,7 @@ Hydrology::~Hydrology() {
 
 void Hydrology::init() {
 
-  verbPrintf(4, m_grid.com,
+  m_log->message(4,
              "entering Hydrology::init() ...\n");
 
   options::String bmelt_file("-hydrology_bmelt_file",
@@ -84,7 +84,7 @@ void Hydrology::init() {
   // update() method at the current Hydrology time
 
   if (bmelt_file.is_set()) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  option -hydrology_bmelt_file seen; reading bmelt from '%s'.\n", bmelt_file->c_str());
     m_bmelt_local.regrid(bmelt_file, CRITICAL);
     m_hold_bmelt = true;
@@ -115,9 +115,9 @@ void Hydrology::init() {
                                     itb_file->c_str());
     }
 
-    verbPrintf(2,m_grid.com,
+    m_log->message(2,
                "    option -hydrology_input_to_bed_file seen ... creating 'inputtobed' variable ...\n");
-    verbPrintf(2,m_grid.com,
+    m_log->message(2,
                "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records);
     m_inputtobed = new IceModelVec2T;
     m_inputtobed->set_n_records(n_records);
@@ -126,7 +126,7 @@ void Hydrology::init() {
                             "amount of water (depth per time like bmelt)"
                             " which should be put at the ice sheet bed",
                             "m s-1", "");
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "    reading 'inputtobed' variable from file '%s' ...\n",
                itb_file->c_str());
     m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);

@@ -23,6 +23,7 @@
 #include "base/util/IceGrid.hh" // inline implementation in the header uses IceGrid
 #include "base/util/Vector2.hh" // to get Vector2
 #include "base/util/petscwrappers/SNES.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -180,8 +181,8 @@ void SNESProblem<DOF,U>::solve() {
                                   name().c_str(), SNESConvergedReasons[reason]);
   }
 
-  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n",
-             name().c_str(), SNESConvergedReasons[reason]);
+  m_grid.ctx()->log()->message(1, "SNESProblem %s converged (SNES reason %s)\n",
+                               name().c_str(), SNESConvergedReasons[reason]);
 }
 
 } // end of namespace pism

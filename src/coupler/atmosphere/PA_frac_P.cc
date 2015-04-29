@@ -60,7 +60,7 @@ void Frac_P::init() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing precipitation forcing using scalar multipliers...\n");
 
   init_internal();

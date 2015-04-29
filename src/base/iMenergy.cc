@@ -94,7 +94,7 @@ void IceModel::energyStep() {
 
     gLiquifiedVol = GlobalSum(m_grid.com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
-      verbPrintf(1,m_grid.com,
+      m_log->message(1,
                  "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
                  gLiquifiedVol / 1.0e9);
     }

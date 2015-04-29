@@ -47,7 +47,7 @@ void Elevation::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
 
   // options
@@ -116,7 +116,7 @@ void Elevation::init_impl() {
     }
   }
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
              "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
@@ -147,8 +147,8 @@ void Elevation::init_impl() {
   m_ice_surface_temp.set_string("units", "K");
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
-  verbPrintf(2, m_grid.com, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
-  verbPrintf(2, m_grid.com,
+  m_log->message(2, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
+  m_log->message(2,
              "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
              "        of surface altitude (usurf):\n"
              "                 /  %2.2f K                            for            usurf < %.f m\n"
@@ -159,15 +159,15 @@ void Elevation::init_impl() {
              m_T_max, m_z_T_max);
 
   // parameterizing the ice surface mass balance 'climatic_mass_balance'
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n");
 
   if (m_limits_set) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n");
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
              "        of surface altitue (usurf):\n"
              "                  /  %5.2f m/year                       for          usurf < %3.f m\n"

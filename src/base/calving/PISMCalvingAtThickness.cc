@@ -41,7 +41,7 @@ CalvingAtThickness::~CalvingAtThickness() {
 
 
 void CalvingAtThickness::init() {
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the 'calving at a threshold thickness' mechanism...\n"
              "  thickness threshold: %3.3f meters\n", m_calving_threshold);
 }

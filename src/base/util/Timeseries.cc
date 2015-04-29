@@ -28,6 +28,7 @@
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -64,7 +65,7 @@ void Timeseries::set_bounds_units() {
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-void Timeseries::read(const PIO &nc, const Time *time_manager) {
+void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log) {
 
   bool exists, found_by_standard_name;
   std::vector<std::string> dims;
@@ -95,7 +96,7 @@ void Timeseries::read(const PIO &nc, const Time *time_manager) {
   TimeseriesMetadata tmp_dim = m_dimension;
   tmp_dim.set_name(time_name);
 
-  io::read_timeseries(m_com, nc, tmp_dim, time_manager, m_time);
+  io::read_timeseries(nc, tmp_dim, time_manager, log, m_time);
   bool is_increasing = true;
   for (unsigned int j = 1; j < m_time.size(); ++j) {
     if (m_time[j] - m_time[j-1] < 1e-16) {
@@ -119,12 +120,12 @@ void Timeseries::read(const PIO &nc, const Time *time_manager) {
 
     tmp_bounds.set_string("units", tmp_dim.get_string("units"));
 
-    io::read_time_bounds(m_com, nc, tmp_bounds, time_manager, m_time_bounds);
+    io::read_time_bounds(nc, tmp_bounds, time_manager, log, m_time_bounds);
   } else {
     m_use_bounds = false;
   }
 
-  io::read_timeseries(m_com, nc, m_variable, time_manager, m_values);
+  io::read_timeseries(nc, m_variable, time_manager, log, m_values);
 
   if (m_time.size() != m_values.size()) {
     throw RuntimeError::formatted("variables %s and %s in %s have different numbers of values.",
@@ -133,11 +134,11 @@ void Timeseries::read(const PIO &nc, const Time *time_manager) {
                                   nc.inq_filename().c_str());
   }
 
-  report_range();
+  report_range(log);
 }
 
 //! \brief Report the range of a time-series stored in `values`.
-void Timeseries::report_range() {
+void Timeseries::report_range(const Logger &log) {
   double min, max;
 
   // min_element and max_element return iterators; "*" is used to get
@@ -153,7 +154,7 @@ void Timeseries::report_range() {
 
   std::string spacer(m_variable.get_name().size(), ' ');
 
-  verbPrintf(2, m_com,
+  log.message(2, 
              "  FOUND  %s / %-60s\n"
              "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
              m_variable.get_name().c_str(),

@@ -55,7 +55,7 @@ void LapseRates::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  [using temperature and mass balance lapse corrections]\n");
 
   init_internal();
@@ -65,7 +65,7 @@ void LapseRates::init_impl() {
                                    " in m/year per km",
                                    m_smb_lapse_rate);
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
              "   ice-equivalent surface mass balance lapse rate: %3.3f m/year per km\n",
              m_temp_lapse_rate, m_smb_lapse_rate);

@@ -33,6 +33,8 @@
 
 namespace pism {
 
+class Logger;
+
 //! @brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
 /*! A NetCDF variable can have any number of attributes, but some of them get
@@ -103,9 +105,9 @@ public:
   typedef std::map<std::string,std::vector<double> > DoubleAttrs;
   const DoubleAttrs& get_all_doubles() const;
 
-  void report_to_stdout(MPI_Comm com, int verbosity_threshold) const;
+  void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max);
-  void report_range(MPI_Comm com, double min, double max, bool found_by_standard_name);
+  void report_range(const Logger &log, double min, double max, bool found_by_standard_name);
 
 protected:
   unsigned int m_n_spatial_dims;

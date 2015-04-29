@@ -31,6 +31,7 @@
 namespace pism {
 
 class PIO;
+class Logger;
 
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
@@ -127,7 +128,7 @@ private:
   Impl *m_impl;
 };
 
-Config::Ptr config_from_options(MPI_Comm com, units::System::Ptr unit_system);
+Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system);
 
 //! Set configuration parameters using command-line options.
 void set_config_from_options(Config &config);
@@ -153,10 +154,11 @@ void set_keyword_from_option(Config &config,
                              const std::string &choices);
 
 //! Report configuration parameters to `stdout`.
-void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config);
+void print_config(const Logger &log, int verbosity_threshhold, const Config &config);
 
 //! Report unused configuration parameters to `stdout`.
-void print_unused_parameters(int verbosity_threshhold, MPI_Comm com, const Config &config);
+void print_unused_parameters(const Logger &log, int verbosity_threshhold,
+                             const Config &config);
 
 } // end of namespace pism
 

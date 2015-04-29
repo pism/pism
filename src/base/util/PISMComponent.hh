@@ -26,6 +26,7 @@
 #include "base/util/io/IO_Flags.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMUnits.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -140,6 +141,8 @@ protected:
   const Config::ConstPtr m_config;
   //! unit system used by this component
   const units::System::Ptr m_sys;
+  //! logger (for easy access)
+  const Logger::ConstPtr m_log;
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

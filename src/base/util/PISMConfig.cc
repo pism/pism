@@ -24,6 +24,7 @@
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -200,23 +201,23 @@ DefaultConfig::~DefaultConfig() {
   // empty
 }
 
-void DefaultConfig::init(bool use_default_path) {
+void DefaultConfig::init(const Logger &log, bool use_default_path) {
   options::String file(m_option,
                        "Name of the file to read " + m_data.get_name() + " from",
                        PISM_DefaultConfigFile);
   if (use_default_path or file.is_set()) {
     this->read(m_com, file);
-    verbPrintf(2, m_com, "Reading configuration parameters (%s) from file '%s'.\n",
-               m_data.get_name().c_str(), file->c_str());
+    log.message(2, "Reading configuration parameters (%s) from file '%s'.\n",
+                m_data.get_name().c_str(), file->c_str());
   }
 }
 
-void DefaultConfig::init_with_default() {
-  this->init(true);
+void DefaultConfig::init_with_default(const Logger &log) {
+  this->init(log, true);
 }
 
-void DefaultConfig::init() {
-  this->init(false);
+void DefaultConfig::init(const Logger &log) {
+  this->init(log, false);
 }
 
 } // end of namespace pism

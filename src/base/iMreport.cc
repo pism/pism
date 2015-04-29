@@ -245,9 +245,9 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
   }
 
   if (printPrototype == true) {
-    verbPrintf(2,m_grid.com,
+    m_log->message(2,
                "P         time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
-    verbPrintf(2,m_grid.com,
+    m_log->message(2,
                "U         %s   %skm^3  %skm^2         m^2 s^-1       m/%s\n",
                tunitstr.c_str(),volscalestr,areascalestr,tunitstr.c_str());
     return;
@@ -281,7 +281,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
 
     if (delta_t > 0.0) { // avoids printing an empty line if we have not done anything
       stdout_flags_count0 += "\n";
-      verbPrintf(2,m_grid.com, stdout_flags_count0.c_str());
+      m_log->message(2, stdout_flags_count0);
     }
 
     if (use_calendar) {
@@ -293,7 +293,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
     const double maxvel = units::convert(m_sys, gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
 
-    verbPrintf(2,m_grid.com,
+    m_log->message(2,
                "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",
                tempstr,
                volume/(scalevol*1.0e9), area/(scalearea*1.0e6),

@@ -42,7 +42,7 @@ namespace pism {
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 void IceModel::setFromOptions() {
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "Processing physics-related command-line options...\n");
 
   set_config_from_options(*config);
@@ -60,17 +60,17 @@ void IceModel::setFromOptions() {
   if (config->get_double("maximum_time_step_years") <= 0) {
     throw RuntimeError("maximum_time_step_years has to be greater than 0.");
   }
-  
+
   if (config->get_boolean("do_mass_conserve") == false &&
       config->get_boolean("do_skip")) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
                "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
   if (config->get_string("calving_methods").find("thickness_calving") != std::string::npos &&
       config->get_boolean("part_grid") == false) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
                "              without application of partially filled grid cell scheme (-part_grid)\n"
                "              may lead to (incorrect) non-moving ice shelf front.\n");
@@ -81,7 +81,7 @@ void IceModel::setFromOptions() {
   // enhancement factor is coupled to the age of the ice with
   // e = 1 (A < 11'000 years), e = 3 otherwise
   if (config->get_boolean("e_age_coupling")) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  setting age-dependent enhancement factor: "
                "e=1 if A<11'000 years, e=3 otherwise\n");
 

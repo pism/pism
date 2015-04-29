@@ -27,6 +27,7 @@
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -105,6 +106,8 @@ void IceModelVec2T::end_access() const {
 
 void IceModelVec2T::init(const std::string &fname, unsigned int period, double reference_time) {
 
+  const Logger &log = *m_grid->ctx()->log();
+
   filename         = fname;
   m_period         = period;
   m_reference_time = reference_time;
@@ -146,8 +149,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     TimeseriesMetadata time_dimension(dimname, dimname, m_grid->ctx()->unit_system());
 
     time_dimension.set_string("units", m_grid->ctx()->time()->units_string());
-    io::read_timeseries(m_grid->com, nc, time_dimension,
-                        m_grid->ctx()->time().get(), time);
+    io::read_timeseries(nc, time_dimension,
+                        *m_grid->ctx()->time(), log, time);
 
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
@@ -157,7 +160,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         TimeBoundsMetadata tb(bounds_name, dimname, m_grid->ctx()->unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
-        io::read_time_bounds(m_grid->com, nc, tb, m_grid->ctx()->time().get(), time_bounds);
+        io::read_time_bounds(nc, tb, *m_grid->ctx()->time(),
+                             log, time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -324,7 +328,7 @@ void IceModelVec2T::update(unsigned int start) {
   Time::ConstPtr t = m_grid->ctx()->time();
 
   if (this->get_n_records() > 1 || getVerbosityLevel() > 4) {
-    verbPrintf(2, m_grid->com,
+    m_grid->ctx()->log()->message(2, 
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
                metadata().get_string("long_name").c_str(), m_name.c_str(), missing,
@@ -347,7 +351,7 @@ void IceModelVec2T::update(unsigned int start) {
                            CRITICAL, m_report_range, 0.0, tmp_array.get());
     }
 
-    verbPrintf(5, m_grid->com, " %s: reading entry #%02d, year %s...\n",
+    m_grid->ctx()->log()->message(5, " %s: reading entry #%02d, year %s...\n",
                m_name.c_str(),
                start + j,
                t->date(time[start + j]).c_str());

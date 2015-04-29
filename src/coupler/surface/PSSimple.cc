@@ -58,7 +58,7 @@ void Simple::init_impl() {
   assert(m_atmosphere != NULL);
   m_atmosphere->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
              "  It passes atmospheric state directly to upper ice fluid surface:\n"
              "    surface mass balance          := precipitation,\n"

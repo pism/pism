@@ -84,7 +84,7 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
 void PBLingleClark::init_impl() {
   BedDef::init_impl();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the Lingle-Clark bed deformation model...\n");
 
   correct_topg();
@@ -138,13 +138,13 @@ void PBLingleClark::correct_topg() {
 
   if (regrid_vars.is_set()) {
     if (set_contains(regrid_vars, "topg")) {
-      verbPrintf(2, m_grid.com,
+      m_log->message(2,
                  "  Bed elevation correction requested, but -regrid_vars contains topg...\n");
       return;
     }
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
              "  of the bed deformation from '%s'...\n",
              input_file->c_str(), regrid_file->c_str());

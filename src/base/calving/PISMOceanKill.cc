@@ -46,7 +46,7 @@ OceanKill::~OceanKill() {
 }
 
 void OceanKill::init() {
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing calving at a fixed calving front...\n");
 
   options::String ocean_kill_file("-ocean_kill_file",
@@ -59,7 +59,7 @@ void OceanKill::init() {
   IceModelVec2S thickness, bed;
 
   {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  setting fixed calving front location using\n"
                "  ice thickness and bed topography from '%s'\n"
                "  assuming sea level elevation of 0 meters.\n", ocean_kill_file->c_str());

@@ -86,7 +86,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
   Logger::Ptr logger = logger_from_options(com);
 
   // configuration parameters
-  Config::Ptr config = config_from_options(com, sys);
+  Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("calendar", "none");
   // when IceGrid constructor is called, these settings are used
@@ -95,7 +95,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
 
   set_config_from_options(*config);
 
-  print_config(3, com, *config);
+  print_config(*logger, 3, *config);
 
   Time::Ptr time = time_from_options(com, config, sys);
 
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     grid.set_vertical_levels(Lz, Mz, EQUAL);
 
     // complete grid initialization based on user options
-    ctx->time()->init();
+    ctx->time()->init(*ctx->log());
     grid.allocate();
 
     // allocate tools and IceModelVecs

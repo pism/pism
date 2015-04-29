@@ -42,13 +42,13 @@ Context::Ptr pisms_context(MPI_Comm com) {
   Logger::Ptr logger = logger_from_options(com);
 
   // configuration parameters
-  Config::Ptr config = config_from_options(com, sys);
+  Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("calendar", "none");
 
   set_config_from_options(*config);
 
-  print_config(3, com, *config);
+  print_config(*logger, 3, *config);
 
   Time::Ptr time = time_from_options(com, config, sys);
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed.nc");
 
-    print_unused_parameters(3, com, *config);
+    print_unused_parameters(*ctx->log(), 3, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

@@ -84,9 +84,9 @@ void SIAFD::init() {
 
   SSB_Modifier::init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the SIA stress balance modifier...\n");
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
   // set bed_state_counter to -1 so that the smoothed bed is computed the first

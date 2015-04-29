@@ -29,6 +29,7 @@
 
 #include "base/util/interpolation.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -86,8 +87,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   rank = grid.rank();
   report_range = true;
 
-  verbPrintf(3, com, "\nRegridding file grid info:\n");
-  input.report(com, grid.ctx()->unit_system(), 3);
+  grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
+  input.report(*grid.ctx()->log(), 3, grid.ctx()->unit_system());
 
   // Grid spacing (assume that the grid is equally-spaced) and the
   // extent of the domain. To compute the extent of the domain, assume

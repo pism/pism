@@ -29,6 +29,7 @@
 #include "base/util/io/LocalInterpCtx.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/pism_memory.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 namespace io {
@@ -408,7 +409,7 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
   }
 }
 
- 
+
 //! @brief Get the interpolation context (grid information) for an input file.
 /*!
  * @note The *caller* is in charge of destroying lic
@@ -485,7 +486,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
     assert((bool)lic);
 
     double *buffer = &(lic->buffer[0]);
-    
+
     const unsigned int t_count = 1;
     compute_start_and_count(nc,
                             grid.ctx()->unit_system(),
@@ -603,6 +604,8 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
                            const IceGrid& grid, const PIO &nc,
                            unsigned int time, double *output) {
 
+  const Logger &log = *grid.ctx()->log();
+
   nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   // Find the variable:
@@ -673,7 +676,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
   if (var.has_attribute("units") && input_units.empty()) {
     const std::string &units_string = var.get_string("units"),
       &long_name = var.get_string("long_name");
-    verbPrintf(2, nc.com(),
+    log.message(2,
                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                "              Assuming that it is in '%s'.\n",
                var.get_name().c_str(), long_name.c_str(),
@@ -782,6 +785,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              unsigned int t_start, RegriddingFlag flag,
                              bool do_report_range, double default_value,
                              double *output) {
+  const Logger &log = *grid.ctx()->log();
 
   nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
@@ -798,7 +802,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
   if (exists) {                      // the variable was found successfully
 
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
-      verbPrintf(2, nc.com(),
+      log.message(2,
                  "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
                  default_value, var.get_string("units").c_str(), var.get_name().c_str(),
                  nc.inq_filename().c_str());
@@ -819,7 +823,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
       std::string internal_units = var.get_string("units");
       input_units = internal_units;
       if (not internal_units.empty()) {
-        verbPrintf(2, nc.com(),
+        log.message(2,
                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                    "              Assuming that it is in '%s'.\n",
                    var.get_name().c_str(),
@@ -838,15 +842,15 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
 
     double min = 0.0, max = 0.0;
     compute_range(nc.com(), output, data_size, &min, &max);
-    
+
     // Check the range and warn the user if needed:
     var.check_range(nc.inq_filename(), min, max);
 
     if (do_report_range) {
       // We can report the success, and the range now:
-      verbPrintf(2, nc.com(), "  FOUND ");
+      log.message(2, "  FOUND ");
 
-      var.report_range(nc.com(), min, max, found_by_standard_name);
+      var.report_range(log, min, max, found_by_standard_name);
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
@@ -862,7 +866,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                     var.get_string("glaciological_units"));
 
     std::string spacer(var.get_name().size(), ' ');
-    verbPrintf(2, nc.com(),
+    log.message(2,
                "  absent %s / %-10s\n"
                "         %s \\ not found; using default constant %7.2f (%s)\n",
                var.get_name().c_str(),
@@ -884,7 +888,7 @@ void define_timeseries(const TimeseriesMetadata& var,
 
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
-  
+
   if (nc.inq_var(name)) {
     return;
   }
@@ -906,8 +910,9 @@ void define_timeseries(const TimeseriesMetadata& var,
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &metadata,
-                     const Time *time, std::vector<double> &data) {
+void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
+                     const Time &time, const Logger &log, std::vector<double> &data) {
+
   std::string name = metadata.get_name();
 
   try {
@@ -950,7 +955,7 @@ void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &meta
     if (input_units_string.empty()) {
       input_has_units = false;
     } else {
-      input_units_string = time->CF_units_to_PISM_units(input_units_string);
+      input_units_string = time.CF_units_to_PISM_units(input_units_string);
 
       input_units = units::Unit(system, input_units_string);
       input_has_units = true;
@@ -958,7 +963,7 @@ void read_timeseries(MPI_Comm com, const PIO &nc, const TimeseriesMetadata &meta
 
     if (metadata.has_attribute("units") == true && input_has_units == false) {
       std::string units_string = internal_units.format();
-      verbPrintf(2, com,
+      log.message(2,
                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                  "              Assuming that it is in '%s'.\n",
                  name.c_str(), long_name.c_str(),
@@ -990,7 +995,7 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
 void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t t_start,
                       const std::vector<double> &data,
                       IO_Type nctype) {
-  
+
   std::string name = metadata.get_name();
   try {
     if (not nc.inq_var(name)) {
@@ -1048,10 +1053,11 @@ void define_time_bounds(const TimeBoundsMetadata& var,
   write_attributes(nc, var, nctype, true);
 }
 
-void read_time_bounds(MPI_Comm com, const PIO &nc,
+void read_time_bounds(const PIO &nc,
                       const TimeBoundsMetadata &metadata,
-                      const Time *time, std::vector<double> &data) {
-  
+                      const Time &time, const Logger &log,
+                      std::vector<double> &data) {
+
   std::string name = metadata.get_name();
 
   try {
@@ -1106,7 +1112,7 @@ void read_time_bounds(MPI_Comm com, const PIO &nc,
     units::Unit input_units(internal_units.get_system(), "1");
 
     std::string input_units_string = nc.get_att_text(dimension_name, "units");
-    input_units_string = time->CF_units_to_PISM_units(input_units_string);
+    input_units_string = time.CF_units_to_PISM_units(input_units_string);
 
     if (input_units_string.empty() == true) {
       input_has_units = false;
@@ -1117,7 +1123,7 @@ void read_time_bounds(MPI_Comm com, const PIO &nc,
 
     if (metadata.has_attribute("units") && input_has_units == false) {
       std::string units_string = internal_units.format();
-      verbPrintf(2, com,
+      log.message(2,
                  "PISM WARNING: Variable '%s' does not have the units attribute.\n"
                  "              Assuming that it is in '%s'.\n",
                  dimension_name.c_str(),
@@ -1186,7 +1192,7 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
 
   if (file_exists_flag == 1) {
     return true;
-  } else { 
+  } else {
     return false;
   }
 }

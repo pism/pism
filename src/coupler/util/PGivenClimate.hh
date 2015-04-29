@@ -104,7 +104,7 @@ protected:
                          "Specifies a file with boundary conditions");
     if (file.is_set()) {
       filename = file;
-      verbPrintf(2, Model::m_grid.com,
+      Model::m_log->message(2,
                  "  - Reading boundary conditions from '%s'...\n",
                  filename.c_str());
     } else {
@@ -112,7 +112,7 @@ protected:
       bool do_regrid; int start;   // will be ignored
       Model::find_pism_input(filename, do_regrid, start);
 
-      verbPrintf(2, Model::m_grid.com,
+      Model::m_log->message(2,
                  "  - Option %s_file is not set. Trying the input file '%s'...\n",
                  option_prefix.c_str(), filename.c_str());
     }

@@ -26,6 +26,7 @@
 namespace pism {
 
 class Config;
+class Logger;
 
 void verbosityLevelFromOptions();
 
@@ -119,7 +120,7 @@ bool Bool(const std::string& option,
           const std::string& description);
 
 void deprecated(const std::string &old_name, const std::string &new_name);
-void ignored(MPI_Comm com, const std::string &name);
+void ignored(const Logger &log, const std::string &name);
 void forbidden(const std::string &name);
 } // end of namespace options
 

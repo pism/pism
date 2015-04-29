@@ -187,24 +187,24 @@ void TemperatureIndex::init_impl() {
   // call the default implementation (not the interface method init())
   SurfaceModel::init_impl();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
              "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
              "  Surface mass balance and ice upper surface temperature are outputs.\n"
              "  See PISM User's Manual for control of degree-day factors.\n");
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  Computing number of positive degree-days by: ");
   if (m_randomized) {
-    verbPrintf(2, m_grid.com, "simulation of a random process.\n");
+    m_log->message(2, "simulation of a random process.\n");
   } else if (m_randomized_repeatable) {
-    verbPrintf(2, m_grid.com, "repeatable simulation of a random process.\n");
+    m_log->message(2, "repeatable simulation of a random process.\n");
   } else {
-    verbPrintf(2, m_grid.com, "an expectation integral.\n");
+    m_log->message(2, "an expectation integral.\n");
   }
 
   if (m_use_fausto_params) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  Setting PDD parameters from [Faustoetal2009] ...\n");
 
     m_base_pddStdDev = 2.53;
@@ -213,12 +213,12 @@ void TemperatureIndex::init_impl() {
 
   options::String file("-pdd_sd_file", "Read standard deviation from file");
   if (file.is_set()) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  Reading standard deviation of near-surface temperature from '%s'...\n",
                file->c_str());
     m_air_temp_sd.init(file, m_sd_period, m_sd_ref_time);
   } else {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  Option -pdd_sd_file is not set. Using a constant value.\n");
     m_air_temp_sd.init_constant(m_base_pddStdDev);
   }
@@ -231,7 +231,7 @@ void TemperatureIndex::init_impl() {
   find_pism_input(input_file, do_regrid, start);
 
   // read snow precipitation rate from file
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading snow depth (ice equivalent meters) from %s ... \n",
              input_file.c_str());
   m_snow_depth.regrid(input_file, OPTIONAL, 0.0);

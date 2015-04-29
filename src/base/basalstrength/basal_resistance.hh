@@ -26,6 +26,7 @@
 namespace pism {
 
 class Config;
+class Logger;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
@@ -36,7 +37,7 @@ class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const Config &config);
   virtual ~IceBasalResistancePlasticLaw();
-  virtual void print_info(int verbthresh, MPI_Comm com, units::System::Ptr system) const;
+  virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
@@ -48,7 +49,7 @@ class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const Config &config);
   virtual ~IceBasalResistancePseudoPlasticLaw();
-  virtual void print_info(int verbthresh, MPI_Comm com, units::System::Ptr system) const;
+  virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;

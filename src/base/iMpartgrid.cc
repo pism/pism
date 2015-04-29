@@ -119,7 +119,7 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
   bool done = false;
   for (int i = 0; not done and i < max_loopcount; ++i) {
     residual_redistribution_iteration(H_residual, done);
-    verbPrintf(4, m_grid.com, "redistribution loopcount = %d\n", i);
+    m_log->message(4, "redistribution loopcount = %d\n", i);
   }
 }
 
@@ -247,7 +247,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         vHref(i, j) = 0.0;
       }
       if (ice_thickness(i, j)<0) {
-        verbPrintf(1, m_grid.com,
+        m_log->message(1,
                    "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
                    "  H_threshold: %f\n"
                    "  coverage_ratio: %f\n"

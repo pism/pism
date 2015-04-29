@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
       // provide a default output file name if no -o option is given.
       m.writeFiles("unnamed.nc");
     }
-    print_unused_parameters(3, com, *config);
+    print_unused_parameters(*ctx->log(), 3, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

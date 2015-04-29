@@ -20,6 +20,7 @@
 #define _LOGGER_H_
 
 #include <mpi.h>
+#include <string>
 
 #include "pism_memory.hh"
 
@@ -47,6 +48,7 @@ public:
    *  set_threshold().
    */
   void message(int threshold, const char format[], ...) const __attribute__((format(printf, 3, 4)));
+  void message(int threshold, const std::string &text) const;
 
   //! Set verbosity threshold.
   void set_threshold(int level);

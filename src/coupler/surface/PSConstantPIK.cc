@@ -60,7 +60,7 @@ void PIK::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the constant-in-time surface processes model PIK.\n"
              "  It reads surface mass balance directly from the file and holds it constant.\n"
              "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
@@ -70,7 +70,7 @@ void PIK::init_impl() {
   find_pism_input(m_input_file, do_regrid, start);
 
   // read snow precipitation rate from file
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
              m_input_file.c_str());
   if (do_regrid) {
@@ -80,7 +80,7 @@ void PIK::init_impl() {
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 

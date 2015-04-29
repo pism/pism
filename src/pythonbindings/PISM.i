@@ -183,6 +183,9 @@
 %include pism_Vec.i
 /* End of independent PISM classes. */
 
+%shared_ptr(pism::Logger);
+%include "base/util/Logger.hh"
+
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %shared_ptr(pism::DefaultConfig);
@@ -203,8 +206,6 @@
 %include "base/util/Profiling.hh"
 %shared_ptr(pism::Context);
 %include "base/util/Context.hh"
-
-%include "base/util/Logger.hh"
 
 %include pism_IceGrid.i
 

@@ -28,6 +28,7 @@
 
 #include "PISMConfigInterface.hh"
 #include "error_handling.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -190,13 +191,13 @@ const std::vector<double>& SpatialVariableMetadata::get_levels() const {
 }
 
 //! Report the range of a \b global Vec `v`.
-void VariableMetadata::report_range(MPI_Comm com, double min, double max,
+void VariableMetadata::report_range(const Logger &log, double min, double max,
                                     bool found_by_standard_name) {
 
   // units::Converter constructor will make sure that units are compatible.
   units::Converter c(m_unit_system,
-                  this->get_string("units"),
-                  this->get_string("glaciological_units"));
+                     this->get_string("units"),
+                     this->get_string("glaciological_units"));
   min = c(min);
   max = c(max);
 
@@ -205,28 +206,28 @@ void VariableMetadata::report_range(MPI_Comm com, double min, double max,
   if (has_attribute("standard_name")) {
 
     if (found_by_standard_name) {
-      verbPrintf(2, com,
-                 " %s / standard_name=%-10s\n"
-                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                 get_name().c_str(),
-                 get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                 get_string("glaciological_units").c_str());
+      log.message(2, 
+                  " %s / standard_name=%-10s\n"
+                  "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+                  get_name().c_str(),
+                  get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                  get_string("glaciological_units").c_str());
     } else {
-      verbPrintf(2, com,
-                 " %s / WARNING! standard_name=%s is missing, found by short_name\n"
-                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                 get_name().c_str(),
-                 get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                 get_string("glaciological_units").c_str());
+      log.message(2, 
+                  " %s / WARNING! standard_name=%s is missing, found by short_name\n"
+                  "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+                  get_name().c_str(),
+                  get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                  get_string("glaciological_units").c_str());
     }
 
   } else {
-    verbPrintf(2, com,
-               " %s / %-10s\n"
-               "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-               get_name().c_str(),
-               get_string("long_name").c_str(), spacer.c_str(), min, max,
-               get_string("glaciological_units").c_str());
+    log.message(2, 
+                " %s / %-10s\n"
+                "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+                get_name().c_str(),
+                get_string("long_name").c_str(), spacer.c_str(), min, max,
+                get_string("glaciological_units").c_str());
   }
 }
 
@@ -372,7 +373,7 @@ std::string VariableMetadata::get_string(const std::string &name) const {
   }
 }
 
-void VariableMetadata::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
+void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
   // Print text attributes:
   const VariableMetadata::StringAttrs &strings = this->get_all_strings();
@@ -385,8 +386,8 @@ void VariableMetadata::report_to_stdout(MPI_Comm com, int verbosity_threshold) c
       continue;
     }
 
-    verbPrintf(verbosity_threshold, com, "  %s = \"%s\"\n",
-               name.c_str(), value.c_str());
+    log.message(verbosity_threshold, "  %s = \"%s\"\n",
+                name.c_str(), value.c_str());
   }
 
   // Print double attributes:
@@ -402,11 +403,11 @@ void VariableMetadata::report_to_stdout(MPI_Comm com, int verbosity_threshold) c
 
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
-      verbPrintf(verbosity_threshold, com, "  %s = %12.3e\n",
-                 name.c_str(), values[0]);
+      log.message(verbosity_threshold, "  %s = %12.3e\n",
+                  name.c_str(), values[0]);
     } else {
-      verbPrintf(verbosity_threshold, com, "  %s = %12.5f\n",
-                 name.c_str(), values[0]);
+      log.message(verbosity_threshold, "  %s = %12.5f\n",
+                  name.c_str(), values[0]);
     }
 
   }

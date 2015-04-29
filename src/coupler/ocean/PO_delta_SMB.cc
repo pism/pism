@@ -61,7 +61,7 @@ void Delta_SMB::init_impl() {
 
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 
   init_internal();

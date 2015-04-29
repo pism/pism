@@ -30,6 +30,7 @@
 // include an implementation header so that we can allocate a DefaultConfig instance in
 // config_from_options()
 #include "PISMConfig.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -224,10 +225,10 @@ void Config::set_boolean(const std::string& name, bool value,
   this->set_boolean_impl(name, value);
 }
 
-void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) {
+void print_config(const Logger &log, int verbosity_threshhold, const Config &config) {
   const int v = verbosity_threshhold;
 
-  verbPrintf(v, com,
+  log.message(v,
              "### Strings:\n"
              "###\n");
 
@@ -241,10 +242,10 @@ void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) 
       continue;
     }
 
-    verbPrintf(v, com, "  %s = \"%s\"\n", name.c_str(), value.c_str());
+    log.message(v, "  %s = \"%s\"\n", name.c_str(), value.c_str());
   }
 
-  verbPrintf(v, com,
+  log.message(v,
              "### Doubles:\n"
              "###\n");
 
@@ -257,13 +258,13 @@ void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) 
 
     if (fabs(value) >= 1.0e7 or fabs(value) <= 1.0e-4) {
       // use scientific notation if a number is big or small
-      verbPrintf(v, com, "  %s = %12.3e (%s)\n", name.c_str(), value, units.c_str());
+      log.message(v, "  %s = %12.3e (%s)\n", name.c_str(), value, units.c_str());
     } else {
-      verbPrintf(v, com, "  %s = %12.5f (%s)\n", name.c_str(), value, units.c_str());
+      log.message(v, "  %s = %12.5f (%s)\n", name.c_str(), value, units.c_str());
     }
   }
 
-  verbPrintf(v, com,
+  log.message(v,
              "### Booleans:\n"
              "###\n");
 
@@ -273,15 +274,15 @@ void print_config(int verbosity_threshhold, MPI_Comm com, const Config &config) 
     std::string name  = p->first;
     std::string value = p->second ? "true" : "false";
 
-    verbPrintf(v, com, "  %s = %s\n", name.c_str(), value.c_str());
+    log.message(v, "  %s = %s\n", name.c_str(), value.c_str());
   }
 
-  verbPrintf(v, com,
+  log.message(v,
              "### List of configuration parameters ends here.\n"
              "###\n");
 }
 
-void print_unused_parameters(int verbosity_threshhold, MPI_Comm com,
+void print_unused_parameters(const Logger &log, int verbosity_threshhold,
                              const Config &config) {
   std::set<std::string> parameters_set = config.parameters_set_by_user();
   std::set<std::string> parameters_used = config.parameters_used();
@@ -298,9 +299,9 @@ void print_unused_parameters(int verbosity_threshhold, MPI_Comm com,
     }
 
     if (parameters_used.find(*k) == parameters_used.end()) {
-      verbPrintf(verbosity_threshhold, com,
-                 "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n",
-                 k->c_str());
+      log.message(verbosity_threshhold,
+                  "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n",
+                  k->c_str());
 
     }
   }
@@ -763,12 +764,12 @@ void set_config_from_options(Config &config) {
 }
 
 //! Create a configuration database using command-line options.
-Config::Ptr config_from_options(MPI_Comm com, units::System::Ptr sys) {
+Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr sys) {
 
   DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
     overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
-  overrides->init();
-  config->init_with_default();
+  overrides->init(log);
+  config->init_with_default(log);
   config->import_from(*overrides);
   set_config_from_options(*config);
 

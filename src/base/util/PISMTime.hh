@@ -100,7 +100,7 @@ public:
   // Virtual methods:
 
   //! \brief Intialize using command-line options.
-  virtual void init();
+  virtual void init(const Logger &log);
 
   void init_calendar(const std::string &calendar);
 

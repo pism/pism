@@ -46,6 +46,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/Context.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -164,14 +165,14 @@ void IceCompModel::set_grid_defaults() {
 
 void IceCompModel::setFromOptions() {
 
-  verbPrintf(2, m_grid.com, "starting Test %c ...\n", testname);
+  m_log->message(2, "starting Test %c ...\n", testname);
 
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
   bool flag = options::Bool("-eo", "exact only");
   if (flag) {
     exactOnly = true;
-    verbPrintf(1,m_grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
+    m_log->message(1, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
   }
 
   // These ifs are here (and not in the constructor or later) because
@@ -236,14 +237,14 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
   if (biiSet == true) {
     if (testname == 'K') {
-      verbPrintf(1,m_grid.com,
+      m_log->message(1,
                  "setting material properties of bedrock to those of ice in Test K\n");
       config->set_double("bedrock_thermal_density", config->get_double("ice_density"));
       config->set_double("bedrock_thermal_conductivity", config->get_double("ice_thermal_conductivity"));
       config->set_double("bedrock_thermal_specific_heat_capacity", config->get_double("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
-      verbPrintf(1,m_grid.com,
+      m_log->message(1,
                  "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
     }
   }
@@ -289,7 +290,7 @@ void IceCompModel::allocate_stressbalance() {
     rheology::FlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
     if (FlowLawIsPatersonBuddCold(ice, *config, EC) == false) {
-      verbPrintf(1, m_grid.com,
+      m_log->message(1,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
     }
   }
@@ -304,7 +305,7 @@ void IceCompModel::allocate_bed_deformation() {
   std::string bed_def_model = config->get_string("bed_deformation_model");
 
   if ((testname == 'H') && bed_def_model != "iso") {
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "IceCompModel WARNING: Test H should be run with option\n"
                "  '-bed_def iso'  for the reported errors to be correct.\n");
   }
@@ -325,7 +326,7 @@ void IceCompModel::set_vars_from_options() {
 
   strain_heating3_comp.set(0.0);
 
-  verbPrintf(3,m_grid.com,
+  m_log->message(3,
              "initializing Test %c from formulas ...\n",testname);
 
   // all have no uplift
@@ -475,8 +476,8 @@ void IceCompModel::initTestL() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  T3.set(T0); 
-  geothermal_flux.set(Ggeo); 
+  T3.set(T0);
+  geothermal_flux.set(Ggeo);
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
@@ -506,20 +507,20 @@ void IceCompModel::initTestL() {
   ierr = exactL_list(&rr[0], MM, &HH[0], &bb[0], &aa[0]);
   switch (ierr) {
      case TESTL_NOT_DONE:
-       verbPrintf(1,m_grid.com,
-          "\n\nTest L ERROR: exactL_list() returns 'NOT_DONE' ...\n\n\n",ierr);
+       m_log->message(1,
+          "\n\nTest L ERROR: exactL_list() returns 'NOT_DONE' (%d) ...\n\n\n",ierr);
        break;
      case TESTL_NOT_DECREASING:
-       verbPrintf(1,m_grid.com,
-          "\n\nTest L ERROR: exactL_list() returns 'NOT_DECREASING' ...\n\n\n",ierr);
+       m_log->message(1,
+          "\n\nTest L ERROR: exactL_list() returns 'NOT_DECREASING' (%d) ...\n\n\n",ierr);
        break;
      case TESTL_INVALID_METHOD:
-       verbPrintf(1,m_grid.com,
-          "\n\nTest L ERROR: exactL_list() returns 'INVALID_METHOD' ...\n\n\n",ierr);
+       m_log->message(1,
+          "\n\nTest L ERROR: exactL_list() returns 'INVALID_METHOD' (%d) ...\n\n\n",ierr);
        break;
      case TESTL_NO_LIST:
-       verbPrintf(1,m_grid.com,
-          "\n\nTest L ERROR: exactL_list() returns 'NO_LIST' ...\n\n\n",ierr);
+       m_log->message(1,
+          "\n\nTest L ERROR: exactL_list() returns 'NO_LIST' (%d) ...\n\n\n",ierr);
        break;
      default:
        break;
@@ -541,7 +542,7 @@ void IceCompModel::initTestL() {
       bed_topography(rrv[k].i, rrv[k].j) = bb[k];
     }
 
-    ice_thickness.update_ghosts(); 
+    ice_thickness.update_ghosts();
     beddef->set_elevation(bed_topography);
   }
 
@@ -649,7 +650,7 @@ void IceCompModel::fillSolnTestE() {
     vel_adv(i,j)    = bvel;
   }
 
-  ice_thickness.update_ghosts(); 
+  ice_thickness.update_ghosts();
 }
 
 
@@ -977,13 +978,13 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *config, EC)) {
-    verbPrintf(1, m_grid.com,
+    m_log->message(1,
                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                "   for reported errors in test %c to be meaningful!\n",
                testname);
   }
 
-  verbPrintf(1,m_grid.com,
+  m_log->message(1,
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
@@ -1002,7 +1003,7 @@ void IceCompModel::reportErrors() {
   }
 
   if (report_file.is_set()) {
-    verbPrintf(2,m_grid.com, "Also writing errors to '%s'...\n", report_file->c_str());
+    m_log->message(2, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
     nc.open(report_file, mode);
@@ -1034,10 +1035,10 @@ void IceCompModel::reportErrors() {
                 maxetaerr, centerHerr;
     computeGeometryErrors(volexact,areaexact,domeHexact,
                           volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");  // no longer reporting centerHerr
     const double   m = (2.0 * flow_law->exponent() + 2.0) / flow_law->exponent();
-    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
                100*volerr/volexact, maxHerr, avHerr,
                maxetaerr/pow(domeHexact,m));
 
@@ -1070,9 +1071,9 @@ void IceCompModel::reportErrors() {
     double maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr;
     computeTemperatureErrors(maxTerr, avTerr);
     computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr);
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "temp      :        maxT         avT    basemaxT     baseavT\n");  // no longer reporting   basecenterT
-    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, basemaxTerr, baseavTerr);
 
     if (report_file.is_set()) {
@@ -1097,9 +1098,9 @@ void IceCompModel::reportErrors() {
   } else if ((testname == 'K') || (testname == 'O')) {
     double maxTerr, avTerr, maxTberr, avTberr;
     computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "temp      :        maxT         avT       maxTb        avTb\n");
-    verbPrintf(1,m_grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, maxTberr, avTberr);
 
     if (report_file.is_set()) {
@@ -1127,9 +1128,9 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     double max_strain_heating_error, av_strain_heating_error;
     compute_strain_heating_errors(max_strain_heating_error, av_strain_heating_error);
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "Sigma     :      maxSig       avSig\n");
-    verbPrintf(1,m_grid.com, "           %12.6f%12.6f\n",
+    m_log->message(1, "           %12.6f%12.6f\n",
                max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
     if (report_file.is_set()) {
@@ -1150,9 +1151,9 @@ void IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     double maxUerr, avUerr, maxWerr, avWerr;
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
-    verbPrintf(1, m_grid.com,
+    m_log->message(1,
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
-    verbPrintf(1, m_grid.com,
+    m_log->message(1,
                "           %12.6f%12.6f%12.6f%12.6f\n",
                units::convert(m_sys, maxUerr, "m/second", "m/year"),
                units::convert(m_sys, avUerr, "m/second", "m/year"),
@@ -1186,9 +1187,9 @@ void IceCompModel::reportErrors() {
     double exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     computeBasalVelocityErrors(exactmaxspeed,
                                maxvecerr,avvecerr,maxuberr,maxvberr);
-    verbPrintf(1, m_grid.com,
+    m_log->message(1,
                "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
-    verbPrintf(1, m_grid.com,
+    m_log->message(1,
                "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
                units::convert(m_sys, maxvecerr, "m/second", "m/year"),
                units::convert(m_sys, avvecerr, "m/second", "m/year"),
@@ -1222,15 +1223,15 @@ void IceCompModel::reportErrors() {
     double maxbmelterr, minbmelterr;
     computeBasalMeltRateErrors(maxbmelterr, minbmelterr);
     if (maxbmelterr != minbmelterr) {
-      verbPrintf(1,m_grid.com,
+      m_log->message(1,
                  "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
                  "  are different: maxbmelterr = %f, minbmelterr = %f\n",
                  units::convert(m_sys, maxbmelterr, "m/second", "m/year"),
                  units::convert(m_sys, minbmelterr, "m/second", "m/year"));
     }
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "basal melt:  max\n");
-    verbPrintf(1,m_grid.com, "           %11.5f\n",
+    m_log->message(1, "           %11.5f\n",
                units::convert(m_sys, maxbmelterr, "m/second", "m/year"));
 
     if (report_file.is_set()) {
@@ -1246,7 +1247,7 @@ void IceCompModel::reportErrors() {
     nc.close();
   }
 
-  verbPrintf(1,m_grid.com, "NUM ERRORS DONE\n");
+  m_log->message(1, "NUM ERRORS DONE\n");
 }
 
 //! \brief Initialize test V.

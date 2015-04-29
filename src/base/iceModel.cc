@@ -54,6 +54,7 @@ IceModel::IceModel(IceGrid &g, Context::Ptr ctx)
     config(ctx->config()),
     m_ctx(ctx),
     m_sys(ctx->unit_system()),
+    m_log(ctx->log()),
     global_attributes("PISM_GLOBAL", ctx->unit_system()),
     mapping("mapping", ctx->unit_system()),
     run_stats("run_stats", ctx->unit_system()),
@@ -192,7 +193,7 @@ void IceModel::createVecs() {
 
   const unsigned int WIDE_STENCIL = config->get_double("grid_max_stencil_width");
 
-  verbPrintf(3, m_grid.com,
+  m_log->message(3,
              "Allocating memory...\n");
 
   // get the list of selected calving methods:
@@ -376,21 +377,21 @@ void IceModel::createVecs() {
   }
 
   if (config->get_boolean("do_fracture_density") == true) {
-    
+
     deviatoric_stresses.create(m_grid, "sigma", WITH_GHOSTS,
                                2, // stencil width
                                3);
-    
+
     deviatoric_stresses.metadata(0).set_name("sigma_xx");
     deviatoric_stresses.set_attrs("internal",
                                   "deviatoric stress in x direction",
                                   "Pa", "", 0);
-                                  
+
     deviatoric_stresses.metadata(1).set_name("sigma_yy");
     deviatoric_stresses.set_attrs("internal",
                                   "deviatoric stress in y direction",
-                                  "Pa", "", 1);   
-                                         
+                                  "Pa", "", 1);
+
     deviatoric_stresses.metadata(2).set_name("sigma_xy");
     deviatoric_stresses.set_attrs("internal",
                                   "deviatoric shear stress",
@@ -430,31 +431,31 @@ void IceModel::createVecs() {
 
   // fracture density field
   if (config->get_boolean("do_fracture_density")) {
-    vFD.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL); 
+    vFD.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
     vFD.set_attrs("model_state", "fracture density in ice shelf", "", "");
     vFD.metadata().set_double("valid_max", 1.0);
     vFD.metadata().set_double("valid_min", 0.0);
     m_grid.variables().add(vFD);
 
     if (config->get_boolean("write_fd_fields")) {
-      vFG.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL); 
+      vFG.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
       vFG.set_attrs("model_state", "fracture growth rate",       "1/s", "");
       vFG.metadata().set_double("valid_min", 0.0);
       m_grid.variables().add(vFG);
 
-      vFH.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL); 
+      vFH.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
       vFH.set_attrs("model_state", "fracture healing rate",      "1/s", "");
       m_grid.variables().add(vFH);
 
-      vFE.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL); 
+      vFE.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
       vFE.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
       m_grid.variables().add(vFE);
 
-      vFA.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL); 
+      vFA.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
       vFA.set_attrs("model_state", "age since fracturing",       "years", "");
       m_grid.variables().add(vFA);
-      
-      vFT.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL); 
+
+      vFT.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
       vFT.set_attrs("model_state", "fracture toughness", "Pa", "");
       m_grid.variables().add(vFT);
     }
@@ -830,7 +831,7 @@ void IceModel::run() {
   write_timeseries();
   write_extras();
 
-  verbPrintf(2, m_grid.com, "running forward ...\n");
+  m_log->message(2, "running forward ...\n");
 
   stdout_flags.erase(); // clear it out
   summaryPrintLine(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -881,12 +882,12 @@ void IceModel::run() {
 
   options::Integer pause_time("-pause", "Pause after the run, seconds", 0);
   if (pause_time > 0) {
-    verbPrintf(2,m_grid.com,"pausing for %d secs ...\n", pause_time.value());
+    m_log->message(2, "pausing for %d secs ...\n", pause_time.value());
     PetscErrorCode ierr = PetscSleep(pause_time); PISM_CHK(ierr, "PetscSleep");
   }
 
   if (stepcount >= 0) {
-    verbPrintf(1,m_grid.com,
+    m_log->message(1,
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
                stepcount,

@@ -39,6 +39,7 @@ using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 #include "base/util/petscwrappers/VecScatter.hh"
 #include "pism_const.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -359,7 +360,7 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
     return;
   }
 
-  verbPrintf(3, m_grid->com, "  Regridding %s...\n", m_name.c_str());
+  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):

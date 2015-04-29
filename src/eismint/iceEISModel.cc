@@ -177,7 +177,7 @@ void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
 void IceEISModel::set_vars_from_options() {
 
   // initialize from EISMINT II formulas
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "initializing variables from EISMINT II experiment %c formulas... \n",
              m_experiment);
 

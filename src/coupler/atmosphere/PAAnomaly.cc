@@ -79,10 +79,10 @@ void Anomaly::init() {
   assert(input_model != NULL);
   input_model->init();
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the -atmosphere ...,anomaly code...\n");
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading anomalies from %s ...\n",
              filename.c_str());
 

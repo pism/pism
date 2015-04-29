@@ -655,7 +655,7 @@ void IceModel::massContExplicitStep() {
           H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
           vHref(i, j) += H_to_Href_flux;
           if (vHref(i, j) < 0) {
-            verbPrintf(3, m_grid.com,
+            m_log->message(3,
                        "PISM WARNING: negative Href at (%d,%d)\n",
                        i, j);
 

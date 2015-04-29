@@ -75,7 +75,7 @@ void IceModel::compute_cell_areas() {
                                   proj_string.c_str());
   }
 
-  verbPrintf(2,m_grid.com,
+  m_log->message(2,
              "* Computing cell areas, latitude and longitude\n"
              "  using projection parameters...\n");
 

@@ -120,7 +120,7 @@ void TemperatureIndex_Old::init_impl() {
                                           base_pddThresholdTemp);
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
              "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
              "  Surface mass balance and ice upper surface temperature are outputs.\n"
@@ -139,13 +139,13 @@ void TemperatureIndex_Old::init_impl() {
       mbscheme = new PDDMassBalance_Old(m_config);
     }
   }
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "  Computing number of positive degree-days by: %s\n",
              method.c_str());
 
 
   if (fausto_params) {
-    verbPrintf(2, m_grid.com,
+    m_log->message(2,
                "  Setting PDD parameters from [Faustoetal2009] ...\n");
 
     base_pddStdDev = 2.53;
@@ -201,9 +201,9 @@ void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
 
   if (pdd_annualize) {
     if (my_t + my_dt > next_pdd_update) {
-      verbPrintf(3, m_grid.com,
-                 "  Updating mass balance for one year starting at %1.1f...\n",
-                 m_grid.ctx()->time()->date(my_t).c_str());
+      m_log->message(3,
+                     "  Updating mass balance for one year starting at %s...\n",
+                     m_grid.ctx()->time()->date(my_t).c_str());
       update_internal(my_t, one_year);
       next_pdd_update = my_t + one_year;
     }

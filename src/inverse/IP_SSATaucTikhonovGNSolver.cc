@@ -230,16 +230,19 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::check_convergence() {
 
   sumNorm = m_gradient.norm(NORM_2);
 
-  verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",
-             designNorm,stateNorm,sumNorm);
-  verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",
-             m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale);
+  verbPrintf(2, PETSC_COMM_WORLD,
+             "----------------------------------------------------------\n",
+             designNorm, stateNorm, sumNorm);
+  verbPrintf(2, PETSC_COMM_WORLD,
+             "IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",
+             m_iter, sqrt(m_val_state)*m_vel_scale, m_value*m_vel_scale*m_vel_scale);
   if (m_tikhonov_adaptive) {
-    verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha);
+    verbPrintf(2, PETSC_COMM_WORLD, "alpha %g; log(alpha) %g\n", m_alpha, m_logalpha);
   }
   double relsum = (sumNorm/std::max(designNorm,stateNorm));
-  verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",
-             designNorm,stateNorm,sumNorm,relsum);
+  verbPrintf(2, PETSC_COMM_WORLD,
+             "design norm %g stateNorm %g sum %g; relative difference %g\n",
+             designNorm, stateNorm, sumNorm, relsum);
 
   // If we have an adaptive tikhonov parameter, check if we have met
   // this constraint first.
@@ -464,7 +467,10 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlo
   if (ddisc_sq_dalpha <= 0) {
     // Try harder.
     
-    verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0).  Tighten inv_gn_ksp_rtol?\n",ddisc_sq_dalpha);
+    verbPrintf(3, PETSC_COMM_WORLD,
+               "Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0)."
+               " Tighten inv_gn_ksp_rtol?\n",
+               ddisc_sq_dalpha);
     
     // S2Local contains T(dh/dalpha)
     m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local);
@@ -476,7 +482,9 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlo
     m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b);
     ddisc_sq_dalpha = 2*m_alpha*(ddisc_sq_dalpha_a+m_alpha*ddisc_sq_dalpha_b);
 
-    verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check recovery attempt: dh/dalpha= %g. \n",ddisc_sq_dalpha);
+    verbPrintf(3, PETSC_COMM_WORLD,
+               "Adaptive Tikhonov sanity check recovery attempt: dh/dalpha= %g. \n",
+               ddisc_sq_dalpha);
 
     // This is yet another alternative formula.
     // m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S2Local,&ddisc_sq_dalpha);

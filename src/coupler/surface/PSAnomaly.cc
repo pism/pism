@@ -83,10 +83,10 @@ void Anomaly::init_impl() {
     input_model->init();
   }
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "* Initializing the '-surface ...,anomaly' modifier...\n");
 
-  verbPrintf(2, m_grid.com,
+  m_log->message(2,
              "    reading anomalies from %s ...\n", filename.c_str());
 
   ice_surface_temp_anomaly->init(filename, bc_period, bc_reference_time);

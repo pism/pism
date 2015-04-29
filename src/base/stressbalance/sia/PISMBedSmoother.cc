@@ -23,12 +23,15 @@
 
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {
 
 BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
     : grid(g), config(g.ctx()->config()) {
+
+  const Logger &log = *grid.ctx()->log();
 
   {
     // allocate Vecs that live on all procs; all have to be as "wide" as any of
@@ -67,9 +70,9 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
   m_smoothing_range = config->get_double("bed_smoother_range");
 
   if (m_smoothing_range > 0.0) {
-    verbPrintf(2, grid.com,
-               "* Initializing bed smoother object with %.3f km half-width ...\n",
-               units::convert(grid.ctx()->unit_system(), m_smoothing_range, "m", "km"));
+    log.message(2,
+                "* Initializing bed smoother object with %.3f km half-width ...\n",
+                units::convert(grid.ctx()->unit_system(), m_smoothing_range, "m", "km"));
   }
 
   // Make sure that Nx and Ny are initialized. In most cases SIAFD::update() will call
@@ -382,7 +385,7 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
       const int i = p.i(), j = p.j();
 
       const double H = usurf(i, j) - topgsmooth(i, j);
-      if (H > maxtl(i, j)) { 
+      if (H > maxtl(i, j)) {
         // thickness exceeds maximum variation in patch of local topography,
         // so ice buries local topography; note maxtl >= 0 always
         const double Hinv = 1.0 / std::max(H, 1.0);
