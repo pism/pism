@@ -168,7 +168,9 @@ def grid_from_file_test():
                      grid.ctx().config().get_string("calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
-    PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), grid.ctx().time().current())
+    PISM.append_time(pio,
+                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().time().current())
     pio.close()
 
     enthalpy.write(output_file)
@@ -376,7 +378,9 @@ def modelvecs_test():
                      grid.ctx().config().get_string("calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
-    PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), grid.ctx().time().current())
+    PISM.append_time(pio,
+                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().time().current())
     pio.close()
 
     vecs.write(output_file)

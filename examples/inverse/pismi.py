@@ -462,10 +462,14 @@ def run():
     if not append_mode:
         pio = PISM.PIO(grid.com, "netcdf3")
         pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
-        PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
-                         grid.ctx().config().get_string("calendar"), grid.ctx().time().units_string(),
+        PISM.define_time(pio,
+                         grid.ctx().config().get_string("time_dimension_name"),
+                         grid.ctx().config().get_string("calendar"),
+                         grid.ctx().time().units_string(),
                          grid.ctx().unit_system())
-        PISM.append_time(pio, grid.ctx().config().get_string("time_dimension_name"), grid.ctx().time().current())
+        PISM.append_time(pio,
+                         grid.ctx().config().get_string("time_dimension_name"),
+                         grid.ctx().time().current())
         pio.close()
     zeta.write(output_filename)
 
