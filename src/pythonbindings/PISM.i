@@ -49,6 +49,7 @@
 
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Context.hh"
+#include "base/util/Logger.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -202,6 +203,8 @@
 %include "base/util/Profiling.hh"
 %shared_ptr(pism::Context);
 %include "base/util/Context.hh"
+
+%include "base/util/Logger.hh"
 
 %include pism_IceGrid.i
 
