@@ -159,7 +159,6 @@ void IceModel::set_grid_defaults() {
   }
 
   m_ctx->time()->init();
-
 }
 
 //! Initalizes the grid from options.

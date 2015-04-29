@@ -67,8 +67,6 @@ IceEISModel::IceEISModel(IceGrid &g, Context::Ptr ctx)
 void IceEISModel::set_grid_defaults() {
   double Lx = 750e3;
   m_grid.set_extent(0.0, 0.0, Lx, Lx);
-
-  m_ctx->time()->init();
 }
 
 void IceEISModel::setFromOptions() {

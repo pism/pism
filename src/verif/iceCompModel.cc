@@ -160,8 +160,6 @@ void IceCompModel::set_grid_defaults() {
 
   m_grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
   m_grid.set_vertical_levels(Lz, Mz, spacing);
-
-  m_ctx->time()->init();
 }
 
 void IceCompModel::setFromOptions() {
