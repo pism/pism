@@ -30,12 +30,16 @@ static char help[] =
 #include "base/util/pism_options.hh"
 #include "eismint/iceEISModel.hh"
 #include "base/util/Context.hh"
+#include "base/util/Logger.hh"
 
 using namespace pism;
 
 Context::Ptr pisms_context(MPI_Comm com) {
   // unit system
   units::System::Ptr sys(new units::System);
+
+  // logger
+  Logger::Ptr logger = logger_from_options(com);
 
   // configuration parameters
   Config::Ptr config = config_from_options(com, sys);
@@ -50,7 +54,7 @@ Context::Ptr pisms_context(MPI_Comm com) {
 
   EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, "pisms"));
+  return Context::Ptr(new Context(com, sys, config, EC, time, logger, "pisms"));
 }
 
 int main(int argc, char *argv[]) {

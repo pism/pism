@@ -37,6 +37,7 @@ static char help[] =
 #include "base/util/PISMConfig.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 namespace energy {
@@ -81,6 +82,9 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
 
+  // logger
+  Logger::Ptr logger = logger_from_options(com);
+
   // configuration parameters
   Config::Ptr config = config_from_options(com, sys);
 
@@ -97,7 +101,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
+  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 int main(int argc, char *argv[]) {

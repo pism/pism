@@ -22,33 +22,26 @@ static char help[] =
 "  and numerical solution.  Can also just compute exact solution (-eo).\n"
 "  Currently implements tests A, B, C, D, E, F, G, H, K, L.\n\n";
 
-#include <cctype>               // toupper
 #include <string>
-#include <algorithm>            // std::transform()
-#include <petscsys.h>
 
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfig.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/pism_options.hh"
-#include "coupler/ocean/POConstant.hh"
 #include "verif/iceCompModel.hh"
 #include "base/util/Context.hh"
+#include "base/util/Logger.hh"
 
 using namespace pism;
-
-// a wrapper that seems to be necessary to make std::transform below work
-static inline char pism_toupper(char c)
-{
-    return (char)std::toupper(c);
-}
-
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
 Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
+
+  // logger
+  Logger::Ptr logger = logger_from_options(com);
 
   // configuration parameters
   Config::Ptr config = config_from_options(com, sys);
@@ -63,7 +56,7 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
+  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 
@@ -108,10 +101,8 @@ int main(int argc, char *argv[]) {
     IceGrid g(ctx);
 
     // determine test (and whether to report error)
-    std::string testname = options::String("-test", "Specifies PISM verification test", "A");
-
-    // transform to uppercase:
-    transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);
+    std::string testname = options::Keyword("-test", "Specifies PISM verification test",
+                                            "A,B,C,D,E,F,G,H,K,L", "A");
 
     // actually construct and run one of the derived classes of IceModel
     // run derived class for compensatory source SIA solutions

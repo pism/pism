@@ -22,6 +22,7 @@
 #include "PISMUnits.hh"
 #include "PISMConfig.hh"
 #include "PISMTime.hh"
+#include "Logger.hh"
 #include "base/enthalpyConverter.hh"
 
 namespace pism {
@@ -33,8 +34,10 @@ public:
        ConfigPtr conf,
        EnthalpyConverterPtr EC,
        TimePtr t,
+       LoggerPtr log,
        const std::string &p)
-    : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p) {
+    : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
+      logger(log) {
     // empty
   }
   MPI_Comm com;
@@ -44,12 +47,14 @@ public:
   TimePtr time;
   std::string prefix;
   Profiling profiling;
+  LoggerPtr logger;
 };
 
 Context::Context(MPI_Comm c, UnitsSystemPtr sys,
                  ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
+                 LoggerPtr log,
                  const std::string &p)
-  : m_impl(new Impl(c, sys, conf, EC, t, p)) {
+  : m_impl(new Impl(c, sys, conf, EC, t, log, p)) {
   // empty
 }
 
@@ -89,9 +94,20 @@ const Profiling& Context::profiling() const {
   return m_impl->profiling;
 }
 
+Context::ConstLoggerPtr Context::log() const {
+  return m_impl->logger;
+}
+
+Context::LoggerPtr Context::log() {
+  return m_impl->logger;
+}
+
 Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
+
+  // logger
+  Logger::Ptr logger = logger_from_options(com);
 
   // configuration parameters
   Config::Ptr config = config_from_options(com, sys);
@@ -103,7 +119,7 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   // enthalpy converter
   EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, prefix));
+  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 

@@ -36,6 +36,7 @@ class Config;
 class EnthalpyConverter;
 class Time;
 class Profiling;
+class Logger;
 
 class Context {
 public:
@@ -45,14 +46,16 @@ public:
   typedef PISM_SHARED_PTR(EnthalpyConverter) EnthalpyConverterPtr;
   typedef PISM_SHARED_PTR(Time) TimePtr;
   typedef PISM_SHARED_PTR(const Time) ConstTimePtr;
+  typedef PISM_SHARED_PTR(Logger) LoggerPtr;
+  typedef PISM_SHARED_PTR(const Logger) ConstLoggerPtr;
 
   typedef PISM_SHARED_PTR(Context) Ptr;
   typedef PISM_SHARED_PTR(const Context) ConstPtr;
 
-  Context(MPI_Comm com,
-          UnitsSystemPtr system, ConfigPtr config,
-          EnthalpyConverterPtr EC, TimePtr time,
-          const std::string &prefix);
+  Context(MPI_Comm c, UnitsSystemPtr sys,
+          ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
+          LoggerPtr log,
+          const std::string &p);
 
   MPI_Comm com() const;
   UnitsSystemPtr unit_system() const;
@@ -61,6 +64,9 @@ public:
   ConstTimePtr time() const;
   const std::string& prefix() const;
   const Profiling& profiling() const;
+
+  ConstLoggerPtr log() const;
+  LoggerPtr log();
 
   ConfigPtr config();
   TimePtr time();
