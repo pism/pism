@@ -102,7 +102,7 @@ void IceModel::init_timeseries() {
 
   if (append == true) {
     double time_max;
-    std::string time_name = config->get_string("time_dimension_name");
+    std::string time_name = m_config->get_string("time_dimension_name");
     bool time_exists = false;
 
     time_exists = nc.inq_var(time_name);
@@ -242,8 +242,8 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(m_grid->com, config->get_string("output_format"));
-    std::string time_name = config->get_string("time_dimension_name");
+    PIO nc(m_grid->com, m_config->get_string("output_format"));
+    std::string time_name = m_config->get_string("time_dimension_name");
     bool time_exists;
 
     nc.open(extra_filename, PISM_READONLY);
@@ -438,7 +438,7 @@ void IceModel::write_extras() {
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
 
-  PIO nc(m_grid->com, config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output_format"));
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
@@ -451,11 +451,11 @@ void IceModel::write_extras() {
 
     // Prepare the file:
     nc.open(filename, mode);
-    io::define_time(nc, config->get_string("time_dimension_name"),
+    io::define_time(nc, m_config->get_string("time_dimension_name"),
                     m_time->calendar(),
                     m_time->CF_units_string(),
                     m_sys);
-    nc.put_att_text(config->get_string("time_dimension_name"),
+    nc.put_att_text(m_config->get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
     write_metadata(nc, true, false);
@@ -467,7 +467,7 @@ void IceModel::write_extras() {
   }
 
   double      current_time = m_time->current();
-  std::string time_name    = config->get_string("time_dimension_name");
+  std::string time_name    = m_config->get_string("time_dimension_name");
 
   io::append_time(nc, time_name, current_time);
 
@@ -528,7 +528,7 @@ static MaxTimestep reporting_max_timestep(const std::vector<double> &times, doub
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not save_extra) or
-      (not config->get_boolean("extras_force_output_times"))) {
+      (not m_config->get_boolean("extras_force_output_times"))) {
     return MaxTimestep();
   }
 
@@ -539,7 +539,7 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not save_ts) or
-      (not config->get_boolean("ts_force_output_times"))) {
+      (not m_config->get_boolean("ts_force_output_times"))) {
     return MaxTimestep();
   }
 

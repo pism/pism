@@ -219,7 +219,7 @@ protected:
   //! Computational grid
   const IceGrid::Ptr m_grid;
   //! Configuration flags and parameters
-  const Config::Ptr config;
+  const Config::Ptr m_config;
   //! Execution context
   const Context::Ptr m_ctx;
   //! Unit system

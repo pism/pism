@@ -101,19 +101,19 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
   io::write_global_attributes(nc, global_attributes);
 
   // write configuration parameters to the file:
-  config->write(nc);
+  m_config->write(nc);
 }
 
 
 void IceModel::dumpToFile(const std::string &filename) {
   const Profiling &profiling = m_ctx->profiling();
 
-  PIO nc(m_grid->com, config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output_format"));
 
   profiling.begin("model state dump");
 
   // Prepare the file
-  std::string time_name = config->get_string("time_dimension_name");
+  std::string time_name = m_config->get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
   io::define_time(nc, time_name, m_time->calendar(),
                   m_time->CF_units_string(),
@@ -378,14 +378,14 @@ void IceModel::initFromFile(const std::string &filename) {
     }
   }
 
-  if (config->get_boolean("do_energy") && config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("do_energy") && m_config->get_boolean("do_cold_ice_methods")) {
     m_log->message(3,
                "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(T3, Enth3);
   }
 
   // check if the input file has Href; set to 0 if it is not present
-  if (config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("part_grid")) {
     bool href_exists = nc.inq_var("Href");
 
     if (href_exists == true) {
@@ -399,7 +399,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   // read the age field if present, otherwise set to zero
-  if (config->get_boolean("do_age")) {
+  if (m_config->get_boolean("do_age")) {
     bool age_exists = nc.inq_var("age");
 
     if (age_exists) {
@@ -471,11 +471,11 @@ void IceModel::regrid(int dimensions) {
     // defaults if user gives no regrid_vars list
     regrid_vars->insert("litho_temp");
 
-    if (config->get_boolean("do_age")) {
+    if (m_config->get_boolean("do_age")) {
       regrid_vars->insert("age");
     }
 
-    if (config->get_boolean("do_cold_ice_methods")) {
+    if (m_config->get_boolean("do_cold_ice_methods")) {
       regrid_vars->insert("temp");
     } else {
       regrid_vars->insert("enthalpy");
@@ -715,12 +715,12 @@ void IceModel::write_snapshot() {
              filename, m_time->date().c_str(),
              m_time->date(saving_after).c_str());
 
-  PIO nc(m_grid->com, config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output_format"));
 
   if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
-    io::define_time(nc, config->get_string("time_dimension_name"),
+    io::define_time(nc, m_config->get_string("time_dimension_name"),
                 m_time->calendar(),
                 m_time->CF_units_string(),
                 m_sys);
@@ -735,8 +735,8 @@ void IceModel::write_snapshot() {
 
   unsigned int time_length = 0;
 
-  io::append_time(nc, config->get_string("time_dimension_name"), m_time->current());
-  time_length = nc.inq_dimlen(config->get_string("time_dimension_name"));
+  io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
+  time_length = nc.inq_dimlen(m_config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
 
@@ -765,7 +765,7 @@ void IceModel::write_snapshot() {
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  backup_interval = config->get_double("backup_interval");
+  backup_interval = m_config->get_double("backup_interval");
 
   options::String backup_file("-o", "Output file name");
   if (backup_file.is_set()) {
@@ -818,15 +818,15 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(m_grid->com, config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output_format"));
 
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);
-  io::define_time(nc, config->get_string("time_dimension_name"),
+  io::define_time(nc, m_config->get_string("time_dimension_name"),
               m_time->calendar(),
               m_time->CF_units_string(),
               m_sys);
-  io::append_time(nc, config->get_string("time_dimension_name"), m_time->current());
+  io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);

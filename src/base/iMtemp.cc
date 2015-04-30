@@ -48,7 +48,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
 
-  assert(config->get_boolean("temperature_allow_above_melting") == false);
+  assert(m_config->get_boolean("temperature_allow_above_melting") == false);
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
@@ -139,18 +139,18 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
 
   const double
-    ice_density        = config->get_double("ice_density"),
-    ice_c              = config->get_double("ice_specific_heat_capacity"),
-    L                  = config->get_double("water_latent_heat_fusion"),
-    melting_point_temp = config->get_double("water_melting_point_temperature"),
-    beta_CC_grad       = config->get_double("beta_CC") * ice_density * config->get_double("standard_gravity");
+    ice_density        = m_config->get_double("ice_density"),
+    ice_c              = m_config->get_double("ice_specific_heat_capacity"),
+    L                  = m_config->get_double("water_latent_heat_fusion"),
+    melting_point_temp = m_config->get_double("water_melting_point_temperature"),
+    beta_CC_grad       = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity");
 
-  const bool allow_above_melting = config->get_boolean("temperature_allow_above_melting");
+  const bool allow_above_melting = m_config->get_boolean("temperature_allow_above_melting");
 
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulgeMax  = config->get_double("enthalpy_cold_bulge_max") / ice_c;
+  const double bulgeMax  = m_config->get_double("enthalpy_cold_bulge_max") / ice_c;
 
   // now get map-plane fields, starting with coupler fields
   assert(surface != NULL);
@@ -190,7 +190,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   energy::tempSystemCtx system(m_grid->z(), "temperature",
                                m_grid->dx(), m_grid->dy(), dt_TempAge,
-                               *config,
+                               *m_config,
                                T3, u3, v3, w3, strain_heating3);
 
   double dz = system.dz();
@@ -210,12 +210,12 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   // counts unreasonably low temperature values; deprecated?
   int myLowTempCount = 0;
-  int maxLowTempCount = static_cast<int>(config->get_double("max_low_temp_count"));
-  double globalMinAllowedTemp = config->get_double("global_min_allowed_temp");
+  int maxLowTempCount = static_cast<int>(m_config->get_double("max_low_temp_count"));
+  double globalMinAllowedTemp = m_config->get_double("global_min_allowed_temp");
 
   MaskQuery mask(vMask);
 
-  const double thickness_threshold = config->get_double("energy_advection_ice_thickness_threshold");
+  const double thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
 
   ParallelSection loop(m_grid->com);
   try {

@@ -160,7 +160,7 @@ void IceRegionalModel::createVecs() {
                        "time-independent basal melt rate in the no-model-strip",
                        "m s-1", "");
 
-  if (config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
     // remove the bc_mask variable from the dictionary
     m_grid->variables().remove("bc_mask");
 
@@ -204,7 +204,7 @@ void IceRegionalModel::allocate_stressbalance() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  std::string model = config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance_model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
@@ -237,11 +237,11 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     return;
   }
 
-  std::string model = config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance_model");
 
   // only these two use the yield stress (so far):
   if (model == "ssa" || model == "ssa+sia") {
-    std::string yield_stress_model = config->get_string("yield_stress_model");
+    std::string yield_stress_model = m_config->get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
       basal_yield_stress_model = new ConstantYieldStress(m_grid);
@@ -279,7 +279,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
-  if (config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
     nc.open(filename, PISM_READONLY);
@@ -307,7 +307,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   IceModel::initFromFile(filename);
 
-  if (config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
       vBCvel.metadata().set_string("pism_intent", "model_state");
   }
 
@@ -331,7 +331,7 @@ void IceRegionalModel::set_vars_from_options() {
                        "pismo has no well-defined semantics without it!");
   }
 
-  if (config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("do_cold_ice_methods")) {
     throw RuntimeError("pismo does not support the 'cold' mode.");
   }
 }

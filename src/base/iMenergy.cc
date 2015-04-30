@@ -70,7 +70,7 @@ void IceModel::energyStep() {
   btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
   profiling.end("BTU");
 
-  if (config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
     profiling.begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
@@ -142,7 +142,7 @@ void IceModel::combine_basal_melt_rate() {
   assert(ocean != NULL);
   ocean->shelf_base_mass_flux(shelfbmassflux);
 
-  const bool sub_gl = config->get_boolean("sub_groundingline");
+  const bool sub_gl = m_config->get_boolean("sub_groundingline");
 
   IceModelVec::AccessList list;
 
@@ -152,7 +152,7 @@ void IceModel::combine_basal_melt_rate() {
 
   MaskQuery mask(vMask);
 
-  double ice_density = config->get_double("ice_density");
+  double ice_density = m_config->get_double("ice_density");
 
   list.add(vMask);
   list.add(basal_melt_rate);
@@ -182,9 +182,9 @@ void IceModel::combine_basal_melt_rate() {
 //! the bedrock thermal layer will see.
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double sea_level = 0,
-    T0 = config->get_double("water_melting_point_temperature"),
-    beta_CC_grad_sea_water = (config->get_double("beta_CC") * config->get_double("sea_water_density") *
-                              config->get_double("standard_gravity")); // K m-1
+    T0 = m_config->get_double("water_melting_point_temperature"),
+    beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water_density") *
+                              m_config->get_double("standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and
   assert(surface != NULL);

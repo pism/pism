@@ -207,18 +207,18 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  assert(config->get_boolean("do_cold_ice_methods") == false);
+  assert(m_config->get_boolean("do_cold_ice_methods") == false);
 
   // essentially physical constants:
   const double
-    ice_density = config->get_double("ice_density"),              // kg m-3
+    ice_density = m_config->get_double("ice_density"),              // kg m-3
     // constants controlling the numerical method:
-    bulgeEnthMax = config->get_double("enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to a file");
 
-  energy::DrainageCalculator dc(*config);
+  energy::DrainageCalculator dc(*m_config);
 
   const IceModelVec2S &Rb = stress_balance->basal_frictional_heating();
   const IceModelVec3
@@ -229,7 +229,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
 
   energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt_TempAge,
-                               *config, Enth3, u3, v3, w3, strain_heating3, EC);
+                               *m_config, Enth3, u3, v3, w3, strain_heating3, EC);
 
   size_t Mz_fine = system.z().size();
   double dz = system.dz();
@@ -285,7 +285,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       const int i = pt.i(), j = pt.j();
 
       // ignore advection and strain heating in ice if isMarginal
-      const double thickness_threshold = config->get_double("energy_advection_ice_thickness_threshold");
+      const double thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
       system.initThisColumn(i, j, isMarginal, ice_thickness(i, j));

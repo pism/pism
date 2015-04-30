@@ -134,7 +134,7 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
  */
 void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool &done) {
 
-  bool reduce_frontal_thickness = config->get_boolean("part_grid_reduce_frontal_thickness");
+  bool reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 

@@ -235,7 +235,7 @@ void IceModel::set_grid_from_options() {
 
     // Vertical spacing (respects -z_spacing)
     {
-      spacing = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
+      spacing = string_to_spacing(m_config->get_string("grid_ice_vertical_spacing"));
     }
   }
 
@@ -362,7 +362,7 @@ void IceModel::time_setup() {
   if (input_file.is_set()) {
     PIO nc(m_grid->com, "guess_mode");
 
-    std::string time_name = config->get_string("time_dimension_name");
+    std::string time_name = m_config->get_string("time_dimension_name");
 
     nc.open(input_file, PISM_READONLY);
     unsigned int time_length = nc.inq_dimlen(time_name);
@@ -439,7 +439,7 @@ void IceModel::model_state_setup() {
   if (stress_balance) {
     stress_balance->init();
 
-    if (config->get_boolean("include_bmr_in_continuity")) {
+    if (m_config->get_boolean("include_bmr_in_continuity")) {
       stress_balance->set_basal_melt_rate(basal_melt_rate);
     }
   }
@@ -565,9 +565,9 @@ void IceModel::model_state_setup() {
   compute_cell_areas();
 
   // a report on whether PISM-PIK modifications of IceModel are in use
-  const bool pg   = config->get_boolean("part_grid"),
-    pr   = config->get_boolean("part_redist"),
-    ki   = config->get_boolean("kill_icebergs");
+  const bool pg   = m_config->get_boolean("part_grid"),
+    pr   = m_config->get_boolean("part_redist"),
+    ki   = m_config->get_boolean("kill_icebergs");
   if (pg || pr || ki) {
     m_log->message(2,
                "* PISM-PIK mass/geometry methods are in use:  ");
@@ -624,7 +624,7 @@ void IceModel::allocate_stressbalance() {
   m_log->message(2,
              "# Allocating a stress balance model...\n");
 
-  std::string model = config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance_model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
@@ -632,7 +632,7 @@ void IceModel::allocate_stressbalance() {
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
     sliding = new PrescribedSliding(m_grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
-    std::string method = config->get_string("ssa_method");
+    std::string method = m_config->get_string("ssa_method");
 
     if (method == "fem") {
       sliding = new SSAFEM(m_grid, EC);
@@ -668,7 +668,7 @@ void IceModel::allocate_iceberg_remover() {
   m_log->message(2,
              "# Allocating an iceberg remover (part of a calving model)...\n");
 
-  if (config->get_boolean("kill_icebergs")) {
+  if (m_config->get_boolean("kill_icebergs")) {
 
     // this will throw an exception on failure
     iceberg_remover = new calving::IcebergRemover(m_grid);
@@ -697,7 +697,7 @@ void IceModel::allocate_subglacial_hydrology() {
 
   using namespace pism::hydrology;
 
-  std::string hydrology_model = config->get_string("hydrology_model");
+  std::string hydrology_model = m_config->get_string("hydrology_model");
 
   if (subglacial_hydrology != NULL) { // indicates it has already been allocated
     return;
@@ -728,11 +728,11 @@ void IceModel::allocate_basal_yield_stress() {
   m_log->message(2,
              "# Allocating a basal yield stress model...\n");
 
-  std::string model = config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance_model");
 
   // only these two use the yield stress (so far):
   if (model == "ssa" || model == "ssa+sia") {
-    std::string yield_stress_model = config->get_string("yield_stress_model");
+    std::string yield_stress_model = m_config->get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
       basal_yield_stress_model = new ConstantYieldStress(m_grid);
@@ -754,8 +754,8 @@ void IceModel::allocate_basal_yield_stress() {
 void IceModel::allocate_submodels() {
 
   // FIXME: someday we will have an "energy balance" sub-model...
-  if (config->get_boolean("do_energy") == true) {
-    if (config->get_boolean("do_cold_ice_methods") == false) {
+  if (m_config->get_boolean("do_energy") == true) {
+    if (m_config->get_boolean("do_cold_ice_methods") == false) {
       m_log->message(2,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {
@@ -856,7 +856,7 @@ void IceModel::init_step_couplers() {
 
 //! Allocates work vectors.
 void IceModel::allocate_internal_objects() {
-  const unsigned int WIDE_STENCIL = config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   // various internal quantities
   // 2d work vectors
@@ -902,9 +902,9 @@ void IceModel::misc_setup() {
   // Make sure that we use the output_variable_order that works with NetCDF-4,
   // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)
-  std::string o_format = config->get_string("output_format");
+  std::string o_format = m_config->get_string("output_format");
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
-      config->get_string("output_variable_order") != "xyz") {
+      m_config->get_string("output_variable_order") != "xyz") {
     throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.");
   }
 }
@@ -912,7 +912,7 @@ void IceModel::misc_setup() {
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
-  std::istringstream arg(config->get_string("calving_methods"));
+  std::istringstream arg(m_config->get_string("calving_methods"));
   std::string method_name;
   std::set<std::string> methods;
 
@@ -975,7 +975,7 @@ void IceModel::init_calving() {
 }
 
 void IceModel::allocate_bed_deformation() {
-  std::string model = config->get_string("bed_deformation_model");
+  std::string model = m_config->get_string("bed_deformation_model");
 
   if (beddef != NULL) {
     return;

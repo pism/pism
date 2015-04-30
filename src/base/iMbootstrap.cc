@@ -65,12 +65,12 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
   // Fill 3D fields using heuristics:
   {
     // set the initial age of the ice if appropriate
-    if (config->get_boolean("do_age")) {
+    if (m_config->get_boolean("do_age")) {
       if (age_revision == age3.get_state_counter()) {
         m_log->message(2,
                    " - setting initial age to %.4f years\n",
-                   config->get_double("initial_age_of_ice_years"));
-        age3.set(config->get_double("initial_age_of_ice_years", "years", "seconds"));
+                   m_config->get_double("initial_age_of_ice_years"));
+        age3.set(m_config->get_double("initial_age_of_ice_years", "years", "seconds"));
 
       } else {
         m_log->message(2,
@@ -78,7 +78,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
       }
     }
 
-    if (config->get_boolean("do_cold_ice_methods") == true) {
+    if (m_config->get_boolean("do_cold_ice_methods") == true) {
       if (temperature_revision == T3.get_state_counter()) {
         m_log->message(2,
                    "getting surface B.C. from couplers...\n");
@@ -175,12 +175,12 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   }
 
   basal_melt_rate.regrid(filename, OPTIONAL,
-                         config->get_double("bootstrapping_bmelt_value_no_var"));
+                         m_config->get_double("bootstrapping_bmelt_value_no_var"));
   geothermal_flux.regrid(filename, OPTIONAL,
-                         config->get_double("bootstrapping_geothermal_flux_value_no_var"));
+                         m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
 
   ice_thickness.regrid(filename, OPTIONAL,
-                       config->get_double("bootstrapping_H_value_no_var"));
+                       m_config->get_double("bootstrapping_H_value_no_var"));
   // check the range of the ice thickness
   {
     Range thk_range = ice_thickness.range();
@@ -192,7 +192,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     }
   }
 
-  if (config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("part_grid")) {
     // Read the Href field from an input file. This field is
     // grid-dependent, so interpolating it from one grid to a
     // different one does not make sense in general.
@@ -204,11 +204,11 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     vHref.regrid(filename, OPTIONAL, 0.0);
   }
 
-  if (config->get_string("calving_methods").find("eigen_calving") != std::string::npos) {
+  if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos) {
     strain_rates.set(0.0);
   }
 
-  if (config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
     vBCMask.regrid(filename, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
@@ -296,17 +296,17 @@ bootstrap temperature profile in the bedrock.
 void IceModel::putTempAtDepth() {
 
   m_log->message(2, " - filling ice temperatures using surface temps (and %s)\n",
-             (config->get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
+             (m_config->get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
               ? "quartic guess sans smb" : "mass balance for velocity estimate"));
 
-  const bool do_cold = config->get_boolean("do_cold_ice_methods"),
-             usesmb  = config->get_string("bootstrapping_temperature_heuristic") == "smb";
+  const bool do_cold = m_config->get_boolean("do_cold_ice_methods"),
+             usesmb  = m_config->get_string("bootstrapping_temperature_heuristic") == "smb";
   const double
-    ice_k = config->get_double("ice_thermal_conductivity"),
-    melting_point_temp = config->get_double("water_melting_point_temperature"),
-    ice_density = config->get_double("ice_density"),
-    beta_CC_grad = config->get_double("beta_CC") * ice_density * config->get_double("standard_gravity"),
-    KK = ice_k / (ice_density * config->get_double("ice_specific_heat_capacity"));
+    ice_k = m_config->get_double("ice_thermal_conductivity"),
+    melting_point_temp = m_config->get_double("water_melting_point_temperature"),
+    ice_density = m_config->get_double("ice_density"),
+    beta_CC_grad = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity"),
+    KK = ice_k / (ice_density * m_config->get_double("ice_specific_heat_capacity"));
 
   assert(surface != NULL);
 
@@ -316,7 +316,7 @@ void IceModel::putTempAtDepth() {
     if (usesmb == true) {
       surface->ice_surface_mass_flux(climatic_mass_balance);
       // convert from [kg m-2 s-1] to [m / s]
-      climatic_mass_balance.scale(1.0 / config->get_double("ice_density"));
+      climatic_mass_balance.scale(1.0 / m_config->get_double("ice_density"));
     }
   }
 
