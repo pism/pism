@@ -686,6 +686,8 @@ void set_config_from_options(Config &config) {
   set_scalar_from_option(config, "summary_area_scale_factor_log10",
                            "summary_area_scale_factor_log10");
 
+  set_scalar_from_option(config, "view_size", "viewer_size");
+
   // Metadata
   set_string_from_option(config, "title", "run_title");
   set_string_from_option(config, "institution", "institution");

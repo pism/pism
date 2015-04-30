@@ -334,6 +334,8 @@ void IceModel::putTempAtDepth() {
   list.add(geothermal_flux);
   list.add(*result);
 
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -385,7 +387,6 @@ void IceModel::putTempAtDepth() {
 
       // convert to enthalpy if that's what we are calculating
       if (do_cold == false) {
-        EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
         for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
           const double depth = HH - m_grid->z(k);
           const double pressure = EC->pressure(depth);

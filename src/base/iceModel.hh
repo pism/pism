@@ -42,8 +42,8 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/Context.hh"
-#include "base/enthalpyConverter.hh"
 #include "base/util/Logger.hh"
+#include "base/util/PISMTime.hh"
 
 namespace pism {
 
@@ -216,13 +216,18 @@ public:
                                IO_Type nctype);
 protected:
 
-  IceGrid::Ptr m_grid;
-
+  //! Computational grid
+  const IceGrid::Ptr m_grid;
   //! Configuration flags and parameters
-  Config::Ptr config;
-  Context::Ptr m_ctx;
+  const Config::Ptr config;
+  //! Execution context
+  const Context::Ptr m_ctx;
+  //! Unit system
   const units::System::Ptr m_sys;
-  Logger::ConstPtr m_log;
+  //! Logger
+  const Logger::Ptr m_log;
+  //! Time manager
+  const Time::Ptr m_time;
 
   VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters
@@ -443,9 +448,8 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const int nWork2d=3;
+  static const int nWork2d=2;
   IceModelVec2S vWork2d[nWork2d];
-  IceModelVec2V vWork2dV;
 
   // 3D working space
   IceModelVec3 vWork3d;

@@ -32,6 +32,7 @@ static char help[] =
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
+#include "base/enthalpyConverter.hh"
 
 using namespace pism;
 

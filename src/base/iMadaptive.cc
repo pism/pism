@@ -215,8 +215,8 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
 void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
   const bool update_3d = (skipCountDown == 0);
-  const double current_time = m_grid->ctx()->time()->current();
-  const double time_to_end = m_grid->ctx()->time()->end() - current_time;
+  const double current_time = m_time->current();
+  const double time_to_end = m_time->end() - current_time;
 
   // FIXME: we should probably create a std::vector<const Component_TS*>
   // (or similar) and iterate over that instead.
@@ -335,8 +335,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       double
         next_time = timestep_hit_multiples_last_time;
 
-      while (m_grid->ctx()->time()->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
-        next_time = m_grid->ctx()->time()->increment_date(next_time, timestep_hit_multiples);
+      while (m_time->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
+        next_time = m_time->increment_date(next_time, timestep_hit_multiples);
       }
 
       if (next_time > current_time && next_time <= current_time + dt_result + epsilon) {

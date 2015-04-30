@@ -56,13 +56,14 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr ctx)
     m_ctx(ctx),
     m_sys(ctx->unit_system()),
     m_log(ctx->log()),
-    global_attributes("PISM_GLOBAL", ctx->unit_system()),
-    mapping("mapping", ctx->unit_system()),
-    run_stats("run_stats", ctx->unit_system()),
-    extra_bounds("time_bounds", config->get_string("time_dimension_name"), ctx->unit_system()),
-    timestamp("timestamp", config->get_string("time_dimension_name"), ctx->unit_system()) {
+    m_time(ctx->time()),
+    global_attributes("PISM_GLOBAL", m_sys),
+    mapping("mapping", m_sys),
+    run_stats("run_stats", m_sys),
+    extra_bounds("time_bounds", config->get_string("time_dimension_name"), m_sys),
+    timestamp("timestamp", config->get_string("time_dimension_name"), m_sys) {
 
-  extra_bounds.set_string("units", m_ctx->time()->units_string());
+  extra_bounds.set_string("units", m_time->units_string());
 
   timestamp.set_string("units", "hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
@@ -129,7 +130,7 @@ void IceModel::reset_counters() {
   dt_force        = 0.0;
   skipCountDown   = 0;
 
-  timestep_hit_multiples_last_time = m_ctx->time()->current();
+  timestep_hit_multiples_last_time = m_time->current();
 
   grounded_basal_ice_flux_cumulative = 0;
   nonneg_rule_flux_cumulative        = 0;
@@ -599,9 +600,9 @@ void IceModel::step(bool do_mass_continuity,
                               bool do_age,
                               bool do_skip) {
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
+  const Profiling &profiling = m_ctx->profiling();
 
-  double current_time = m_ctx->time()->current();
+  double current_time = m_time->current();
 
   //! \li call additionalAtStartTimestep() to let derived classes do more
   additionalAtStartTimestep();  // might set dt_force,maxdt_temporary
@@ -778,10 +779,10 @@ void IceModel::step(bool do_mass_continuity,
   additionalAtEndTimestep();
 
   // Done with the step; now adopt the new time.
-  m_ctx->time()->step(dt);
+  m_time->step(dt);
 
   if (do_energy_step) {
-    t_TempAge = m_ctx->time()->current();
+    t_TempAge = m_time->current();
     dt_TempAge = 0.0;
   }
 
@@ -802,7 +803,7 @@ void IceModel::step(bool do_mass_continuity,
  */
 void IceModel::run_to(double run_end) {
 
-  m_ctx->time()->set_end(run_end);
+  m_time->set_end(run_end);
 
   run();
 }
@@ -817,7 +818,7 @@ void IceModel::run_to(double run_end) {
  * @return 0 on success
  */
 void IceModel::run() {
-  const Profiling &profiling = m_grid->ctx()->profiling();
+  const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = config->get_boolean("do_mass_conserve");
   bool do_energy = config->get_boolean("do_energy");
@@ -839,14 +840,14 @@ void IceModel::run() {
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
   summary(do_energy);  // report starting state
 
-  t_TempAge = m_ctx->time()->current();
+  t_TempAge = m_time->current();
   dt_TempAge = 0.0;
 
   // main loop for time evolution
   // IceModel::step calls Time::step(dt), ensuring that this while loop
   // will terminate
   profiling.stage_begin("time-stepping loop");
-  while (m_ctx->time()->current() < m_ctx->time()->end()) {
+  while (m_time->current() < m_time->end()) {
 
     stdout_flags.erase();  // clear it out
     dt_force = -1.0;
@@ -892,7 +893,7 @@ void IceModel::run() {
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
                stepcount,
-               units::convert(m_sys, m_ctx->time()->end() - m_ctx->time()->start(), "seconds", "years")/(double)stepcount);
+               units::convert(m_sys, m_time->end() - m_time->start(), "seconds", "years")/(double)stepcount);
   }
 }
 
@@ -902,7 +903,7 @@ Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
 void IceModel::init() {
-  const Profiling &profiling = m_grid->ctx()->profiling();
+  const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("initialization");
 

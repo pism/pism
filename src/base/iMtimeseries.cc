@@ -69,7 +69,7 @@ void IceModel::init_timeseries() {
   save_ts = true;
 
   try {
-    m_grid->ctx()->time()->parse_times(times, ts_times);
+    m_time->parse_times(times, ts_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -ts_times argument");
     throw;
@@ -116,7 +116,7 @@ void IceModel::init_timeseries() {
       if (current_ts > 0) {
         m_log->message(2,
                    "skipping times before the last record in %s (at %s)\n",
-                   ts_file->c_str(), m_grid->ctx()->time()->date(time_max).c_str());
+                   ts_file->c_str(), m_time->date(time_max).c_str());
       }
     }
   }
@@ -134,7 +134,7 @@ void IceModel::init_timeseries() {
   }
 
   // ignore times before (and including) the beginning of the run:
-  while (current_ts < ts_times.size() && ts_times[current_ts] < m_grid->ctx()->time()->start()) {
+  while (current_ts < ts_times.size() && ts_times[current_ts] < m_time->start()) {
     current_ts++;
   }
 
@@ -167,7 +167,7 @@ void IceModel::write_timeseries() {
   }
 
   // return if did not yet reach the time we need to save at
-  if (ts_times[current_ts] > m_grid->ctx()->time()->current()) {
+  if (ts_times[current_ts] > m_time->current()) {
     return;
   }
 
@@ -175,13 +175,13 @@ void IceModel::write_timeseries() {
     TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
-      diag->update(m_grid->ctx()->time()->current() - dt, m_grid->ctx()->time()->current());
+      diag->update(m_time->current() - dt, m_time->current());
     }
   }
 
 
   // Interpolate to put them on requested times:
-  for (; current_ts < ts_times.size() && ts_times[current_ts] <= m_grid->ctx()->time()->current(); current_ts++) {
+  for (; current_ts < ts_times.size() && ts_times[current_ts] <= m_time->current(); current_ts++) {
 
     // the very first time (current_ts == 0) defines the left endpoint of the
     // first time interval; we don't write a report at that time
@@ -227,7 +227,7 @@ void IceModel::init_extras() {
   }
 
   try {
-    m_grid->ctx()->time()->parse_times(times, extra_times);
+    m_time->parse_times(times, extra_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -extra_times argument");
     throw;
@@ -242,7 +242,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
+    PIO nc(m_grid->com, config->get_string("output_format"));
     std::string time_name = config->get_string("time_dimension_name");
     bool time_exists;
 
@@ -260,7 +260,7 @@ void IceModel::init_extras() {
       if (next_extra > 0) {
         m_log->message(2,
                    "skipping times before the last record in %s (at %s)\n",
-                   extra_filename.c_str(), m_grid->ctx()->time()->date(time_max).c_str());
+                   extra_filename.c_str(), m_time->date(time_max).c_str());
       }
 
       // discard requested times before the beginning of the run
@@ -351,8 +351,8 @@ void IceModel::write_extras() {
 
   // do we need to save *now*?
   if (next_extra < extra_times.size() &&
-      (m_grid->ctx()->time()->current() >= extra_times[next_extra] ||
-       fabs(m_grid->ctx()->time()->current() - extra_times[next_extra]) < 1.0)) {
+      (m_time->current() >= extra_times[next_extra] ||
+       fabs(m_time->current() - extra_times[next_extra]) < 1.0)) {
     // the condition above is "true" if we passed a requested time or got to
     // within 1 second from it
 
@@ -360,8 +360,8 @@ void IceModel::write_extras() {
 
     // update next_extra
     while (next_extra < extra_times.size() &&
-           (extra_times[next_extra] <= m_grid->ctx()->time()->current() ||
-            fabs(m_grid->ctx()->time()->current() - extra_times[next_extra]) < 1.0)) {
+           (extra_times[next_extra] <= m_time->current() ||
+            fabs(m_time->current() - extra_times[next_extra]) < 1.0)) {
       next_extra++;
     }
 
@@ -388,12 +388,12 @@ void IceModel::write_extras() {
 
     // This line re-initializes last_extra (the correct value is not known at
     // the time init_extras() is calles).
-    last_extra = m_grid->ctx()->time()->current();
+    last_extra = m_time->current();
 
     return;
   }
 
-  if (saving_after < m_grid->ctx()->time()->start()) {
+  if (saving_after < m_time->start()) {
     // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
     // also that PISM writes a backup file at year 2500 and gets stopped.
     //
@@ -407,21 +407,21 @@ void IceModel::write_extras() {
     return;
   }
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
+  const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("extra_file reporting");
 
   if (split_extra) {
     extra_file_is_ready = false;        // each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             extra_filename.c_str(), m_grid->ctx()->time()->date().c_str());
+             extra_filename.c_str(), m_time->date().c_str());
   } else {
     strncpy(filename, extra_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
   m_log->message(3,
              "\nsaving spatial time-series to %s at %s\n\n",
-             filename, m_grid->ctx()->time()->date().c_str());
+             filename, m_time->date().c_str());
 
   // find out how much time passed since the beginning of the run
   double wall_clock_hours;
@@ -438,7 +438,7 @@ void IceModel::write_extras() {
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
 
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
+  PIO nc(m_grid->com, config->get_string("output_format"));
 
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
@@ -452,9 +452,9 @@ void IceModel::write_extras() {
     // Prepare the file:
     nc.open(filename, mode);
     io::define_time(nc, config->get_string("time_dimension_name"),
-                    m_ctx->time()->calendar(),
-                    m_ctx->time()->CF_units_string(),
-                    m_ctx->unit_system());
+                    m_time->calendar(),
+                    m_time->CF_units_string(),
+                    m_sys);
     nc.put_att_text(config->get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
@@ -466,7 +466,7 @@ void IceModel::write_extras() {
     nc.open(filename, PISM_READWRITE);
   }
 
-  double      current_time = m_ctx->time()->current();
+  double      current_time = m_time->current();
   std::string time_name    = config->get_string("time_dimension_name");
 
   io::append_time(nc, time_name, current_time);

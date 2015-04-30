@@ -116,7 +116,7 @@ void IceModel::set_grid_defaults() {
       }
 
       if (grid_info_found) {
-        input = grid_info(nc, names[i], m_ctx->unit_system(), m_grid->periodicity());
+        input = grid_info(nc, names[i], m_sys, m_grid->periodicity());
         break;
       }
     }
@@ -151,14 +151,14 @@ void IceModel::set_grid_defaults() {
   bool ys = options::Bool("-ys", "starting time");
   if (not ys) {
     if (input.t_len > 0) {
-      m_ctx->time()->set_start(input.time);
+      m_time->set_start(input.time);
       m_log->message(2,
                  "  time t = %s found; setting current time\n",
-                 m_grid->ctx()->time()->date().c_str());
+                 m_time->date().c_str());
     }
   }
 
-  m_ctx->time()->init(*m_ctx->log());
+  m_time->init(*m_log);
 }
 
 //! Initalizes the grid from options.
@@ -354,7 +354,7 @@ void IceModel::grid_setup() {
 
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
-  Time::Ptr time = m_ctx->time();
+  Time::Ptr time = m_time;
 
   // Check if we are initializing from a PISM output file:
   options::String input_file("-i", "Specifies a PISM input file");
@@ -362,7 +362,7 @@ void IceModel::time_setup() {
   if (input_file.is_set()) {
     PIO nc(m_grid->com, "guess_mode");
 
-    std::string time_name = m_ctx->config()->get_string("time_dimension_name");
+    std::string time_name = config->get_string("time_dimension_name");
 
     nc.open(input_file, PISM_READONLY);
     unsigned int time_length = nc.inq_dimlen(time_name);
@@ -830,8 +830,8 @@ void IceModel::init_couplers() {
 void IceModel::init_step_couplers() {
 
   const double
-    now               = m_grid->ctx()->time()->current(),
-    one_year_from_now = m_grid->ctx()->time()->increment_date(now, 1.0);
+    now               = m_time->current(),
+    one_year_from_now = m_time->increment_date(now, 1.0);
 
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);

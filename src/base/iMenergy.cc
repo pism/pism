@@ -52,7 +52,7 @@ namespace pism {
 */
 void IceModel::energyStep() {
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
+  const Profiling &profiling = m_ctx->profiling();
 
   unsigned int
     myVertSacrCount = 0,
