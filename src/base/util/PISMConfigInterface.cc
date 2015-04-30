@@ -584,6 +584,7 @@ void set_config_from_options(Config &config) {
   set_scalar_from_option(config, "inv_log_ratio_scale","inv_log_ratio_scale");
 
   // Basal strength
+  set_scalar_from_option(config, "tauc", "default_tauc");
   set_scalar_from_option(config, "till_cohesion", "till_cohesion");
   set_scalar_from_option(config, "till_reference_void_ratio",
                            "till_reference_void_ratio");
@@ -622,14 +623,8 @@ void set_config_from_options(Config &config) {
   // controls regularization of plastic basal sliding law
   set_scalar_from_option(config, "plastic_reg", "plastic_regularization");
 
-  // "friction angle" in degrees. We allow -plastic_phi without an
-  // argument: MohrCoulombYieldStress interprets that as "set
-  // constant till friction angle using the default read from a config
-  // file or an override file".
-  bool plastic_phi_set = options::Bool("-plastic_phi", "use constant till_phi");
-  if (plastic_phi_set) {
-    set_scalar_from_option(config, "plastic_phi", "default_till_phi");
-  }
+  // "friction angle" in degrees.
+  set_scalar_from_option(config, "plastic_phi", "default_till_phi");
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
   set_boolean_from_option(config, "pseudo_plastic", "do_pseudo_plastic_till");
@@ -763,6 +758,7 @@ void set_config_from_options(Config &config) {
   options::deprecated("-float_kill", "-calving float_kill");
   options::deprecated("-no_energy", "-energy none");
   options::deprecated("-cold", "-energy cold");
+  options::deprecated("-boot_file", "-bootstrap -i");
 }
 
 //! Create a configuration database using command-line options.

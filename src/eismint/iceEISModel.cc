@@ -34,9 +34,9 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr ctx)
-  : IceModel(g, ctx) {
-  m_experiment = 'A';
+IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr ctx, char experiment)
+  : IceModel(g, ctx), m_experiment(experiment) {
+  m_config->set_string("EISMINT_II_experiment", std::string(1, m_experiment));
 
   // the following flag must be here in constructor because
   // IceModel::createVecs() uses it non-polythermal methods; can be
@@ -70,27 +70,6 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr ctx)
 void IceEISModel::set_grid_defaults() {
   double Lx = 750e3;
   m_grid->set_extent(0.0, 0.0, Lx, Lx);
-}
-
-void IceEISModel::setFromOptions() {
-
-  // set experiment name using command-line options
-  {
-    std::string experiments = "ABCDEFGHIJKL";
-    std::string name = options::String("-eisII", "EISMINT II experiment name",
-                                       std::string(1, m_experiment));
-
-    if (name.size() != 1 or
-        experiments.find(name) == std::string::npos) {
-      throw RuntimeError::formatted("option -eisII must be a single letter in [%s]; got %s",
-                                    experiments.c_str(), name.c_str());
-    }
-
-    m_experiment = name[0];
-    m_config->set_string("EISMINT_II_experiment", name);
-  }
-
-  IceModel::setFromOptions();
 }
 
 

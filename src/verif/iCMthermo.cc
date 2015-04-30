@@ -676,12 +676,8 @@ void IceCompModel::fillBasalMeltRateSolnTestO() {
 
 void IceCompModel::initTestsKO() {
 
-  if (testname == 'K') {
-    options::Integer Mbz("-Mbz", "Number of levels in the bedrock thermal model",
-                         btu->Mbz());
-    if (Mbz.is_set() && Mbz < 2) {
-      throw RuntimeError("pismv test K requires a bedrock thermal layer 1000m deep");
-    }
+  if (testname == 'K' and btu->Mbz() < 2) {
+    throw RuntimeError("pismv test K requires a bedrock thermal layer 1000m deep");
   }
 
   IceModelVec2S bed_topography;

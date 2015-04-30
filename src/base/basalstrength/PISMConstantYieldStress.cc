@@ -41,18 +41,15 @@ void ConstantYieldStress::init_impl() {
   int start = 0;
   bool boot = false;
   bool use_input_file = find_pism_input(filename, boot, start);
+  double tauc = m_config->get_double("default_tauc");
   if (use_input_file) {
     if (boot) {
-      m_tauc.regrid(filename, OPTIONAL, m_config->get_double("default_tauc"));
+      m_tauc.regrid(filename, OPTIONAL, tauc);
     } else {
       m_tauc.read(filename, start);
     }
   } else {
-    options::Real
-      tauc("-tauc", "set basal yield stress to a constant (units of Pa)",
-           m_config->get_double("default_tauc"));
-
-    // Set the constant value (either the default from a configuration file or set using -tauc).
+    // Set the constant value.
     m_tauc.set(tauc);
   }
 

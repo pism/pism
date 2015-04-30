@@ -89,11 +89,14 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
+    std::string experiment = options::Keyword("-eisII", "EISMINT II experiment name",
+                                              "A,B,C,D,E,F,G,H,I,J,K,L", "A");
+
     Context::Ptr ctx = pisms_context(com);
     Config::Ptr config = ctx->config();
 
     IceGrid::Ptr g(new IceGrid(ctx));
-    IceEISModel m(g, ctx);
+    IceEISModel m(g, ctx, experiment[0]);
 
     m.init();
 

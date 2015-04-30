@@ -663,7 +663,7 @@ def flowlaw_test():
     TpaC = [-30, -5, 0, 0]
     depth = 2000
     gs = 1e-3
-    omega0 = 0.005
+    omega = [0.0, 0.0, 0.0, 0.005]
     sigma = [1e4, 5e4, 1e5, 1.5e5]
 
     p = EC.pressure(depth)
@@ -677,10 +677,6 @@ def flowlaw_test():
     for i in range(4):
         for j in range(4):
             T = Tm + TpaC[j]
-            if j == 3:
-                omega = omega0
-            else:
-                omega = 0.0
-            E = EC.enthalpy(T, omega, p)
+            E = EC.enthalpy(T, omega[j], p)
             flowcoeff = law.flow(sigma[i], E, p, gs)
-            print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega, flowcoeff)
+            print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega[j], flowcoeff)
