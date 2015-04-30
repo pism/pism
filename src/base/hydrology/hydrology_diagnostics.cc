@@ -59,12 +59,12 @@ Hydrology_bwprel::Hydrology_bwprel(Hydrology *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys, "bwprel"));
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
 }
 
 
 IceModelVec::Ptr Hydrology_bwprel::compute() {
-  double fill_value = m_grid.ctx()->config()->get_double("fill_value");
+  double fill_value = m_grid->ctx()->config()->get_double("fill_value");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "bwprel", WITHOUT_GHOSTS);
@@ -79,7 +79,7 @@ IceModelVec::Ptr Hydrology_bwprel::compute() {
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(Po);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (Po(i,j) > 0.0) {
@@ -182,7 +182,7 @@ IceModelVec::Ptr Hydrology_wallmelt::compute() {
 
 MCHydrology_ice_free_land_loss_cumulative::MCHydrology_ice_free_land_loss_cumulative(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ice_free_land_loss_cumulative", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_ice_free_land_loss_cumulative", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -195,7 +195,7 @@ void MCHydrology_ice_free_land_loss_cumulative::update(double a, double b) {
 
 MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ice_free_land_loss", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_ice_free_land_loss", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -209,7 +209,7 @@ void MCHydrology_ice_free_land_loss::update(double a, double b) {
 
 MCHydrology_ocean_loss_cumulative::MCHydrology_ocean_loss_cumulative(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ocean_loss_cumulative", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_ocean_loss_cumulative", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -222,7 +222,7 @@ void MCHydrology_ocean_loss_cumulative::update(double a, double b) {
 
 MCHydrology_ocean_loss::MCHydrology_ocean_loss(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_ocean_loss", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_ocean_loss", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -236,7 +236,7 @@ void MCHydrology_ocean_loss::update(double a, double b) {
 
 MCHydrology_negative_thickness_gain_cumulative::MCHydrology_negative_thickness_gain_cumulative(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_negative_thickness_gain_cumulative", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_negative_thickness_gain_cumulative", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -249,7 +249,7 @@ void MCHydrology_negative_thickness_gain_cumulative::update(double a, double b) 
 
 MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_negative_thickness_gain", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_negative_thickness_gain", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -263,7 +263,7 @@ void MCHydrology_negative_thickness_gain::update(double a, double b) {
 
 MCHydrology_null_strip_loss_cumulative::MCHydrology_null_strip_loss_cumulative(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_null_strip_loss_cumulative", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_null_strip_loss_cumulative", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
@@ -276,7 +276,7 @@ void MCHydrology_null_strip_loss_cumulative::update(double a, double b) {
 
 MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(Routing *m)
       : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(&m_grid, "hydro_null_strip_loss", m_time_dimension_name);
+  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_null_strip_loss", m_time_dimension_name);
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",

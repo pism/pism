@@ -53,7 +53,7 @@ namespace atmosphere {
 class PaleoPrecip : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PaleoPrecip(const IceGrid &g, AtmosphereModel* in);
+  PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~PaleoPrecip();
 
   virtual void init();

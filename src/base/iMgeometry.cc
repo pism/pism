@@ -94,7 +94,7 @@ void IceModel::update_mask(const IceModelVec2S &bed,
   assert(bed.get_stencil_width() >= result.get_stencil_width());
   assert(thickness.get_stencil_width() >= result.get_stencil_width());
 
-  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = gc.mask(bed(i, j), thickness(i, j));
@@ -131,9 +131,9 @@ void IceModel::update_surface_elevation(const IceModelVec2S &bed,
   assert(bed.get_stencil_width() >= result.get_stencil_width());
   assert(thickness.get_stencil_width() >= result.get_stencil_width());
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // take this opportunity to check that thickness(i, j) >= 0
@@ -516,7 +516,7 @@ void IceModel::massContExplicitStep() {
     total_sum_divQ_SSA            = 0,
     total_surface_ice_flux        = 0;
 
-  const double dx = m_grid.dx(), dy = m_grid.dy();
+  const double dx = m_grid->dx(), dy = m_grid->dy();
   bool
     include_bmr_in_continuity = config->get_boolean("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
@@ -595,9 +595,9 @@ void IceModel::massContExplicitStep() {
 
   MaskQuery mask(vMask);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // These constants are used to convert ice equivalent
@@ -787,7 +787,7 @@ void IceModel::massContExplicitStep() {
                            proc_Href_to_H_flux,
                            proc_H_to_Href_flux};
     double tmp_global[8];
-    GlobalSum(m_grid.com, tmp_local, tmp_global, 8);
+    GlobalSum(m_grid->com, tmp_local, tmp_global, 8);
 
     total_grounded_basal_ice_flux = tmp_global[0];
     total_nonneg_rule_flux        = tmp_global[1];
@@ -926,9 +926,9 @@ void IceModel::update_floatation_mask() {
   list.add(gl_mask_x);
   list.add(gl_mask_y);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double

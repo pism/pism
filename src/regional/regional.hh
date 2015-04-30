@@ -33,7 +33,7 @@ namespace stressbalance {
 //! simulations.
 class SIAFD_Regional : public SIAFD {
 public:
-  SIAFD_Regional(const IceGrid &g, EnthalpyConverter::Ptr e);
+  SIAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SIAFD_Regional();
   virtual void init();
 protected:
@@ -44,7 +44,7 @@ protected:
 //! simulations.
 class SSAFD_Regional : public SSAFD {
 public:
-  SSAFD_Regional(const IceGrid &g, EnthalpyConverter::Ptr e);
+  SSAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SSAFD_Regional();
   virtual void init();
   virtual void compute_driving_stress(IceModelVec2V &taud);
@@ -54,7 +54,7 @@ public:
 
 class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
 public:
-  RegionalDefaultYieldStress(const IceGrid &g, hydrology::Hydrology *hydro)
+  RegionalDefaultYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro)
     : MohrCoulombYieldStress(g, hydro) {}
   virtual ~RegionalDefaultYieldStress() {}
   virtual void init();

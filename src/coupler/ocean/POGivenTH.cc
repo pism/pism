@@ -58,7 +58,7 @@ GivenTH::Constants::Constants(const Config &config) {
   limit_salinity_range             = config.get_boolean("ocean_three_equation_model_clip_salinity");
 }
 
-GivenTH::GivenTH(const IceGrid &g)
+GivenTH::GivenTH(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
 
   option_prefix   = "-ocean_th";
@@ -114,7 +114,7 @@ void GivenTH::init_impl() {
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
-    update(m_grid.ctx()->time()->current(), 0); // dt is irrelevant
+    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
@@ -181,7 +181,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
 
   Constants c(*m_config);
 
-  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
@@ -190,7 +190,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
   list.add(m_shelfbtemp);
   list.add(m_shelfbmassflux);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double potential_temperature_celsius = (*m_theta_ocean)(i,j) - 273.15;

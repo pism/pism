@@ -27,7 +27,7 @@ namespace pism {
 //! \brief The PISM basal yield stress model interface (virtual base class)
 class YieldStress : public Component_TS {
 public:
-  YieldStress(const IceGrid &g);
+  YieldStress(IceGrid::ConstPtr g);
   virtual ~YieldStress();
 
   void init();

@@ -27,7 +27,7 @@
 namespace pism {
 namespace stressbalance {
 
-SIA_Sliding::SIA_Sliding(const IceGrid &g, EnthalpyConverter::Ptr e)
+SIA_Sliding::SIA_Sliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e)
 {
   m_verification_mode = false;
@@ -115,13 +115,13 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
     minimum_temperature_for_sliding = m_config->get_double("minimum_temperature_for_sliding"),
     ice_rho = m_config->get_double("ice_density");
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   const IceModelVec2S
-    &surface  = *m_grid.variables().get_2d_scalar("surface_altitude"),
-    &bed      = *m_grid.variables().get_2d_scalar("bedrock_altitude");
+    &surface  = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    &bed      = *m_grid->variables().get_2d_scalar("bedrock_altitude");
   const IceModelVec3
-    &enthalpy = *m_grid.variables().get_3d_scalar("enthalpy");
+    &enthalpy = *m_grid->variables().get_3d_scalar("enthalpy");
 
   MaskQuery m(*mask);
 
@@ -137,9 +137,9 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
   list.add(m_velocity);
   list.add(m_basal_frictional_heating);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m.ocean(i,j)) {
@@ -149,8 +149,8 @@ void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
       } else {
         // basal velocity from SIA-type sliding law: not recommended!
         const double
-          myx = m_grid.x(i),
-          myy = m_grid.y(j),
+          myx = m_grid->x(i),
+          myy = m_grid->y(j),
           myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
                          + h_x(i,j,1) + h_x(i,j-1,1)),
           myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
@@ -294,14 +294,14 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
+  const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
   IceModelVec2S &eta = m_work_2d;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
   const IceModelVec2S
-    *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness"),
-    *bed       = m_grid.variables().get_2d_scalar("bedrock_altitude");
+    *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness"),
+    *bed       = m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -310,7 +310,7 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
   unsigned int GHOSTS = eta.get_stencil_width();
   assert(thickness->get_stencil_width() >= GHOSTS);
 
-  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     eta(i,j) = pow((*thickness)(i,j), etapow);
@@ -330,7 +330,7 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
 
   for (int o=0; o<2; o++) {
 
-    for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (o==0) {     // If I-offset
@@ -373,12 +373,12 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
  */
 void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
-  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
+  const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
   const IceModelVec2S
-    &b = *m_grid.variables().get_2d_scalar("bedrock_altitude"),
-    &H = *m_grid.variables().get_2d_scalar("land_ice_thickness"),
-    &h = *m_grid.variables().get_2d_scalar("surface_altitude");
+    &b = *m_grid->variables().get_2d_scalar("bedrock_altitude"),
+    &H = *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+    &h = *m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(h_x);
@@ -395,7 +395,7 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
 
   for (int o=0; o<2; o++) {
 
-    for (PointsWithGhosts p(m_grid); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (o==0) {     // If I-offset
@@ -499,9 +499,9 @@ void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2S
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  const double dx = m_grid.dx(), dy = m_grid.dy();  // convenience
+  const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  const IceModelVec2S &h = *m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S &h = *m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(h_x);
@@ -513,7 +513,7 @@ void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2St
   assert(h.get_stencil_width()   >= 2);
 
   for (int o=0; o<2; o++) {
-    for (PointsWithGhosts p(m_grid); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (o==0) {     // If I-offset

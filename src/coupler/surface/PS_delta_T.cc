@@ -27,7 +27,7 @@ namespace surface {
 
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
-Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
+Delta_T::Delta_T(IceGrid::ConstPtr g, SurfaceModel* in)
   : PScalarForcing<SurfaceModel,SurfaceModifier>(g, in),
     climatic_mass_balance(m_sys, "climatic_mass_balance"),
     ice_surface_temp(m_sys, "ice_surface_temp") {
@@ -35,11 +35,11 @@ Delta_T::Delta_T(const IceGrid &g, SurfaceModel* in)
   option_prefix = "-surface_delta_T";
   offset_name   = "delta_T";
 
-  offset = new Timeseries(&m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
 
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "ice-surface temperature offsets");
-  offset->dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
+  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
@@ -91,14 +91,14 @@ void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 }
 
 void Delta_T::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

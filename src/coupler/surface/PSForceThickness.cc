@@ -32,7 +32,7 @@ namespace pism {
 namespace surface {
 
 ///// "Force-to-thickness" mechanism
-ForceThickness::ForceThickness(const IceGrid &g, SurfaceModel *input)
+ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
   : SurfaceModifier(g, input),
     m_climatic_mass_balance(m_sys, "climatic_mass_balance"),
     m_climatic_mass_balance_original(m_sys, "climatic_mass_balance_original"),
@@ -123,7 +123,7 @@ void ForceThickness::init_impl() {
 
   // m_input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
-  PIO nc(m_grid.com, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
   bool mask_exists = false;
   nc.open(m_input_file, PISM_READONLY);
   mask_exists = nc.inq_var("ftt_mask");
@@ -282,8 +282,8 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   double ice_density = m_config->get_double("ice_density");
 
-  const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int &mask = *m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
 
   MaskQuery m(mask);
 
@@ -294,7 +294,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   list.add(m_ftt_mask);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
@@ -348,7 +348,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
 }
 
 void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);
@@ -359,15 +359,15 @@ void ForceThickness::define_variables_impl(const std::set<std::string> &vars, co
   }
 
   if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance_original")) {
-    io::define_spatial_variable(m_climatic_mass_balance_original, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance_original, *m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

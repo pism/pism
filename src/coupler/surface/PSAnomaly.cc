@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-Anomaly::Anomaly(const IceGrid &g, SurfaceModel* in)
+Anomaly::Anomaly(IceGrid::ConstPtr g, SurfaceModel* in)
   : PGivenClimate<SurfaceModifier,SurfaceModel>(g, in),
     climatic_mass_balance(m_sys, "climatic_mass_balance"),
     ice_surface_temp(m_sys, "ice_surface_temp") {
@@ -120,14 +120,14 @@ void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 }
 
 void Anomaly::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

@@ -39,7 +39,7 @@ public:
   // in the same dictionary
   class ModelCreator {
   public:
-    virtual Model* create(const IceGrid &g) = 0;
+    virtual Model* create(IceGrid::ConstPtr g) = 0;
     virtual ~ModelCreator() {}
   };
 
@@ -47,7 +47,7 @@ public:
   template <class M>
   class SpecificModelCreator : public ModelCreator {
   public:
-    M* create(const IceGrid &g) {
+    M* create(IceGrid::ConstPtr g) {
       return new M(g);
     }
   };
@@ -56,7 +56,7 @@ public:
   // creators in the same dictionary
   class ModifierCreator {
   public:
-    virtual Modifier* create(const IceGrid &g, Model* input) = 0;
+    virtual Modifier* create(IceGrid::ConstPtr g, Model* input) = 0;
     virtual ~ModifierCreator() {}
   };
 
@@ -64,7 +64,7 @@ public:
   template <class M>
   class SpecificModifierCreator : public ModifierCreator {
   public:
-    M* create(const IceGrid &g, Model* input) {
+    M* create(IceGrid::ConstPtr g, Model* input) {
       return new M(g, input);
     }
   };
@@ -72,7 +72,7 @@ public:
   typedef PISM_SHARED_PTR(ModelCreator) ModelCreatorPtr;
   typedef PISM_SHARED_PTR(ModifierCreator) ModifierCreatorPtr;
 
-  PCFactory<Model,Modifier>(const IceGrid &g)
+  PCFactory<Model,Modifier>(IceGrid::ConstPtr g)
   : m_grid(g) {}
   ~PCFactory<Model,Modifier>() {}
 
@@ -178,7 +178,7 @@ protected:
   std::string m_default_type, m_option;
   std::map<std::string, ModelCreatorPtr> m_models;
   std::map<std::string, ModifierCreatorPtr> m_modifiers;
-  const IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
 };
 
 } // end of namespace pism

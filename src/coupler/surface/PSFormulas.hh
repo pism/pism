@@ -33,7 +33,7 @@ namespace surface {
  */
 class PSFormulas : public SurfaceModel {
 public:
-  PSFormulas(const IceGrid &g);
+  PSFormulas(IceGrid::ConstPtr g);
   ~PSFormulas();
 protected:
   void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);

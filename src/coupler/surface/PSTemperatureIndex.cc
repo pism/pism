@@ -38,7 +38,7 @@ namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-TemperatureIndex::TemperatureIndex(const IceGrid &g)
+TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   : SurfaceModel(g),
     ice_surface_temp(m_sys, "ice_surface_temp") {
 
@@ -99,9 +99,9 @@ TemperatureIndex::TemperatureIndex(const IceGrid &g)
     std::string short_name = "air_temp_sd";
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
 
-    PIO nc(m_grid.com, "netcdf3");
+    PIO nc(m_grid->com, "netcdf3");
     nc.open(file, PISM_READONLY);
-    n_records = nc.inq_nrecords(short_name, "", m_grid.ctx()->unit_system());
+    n_records = nc.inq_nrecords(short_name, "", m_grid->ctx()->unit_system());
     nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the
@@ -236,7 +236,7 @@ void TemperatureIndex::init_impl() {
              input_file.c_str());
   m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
 
-  m_next_balance_year_start = compute_next_balance_year_start(m_grid.ctx()->time()->current());
+  m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
 MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
@@ -248,13 +248,13 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
   double
     balance_year_start_day = m_config->get_double("pdd_balance_year_start_day"),
     one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
-    year_start             = m_grid.ctx()->time()->calendar_year_start(time),
+    year_start             = m_grid->ctx()->time()->calendar_year_start(time),
     balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
   if (balance_year_start > time) {
     return balance_year_start;
   }
-  return m_grid.ctx()->time()->increment_date(balance_year_start, 1);
+  return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
 }
 
 
@@ -287,16 +287,16 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     m_air_temp_sd.init_interpolation(ts);
   }
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
   const IceModelVec2S *surface_altitude = NULL, *latitude = NULL, *longitude = NULL;
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list(*mask);
 
   if (m_faustogreve != NULL) {
-    surface_altitude = m_grid.variables().get_2d_scalar("surface_altitude");
-    latitude         = m_grid.variables().get_2d_scalar("latitude");
-    longitude        = m_grid.variables().get_2d_scalar("longitude");
+    surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
+    latitude         = m_grid->variables().get_2d_scalar("latitude");
+    longitude        = m_grid->variables().get_2d_scalar("longitude");
 
     list.add(*latitude);
     list.add(*longitude);
@@ -309,7 +309,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     sigmabaselat   = m_config->get_double("pdd_std_dev_lapse_lat_base");
 
   if (sigmalapserate != 0.0) {
-    latitude = m_grid.variables().get_2d_scalar("latitude");
+    latitude = m_grid->variables().get_2d_scalar("latitude");
     list.add(*latitude);
   }
 
@@ -328,9 +328,9 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   const double ice_density = m_config->get_double("ice_density");
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // the temperature time series from the AtmosphereModel and its modifiers
@@ -397,7 +397,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
           if (ts[k] >= next_snow_depth_reset) {
             m_snow_depth(i,j)       = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
-              next_snow_depth_reset = m_grid.ctx()->time()->increment_date(next_snow_depth_reset, 1);
+              next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
             }
           }
 
@@ -426,7 +426,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   m_atmosphere->end_pointwise_access();
 
-  m_next_balance_year_start = compute_next_balance_year_start(m_grid.ctx()->time()->current());
+  m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
 
@@ -462,8 +462,8 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
 void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
-    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {

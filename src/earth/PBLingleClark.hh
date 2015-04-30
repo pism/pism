@@ -31,7 +31,7 @@ namespace bed {
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public BedDef {
 public:
-  PBLingleClark(const IceGrid &g);
+  PBLingleClark(IceGrid::ConstPtr g);
   virtual ~PBLingleClark();
 
 protected:

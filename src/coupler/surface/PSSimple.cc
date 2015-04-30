@@ -31,7 +31,7 @@ namespace pism {
 namespace surface {
 
 ///// Simple PISM surface model.
-Simple::Simple(const IceGrid &g)
+Simple::Simple(IceGrid::ConstPtr g)
   : SurfaceModel(g),
     climatic_mass_balance(m_sys, "climatic_mass_balance"),
     ice_surface_temp(m_sys, "ice_surface_temp") {
@@ -98,14 +98,14 @@ void Simple::add_vars_to_output_impl(const std::string &keyword, std::set<std::s
 }
 
 void Simple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
   SurfaceModel::define_variables_impl(vars, nc, nctype);

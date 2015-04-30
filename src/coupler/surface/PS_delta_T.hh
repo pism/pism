@@ -34,7 +34,7 @@ namespace surface {
 class Delta_T : public PScalarForcing<SurfaceModel,SurfaceModifier>
 {
 public:
-  Delta_T(const IceGrid &g, SurfaceModel* in);
+  Delta_T(IceGrid::ConstPtr g, SurfaceModel* in);
   virtual ~Delta_T();
 protected:
   virtual void init_impl();

@@ -27,7 +27,7 @@ namespace pism {
 namespace atmosphere {
 class Factory : public PCFactory<AtmosphereModel,PAModifier> {
 public:
-  Factory(const IceGrid& g);
+  Factory(IceGrid::ConstPtr g);
   ~Factory();
 };
 } // end of namespace atmosphere

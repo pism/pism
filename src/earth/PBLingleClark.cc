@@ -29,7 +29,7 @@
 namespace pism {
 namespace bed {
 
-PBLingleClark::PBLingleClark(const IceGrid &g)
+PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   : BedDef(g) {
 
   m_Hp0        = m_topg_initial.allocate_proc0_copy();
@@ -42,11 +42,11 @@ PBLingleClark::PBLingleClark(const IceGrid &g)
 
   m_bdLC = NULL;
 
-  ParallelSection rank0(m_grid.com);
+  ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid.rank() == 0) {
+    if (m_grid->rank() == 0) {
       m_bdLC = new BedDeformLC(*m_config, use_elastic_model,
-                               m_grid.Mx(), m_grid.My(), m_grid.dx(), m_grid.dy(),
+                               m_grid->Mx(), m_grid->My(), m_grid->dx(), m_grid->dy(),
                                4,     // use Z = 4 for now; to reduce global drift?
                                *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
     }
@@ -69,9 +69,9 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
   bed.put_on_proc0(*m_bedstartp0);
   bed_uplift.put_on_proc0(*m_upliftp0);
 
-  ParallelSection rank0(m_grid.com);
+  ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid.rank() == 0) {
+    if (m_grid->rank() == 0) {
       m_bdLC->uplift_init();
     }
   } catch (...) {
@@ -89,7 +89,7 @@ void PBLingleClark::init_impl() {
 
   correct_topg();
 
-  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   this->init_with_inputs_impl(m_topg, m_uplift, *ice_thickness);
 }
 
@@ -101,7 +101,7 @@ MaxTimestep PBLingleClark::max_timestep_impl(double t) {
 void PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, topg_exists, topg_initial_exists;
 
-  PIO nc(m_grid.com, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
 
   use_special_regrid_semantics = options::Bool("-regrid_bed_special",
                                                "Correct topg when switching to a different grid");
@@ -191,7 +191,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
   if ((dt_beddef < m_config->get_double("bed_def_interval_years", "years", "seconds") &&
-       t_final < m_grid.ctx()->time()->end()) ||
+       t_final < m_grid->ctx()->time()->end()) ||
       dt_beddef < 1e-12) {
     return;
   }
@@ -201,11 +201,11 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   ice_thickness.put_on_proc0(*m_Hp0);
   m_topg.put_on_proc0(*m_bedp0);
 
-  ParallelSection rank0(m_grid.com);
+  ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid.rank() == 0) {  // only processor zero does the step
+    if (m_grid->rank() == 0) {  // only processor zero does the step
       m_bdLC->step(dt_beddef, // time step, in seconds
-                   t_final - m_grid.ctx()->time()->start()); // time since the start of the run, in seconds
+                   t_final - m_grid->ctx()->time()->start()); // time since the start of the run, in seconds
     }
   } catch (...) {
     rank0.failed();

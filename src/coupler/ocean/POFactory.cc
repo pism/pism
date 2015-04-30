@@ -33,7 +33,7 @@
 namespace pism {
 namespace ocean {
 // Ocean
-Factory::Factory(const IceGrid& g)
+Factory::Factory(IceGrid::ConstPtr g)
   : PCFactory<OceanModel,OceanModifier>(g) {
   m_option = "ocean";
 

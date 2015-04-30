@@ -233,7 +233,7 @@ public:
 
 protected:
 
-  const IceGrid *m_grid;
+  IceGrid::ConstPtr m_grid;
   
   ForwardProblem &m_forward;
 
@@ -310,27 +310,27 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
   int state_stencil_width = m_u_obs.get_stencil_width();
 
   m_d.reset(new DesignVec);
-  m_d->create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
+  m_d->create(m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
 
-  m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
+  m_dGlobal.create(m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
   m_dGlobal.copy_from(m_d0);
 
   m_u_diff.reset(new StateVec);
-  m_u_diff->create(*m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
+  m_u_diff->create(m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
 
   m_d_diff.reset(new DesignVec);
-  m_d_diff->create(*m_grid, "design residual", WITH_GHOSTS, design_stencil_width);
+  m_d_diff->create(m_grid, "design residual", WITH_GHOSTS, design_stencil_width);
 
   m_grad_state.reset(new DesignVec);
-  m_grad_state->create(*m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_state->create(m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width);
 
   m_grad_design.reset(new DesignVec);
-  m_grad_design->create(*m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_design->create(m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
 
   m_grad.reset(new DesignVec);
-  m_grad->create(*m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad->create(m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width);
 
-  m_adjointRHS.create(*m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width);
+  m_adjointRHS.create(m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width);
 }
 
 template<class ForwardProblem>

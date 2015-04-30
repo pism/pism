@@ -283,8 +283,8 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(const IceGrid &g)
-  : m_grid(g), m_config(g.ctx()->config()) {
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
+  : m_grid(g), m_config(g->ctx()->config()) {
 
   beta_ice_w  = m_config->get_double("pdd_fausto_beta_ice_w");
   beta_snow_w = m_config->get_double("pdd_fausto_beta_snow_w");
@@ -365,7 +365,7 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
   list.add(lon_degE);
   list.add(m_temp_mj);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }

@@ -68,7 +68,7 @@ double SSAStrengthExtension::get_min_thickness() const {
 }
 
 
-SSA::SSA(const IceGrid &g, EnthalpyConverter::Ptr e)
+SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e)
 {
   m_mask = NULL;
@@ -132,22 +132,22 @@ void SSA::init_impl() {
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
   if (m_config->get_boolean("sub_groundingline")) {
-    m_gl_mask = m_grid.variables().get_2d_scalar("gl_mask");
+    m_gl_mask = m_grid->variables().get_2d_scalar("gl_mask");
   }
 
-  m_mask      = m_grid.variables().get_2d_mask("mask");
-  m_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  m_tauc      = m_grid.variables().get_2d_scalar("tauc");
+  m_mask      = m_grid->variables().get_2d_mask("mask");
+  m_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  m_tauc      = m_grid->variables().get_2d_scalar("tauc");
 
   try {
-    m_surface = m_grid.variables().get_2d_scalar("surface_altitude");
+    m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
   } catch (RuntimeError) {
-    m_driving_stress_x = m_grid.variables().get_2d_scalar("ssa_driving_stress_x");
-    m_driving_stress_y = m_grid.variables().get_2d_scalar("ssa_driving_stress_y");
+    m_driving_stress_x = m_grid->variables().get_2d_scalar("ssa_driving_stress_x");
+    m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
   }
 
-  m_bed      = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  m_enthalpy = m_grid.variables().get_3d_scalar("enthalpy");
+  m_bed      = m_grid->variables().get_2d_scalar("bedrock_altitude");
+  m_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
 
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
@@ -157,7 +157,7 @@ void SSA::init_impl() {
   if (input_file.is_set() and not bootstrap) {
     bool u_ssa_found = false, v_ssa_found = false;
     unsigned int start = 0;
-    PIO nc(m_grid.com, "guess_mode");
+    PIO nc(m_grid->com, "guess_mode");
 
     bool dont_read_initial_guess = options::Bool("-dontreadSSAvels",
                                                  "don't read the initial guess");
@@ -179,8 +179,8 @@ void SSA::init_impl() {
   }
 
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
-    m_bc_mask = m_grid.variables().get_2d_mask("bc_mask");
-    m_bc_values = m_grid.variables().get_2d_vector("vel_ssa_bc");
+    m_bc_mask = m_grid->variables().get_2d_mask("bc_mask");
+    m_bc_values = m_grid->variables().get_2d_vector("vel_ssa_bc");
   }
 }
 
@@ -216,7 +216,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const double minThickEtaTransform = 5.0; // m
-  const double dx=m_grid.dx(), dy=m_grid.dy();
+  const double dx=m_grid->dx(), dy=m_grid->dy();
 
   bool cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = m_config->get_boolean("compute_surf_grad_inward_ssa");
@@ -231,7 +231,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   list.add(thk);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double pressure = m_EC->pressure(thk(i,j)); // FIXME issue #15

@@ -27,12 +27,12 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMUnits.hh"
 #include "base/util/Logger.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 
 class MaxTimestep;
 class PIO;
-class IceGrid;
 class Diagnostic;
 class TSDiagnostic;
 class IceModelVec;
@@ -92,7 +92,7 @@ class IceModelVec;
 class Component {
 public:
   /** Create a Component instance given a grid. */
-  Component(const IceGrid &g);
+  Component(IceGrid::ConstPtr g);
   virtual ~Component();
 
   //! \brief Adds more variable names to result (to let sub-models respect
@@ -114,7 +114,7 @@ public:
   void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                        std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  const IceGrid& grid() const;
+  IceGrid::ConstPtr grid() const;
 
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
@@ -136,7 +136,7 @@ protected:
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 protected:
   //! grid used by this component
-  const IceGrid &m_grid;
+  const IceGrid::ConstPtr m_grid;
   //! configuration database used by this component
   const Config::ConstPtr m_config;
   //! unit system used by this component
@@ -151,7 +151,7 @@ protected:
 class Component_TS : public Component {
 public:
   /** Create an instance of Component_TS given a grid. */
-  Component_TS(const IceGrid &g);
+  Component_TS(IceGrid::ConstPtr g);
   virtual ~Component_TS();
 
   //! @brief Reports the maximum time-step the model can take at t.

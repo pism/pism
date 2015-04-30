@@ -44,6 +44,7 @@
 #include "earth/PISMBedDef.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 
@@ -105,19 +106,19 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
 
 void IceModel::dumpToFile(const std::string &filename) {
-  const Profiling &profiling = m_grid.ctx()->profiling();
+  const Profiling &profiling = m_grid->ctx()->profiling();
 
-  PIO nc(m_grid.com, config->get_string("output_format"));
+  PIO nc(m_grid->com, config->get_string("output_format"));
 
   profiling.begin("model state dump");
 
   // Prepare the file
   std::string time_name = config->get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
-  io::define_time(nc, time_name, m_grid.ctx()->time()->calendar(),
-                  m_grid.ctx()->time()->CF_units_string(),
+  io::define_time(nc, time_name, m_grid->ctx()->time()->calendar(),
+                  m_grid->ctx()->time()->CF_units_string(),
                   m_ctx->unit_system());
-  io::append_time(nc, time_name, m_grid.ctx()->time()->current());
+  io::append_time(nc, time_name, m_grid->ctx()->time()->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);
@@ -141,8 +142,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     std::set<std::string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
 
-      if (m_grid.variables().is_available(*i)) {
-        v = m_grid.variables().get(*i);
+      if (m_grid->variables().is_available(*i)) {
+        v = m_grid->variables().get(*i);
         // It has dedicated storage.
         if (*i == "mask") {
           v->define(nc, PISM_BYTE); // use the default data type
@@ -216,8 +217,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   std::set<std::string> vars_copy = vars;
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
-    if (m_grid.variables().is_available(*i)) {
-      m_grid.variables().get(*i)->write(nc);
+    if (m_grid->variables().is_available(*i)) {
+      m_grid->variables().get(*i)->write(nc);
 
       // note that it only erases variables that were found (and
       // saved)
@@ -338,7 +339,7 @@ void IceModel::write_model_state(const PIO &nc) {
   box from the same input file.
 */
 void IceModel::initFromFile(const std::string &filename) {
-  PIO nc(m_grid.com, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
 
   m_log->message(2, "initializing from NetCDF file '%s'...\n",
              filename.c_str());
@@ -349,12 +350,12 @@ void IceModel::initFromFile(const std::string &filename) {
   unsigned int last_record = nc.inq_nrecords() - 1;
 
   // Read the model state, mapping and climate_steady variables:
-  std::set<std::string> vars = m_grid.variables().keys();
+  std::set<std::string> vars = m_grid->variables().keys();
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
     // FIXME: remove const_cast. This is bad.
-    IceModelVec *var = const_cast<IceModelVec*>(m_grid.variables().get(*i));
+    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(*i));
     SpatialVariableMetadata &m = var->metadata();
 
     std::string
@@ -494,12 +495,12 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
 
-    if (not m_grid.variables().is_available(*i)) {
+    if (not m_grid->variables().is_available(*i)) {
       continue;
     }
 
     // FIXME: remove const_cast. This is bad.
-    IceModelVec *v = const_cast<IceModelVec*>(m_grid.variables().get(*i));
+    IceModelVec *v = const_cast<IceModelVec*>(m_grid->variables().get(*i));
     SpatialVariableMetadata &m = v->metadata();
 
     if (v->get_ndims() != ndims) {
@@ -526,10 +527,10 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
     if (v == &this->ice_thickness) {
       Range thk_range = ice_thickness.range();
 
-      if (thk_range.max >= m_grid.Lz() + 1e-6) {
+      if (thk_range.max >= m_grid->Lz() + 1e-6) {
         throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
                                       "exceeds the height of the computational domain (%f meters).",
-                                      thk_range.max, m_grid.Lz());
+                                      thk_range.max, m_grid->Lz());
       }
     }
 
@@ -553,7 +554,7 @@ void IceModel::init_enthalpy(const std::string &filename,
     liqfrac_exists  = false,
     enthalpy_exists = false;
 
-  PIO nc(m_grid.com, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
   nc.open(filename, PISM_READONLY);
   enthalpy_exists = nc.inq_var("enthalpy");
   temp_exists     = nc.inq_var("temp");
@@ -638,7 +639,7 @@ void IceModel::init_snapshots() {
   }
 
   try {
-    m_grid.ctx()->time()->parse_times(save_times, snapshot_times);
+    m_grid->ctx()->time()->parse_times(save_times, snapshot_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -save_times argument");
     throw;
@@ -685,11 +686,12 @@ void IceModel::write_snapshot() {
   }
 
   // do we need to save *now*?
-  if ((m_grid.ctx()->time()->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
+  if ((m_grid->ctx()->time()->current() >= snapshot_times[current_snapshot]) and
+      (current_snapshot < snapshot_times.size())) {
     saving_after = snapshot_times[current_snapshot];
 
-    while ((current_snapshot < snapshot_times.size()) &&
-           (snapshot_times[current_snapshot] <= m_grid.ctx()->time()->current())) {
+    while ((current_snapshot < snapshot_times.size()) and
+           (snapshot_times[current_snapshot] <= m_grid->ctx()->time()->current())) {
       current_snapshot++;
     }
   } else {
@@ -703,24 +705,24 @@ void IceModel::write_snapshot() {
   if (split_snapshots) {
     snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             snapshots_filename.c_str(), m_grid.ctx()->time()->date().c_str());
+             snapshots_filename.c_str(), m_grid->ctx()->time()->date().c_str());
   } else {
     strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
   m_log->message(2,
              "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
-             filename, m_grid.ctx()->time()->date().c_str(),
-             m_grid.ctx()->time()->date(saving_after).c_str());
+             filename, m_grid->ctx()->time()->date().c_str(),
+             m_grid->ctx()->time()->date(saving_after).c_str());
 
-  PIO nc(m_grid.com, m_grid.ctx()->config()->get_string("output_format"));
+  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
 
   if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
     io::define_time(nc, config->get_string("time_dimension_name"),
-                m_grid.ctx()->time()->calendar(),
-                m_grid.ctx()->time()->CF_units_string(),
+                m_grid->ctx()->time()->calendar(),
+                m_grid->ctx()->time()->CF_units_string(),
                 m_ctx->unit_system());
 
     write_metadata(nc, true, true);
@@ -733,7 +735,7 @@ void IceModel::write_snapshot() {
 
   unsigned int time_length = 0;
 
-  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.ctx()->time()->current());
+  io::append_time(nc, config->get_string("time_dimension_name"), m_grid->ctx()->time()->current());
   time_length = nc.inq_dimlen(config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
@@ -741,9 +743,9 @@ void IceModel::write_snapshot() {
   {
     // find out how much time passed since the beginning of the run
     double wall_clock_hours;
-    ParallelSection rank0(m_grid.com);
+    ParallelSection rank0(m_grid->com);
     try {
-      if (m_grid.rank() == 0) {
+      if (m_grid->rank() == 0) {
         wall_clock_hours = (GetTime() - start_time) / 3600.0;
       }
     } catch (...) {
@@ -751,7 +753,7 @@ void IceModel::write_snapshot() {
     }
     rank0.check();
 
-    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid.com);
+    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
 
     io::write_timeseries(nc, timestamp, static_cast<size_t>(time_length - 1),
                         wall_clock_hours);
@@ -785,9 +787,9 @@ void IceModel::init_backups() {
 void IceModel::write_backup() {
   double wall_clock_hours;
 
-  ParallelSection rank0(m_grid.com);
+  ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid.rank() == 0) {
+    if (m_grid->rank() == 0) {
       wall_clock_hours = (GetTime() - start_time) / 3600.0;
     }
   } catch (...) {
@@ -795,7 +797,7 @@ void IceModel::write_backup() {
   }
   rank0.check();
 
-  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid.com);
+  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
 
   if (wall_clock_hours - last_backup_time < backup_interval) {
     return;
@@ -804,11 +806,11 @@ void IceModel::write_backup() {
   last_backup_time = wall_clock_hours;
 
   // create a history string:
-  std::string date_str = pism_timestamp(m_grid.com);
+  std::string date_str = pism_timestamp(m_grid->com);
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
-           m_grid.ctx()->time()->date().c_str(), wall_clock_hours);
+           m_grid->ctx()->time()->date().c_str(), wall_clock_hours);
 
   m_log->message(2,
              "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
@@ -816,15 +818,15 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(m_grid.com, m_grid.ctx()->config()->get_string("output_format"));
+  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
 
   // write metadata:
   nc.open(backup_filename, PISM_READWRITE_MOVE);
   io::define_time(nc, config->get_string("time_dimension_name"),
-              m_grid.ctx()->time()->calendar(),
-              m_grid.ctx()->time()->CF_units_string(),
+              m_grid->ctx()->time()->calendar(),
+              m_grid->ctx()->time()->CF_units_string(),
               m_ctx->unit_system());
-  io::append_time(nc, config->get_string("time_dimension_name"), m_grid.ctx()->time()->current());
+  io::append_time(nc, config->get_string("time_dimension_name"), m_grid->ctx()->time()->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);

@@ -27,7 +27,7 @@ namespace atmosphere {
 
 class PIK : public AtmosphereModel {
 public:
-  PIK(const IceGrid &g);
+  PIK(IceGrid::ConstPtr g);
   virtual void init();
   virtual void mean_precipitation(IceModelVec2S &result);
   virtual void mean_annual_temp(IceModelVec2S &result);

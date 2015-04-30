@@ -28,10 +28,10 @@
 namespace pism {
 namespace stressbalance {
 
-BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
-    : grid(g), config(g.ctx()->config()) {
+BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
+    : grid(g), config(g->ctx()->config()) {
 
-  const Logger &log = *grid.ctx()->log();
+  const Logger &log = *grid->ctx()->log();
 
   {
     // allocate Vecs that live on all procs; all have to be as "wide" as any of
@@ -72,7 +72,7 @@ BedSmoother::BedSmoother(const IceGrid &g, int MAX_GHOSTS)
   if (m_smoothing_range > 0.0) {
     log.message(2,
                 "* Initializing bed smoother object with %.3f km half-width ...\n",
-                units::convert(grid.ctx()->unit_system(), m_smoothing_range, "m", "km"));
+                units::convert(grid->ctx()->unit_system(), m_smoothing_range, "m", "km"));
   }
 
   // Make sure that Nx and Ny are initialized. In most cases SIAFD::update() will call
@@ -106,8 +106,8 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   }
 
   // determine Nx, Ny, which are always at least one if m_smoothing_range > 0
-  Nx = static_cast<int>(ceil(m_smoothing_range / grid.dx()));
-  Ny = static_cast<int>(ceil(m_smoothing_range / grid.dy()));
+  Nx = static_cast<int>(ceil(m_smoothing_range / grid->dx()));
+  Ny = static_cast<int>(ceil(m_smoothing_range / grid->dy()));
   if (Nx < 1) {
     Nx = 1;
   }
@@ -129,7 +129,7 @@ average.
 void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
                                  unsigned int Nx_in, unsigned int Ny_in) {
 
-  if ((Nx_in >= grid.Mx()) || (Ny_in >= grid.My())) {
+  if ((Nx_in >= grid->Mx()) || (Ny_in >= grid->My())) {
     throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
                        "domain of smoothing exceeds IceGrid domain");
   }
@@ -161,21 +161,21 @@ void BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
 //! Computes the smoothed bed by a simple average over a rectangle of grid points.
 void BedSmoother::smooth_the_bed_on_proc0() {
 
-  ParallelSection rank0(grid.com);
+  ParallelSection rank0(grid->com);
   try {
-    if (grid.rank() == 0) {
+    if (grid->rank() == 0) {
       petsc::VecArray2D
-        b0(*topgp0,       grid.Mx(), grid.My()),
-        bs(*topgsmoothp0, grid.Mx(), grid.My());
+        b0(*topgp0,       grid->Mx(), grid->My()),
+        bs(*topgsmoothp0, grid->Mx(), grid->My());
 
-      for (int i=0; i < (int)grid.Mx(); i++) {
-        for (int j=0; j < (int)grid.My(); j++) {
+      for (int i=0; i < (int)grid->Mx(); i++) {
+        for (int j=0; j < (int)grid->My(); j++) {
           // average only over those points which are in the grid; do
           // not wrap periodically
           double sum = 0.0, count = 0.0;
           for (int r = -Nx; r <= Nx; r++) {
             for (int s = -Ny; s <= Ny; s++) {
-              if ((i+r >= 0) && (i+r < (int)grid.Mx()) && (j+s >= 0) && (j+s < (int)grid.My())) {
+              if ((i+r >= 0) && (i+r < (int)grid->Mx()) && (j+s >= 0) && (j+s < (int)grid->My())) {
                 sum += b0(i+r,j+s);
                 count += 1.0;
               }
@@ -195,19 +195,21 @@ void BedSmoother::smooth_the_bed_on_proc0() {
 
 void BedSmoother::compute_coefficients_on_proc0() {
 
-  ParallelSection rank0(grid.com);
-  try {
-    if (grid.rank() == 0) {
-      petsc::VecArray2D
-        b0(*topgp0,       grid.Mx(), grid.My()),
-        bs(*topgsmoothp0, grid.Mx(), grid.My()),
-        mt(*maxtlp0,      grid.Mx(), grid.My()),
-        c2(*C2p0,         grid.Mx(), grid.My()),
-        c3(*C3p0,         grid.Mx(), grid.My()),
-        c4(*C4p0,         grid.Mx(), grid.My());
+  const unsigned int Mx = grid->Mx(), My = grid->My();
 
-      for (int i=0; i < (int)grid.Mx(); i++) {
-        for (int j=0; j < (int)grid.My(); j++) {
+  ParallelSection rank0(grid->com);
+  try {
+    if (grid->rank() == 0) {
+      petsc::VecArray2D
+        b0(*topgp0,       Mx, My),
+        bs(*topgsmoothp0, Mx, My),
+        mt(*maxtlp0,      Mx, My),
+        c2(*C2p0,         Mx, My),
+        c3(*C3p0,         Mx, My),
+        c4(*C4p0,         Mx, My);
+
+      for (int i=0; i < (int)Mx; i++) {
+        for (int j=0; j < (int)My; j++) {
           // average only over those points which are in the grid
           // do not wrap periodically
           double
@@ -220,7 +222,7 @@ void BedSmoother::compute_coefficients_on_proc0() {
 
           for (int r = -Nx; r <= Nx; r++) {
             for (int s = -Ny; s <= Ny; s++) {
-              if ((i+r >= 0) && (i+r < (int)grid.Mx()) && (j+s >= 0) && (j+s < (int)grid.My())) {
+              if ((i+r >= 0) && (i+r < (int)Mx) && (j+s >= 0) && (j+s < (int)My)) {
                 // tl is elevation of local topography at a pt in patch
                 const double tl  = b0(i+r, j+s) - topgs;
                 maxtltemp = std::max(maxtltemp, tl);
@@ -302,9 +304,9 @@ void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
   assert(topgsmooth.get_stencil_width() >= GHOSTS);
   assert(usurf.get_stencil_width()      >= GHOSTS);
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(grid->com);
   try {
-    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    for (PointsWithGhosts p(*grid, GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (thk(i, j) < 0.0) {
@@ -379,9 +381,9 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
   assert(topgsmooth.get_stencil_width() >= GHOSTS);
   assert(usurf.get_stencil_width()      >= GHOSTS);
 
-  ParallelSection loop(grid.com);
+  ParallelSection loop(grid->com);
   try {
-    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    for (PointsWithGhosts p(*grid, GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = usurf(i, j) - topgsmooth(i, j);

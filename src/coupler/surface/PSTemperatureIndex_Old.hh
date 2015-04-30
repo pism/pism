@@ -48,7 +48,7 @@ namespace surface {
 */
 class TemperatureIndex_Old : public SurfaceModel {
 public:
-  TemperatureIndex_Old(const IceGrid &g);
+  TemperatureIndex_Old(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex_Old();
 protected:
   virtual void init_impl();

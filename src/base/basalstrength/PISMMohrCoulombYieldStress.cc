@@ -55,7 +55,7 @@ This submodel is inactive in floating areas.
 */
 
 
-MohrCoulombYieldStress::MohrCoulombYieldStress(const IceGrid &g,
+MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
                                                hydrology::Hydrology *hydro)
   : YieldStress(g) {
 
@@ -181,7 +181,7 @@ void MohrCoulombYieldStress::init_impl() {
 
     if (use_input_file) {
 
-      PIO nc(m_grid.com, "guess_mode");
+      PIO nc(m_grid->com, "guess_mode");
 
       nc.open(filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));
@@ -368,8 +368,8 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
     }
   }
 
-  const IceModelVec2Int &mask           = *m_grid.variables().get_2d_mask("mask");
-  const IceModelVec2S   &bed_topography = *m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2Int &mask           = *m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S   &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   IceModelVec::AccessList list;
   if (addtransportable == true) {
@@ -384,7 +384,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
 
   MaskQuery m(mask);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.ocean(i, j)) {
@@ -460,7 +460,7 @@ void MohrCoulombYieldStress::topg_to_phi() {
     throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
-  const IceModelVec2S &bed_topography = *m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
@@ -468,7 +468,7 @@ void MohrCoulombYieldStress::topg_to_phi() {
   list.add(bed_topography);
   list.add(m_till_phi);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double bed = bed_topography(i, j);
 
@@ -500,7 +500,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   m_hydrology->till_water_thickness(m_tillwat);
   m_hydrology->overburden_pressure(m_Po);
 
-  const IceModelVec2Int &mask = *m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
 
   IceModelVec::AccessList list;
   list.add(mask);
@@ -518,7 +518,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   assert(m_tillwat.get_stencil_width() >= GHOSTS);
   assert(m_Po.get_stencil_width()      >= GHOSTS);
 
-  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.ocean(i, j)) {

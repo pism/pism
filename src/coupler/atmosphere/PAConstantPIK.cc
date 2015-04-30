@@ -29,7 +29,7 @@
 namespace pism {
 namespace atmosphere {
 
-PIK::PIK(const IceGrid &g)
+PIK::PIK(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
 
@@ -106,8 +106,8 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   if (set_contains(vars, "air_temp_snapshot")) {
-    std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
-    io::define_spatial_variable(m_air_temp_snapshot, m_grid, nc, nctype, order, false);
+    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -175,14 +175,14 @@ void PIK::update_impl(double, double) {
   // elevation-dependent parameterization:
 
   const IceModelVec2S
-    *usurf = m_grid.variables().get_2d_scalar("surface_altitude"),
-    *lat   = m_grid.variables().get_2d_scalar("latitude");
+    *usurf = m_grid->variables().get_2d_scalar("surface_altitude"),
+    *lat   = m_grid->variables().get_2d_scalar("latitude");
 
   IceModelVec::AccessList list;
   list.add(m_air_temp);
   list.add(*usurf);
   list.add(*lat);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     m_air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;

@@ -29,7 +29,7 @@ namespace ocean {
 class Delta_T : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  Delta_T(const IceGrid &g, OceanModel* in);
+  Delta_T(IceGrid::ConstPtr g, OceanModel* in);
   virtual ~Delta_T();
 
 protected:

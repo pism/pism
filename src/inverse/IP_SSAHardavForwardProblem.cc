@@ -31,14 +31,14 @@
 namespace pism {
 namespace inverse {
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(const IceGrid &g, EnthalpyConverter::Ptr e,
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e,
                                                        IPDesignVariableParameterization &tp)
   : SSAFEM(g, e),
     m_zeta(NULL),
     m_fixed_design_locations(NULL),
     m_design_param(tp),
-    m_element_index(m_grid),
-    m_quadrature(m_grid, 1.0),
+    m_element_index(*m_grid),
+    m_quadrature(*m_grid, 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }
@@ -75,7 +75,7 @@ void IP_SSAHardavForwardProblem::construct() {
   PISM_CHK(ierr, "DMCreateMatrix");
 #endif
 
-  ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
+  ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
 
   double ksp_rtol = 1e-12;
@@ -251,7 +251,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     du_a[i][j].u = 0.0;
@@ -294,7 +294,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     ys   = m_element_index.ys,
     ym   = m_element_index.ym;
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
     for (int i =xs; i<xs+xm; i++) {
       for (int j =ys; j<ys+ym; j++) {
@@ -309,7 +309,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, m_grid);
+        m_dofmap.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
@@ -388,7 +388,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
                                                                  IceModelVec2V &du,
                                                                  Vec dzeta) {
 
-  petsc::DM::Ptr da2 = m_grid.get_dm(1, m_config->get_double("grid_max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid_max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }
@@ -457,7 +457,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     dzeta_a[i][j] = 0;
@@ -465,7 +465,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
     for (int i = xs; i < xs + xm; i++) {
       for (int j = ys; j < ys + ym; j++) {
@@ -473,7 +473,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, m_grid);
+        m_dofmap.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
@@ -525,7 +525,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
   dirichletBC.finish();
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dB_dzeta;
@@ -586,7 +586,7 @@ void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMo
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid.com,
+    verbPrintf(4, m_grid->com,
                "IP_SSAHardavForwardProblem::apply_linearization converged"
                " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
@@ -656,7 +656,7 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid.com,
+    verbPrintf(4, m_grid->com,
                "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }

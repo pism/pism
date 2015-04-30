@@ -48,7 +48,7 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @return 0 on success
  */
 
-void IceModelVec3Custom::create(const IceGrid &mygrid,
+void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
                                 const std::string &short_name,
                                 const std::string &z_name,
                                 const std::vector<double> &my_zlevels,
@@ -57,7 +57,7 @@ void IceModelVec3Custom::create(const IceGrid &mygrid,
   assert(m_v == NULL);
 
   m_has_ghosts = false;
-  m_grid         = &mygrid;
+  m_grid       = mygrid;
   m_name       = short_name;
   zlevels      = my_zlevels;
 

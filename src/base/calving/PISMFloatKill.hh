@@ -33,7 +33,7 @@ namespace calving {
 class FloatKill : public Component
 {
 public:
-  FloatKill(const IceGrid &g);
+  FloatKill(IceGrid::ConstPtr g);
   virtual ~FloatKill();
 
   virtual void init();

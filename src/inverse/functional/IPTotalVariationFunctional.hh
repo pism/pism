@@ -33,7 +33,7 @@ namespace inverse {
 */
 class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  IPTotalVariationFunctional2S(const IceGrid &grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(IceGrid::ConstPtr grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
 
   virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
   virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);

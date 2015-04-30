@@ -35,7 +35,7 @@ namespace pism {
 template <class Model, class Mod>
 class PLapseRates : public Mod {
 public:
-  PLapseRates(const IceGrid &g, Model* in)
+  PLapseRates(IceGrid::ConstPtr g, Model* in)
     : Mod(g, in) {
     m_temp_lapse_rate = 0.0;
   }
@@ -47,7 +47,7 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) {
     // "Periodize" the climate:
-    t = Mod::m_grid.ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
+    t = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
     MaxTimestep input_max_dt = Mod::input_model->max_timestep(t);
     MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
@@ -65,7 +65,7 @@ protected:
     double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
-    my_t = Mod::m_grid.ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
+    my_t = Mod::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
         (fabs(my_dt - dt) < 1e-12)) {
@@ -84,7 +84,7 @@ protected:
   }
 
   virtual void init_internal() {
-    const IceGrid &g = Mod::m_grid;
+    IceGrid::ConstPtr g = Mod::m_grid;
 
     options::String file(m_option_prefix + "_file",
                          "Specifies a file with top-surface boundary conditions");
@@ -121,7 +121,7 @@ protected:
       unsigned int buffer_size = (unsigned int) Mod::m_config->get_double("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
-      PIO nc(g.com, "netcdf3");
+      PIO nc(g->com, "netcdf3");
       nc.open(file, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
                                               Mod::m_sys);
@@ -160,8 +160,8 @@ protected:
     }
 
     const IceModelVec2S
-      *surface = Mod::m_grid.variables().get_2d_scalar("surface_altitude"),
-      *thk     = Mod::m_grid.variables().get_2d_scalar("land_ice_thickness");
+      *surface = Mod::m_grid->variables().get_2d_scalar("surface_altitude"),
+      *thk     = Mod::m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     IceModelVec::AccessList list;
     list.add(*thk);
@@ -169,7 +169,7 @@ protected:
     list.add(m_reference_surface);
     list.add(result);
 
-    for (Points p(Mod::m_grid); p; p.next()) {
+    for (Points p(*Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*thk)(i,j) > 0) {

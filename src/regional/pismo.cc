@@ -66,7 +66,7 @@ Instead see the ForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, Context::Ptr c)
+  IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
      : IceModel(g,c) {};
 protected:
   virtual void set_vars_from_options();
@@ -98,10 +98,10 @@ private:
 void IceRegionalModel::set_no_model_strip(double strip) {
 
   IceModelVec::AccessList list(no_model_mask);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (in_null_strip(m_grid, i, j, strip) == true) {
+    if (in_null_strip(*m_grid, i, j, strip) == true) {
       no_model_mask(i, j) = 1;
     } else {
       no_model_mask(i, j) = 0;
@@ -135,7 +135,7 @@ void IceRegionalModel::createVecs() {
   no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   no_model_mask.set_time_independent(true);
   no_model_mask.set(NMMASK_NORMAL);
-  m_grid.variables().add(no_model_mask);
+  m_grid->variables().add(no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   usurfstore.create(m_grid, "usurfstore", WITH_GHOSTS, 2);
@@ -143,7 +143,7 @@ void IceRegionalModel::createVecs() {
                        "saved surface elevation for use to keep surface gradient constant in no_model strip",
                        "m",
                        ""); //  no standard name
-  m_grid.variables().add(usurfstore);
+  m_grid->variables().add(usurfstore);
 
   // stencil width of 1 needed for differentiation
   thkstore.create(m_grid, "thkstore", WITH_GHOSTS, 1);
@@ -151,7 +151,7 @@ void IceRegionalModel::createVecs() {
                      "saved ice thickness for use to keep driving stress constant in no_model strip",
                      "m",
                      ""); //  no standard name
-  m_grid.variables().add(thkstore);
+  m_grid->variables().add(thkstore);
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.
@@ -162,9 +162,9 @@ void IceRegionalModel::createVecs() {
 
   if (config->get_boolean("ssa_dirichlet_bc")) {
     // remove the bc_mask variable from the dictionary
-    m_grid.variables().remove("bc_mask");
+    m_grid->variables().remove("bc_mask");
 
-    m_grid.variables().add(no_model_mask, "bc_mask");
+    m_grid->variables().add(no_model_mask, "bc_mask");
   }
 }
 
@@ -265,7 +265,7 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 
 
 void IceRegionalModel::initFromFile(const std::string &filename) {
-  PIO nc(m_grid.com, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode");
 
   bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
 
@@ -385,7 +385,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(vWork3d);
   list.add(Enth3);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) < 0.5) {
@@ -395,7 +395,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
     double *new_enthalpy = vWork3d.get_column(i, j);
     double *old_enthalpy = Enth3.get_column(i, j);
 
-    for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
+    for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
       new_enthalpy[k] = old_enthalpy[k];
     }
   }
@@ -403,7 +403,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
   list.add(basal_melt_rate);
   list.add(bmr_stored);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) < 0.5) {
@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     // initialize the ice dynamics model
-    IceGrid g(ctx);
+    IceGrid::Ptr g(new IceGrid(ctx));
     IceRegionalModel m(g, ctx);
 
     m.init();

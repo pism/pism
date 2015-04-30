@@ -38,7 +38,7 @@ namespace stressbalance {
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
 public:
-  ShallowStressBalance(const IceGrid &g, EnthalpyConverter::Ptr e);
+  ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -106,7 +106,7 @@ protected:
 */
 class ZeroSliding : public ShallowStressBalance {
 public:
-  ZeroSliding(const IceGrid &g, EnthalpyConverter::Ptr e);
+  ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~ZeroSliding();
   
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
@@ -123,7 +123,7 @@ protected:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(const IceGrid &g, EnthalpyConverter::Ptr e);
+  PrescribedSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
   virtual void init();

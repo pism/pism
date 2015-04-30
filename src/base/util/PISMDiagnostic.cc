@@ -23,8 +23,8 @@
 
 namespace pism {
 
-Diagnostic::Diagnostic(const IceGrid &g)
-  : m_grid(g), m_sys(g.ctx()->unit_system()) {
+Diagnostic::Diagnostic(IceGrid::ConstPtr g)
+  : m_grid(g), m_sys(g->ctx()->unit_system()) {
   m_output_datatype = PISM_FLOAT;
   m_dof = 1;
 }
@@ -59,7 +59,7 @@ void Diagnostic::set_zlevels(std::vector<double> &zlevels) {
 //! Get a metadata object corresponding to variable number N.
 SpatialVariableMetadata Diagnostic::get_metadata(int N) {
   if (N >= m_dof) {
-    return SpatialVariableMetadata(m_grid.ctx()->unit_system(), "missing");
+    return SpatialVariableMetadata(m_grid->ctx()->unit_system(), "missing");
   }
 
   return m_vars[N];
@@ -67,9 +67,9 @@ SpatialVariableMetadata Diagnostic::get_metadata(int N) {
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define(const PIO &nc) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
   for (int j = 0; j < m_dof; ++j) {
-    io::define_spatial_variable(m_vars[j], m_grid, nc, m_output_datatype, order, true);
+    io::define_spatial_variable(m_vars[j], *m_grid, nc, m_output_datatype, order, true);
   }
 }
 

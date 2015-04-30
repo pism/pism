@@ -28,8 +28,8 @@
 namespace pism {
 namespace hydrology {
 
-Routing::Routing(const IceGrid &g)
-    : Hydrology(g)
+Routing::Routing(IceGrid::ConstPtr g)
+  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy())
 {
   m_stripwidth = m_config->get_double("hydrology_null_strip_width");
 
@@ -198,9 +198,9 @@ void Routing::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   IceModelVec::AccessList list;
   list.add(waterthk);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (waterthk(i,j) < 0.0) {
@@ -237,8 +237,8 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   double fresh_water_density = m_config->get_double("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
 
-  const IceModelVec2S *cellarea = m_grid.variables().get_2d_scalar("cell_area");
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S *cellarea = m_grid->variables().get_2d_scalar("cell_area");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -247,7 +247,7 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   list.add(*cellarea);
   list.add(*mask);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
@@ -266,9 +266,9 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   }
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
-  icefreelost  = GlobalSum(m_grid.com, my_icefreelost);
-  oceanlost    = GlobalSum(m_grid.com, my_oceanlost);
-  negativegain = GlobalSum(m_grid.com, my_negativegain);
+  icefreelost  = GlobalSum(m_grid->com, my_icefreelost);
+  oceanlost    = GlobalSum(m_grid->com, my_oceanlost);
+  negativegain = GlobalSum(m_grid->com, my_negativegain);
 
   if (m_stripwidth <= 0.0) {
     nullstriplost = 0.0;
@@ -276,17 +276,17 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   }
 
   double my_nullstriplost = 0.0;
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-    if (in_null_strip(m_grid, i, j, m_stripwidth)) {
+    if (in_null_strip(*m_grid, i, j, m_stripwidth)) {
       my_nullstriplost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
     }
   }
 
-  nullstriplost = GlobalSum(m_grid.com, my_nullstriplost);
+  nullstriplost = GlobalSum(m_grid->com, my_nullstriplost);
 }
 
 
@@ -312,8 +312,8 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
   const double
     rg = m_config->get_double("fresh_water_density") * m_config->get_double("standard_gravity");
 
-  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   subglacial_water_pressure(result);
   result.add(rg, *bed); // result  <-- P + rhow g b
@@ -328,7 +328,7 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
   list.add(*mask);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ocean(i,j)) {
@@ -343,7 +343,7 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
 either ice-free or floating areas. */
 void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
   MaskQuery M(*mask);
 
   IceModelVec::AccessList list;
@@ -351,7 +351,7 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
   list.add(m_W);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // east
@@ -410,7 +410,7 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
 
   IceModelVec::AccessList list(result);
 
-  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   // the following calculation is bypassed if beta == 2.0 exactly; it puts
   // the squared norm of the gradient of the simplified hydrolic potential
@@ -421,15 +421,15 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
     m_R.update_ghosts();
 
     list.add(m_R);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double dRdx, dRdy;
-      dRdx = (m_R(i+1,j) - m_R(i,j)) / m_grid.dx();
-      dRdy = (m_R(i+1,j+1) + m_R(i,j+1) - m_R(i+1,j-1) - m_R(i,j-1)) / (4.0 * m_grid.dy());
+      dRdx = (m_R(i+1,j) - m_R(i,j)) / m_dx;
+      dRdy = (m_R(i+1,j+1) + m_R(i,j+1) - m_R(i+1,j-1) - m_R(i,j-1)) / (4.0 * m_dy);
       result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
-      dRdx = (m_R(i+1,j+1) + m_R(i+1,j) - m_R(i-1,j+1) - m_R(i-1,j)) / (4.0 * m_grid.dx());
-      dRdy = (m_R(i,j+1) - m_R(i,j)) / m_grid.dy();
+      dRdx = (m_R(i+1,j+1) + m_R(i+1,j) - m_R(i-1,j+1) - m_R(i-1,j)) / (4.0 * m_dx);
+      dRdy = (m_R(i,j+1) - m_R(i,j)) / m_dy;
       result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
     }
   }
@@ -437,7 +437,7 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
   double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
 
   list.add(m_Wstag);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
@@ -456,7 +456,7 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
     }
   }
 
-  maxKW = GlobalMax(m_grid.com, mymaxKW);
+  maxKW = GlobalMax(m_grid->com, mymaxKW);
 }
 
 
@@ -485,7 +485,7 @@ void Routing::wall_melt(IceModelVec2S &result) {
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
-  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
@@ -501,24 +501,24 @@ void Routing::wall_melt(IceModelVec2S &result) {
   list.add(m_W);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double dRdx, dRdy;
 
     if (m_W(i,j) > 0.0) {
       dRdx = 0.0;
       if (m_W(i+1,j) > 0.0) {
-        dRdx =  (m_R(i+1,j) - m_R(i,j)) / (2.0 * m_grid.dx());
+        dRdx =  (m_R(i+1,j) - m_R(i,j)) / (2.0 * m_dx);
       }
       if (m_W(i-1,j) > 0.0) {
-        dRdx += (m_R(i,j) - m_R(i-1,j)) / (2.0 * m_grid.dx());
+        dRdx += (m_R(i,j) - m_R(i-1,j)) / (2.0 * m_dx);
       }
       dRdy = 0.0;
       if (m_W(i,j+1) > 0.0) {
-        dRdy =  (m_R(i,j+1) - m_R(i,j)) / (2.0 * m_grid.dy());
+        dRdy =  (m_R(i,j+1) - m_R(i,j)) / (2.0 * m_dy);
       }
       if (m_W(i,j-1) > 0.0) {
-        dRdy += (m_R(i,j) - m_R(i,j-1)) / (2.0 * m_grid.dy());
+        dRdy += (m_R(i,j) - m_R(i,j-1)) / (2.0 * m_dy);
       }
       result(i,j) = CC * pow(m_W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
     } else {
@@ -554,7 +554,7 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) {
 
   subglacial_water_pressure(m_R);  // R=P; yes, it updates ghosts
 
-  const IceModelVec2S *bed = m_grid.variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   IceModelVec::AccessList list;
   list.add(m_R);
@@ -563,30 +563,32 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) {
   list.add(*bed);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_Wstag(i,j,0) > 0.0) {
-      dPdx = (m_R(i+1,j) - m_R(i,j)) / m_grid.dx();
-      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / m_grid.dx();
+      dPdx = (m_R(i+1,j) - m_R(i,j)) / m_dx;
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / m_dx;
       result(i,j,0) = - m_Kstag(i,j,0) * (dPdx + rg * dbdx);
     } else {
       result(i,j,0) = 0.0;
     }
 
     if (m_Wstag(i,j,1) > 0.0) {
-      dPdy = (m_R(i,j+1) - m_R(i,j)) / m_grid.dy();
-      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / m_grid.dy();
+      dPdy = (m_R(i,j+1) - m_R(i,j)) / m_dy;
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / m_dy;
       result(i,j,1) = - m_Kstag(i,j,1) * (dPdy + rg * dbdy);
     } else {
       result(i,j,1) = 0.0;
     }
 
-    if (in_null_strip(m_grid, i,j, m_stripwidth) || in_null_strip(m_grid, i+1,j, m_stripwidth)) {
+    if (in_null_strip(*m_grid, i,j, m_stripwidth) or
+        in_null_strip(*m_grid, i+1,j, m_stripwidth)) {
       result(i,j,0) = 0.0;
     }
 
-    if (in_null_strip(m_grid, i,j, m_stripwidth) || in_null_strip(m_grid, i,j+1, m_stripwidth)) {
+    if (in_null_strip(*m_grid, i,j, m_stripwidth) or
+        in_null_strip(*m_grid, i,j+1, m_stripwidth)) {
       result(i,j,1) = 0.0;
     }
   }
@@ -607,7 +609,7 @@ void Routing::advective_fluxes(IceModelVec2Stag &result) {
 
   assert(m_W.get_stencil_width() >= 1);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j,0) = (m_V(i,j,0) >= 0.0) ? m_V(i,j,0) * m_W(i,j) :  m_V(i,j,0) * m_W(i+1,j);
@@ -630,8 +632,8 @@ void Routing::adaptive_for_W_evolution(double t_current, double t_end, double ma
   std::vector<double> tmp = m_V.absmaxcomponents();
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
-  dtCFL_result = 0.5 / (tmp[0]/m_grid.dx() + tmp[1]/m_grid.dy()); // FIXME: is regularization needed?
-  dtDIFFW_result = 1.0/(m_grid.dx()*m_grid.dx()) + 1.0/(m_grid.dy()*m_grid.dy());
+  dtCFL_result = 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
+  dtDIFFW_result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
   dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
   dt_result = std::min(t_end - t_current, dtmax);
@@ -664,7 +666,7 @@ void Routing::raw_update_Wtil(double hdt) {
   list.add(m_Wtilnew);
   list.add(m_total_input);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     m_Wtilnew(i,j) = m_Wtil(i,j) + hdt * (m_total_input(i,j) - C);
@@ -676,8 +678,8 @@ void Routing::raw_update_Wtil(double hdt) {
 //! The computation of Wnew, called by update().
 void Routing::raw_update_W(double hdt) {
   const double
-    wux  = 1.0 / (m_grid.dx() * m_grid.dx()),
-    wuy  = 1.0 / (m_grid.dy() * m_grid.dy()),
+    wux  = 1.0 / (m_dx * m_dx),
+    wuy  = 1.0 / (m_dy * m_dy),
     rg   = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water_density");
   double divadflux, diffW;
 
@@ -691,11 +693,11 @@ void Routing::raw_update_W(double hdt) {
   list.add(m_total_input);
   list.add(m_Wnew);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_grid.dx()
-      + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_grid.dy();
+    divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_dx
+      + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_dy;
     const double  De = rg * m_Kstag(i,  j,0) * m_Wstag(i,  j,0),
       Dw = rg * m_Kstag(i-1,j,0) * m_Wstag(i-1,j,0),
       Dn = rg * m_Kstag(i,j  ,1) * m_Wstag(i,j  ,1),
@@ -737,7 +739,7 @@ void Routing::update_impl(double icet, double icedt) {
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
   MaskQuery M(*mask);
 
   double ht = m_t, hdt = 0.0, // hydrology model time and time step

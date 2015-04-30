@@ -45,7 +45,7 @@ class SSB_Modifier;
 class StressBalance : public Component
 {
 public:
-  StressBalance(const IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
+  StressBalance(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.

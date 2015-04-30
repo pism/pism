@@ -29,6 +29,7 @@
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
 #include "iceModel.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 
@@ -51,7 +52,7 @@ namespace pism {
 */
 void IceModel::energyStep() {
 
-  const Profiling &profiling = m_grid.ctx()->profiling();
+  const Profiling &profiling = m_grid->ctx()->profiling();
 
   unsigned int
     myVertSacrCount = 0,
@@ -92,7 +93,7 @@ void IceModel::energyStep() {
 
     vWork3d.update_ghosts(Enth3);
 
-    gLiquifiedVol = GlobalSum(m_grid.com, myLiquifiedVol);
+    gLiquifiedVol = GlobalSum(m_grid->com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
       m_log->message(1,
                  "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
@@ -103,9 +104,9 @@ void IceModel::energyStep() {
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   CFLviolcount = countCFLViolations();
 
-  gVertSacrCount = GlobalSum(m_grid.com, myVertSacrCount);
+  gVertSacrCount = GlobalSum(m_grid->com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (m_grid.Mx() * m_grid.My()));
+    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (m_grid->Mx() * m_grid->My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
         getVerbosityLevel() > 2) {
@@ -115,7 +116,7 @@ void IceModel::energyStep() {
     }
   }
 
-  gBulgeCount = GlobalSum(m_grid.com, myBulgeCount);
+  gBulgeCount = GlobalSum(m_grid->com, myBulgeCount);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
@@ -157,7 +158,7 @@ void IceModel::combine_basal_melt_rate() {
   list.add(basal_melt_rate);
   list.add(shelfbmassflux);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double lambda = 1.0;      // 1.0 corresponds to the grounded case
@@ -207,9 +208,9 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   list.add(ice_thickness);
   list.add(vMask);
   list.add(ice_surface_temp);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.grounded(i,j)) {

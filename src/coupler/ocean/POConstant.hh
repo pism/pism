@@ -29,7 +29,7 @@ namespace ocean {
 //! sub-shelf heat flux.
 class Constant : public OceanModel {
 public:
-  Constant(const IceGrid &g);
+  Constant(IceGrid::ConstPtr g);
   virtual ~Constant();
 protected:
   virtual MaxTimestep max_timestep_impl(double t);

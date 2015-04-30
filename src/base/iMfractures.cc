@@ -35,7 +35,7 @@ namespace pism {
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
 void IceModel::calculateFractureDensity() {
-  const double dx = m_grid.dx(), dy = m_grid.dy(), Mx = m_grid.Mx(), My = m_grid.My();
+  const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
 
   IceModelVec2S
     &vFDnew = vWork2d[0],
@@ -138,7 +138,7 @@ void IceModel::calculateFractureDensity() {
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     tempFD=0;

@@ -29,7 +29,7 @@ namespace pism {
 
 template<int DOF, class U> class SNESProblem {
 public:
-  SNESProblem(const IceGrid &g);
+  SNESProblem(IceGrid::ConstPtr g);
 
   virtual ~SNESProblem();
 
@@ -47,7 +47,7 @@ protected:
   virtual void compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
   virtual void compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
 
-  const IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
 
   petsc::Vec m_X;
   petsc::SNES m_snes;
@@ -102,18 +102,18 @@ PetscErrorCode SNESProblem<DOF,U>::jacobian_callback(DMDALocalInfo *info,
 }
 
 template<int DOF, class U>
-SNESProblem<DOF, U>::SNESProblem(const IceGrid &g)
+SNESProblem<DOF, U>::SNESProblem(IceGrid::ConstPtr g)
   : m_grid(g) {
 
   PetscErrorCode ierr;
 
   int stencil_width=1;
-  m_DA = m_grid.get_dm(DOF, stencil_width);
+  m_DA = m_grid->get_dm(DOF, stencil_width);
 
   ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");
 
-  ierr = SNESCreate(m_grid.com, m_snes.rawptr());
+  ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
@@ -181,7 +181,7 @@ void SNESProblem<DOF,U>::solve() {
                                   name().c_str(), SNESConvergedReasons[reason]);
   }
 
-  m_grid.ctx()->log()->message(1, "SNESProblem %s converged (SNES reason %s)\n",
+  m_grid->ctx()->log()->message(1, "SNESProblem %s converged (SNES reason %s)\n",
                                name().c_str(), SNESConvergedReasons[reason]);
 }
 

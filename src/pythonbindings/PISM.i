@@ -50,6 +50,7 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
+#include "base/util/Profiling.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values

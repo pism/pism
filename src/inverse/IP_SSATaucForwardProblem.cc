@@ -29,15 +29,15 @@
 namespace pism {
 namespace inverse {
 
-IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(const IceGrid &g, EnthalpyConverter::Ptr e,
+IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e,
                                                    IPDesignVariableParameterization &tp)
   : SSAFEM(g, e),
     m_zeta(NULL),
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
-    m_element_index(m_grid),
-    m_quadrature(g, 1.0),
-    m_quadrature_vector(g, 1.0),
+    m_element_index(*m_grid),
+    m_quadrature(*g, 1.0),
+    m_quadrature_vector(*g, 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }
@@ -75,7 +75,7 @@ void IP_SSATaucForwardProblem::construct() {
   PISM_CHK(ierr, "DMCreateMatrix");
 #endif
 
-  ierr = KSPCreate(m_grid.com, m_ksp.rawptr());
+  ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
 
   double ksp_rtol = 1e-12;
@@ -265,7 +265,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     du_a[i][j].u = 0.0;
@@ -304,7 +304,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
     for (int i = xs; i < xs + xm; i++) {
       for (int j = ys; j < ys + ym; j++) {
@@ -319,7 +319,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, m_grid);
+        m_dofmap.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
@@ -394,7 +394,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                Vec dzeta) {
-  petsc::DM::Ptr da2 = m_grid.get_dm(1, m_config->get_double("grid_max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid_max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }
@@ -453,7 +453,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     dzeta_a[i][j] = 0;
@@ -461,7 +461,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
     for (int i=xs; i<xs+xm; i++) {
       for (int j=ys; j<ys+ym; j++) {
@@ -469,7 +469,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, m_grid);
+        m_dofmap.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
@@ -517,7 +517,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 
   dirichletBC.finish();
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dtauc_dzeta;
@@ -578,7 +578,7 @@ void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMode
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid.com,
+    verbPrintf(4, m_grid->com,
                "IP_SSATaucForwardProblem::apply_linearization converged"
                " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
@@ -651,7 +651,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid.com,
+    verbPrintf(4, m_grid->com,
                "IP_SSATaucForwardProblem::apply_linearization converged"
                " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);

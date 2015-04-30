@@ -52,7 +52,7 @@ namespace pism {
  */
 class Diagnostic {
 public:
-  Diagnostic(const IceGrid &g);
+  Diagnostic(IceGrid::ConstPtr g);
   virtual ~Diagnostic();
 
   virtual void update_cumulative();
@@ -76,7 +76,7 @@ public:
                  int N = 0);
 protected:
   //! the grid
-  const IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
   //! the unit system
   const units::System::Ptr m_sys;
   //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
@@ -100,8 +100,8 @@ protected:
 //! @brief PISM's scalar time-series diagnostics.
 class TSDiagnostic {
 public:
-  TSDiagnostic(const IceGrid &g)
-    : m_grid(g), m_sys(g.ctx()->unit_system()), m_ts(NULL) {
+  TSDiagnostic(IceGrid::ConstPtr g)
+    : m_grid(g), m_sys(g->ctx()->unit_system()), m_ts(NULL) {
   }
 
   virtual ~TSDiagnostic() {
@@ -134,7 +134,7 @@ public:
 
 protected:
   //! the grid
-  const IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
   //! the unit system
   const units::System::Ptr m_sys;
   DiagnosticTimeseries *m_ts;
@@ -145,8 +145,8 @@ class TSDiag : public TSDiagnostic {
 public:
   TSDiag(Model *m)
     : TSDiagnostic(m->grid()), model(m) {
-    m_time_units = m_grid.ctx()->time()->CF_units_string();
-    m_time_dimension_name = m_grid.ctx()->config()->get_string("time_dimension_name");
+    m_time_units = m_grid->ctx()->time()->CF_units_string();
+    m_time_dimension_name = m_grid->ctx()->config()->get_string("time_dimension_name");
   }
 protected:
   Model *model;

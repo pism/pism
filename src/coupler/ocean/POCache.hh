@@ -27,7 +27,7 @@ namespace pism {
 namespace ocean {
 class Cache : public OceanModifier {
 public:
-  Cache(const IceGrid &g, OceanModel* in);
+  Cache(IceGrid::ConstPtr g, OceanModel* in);
   virtual ~Cache();
 
 protected:

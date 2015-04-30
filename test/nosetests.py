@@ -639,7 +639,7 @@ def pism_context_test():
     logger = PISM.Logger(com, 2)
 
     config = PISM.DefaultConfig(com, "pism_config", "-config", system)
-    config.init_with_default()
+    config.init_with_default(logger)
 
     EC = PISM.EnthalpyConverter(config)
 

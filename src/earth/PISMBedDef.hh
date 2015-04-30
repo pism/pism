@@ -31,7 +31,7 @@ namespace bed {
 //! PISM bed deformation model (base class).
 class BedDef : public Component_TS {
 public:
-  BedDef(const IceGrid &g);
+  BedDef(IceGrid::ConstPtr g);
   virtual ~BedDef();
 
   void init();
@@ -81,7 +81,7 @@ protected:
 
 class PBNull : public BedDef {
 public:
-  PBNull(const IceGrid &g);
+  PBNull(IceGrid::ConstPtr g);
 protected:
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
@@ -92,7 +92,7 @@ protected:
 //! Pointwide isostasy bed deformation model.
 class PBPointwiseIsostasy : public BedDef {
 public:
-  PBPointwiseIsostasy(const IceGrid &g); 
+  PBPointwiseIsostasy(IceGrid::ConstPtr g); 
   virtual ~PBPointwiseIsostasy();
 protected:
   virtual MaxTimestep max_timestep_impl(double t);

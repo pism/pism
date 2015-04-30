@@ -26,7 +26,7 @@
 namespace pism {
 namespace bed {
 
-PBPointwiseIsostasy::PBPointwiseIsostasy(const IceGrid &g)
+PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid::ConstPtr g)
   : BedDef(g) {
   m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
 }
@@ -42,7 +42,7 @@ void PBPointwiseIsostasy::init_impl() {
   m_log->message(2,
              "* Initializing the pointwise isostasy bed deformation model...\n");
 
-  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   m_thk_last.copy_from(*ice_thickness);
 }
 
@@ -67,7 +67,7 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
   if ((dt_beddef < m_config->get_double("bed_def_interval_years", "years", "seconds") &&
-       t_final < m_grid.ctx()->time()->end()) ||
+       t_final < m_grid->ctx()->time()->end()) ||
       dt_beddef < 1e-12) {
     return;
   }

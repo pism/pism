@@ -31,14 +31,14 @@ void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
   list.add(thickness);
   list.add(out_mask);
   list.add(out_surface);
-  const IceGrid *grid = bed.get_grid();
+  const IceGrid &grid = *bed.get_grid();
   
   unsigned int stencil = out_mask.get_stencil_width();
   assert(bed.get_stencil_width()         >= stencil);
   assert(thickness.get_stencil_width()   >= stencil);
   assert(out_surface.get_stencil_width() >= stencil);
 
-  for (PointsWithGhosts p(*grid, stencil); p; p.next()) {
+  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int mask_value;

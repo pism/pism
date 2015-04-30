@@ -30,7 +30,7 @@ namespace surface {
 class Given : public PGivenClimate<SurfaceModifier,SurfaceModel>
 {
 public:
-  Given(const IceGrid &g);
+  Given(IceGrid::ConstPtr g);
   virtual ~Given();
 protected:
   void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);

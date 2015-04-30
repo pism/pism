@@ -27,7 +27,7 @@ namespace ocean {
 class GivenTH : public PGivenClimate<OceanModifier,OceanModel>
 {
 public:
-  GivenTH(const IceGrid &g);
+  GivenTH(IceGrid::ConstPtr g);
   virtual ~GivenTH();
 
   class Constants {

@@ -30,7 +30,7 @@ namespace surface {
 class StuffAsAnomaly : public SurfaceModifier
 {
 public:
-  StuffAsAnomaly(const IceGrid &g, SurfaceModel *input);
+  StuffAsAnomaly(IceGrid::ConstPtr g, SurfaceModel *input);
   virtual ~StuffAsAnomaly();
 protected:
   virtual void init_impl();

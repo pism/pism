@@ -37,7 +37,7 @@
 namespace pism {
 namespace surface {
 // Surface
-Factory::Factory(const IceGrid& g)
+Factory::Factory(IceGrid::ConstPtr  g)
   : PCFactory<SurfaceModel,SurfaceModifier>(g) {
   m_option = "surface";
 

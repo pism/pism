@@ -29,7 +29,7 @@ namespace surface {
 class LapseRates : public PLapseRates<SurfaceModel,SurfaceModifier>
 {
 public:
-  LapseRates(const IceGrid &g, SurfaceModel* in);
+  LapseRates(IceGrid::ConstPtr g, SurfaceModel* in);
   virtual ~LapseRates();
 protected:
   virtual void init_impl();

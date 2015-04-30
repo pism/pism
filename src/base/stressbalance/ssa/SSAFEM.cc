@@ -33,9 +33,9 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(const IceGrid &g, EnthalpyConverter::Ptr e)
-  : SSA(g, e), m_element_index(g), m_quadrature(m_grid, 1.0),
-    m_quadrature_vector(m_grid, 1.0) {
+SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
+  : SSA(g, e), m_element_index(*g), m_quadrature(*m_grid, 1.0),
+    m_quadrature_vector(*m_grid, 1.0) {
 
   PetscErrorCode ierr;
 
@@ -44,7 +44,7 @@ SSAFEM::SSAFEM(const IceGrid &g, EnthalpyConverter::Ptr e)
   m_earth_grav = m_config->get_double("standard_gravity");
   m_beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
 
-  ierr = SNESCreate(m_grid.com, m_snes.rawptr());
+  ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian.
@@ -101,7 +101,7 @@ SSAFEM::SSAFEM(const IceGrid &g, EnthalpyConverter::Ptr e)
   m_coefficients.resize(fem::Quadrature::Nq * nElements);
 }
 
-SSA* SSAFEMFactory(const IceGrid &g, EnthalpyConverter::Ptr ec) {
+SSA* SSAFEMFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
   return new SSAFEM(g, ec);
 }
 
@@ -177,7 +177,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {
     petsc::Viewer viewer;
-    ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
+    ierr = PetscViewerASCIIOpen(m_grid->com, filename->c_str(), viewer.rawptr());
     PISM_CHK(ierr, "PetscViewerASCIIOpen");
 
     ierr = PetscViewerASCIIPrintf(viewer, "SNES before SSASolve_FE\n");
@@ -216,7 +216,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
     bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
     if (view_solution) {
       petsc::Viewer viewer;
-      ierr = PetscViewerASCIIOpen(m_grid.com, filename->c_str(), viewer.rawptr());
+      ierr = PetscViewerASCIIOpen(m_grid->com, filename->c_str(), viewer.rawptr());
       PISM_CHK(ierr, "PetscViewerASCIIOpen");
 
       ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
@@ -250,7 +250,7 @@ void SSAFEM::cacheQuadPtValues() {
   double ice_density = m_config->get_double("ice_density");
 
   for (unsigned int q=0; q<Quadrature::Nq; q++) {
-    Enth_q[q] = new double[m_grid.Mz()];
+    Enth_q[q] = new double[m_grid->Mz()];
   }
 
   GeometryCalculator gc(sea_level, *m_config);
@@ -275,7 +275,7 @@ void SSAFEM::cacheQuadPtValues() {
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
     for (int i=xs; i<xs+xm; i++) {
       for (int j=ys; j<ys+ym; j++) {
@@ -329,7 +329,7 @@ void SSAFEM::cacheQuadPtValues() {
         // using getInternalColumn doesn't make this straightforward.  So we compute the values
         // by hand.
         const FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
-        for (unsigned int k = 0; k < m_grid.Mz(); k++) {
+        for (unsigned int k = 0; k < m_grid->Mz(); k++) {
           Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
           for (unsigned int q = 0; q < Quadrature::Nq; q++) {
             for (unsigned int p = 0; p < Quadrature::Nk; p++) {
@@ -342,8 +342,8 @@ void SSAFEM::cacheQuadPtValues() {
         for (unsigned int q = 0; q < Quadrature::Nq; q++) {
           // Evaluate column integrals in flow law at every quadrature point's column
           coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
-                                                            m_grid.kBelowHeight(coefficients[q].H),
-                                                            &(m_grid.z()[0]), Enth_q[q]);
+                                                            m_grid->kBelowHeight(coefficients[q].H),
+                                                            &(m_grid->z()[0]), Enth_q[q]);
         }
 
       } // j-loop
@@ -428,7 +428,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     residual_global[i][j].u = 0.0;
@@ -467,7 +467,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Obtain the value of the solution at the nodes adjacent to the element.
       m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
@@ -541,16 +541,16 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
     return;
   }
 
-  ierr = PetscPrintf(m_grid.com,
+  ierr = PetscPrintf(m_grid->com,
                      "SSA Solution and Function values (pointwise residuals)\n");
   PISM_CHK(ierr, "PetscPrintf");
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      ierr = PetscSynchronizedPrintf(m_grid.com,
+      ierr = PetscSynchronizedPrintf(m_grid->com,
                                      "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
                                      i, j,
                                      velocity_global[i][j].u, velocity_global[i][j].v,
@@ -566,7 +566,7 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
   ierr = PetscSynchronizedFlush(m_grid.com);
   PISM_CHK(ierr, "PetscSynchronizedFlush");
 #else
-  ierr = PetscSynchronizedFlush(m_grid.com, NULL);
+  ierr = PetscSynchronizedFlush(m_grid->com, NULL);
   PISM_CHK(ierr, "PetscSynchronizedFlush");
 #endif
 }
@@ -618,7 +618,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
     for (int i = xs; i < xs + xm; i++) {
       for (int j = ys; j < ys + ym; j++) {
@@ -637,7 +637,7 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, m_grid);
+        m_dofmap.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the adjacent nodes to the element.
         m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
@@ -779,7 +779,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
              "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
              file_name);
 
-  petsc::Viewer viewer(m_grid.com);
+  petsc::Viewer viewer(m_grid->com);
 
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
   PISM_CHK(ierr, "PetscViewerSetType");

@@ -47,7 +47,7 @@ const double Verification::Tmin = 223.15;  // K
 const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
-Verification::Verification(const IceGrid &g,
+Verification::Verification(IceGrid::ConstPtr g,
                            EnthalpyConverter::Ptr EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
@@ -61,7 +61,7 @@ void Verification::init_impl() {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(m_grid.ctx()->time()->current(), 0);
+  update(m_grid->ctx()->time()->current(), 0);
 }
 
 MaxTimestep Verification::max_timestep_impl(double t) {
@@ -105,10 +105,10 @@ void Verification::update_L() {
     Lsqr        = L * L;
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = radius(m_grid, i, j);
+    double r = radius(*m_grid, i, j);
     m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
@@ -181,13 +181,13 @@ void Verification::update_ABCDEH(double time) {
   m_ice_surface_temp.set(T0);
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = m_grid.x(i), yy = m_grid.y(j),
-        r = radius(m_grid, i, j);
+      double xx = m_grid->x(i), yy = m_grid->y(j),
+        r = radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -220,7 +220,7 @@ void Verification::update_ABCDEH(double time) {
 }
 
 void Verification::update_FG(double time) {
-  unsigned int   Mz = m_grid.Mz();
+  unsigned int   Mz = m_grid->Mz();
   double         H, accum;
 
   std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
@@ -228,10 +228,10 @@ void Verification::update_FG(double time) {
   IceModelVec::AccessList list(m_climatic_mass_balance);
   list.add(m_ice_surface_temp);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(radius(m_grid, i, j), 1.0); // avoid singularity at origin
+    double r = std::max(radius(*m_grid, i, j), 1.0); // avoid singularity at origin
 
     m_ice_surface_temp(i, j) = Tmin + ST * r;
 
@@ -239,10 +239,10 @@ void Verification::update_FG(double time) {
       accum = - ablationRateOutside / secpera;
     } else {
       if (m_testname == 'F') {
-        bothexact(0.0, r, &(m_grid.z()[0]), Mz, 0.0,
+        bothexact(0.0, r, &(m_grid->z()[0]), Mz, 0.0,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       } else {
-        bothexact(time, r, &(m_grid.z()[0]), Mz, ApforG,
+        bothexact(time, r, &(m_grid->z()[0]), Mz, ApforG,
                   &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       }
     }

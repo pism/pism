@@ -81,7 +81,7 @@ PSB_velbar::PSB_velbar(StressBalance *m)
 
 IceModelVec::Ptr PSB_velbar::compute() {
   // get the thickness
-  const IceModelVec2S* thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S* thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-integrated horizontal ice flux:
   IceModelVec2V::Ptr result = IceModelVec2V::ToVector(PSB_flux(model).compute());
@@ -94,7 +94,7 @@ IceModelVec::Ptr PSB_velbar::compute() {
   list.add(*thickness);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double thk = (*thickness)(i,j);
 
@@ -119,7 +119,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("_FillValue", units::convert(m_sys, m_grid.ctx()->config()->get_double("fill_value"),
+  m_vars[0].set_double("_FillValue", units::convert(m_sys, m_grid->ctx()->config()->get_double("fill_value"),
                                          "m/year", "m/s"));
   m_vars[0].set_double("valid_min", 0.0);
 }
@@ -136,10 +136,10 @@ IceModelVec::Ptr PSB_velbar_mag::compute() {
   // compute its magnitude:
   result->set_to_magnitude(*velbar);
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // mask out ice-free areas:
-  result->mask_by(*thickness, m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  result->mask_by(*thickness, m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
   return result;
 }
@@ -163,7 +163,7 @@ PSB_flux::PSB_flux(StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_flux::compute() {
-  double icefree_thickness = m_grid.ctx()->config()->get_double("mask_icefree_thickness_standard");
+  double icefree_thickness = m_grid->ctx()->config()->get_double("mask_icefree_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "flux", WITHOUT_GHOSTS);
@@ -171,7 +171,7 @@ IceModelVec::Ptr PSB_flux::compute() {
   result->metadata(1) = m_vars[1];
 
   // get the thickness
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -183,14 +183,14 @@ IceModelVec::Ptr PSB_flux::compute() {
   list.add(*thickness);
   list.add(*result);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double u_sum = 0, v_sum = 0,
         thk = (*thickness)(i,j);
-      int ks = m_grid.kBelowHeight(thk);
+      int ks = m_grid->kBelowHeight(thk);
 
       // an "ice-free" cell:
       if (thk < icefree_thickness) {
@@ -204,15 +204,15 @@ IceModelVec::Ptr PSB_flux::compute() {
       u_ij = u3.get_column(i, j);
       v_ij = v3.get_column(i, j);
 
-      if (thk <= m_grid.z(1)) {
+      if (thk <= m_grid->z(1)) {
         (*result)(i,j).u = u_ij[0];
         (*result)(i,j).v = v_ij[0];
         continue;
       }
 
       for (int k = 1; k <= ks; ++k) {
-        u_sum += (m_grid.z(k) - m_grid.z(k-1)) * (u_ij[k] + u_ij[k-1]);
-        v_sum += (m_grid.z(k) - m_grid.z(k-1)) * (v_ij[k] + v_ij[k-1]);
+        u_sum += (m_grid->z(k) - m_grid->z(k-1)) * (u_ij[k] + u_ij[k-1]);
+        v_sum += (m_grid->z(k) - m_grid->z(k-1)) * (v_ij[k] + v_ij[k-1]);
       }
 
       // Finish the trapezoidal rule integration (multiply by 1/2).
@@ -223,8 +223,8 @@ IceModelVec::Ptr PSB_flux::compute() {
       // we have at most dz meters of ice above grid.z(ks).
       // Assume that its velocity is (u_ij[ks], v_ij[ks]) and add its
       // contribution.
-      (*result)(i,j).u += u_ij[ks] * (thk - m_grid.z(ks));
-      (*result)(i,j).v += v_ij[ks] * (thk - m_grid.z(ks));
+      (*result)(i,j).u += u_ij[ks] * (thk - m_grid->z(ks));
+      (*result)(i,j).v += v_ij[ks] * (thk - m_grid->z(ks));
     }
   } catch (...) {
     loop.failed();
@@ -243,12 +243,12 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m)
 
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m2/year", "m2/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m2/year", "m2/s"));
   m_vars[0].set_double("valid_min", 0.0);
 }
 
 IceModelVec::Ptr PSB_flux_mag::compute() {
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-averaged horizontal ice velocity:
   IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(PSB_velbar_mag(model).compute());
@@ -257,14 +257,14 @@ IceModelVec::Ptr PSB_flux_mag::compute() {
   list.add(*thickness);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) *= (*thickness)(i,j);
   }
 
 
-  result->mask_by(*thickness, m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  result->mask_by(*thickness, m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
   result->metadata() = m_vars[0];
 
@@ -279,7 +279,7 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
 
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
   m_vars[0].set_double("valid_min", 0.0);
 }
 
@@ -297,7 +297,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute() {
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   u3.getHorSlice(*result, 0.0); // result = u_{z=0}
   v3.getHorSlice(tmp, 0.0);    // tmp = v_{z=0}
@@ -305,7 +305,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute() {
   result->set_to_magnitude(*result, tmp);
 
   // mask out ice-free areas
-  result->mask_by(*thickness, m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  result->mask_by(*thickness, m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
   return result;
 }
@@ -317,7 +317,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
 
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
   m_vars[0].set_double("valid_min",  0.0);
 }
 
@@ -336,7 +336,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute() {
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   u3.getSurfaceValues(*result, *thickness);
   v3.getSurfaceValues(tmp, *thickness);
@@ -344,7 +344,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute() {
   result->set_to_magnitude(*result, tmp);
 
   // mask out ice-free areas
-  result->mask_by(*thickness, m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  result->mask_by(*thickness, m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
   return result;
 }
@@ -366,15 +366,15 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
 
   m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
   m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
-  m_vars[1].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[1].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
 IceModelVec::Ptr PSB_velsurf::compute() {
-  double fill_value = m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s");
+  double fill_value = m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "surf", WITHOUT_GHOSTS);
@@ -388,7 +388,7 @@ IceModelVec::Ptr PSB_velsurf::compute() {
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   u3.getSurfaceValues(tmp, *thickness);
   result->set_component(0, tmp);
@@ -396,7 +396,7 @@ IceModelVec::Ptr PSB_velsurf::compute() {
   v3.getSurfaceValues(tmp, *thickness);
   result->set_component(1, tmp);
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -404,7 +404,7 @@ IceModelVec::Ptr PSB_velsurf::compute() {
   list.add(*mask);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ice_free(i, j)) {
@@ -421,7 +421,7 @@ PSB_wvel::PSB_wvel(StressBalance *m)
 
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "wvel",
-                                           m_grid.z()));
+                                           m_grid->z()));
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
@@ -435,11 +435,11 @@ IceModelVec::Ptr PSB_wvel::compute() {
   result3->metadata() = m_vars[0];
 
   const IceModelVec2S *bed, *uplift;
-  bed    = m_grid.variables().get_2d_scalar("bedrock_altitude");
-  uplift = m_grid.variables().get_2d_scalar("tendency_of_bedrock_altitude");
+  bed    = m_grid->variables().get_2d_scalar("bedrock_altitude");
+  uplift = m_grid->variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
-  const IceModelVec2S   *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int *mask      = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S   *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2Int *mask      = m_grid->variables().get_2d_mask("mask");
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -458,13 +458,13 @@ IceModelVec::Ptr PSB_wvel::compute() {
 
   MaskQuery M(*mask);
 
-  const double ice_density = m_grid.ctx()->config()->get_double("ice_density"),
-    sea_water_density = m_grid.ctx()->config()->get_double("sea_water_density"),
+  const double ice_density = m_grid->ctx()->config()->get_double("ice_density"),
+    sea_water_density = m_grid->ctx()->config()->get_double("sea_water_density"),
     R = ice_density / sea_water_density;
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double
@@ -473,7 +473,7 @@ IceModelVec::Ptr PSB_wvel::compute() {
         *w = w3.get_column(i, j);
       double *result = result3->get_column(i, j);
 
-      int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid->kBelowHeight((*thickness)(i,j));
 
       // in the ice:
       if (M.grounded(i,j)) {
@@ -493,7 +493,7 @@ IceModelVec::Ptr PSB_wvel::compute() {
       }
 
       // above the ice:
-      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
         result[k] = 0.0;
       }
 
@@ -516,11 +516,11 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
             "m s-1", "m year-1", 0);
   m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
 IceModelVec::Ptr PSB_wvelsurf::compute() {
-  double fill_value = m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s");
+  double fill_value = m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "wvelsurf", WITHOUT_GHOSTS);
@@ -528,11 +528,11 @@ IceModelVec::Ptr PSB_wvelsurf::compute() {
 
   IceModelVec3::Ptr w3 = IceModelVec3::To3DScalar(PSB_wvel(model).compute());
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   w3->getSurfaceValues(*result, *thickness);
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -540,7 +540,7 @@ IceModelVec::Ptr PSB_wvelsurf::compute() {
   list.add(*mask);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ice_free(i, j)) {
@@ -561,11 +561,11 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m)
             "m s-1", "m year-1", 0);
   m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
 IceModelVec::Ptr PSB_wvelbase::compute() {
-  double fill_value = m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s");
+  double fill_value = m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "wvelbase", WITHOUT_GHOSTS);
@@ -575,7 +575,7 @@ IceModelVec::Ptr PSB_wvelbase::compute() {
 
   w3->getHorSlice(*result, 0.0);
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -583,7 +583,7 @@ IceModelVec::Ptr PSB_wvelbase::compute() {
   list.add(*mask);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ice_free(i, j)) {
@@ -610,15 +610,15 @@ PSB_velbase::PSB_velbase(StressBalance *m)
 
   m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
-  m_vars[0].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 
   m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
-  m_vars[1].set_double("_FillValue", m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s"));
+  m_vars[1].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s"));
 }
 
 IceModelVec::Ptr PSB_velbase::compute() {
-  double fill_value = m_grid.ctx()->config()->get_double("fill_value", "m/year", "m/s");
+  double fill_value = m_grid->ctx()->config()->get_double("fill_value", "m/year", "m/s");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "base", WITHOUT_GHOSTS);
@@ -638,7 +638,7 @@ IceModelVec::Ptr PSB_velbase::compute() {
   v3.getHorSlice(tmp, 0.0);
   result->set_component(1, tmp);
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -646,7 +646,7 @@ IceModelVec::Ptr PSB_velbase::compute() {
   list.add(*mask);
   list.add(*result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ice_free(i, j)) {
@@ -685,7 +685,7 @@ PSB_uvel::PSB_uvel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "uvel", m_grid.z()));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "uvel", m_grid->z()));
 
   set_attrs("horizontal velocity of ice in the X direction", "land_ice_x_velocity",
             "m s-1", "m year-1", 0);
@@ -697,7 +697,7 @@ IceModelVec::Ptr PSB_uvel::compute() {
   result->create(m_grid, "uvel", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const IceModelVec3
     &u3 = model->velocity_u();
@@ -707,12 +707,12 @@ IceModelVec::Ptr PSB_uvel::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid->kBelowHeight((*thickness)(i,j));
 
       const double *u_ij = u3.get_column(i,j);
       double *u_out_ij = result->get_column(i,j);
@@ -722,7 +722,7 @@ IceModelVec::Ptr PSB_uvel::compute() {
         u_out_ij[k] = u_ij[k];
       }
       // above the ice:
-      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
         u_out_ij[k] = 0.0;
       }
     }
@@ -738,7 +738,7 @@ PSB_vvel::PSB_vvel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vvel", m_grid.z()));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "vvel", m_grid->z()));
 
   set_attrs("horizontal velocity of ice in the Y direction", "land_ice_y_velocity",
             "m s-1", "m year-1", 0);
@@ -750,7 +750,7 @@ IceModelVec::Ptr PSB_vvel::compute() {
   result->create(m_grid, "vvel", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const IceModelVec3
     &v3 = model->velocity_v();
@@ -760,12 +760,12 @@ IceModelVec::Ptr PSB_vvel::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid->kBelowHeight((*thickness)(i,j));
 
       const double *v_ij = v3.get_column(i,j);
       double *v_out_ij = result->get_column(i,j);
@@ -775,7 +775,7 @@ IceModelVec::Ptr PSB_vvel::compute() {
         v_out_ij[k] = v_ij[k];
       }
       // above the ice:
-      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
         v_out_ij[k] = 0.0;
       }
     }
@@ -791,7 +791,7 @@ PSB_wvel_rel::PSB_wvel_rel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "wvel_rel", m_grid.z()));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "wvel_rel", m_grid->z()));
 
   set_attrs("vertical velocity of ice, relative to base of ice directly below", "",
             "m s-1", "m year-1", 0);
@@ -803,7 +803,7 @@ IceModelVec::Ptr PSB_wvel_rel::compute() {
   result->create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const IceModelVec3
     &w3 = model->velocity_w();
@@ -813,12 +813,12 @@ IceModelVec::Ptr PSB_wvel_rel::compute() {
   list.add(*result);
   list.add(*thickness);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      int ks = m_grid->kBelowHeight((*thickness)(i,j));
 
       const double *w_ij = w3.get_column(i,j);
       double *w_out_ij = result->get_column(i,j);
@@ -828,7 +828,7 @@ IceModelVec::Ptr PSB_wvel_rel::compute() {
         w_out_ij[k] = w_ij[k];
       }
       // above the ice:
-      for (unsigned int k = ks+1; k < m_grid.Mz() ; k++) {
+      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
         w_out_ij[k] = 0.0;
       }
     }
@@ -846,7 +846,7 @@ PSB_strainheat::PSB_strainheat(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "strainheat", m_grid.z()));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "strainheat", m_grid->z()));
 
   set_attrs("rate of strain heating in ice (dissipation heating)", "",
             "W m-3", "mW m-3", 0);
@@ -886,7 +886,7 @@ IceModelVec::Ptr PSB_strain_rates::compute() {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   IceModelVec2V velbar_with_ghosts;
   velbar_with_ghosts.create(m_grid, "velbar", WITH_GHOSTS);
@@ -924,7 +924,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute() {
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   IceModelVec2V velbar_with_ghosts;
   velbar_with_ghosts.create(m_grid, "velbar", WITH_GHOSTS);
@@ -942,7 +942,7 @@ PSB_pressure::PSB_pressure(StressBalance *m)
 
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "pressure",
-                                           m_grid.z()));
+                                           m_grid->z()));
 
   set_attrs("pressure in ice (hydrostatic)", "", "Pa", "Pa", 0);
 }
@@ -953,28 +953,28 @@ IceModelVec::Ptr PSB_pressure::compute() {
   result->create(m_grid, "pressure", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*thickness);
 
-  const double rg = m_grid.ctx()->config()->get_double("ice_density") * m_grid.ctx()->config()->get_double("standard_gravity");
+  const double rg = m_grid->ctx()->config()->get_double("ice_density") * m_grid->ctx()->config()->get_double("standard_gravity");
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      unsigned int ks = m_grid->kBelowHeight((*thickness)(i,j));
       double *P_out_ij = result->get_column(i,j);
       const double H = (*thickness)(i,j);
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
-        P_out_ij[k] = rg * (H - m_grid.z(k));  // FIXME: add atmospheric pressure?
+        P_out_ij[k] = rg * (H - m_grid->z(k));  // FIXME: add atmospheric pressure?
       }
       // above the ice:
-      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
         P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
       }
     }
@@ -991,7 +991,7 @@ PSB_tauxz::PSB_tauxz(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "tauxz", m_grid.z()));
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "tauxz", m_grid->z()));
 
   set_attrs("shear stress xz component (in shallow ice approximation SIA)", "",
             "Pa", "Pa", 0);
@@ -1012,22 +1012,22 @@ IceModelVec::Ptr PSB_tauxz::compute() {
 
   const IceModelVec2S *thickness, *surface;
 
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  surface   = m_grid.variables().get_2d_scalar("surface_altitude");
+  thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*surface);
   list.add(*thickness);
 
-  const double rg = m_grid.ctx()->config()->get_double("ice_density") * m_grid.ctx()->config()->get_double("standard_gravity");
+  const double rg = m_grid->ctx()->config()->get_double("ice_density") * m_grid->ctx()->config()->get_double("standard_gravity");
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      unsigned int ks = m_grid->kBelowHeight((*thickness)(i,j));
       double *tauxz_out_ij = result->get_column(i, j);
       const double
         H    = (*thickness)(i,j),
@@ -1035,10 +1035,10 @@ IceModelVec::Ptr PSB_tauxz::compute() {
 
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
-        tauxz_out_ij[k] = - rg * (H - m_grid.z(k)) * dhdx;
+        tauxz_out_ij[k] = - rg * (H - m_grid->z(k)) * dhdx;
       }
       // above the ice:
-      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
         tauxz_out_ij[k] = 0.0;
       }
     }
@@ -1056,7 +1056,7 @@ PSB_tauyz::PSB_tauyz(StressBalance *m)
 
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "tauyz",
-                                           m_grid.z()));
+                                           m_grid->z()));
 
   set_attrs("shear stress yz component (in shallow ice approximation SIA)", "",
             "Pa", "Pa", 0);
@@ -1075,22 +1075,22 @@ IceModelVec::Ptr PSB_tauyz::compute() {
   result->create(m_grid, "tauyz", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2S *surface   = m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*surface);
   list.add(*thickness);
 
-  const double rg = m_grid.ctx()->config()->get_double("ice_density") * m_grid.ctx()->config()->get_double("standard_gravity");
+  const double rg = m_grid->ctx()->config()->get_double("ice_density") * m_grid->ctx()->config()->get_double("standard_gravity");
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      unsigned int ks = m_grid.kBelowHeight((*thickness)(i,j));
+      unsigned int ks = m_grid->kBelowHeight((*thickness)(i,j));
       double *tauyz_out_ij = result->get_column(i, j);
       const double
         H    = (*thickness)(i,j),
@@ -1098,10 +1098,10 @@ IceModelVec::Ptr PSB_tauyz::compute() {
 
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
-        tauyz_out_ij[k] = - rg * (H - m_grid.z(k)) * dhdy;
+        tauyz_out_ij[k] = - rg * (H - m_grid->z(k)) * dhdy;
       }
       // above the ice:
-      for (unsigned int k = ks + 1; k < m_grid.Mz(); ++k) {
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
         tauyz_out_ij[k] = 0.0;
       }
     }

@@ -29,7 +29,7 @@ class IceGrid;
 class ConstantYieldStress : public YieldStress
 {
 public:
-  ConstantYieldStress(const IceGrid &g);
+  ConstantYieldStress(IceGrid::ConstPtr g);
   virtual ~ConstantYieldStress();
 protected:
   virtual void init_impl();

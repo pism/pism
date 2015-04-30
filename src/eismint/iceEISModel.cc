@@ -34,7 +34,7 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid &g, Context::Ptr ctx)
+IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr ctx)
   : IceModel(g, ctx) {
   m_experiment = 'A';
 
@@ -66,7 +66,7 @@ IceEISModel::IceEISModel(IceGrid &g, Context::Ptr ctx)
 
 void IceEISModel::set_grid_defaults() {
   double Lx = 750e3;
-  m_grid.set_extent(0.0, 0.0, Lx, Lx);
+  m_grid->set_extent(0.0, 0.0, Lx, Lx);
 }
 
 void IceEISModel::setFromOptions() {
@@ -141,10 +141,10 @@ void IceEISModel::generateTroughTopography(IceModelVec2S &result) {
 
   IceModelVec::AccessList list;
   list.add(result);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double nsd = i * m_grid.dx(), ewd = j * m_grid.dy();
+    const double nsd = i * m_grid->dx(), ewd = j * m_grid->dy();
     if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
         (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
       result(i,j) = 1000.0 - std::max(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
@@ -164,10 +164,10 @@ void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
 
   IceModelVec::AccessList list;
   list.add(result);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double nsd = i * m_grid.dx(), ewd = j * m_grid.dy();
+    const double nsd = i * m_grid->dx(), ewd = j * m_grid->dy();
     result(i,j) = fabs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
 }

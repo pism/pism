@@ -37,7 +37,7 @@ namespace atmosphere {
  */
 class WeatherStation : public AtmosphereModel {
 public:
-  WeatherStation(const IceGrid &g);
+  WeatherStation(IceGrid::ConstPtr g);
   virtual ~WeatherStation();
 
   virtual void init();

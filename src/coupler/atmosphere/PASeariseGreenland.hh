@@ -31,7 +31,7 @@ namespace atmosphere {
 //! present-day temperature parameterization and stored precipitation data.
 class SeaRISEGreenland : public YearlyCycle {
 public:
-  SeaRISEGreenland(const IceGrid &g);
+  SeaRISEGreenland(IceGrid::ConstPtr g);
   virtual ~SeaRISEGreenland();
 
   virtual void init();

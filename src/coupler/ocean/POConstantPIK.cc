@@ -31,7 +31,7 @@
 namespace pism {
 namespace ocean {
 
-PIK::PIK(const IceGrid &g)
+PIK::PIK(IceGrid::ConstPtr g)
   : OceanModel(g),
     m_shelfbmassflux(m_sys, "shelfbmassflux"),
     m_shelfbtemp(m_sys, "shelfbtemp")
@@ -88,12 +88,12 @@ void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
     g           = m_config->get_double("standard_gravity"),
     ice_density = m_config->get_double("ice_density");
 
-  const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(H);
   list.add(result);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * H(i,j); // FIXME task #7297
     // temp is set to melting point at depth
@@ -117,12 +117,12 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
-  const IceModelVec2S &H = *m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(H);
   list.add(result);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // compute T_f[i][j] according to beckmann_goosse03, which has the
@@ -159,14 +159,14 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    io::define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    io::define_spatial_variable(m_shelfbmassflux, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
   }
 }
 

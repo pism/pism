@@ -73,7 +73,7 @@ class Logger;
 */
 class Timeseries {
 public:
-  Timeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
+  Timeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
   Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
   
@@ -161,7 +161,7 @@ private:
 */
 class DiagnosticTimeseries : public Timeseries {
 public:
-  DiagnosticTimeseries(const IceGrid * g, const std::string &name, const std::string &dimension_name);
+  DiagnosticTimeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
   ~DiagnosticTimeseries();
 
   void init(const std::string &filename);

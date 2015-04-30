@@ -39,7 +39,7 @@ namespace ocean {
 //! shelf bottom.
 class PIK : public OceanModel {
 public:
-  PIK(const IceGrid &g);
+  PIK(IceGrid::ConstPtr g);
   virtual ~PIK();
 
 protected:

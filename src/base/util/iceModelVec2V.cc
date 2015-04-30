@@ -42,7 +42,7 @@ IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
   return result;
 }
 
-void IceModelVec2V::create(const IceGrid &my_grid, const std::string &short_name,
+void IceModelVec2V::create(IceGrid::ConstPtr my_grid, const std::string &short_name,
                            IceModelVecKind ghostedp,
                            unsigned int stencil_width) {
 

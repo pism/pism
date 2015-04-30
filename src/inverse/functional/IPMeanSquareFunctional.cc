@@ -37,18 +37,18 @@ void IPMeanSquareFunctional2V::normalize(double scale) {
   if (m_weights) {
     IceModelVec::AccessList list;
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (*m_weights)(i, j);
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       value += 1;
     }
   }
 
-  m_normalization = GlobalSum(m_grid.com, value);
+  m_normalization = GlobalSum(m_grid->com, value);
   m_normalization *= (scale*scale);
 }
 
@@ -62,14 +62,14 @@ void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   if (m_weights) {
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       Vector2 &x_ij = x(i, j);
       value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v)*(*m_weights)(i, j);
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       Vector2 &x_ij = x(i, j);
@@ -78,7 +78,7 @@ void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   }
   value /= m_normalization;
 
-  GlobalSum( m_grid.com, &value, OUTPUT, 1);
+  GlobalSum( m_grid->com, &value, OUTPUT, 1);
 }
 
 void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT)  {
@@ -92,7 +92,7 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
 
   if (m_weights) {
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       Vector2 &a_ij = a(i, j);
@@ -100,7 +100,7 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
       value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v)*(*m_weights)(i, j);
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       Vector2 &a_ij = a(i, j);
@@ -110,7 +110,7 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
   }
   value /= m_normalization;
 
-  GlobalSum( m_grid.com, &value, OUTPUT, 1);
+  GlobalSum( m_grid->com, &value, OUTPUT, 1);
 }
 
 void IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
@@ -122,14 +122,14 @@ void IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradi
 
   if (m_weights) {
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       gradient(i, j).u = 2*x(i, j).u*(*m_weights)(i, j) / m_normalization;
       gradient(i, j).v = 2*x(i, j).v*(*m_weights)(i, j) / m_normalization;
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       gradient(i, j).u = 2*x(i, j).u / m_normalization;
@@ -151,18 +151,18 @@ void IPMeanSquareFunctional2S::normalize(double scale) {
 
   if (m_weights) {
     IceModelVec::AccessList list(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (*m_weights)(i, j);
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       value += 1;
     }
   }
 
-  m_normalization = GlobalSum(m_grid.com, value);
+  m_normalization = GlobalSum(m_grid->com, value);
   m_normalization *= (scale*scale);
 }
 
@@ -175,14 +175,14 @@ void IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
 
   if (m_weights) {
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double &x_ij = x(i, j);
       value += x_ij*x_ij*(*m_weights)(i, j);
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double &x_ij = x(i, j);
@@ -191,7 +191,7 @@ void IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
   }
   value /= m_normalization;
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
 void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT)  {
@@ -205,13 +205,13 @@ void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *O
 
   if (m_weights) {
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (a(i, j)*b(i, j))*(*m_weights)(i, j);
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (a(i, j)*b(i, j));
@@ -219,7 +219,7 @@ void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *O
   }
   value /= m_normalization;
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
 
@@ -232,13 +232,13 @@ void IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradi
 
   if (m_weights) {
     list.add(*m_weights);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       gradient(i, j) = 2*x(i, j)*(*m_weights)(i, j) / m_normalization;
     }
   } else {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       gradient(i, j) = 2*x(i, j) / m_normalization;

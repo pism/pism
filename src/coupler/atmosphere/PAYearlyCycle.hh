@@ -31,7 +31,7 @@ namespace atmosphere {
 //! (constant in time) precipitation field.
 class YearlyCycle : public AtmosphereModel {
 public:
-  YearlyCycle(const IceGrid &g);
+  YearlyCycle(IceGrid::ConstPtr g);
   virtual ~YearlyCycle();
 
   virtual void init();

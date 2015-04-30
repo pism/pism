@@ -35,7 +35,7 @@ namespace calving {
  */
 class OceanKill : public Component {
 public:
-  OceanKill(const IceGrid &g);
+  OceanKill(IceGrid::ConstPtr g);
   virtual ~OceanKill();
 
   virtual void init();

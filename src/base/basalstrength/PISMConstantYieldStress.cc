@@ -25,7 +25,7 @@
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(const IceGrid &g)
+ConstantYieldStress::ConstantYieldStress(IceGrid::ConstPtr g)
   : YieldStress(g) {
   // empty
 }

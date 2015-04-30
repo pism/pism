@@ -43,7 +43,7 @@ public:
   typedef PISM_SHARED_PTR(IceModelVec3Custom) Ptr;
   typedef PISM_SHARED_PTR(const IceModelVec3Custom) ConstPtr;
 
-  virtual void create(const IceGrid &mygrid,
+  virtual void create(IceGrid::ConstPtr mygrid,
                       const std::string &short_name,
                       const std::string &z_name,
                       const std::vector<double> &my_zlevels,

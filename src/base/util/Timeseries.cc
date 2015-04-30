@@ -32,12 +32,12 @@
 
 namespace pism {
 
-Timeseries::Timeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
-  : m_dimension(dimension_name, dimension_name, g->ctx()->unit_system()),
-    m_variable(name, dimension_name, g->ctx()->unit_system()),
-    m_bounds(dimension_name + "_bounds", dimension_name, g->ctx()->unit_system())
+Timeseries::Timeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name)
+  : m_dimension(dimension_name, dimension_name, g.ctx()->unit_system()),
+    m_variable(name, dimension_name, g.ctx()->unit_system()),
+    m_bounds(dimension_name + "_bounds", dimension_name, g.ctx()->unit_system())
 {
-  private_constructor(g->com, name, dimension_name);
+  private_constructor(g.com, name, dimension_name);
 }
 
 Timeseries::Timeseries(MPI_Comm c, units::System::Ptr unit_system,
@@ -301,13 +301,13 @@ int Timeseries::length() {
 
 //----- DiagnosticTimeseries
 
-DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid *g, const std::string &name, const std::string &dimension_name)
+DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name)
   : Timeseries(g, name, dimension_name) {
 
-  buffer_size = (size_t)g->ctx()->config()->get_double("timeseries_buffer_size");
+  buffer_size = (size_t)g.ctx()->config()->get_double("timeseries_buffer_size");
   m_start = 0;
   rate_of_change = false;
-  m_dimension.set_string("calendar", g->ctx()->time()->calendar());
+  m_dimension.set_string("calendar", g.ctx()->time()->calendar());
   m_dimension.set_string("long_name", "time");
   m_dimension.set_string("axis", "T");
 }

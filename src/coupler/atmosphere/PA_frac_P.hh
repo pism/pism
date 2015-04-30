@@ -28,7 +28,7 @@ namespace atmosphere {
 class Frac_P : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  Frac_P(const IceGrid &g, AtmosphereModel* in);
+  Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Frac_P();
 
   virtual void init();

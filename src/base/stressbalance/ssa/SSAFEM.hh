@@ -28,7 +28,7 @@ namespace pism {
 namespace stressbalance {
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(const IceGrid &, EnthalpyConverter::Ptr);
+SSA * SSAFEMFactory(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -38,7 +38,7 @@ SSA * SSAFEMFactory(const IceGrid &, EnthalpyConverter::Ptr);
 class SSAFEM : public SSA
 {
 public:
-  SSAFEM(const IceGrid &g, EnthalpyConverter::Ptr e);
+  SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
 
   virtual ~SSAFEM();
 

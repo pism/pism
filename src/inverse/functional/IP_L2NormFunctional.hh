@@ -34,7 +34,7 @@ namespace inverse {
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_L2NormFunctional2S(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
+  IP_L2NormFunctional2S(IceGrid::ConstPtr grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
   virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
@@ -56,7 +56,7 @@ private:
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  IP_L2NormFunctional2V(const IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
+  IP_L2NormFunctional2V(IceGrid::ConstPtr grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
   virtual void valueAt(IceModelVec2V &x, double *v);

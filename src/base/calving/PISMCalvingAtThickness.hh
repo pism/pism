@@ -31,7 +31,7 @@ namespace calving {
 class CalvingAtThickness : public Component
 {
 public:
-  CalvingAtThickness(const IceGrid &g);
+  CalvingAtThickness(IceGrid::ConstPtr g);
   virtual ~CalvingAtThickness();
 
   virtual void init();

@@ -30,7 +30,7 @@ namespace surface {
 //! ice thickness to a given target by the end of the run.
 class ForceThickness : public SurfaceModifier {
 public:
-  ForceThickness(const IceGrid &g, SurfaceModel *input);
+  ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input);
   virtual ~ForceThickness();
 protected:
   virtual void init_impl();

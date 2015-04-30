@@ -25,7 +25,7 @@
 namespace pism {
 namespace bed {
 
-PBNull::PBNull(const IceGrid &g)
+PBNull::PBNull(IceGrid::ConstPtr g)
   : BedDef(g) {
   // empty
 }

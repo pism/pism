@@ -46,7 +46,7 @@ namespace calving {
 class IcebergRemover : public Component
 {
 public:
-  IcebergRemover(const IceGrid &g);
+  IcebergRemover(IceGrid::ConstPtr g);
   virtual ~IcebergRemover();
 
   virtual void init();

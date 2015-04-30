@@ -29,6 +29,7 @@
 #include "StarStencil.hh"
 #include "base/util/petscwrappers/DM.hh"
 #include "base/util/petscwrappers/Vec.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
 
@@ -175,7 +176,7 @@ public:
 
 
   virtual bool was_created() const;
-  const IceGrid* get_grid() const;
+  IceGrid::ConstPtr get_grid() const;
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
   unsigned int get_ndof() const;
@@ -249,7 +250,7 @@ protected:
   //! stores metadata (NetCDF variable attributes)
   std::vector<SpatialVariableMetadata> m_metadata;
 
-  const IceGrid *m_grid;
+  IceGrid::ConstPtr m_grid;
 
   unsigned int m_dof;                     //!< number of "degrees of freedom" per grid point
   unsigned int m_da_stencil_width;      //!< stencil width supported by the DA
@@ -324,7 +325,7 @@ public:
   virtual void set_component(unsigned int n, const IceModelVec2S &source);
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
-  void create(const IceGrid &my_grid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr my_grid, const std::string &my_short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const PIO &nc, const unsigned int time);
@@ -350,7 +351,7 @@ public:
 
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  void create(const IceGrid &my_grid, const std::string &my_name,
+  void create(IceGrid::ConstPtr my_grid, const std::string &my_name,
               IceModelVecKind ghostedp, int width = 1);
   petsc::Vec::Ptr allocate_proc0_copy() const;
   void put_on_proc0(Vec onp0) const;
@@ -413,7 +414,7 @@ public:
 
   static Ptr ToVector(IceModelVec::Ptr input);
 
-  void create(const IceGrid &my_grid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr my_grid, const std::string &my_short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_from(const IceModelVec &source);
   virtual void add(double alpha, const IceModelVec &x);
@@ -438,7 +439,7 @@ public:
 
   static Ptr ToStaggered(IceModelVec::Ptr input);
 
-  void create(const IceGrid &my_grid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr my_grid, const std::string &my_short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
@@ -469,7 +470,7 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 protected:
-  void allocate(const IceGrid &mygrid, const std::string &my_short_name,
+  void allocate(IceGrid::ConstPtr mygrid, const std::string &my_short_name,
                 IceModelVecKind ghostedp, const std::vector<double> &levels,
                 unsigned int stencil_width = 1);
 private:
@@ -488,7 +489,7 @@ public:
 
   static Ptr To3DScalar(IceModelVec::Ptr input);
 
-  void create(const IceGrid &mygrid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr mygrid, const std::string &my_short_name,
               IceModelVecKind ghostedp,
               unsigned int stencil_width = 1);
 

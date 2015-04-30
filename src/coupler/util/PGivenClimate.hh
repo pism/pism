@@ -32,7 +32,7 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(const IceGrid &g, Input *in)
+  PGivenClimate(IceGrid::ConstPtr g, Input *in)
     : Model(g, in) {}
 
   virtual ~PGivenClimate() {
@@ -138,7 +138,7 @@ protected:
   {
     unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing_buffer_size");
 
-    PIO nc(Model::m_grid.com, "netcdf3");
+    PIO nc(Model::m_grid->com, "netcdf3");
     nc.open(filename, PISM_READONLY);
 
     std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();
@@ -152,7 +152,7 @@ protected:
       // else leave standard_name empty
 
       n_records = nc.inq_nrecords(short_name, standard_name,
-                                  Model::m_grid.ctx()->unit_system());
+                                  Model::m_grid->ctx()->unit_system());
 
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
@@ -182,7 +182,7 @@ protected:
   virtual void update_internal(double my_t, double my_dt)
   {
     // "Periodize" the climate:
-    my_t = Model::m_grid.ctx()->time()->mod(my_t - bc_reference_time, bc_period);
+    my_t = Model::m_grid->ctx()->time()->mod(my_t - bc_reference_time, bc_period);
 
     if ((fabs(my_t - Model::m_t) < 1e-12) &&
         (fabs(my_dt - Model::m_dt) < 1e-12)) {

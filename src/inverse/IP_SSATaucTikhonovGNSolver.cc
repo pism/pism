@@ -44,8 +44,8 @@ IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
 
 void IP_SSATaucTikhonovGNSolver::construct() {
   PetscErrorCode ierr;
-  const IceGrid &grid = *m_d0.get_grid();
-  m_comm = grid.com;
+  IceGrid::ConstPtr grid = m_d0.get_grid();
+  m_comm = grid->com;
 
   unsigned int design_stencil_width = m_d0.get_stencil_width();
   unsigned int state_stencil_width = m_u_obs.get_stencil_width();
@@ -82,7 +82,7 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS);
   m_gradient.create(grid, "grad design", WITHOUT_GHOSTS);
 
-  ierr = KSPCreate(grid.com, m_ksp.rawptr());
+  ierr = KSPCreate(grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
 
   ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_");
@@ -105,9 +105,9 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   ierr = KSPSetFromOptions(m_ksp);
   PISM_CHK(ierr, "KSPSetFromOptions");  
 
-  int nLocalNodes  = grid.xm()*grid.ym();
-  int nGlobalNodes = grid.Mx()*grid.My();
-  ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes,
+  int nLocalNodes  = grid->xm()*grid->ym();
+  int nGlobalNodes = grid->Mx()*grid->My();
+  ierr = MatCreateShell(grid->com, nLocalNodes, nLocalNodes,
                         nGlobalNodes, nGlobalNodes, this, m_mat_GN.rawptr());
   PISM_CHK(ierr, "MatCreateShell");
 
@@ -123,9 +123,9 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
-  m_tikhonov_atol = grid.ctx()->config()->get_double("tikhonov_atol");
-  m_tikhonov_rtol = grid.ctx()->config()->get_double("tikhonov_rtol");
-  m_tikhonov_ptol = grid.ctx()->config()->get_double("tikhonov_ptol");
+  m_tikhonov_atol = grid->ctx()->config()->get_double("tikhonov_atol");
+  m_tikhonov_rtol = grid->ctx()->config()->get_double("tikhonov_rtol");
+  m_tikhonov_ptol = grid->ctx()->config()->get_double("tikhonov_ptol");
 }
 
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {

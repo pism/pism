@@ -31,6 +31,7 @@ static char help[] =
 #include "eismint/iceEISModel.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
+#include "base/util/PISMTime.hh"
 
 using namespace pism;
 
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = pisms_context(com);
     Config::Ptr config = ctx->config();
 
-    IceGrid g(ctx);
+    IceGrid::Ptr g(new IceGrid(ctx));
     IceEISModel m(g, ctx);
 
     m.init();

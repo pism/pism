@@ -27,7 +27,7 @@
 namespace pism {
 namespace atmosphere {
 
-Anomaly::Anomaly(const IceGrid &g, AtmosphereModel* in)
+Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
@@ -173,15 +173,15 @@ void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 void Anomaly::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                            IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    io::define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);
+    io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
-    io::define_spatial_variable(precipitation, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(precipitation, *m_grid, nc, nctype, order, true);
     vars.erase("precipitation");
   }
 

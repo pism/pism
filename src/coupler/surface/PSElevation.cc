@@ -34,7 +34,7 @@ namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(const IceGrid &g)
+Elevation::Elevation(IceGrid::ConstPtr g)
   : SurfaceModel(g),
     m_climatic_mass_balance(m_sys, "climatic_mass_balance"),
     m_ice_surface_temp(m_sys, "ice_surface_temp")
@@ -207,14 +207,14 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
   // get access to ice upper surface elevation
-  const IceModelVec2S *usurf = m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(result);
   list.add(*usurf);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double z = (*usurf)(i, j);
@@ -245,15 +245,15 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
 void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
 
-  const IceModelVec2S *usurf = m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(result);
   list.add(*usurf);
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double z = (*usurf)(i, j);
@@ -284,15 +284,15 @@ void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std
 }
 
 void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 }
 

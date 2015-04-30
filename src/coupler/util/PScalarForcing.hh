@@ -34,7 +34,7 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(const IceGrid &g, Model* in)
+  PScalarForcing(IceGrid::ConstPtr g, Model* in)
     : Mod(g, in), input(in) {}
 
   virtual ~PScalarForcing()
@@ -47,7 +47,7 @@ public:
 protected:
   virtual void update_impl(double my_t, double my_dt)
   {
-    Mod::m_t  = Mod::m_grid.ctx()->time()->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_t  = Mod::m_grid->ctx()->time()->mod(my_t - bc_reference_time, bc_period);
     Mod::m_dt = my_dt;
 
     Mod::input_model->update(my_t, my_dt);
@@ -55,7 +55,7 @@ protected:
 
   virtual void init_internal()
   {
-    const IceGrid &g = Mod::m_grid;
+    IceGrid::ConstPtr g = Mod::m_grid;
 
     options::String file(option_prefix + "_file", "Specifies a file with scalar offsets");
     options::Integer period(option_prefix + "_period",
@@ -84,10 +84,10 @@ protected:
                "  reading %s data from forcing file %s...\n",
                offset->short_name.c_str(), file->c_str());
 
-    PIO nc(g.com, "netcdf3");
+    PIO nc(g->com, "netcdf3");
     nc.open(file, PISM_READONLY);
     {
-      offset->read(nc, *g.ctx()->time(), *g.ctx()->log());
+      offset->read(nc, *g->ctx()->time(), *g->ctx()->log());
     }
     nc.close();
   }

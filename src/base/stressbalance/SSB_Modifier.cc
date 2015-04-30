@@ -26,7 +26,7 @@
 namespace pism {
 namespace stressbalance {
 
-SSB_Modifier::SSB_Modifier(const IceGrid &g, EnthalpyConverter::Ptr e)
+SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : Component(g), m_EC(e) {
 
   m_D_max = 0.0;
@@ -97,10 +97,10 @@ void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
 
-ConstantInColumn::ConstantInColumn(const IceGrid &g, EnthalpyConverter::Ptr e)
+ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSB_Modifier(g, e)
 {
-  rheology::FlowLawFactory ice_factory("sia_", m_grid.ctx()->config(), m_EC);
+  rheology::FlowLawFactory ice_factory("sia_", m_grid->ctx()->config(), m_EC);
 
   m_flow_law = ice_factory.create();
 }
@@ -135,7 +135,7 @@ void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
   list.add(m_v);
   list.add(vel_input);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     m_u.set_column(i,j, vel_input(i,j).u);

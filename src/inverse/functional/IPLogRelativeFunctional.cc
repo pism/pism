@@ -46,7 +46,7 @@ void IPLogRelativeFunctional::normalize(double scale) {
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2 &u_obs_ij = m_u_observed(i, j);
@@ -57,7 +57,7 @@ void IPLogRelativeFunctional::normalize(double scale) {
     value += log(1 + w*scale_sq/obsMagSq);
   }
 
-  m_normalization = GlobalSum(m_grid.com, value);
+  m_normalization = GlobalSum(m_grid->com, value);
 }
 
 void IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
@@ -74,7 +74,7 @@ void IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2 &x_ij = x(i, j);
@@ -88,7 +88,7 @@ void IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   value /= m_normalization;
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
 void IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
@@ -104,7 +104,7 @@ void IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradie
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2 &x_ij = x(i, j);

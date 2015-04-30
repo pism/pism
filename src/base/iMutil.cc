@@ -68,7 +68,7 @@ int IceModel::endOfTimeStepHook() {
     char str[TEMPORARY_STRING_LENGTH];
     snprintf(str, sizeof(str),
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
-             m_grid.ctx()->time()->date().c_str());
+             m_grid->ctx()->time()->date().c_str());
     stampHistory(str);
     // Tell the caller that the user requested an early termination of
     // the run.
@@ -78,7 +78,7 @@ int IceModel::endOfTimeStepHook() {
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%s.nc",
-             m_grid.ctx()->time()->date().c_str());
+             m_grid->ctx()->time()->date().c_str());
     m_log->message(1,
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
@@ -108,7 +108,7 @@ void  IceModel::stampHistoryCommand() {
   char startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr),
-           "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid.size());
+           "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
   stampHistory(std::string(startstr));
 
   global_attributes.set_string("history",
@@ -121,18 +121,18 @@ void IceModel::update_run_stats() {
   // timing stats
   double wall_clock_hours, proc_hours, mypph;
 
-  double current_time = GlobalMax(m_grid.com, GetTime());
+  double current_time = GlobalMax(m_grid->com, GetTime());
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
-  proc_hours = m_grid.size() * wall_clock_hours;
+  proc_hours = m_grid->size() * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
   mypph = units::convert(m_sys,
-                         m_grid.ctx()->time()->current() - m_grid.ctx()->time()->start(),
+                         m_grid->ctx()->time()->current() - m_grid->ctx()->time()->start(),
                          "seconds", "years") / proc_hours;
 
-  MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, m_grid.com);
+  MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, m_grid->com);
 
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
@@ -140,16 +140,16 @@ void IceModel::update_run_stats() {
   ierr = PetscGetFlops(&my_flops);
   PISM_CHK(ierr, "PetscGetFlops");
 
-  double flops = GlobalSum(m_grid.com, my_flops);
+  double flops = GlobalSum(m_grid->com, my_flops);
 
   run_stats.set_double("wall_clock_hours", wall_clock_hours);
   run_stats.set_double("processor_hours", proc_hours);
   run_stats.set_double("model_years_per_processor_hour", mypph);
   run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
-  run_stats.set_double("grid_dx_meters", m_grid.dx());
-  run_stats.set_double("grid_dy_meters", m_grid.dy());
-  run_stats.set_double("grid_dz_min_meters", m_grid.dz_min());
-  run_stats.set_double("grid_dz_max_meters", m_grid.dz_max());
+  run_stats.set_double("grid_dx_meters", m_grid->dx());
+  run_stats.set_double("grid_dy_meters", m_grid->dy());
+  run_stats.set_double("grid_dz_min_meters", m_grid->dz_min());
+  run_stats.set_double("grid_dz_max_meters", m_grid->dz_max());
   if (btu != NULL) {
     run_stats.set_double("grid_dzb_meters", btu->vertical_spacing());
   }
@@ -189,7 +189,7 @@ void  IceModel::stampHistoryEnd() {
 //! Get time and user/host name and add it to the given string.
 void  IceModel::stampHistory(const std::string &str) {
 
-  std::string history = pism_username_prefix(m_grid.com) + (str + "\n");
+  std::string history = pism_username_prefix(m_grid->com) + (str + "\n");
 
   global_attributes.set_string("history",
                                history + global_attributes.get_string("history"));
@@ -202,13 +202,13 @@ void  IceModel::stampHistory(const std::string &str) {
  */
 void IceModel::check_maximum_thickness() {
 Range thk_range = ice_thickness.range();
-  if (m_grid.Lz() >= thk_range.max) {
+  if (m_grid->Lz() >= thk_range.max) {
     return;
   }
 
   throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height"
                                 " of the computational box (%7.4f m).",
-                                thk_range.max, m_grid.Lz());
+                                thk_range.max, m_grid->Lz());
 }
 
 
@@ -219,7 +219,7 @@ void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
 }
 
 //! Return the grid used by this model.
-const IceGrid& IceModel::grid() const {
+IceGrid::Ptr IceModel::grid() const {
   return m_grid;
 }
 

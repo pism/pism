@@ -25,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-Frac_P::Frac_P(const IceGrid &g, AtmosphereModel* in)
+Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
@@ -34,10 +34,10 @@ Frac_P::Frac_P(const IceGrid &g, AtmosphereModel* in)
 
   option_prefix = "-atmosphere_frac_P";
   offset_name = "frac_P";
-  offset = new Timeseries(&m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
   offset->metadata().set_string("units", "1");
   offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
-  offset->dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
+  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
@@ -107,15 +107,15 @@ void Frac_P::add_vars_to_output_impl(const std::string &keyword,
 void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
                                            const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    io::define_spatial_variable(air_temp, m_grid, nc, nctype, order, false);
+    io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
-    io::define_spatial_variable(precipitation, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(precipitation, *m_grid, nc, nctype, order, true);
     vars.erase("precipitation");
   }
 

@@ -35,7 +35,7 @@ namespace surface {
 
 class PIK : public SurfaceModel {
 public:
-  PIK(const IceGrid &g);
+  PIK(IceGrid::ConstPtr g);
 protected:
   virtual void init_impl();
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);

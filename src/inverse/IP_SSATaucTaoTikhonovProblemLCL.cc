@@ -44,12 +44,12 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 
 void IP_SSATaucTaoTikhonovProblemLCL::construct() {
   PetscErrorCode ierr;
-  const IceGrid &grid = *m_d0.get_grid();
+  IceGrid::ConstPtr grid = m_d0.get_grid();
 
-  double stressScale = grid.ctx()->config()->get_double("design_param_tauc_scale");
-  m_constraintsScale = grid.Lx()*grid.Ly()*4*stressScale;
+  double stressScale = grid->ctx()->config()->get_double("design_param_tauc_scale");
+  m_constraintsScale = grid->Lx()*grid->Ly()*4*stressScale;
 
-  m_velocityScale = grid.ctx()->config()->get_double("inv_ssa_velocity_scale", "m/year", "m/second");
+  m_velocityScale = grid->ctx()->config()->get_double("inv_ssa_velocity_scale", "m/year", "m/second");
 
 
   int design_stencil_width = m_d0.get_stencil_width();
@@ -94,9 +94,9 @@ void IP_SSATaucTaoTikhonovProblemLCL::construct() {
   ierr = DMCreateMatrix(da, m_Jstate.rawptr());
   PISM_CHK(ierr, "DMCreateMatrix");
 
-  int nLocalNodes  = grid.xm()*grid.ym();
-  int nGlobalNodes = grid.Mx()*grid.My();
-  ierr = MatCreateShell(grid.com, 2*nLocalNodes, nLocalNodes, 2*nGlobalNodes, nGlobalNodes,
+  int nLocalNodes  = grid->xm()*grid->ym();
+  int nGlobalNodes = grid->Mx()*grid->My();
+  ierr = MatCreateShell(grid->com, 2*nLocalNodes, nLocalNodes, 2*nGlobalNodes, nGlobalNodes,
                         this, m_Jdesign.rawptr());
   PISM_CHK(ierr, "MatCreateShell");
 

@@ -22,7 +22,7 @@
 
 namespace pism {
 namespace ocean {
-OceanModel::OceanModel(const IceGrid &g)
+OceanModel::OceanModel(IceGrid::ConstPtr g)
   : Component_TS(g), m_sea_level(0) {
   // empty
 }

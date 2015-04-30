@@ -32,7 +32,7 @@ namespace surface {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PIK::PIK(const IceGrid &g)
+PIK::PIK(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
 
   m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
@@ -100,15 +100,15 @@ void PIK::update_impl(double my_t, double my_dt)
   m_dt = my_dt;
 
   const IceModelVec2S
-    &usurf = *m_grid.variables().get_2d_scalar("surface_altitude"),
-    &lat   = *m_grid.variables().get_2d_scalar("latitude");
+    &usurf = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    &lat   = *m_grid->variables().get_2d_scalar("latitude");
 
   IceModelVec::AccessList list;
   list.add(m_ice_surface_temp);
   list.add(usurf);
   list.add(lat);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * usurf(i,j) - 0.68775 * lat(i,j)*(-1.0);
   }

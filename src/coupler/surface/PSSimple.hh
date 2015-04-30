@@ -41,7 +41,7 @@ namespace surface {
 */
 class Simple : public SurfaceModel {
 public:
-  Simple(const IceGrid &g);
+  Simple(IceGrid::ConstPtr g);
 protected:
   virtual void init_impl();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);

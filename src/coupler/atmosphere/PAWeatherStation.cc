@@ -34,19 +34,19 @@
 namespace pism {
 namespace atmosphere {
 
-WeatherStation::WeatherStation(const IceGrid &g)
+WeatherStation::WeatherStation(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
-    m_precipitation(&g, "precipitation", g.ctx()->config()->get_string("time_dimension_name")),
-    m_air_temperature(&g, "air_temp", g.ctx()->config()->get_string("time_dimension_name")),
+    m_precipitation(*g, "precipitation", g->ctx()->config()->get_string("time_dimension_name")),
+    m_air_temperature(*g, "air_temp", g->ctx()->config()->get_string("time_dimension_name")),
     m_precip_metadata(m_sys, "precipitation"),
     m_air_temp_metadata(m_sys, "air_temp")
 {
-  m_precipitation.dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
+  m_precipitation.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   m_precipitation.metadata().set_string("units", "m / second");
   m_precipitation.metadata().set_string("long_name",
                                             "ice-equivalent precipitation rate");
 
-  m_air_temperature.dimension_metadata().set_string("units", m_grid.ctx()->time()->units_string());
+  m_air_temperature.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   m_air_temperature.metadata().set_string("units", "Kelvin");
   m_air_temperature.metadata().set_string("long_name",
                                               "near-surface air temperature");
@@ -88,11 +88,11 @@ void WeatherStation::init() {
              "  - Reading air temperature and precipitation from '%s'...\n",
              filename->c_str());
 
-  PIO nc(m_grid.com, "netcdf3");
+  PIO nc(m_grid->com, "netcdf3");
   nc.open(filename, PISM_READONLY);
   {
-    m_precipitation.read(nc, *m_grid.ctx()->time(), *m_grid.ctx()->log());
-    m_air_temperature.read(nc, *m_grid.ctx()->time(), *m_grid.ctx()->log());
+    m_precipitation.read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
+    m_air_temperature.read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
   }
   nc.close();
 }
@@ -173,16 +173,16 @@ void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
 
 void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units
-    io::define_spatial_variable(m_air_temp_metadata, m_grid, nc, nctype, order, false);
+    io::define_spatial_variable(m_air_temp_metadata, *m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {
     // do write using glaciological units
-    io::define_spatial_variable(m_precip_metadata, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_precip_metadata, *m_grid, nc, nctype, order, true);
   }
 }
 

@@ -103,7 +103,7 @@ public:
   virtual void set_n_records(unsigned int N);
   virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
-  void create(const IceGrid &mygrid, const std::string &my_short_name);
+  void create(IceGrid::ConstPtr mygrid, const std::string &my_short_name);
   virtual void init(const std::string &filename, unsigned int period,
                               double reference_time);
   virtual void init_constant(double value);

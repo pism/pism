@@ -28,7 +28,7 @@
 namespace pism {
 namespace hydrology {
 
-Distributed::Distributed(const IceGrid &g, stressbalance::StressBalance *sb)
+Distributed::Distributed(IceGrid::ConstPtr g, stressbalance::StressBalance *sb)
   : Routing(g) {
   m_stressbalance = sb;
   m_hold_velbase_mag = false;
@@ -200,9 +200,9 @@ void Distributed::check_P_bounds(bool enforce_upper) {
   list.add(m_P);
   list.add(m_Pover);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_P(i,j) < 0.0) {
@@ -250,7 +250,7 @@ void Distributed::P_from_W_steady(IceModelVec2S &result) {
   list.add(m_velbase_mag);
   list.add(result);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double sb = pow(CC * m_velbase_mag(i, j), powglen);
@@ -405,13 +405,13 @@ void Distributed::update_impl(double icet, double icedt) {
 
     // update Pnew from time step
     const double  CC = (rg * hdt) / phi0,
-                     wux  = 1.0 / (m_grid.dx() * m_grid.dx()),
-                     wuy  = 1.0 / (m_grid.dy() * m_grid.dy());
+                     wux  = 1.0 / (m_dx * m_dx),
+                     wuy  = 1.0 / (m_dy * m_dy);
     double  Open, Close, divflux, ZZ,
                divadflux, diffW;
     overburden_pressure(m_Pover);
 
-    const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+    const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
     MaskQuery M(*mask);
 
@@ -429,7 +429,7 @@ void Distributed::update_impl(double icet, double icedt) {
     list.add(m_Pover);
     list.add(m_Pnew);
 
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (M.ice_free_land(i,j)) {
@@ -444,8 +444,8 @@ void Distributed::update_impl(double icet, double icedt) {
         Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
-        divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_grid.dx()
-          + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_grid.dy();
+        divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_dx
+          + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_dy;
         const double  De = rg * m_Kstag(i,  j,0) * m_Wstag(i,  j,0),
           Dw = rg * m_Kstag(i-1,j,0) * m_Wstag(i-1,j,0),
           Dn = rg * m_Kstag(i,j  ,1) * m_Wstag(i,j  ,1),

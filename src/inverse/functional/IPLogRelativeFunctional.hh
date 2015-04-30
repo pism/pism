@@ -35,7 +35,7 @@ namespace inverse {
 */
 class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRelativeFunctional(const IceGrid &grid, IceModelVec2V &u_observed, double eps,
+  IPLogRelativeFunctional(IceGrid::ConstPtr grid, IceModelVec2V &u_observed, double eps,
                           IceModelVec2S *weights=NULL) :
     IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRelativeFunctional() {};

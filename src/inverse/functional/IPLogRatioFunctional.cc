@@ -43,7 +43,7 @@ void IPLogRatioFunctional::normalize(double scale) {
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
@@ -59,7 +59,7 @@ void IPLogRatioFunctional::normalize(double scale) {
     value += w*v*v;
   }
 
-  m_normalization = GlobalSum(m_grid.com, value);
+  m_normalization = GlobalSum(m_grid->com, value);
 }
 
 void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
@@ -78,7 +78,7 @@ void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
@@ -96,7 +96,7 @@ void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   value /= m_normalization;
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
 void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
@@ -113,7 +113,7 @@ void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {

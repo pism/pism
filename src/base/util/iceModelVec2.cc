@@ -74,7 +74,7 @@ IceModelVec2Stag::IceModelVec2Stag()
   begin_end_access_use_dof = true;
 }
 
-void  IceModelVec2S::create(const IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
+void  IceModelVec2S::create(IceGrid::ConstPtr my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
   assert(m_v == NULL);
   IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof);
 }
@@ -598,14 +598,14 @@ void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
   IceModelVec2::set_dof(source.get_dm(), source.m_v, n);
 }
 
-void  IceModelVec2::create(const IceGrid &my_grid, const std::string & my_name,
+void IceModelVec2::create(IceGrid::ConstPtr my_grid, const std::string & my_name,
                            IceModelVecKind ghostedp,
                            unsigned int stencil_width, int my_dof) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
 
   m_dof  = my_dof;
-  m_grid = &my_grid;
+  m_grid = my_grid;
 
   if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_double("grid_max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
@@ -666,7 +666,7 @@ IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
 }
 
 
-void IceModelVec2Stag::create(const IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
+void IceModelVec2Stag::create(IceGrid::ConstPtr my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
 
   IceModelVec2::create(my_grid, my_short_name, ghostedp, stencil_width, m_dof);

@@ -26,7 +26,7 @@
 namespace pism {
 namespace hydrology {
 
-NullTransport::NullTransport(const IceGrid &g)
+NullTransport::NullTransport(IceGrid::ConstPtr g)
   : Hydrology(g) {
 }
 
@@ -91,14 +91,14 @@ void NullTransport::update_impl(double icet, double icedt) {
                        "This is not allowed.");
   }
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   MaskQuery M(*mask);
   IceModelVec::AccessList list;
   list.add(*mask);
   list.add(m_Wtil);
   list.add(m_total_input);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.ocean(i,j) || M.ice_free(i,j)) {

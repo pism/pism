@@ -28,7 +28,7 @@ namespace atmosphere {
 class Delta_P : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  Delta_P(const IceGrid &g, AtmosphereModel* in);
+  Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Delta_P();
 
   virtual void init();

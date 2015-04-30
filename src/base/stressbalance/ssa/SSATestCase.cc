@@ -36,32 +36,32 @@ void SSATestCase::buildSSACoefficients()
   const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   // ice surface elevation
-  m_surface.create(*m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
+  m_surface.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
   m_surface.set_attrs("diagnostic", "ice upper surface elevation", "m",
                       "surface_altitude");
   m_grid->variables().add(m_surface);
 
   // land ice thickness
-  m_thickness.create(*m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+  m_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
   m_thickness.set_attrs("model_state", "land ice thickness", "m",
                         "land_ice_thickness");
   m_thickness.metadata().set_double("valid_min", 0.0);
   m_grid->variables().add(m_thickness);
 
   // bedrock surface elevation
-  m_bed.create(*m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  m_bed.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_bed.set_attrs("model_state", "bedrock surface elevation", "m",
                   "bedrock_altitude");
   m_grid->variables().add(m_bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  m_tauc.create(*m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
+  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   m_tauc.set_attrs("diagnostic",
                    "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
   m_grid->variables().add(m_tauc);
 
   // enthalpy
-  m_enthalpy.create(*m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+  m_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   m_enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");
@@ -69,7 +69,7 @@ void SSATestCase::buildSSACoefficients()
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  m_bc_values.create(*m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
+  m_bc_values.create(m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
   m_bc_values.set_attrs("intent",
                      "X-component of the SSA velocity boundary conditions",
                      "m s-1", "", 0);
@@ -90,7 +90,7 @@ void SSATestCase::buildSSACoefficients()
   m_bc_values.set(m_config->get_double("fill_value", "m/year", "m/s"));
 
   // grounded_dragging_floating integer mask
-  m_ice_mask.create(*m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+  m_ice_mask.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
   m_ice_mask.set_attrs("model_state",
                        "grounded_dragging_floating integer mask", "", "");
   std::vector<double> mask_values(4);
@@ -106,7 +106,7 @@ void SSATestCase::buildSSACoefficients()
   m_ice_mask.set(MASK_GROUNDED);
 
   // Dirichlet B.C. mask
-  m_bc_mask.create(*m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
+  m_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_bc_mask.set_attrs("model_state",
                       "grounded_dragging_floating integer mask", "", "");
   mask_values.resize(2);
@@ -117,7 +117,7 @@ void SSATestCase::buildSSACoefficients()
                                   "no_data ssa_dirichlet_bc_location");
   m_grid->variables().add(m_bc_mask);
 
-  m_melange_back_pressure.create(*m_grid, "melange_back_pressure_fraction",
+  m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
                                  WITH_GHOSTS, WIDE_STENCIL);
   m_melange_back_pressure.set_attrs("boundary_condition",
                                     "melange back pressure fraction", "", "");
@@ -148,7 +148,7 @@ void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
   buildSSACoefficients();
 
   // Allocate the actual SSA solver.
-  m_ssa = ssafactory(*m_grid, m_enthalpyconverter);
+  m_ssa = ssafactory(m_grid, m_enthalpyconverter);
   m_ssa->init(); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.
@@ -368,7 +368,7 @@ void SSATestCase::write(const std::string &filename) {
   vel_ssa.write(pio);
 
   IceModelVec2V exact;
-  exact.create(*m_grid, "_exact", WITHOUT_GHOSTS);
+  exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
                   "m s-1", "", 0);

@@ -26,7 +26,7 @@ namespace pism {
 namespace surface {
 class Factory : public PCFactory<SurfaceModel,SurfaceModifier> {
 public:
-  Factory(const IceGrid& g);
+  Factory(IceGrid::ConstPtr  g);
   ~Factory();
 };
 } // end of namespace surface

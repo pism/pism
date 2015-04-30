@@ -32,6 +32,7 @@ static char help[] =
 #include "verif/iceCompModel.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
+#include "base/util/PISMTime.hh"
 
 using namespace pism;
 
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]) {
 
     config->set_boolean("use_eta_transformation", false);
 
-    IceGrid g(ctx);
+    IceGrid::Ptr g(new IceGrid(ctx));
 
     // determine test (and whether to report error)
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",

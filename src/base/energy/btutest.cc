@@ -44,7 +44,7 @@ namespace energy {
 
 class BTU_Test : public BedThermalUnit {
 public:
-  BTU_Test(IceGrid &g)
+  BTU_Test(IceGrid::ConstPtr g)
     : BedThermalUnit(g) {}
   virtual ~BTU_Test() {}
   /** Initialize the bedrock temperature field at the beginning of the run. */
@@ -59,14 +59,14 @@ void BTU_Test::bootstrap() {
 
     IceModelVec::AccessList list(m_temp);
 
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *Tb = m_temp.get_column(i, j);
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF = 0.0; // Test K:  use Tb[k], ignore FF
-        exactK(m_grid.ctx()->time()->start(), z, &Tb[k], &FF, 0);
+        exactK(m_grid->ctx()->time()->start(), z, &Tb[k], &FF, 0);
       }
     }
   }
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     // create grid and set defaults
-    IceGrid grid(ctx);
+    IceGrid::Ptr grid(new IceGrid(ctx));
     double
       Lx = 1500e3,
       Ly = Lx;
@@ -174,12 +174,12 @@ int main(int argc, char *argv[]) {
 
     options::Real Lz("-Lz", "height of ice/atmosphere boxr", 4000.0);
 
-    grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
-    grid.set_vertical_levels(Lz, Mz, EQUAL);
+    grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
+    grid->set_vertical_levels(Lz, Mz, EQUAL);
 
     // complete grid initialization based on user options
     ctx->time()->init(*ctx->log());
-    grid.allocate();
+    grid->allocate();
 
     // allocate tools and IceModelVecs
     IceModelVec2S bedtoptemp, ghf;
@@ -192,13 +192,13 @@ int main(int argc, char *argv[]) {
 
       ghf.set(0.042);  // see Test K
 
-      grid.variables().add(ghf);
+      grid->variables().add(ghf);
 
       bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
       bedtoptemp.set_attrs("",
                             "temperature at top of bedrock thermal layer",
                             "K", "");
-      grid.variables().add(bedtoptemp);
+      grid->variables().add(bedtoptemp);
     }
 
     // initialize BTU object:
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
 
       // compute exact ice temperature at z=0 at time y
       IceModelVec::AccessList list(bedtoptemp);
-      for (Points p(grid); p; p.next()) {
+      for (Points p(*grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         double TT, FF; // Test K:  use TT, ignore FF
@@ -262,22 +262,22 @@ int main(int argc, char *argv[]) {
     maxghferr = ghf.norm(NORM_INFINITY);
     avghferr  = ghf.norm(NORM_1);
     ghf.shift(+FF); // shift it back for writing
-    avghferr /= (grid.Mx() * grid.My());
-    verbPrintf(2, grid.com, 
+    avghferr /= (grid->Mx() * grid->My());
+    verbPrintf(2, grid->com, 
                "case dt = %.5f:\n", dt_years.value());
-    verbPrintf(1, grid.com, 
+    verbPrintf(1, grid->com, 
                "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
-    verbPrintf(1, grid.com, 
+    verbPrintf(1, grid->com, 
                "bheatflx0  :       max    prcntmax          av\n");
-    verbPrintf(1, grid.com, 
+    verbPrintf(1, grid->com, 
                "           %11.7f  %11.7f  %11.7f\n", 
                maxghferr, 100.0*maxghferr/FF, avghferr);
-    verbPrintf(1, grid.com, "NUM ERRORS DONE\n");
+    verbPrintf(1, grid->com, "NUM ERRORS DONE\n");
 
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid.com, grid.ctx()->config()->get_string("output_format"));
+    PIO pio(grid->com, grid->ctx()->config()->get_string("output_format"));
 
     std::string time_name = config->get_string("time_dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);

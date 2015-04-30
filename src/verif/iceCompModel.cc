@@ -52,7 +52,7 @@ namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, Context::Ptr ctx, int mytest)
+IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr ctx, int mytest)
   : IceModel(g, ctx) {
 
   // note lots of defaults are set by the IceModel constructor
@@ -103,9 +103,9 @@ void IceCompModel::set_grid_defaults() {
   double Lx = 0.0, Ly = 0.0, Lz = 0.0;
 
   unsigned int
-    Mx = m_grid.Mx(),
-    My = m_grid.My(),
-    Mz = m_grid.Mz();
+    Mx = m_grid->Mx(),
+    My = m_grid->My(),
+    Mz = m_grid->Mz();
 
   switch (testname) {
   case 'A':
@@ -151,16 +151,16 @@ void IceCompModel::set_grid_defaults() {
   case 'V':
     My = 3;             // it's a flow-line setup
     Lx = 500e3;            // 500 km long
-    Ly = m_grid.Ly();
-    Lz = m_grid.Lz();
+    Ly = m_grid->Ly();
+    Lz = m_grid->Lz();
     periodicity = Y_PERIODIC;
     break;
   default:
     throw RuntimeError("desired test not implemented\n");
   }
 
-  m_grid.set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
-  m_grid.set_vertical_levels(Lz, Mz, spacing);
+  m_grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
+  m_grid->set_vertical_levels(Lz, Mz, spacing);
 }
 
 void IceCompModel::setFromOptions() {
@@ -377,7 +377,7 @@ void IceCompModel::initTestABCDEH() {
 
   rheology::PatersonBuddCold tgaIce("sia_", *config, EC);
 
-  const double time = m_grid.ctx()->time()->current();
+  const double time = m_grid->ctx()->time()->current();
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -390,13 +390,13 @@ void IceCompModel::initTestABCDEH() {
 
   IceModelVec::AccessList list(ice_thickness);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = m_grid.x(i), yy = m_grid.y(j),
-        r = radius(m_grid, i, j);
+      double xx = m_grid->x(i), yy = m_grid->y(j),
+        r = radius(*m_grid, i, j);
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -481,16 +481,16 @@ void IceCompModel::initTestL() {
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
-  const int MM = m_grid.xm() * m_grid.ym();
+  const int MM = m_grid->xm() * m_grid->ym();
 
   std::vector<rgrid> rrv(MM);  // destructor at end of scope
   int k = 0;
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     rrv[k].i = i;
     rrv[k].j = j;
-    rrv[k].r = radius(m_grid, i,j);
+    rrv[k].r = radius(*m_grid, i,j);
 
     k += 1;
   }
@@ -556,10 +556,10 @@ void IceCompModel::reset_thickness_tests_AE() {
 
   IceModelVec::AccessList list(ice_thickness);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (radius(m_grid, i, j) > LforAE) {
+    if (radius(*m_grid, i, j) > LforAE) {
       ice_thickness(i, j) = 0;
     }
   }
@@ -572,16 +572,16 @@ void IceCompModel::reset_thickness_tests_AE() {
 void IceCompModel::fillSolnTestABCDH() {
   double     H, accum;
 
-  const double time = m_grid.ctx()->time()->current();
+  const double time = m_grid->ctx()->time()->current();
 
   IceModelVec::AccessList list(ice_thickness);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double r = radius(m_grid, i, j);
+      double r = radius(*m_grid, i, j);
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -641,10 +641,10 @@ void IceCompModel::fillSolnTestE() {
   list.add(ice_thickness);
   list.add(vel_adv);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double xx = m_grid.x(i), yy = m_grid.y(j);
+    double xx = m_grid->x(i), yy = m_grid->y(j);
     exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
     ice_thickness(i,j) = H;
     vel_adv(i,j)    = bvel;
@@ -670,7 +670,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
                                                    double &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
 
-  const double time = m_grid.ctx()->time()->current();
+  const double time = m_grid->ctx()->time()->current();
   double
     Hexact     = 0.0,
     vol        = 0.0,
@@ -698,20 +698,20 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     standard_gravity = config->get_double("standard_gravity");
 
   // area of grid square in square km:
-  const double   a = m_grid.dx() * m_grid.dy() * 1e-3 * 1e-3;
+  const double   a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3;
   const double   m = (2.0 * Glen_n + 2.0) / Glen_n;
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i,j) > 0) {
         area += a;
         vol += a * ice_thickness(i,j) * 1e-3;
       }
-      double xx = m_grid.x(i), yy = m_grid.y(j),
-        r = radius(m_grid, i,j);
+      double xx = m_grid->x(i), yy = m_grid->y(j),
+        r = radius(*m_grid, i,j);
       switch (testname) {
       case 'A':
         exactA(r,&Hexact,&dummy);
@@ -778,8 +778,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         areaexact += a;
         volexact += a * Hexact * 1e-3;
       }
-      if (i == ((int)m_grid.Mx() - 1)/2 and
-          j == ((int)m_grid.My() - 1)/2) {
+      if (i == ((int)m_grid->Mx() - 1)/2 and
+          j == ((int)m_grid->My() - 1)/2) {
         domeH = ice_thickness(i,j);
         domeHexact = Hexact;
       }
@@ -796,21 +796,21 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
-  gvolexact = GlobalSum(m_grid.com, volexact);
-  gdomeHexact = GlobalMax(m_grid.com, domeHexact);
-  gareaexact = GlobalSum(m_grid.com, areaexact);
+  gvolexact = GlobalSum(m_grid->com, volexact);
+  gdomeHexact = GlobalMax(m_grid->com, domeHexact);
+  gareaexact = GlobalSum(m_grid->com, areaexact);
 
-  gvol = GlobalSum(m_grid.com, vol);
-  garea = GlobalSum(m_grid.com, area);
+  gvol = GlobalSum(m_grid->com, vol);
+  garea = GlobalSum(m_grid->com, area);
   volerr = fabs(gvol - gvolexact);
   areaerr = fabs(garea - gareaexact);
 
-  gmaxHerr = GlobalMax(m_grid.com, Herr);
-  gavHerr = GlobalSum(m_grid.com, avHerr);
-  gavHerr = gavHerr/(m_grid.Mx()*m_grid.My());
-  gmaxetaerr = GlobalMax(m_grid.com, etaerr);
+  gmaxHerr = GlobalMax(m_grid->com, Herr);
+  gavHerr = GlobalSum(m_grid->com, avHerr);
+  gavHerr = gavHerr/(m_grid->Mx()*m_grid->My());
+  gmaxetaerr = GlobalMax(m_grid->com, etaerr);
 
-  gdomeH = GlobalMax(m_grid.com, domeH);
+  gdomeH = GlobalMax(m_grid->com, domeH);
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
@@ -833,11 +833,11 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
   list.add(ice_thickness);
 
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i,j) > 0.0) {
-      double xx = m_grid.x(i), yy = m_grid.y(j);
+      double xx = m_grid->x(i), yy = m_grid->y(j);
       exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
       // compute maximum errors
       const double uberr = fabs(vel_adv(i,j).u - ubexact);
@@ -850,12 +850,12 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
     }
   }
 
-  gmaxuberr = GlobalMax(m_grid.com, maxuberr);
-  gmaxvberr = GlobalMax(m_grid.com, maxvberr);
+  gmaxuberr = GlobalMax(m_grid->com, maxuberr);
+  gmaxvberr = GlobalMax(m_grid->com, maxvberr);
 
-  gmaxvecerr = GlobalMax(m_grid.com, maxvecerr);
-  gavvecerr = GlobalSum(m_grid.com, avvecerr);
-  gavvecerr = gavvecerr/(m_grid.Mx()*m_grid.My());
+  gmaxvecerr = GlobalMax(m_grid->com, maxvecerr);
+  gavvecerr = GlobalSum(m_grid->com, avvecerr);
+  gavvecerr = gavvecerr/(m_grid->Mx()*m_grid->My());
 
   const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),
                     ypeak = 450e3 * sin(25.0*(M_PI/180.0));
@@ -988,11 +988,11 @@ void IceCompModel::reportErrors() {
              "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
   unsigned int start;
-  TimeseriesMetadata err("N", "N", m_grid.ctx()->unit_system());
+  TimeseriesMetadata err("N", "N", m_grid->ctx()->unit_system());
 
   err.set_string("units", "1");
 
-  PIO nc(m_grid.com, "netcdf3"); // OK to use netcdf3
+  PIO nc(m_grid->com, "netcdf3"); // OK to use netcdf3
 
   options::String report_file("-report_file", "NetCDF error report file");
   bool append = options::Bool("-append", "Append the NetCDF error report");
@@ -1017,11 +1017,11 @@ void IceCompModel::reportErrors() {
     // Always write grid parameters:
     err.set_name("dx");
     err.set_string("units", "meters");
-    io::write_timeseries(nc, err, (size_t)start, m_grid.dx());
+    io::write_timeseries(nc, err, (size_t)start, m_grid->dx());
     err.set_name("dy");
-    io::write_timeseries(nc, err, (size_t)start, m_grid.dy());
+    io::write_timeseries(nc, err, (size_t)start, m_grid->dy());
     err.set_name("dz");
-    io::write_timeseries(nc, err, (size_t)start, m_grid.dz_max());
+    io::write_timeseries(nc, err, (size_t)start, m_grid->dz_max());
 
     // Always write the test name:
     err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1297,7 +1297,7 @@ void IceCompModel::test_V_init() {
   list.add(vBCMask);
   list.add(vBCvel);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {

@@ -41,8 +41,6 @@ IceModelVec::IceModelVec() {
   m_dof = 1;                    // default
   begin_end_access_use_dof = true;
 
-  m_grid = NULL;
-
   m_has_ghosts = true;
 
   m_name = "unintialized variable";
@@ -73,7 +71,7 @@ int IceModelVec::get_state_counter() const {
   return m_state_counter;
 }
 
-const IceGrid* IceModelVec::get_grid() const {
+IceGrid::ConstPtr IceModelVec::get_grid() const {
   return m_grid;
 }
 

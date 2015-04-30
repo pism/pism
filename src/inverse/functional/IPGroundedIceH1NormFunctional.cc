@@ -57,7 +57,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
         continue;
       }
 
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(x, x_e);
@@ -72,7 +72,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
     } // j
   } // i
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
 }
@@ -114,7 +114,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
         continue;
       }
 
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(a, a_e);
@@ -135,7 +135,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
     } // j
   } // i
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
 }
@@ -181,7 +181,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
       }
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i, j, x, x_e);
@@ -253,7 +253,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       double K[Quadrature::Nk][Quadrature::Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Don't update rows/cols where we project to zero.
       if (zeroLocs) {

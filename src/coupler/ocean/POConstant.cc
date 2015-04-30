@@ -30,7 +30,7 @@
 
 namespace pism {
 namespace ocean {
-Constant::Constant(const IceGrid &g)
+Constant::Constant(IceGrid::ConstPtr g)
   : OceanModel(g),
     m_shelfbmassflux(m_sys, "shelfbmassflux"),
     m_shelfbtemp(m_sys, "shelfbtemp") {
@@ -96,12 +96,12 @@ void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
     g             = m_config->get_double("standard_gravity"),
     ice_density   = m_config->get_double("ice_density");
 
-  const IceModelVec2S *ice_thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
   list.add(result);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
     // temp is set to melting point at depth
@@ -141,14 +141,14 @@ void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string>
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    io::define_spatial_variable(m_shelfbtemp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    io::define_spatial_variable(m_shelfbmassflux, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
   }
 }
 

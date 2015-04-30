@@ -32,7 +32,7 @@ namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component_TS {
 public:
-  AtmosphereModel(const IceGrid &g)
+  AtmosphereModel(IceGrid::ConstPtr g)
     : Component_TS(g) {};
 
   virtual void init() = 0;

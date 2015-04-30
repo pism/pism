@@ -28,7 +28,7 @@ namespace atmosphere {
 class PAModifier : public Modifier<AtmosphereModel>
 {
 public:
-  PAModifier(const IceGrid &g, AtmosphereModel* in)
+  PAModifier(IceGrid::ConstPtr g, AtmosphereModel* in)
     : Modifier<AtmosphereModel>(g, in) {}
   virtual ~PAModifier() {}
 

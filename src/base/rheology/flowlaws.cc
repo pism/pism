@@ -108,23 +108,23 @@ void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
                                     const IceModelVec3  &enthalpy,
                                     IceModelVec2S &result) const {
 
-  const IceGrid *grid = thickness.get_grid();
+  const IceGrid &grid = *thickness.get_grid();
 
   IceModelVec::AccessList list;
   list.add(thickness);
   list.add(result);
   list.add(enthalpy);
 
-  ParallelSection loop(grid->com);
+  ParallelSection loop(grid.com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Evaluate column integrals in flow law at every quadrature point's column
       double H = thickness(i,j);
       const double *enthColumn = enthalpy.get_column(i, j);
-      result(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
-                                            &(grid->z()[0]), enthColumn);
+      result(i,j) = this->averaged_hardness(H, grid.kBelowHeight(H),
+                                            &(grid.z()[0]), enthColumn);
     }
   } catch (...) {
     loop.failed();

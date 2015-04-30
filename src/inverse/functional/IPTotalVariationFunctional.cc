@@ -23,7 +23,7 @@
 namespace pism {
 namespace inverse {
 
-IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(const IceGrid &grid,
+IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr grid,
                                                            double c, double exponent, double eps,
                                                            IceModelVec2Int *dirichletLocations) :
     IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations),
@@ -53,7 +53,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
            ys = m_element_index.lys, ym = m_element_index.lym;
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(x, x_e);
@@ -68,7 +68,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
     } // j
   } // i
 
-  GlobalSum(m_grid.com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 
   dirichletBC.finish();
 }
@@ -104,7 +104,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
     for (int j = ys; j < ys + ym; j++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, m_grid);
+      m_dofmap.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i, j, x, x_e);

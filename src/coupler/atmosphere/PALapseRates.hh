@@ -28,7 +28,7 @@ namespace atmosphere {
 class LapseRates : public PLapseRates<AtmosphereModel,PAModifier>
 {
 public:
-  LapseRates(const IceGrid &g, AtmosphereModel* in);
+  LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~LapseRates();
 
   virtual void init();

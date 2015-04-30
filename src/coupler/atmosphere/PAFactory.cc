@@ -37,7 +37,7 @@ namespace atmosphere {
 
 // Atmosphere
 
-Factory::Factory(const IceGrid& g)
+Factory::Factory(IceGrid::ConstPtr g)
   : PCFactory<AtmosphereModel,PAModifier>(g) {
   m_option = "atmosphere";
 

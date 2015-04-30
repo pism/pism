@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-StuffAsAnomaly::StuffAsAnomaly(const IceGrid &g, SurfaceModel *input)
+StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, SurfaceModel *input)
     : SurfaceModifier(g, input) {
 
   mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
@@ -109,7 +109,7 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
     input_model->ice_surface_mass_flux(mass_flux);
 
     // if we are at the beginning of the run...
-    if (m_t < m_grid.ctx()->time()->start() + 1) { // this is goofy, but time-steps are
+    if (m_t < m_grid->ctx()->time()->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
       temp_0.copy_from(temp);
@@ -126,7 +126,7 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   list.add(temp_0);
   list.add(temp_input);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);

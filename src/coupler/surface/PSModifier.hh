@@ -39,7 +39,7 @@ namespace surface {
 class SurfaceModifier : public Modifier<SurfaceModel>
 {
 public:
-  SurfaceModifier(const IceGrid &g, SurfaceModel* in)
+  SurfaceModifier(IceGrid::ConstPtr g, SurfaceModel* in)
     : Modifier<SurfaceModel>(g, in) {}
   virtual ~SurfaceModifier() {}
 protected:

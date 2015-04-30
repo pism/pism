@@ -24,7 +24,7 @@
 namespace pism {
 namespace surface {
 
-PSFormulas::PSFormulas(const IceGrid &g)
+PSFormulas::PSFormulas(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
   m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_climatic_mass_balance.set_attrs("internal",

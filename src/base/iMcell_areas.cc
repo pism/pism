@@ -50,7 +50,7 @@ void IceModel::compute_cell_areas() {
   if (config->get_boolean("correct_cell_areas") == false ||
       global_attributes.has_attribute("proj4") == false) {
 
-    cell_area.set(m_grid.dx() * m_grid.dy());
+    cell_area.set(m_grid->dx() * m_grid->dy());
 
     return;
   }
@@ -90,16 +90,16 @@ void IceModel::compute_cell_areas() {
 // +-----------+
 // (sw)        (se)
 
-  double dx2 = 0.5 * m_grid.dx(), dy2 = 0.5 * m_grid.dy();
+  double dx2 = 0.5 * m_grid->dx(), dy2 = 0.5 * m_grid->dy();
 
   IceModelVec::AccessList list;
   list.add(vLatitude);
   list.add(vLongitude);
   list.add(cell_area);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double x = m_grid.x(i), y = m_grid.y(j), Z;
+    double x = m_grid->x(i), y = m_grid->y(j), Z;
 
     // compute the cell area:
     double x_nw = x - dx2, y_nw = y + dy2;

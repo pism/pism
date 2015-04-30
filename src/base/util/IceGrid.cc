@@ -210,18 +210,16 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx) {
 //! \brief Sets grid parameters using data read from the file.
 void IceGrid::FromFile(const PIO &file, const std::string &var_name,
                        Periodicity periodicity,
-                       IceGrid *output) {
+                       IceGrid &output) {
   try {
-    assert(output != NULL);
-
-    const Logger &log = *output->ctx()->log();
+    const Logger &log = *output.ctx()->log();
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input(file, var_name, output->ctx()->unit_system(), periodicity);
+    grid_info input(file, var_name, output.ctx()->unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
-      double Lz = output->ctx()->config()->get_double("grid_Lz");
+      double Lz = output.ctx()->config()->get_double("grid_Lz");
       log.message(3,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
@@ -232,12 +230,12 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
       input.z.push_back(Lz);
     }
 
-    output->set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
+    output.set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
                                 input.x_len, input.y_len,
                                 periodicity);
-    output->set_vertical_levels(input.z);
+    output.set_vertical_levels(input.z);
 
-    // We're ready to call output->allocate().
+    // We're ready to call output.allocate().
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from \"%s\"",
                   file.inq_filename().c_str());

@@ -64,7 +64,7 @@ unsigned int IceModelVec2T::get_n_records() {
   return n_records;
 }
 
-void IceModelVec2T::create(const IceGrid &my_grid, const std::string &my_short_name) {
+void IceModelVec2T::create(IceGrid::ConstPtr my_grid, const std::string &my_short_name) {
   const unsigned int width = 1;
 
   IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width);

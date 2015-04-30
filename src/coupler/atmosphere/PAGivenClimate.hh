@@ -28,7 +28,7 @@ namespace atmosphere {
 class Given : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  Given(const IceGrid &g);
+  Given(IceGrid::ConstPtr g);
   virtual ~Given();
 
   virtual void init();

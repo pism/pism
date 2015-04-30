@@ -33,7 +33,7 @@ namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-TemperatureIndex_Old::TemperatureIndex_Old(const IceGrid &g)
+TemperatureIndex_Old::TemperatureIndex_Old(IceGrid::ConstPtr g)
   : SurfaceModel(g), temperature_name("ice_surface_temp"),
     ice_surface_temp(m_sys, temperature_name) {
   mbscheme = NULL;
@@ -158,7 +158,7 @@ void TemperatureIndex_Old::init_impl() {
 
   // if -pdd_annualize is set, update mass balance immediately (at the
   // beginning of the run)
-  next_pdd_update = m_grid.ctx()->time()->current();
+  next_pdd_update = m_grid->ctx()->time()->current();
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
@@ -203,7 +203,7 @@ void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
     if (my_t + my_dt > next_pdd_update) {
       m_log->message(3,
                      "  Updating mass balance for one year starting at %s...\n",
-                     m_grid.ctx()->time()->date(my_t).c_str());
+                     m_grid->ctx()->time()->date(my_t).c_str());
       update_internal(my_t, one_year);
       next_pdd_update = my_t + one_year;
     }
@@ -230,7 +230,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscReal one_year = units::convert(m_sys, 1.0, "years", "seconds");
 
   // time since the beginning of the year, in seconds
-  const PetscScalar tseries = m_grid.ctx()->time()->mod(my_t, one_year),
+  const PetscScalar tseries = m_grid->ctx()->time()->mod(my_t, one_year),
     dtseries = my_dt / ((PetscScalar) (Nseries - 1));
 
   // times for the air temperature time-series, in years:
@@ -244,8 +244,8 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   IceModelVec::AccessList list;
 
   if (faustogreve != NULL) {
-    lon   = m_grid.variables().get_2d_scalar("longitude");
-    usurf = m_grid.variables().get_2d_scalar("usurf");
+    lon   = m_grid->variables().get_2d_scalar("longitude");
+    usurf = m_grid->variables().get_2d_scalar("usurf");
 
     list.add(*lon);
     list.add(*usurf);
@@ -255,7 +255,7 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   const PetscScalar sigmalapserate = m_config->get_double("pdd_std_dev_lapse_lat_rate"),
                     sigmabaselat   = m_config->get_double("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
-    lat = m_grid.variables().get_2d_scalar("latitude");
+    lat = m_grid->variables().get_2d_scalar("latitude");
     list.add(*lat);
   }
 
@@ -270,9 +270,9 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
   m_atmosphere->init_timeseries(ts);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // the temperature time series from the AtmosphereModel and its modifiers
@@ -349,8 +349,8 @@ void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &va
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, temperature_name)) {
-    std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
-    io::define_spatial_variable(ice_surface_temp, m_grid, nc, nctype, order, true);
+    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, mass_balance_name)) {

@@ -254,8 +254,8 @@ void IceModel::ageStep() {
     &v3 = stress_balance->velocity_v(),
     &w3 = stress_balance->velocity_w();
 
-  ageSystemCtx system(m_grid.z(), "age",
-                      m_grid.dx(), m_grid.dy(), dt_TempAge,
+  ageSystemCtx system(m_grid->z(), "age",
+                      m_grid->dx(), m_grid->dy(), dt_TempAge,
                       age3, u3, v3, w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
@@ -269,9 +269,9 @@ void IceModel::ageStep() {
   list.add(w3);
   list.add(vWork3d);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       system.initThisColumn(i, j, ice_thickness(i, j));
@@ -303,7 +303,7 @@ void IceModel::ageStep() {
         // FIXME: this is a kludge. We need to ensure that our numerical method has the maximum
         // principle instead. (We may still need this for correctness, though.)
         double *column = vWork3d.get_column(i, j);
-        for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
+        for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
           if (column[k] < 0.0) {
             column[k] = 0.0;
           }

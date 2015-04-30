@@ -88,7 +88,7 @@ namespace energy {
 */
 class BedThermalUnit : public Component_TS {
 public:
-  BedThermalUnit(const IceGrid &g);
+  BedThermalUnit(IceGrid::ConstPtr g);
 
   virtual ~BedThermalUnit();
 

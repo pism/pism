@@ -44,7 +44,7 @@ void IceModel::view_field(const IceModelVec *field) {
     petsc::Viewer::Ptr viewer = viewers[name];
 
     if (not viewer) {
-      viewers[name].reset(new petsc::Viewer(m_grid.com, name, viewer_size, m_grid.Lx(), m_grid.Ly()));
+      viewers[name].reset(new petsc::Viewer(m_grid->com, name, viewer_size, m_grid->Lx(), m_grid->Ly()));
       viewer = viewers[name];
     }
 
@@ -64,12 +64,12 @@ void IceModel::view_field(const IceModelVec *field) {
       v2 = viewers[name_2];
 
     if (not v1) {
-      viewers[name_1].reset(new petsc::Viewer(m_grid.com, name_1, viewer_size, m_grid.Lx(), m_grid.Ly()));
+      viewers[name_1].reset(new petsc::Viewer(m_grid->com, name_1, viewer_size, m_grid->Lx(), m_grid->Ly()));
       v1 = viewers[name_1];
     }
 
     if (not v2) {
-      viewers[name_2].reset(new petsc::Viewer(m_grid.com, name_2, viewer_size, m_grid.Lx(), m_grid.Ly()));
+      viewers[name_2].reset(new petsc::Viewer(m_grid->com, name_2, viewer_size, m_grid->Lx(), m_grid->Ly()));
       v2 = viewers[name_2];
     }
 
@@ -92,8 +92,8 @@ void IceModel::update_viewers() {
   std::set<std::string>::iterator i;
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
 
-    if (m_grid.variables().is_available(*i)) {
-      this->view_field(m_grid.variables().get(*i));
+    if (m_grid->variables().is_available(*i)) {
+      this->view_field(m_grid->variables().get(*i));
     } else {
       // if not found, try to compute:
       Diagnostic *diag = diagnostics[*i];

@@ -27,7 +27,7 @@
 namespace pism {
 namespace calving {
 
-IcebergRemover::IcebergRemover(const IceGrid &g)
+IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
   : Component(g) {
 
   m_iceberg_mask.create(m_grid, "iceberg_mask", WITHOUT_GHOSTS);
@@ -63,7 +63,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     list.add(pism_mask);
     list.add(m_iceberg_mask);
 
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (M.grounded_ice(i,j) == true) {
@@ -75,11 +75,11 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
 
     // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
     // don't want them removed.
-    if (m_grid.variables().is_available("bc_mask")) {
-      const IceModelVec2Int &bc_mask = *m_grid.variables().get_2d_mask("bc_mask");
+    if (m_grid->variables().is_available("bc_mask")) {
+      const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");
       list.add(bc_mask);
 
-      for (Points p(m_grid); p; p.next()) {
+      for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (bc_mask(i,j) > 0.5 and M.icy(i,j)) {
@@ -93,11 +93,11 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   {
     m_iceberg_mask.put_on_proc0(*m_mask_p0);
 
-    ParallelSection rank0(m_grid.com);
+    ParallelSection rank0(m_grid->com);
     try {
-      if (m_grid.rank() == 0) {
+      if (m_grid->rank() == 0) {
         petsc::VecArray mask(*m_mask_p0);
-        cc(mask.get(), m_grid.Mx(), m_grid.My(), true, mask_grounded_ice);
+        cc(mask.get(), m_grid->Mx(), m_grid->My(), true, mask_grounded_ice);
       }
     } catch (...) {
       rank0.failed();
@@ -115,13 +115,13 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     list.add(pism_mask);
     list.add(m_iceberg_mask);
 
-    if (m_grid.variables().is_available("bc_mask")) {
-      const IceModelVec2Int &bc_mask = *m_grid.variables().get_2d_mask("bc_mask");
+    if (m_grid->variables().is_available("bc_mask")) {
+      const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");
       // if SSA Dirichlet B.C. are in use, do not modify mask and ice
       // thickness at Dirichlet B.C. locations
       list.add(bc_mask);
 
-      for (Points p(m_grid); p; p.next()) {
+      for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
@@ -131,7 +131,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
       }
     } else {
 
-      for (Points p(m_grid); p; p.next()) {
+      for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (m_iceberg_mask(i,j) > 0.5) {

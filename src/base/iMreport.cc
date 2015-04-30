@@ -46,7 +46,7 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   double result = 0.0, meltarea = 0.0;
-  const double a = m_grid.dx() * m_grid.dy() * 1e-3 * 1e-3; // area unit (km^2)
+  const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3; // area unit (km^2)
 
   IceModelVec2S &Enthbase = vWork2d[0];
   // use Enth3 to get stats
@@ -58,9 +58,9 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
   list.add(vMask);
   list.add(ice_thickness);
   list.add(Enthbase);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j)) {
@@ -77,7 +77,7 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
 
 
   // communication
-  result = GlobalSum(m_grid.com, meltarea);
+  result = GlobalSum(m_grid->com, meltarea);
 
   // normalize fraction correctly
   if (ice_area > 0.0) {
@@ -103,8 +103,8 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
     return result;  // leave now
   }
 
-  const double a = m_grid.dx() * m_grid.dy() * 1e-3 * 1e-3, // area unit (km^2)
-    currtime = m_grid.ctx()->time()->current(); // seconds
+  const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3, // area unit (km^2)
+    currtime = m_grid->ctx()->time()->current(); // seconds
 
   MaskQuery mask(vMask);
 
@@ -117,19 +117,19 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
   double original_ice_volume = 0.0;
 
   // compute local original volume
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j)) {
         // accumulate volume of ice which is original
         double *age = age3.get_column(i, j);
-        const int  ks = m_grid.kBelowHeight(ice_thickness(i,j));
+        const int  ks = m_grid->kBelowHeight(ice_thickness(i,j));
         for (int k = 1; k <= ks; k++) {
           // ice in segment is original if it is as old as one year less than current time
           if (0.5 * (age[k - 1] + age[k]) > currtime - one_year) {
-            original_ice_volume += a * 1.0e-3 * (m_grid.z(k) - m_grid.z(k - 1));
+            original_ice_volume += a * 1.0e-3 * (m_grid->z(k) - m_grid->z(k - 1));
           }
         }
       }
@@ -141,7 +141,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
 
 
   // communicate to turn into global original fraction
-  result = GlobalSum(m_grid.com, original_ice_volume);
+  result = GlobalSum(m_grid->com, original_ice_volume);
 
   // normalize fraction correctly
   if (ice_volume > 0.0) {
@@ -157,7 +157,7 @@ void IceModel::summary(bool tempAndAge) {
 
   // report CFL violations
   if (CFLviolcount > 0.0) {
-    const double CFLviolpercent = 100.0 * CFLviolcount / (m_grid.Mx() * m_grid.My() * m_grid.Mz());
+    const double CFLviolpercent = 100.0 * CFLviolcount / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
@@ -270,7 +270,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     char tempstr[90]    = "",
          velunitstr[90] = "";
 
-    const double major_dt = m_grid.ctx()->time()->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
+    const double major_dt = m_grid->ctx()->time()->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
     if (mass_cont_sub_counter <= 1) {
       snprintf(tempstr,90, " (dt=%.5f)", major_dt);
     } else {
@@ -285,9 +285,9 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     if (use_calendar) {
-      snprintf(tempstr,90, "%s", m_grid.ctx()->time()->date().c_str());
+      snprintf(tempstr,90, "%s", m_grid->ctx()->time()->date().c_str());
     } else {
-      snprintf(tempstr,90, "%.3f", m_grid.ctx()->time()->convert_time_interval(m_grid.ctx()->time()->current(), tunitstr));
+      snprintf(tempstr,90, "%.3f", m_grid->ctx()->time()->convert_time_interval(m_grid->ctx()->time()->current(), tunitstr));
     }
 
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
@@ -314,7 +314,7 @@ double IceModel::compute_ice_volume() {
 
   {
     list.add(ice_thickness);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they
@@ -328,14 +328,14 @@ double IceModel::compute_ice_volume() {
   // Add the volume of the ice in Href:
   if (config->get_boolean("part_grid")) {
     list.add(vHref);
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       volume += vHref(i,j) * cell_area(i,j);
     }
   }
 
-  return GlobalSum(m_grid.com, volume);
+  return GlobalSum(m_grid->com, volume);
 }
 
 //! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
@@ -356,7 +356,7 @@ double IceModel::compute_sealevel_volume() {
   list.add(ice_thickness);
   list.add(bed_topography);
   list.add(cell_area);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded(i,j)) {
@@ -374,7 +374,7 @@ double IceModel::compute_sealevel_volume() {
   const double ocean_area = 3.61e14; //in square meters
   volume /= ocean_area;
 
-  return GlobalSum(m_grid.com, volume);
+  return GlobalSum(m_grid->com, volume);
 }
 
 //! Computes the temperate ice volume, in m^3.
@@ -389,26 +389,26 @@ double  IceModel::compute_ice_volume_temperate() {
   list.add(Enth3);
   list.add(cell_area);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they are
       // considered "ice-free"
       if (ice_thickness(i,j) > 0) {
-        const int ks = m_grid.kBelowHeight(ice_thickness(i,j));
+        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
         const double *Enth = Enth3.get_column(i,j);
         const double A = cell_area(i, j);
 
         for (int k = 0; k < ks; ++k) {
           if (EC->is_temperate(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
-            volume += (m_grid.z(k + 1) - m_grid.z(k)) * A;
+            volume += (m_grid->z(k + 1) - m_grid->z(k)) * A;
           }
         }
 
         if (EC->is_temperate(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (ice_thickness(i,j) - m_grid.z(ks)) * A;
+          volume += (ice_thickness(i,j) - m_grid->z(ks)) * A;
         }
       }
     }
@@ -418,7 +418,7 @@ double  IceModel::compute_ice_volume_temperate() {
   loop.check();
 
 
-  return GlobalSum(m_grid.com, volume);
+  return GlobalSum(m_grid->com, volume);
 }
 
 //! Computes the cold ice volume, in m^3.
@@ -433,26 +433,26 @@ double IceModel::compute_ice_volume_cold() {
   list.add(Enth3);
   list.add(cell_area);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they
       // are considered "ice-free"
       if (ice_thickness(i,j) > 0) {
-        const int ks = m_grid.kBelowHeight(ice_thickness(i,j));
+        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
         const double *Enth = Enth3.get_column(i,j);
         const double A = cell_area(i, j);
 
         for (int k=0; k<ks; ++k) {
           if (not EC->is_temperate(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
-            volume += (m_grid.z(k+1) - m_grid.z(k)) * A;
+            volume += (m_grid->z(k+1) - m_grid->z(k)) * A;
           }
         }
 
         if (not EC->is_temperate(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (ice_thickness(i,j) - m_grid.z(ks)) * A;
+          volume += (ice_thickness(i,j) - m_grid->z(ks)) * A;
         }
       }
     }
@@ -462,7 +462,7 @@ double IceModel::compute_ice_volume_cold() {
   loop.check();
 
 
-  return GlobalSum(m_grid.com, volume);
+  return GlobalSum(m_grid->com, volume);
 }
 
 //! Computes ice area, in m^2.
@@ -475,7 +475,7 @@ double IceModel::compute_ice_area() {
   list.add(vMask);
   list.add(ice_thickness);
   list.add(cell_area);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -483,7 +483,7 @@ double IceModel::compute_ice_area() {
     }
   }
 
-  return GlobalSum(m_grid.com, area);
+  return GlobalSum(m_grid->com, area);
 }
 
 //! Computes area of basal ice which is temperate, in m^2.
@@ -503,9 +503,9 @@ double IceModel::compute_ice_area_temperate() {
   list.add(Enthbase);
   list.add(ice_thickness);
   list.add(cell_area);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
@@ -519,7 +519,7 @@ double IceModel::compute_ice_area_temperate() {
   loop.check();
 
 
-  return GlobalSum(m_grid.com, area);
+  return GlobalSum(m_grid->com, area);
 }
 
 //! Computes area of basal ice which is cold, in m^2.
@@ -539,9 +539,9 @@ double IceModel::compute_ice_area_cold() {
   list.add(Enthbase);
   list.add(ice_thickness);
   list.add(cell_area);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
@@ -555,7 +555,7 @@ double IceModel::compute_ice_area_cold() {
   loop.check();
 
 
-  return GlobalSum(m_grid.com, area);
+  return GlobalSum(m_grid->com, area);
 }
 
 //! Computes grounded ice area, in m^2.
@@ -567,7 +567,7 @@ double IceModel::compute_ice_area_grounded() {
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(cell_area);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j)) {
@@ -575,7 +575,7 @@ double IceModel::compute_ice_area_grounded() {
     }
   }
 
-  return GlobalSum(m_grid.com, area);
+  return GlobalSum(m_grid->com, area);
 }
 
 //! Computes floating ice area, in m^2.
@@ -587,7 +587,7 @@ double IceModel::compute_ice_area_floating() {
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(cell_area);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.floating_ice(i,j)) {
@@ -595,7 +595,7 @@ double IceModel::compute_ice_area_floating() {
     }
   }
 
-  return GlobalSum(m_grid.com, area);
+  return GlobalSum(m_grid->com, area);
 }
 
 
@@ -612,21 +612,21 @@ double IceModel::compute_ice_enthalpy() {
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(Enth3);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they
       // are considered "ice-free"
       if (ice_thickness(i,j) > 0) {
-        const int ks = m_grid.kBelowHeight(ice_thickness(i,j));
+        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
         const double *Enth = Enth3.get_column(i,j);
 
         for (int k=0; k<ks; ++k) {
-          enthalpy_sum += Enth[k] * (m_grid.z(k+1) - m_grid.z(k));
+          enthalpy_sum += Enth[k] * (m_grid->z(k+1) - m_grid->z(k));
         }
-        enthalpy_sum += Enth[ks] * (ice_thickness(i,j) - m_grid.z(ks));
+        enthalpy_sum += Enth[ks] * (ice_thickness(i,j) - m_grid->z(ks));
       }
     }
   } catch (...) {
@@ -635,9 +635,9 @@ double IceModel::compute_ice_enthalpy() {
   loop.check();
 
   // FIXME: use cell_area.
-  enthalpy_sum *= config->get_double("ice_density") * (m_grid.dx() * m_grid.dy());
+  enthalpy_sum *= config->get_double("ice_density") * (m_grid->dx() * m_grid->dy());
 
-  return GlobalSum(m_grid.com, enthalpy_sum);
+  return GlobalSum(m_grid->com, enthalpy_sum);
 }
 
 } // end of namespace pism

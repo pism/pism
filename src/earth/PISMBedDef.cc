@@ -27,7 +27,7 @@
 namespace pism {
 namespace bed {
 
-BedDef::BedDef(const IceGrid &g)
+BedDef::BedDef(IceGrid::ConstPtr g)
   : Component_TS(g) {
 
   m_t_beddef_last = GSL_NAN;
@@ -120,7 +120,7 @@ void BedDef::init_with_inputs_impl(const IceModelVec2S &bed,
 }
 
 void BedDef::update_impl(double t, double dt) {
-  const IceModelVec2S *thk = m_grid.variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("land_ice_thickness");
   this->update_with_thickness_impl(*thk, t, dt);
 }
 
@@ -130,7 +130,7 @@ void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
 
 //! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl() {
-  m_t_beddef_last = m_grid.ctx()->time()->start();
+  m_t_beddef_last = m_grid->ctx()->time()->start();
 
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;

@@ -35,7 +35,7 @@ namespace surface {
 
 ///// PISMSurfaceModel base class:
 
-SurfaceModel::SurfaceModel(const IceGrid &g)
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
   : Component_TS(g) {
   m_atmosphere = NULL;
 }

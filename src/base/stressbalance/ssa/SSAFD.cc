@@ -44,7 +44,7 @@ SSAFD::PicardFailure::PicardFailure(const std::string &message)
   // empty
 }
 
-SSA* SSAFDFactory(const IceGrid &g, EnthalpyConverter::Ptr ec) {
+SSA* SSAFDFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
   return new SSAFD(g, ec);
 }
 
@@ -56,7 +56,7 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(const IceGrid &g, EnthalpyConverter::Ptr e)
+SSAFD::SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSA(g, e) {
   m_b.create(m_grid, "right_hand_side", WITHOUT_GHOSTS);
 
@@ -115,7 +115,7 @@ SSAFD::SSAFD(const IceGrid &g, EnthalpyConverter::Ptr e)
     PISM_CHK(ierr, "DMCreateMatrix");
 #endif
 
-    ierr = KSPCreate(m_grid.com, m_KSP.rawptr());
+    ierr = KSPCreate(m_grid->com, m_KSP.rawptr());
     PISM_CHK(ierr, "KSPCreate");
 
     ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
@@ -253,7 +253,7 @@ void SSAFD::init_impl() {
   m_default_pc_failure_max_count = 5;
 
   if (m_config->get_boolean("do_fracture_density")) {
-    fracture_density = m_grid.variables().get_2d_scalar("fracture_density");
+    fracture_density = m_grid->variables().get_2d_scalar("fracture_density");
   }
 }
 
@@ -280,7 +280,7 @@ come from known velocity values.  The fields m_bc_values and m_bc_mask are used 
 this.
  */
 void SSAFD::assemble_rhs() {
-  const double dx = m_grid.dx(), dy = m_grid.dy();
+  const double dx = m_grid->dx(), dy = m_grid->dy();
 
   const double ice_free_default_velocity = 0.0;
 
@@ -316,7 +316,7 @@ void SSAFD::assemble_rhs() {
     list.add(*m_melange_back_pressure);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_bc_values != NULL &&
@@ -496,7 +496,7 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
 
-  const double   dx=m_grid.dx(), dy=m_grid.dy();
+  const double   dx=m_grid->dx(), dy=m_grid->dy();
   const double   beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
@@ -535,9 +535,9 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   double HminFrozen=0.0;
 
   /* matrix assembly loop */
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Handle the easy case: provided Dirichlet boundary conditions
@@ -1169,7 +1169,7 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
  */
 void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
-  const double area = m_grid.dx() * m_grid.dy();
+  const double area = m_grid->dx() * m_grid->dy();
   const NormType MY_NORM = NORM_1;
 
   // Test for change in nu
@@ -1192,7 +1192,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 void SSAFD::compute_hardav_staggered() {
   const double *E_ij, *E_offset;
 
-  std::vector<double> E(m_grid.Mz());
+  std::vector<double> E(m_grid->Mz());
 
   IceModelVec::AccessList list;
   list.add(*m_thickness);
@@ -1202,9 +1202,9 @@ void SSAFD::compute_hardav_staggered() {
 
   MaskQuery m(*m_mask);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       E_ij = m_enthalpy->get_column(i,j);
@@ -1227,12 +1227,12 @@ void SSAFD::compute_hardav_staggered() {
 
         E_offset = m_enthalpy->get_column(i+oi,j+oj);
         // build a column of enthalpy values a the current location:
-        for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
+        for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid.kBelowHeight(H),
-                                                        &(m_grid.z()[0]), &E[0]);
+        hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid->kBelowHeight(H),
+                                                        &(m_grid->z()[0]), &E[0]);
       } // o
     }
   } catch (...) {
@@ -1292,7 +1292,7 @@ void SSAFD::fracture_induced_softening() {
   list.add(hardness);
   list.add(*fracture_density);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o=0; o<2; o++) {
@@ -1371,11 +1371,11 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
     n_glen = m_flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
-  const double dx = m_grid.dx(), dy = m_grid.dy();
+  const double dx = m_grid->dx(), dy = m_grid->dy();
 
   for (int o=0; o<2; ++o) {
     const int oi = 1 - o, oj=o;
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+oi,j+oj));
@@ -1447,7 +1447,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
 
-  const double dx = m_grid.dx(), dy = m_grid.dy();
+  const double dx = m_grid->dx(), dy = m_grid->dy();
 
   MaskQuery m(*m_mask);
 
@@ -1460,7 +1460,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   assert(m_mask->get_stencil_width()      >= 2);
   assert(m_work.get_stencil_width()     >= 1);
 
-  for (PointsWithGhosts p(m_grid); p; p.next()) {
+  for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
@@ -1494,7 +1494,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   list.add(hardness);
   list.add(*m_thickness);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double u_x, u_y, v_x, v_y, H, nu, W;
@@ -1598,7 +1598,7 @@ void SSAFD::update_nuH_viewers() {
   list.add(nuH);
   list.add(tmp);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
@@ -1610,8 +1610,8 @@ void SSAFD::update_nuH_viewers() {
   }
 
   if (not nuh_viewer) {
-    nuh_viewer.reset(new petsc::Viewer(m_grid.com, "nuH", nuh_viewer_size,
-                                       m_grid.Lx(), m_grid.Ly()));
+    nuh_viewer.reset(new petsc::Viewer(m_grid->com, "nuH", nuh_viewer_size,
+                                       m_grid->Lx(), m_grid->Ly()));
   }
 
   tmp.view(nuh_viewer, petsc::Viewer::Ptr());
@@ -1690,7 +1690,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
              "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
 
   petsc::Viewer viewer;       // will be destroyed automatically
-  ierr = PetscViewerBinaryOpen(m_grid.com, filename.c_str(), FILE_MODE_WRITE,
+  ierr = PetscViewerBinaryOpen(m_grid->com, filename.c_str(), FILE_MODE_WRITE,
                                viewer.rawptr());
   PISM_CHK(ierr, "PetscViewerBinaryOpen");
 
@@ -1708,7 +1708,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
                                        "Save the linear system to an ASCII .m file. Sets the file prefix.",
                                        "SSAFD_" + namepart);
 
-  double year = units::convert(m_sys, m_grid.ctx()->time()->current(), "seconds", "years");
+  double year = units::convert(m_sys, m_grid->ctx()->time()->current(), "seconds", "years");
   char file_name[TEMPORARY_STRING_LENGTH];
   snprintf(file_name, TEMPORARY_STRING_LENGTH, "%s_y%.0f.m", prefix.c_str(), year);
 
@@ -1716,7 +1716,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
              file_name);
 
-  petsc::Viewer viewer(m_grid.com);
+  petsc::Viewer viewer(m_grid->com);
 
   // petsc calls
   PetscErrorCode ierr = write_system_matlab_c(viewer, file_name, pism_args_string(), year);
@@ -1778,8 +1778,8 @@ PetscErrorCode SSAFD::write_system_matlab_c(const petsc::Viewer &viewer,
   ierr = PetscViewerASCIIPrintf(viewer,
                                 "x=%12.3f + (0:%d)*%12.3f;\n"
                                 "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -m_grid.Lx(), m_grid.Mx() - 1, m_grid.dx(),
-                                -m_grid.Ly(), m_grid.My() - 1, m_grid.dy()); CHKERRQ(ierr);
+                                -m_grid->Lx(), m_grid->Mx() - 1, m_grid->dx(),
+                                -m_grid->Ly(), m_grid->My() - 1, m_grid->dy()); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer, "[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer, "echo on\n"); CHKERRQ(ierr);

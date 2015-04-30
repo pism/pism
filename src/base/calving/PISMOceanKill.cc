@@ -29,7 +29,7 @@
 namespace pism {
 namespace calving {
 
-OceanKill::OceanKill(const IceGrid &g)
+OceanKill::OceanKill(IceGrid::ConstPtr g)
   : Component(g) {
 
   m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
@@ -84,7 +84,7 @@ void OceanKill::init() {
 
   GeometryCalculator gc(0.0, *m_config);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int M = gc.mask(bed(i, j), thickness(i, j));
@@ -110,7 +110,7 @@ void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
   assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);
   assert(ice_thickness.get_stencil_width()     >= GHOSTS);
 
-  for (PointsWithGhosts p(m_grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_ocean_kill_mask(i, j) > 0.5) {

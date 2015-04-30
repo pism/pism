@@ -29,7 +29,7 @@ namespace atmosphere {
 class Anomaly : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  Anomaly(const IceGrid &g, AtmosphereModel* in);
+  Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Anomaly();
 
   virtual void init();

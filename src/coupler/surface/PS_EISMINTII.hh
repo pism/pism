@@ -33,7 +33,7 @@ namespace surface {
  */
 class EISMINTII : public PSFormulas {
 public:
-  EISMINTII(const IceGrid &g, int experiment);
+  EISMINTII(IceGrid::ConstPtr g, int experiment);
   ~EISMINTII();
 protected:
   void init_impl();

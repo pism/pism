@@ -31,10 +31,10 @@
 namespace pism {
 namespace energy {
 
-BedThermalUnit::BedThermalUnit(const IceGrid &g)
+BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
     : Component_TS(g) {
 
-  const Logger &log = *g.ctx()->log();
+  const Logger &log = *g->ctx()->log();
 
   m_upward_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
   // PROPOSED standard_name = lithosphere_upward_heat_flux
@@ -74,14 +74,14 @@ BedThermalUnit::BedThermalUnit(const IceGrid &g)
 
       // If we're initializing from a file we need to get the number of bedrock
       // levels and the depth of the bed thermal layer from it:
-      PIO nc(m_grid.com, "guess_mode");
+      PIO nc(m_grid->com, "guess_mode");
 
       nc.open(m_input_file, PISM_READONLY);
 
       bool exists = nc.inq_var("litho_temp");
 
       if (exists) {
-        grid_info info(nc, "litho_temp", m_sys, m_grid.periodicity());
+        grid_info info(nc, "litho_temp", m_sys, m_grid->periodicity());
 
         m_Mbz = info.z_len;
         m_Lbz = -info.z_min;
@@ -162,7 +162,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
   }
 
   if (not m_input_file.empty()) {
-    PIO nc(m_grid.com, "guess_mode");
+    PIO nc(m_grid->com, "guess_mode");
 
     nc.open(m_input_file, PISM_READONLY);
     bool exists = nc.inq_var("litho_temp");
@@ -314,8 +314,8 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   // Get pointers to fields owned by IceModel.
   const IceModelVec2S
-    *bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp"),
-    *ghf        = m_grid.variables().get_2d_scalar("bheatflx");
+    *bedtoptemp = m_grid->variables().get_2d_scalar("bedtoptemp"),
+    *ghf        = m_grid->variables().get_2d_scalar("bheatflx");
 
   double dzb = this->vertical_spacing();
   const int  k0  = m_Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
@@ -329,7 +329,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
   list.add(*ghf);
   list.add(*bedtoptemp);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tbold = m_temp.get_column(i,j); // Tbold actually points into temp memory
@@ -361,7 +361,7 @@ the `Mbz` <= 1 cases, we return the stored geothermal flux.
 const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
 
   if (not m_temp.was_created()) {
-    return *m_grid.variables().get_2d_scalar("bheatflx");
+    return *m_grid->variables().get_2d_scalar("bheatflx");
   }
 
   double dzb = this->vertical_spacing();
@@ -373,7 +373,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
 
   if (m_Mbz >= 3) {
 
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *Tb = m_temp.get_column(i,j);
@@ -382,7 +382,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
 
   } else {
 
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *Tb = m_temp.get_column(i,j);
@@ -409,14 +409,14 @@ void BedThermalUnit::bootstrap() {
 
   // Get pointers to fields owned by IceModel.
   const IceModelVec2S
-    *bedtoptemp = m_grid.variables().get_2d_scalar("bedtoptemp"),
-    *ghf        = m_grid.variables().get_2d_scalar("bheatflx");
+    *bedtoptemp = m_grid->variables().get_2d_scalar("bedtoptemp"),
+    *ghf        = m_grid->variables().get_2d_scalar("bheatflx");
 
   IceModelVec::AccessList list;
   list.add(*bedtoptemp);
   list.add(*ghf);
   list.add(m_temp);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tb = m_temp.get_column(i,j); // Tb points into temp memory

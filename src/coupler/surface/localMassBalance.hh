@@ -193,7 +193,7 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(const IceGrid &g);
+  FaustoGrevePDDObject(IceGrid::ConstPtr g);
   virtual ~FaustoGrevePDDObject() {}
 
   virtual void update_temp_mj(const IceModelVec2S &surfelev,
@@ -207,7 +207,7 @@ public:
                                    LocalMassBalance::DegreeDayFactors &ddf);
 
 protected:
-  const IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
   const Config::ConstPtr m_config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;

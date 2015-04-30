@@ -24,7 +24,7 @@
 namespace pism {
 namespace surface {
 
-LapseRates::LapseRates(const IceGrid &g, SurfaceModel* in)
+LapseRates::LapseRates(IceGrid::ConstPtr g, SurfaceModel* in)
   : PLapseRates<SurfaceModel,SurfaceModifier>(g, in),
     m_climatic_mass_balance(m_sys, "climatic_mass_balance"),
     m_ice_surface_temp(m_sys, "ice_surface_temp") {
@@ -100,14 +100,14 @@ void LapseRates::add_vars_to_output_impl(const std::string &keyword,
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(m_ice_surface_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(m_climatic_mass_balance, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

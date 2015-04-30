@@ -35,7 +35,7 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(const IceGrid &g, Model* in)
+  Modifier(IceGrid::ConstPtr g, Model* in)
     : Model(g), input_model(in) {}
   virtual ~Modifier()
   {

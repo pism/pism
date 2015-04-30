@@ -32,9 +32,9 @@
 
 namespace pism {
 
-Component::Component(const IceGrid &g)
-  : m_grid(g), m_config(g.ctx()->config()), m_sys(g.ctx()->unit_system()),
-    m_log(g.ctx()->log()) {
+Component::Component(IceGrid::ConstPtr g)
+  : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
+    m_log(g->ctx()->log()) {
   // empty
 }
 
@@ -67,7 +67,7 @@ void Component::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
   (void)ts_dict;
 }
 
-const IceGrid& Component::grid() const {
+IceGrid::ConstPtr Component::grid() const {
   return m_grid;
 }
 
@@ -87,7 +87,7 @@ bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &sta
 
     filename = input_file;
 
-    PIO nc(m_grid.com, "netcdf3");      // OK to use netcdf3
+    PIO nc(m_grid->com, "netcdf3");      // OK to use netcdf3
     unsigned int last_record;
     nc.open(filename, PISM_READONLY);
     last_record = nc.inq_nrecords() - 1;
@@ -152,7 +152,7 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
   }
 }
 
-Component_TS::Component_TS(const IceGrid &g)
+Component_TS::Component_TS(IceGrid::ConstPtr g)
   : Component(g) {
   m_t = m_dt = GSL_NAN;
 }

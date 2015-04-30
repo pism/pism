@@ -100,7 +100,7 @@ namespace hydrology {
 */
 class Hydrology : public Component_TS {
 public:
-  Hydrology(const IceGrid &g);
+  Hydrology(IceGrid::ConstPtr g);
   virtual ~Hydrology();
 
   virtual void init();
@@ -163,7 +163,7 @@ protected:
 */
 class NullTransport : public Hydrology {
 public:
-  NullTransport(const IceGrid &g);
+  NullTransport(IceGrid::ConstPtr g);
   virtual ~NullTransport();
 
   virtual void init();
@@ -236,7 +236,7 @@ protected:
 */
 class Routing : public Hydrology {
 public:
-  Routing(const IceGrid &g);
+  Routing(IceGrid::ConstPtr g);
   virtual ~Routing();
 
   virtual void init();
@@ -311,6 +311,8 @@ protected:
 
   void raw_update_W(double hdt);
   void raw_update_Wtil(double hdt);
+protected:
+  double m_dx, m_dy;
 };
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
@@ -330,7 +332,7 @@ protected:
 */
 class Distributed : public Routing {
 public:
-  Distributed(const IceGrid &g, stressbalance::StressBalance *sb);
+  Distributed(IceGrid::ConstPtr g, stressbalance::StressBalance *sb);
   virtual ~Distributed();
 
   virtual void init();

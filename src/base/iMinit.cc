@@ -69,10 +69,10 @@ void IceModel::set_grid_defaults() {
   // deduced from a bootstrapping file, so we check if these options
   // are set and stop if they are not.
   options::Integer
-    Mx("-Mx", "grid size in X direction", m_grid.Mx()),
-    My("-My", "grid size in Y direction", m_grid.My()),
-    Mz("-Mz", "grid size in vertical direction", m_grid.Mz());
-  options::Real Lz("-Lz", "height of the computational domain", m_grid.Lz());
+    Mx("-Mx", "grid size in X direction", m_grid->Mx()),
+    My("-My", "grid size in Y direction", m_grid->My()),
+    Mz("-Mz", "grid size in vertical direction", m_grid->Mz());
+  options::Real Lz("-Lz", "height of the computational domain", m_grid->Lz());
 
   if (not (Mx.is_set() and My.is_set() and Mz.is_set() and Lz.is_set())) {
     throw RuntimeError("All of -bootstrap, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
@@ -90,7 +90,7 @@ void IceModel::set_grid_defaults() {
   // Use a bootstrapping file to set some grid parameters (they can be
   // overridden later, in IceModel::set_grid_from_options()).
 
-  PIO nc(m_grid.com, "netcdf3"); // OK to use netcdf3, we read very little data here.
+  PIO nc(m_grid->com, "netcdf3"); // OK to use netcdf3, we read very little data here.
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -116,7 +116,7 @@ void IceModel::set_grid_defaults() {
       }
 
       if (grid_info_found) {
-        input = grid_info(nc, names[i], m_ctx->unit_system(), m_grid.periodicity());
+        input = grid_info(nc, names[i], m_ctx->unit_system(), m_grid->periodicity());
         break;
       }
     }
@@ -145,7 +145,7 @@ void IceModel::set_grid_defaults() {
   }
 
   // Set the grid center and horizontal extent:
-  m_grid.set_extent(input.x0, input.y0, input.Lx, input.Ly);
+  m_grid->set_extent(input.x0, input.y0, input.Lx, input.Ly);
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys = options::Bool("-ys", "starting time");
@@ -154,7 +154,7 @@ void IceModel::set_grid_defaults() {
       m_ctx->time()->set_start(input.time);
       m_log->message(2,
                  "  time t = %s found; setting current time\n",
-                 m_grid.ctx()->time()->date().c_str());
+                 m_grid->ctx()->time()->date().c_str());
     }
   }
 
@@ -168,15 +168,15 @@ void IceModel::set_grid_defaults() {
 void IceModel::set_grid_from_options() {
 
   double
-    x0 = m_grid.x0(),
-    y0 = m_grid.y0(),
-    Lx = m_grid.Lx(),
-    Ly = m_grid.Ly(),
-    Lz = m_grid.Lz();
+    x0 = m_grid->x0(),
+    y0 = m_grid->y0(),
+    Lx = m_grid->Lx(),
+    Ly = m_grid->Ly(),
+    Lz = m_grid->Lz();
   int
-    Mx = m_grid.Mx(),
-    My = m_grid.My(),
-    Mz = m_grid.Mz();
+    Mx = m_grid->Mx(),
+    My = m_grid->My(),
+    Mz = m_grid->Mz();
   SpacingType spacing = QUADRATIC; // irrelevant (it is reset below)
 
   // Process options:
@@ -243,8 +243,8 @@ void IceModel::set_grid_from_options() {
   //
   // Note that grid.periodicity() includes the result of processing
   // the -periodicity option.
-  m_grid.set_size_and_extent(x0, y0, Lx, Ly, Mx, My, m_grid.periodicity());
-  m_grid.set_vertical_levels(Lz, Mz, spacing);
+  m_grid->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, m_grid->periodicity());
+  m_grid->set_vertical_levels(Lz, Mz, spacing);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
   // filled. We're ready to call grid.allocate().
@@ -274,7 +274,7 @@ void IceModel::grid_setup() {
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
   if (input_file.is_set() and not bootstrap) {
-    PIO nc(m_grid.com, "guess_mode");
+    PIO nc(m_grid->com, "guess_mode");
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
@@ -321,7 +321,7 @@ void IceModel::grid_setup() {
       var_exists = nc.inq_var(names[i]);
 
       if (var_exists == true) {
-        IceGrid::FromFile(nc, names[i], m_grid.periodicity(), &m_grid);
+        IceGrid::FromFile(nc, names[i], m_grid->periodicity(), *m_grid);
         break;
       }
     }
@@ -349,7 +349,7 @@ void IceModel::grid_setup() {
     set_grid_from_options();
   }
 
-  m_grid.allocate();
+  m_grid->allocate();
 }
 
 //! Initialize time from an input file or command-line options.
@@ -360,7 +360,7 @@ void IceModel::time_setup() {
   options::String input_file("-i", "Specifies a PISM input file");
 
   if (input_file.is_set()) {
-    PIO nc(m_grid.com, "guess_mode");
+    PIO nc(m_grid->com, "guess_mode");
 
     std::string time_name = m_ctx->config()->get_string("time_dimension_name");
 
@@ -432,8 +432,8 @@ void IceModel::model_state_setup() {
   // bed elevation and uplift.
   if (beddef) {
     beddef->init();
-    m_grid.variables().add(beddef->bed_elevation());
-    m_grid.variables().add(beddef->uplift());
+    m_grid->variables().add(beddef->bed_elevation());
+    m_grid->variables().add(beddef->uplift());
   }
 
   if (stress_balance) {
@@ -516,7 +516,7 @@ void IceModel::model_state_setup() {
   }
 
   if (input_file.is_set()) {
-    PIO nc(m_grid.com, "netcdf3");
+    PIO nc(m_grid->com, "netcdf3");
 
     nc.open(input_file, PISM_READONLY);
     bool run_stats_exists = nc.inq_var("run_stats");
@@ -830,8 +830,8 @@ void IceModel::init_couplers() {
 void IceModel::init_step_couplers() {
 
   const double
-    now               = m_grid.ctx()->time()->current(),
-    one_year_from_now = m_grid.ctx()->time()->increment_date(now, 1.0);
+    now               = m_grid->ctx()->time()->current(),
+    one_year_from_now = m_grid->ctx()->time()->increment_date(now, 1.0);
 
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);

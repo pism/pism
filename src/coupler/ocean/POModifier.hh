@@ -27,7 +27,7 @@ namespace ocean {
 class OceanModifier : public Modifier<OceanModel>
 {
 public:
-  OceanModifier(const IceGrid &g, OceanModel* in)
+  OceanModifier(IceGrid::ConstPtr g, OceanModel* in)
     : Modifier<OceanModel>(g, in) {}
   virtual ~OceanModifier() {}
 

@@ -36,7 +36,7 @@ namespace stressbalance {
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(const IceGrid &g, EnthalpyConverter::Ptr e);
+  SSB_Modifier(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SSB_Modifier();
 
   virtual void init();
@@ -70,7 +70,7 @@ protected:
 //! The trivial Shallow Stress Balance modifier.
 class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(const IceGrid &g, EnthalpyConverter::Ptr e);
+  ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~ConstantInColumn();
 
   virtual void init();

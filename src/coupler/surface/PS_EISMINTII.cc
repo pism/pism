@@ -28,7 +28,7 @@
 namespace pism {
 namespace surface {
 
-EISMINTII::EISMINTII(const IceGrid &g, int experiment)
+EISMINTII::EISMINTII(IceGrid::ConstPtr g, int experiment)
   : PSFormulas(g), m_experiment(experiment) {
   // empty
 }
@@ -109,7 +109,7 @@ MaxTimestep EISMINTII::max_timestep_impl(double t) {
 
 void EISMINTII::initialize_using_formulas() {
 
-  PetscScalar cx = m_grid.Lx(), cy = m_grid.Ly();
+  PetscScalar cx = m_grid->Lx(), cy = m_grid->Ly();
   if (m_experiment == 'E') {
     // shift center
     cx += 100.0e3;
@@ -121,12 +121,12 @@ void EISMINTII::initialize_using_formulas() {
   list.add(m_ice_surface_temp);
   list.add(m_climatic_mass_balance);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // r is distance from center of grid; if E then center is shifted (above)
-    const double r = sqrt(PetscSqr(-cx + m_grid.dx()*i)
-                          + PetscSqr(-cy + m_grid.dy()*j));
+    const double r = sqrt(PetscSqr(-cx + m_grid->dx()*i)
+                          + PetscSqr(-cy + m_grid->dy()*j));
     // set accumulation from formula (7) in (Payne et al 2000)
     m_climatic_mass_balance(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
     // set surface temperature

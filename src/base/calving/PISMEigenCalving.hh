@@ -32,7 +32,7 @@ namespace calving {
 class EigenCalving : public Component
 {
 public:
-  EigenCalving(const IceGrid &g, stressbalance::StressBalance *stress_balance);
+  EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
   virtual ~EigenCalving();
 
   virtual void init();

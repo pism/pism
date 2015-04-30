@@ -29,7 +29,7 @@ namespace surface {
 class Anomaly : public PGivenClimate<SurfaceModifier,SurfaceModel>
 {
 public:
-  Anomaly(const IceGrid &g, SurfaceModel* in);
+  Anomaly(IceGrid::ConstPtr g, SurfaceModel* in);
   virtual ~Anomaly();
 protected:
   virtual void init_impl();

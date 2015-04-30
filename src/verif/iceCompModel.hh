@@ -28,7 +28,7 @@ namespace energy {
 class BTU_Verification : public BedThermalUnit
 {
 public:
-  BTU_Verification(const IceGrid &g, int test, bool bii);
+  BTU_Verification(IceGrid::ConstPtr g, int test, bool bii);
   virtual ~BTU_Verification();
 
   virtual const IceModelVec3Custom* temperature();
@@ -42,7 +42,7 @@ protected:
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, Context::Ptr ctx, int mytest);
+  IceCompModel(IceGrid::Ptr g, Context::Ptr ctx, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:

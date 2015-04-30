@@ -94,7 +94,7 @@ void IceModel::Href_cleanup() {
   list.add(vHref);
   list.add(vMask);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
@@ -148,7 +148,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
     list.add(Href_old);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free_ocean(i,j)) {
@@ -180,7 +180,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
     }
   }
 
-  total_discharge = GlobalSum(m_grid.com, my_total_discharge);
+  total_discharge = GlobalSum(m_grid->com, my_total_discharge);
 
   this->discharge_flux_cumulative += total_discharge;
 }

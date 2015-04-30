@@ -33,7 +33,7 @@ namespace ocean {
 class Delta_MBP : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  Delta_MBP(const IceGrid &g, OceanModel* in);
+  Delta_MBP(IceGrid::ConstPtr g, OceanModel* in);
   virtual ~Delta_MBP();
 
 protected:

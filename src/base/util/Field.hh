@@ -24,7 +24,7 @@ namespace pism {
 
 class Field {
 protected:
-  Field(const IceGrid &g, const std::string &name);
+  Field(IceGrid::ConstPtr g, const std::string &name);
 public:
   virtual ~Field();
   // metadata
@@ -83,7 +83,7 @@ protected:
 
   std::string m_name;
   Vec m_v;
-  IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
   mutable void *m_array;
   PISMDM::Ptr m_da;          //!< distributed mesh manager (DM)
   unsigned int m_dof;
@@ -114,7 +114,7 @@ public:
 
 class GhostedField : virtual public Field {
 public:
-  GhostedField(const IceGrid &grid, const std::string &name, unsigned int stencil_width);
+  GhostedField(IceGrid::ConstPtr grid, const std::string &name, unsigned int stencil_width);
   virtual ~GhostedField();
   unsigned int stencil_width() const;
   void update_ghosts();
@@ -128,7 +128,7 @@ public:
   struct Range {
     double min, max;
   };
-  ScalarField(const IceGrid &grid, const std::string &name);
+  ScalarField(IceGrid::ConstPtr grid, const std::string &name);
   virtual ~ScalarField();
   void set(double value);
   void shift(double amount);
@@ -139,7 +139,7 @@ public:
 class GhostedScalar2DField;
 class Scalar2DField : virtual public ScalarField {
 public:
-  Scalar2DField(const IceGrid &grid,  const std::string &name);
+  Scalar2DField(IceGrid::ConstPtr grid,  const std::string &name);
   virtual ~Scalar2DField();
   void copy_from(const Scalar2DField &input);
   void scatter_to_ghosted(GhostedScalar2DField &output) const;
@@ -162,7 +162,7 @@ inline double diff_y_p(const Scalar2DField &field, int i, int j) const;
 class GhostedScalar3DField;
 class Scalar3DField : virtual public ScalarField {
 public:
-  Scalar3DField(const IceGrid &grid,  const std::string &name,
+  Scalar3DField(IceGrid::ConstPtr grid,  const std::string &name,
                 const std::vector<double> &levels);
   virtual ~Scalar3DField();
   void copy_from(const Scalar3DField &input);

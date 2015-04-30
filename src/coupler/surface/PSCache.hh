@@ -28,7 +28,7 @@ namespace surface {
 
 class Cache : public SurfaceModifier {
 public:
-  Cache(const IceGrid &g, SurfaceModel* in);
+  Cache(IceGrid::ConstPtr g, SurfaceModel* in);
   virtual ~Cache();
 protected:
   virtual void init_impl();

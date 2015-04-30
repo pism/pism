@@ -47,7 +47,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
 }
 
 IceModelVec::Ptr SIAFD_schoofs_theta::compute() {
-  const IceModelVec2S *surface = m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "schoofs_theta", WITHOUT_GHOSTS);
@@ -92,9 +92,9 @@ IceModelVec::Ptr SIAFD_thksmooth::compute() {
   const IceModelVec2S *surface, *thickness;
   const IceModelVec2Int *mask;
 
-  surface   = m_grid.variables().get_2d_scalar("surface_altitude");
-  thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  mask      = m_grid.variables().get_2d_mask("mask");
+  surface   = m_grid->variables().get_2d_scalar("surface_altitude");
+  thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  mask      = m_grid->variables().get_2d_mask("mask");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "thksmooth", WITHOUT_GHOSTS);

@@ -40,11 +40,11 @@ template<class IMVecType>
 class IPFunctional {
 
 public:
-  IPFunctional(const IceGrid &grid)
+  IPFunctional(IceGrid::ConstPtr grid)
     : m_grid(grid),
-      m_element_index(m_grid),
-      m_quadrature(grid, 1.0),
-      m_quadrature_vector(grid, 1.0)
+      m_element_index(*m_grid),
+      m_quadrature(*grid, 1.0),
+      m_quadrature_vector(*grid, 1.0)
   {
   }
 
@@ -67,7 +67,7 @@ public:
   virtual void gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
 protected:
-  const IceGrid &m_grid;
+  IceGrid::ConstPtr m_grid;
 
   fem::ElementMap m_element_index;
   fem::Quadrature_Scalar m_quadrature;
@@ -95,7 +95,7 @@ template<class IMVecType>
 class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
-  IPInnerProductFunctional(const IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
+  IPInnerProductFunctional(IceGrid::ConstPtr grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a, b)\f$.
   virtual void dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;

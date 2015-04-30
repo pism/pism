@@ -49,11 +49,11 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     double Lx = 1200e3;
-    IceGrid grid(ctx);
-    grid.set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
-    grid.allocate();
+    IceGrid::Ptr grid(new IceGrid(ctx));
+    grid->set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
+    grid->allocate();
 
-    ierr = PetscPrintf(grid.com,"BedSmoother TEST\n");
+    ierr = PetscPrintf(grid->com,"BedSmoother TEST\n");
     PISM_CHK(ierr, "PetscPrintf");
 
     bool show = options::Bool("-show", "turn on diagnostic viewers");
@@ -74,11 +74,11 @@ int main(int argc, char *argv[]) {
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
     //            100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
     IceModelVec::AccessList list(topg);
-    for (Points p(grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x(i) / 600.0e3) +
-        100.0 * sin(2.0 * M_PI * (grid.x(i) + 1.5 * grid.y(j)) / 40.0e3);
+      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid->x(i) / 600.0e3) +
+        100.0 * sin(2.0 * M_PI * (grid->x(i) + 1.5 * grid->y(j)) / 40.0e3);
     }
 
     usurf.set(1000.0);  // compute theta for this constant thk
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     int Nx,Ny;
     smoother.get_smoothing_domain(Nx,Ny);
 
-    ierr = PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
+    ierr = PetscPrintf(grid->com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
     PISM_CHK(ierr, "PetscPrintf");
 
     smoother.get_theta(usurf, theta);
@@ -115,17 +115,17 @@ int main(int argc, char *argv[]) {
     topgs_max = topg_smoothed.max();
     theta_min = theta.min();
     theta_max = theta.max();
-    ierr = PetscPrintf(grid.com,
+    ierr = PetscPrintf(grid->com,
                        "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
                        topg_min, topg_max);
     PISM_CHK(ierr, "PetscPrintf");
 
-    ierr = PetscPrintf(grid.com,
+    ierr = PetscPrintf(grid->com,
                        "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
                        topgs_min, topgs_max);
     PISM_CHK(ierr, "PetscPrintf");
 
-    ierr = PetscPrintf(grid.com,
+    ierr = PetscPrintf(grid->com,
                        "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
                        theta_min, theta_max);
     PISM_CHK(ierr, "PetscPrintf");

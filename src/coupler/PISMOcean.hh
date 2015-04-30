@@ -32,7 +32,7 @@ namespace ocean {
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component_TS {
 public:
-  OceanModel(const IceGrid &g);
+  OceanModel(IceGrid::ConstPtr g);
   virtual ~OceanModel();
 
   void init();

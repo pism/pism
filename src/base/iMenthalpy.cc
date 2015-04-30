@@ -58,14 +58,14 @@ void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVe
   list.add(result);
   list.add(ice_thickness);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double *Tij = temperature.get_column(i,j);
     double *Enthij = result.get_column(i,j);
 
-    for (unsigned int k = 0; k < m_grid.Mz(); ++k) {
-      const double depth = ice_thickness(i, j) - m_grid.z(k); // FIXME issue #15
+    for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
+      const double depth = ice_thickness(i, j) - m_grid->z(k); // FIXME issue #15
       Enthij[k] = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
     }
   }
@@ -92,15 +92,15 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
   list.add(result);
   list.add(ice_thickness);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double *Tij = temperature.get_column(i,j);
     const double *Liqfracij = liquid_water_fraction.get_column(i,j);
     double *Enthij = result.get_column(i,j);
 
-    for (unsigned int k=0; k<m_grid.Mz(); ++k) {
-      const double depth = ice_thickness(i,j) - m_grid.z(k); // FIXME issue #15
+    for (unsigned int k=0; k<m_grid->Mz(); ++k) {
+      const double depth = ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
       Enthij[k] = EC->enthalpy_permissive(Tij[k], Liqfracij[k],
                                         EC->pressure(depth));
     }
@@ -131,16 +131,16 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   list.add(enthalpy);
   list.add(ice_thickness);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Enthij = enthalpy.get_column(i,j);
       double *omegaij = result.get_column(i,j);
 
-      for (unsigned int k=0; k<m_grid.Mz(); ++k) {
-        const double depth = ice_thickness(i,j) - m_grid.z(k); // FIXME issue #15
+      for (unsigned int k=0; k<m_grid->Mz(); ++k) {
+        const double depth = ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
         omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
       }
     }
@@ -174,14 +174,14 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
   list.add(Enth3);
   list.add(ice_thickness);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *CTS  = result.get_column(i,j);
     const double *enthalpy = Enth3.get_column(i,j);
 
-    for (unsigned int k=0; k<m_grid.Mz(); ++k) {
-      const double depth = ice_thickness(i,j) - m_grid.z(k); // FIXME issue #15
+    for (unsigned int k=0; k<m_grid->Mz(); ++k) {
+      const double depth = ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
       CTS[k] = enthalpy[k] / EC->enthalpy_cts(EC->pressure(depth));
     }
   }
@@ -228,7 +228,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
 
-  energy::enthSystemCtx system(m_grid.z(), "enth", m_grid.dx(), m_grid.dy(), dt_TempAge,
+  energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt_TempAge,
                                *config, Enth3, u3, v3, w3, strain_heating3, EC);
 
   size_t Mz_fine = system.z().size();
@@ -279,9 +279,9 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   MaskQuery mask(vMask);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(m_grid); pt; pt.next()) {
+    for (Points pt(*m_grid); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       // ignore advection and strain heating in ice if isMarginal
@@ -495,7 +495,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
 
   // FIXME: use cell areas
-  *liquifiedVol = ((double) liquifiedCount) * dz * m_grid.dx() * m_grid.dy();
+  *liquifiedVol = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
 }
 
 /*

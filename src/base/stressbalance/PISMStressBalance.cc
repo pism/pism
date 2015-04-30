@@ -27,11 +27,12 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 namespace stressbalance {
 
-StressBalance::StressBalance(const IceGrid &g,
+StressBalance::StressBalance(IceGrid::ConstPtr g,
                              ShallowStressBalance *sb,
                              SSB_Modifier *ssb_mod)
   : Component(g), m_shallow_stress_balance(sb), m_modifier(ssb_mod) {
@@ -82,7 +83,7 @@ void StressBalance::update(bool fast, double sea_level,
   // Tell the ShallowStressBalance object about the current sea level:
   m_shallow_stress_balance->set_sea_level_elevation(sea_level);
 
-  const Profiling &profiling = m_grid.ctx()->profiling();
+  const Profiling &profiling = m_grid->ctx()->profiling();
 
   try {
     profiling.begin("SSB");
@@ -192,7 +193,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
                                               const IceModelVec3 &v,
                                               const IceModelVec2S *basal_melt_rate,
                                               IceModelVec3 &result) {
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
@@ -205,7 +206,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
     list.add(*basal_melt_rate);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *w_ij = result.get_column(i,j);
@@ -236,7 +237,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (m_grid.dx() * (east + west));
+        D_x = 1.0 / (m_grid->dx() * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -252,7 +253,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (m_grid.dy() * (north + south));
+        D_y = 1.0 / (m_grid->dy() * (north + south));
       } else {
         D_y = 0.0;
       }
@@ -271,12 +272,12 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
 
     // within the ice and above:
     double old_integrand = u_x + v_y;
-    for (unsigned int k = 1; k < m_grid.Mz(); ++k) {
+    for (unsigned int k = 1; k < m_grid->Mz(); ++k) {
       u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
       v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
       const double new_integrand = u_x + v_y;
 
-      const double dz = m_grid.z(k) - m_grid.z(k-1);
+      const double dz = m_grid->z(k) - m_grid->z(k-1);
 
       w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
@@ -376,10 +377,10 @@ void StressBalance::compute_volumetric_strain_heating() {
     &u = m_modifier->velocity_u(),
     &v = m_modifier->velocity_v();
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec3  *enthalpy  = m_grid.variables().get_3d_scalar("enthalpy");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3  *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
 
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
   MaskQuery m(*mask);
 
   double
@@ -396,13 +397,13 @@ void StressBalance::compute_volumetric_strain_heating() {
   list.add(u);
   list.add(v);
 
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double H = (*thickness)(i,j);
-      int ks = m_grid.kBelowHeight(H);
+      int ks = m_grid->kBelowHeight(H);
       const double
         *u_ij, *u_w, *u_n, *u_e, *u_s,
         *v_ij, *v_w, *v_n, *v_e, *v_s;
@@ -423,7 +424,7 @@ void StressBalance::compute_volumetric_strain_heating() {
         }
 
         if (east + west > 0) {
-          D_x = 1.0 / (m_grid.dx() * (east + west));
+          D_x = 1.0 / (m_grid->dx() * (east + west));
         } else {
           D_x = 0.0;
         }
@@ -439,7 +440,7 @@ void StressBalance::compute_volumetric_strain_heating() {
         }
 
         if (north + south > 0) {
-          D_y = 1.0 / (m_grid.dy() * (north + south));
+          D_y = 1.0 / (m_grid->dy() * (north + south));
         } else {
           D_y = 0.0;
         }
@@ -462,7 +463,7 @@ void StressBalance::compute_volumetric_strain_heating() {
 
       for (int k = 0; k <= ks; ++k) {
         double dz,
-          pressure = EC->pressure(H - m_grid.z(k)),
+          pressure = EC->pressure(H - m_grid->z(k)),
           B        = flow_law->hardness_parameter(E_ij[k], pressure);
 
         double u_z = 0.0, v_z = 0.0,
@@ -472,12 +473,12 @@ void StressBalance::compute_volumetric_strain_heating() {
           v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
 
         if (k > 0) {
-          dz = m_grid.z(k+1) - m_grid.z(k-1);
+          dz = m_grid->z(k+1) - m_grid->z(k-1);
           u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
           v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
         } else {
           // use one-sided differences for u_z and v_z on the bottom level
-          dz = m_grid.z(1) - m_grid.z(0);
+          dz = m_grid->z(1) - m_grid->z(0);
           u_z = (u_ij[1] - u_ij[0]) / dz;
           v_z = (v_ij[1] - v_ij[0]) / dz;
         }
@@ -485,7 +486,7 @@ void StressBalance::compute_volumetric_strain_heating() {
         Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
       } // k-loop
 
-      int remaining_levels = m_grid.Mz() - (ks + 1);
+      int remaining_levels = m_grid->Mz() - (ks + 1);
       if (remaining_levels > 0) {
         ierr = PetscMemzero(&Sigma[ks+1],
                             remaining_levels*sizeof(double));

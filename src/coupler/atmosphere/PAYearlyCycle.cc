@@ -31,7 +31,7 @@
 namespace pism {
 namespace atmosphere {
 
-YearlyCycle::YearlyCycle(const IceGrid &g)
+YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
     m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
 
@@ -111,8 +111,8 @@ void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<s
 void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp_snapshot")) {
-    std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
-    io::define_spatial_variable(m_air_temp_snapshot, m_grid, nc, nctype, order, false);
+    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "air_temp_mean_annual")) {
@@ -167,14 +167,14 @@ void YearlyCycle::mean_annual_temp(IceModelVec2S &result) {
 void YearlyCycle::init_timeseries(const std::vector<double> &ts) {
   // constants related to the standard yearly cycle
   const double
-    julyday_fraction = m_grid.ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
+    julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
 
   size_t N = ts.size();
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    double tk = m_grid.ctx()->time()->year_fraction(ts[k]) - julyday_fraction;
+    double tk = m_grid->ctx()->time()->year_fraction(ts[k]) - julyday_fraction;
 
     m_ts_times[k] = ts[k];
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
@@ -196,8 +196,8 @@ void YearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) {
 
 void YearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
-    julyday_fraction = m_grid.ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = m_grid.ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
+    julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
+    T                = m_grid->ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   IceModelVec::AccessList list;
@@ -205,7 +205,7 @@ void YearlyCycle::temp_snapshot(IceModelVec2S &result) {
   list.add(m_air_temp_mean_annual);
   list.add(m_air_temp_mean_july);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * cos_T;
   }

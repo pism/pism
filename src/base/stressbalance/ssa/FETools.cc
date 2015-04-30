@@ -630,10 +630,10 @@ void DirichletData_Scalar::fix_residual(const double **x_global, double **r_glob
 }
 
 void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
-  const IceGrid *grid = m_indices->get_grid();
+  const IceGrid &grid = *m_indices->get_grid();
 
   // For each node that we own:
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -644,7 +644,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
 }
 
 void DirichletData_Scalar::fix_jacobian(Mat J) {
-  const IceGrid *grid = m_indices->get_grid();
+  const IceGrid &grid = *m_indices->get_grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these
@@ -653,9 +653,9 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
   // preserved.
 
   const double identity = m_weight;
-  ParallelSection loop(grid->com);
+  ParallelSection loop(grid.com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*m_indices)(i, j) > 0.5) {
@@ -718,10 +718,10 @@ void DirichletData_Vector::update_homogeneous(const DOFMap &dofmap, Vector2* x_l
 void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid *grid = m_indices->get_grid();
+  const IceGrid &grid = *m_indices->get_grid();
 
   // For each node that we own:
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {

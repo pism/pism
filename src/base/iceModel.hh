@@ -143,14 +143,14 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, Context::Ptr context);
+  IceModel(IceGrid::Ptr g, Context::Ptr context);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
   virtual void grid_setup();
   virtual void time_setup();
 
-  const IceGrid& grid() const;
+  IceGrid::Ptr  grid() const;
 
   Context::Ptr ctx() const;
 
@@ -216,7 +216,7 @@ public:
                                IO_Type nctype);
 protected:
 
-  IceGrid &m_grid;
+  IceGrid::Ptr m_grid;
 
   //! Configuration flags and parameters
   Config::Ptr config;

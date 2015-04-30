@@ -32,7 +32,7 @@ class Hydrology;
 //! Mohr-Coulomb model of deformable, pressurized till.
 class MohrCoulombYieldStress : public YieldStress {
 public:
-  MohrCoulombYieldStress(const IceGrid &g, hydrology::Hydrology *hydro);
+  MohrCoulombYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro);
   virtual ~MohrCoulombYieldStress();
 
   void set_till_friction_angle(const IceModelVec2S &input);

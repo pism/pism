@@ -28,7 +28,7 @@ namespace pism {
 //! @brief Calving and iceberg removal code.
 namespace calving {
 
-CalvingAtThickness::CalvingAtThickness(const IceGrid &g)
+CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   : Component(g) {
   m_calving_threshold = m_config->get_double("thickness_calving_threshold");
 
@@ -68,7 +68,7 @@ void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
   list.add(ice_thickness);
   list.add(m_old_mask);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M.floating_ice(i, j)           &&

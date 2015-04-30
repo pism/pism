@@ -34,7 +34,7 @@ namespace stressbalance {
 
 using pism::mask::ice_free;
 
-ShallowStressBalance::ShallowStressBalance(const IceGrid &g, EnthalpyConverter::Ptr e)
+ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
   m_bc_values = NULL;
@@ -132,7 +132,7 @@ void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic
 }
 
 
-ZeroSliding::ZeroSliding(const IceGrid &g, EnthalpyConverter::Ptr e)
+ZeroSliding::ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
@@ -188,7 +188,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
   list.add(tauc);
   list.add(mask);
   
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.ocean(i,j)) {
@@ -224,7 +224,7 @@ update_ghosts() to ensure that ghost values are up to date.
 void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &V,
                                                              const IceModelVec2Int &mask,
                                                              IceModelVec2 &result) {
-  double    dx = m_grid.dx(), dy = m_grid.dy();
+  double    dx = m_grid->dx(), dy = m_grid->dy();
 
   if (result.get_ndof() != 2) {
     throw RuntimeError("result.dof() == 2 is required");
@@ -235,7 +235,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
   list.add(result);
   list.add(mask);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_free(mask.as_int(i,j))) {
@@ -307,7 +307,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
 void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
                                                const IceModelVec2Int &mask,
                                                IceModelVec2 &result) {
-  double    dx = m_grid.dx(), dy = m_grid.dy();
+  double    dx = m_grid->dx(), dy = m_grid->dy();
 
   if (result.get_ndof() != 3) {
     throw RuntimeError("result.get_dof() == 3 is required");
@@ -321,7 +321,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   list.add(result);
   list.add(mask);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_free(mask.as_int(i,j))) {
@@ -423,18 +423,18 @@ IceModelVec::Ptr SSB_taud::compute() {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2S *thickness = m_grid.variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2S *surface = m_grid.variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_grid.ctx()->config()->get_double("standard_gravity"),
-    ice_density = m_grid.ctx()->config()->get_double("ice_density");
+  double standard_gravity = m_grid->ctx()->config()->get_double("standard_gravity"),
+    ice_density = m_grid->ctx()->config()->get_double("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*surface);
   list.add(*thickness);
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double pressure = ice_density * standard_gravity * (*thickness)(i,j);
@@ -505,8 +505,8 @@ IceModelVec::Ptr SSB_taub::compute() {
   result->metadata(1) = m_vars[1];
 
   const IceModelVec2V &velocity = model->velocity();
-  const IceModelVec2S   *tauc = m_grid.variables().get_2d_scalar("tauc");
-  const IceModelVec2Int *mask = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S   *tauc = m_grid->variables().get_2d_scalar("tauc");
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
@@ -517,7 +517,7 @@ IceModelVec::Ptr SSB_taub::compute() {
   list.add(*tauc);
   list.add(velocity);
   list.add(*mask);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.grounded_ice(i,j)) {
@@ -566,7 +566,7 @@ IceModelVec::Ptr SSB_taub_mag::compute() {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(const IceGrid &g, EnthalpyConverter::Ptr e)
+PrescribedSliding::PrescribedSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ZeroSliding(g, e) {
   // empty
 }
@@ -610,7 +610,7 @@ IceModelVec::Ptr SSB_beta::compute() {
   result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  const IceModelVec2S *tauc = m_grid.variables().get_2d_scalar("tauc");
+  const IceModelVec2S *tauc = m_grid->variables().get_2d_scalar("tauc");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
@@ -620,7 +620,7 @@ IceModelVec::Ptr SSB_beta::compute() {
   list.add(*result);
   list.add(*tauc);
   list.add(velocity);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);

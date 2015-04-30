@@ -28,8 +28,6 @@
 #include "base/util/Context.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/petscwrappers/DM.hh"
-#include "Profiling.hh"
-#include "PISMTime.hh"
 
 namespace pism {
 
@@ -164,7 +162,7 @@ public:
   static Ptr Create(Context::Ptr ctx);
 
   static void FromFile(const PIO &file, const std::string &var_name, Periodicity p,
-                       IceGrid *output);
+                       IceGrid &output);
 
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,
                            unsigned int Mx, unsigned int My, Periodicity p);

@@ -25,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-LapseRates::LapseRates(const IceGrid &g, AtmosphereModel* in)
+LapseRates::LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
     m_precipitation(m_sys, "precipitation"),
     m_air_temp(m_sys, "air_temp") {
@@ -109,7 +109,7 @@ void LapseRates::init_timeseries(const std::vector<double> &ts) {
 
   m_reference_surface.init_interpolation(ts);
 
-  m_surface = m_grid.variables().get_2d_scalar("surface_altitude");
+  m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
 }
 
 void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
@@ -147,14 +147,14 @@ void LapseRates::temp_snapshot(IceModelVec2S &result) {
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid.ctx()->config()->get_string("output_variable_order");
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    io::define_spatial_variable(m_air_temp, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "precipitation")) {
-    io::define_spatial_variable(m_precipitation, m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
   }
 
   input_model->define_variables(vars, nc, nctype);

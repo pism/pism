@@ -28,7 +28,7 @@
 namespace pism {
 namespace hydrology {
 
-Hydrology::Hydrology(const IceGrid &g)
+Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component_TS(g) {
   m_inputtobed = NULL;
   m_hold_bmelt = false;
@@ -97,7 +97,7 @@ void Hydrology::init() {
 
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
 
-    PIO nc(m_grid.com, "netcdf3");
+    PIO nc(m_grid->com, "netcdf3");
     nc.open(itb_file, PISM_READONLY);
     unsigned int n_records = nc.inq_nrecords("inputtobed", "", m_sys);
     nc.close();
@@ -193,7 +193,7 @@ Accesses H=thk from Vars, which points into IceModel.
  */
 void Hydrology::overburden_pressure(IceModelVec2S &result) {
   // FIXME issue #15
-  const IceModelVec2S *thk = m_grid.variables().get_2d_scalar("thk");
+  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
   result.copy_from(*thk);  // copies into ghosts if result has them
   result.scale(m_config->get_double("ice_density") * m_config->get_double("standard_gravity"));
@@ -219,9 +219,9 @@ void Hydrology::check_Wtil_bounds() {
   double tillwat_max = m_config->get_double("hydrology_tillwat_max");
 
   IceModelVec::AccessList list(m_Wtil);
-  ParallelSection loop(m_grid.com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(m_grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_Wtil(i,j) < 0.0) {
@@ -269,8 +269,8 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
     list.add(*m_inputtobed);
   }
 
-  const IceModelVec2S   *bmelt = m_grid.variables().get_2d_scalar("bmelt");
-  const IceModelVec2Int *mask  = m_grid.variables().get_2d_mask("mask");
+  const IceModelVec2S   *bmelt = m_grid->variables().get_2d_scalar("bmelt");
+  const IceModelVec2Int *mask  = m_grid->variables().get_2d_mask("mask");
 
   if (not m_hold_bmelt) {
     m_bmelt_local.copy_from(*bmelt);
@@ -280,7 +280,7 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
   list.add(*mask);
   list.add(result);
   MaskQuery m(*mask);
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m.icy(i, j)) {
