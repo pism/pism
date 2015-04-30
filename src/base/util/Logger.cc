@@ -88,7 +88,7 @@ Logger::Ptr logger_from_options(MPI_Comm com) {
   Logger::Ptr result(new Logger(com, 2));
 
   options::Integer verbosity("-verbose", "set logger verbosity threshold",
-                             2);
+                             getVerbosityLevel());
 
   setVerbosityLevel(verbosity);
 
