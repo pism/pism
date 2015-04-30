@@ -58,6 +58,10 @@ Context::Context(MPI_Comm c, UnitsSystemPtr sys,
   // empty
 }
 
+Context::~Context() {
+  delete m_impl;
+}
+
 MPI_Comm Context::com() const {
   return m_impl->com;
 }

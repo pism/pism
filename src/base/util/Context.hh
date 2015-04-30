@@ -56,6 +56,7 @@ public:
           ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
           LoggerPtr log,
           const std::string &p);
+  ~Context();
 
   MPI_Comm com() const;
   UnitsSystemPtr unit_system() const;
@@ -72,7 +73,7 @@ public:
   TimePtr time();
 private:
   class Impl;
-  PISM_SHARED_PTR(Impl) m_impl;
+  Impl *m_impl;
   // disable copying and assignments
   Context(const Context& other);
   Context & operator=(const Context &);
