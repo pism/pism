@@ -572,45 +572,47 @@ void IceGrid::compute_horizontal_spacing() {
   compute_horizontal_coordinates();
 }
 
+std::vector<double> IceGrid::compute_horizontal_coordinates(unsigned int M, double delta,
+                                                            double v_min, double v_max,
+                                                            bool periodic) {
+  std::vector<double> result(M);
+
+  // Here v_min, v_max define the extent of the computational domain,
+  // which is not necessarily the same thing as the smallest and
+  // largest values of grid coordinates.
+  if (periodic) {
+    for (unsigned int i = 0; i < M; ++i) {
+      result[i] = v_min + (i + 0.5) * delta;
+    }
+    result[M - 1] = v_max - 0.5*delta;
+  } else {
+    for (unsigned int i = 0; i < M; ++i) {
+      result[i] = v_min + i * delta;
+    }
+    result[M - 1] = v_max;
+  }
+  return result;
+}
+
 //! \brief Computes values of x and y corresponding to the computational grid,
 //! with accounting for periodicity.
 void IceGrid::compute_horizontal_coordinates() {
 
-  m_impl->x.resize(m_impl->Mx);
-  m_impl->y.resize(m_impl->My);
-
-  // Here x_min, x_max define the extent of the computational domain,
-  // which is not necessarily the same thing as the smallest and
-  // largest values of x.
   double
     x_min = m_impl->x0 - m_impl->Lx,
     x_max = m_impl->x0 + m_impl->Lx;
-  if (m_impl->periodicity & X_PERIODIC) {
-    for (unsigned int i = 0; i < m_impl->Mx; ++i) {
-      m_impl->x[i] = x_min + (i + 0.5) * m_impl->dx;
-    }
-    m_impl->x[m_impl->Mx - 1] = x_max - 0.5*m_impl->dx;
-  } else {
-    for (unsigned int i = 0; i < m_impl->Mx; ++i) {
-      m_impl->x[i] = x_min + i * m_impl->dx;
-    }
-    m_impl->x[m_impl->Mx - 1] = x_max;
-  }
+
+  m_impl->x = compute_horizontal_coordinates(m_impl->Mx, m_impl->dx,
+                                             x_min, x_max,
+                                             m_impl->periodicity & X_PERIODIC);
 
   double
     y_min = m_impl->y0 - m_impl->Ly,
     y_max = m_impl->y0 + m_impl->Ly;
-  if (m_impl->periodicity & Y_PERIODIC) {
-    for (unsigned int i = 0; i < m_impl->My; ++i) {
-      m_impl->y[i] = y_min + (i + 0.5) * m_impl->dy;
-    }
-    m_impl->y[m_impl->My - 1] = y_max - 0.5*m_impl->dy;
-  } else {
-    for (unsigned int i = 0; i < m_impl->My; ++i) {
-      m_impl->y[i] = y_min + i * m_impl->dy;
-    }
-    m_impl->y[m_impl->My - 1] = y_max;
-  }
+
+  m_impl->y = compute_horizontal_coordinates(m_impl->My, m_impl->dy,
+                                             y_min, y_max,
+                                             m_impl->periodicity & Y_PERIODIC);
 }
 
 //! \brief Report grid parameters.

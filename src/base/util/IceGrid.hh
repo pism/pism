@@ -147,6 +147,9 @@ public:
   typedef PISM_SHARED_PTR(IceGrid) Ptr;
   typedef PISM_SHARED_PTR(const IceGrid) ConstPtr;
 
+  static std::vector<double> compute_horizontal_coordinates(unsigned int M, double delta,
+                                                            double v_min, double v_max,
+                                                            bool periodic);
   static Ptr Shallow(Context::Ptr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
@@ -167,7 +170,6 @@ public:
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,
                            unsigned int Mx, unsigned int My, Periodicity p);
 
-  void set_periodicity(Periodicity p);
   // only of these two should be called:
   void set_vertical_levels(const std::vector<double> &z_levels);
   void set_vertical_levels(double Lz, unsigned int Mz,
@@ -243,6 +245,7 @@ private:
   // FIXME: REMOVE THESE
   void set_size(unsigned int Mx, unsigned int My);
   void set_extent(double x0, double y0, double Lx, double Ly);
+  void set_periodicity(Periodicity p);
   // END OF METHODS TO REMOVE
 
   void check_parameters();
