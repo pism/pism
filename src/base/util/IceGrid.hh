@@ -241,12 +241,6 @@ private:
   struct Impl;
   Impl *m_impl;
 
-  // FIXME: REMOVE THESE
-  void set_size(unsigned int Mx, unsigned int My);
-  void set_extent(double x0, double y0, double Lx, double Ly);
-  void set_periodicity(Periodicity p);
-  // END OF METHODS TO REMOVE
-
   void check_parameters();
 
   void ownership_ranges_from_options();

@@ -513,21 +513,13 @@ void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
 
 void IceGrid::set_size_and_extent(double new_x0, double new_y0, double new_Lx, double new_Ly,
                                   unsigned int new_Mx, unsigned int new_My, Periodicity p) {
-  set_size(new_Mx, new_My);
-  set_extent(new_x0, new_y0, new_Lx, new_Ly);
-  set_periodicity(p);
-}
-
-void IceGrid::set_extent(double new_x0, double new_y0, double new_Lx, double new_Ly) {
+  m_impl->Mx = new_Mx;
+  m_impl->My = new_My;
   m_impl->x0 = new_x0;
   m_impl->y0 = new_y0;
   m_impl->Lx = new_Lx;
   m_impl->Ly = new_Ly;
-}
-
-void IceGrid::set_size(unsigned int new_Mx, unsigned int new_My) {
-  m_impl->Mx = new_Mx;
-  m_impl->My = new_My;
+  m_impl->periodicity = p;
 }
 
 //! Compute horizontal spacing parameters `dx` and `dy` using `Mx`, `My`, `Lx`, `Ly` and periodicity.
@@ -807,10 +799,6 @@ Periodicity IceGrid::periodicity() const {
 
 Context::ConstPtr IceGrid::ctx() const {
   return m_impl->ctx;
-}
-  
-void IceGrid::set_periodicity(Periodicity p) {
-  m_impl->periodicity = p;
 }
 
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
