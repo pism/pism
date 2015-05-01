@@ -969,30 +969,31 @@ grid_info::grid_info() {
 }
 
 void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) const {
+  units::Converter km(s, "m", "km");
 
   log.message(threshold,
-             "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-             this->x_len,
-             (this->x0 - this->Lx)/1000.0,
-             (this->x0 + this->Lx)/1000.0,
-             this->x0/1000.0,
-             this->Lx/1000.0);
+              "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+              this->x_len,
+              km(this->x0 - this->Lx),
+              km(this->x0 + this->Lx),
+              km(this->x0),
+              km(this->Lx));
 
   log.message(threshold,
-             "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-             this->y_len,
-             (this->y0 - this->Ly)/1000.0,
-             (this->y0 + this->Ly)/1000.0,
-             this->y0/1000.0,
-             this->Ly/1000.0);
+              "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+              this->y_len,
+              km(this->y0 - this->Ly),
+              km(this->y0 + this->Ly),
+              km(this->y0),
+              km(this->Ly));
 
   log.message(threshold,
-             "  z:  %5d points, [%10.3f, %10.3f] m\n",
-             this->z_len, this->z_min, this->z_max);
+              "  z:  %5d points, [%10.3f, %10.3f] m\n",
+              this->z_len, this->z_min, this->z_max);
 
   log.message(threshold,
-             "  t:  %5d points, last time = %.3f years\n\n",
-             this->t_len, convert(s, this->time, "seconds", "years"));
+              "  t:  %5d points, last time = %.3f years\n\n",
+              this->t_len, units::convert(s, this->time, "seconds", "years"));
 }
 
 grid_info::grid_info(const PIO &file, const std::string &variable,
