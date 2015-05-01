@@ -170,8 +170,6 @@ public:
 
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,
                            unsigned int Mx, unsigned int My, Periodicity p);
-
-  // only of these two should be called:
   void set_vertical_levels(const std::vector<double> &z_levels);
 
   // static Ptr Bootstrapping(MPI_Comm c, Config::ConstPtr config,
@@ -244,7 +242,6 @@ private:
   void check_parameters();
 
   void ownership_ranges_from_options();
-  void compute_ownership_ranges();
 
   void compute_horizontal_coordinates();
 

@@ -372,21 +372,15 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
 /*!
  * Expects grid.Nx and grid.Ny to be valid.
  */
-void IceGrid::compute_ownership_ranges() {
+static std::vector<PetscInt> ownership_ranges(unsigned int Mx,
+                                              unsigned int Nx) {
 
-  m_impl->procs_x.resize(m_impl->Nx);
-  m_impl->procs_y.resize(m_impl->Ny);
-
-  const unsigned int Mx = m_impl->Mx, Nx = m_impl->Nx;
-  const unsigned int My = m_impl->My, Ny = m_impl->Ny;
+  std::vector<PetscInt> result(Nx);
 
   for (unsigned int i=0; i < Nx; i++) {
-    m_impl->procs_x[i] = Mx / Nx + ((Mx % Nx) > i);
+    result[i] = Mx / Nx + ((Mx % Nx) > i);
   }
-
-  for (unsigned int i=0; i < Ny; i++) {
-    m_impl->procs_y[i] = My / Ny + ((My % Ny) > i);
-  }
+  return result;
 }
 
 void IceGrid::ownership_ranges_from_options() {
@@ -401,7 +395,8 @@ void IceGrid::ownership_ranges_from_options() {
 
   if ((not Nx.is_set()) && (not Ny.is_set())) {
     compute_nprocs(Mx(), My(), size(), m_impl->Nx, m_impl->Ny);
-    compute_ownership_ranges();
+    m_impl->procs_x = ownership_ranges(Mx(), m_impl->Nx);
+    m_impl->procs_y = ownership_ranges(My(), m_impl->Ny);
   } else {
 
     if ((Mx() / Nx) < 2) {
@@ -438,7 +433,8 @@ void IceGrid::ownership_ranges_from_options() {
       m_impl->procs_x = procs_x;
       m_impl->procs_y = procs_y;
     } else {
-      compute_ownership_ranges();
+      m_impl->procs_x = ownership_ranges(Mx(), m_impl->Nx);
+      m_impl->procs_y = ownership_ranges(My(), m_impl->Ny);
     }
   } // -Nx and -Ny set
 }
