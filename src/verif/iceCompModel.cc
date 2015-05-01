@@ -160,7 +160,9 @@ void IceCompModel::set_grid_defaults() {
   }
 
   m_grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
-  m_grid->set_vertical_levels(Lz, Mz, spacing);
+  double lambda = m_config->get_double("grid_lambda");
+  std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, spacing, lambda);
+  m_grid->set_vertical_levels(z);
 }
 
 void IceCompModel::setFromOptions() {

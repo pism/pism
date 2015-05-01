@@ -232,7 +232,9 @@ void IceModel::set_grid_from_options() {
   // Note that grid.periodicity() includes the result of processing
   // the -periodicity option.
   m_grid->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, m_grid->periodicity());
-  m_grid->set_vertical_levels(Lz, Mz, spacing);
+  double lambda = m_config->get_double("grid_lambda");
+  std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, spacing, lambda);
+  m_grid->set_vertical_levels(z);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
   // filled. We're ready to call grid.allocate().

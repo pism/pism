@@ -147,7 +147,10 @@ IceGrid::IceGrid(Context::Ptr ctx)
   unsigned int tmp_Mz = config->get_double("grid_Mz");
   double tmp_Lz = config->get_double("grid_Lz");
   SpacingType spacing = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
-  set_vertical_levels(tmp_Lz, tmp_Mz, spacing);
+
+  double lambda = config->get_double("grid_lambda");
+  std::vector<double> z = compute_vertical_levels(tmp_Lz, tmp_Mz, spacing, lambda);
+  set_vertical_levels(z);
 
   m_impl->Lx  = config->get_double("grid_Lx");
   m_impl->Ly  = config->get_double("grid_Ly");
@@ -202,10 +205,14 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx) {
   Ptr result(new IceGrid(ctx));
 
   SpacingType spacing = string_to_spacing(ctx->config()->get_string("grid_ice_vertical_spacing"));
-  result->set_vertical_levels(ctx->config()->get_double("grid_Lz"),
-                              ctx->config()->get_double("grid_Mz"),
-                              spacing);
 
+
+  std::vector<double> z = compute_vertical_levels(ctx->config()->get_double("grid_Lz"),
+                                                  ctx->config()->get_double("grid_Mz"),
+                                                  spacing,
+                                                  ctx->config()->get_double("grid_lambda"));
+
+  result->set_vertical_levels(z);
   result->compute_nprocs();
   result->compute_ownership_ranges();
   result->allocate();
@@ -277,24 +284,22 @@ which may not even be a grid created by this routine).
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
-                                  SpacingType spacing) {
-
-  double lambda = m_impl->ctx->config()->get_double("grid_lambda");
+std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int new_Mz,
+                                                     SpacingType spacing, double lambda) {
 
   if (new_Mz < 2) {
-    throw RuntimeError("IceGrid::set_vertical_levels(): Mz must be at least 2.");
+    throw RuntimeError("Mz must be at least 2");
   }
 
   if (new_Lz <= 0) {
-    throw RuntimeError("IceGrid::set_vertical_levels(): Lz must be positive.");
+    throw RuntimeError("Lz must be positive");
   }
 
   if (spacing == QUADRATIC and lambda <= 0) {
-    throw RuntimeError("IceGrid::set_vertical_levels(): lambda must be positive.");
+    throw RuntimeError("lambda must be positive");
   }
 
-  m_impl->z.resize(new_Mz);
+  std::vector<double> result(new_Mz);
 
   // Fill the levels in the ice:
   switch (spacing) {
@@ -303,23 +308,25 @@ void IceGrid::set_vertical_levels(double new_Lz, unsigned int new_Mz,
 
     // Equal spacing
     for (unsigned int k=0; k < new_Mz - 1; k++) {
-      m_impl->z[k] = dz * ((double) k);
+      result[k] = dz * ((double) k);
     }
-    m_impl->z[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
+    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
     break;
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < new_Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) new_Mz - 1);
-      m_impl->z[k] = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+      result[k] = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
-    m_impl->z[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
+    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
     break;
   }
   default:
-    throw RuntimeError("IceGrid::set_vertical_levels(): spacing can not be UNKNOWN.");
+    throw RuntimeError("spacing can not be UNKNOWN");
   }
+
+  return result;
 }
 
 

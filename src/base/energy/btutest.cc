@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     options::Real Lz("-Lz", "height of ice/atmosphere boxr", 4000.0);
 
     grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
-    grid->set_vertical_levels(Lz, Mz, EQUAL);
+    grid->set_vertical_levels(IceGrid::compute_vertical_levels(Lz, Mz, EQUAL));
 
     // complete grid initialization based on user options
     ctx->time()->init(*ctx->log());

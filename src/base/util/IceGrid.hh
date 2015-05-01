@@ -150,6 +150,9 @@ public:
   static std::vector<double> compute_horizontal_coordinates(unsigned int M, double delta,
                                                             double v_min, double v_max,
                                                             bool periodic);
+
+  static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
+                                                     SpacingType spacing, double lambda = 0.0);
   static Ptr Shallow(Context::Ptr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
@@ -172,8 +175,6 @@ public:
 
   // only of these two should be called:
   void set_vertical_levels(const std::vector<double> &z_levels);
-  void set_vertical_levels(double Lz, unsigned int Mz,
-                           SpacingType spacing);
 
   // static Ptr Bootstrapping(MPI_Comm c, Config::ConstPtr config,
   //                          const std::string &filename);
