@@ -328,39 +328,45 @@ unsigned int IceGrid::kBelowHeight(double height) const {
 //! \brief Computes the number of processors in the X- and Y-directions.
 void IceGrid::compute_nprocs() {
 
-  if (m_impl->My <= 0) {
+  if (My() <= 0) {
     throw RuntimeError("'My' is invalid.");
   }
 
-  m_impl->Nx = (int)(0.5 + sqrt(((double)m_impl->Mx)*((double)m_impl->size)/((double)m_impl->My)));
+  unsigned int
+    Nx = (int)(0.5 + sqrt(((double)Mx())*((double)size())/((double)My()))),
+    Ny = 0;
 
-  if (m_impl->Nx == 0) {
-    m_impl->Nx = 1;
+  if (Nx == 0) {
+    Nx = 1;
   }
 
-  while (m_impl->Nx > 0) {
-    m_impl->Ny = m_impl->size/m_impl->Nx;
-    if (m_impl->Nx*m_impl->Ny == (unsigned int)m_impl->size) {
+  while (Nx > 0) {
+    Ny = size() / Nx;
+    if (Nx*Ny == (unsigned int)size()) {
       break;
     }
-    m_impl->Nx--;
+    Nx--;
   }
 
-  if (m_impl->Mx > m_impl->My && m_impl->Nx < m_impl->Ny) {
-    int Nx = m_impl->Nx;
-    m_impl->Nx = m_impl->Ny;
-    m_impl->Ny = Nx;
+  if (Mx() > My() and Nx < Ny) {
+    // Swap Nx and Ny
+    int tmp = Nx;
+    Nx = Ny;
+    Ny = tmp;
   }
 
-  if ((m_impl->Mx / m_impl->Nx) < 2) {          // note: integer division
+  if ((Mx() / Nx) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  m_impl->Mx, m_impl->My, m_impl->size);
+                                  Mx(), My(), size());
   }
 
-  if ((m_impl->My / m_impl->Ny) < 2) {          // note: integer division
+  if ((My() / Ny) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  m_impl->Mx, m_impl->My, m_impl->size);
+                                  Mx(), My(), size());
   }
+
+  m_impl->Nx = Nx;
+  m_impl->Ny = Ny;
 }
 
 //! \brief Computes processor ownership ranges corresponding to equal area
@@ -541,7 +547,7 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 `i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
 Thus we compute  `dx = 2 * Lx / Mx`.
  */
-double IceGrid::compute_horizontal_spacing(double half_width, unsigned int M, bool periodic) {
+static double compute_horizontal_spacing(double half_width, unsigned int M, bool periodic) {
   if (periodic) {
     return 2.0 * half_width / M;
   } else {

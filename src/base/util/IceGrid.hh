@@ -253,7 +253,6 @@ private:
   void compute_nprocs();
   void compute_ownership_ranges();
 
-  double compute_horizontal_spacing(double half_width, unsigned int M, bool periodic);
   void compute_horizontal_coordinates();
 
   petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
