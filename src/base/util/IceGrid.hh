@@ -250,14 +250,11 @@ private:
   void check_parameters();
 
   void ownership_ranges_from_options();
-  void compute_nprocs();
   void compute_ownership_ranges();
 
   void compute_horizontal_coordinates();
 
   petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
-
-  int dm_key(int, int) const;
 
   // Hide copy constructor / assignment operator.
   IceGrid(const IceGrid &);

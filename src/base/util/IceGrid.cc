@@ -326,48 +326,46 @@ unsigned int IceGrid::kBelowHeight(double height) const {
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
-void IceGrid::compute_nprocs() {
+static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
+                           unsigned int &Nx, unsigned int &Ny) {
 
-  if (My() <= 0) {
+  if (My <= 0) {
     throw RuntimeError("'My' is invalid.");
   }
 
-  unsigned int
-    Nx = (int)(0.5 + sqrt(((double)Mx())*((double)size())/((double)My()))),
-    Ny = 0;
+  Nx = (unsigned int)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
+  Ny = 0;
 
   if (Nx == 0) {
     Nx = 1;
   }
 
   while (Nx > 0) {
-    Ny = size() / Nx;
-    if (Nx*Ny == (unsigned int)size()) {
+    Ny = size / Nx;
+    if (Nx*Ny == (unsigned int)size) {
       break;
     }
     Nx--;
   }
 
-  if (Mx() > My() and Nx < Ny) {
+  if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
     int tmp = Nx;
     Nx = Ny;
     Ny = tmp;
   }
 
-  if ((Mx() / Nx) < 2) {          // note: integer division
+  if ((Mx / Nx) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  Mx(), My(), size());
+                                  Mx, My, size);
   }
 
-  if ((My() / Ny) < 2) {          // note: integer division
+  if ((My / Ny) < 2) {          // note: integer division
     throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  Mx(), My(), size());
+                                  Mx, My, size);
   }
-
-  m_impl->Nx = Nx;
-  m_impl->Ny = Ny;
 }
+
 
 //! \brief Computes processor ownership ranges corresponding to equal area
 //! distribution among processors.
@@ -402,7 +400,7 @@ void IceGrid::ownership_ranges_from_options() {
   }
 
   if ((not Nx.is_set()) && (not Ny.is_set())) {
-    compute_nprocs();
+    compute_nprocs(Mx(), My(), size(), m_impl->Nx, m_impl->Ny);
     compute_ownership_ranges();
   } else {
 
@@ -775,6 +773,11 @@ void IceGrid::check_parameters() {
   }
 }
 
+// Computes the key corresponding to the DM with given dof and stencil_width.
+static int grid_dm_key(int da_dof, int stencil_width) {
+  return 10000 * da_dof + stencil_width;
+}
+
 petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   petsc::DM::Ptr result;
 
@@ -786,7 +789,7 @@ petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
     throw RuntimeError::formatted("Invalid stencil_width argument: %d", stencil_width);
   }
 
-  int j = this->dm_key(da_dof, stencil_width);
+  int j = grid_dm_key(da_dof, stencil_width);
 
   if (m_impl->dms[j].expired()) {
     result = this->create_dm(da_dof, stencil_width);
@@ -832,11 +835,6 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
   PISM_CHK(ierr,"DMDACreate2d");
 
   return petsc::DM::Ptr(new petsc::DM(result));
-}
-
-// Computes the key corresponding to the DM with given dof and stencil_width.
-int IceGrid::dm_key(int da_dof, int stencil_width) const {
-  return 10000 * da_dof + stencil_width;
 }
 
 int IceGrid::rank() const {
