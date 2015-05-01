@@ -465,7 +465,7 @@ void IceGrid::allocate() {
 
   check_parameters();
 
-  compute_horizontal_spacing();
+  compute_horizontal_coordinates();
 
   ownership_ranges_from_options();
 
@@ -541,21 +541,12 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 `i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
 Thus we compute  `dx = 2 * Lx / Mx`.
  */
-void IceGrid::compute_horizontal_spacing() {
-
-  if (m_impl->periodicity & X_PERIODIC) {
-    m_impl->dx = 2.0 * m_impl->Lx / m_impl->Mx;
+double IceGrid::compute_horizontal_spacing(double half_width, unsigned int M, bool periodic) {
+  if (periodic) {
+    return 2.0 * half_width / M;
   } else {
-    m_impl->dx = 2.0 * m_impl->Lx / (m_impl->Mx - 1);
+    return 2.0 * half_width / (M - 1);
   }
-
-  if (m_impl->periodicity & Y_PERIODIC) {
-    m_impl->dy = 2.0 * m_impl->Ly / m_impl->My;
-  } else {
-    m_impl->dy = 2.0 * m_impl->Ly / (m_impl->My - 1);
-  }
-
-  compute_horizontal_coordinates();
 }
 
 std::vector<double> IceGrid::compute_horizontal_coordinates(unsigned int M, double delta,
@@ -584,6 +575,12 @@ std::vector<double> IceGrid::compute_horizontal_coordinates(unsigned int M, doub
 //! with accounting for periodicity.
 void IceGrid::compute_horizontal_coordinates() {
 
+  m_impl->dx = compute_horizontal_spacing(m_impl->Lx, m_impl->Mx,
+                                          m_impl->periodicity & X_PERIODIC);
+
+  m_impl->dy = compute_horizontal_spacing(m_impl->Ly, m_impl->My,
+                                          m_impl->periodicity & Y_PERIODIC);
+
   double
     x_min = m_impl->x0 - m_impl->Lx,
     x_max = m_impl->x0 + m_impl->Lx;
@@ -605,23 +602,26 @@ void IceGrid::compute_horizontal_coordinates() {
 void IceGrid::report_parameters() const {
 
   const Logger &log = *this->ctx()->log();
+  units::System::Ptr sys = this->ctx()->unit_system();
 
   log.message(2, "computational domain and grid:\n");
+
+  units::Converter km(sys, "m", "km");
 
   // report on grid
   log.message(2,
              "                grid size   %d x %d x %d\n",
-             m_impl->Mx, m_impl->My, Mz());
+             Mx(), My(), Mz());
 
   // report on computational box
   log.message(2,
              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
-             2*m_impl->Lx/1000.0, 2*m_impl->Ly/1000.0, Lz());
+             km(2*Lx()), km(2*Ly()), Lz());
 
   // report on grid cell dims
   log.message(2,
              "     horizontal grid cell   %.2f km x %.2f km\n",
-             m_impl->dx/1000.0, m_impl->dy/1000.0);
+             km(dx()), km(dy()));
 
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
     log.message(2,
@@ -633,23 +633,22 @@ void IceGrid::report_parameters() const {
                Mz(), dz_min(), dz_max());
   }
 
-  //   FIXME:  this could use pism_config:summary_time_unit_name instead of fixed "years"
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   {
     log.message(3,
                "  IceGrid parameters:\n");
     log.message(3,
                "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
-               m_impl->Lx/1000.0, m_impl->Ly/1000.0, Lz());
+               km(Lx()), km(Ly()), Lz());
     log.message(3,
                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
-               m_impl->x0/1000.0, m_impl->y0/1000.0);
+               km(x0()), km(y0()));
     log.message(3,
                "            Mx = %d, My = %d, Mz = %d, \n",
-               m_impl->Mx, m_impl->My, Mz());
+               Mx(), My(), Mz());
     log.message(3,
                "            dx = %6.3f km, dy = %6.3f km, \n",
-               m_impl->dx/1000.0, m_impl->dy/1000.0);
+               km(dx()), km(dy()));
     log.message(3,
                "            Nx = %d, Ny = %d]\n",
                m_impl->Nx, m_impl->Ny);
@@ -662,7 +661,7 @@ void IceGrid::report_parameters() const {
     log.message(5,
                "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
     for (unsigned int k=0; k < Mz(); k++) {
-      log.message(5, " %5.4f, ", m_impl->z[k]);
+      log.message(5, " %5.4f, ", z(k));
     }
     log.message(5, "\n");
   }
