@@ -340,6 +340,27 @@ void IceModel::grid_setup() {
   }
 
   m_grid->allocate();
+
+  {
+    // A single record of a time-dependent variable cannot exceed 2^32-4
+    // bytes in size. See the NetCDF User's Guide
+    // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
+    // Here we use "long int" to avoid integer overflow.
+    const long int two_to_thirty_two = 4294967296L;
+    const long int
+      Mx_long = m_grid->Mx(),
+      My_long = m_grid->My(),
+      Mz_long = m_grid->Mz();
+    std::string output_format = m_config->get_string("output_format");
+    if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 and
+        (output_format == "netcdf3" or output_format == "pnetcdf")) {
+      throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
+                                    "Each 3D variable requires %lu Mb.\n"
+                                    "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
+                                    "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
+                                    Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
+    }
+  }
 }
 
 //! Initialize time from an input file or command-line options.

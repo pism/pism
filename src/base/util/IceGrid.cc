@@ -766,8 +766,6 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
 //! \brief Checks grid parameters usually set at bootstrapping for validity.
 void IceGrid::check_parameters() {
 
-  Config::ConstPtr config = m_impl->ctx->config();
-
   if (m_impl->Mx < 3) {
     throw RuntimeError("Mx has to be at least 3.");
   }
@@ -791,23 +789,6 @@ void IceGrid::check_parameters() {
   if (Lz() <= 0) {
     throw RuntimeError("Lz must be positive.");
   }
-
-  // A single record of a time-dependent variable cannot exceed 2^32-4
-  // bytes in size. See the NetCDF User's Guide
-  // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
-  // Here we use "long int" to avoid integer overflow.
-  const long int two_to_thirty_two = 4294967296L;
-  const long int Mx_long = m_impl->Mx, My_long = m_impl->My, Mz_long = Mz();
-  if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
-      ((config->get_string("output_format") == "netcdf3") ||
-       (config->get_string("output_format") == "pnetcdf"))) {
-    throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
-                                  "Each 3D variable requires %lu Mb.\n"
-                                  "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
-                                  "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
-                                  Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
-  }
-
 }
 
 petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
