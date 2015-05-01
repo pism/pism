@@ -199,27 +199,6 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
   return result;
 }
 
-IceGrid::Ptr IceGrid::Create(Context::Ptr ctx) {
-  // use defaults from config
-
-  Ptr result(new IceGrid(ctx));
-
-  SpacingType spacing = string_to_spacing(ctx->config()->get_string("grid_ice_vertical_spacing"));
-
-
-  std::vector<double> z = compute_vertical_levels(ctx->config()->get_double("grid_Lz"),
-                                                  ctx->config()->get_double("grid_Mz"),
-                                                  spacing,
-                                                  ctx->config()->get_double("grid_lambda"));
-
-  result->set_vertical_levels(z);
-  result->compute_nprocs();
-  result->compute_ownership_ranges();
-  result->allocate();
-
-  return result;
-}
-
 //! \brief Sets grid parameters using data read from the file.
 void IceGrid::FromFile(const PIO &file, const std::string &var_name,
                        Periodicity periodicity,

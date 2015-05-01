@@ -165,8 +165,6 @@ public:
                     unsigned int Mx, unsigned int My,
                     Periodicity p);
 
-  static Ptr Create(Context::Ptr ctx);
-
   static void FromFile(const PIO &file, const std::string &var_name, Periodicity p,
                        IceGrid &output);
 
