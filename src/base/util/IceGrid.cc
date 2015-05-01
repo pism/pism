@@ -46,9 +46,9 @@ struct IceGrid::Impl {
   unsigned int Ny;
 
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
-  std::vector<int> procs_x;
+  std::vector<PetscInt> procs_x;
   //! @brief array containing lenghts (in the y-direction) of processor sub-domains
-  std::vector<int> procs_y;
+  std::vector<PetscInt> procs_y;
 
   Periodicity periodicity;
 
@@ -816,18 +816,6 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
              "* Creating a DM with dof=%d and stencil_width=%d...\n",
              da_dof, stencil_width);
 
-  // PetscInt and int may have different sizes, so here we make copies of m_impl->procs_x and
-  // m_impl->procs_y. FIXME: Now that we use PIMPL we could store m_impl->procs_[xy] using PetscInt.
-  std::vector<PetscInt> procs_x(m_impl->procs_x.size()), procs_y(m_impl->procs_y.size());
-
-  for (unsigned int k = 0; k < procs_x.size(); ++k) {
-    procs_x[k] = m_impl->procs_x[k];
-  }
-
-  for (unsigned int k = 0; k < procs_y.size(); ++k) {
-    procs_y[k] = m_impl->procs_y[k];
-  }
-
   DM result;
   PetscErrorCode ierr = DMDACreate2d(com,
 #if PETSC_VERSION_LT(3,5,0)
@@ -839,7 +827,7 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
                       m_impl->My, m_impl->Mx, // N, M
                       m_impl->Ny, m_impl->Nx, // n, m
                       da_dof, stencil_width,
-                      &procs_y[0], &procs_x[0], // ly, lx
+                      &m_impl->procs_y[0], &m_impl->procs_x[0], // ly, lx
                       &result);
   PISM_CHK(ierr,"DMDACreate2d");
 
