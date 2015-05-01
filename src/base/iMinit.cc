@@ -146,19 +146,6 @@ void IceModel::set_grid_defaults() {
 
   // Set the grid center and horizontal extent:
   m_grid->set_extent(input.x0, input.y0, input.Lx, input.Ly);
-
-  // read current time if no option overrides it (avoids unnecessary reporting)
-  bool ys = options::Bool("-ys", "starting time");
-  if (not ys) {
-    if (input.t_len > 0) {
-      m_time->set_start(input.time);
-      m_log->message(2,
-                 "  time t = %s found; setting current time\n",
-                 m_time->date().c_str());
-    }
-  }
-
-  m_time->init(*m_log);
 }
 
 //! Initalizes the grid from options.
@@ -354,35 +341,16 @@ void IceModel::grid_setup() {
 
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
-  Time::Ptr time = m_time;
-
-  // Check if we are initializing from a PISM output file:
-  options::String input_file("-i", "Specifies a PISM input file");
-
-  if (input_file.is_set()) {
-    PIO nc(m_grid->com, "guess_mode");
-
-    std::string time_name = m_config->get_string("time_dimension_name");
-
-    nc.open(input_file, PISM_READONLY);
-    unsigned int time_length = nc.inq_dimlen(time_name);
-    if (time_length > 0) {
-      double T = 0.0;
-      // Set the default starting time to be equal to the last time saved in the input file
-      nc.inq_dim_limits(time_name, NULL, &T);
-      time->set_start(T);
-    }
-    nc.close();
-  }
-
-  time->init(*m_log);
+  initialize_time(m_grid->com,
+                  m_config->get_string("time_dimension_name"),
+                  *m_log, *m_time);
 
   m_log->message(2,
-             "* Setting time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-             time->start_date().c_str(),
-             time->end_date().c_str(),
-             time->run_length().c_str(),
-             time->calendar().c_str());
+             "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
+             m_time->start_date().c_str(),
+             m_time->end_date().c_str(),
+             m_time->run_length().c_str(),
+             m_time->calendar().c_str());
 }
 
 //! Sets the starting values of model state variables.

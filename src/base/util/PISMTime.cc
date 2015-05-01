@@ -25,6 +25,7 @@
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "base/util/io/PIO.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -74,10 +75,38 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
       return Time::Ptr(new Time_Calendar(com, config, calendar, system));
     }
 
-  }  catch (RuntimeError &e) {
+  } catch (RuntimeError &e) {
     e.add_context("initializing Time from options");
     throw;
   }
+}
+
+void initialize_time(MPI_Comm com, const std::string &dimension_name,
+                     const Logger &log, Time &time) {
+
+  // Check if we are initializing from a PISM output file:
+  options::String input_file("-i", "Specifies a PISM input file");
+
+  if (input_file.is_set()) {
+    PIO nc(com, "guess_mode");
+
+    nc.open(input_file, PISM_READONLY);
+    unsigned int time_length = nc.inq_dimlen(dimension_name);
+
+    bool ys = options::Bool("-ys", "starting time");
+    if (not ys and time_length > 0) {
+      double T = 0.0;
+      // Set the default starting time to be equal to the last time saved in the input file
+      nc.inq_dim_limits(dimension_name, NULL, &T);
+      time.set_start(T);
+      log.message(2,
+                   "* Time t = %s found in '%s'; setting current time\n",
+                   time.date().c_str(), input_file->c_str());
+    }
+    nc.close();
+  }
+
+  time.init(log);
 }
 
 //! Convert model years into seconds using the year length

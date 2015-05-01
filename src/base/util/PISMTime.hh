@@ -201,6 +201,10 @@ protected:
 //! Create a Time instance by processing command-line options.
 Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System::Ptr system);
 
+//! Initialize time from command-line options or from and input file (set using the `-i` option).
+void initialize_time(MPI_Comm com, const std::string &dimension_name,
+                     const Logger &log, Time &time);
+
 } // end of namespace pism
 
 #endif /* _PISMTIME_H_ */
