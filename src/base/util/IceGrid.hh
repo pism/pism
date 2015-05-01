@@ -167,8 +167,6 @@ public:
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,
                            unsigned int Mx, unsigned int My, Periodicity p);
 
-  void set_extent(double x0, double y0, double Lx, double Ly);
-  void set_size(unsigned int Mx, unsigned int My);
   void set_periodicity(Periodicity p);
   // only of these two should be called:
   void set_vertical_levels(const std::vector<double> &z_levels);
@@ -241,6 +239,11 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
+
+  // FIXME: REMOVE THESE
+  void set_size(unsigned int Mx, unsigned int My);
+  void set_extent(double x0, double y0, double Lx, double Ly);
+  // END OF METHODS TO REMOVE
 
   void check_parameters();
 

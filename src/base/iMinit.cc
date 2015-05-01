@@ -145,7 +145,8 @@ void IceModel::set_grid_defaults() {
   }
 
   // Set the grid center and horizontal extent:
-  m_grid->set_extent(input.x0, input.y0, input.Lx, input.Ly);
+  m_grid->set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
+                              Mx, My, m_grid->periodicity());
 }
 
 //! Initalizes the grid from options.

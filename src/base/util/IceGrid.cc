@@ -37,10 +37,13 @@ struct IceGrid::Impl {
   Context::Ptr ctx;
 
   // int to match types used by MPI
-  int rank, size;
+  int rank;
+  int size;
 
-  unsigned int Nx, //!< number of processors in the x-direction
-    Ny;      //!< number of processors in the y-direction
+  //! number of processors in the x-direction
+  unsigned int Nx;
+  //! number of processors in the y-direction
+  unsigned int Ny;
 
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
   std::vector<int> procs_x;
@@ -49,15 +52,18 @@ struct IceGrid::Impl {
 
   Periodicity periodicity;
 
-  std::vector<double> x,             //!< x-coordinates of grid points
-    y;                          //!< y-coordinates of grid points
-
+  //! x-coordinates of grid points
+  std::vector<double> x;
+  //! y-coordinates of grid points
+  std::vector<double> y;
   //! vertical grid levels in the ice; correspond to the storage grid
   std::vector<double> z;
 
   int xs, xm, ys, ym;
-  double dx,               //!< horizontal grid spacing
-    dy;                    //!< horizontal grid spacing
+  //! horizontal grid spacing
+  double dx;
+  //! horizontal grid spacing
+  double dy;
   //! number of grid points in the x-direction
   unsigned int Mx;
   //! number of grid points in the y-direction
@@ -381,12 +387,15 @@ void IceGrid::compute_ownership_ranges() {
   m_impl->procs_x.resize(m_impl->Nx);
   m_impl->procs_y.resize(m_impl->Ny);
 
-  for (unsigned int i=0; i < m_impl->Nx; i++) {
-    m_impl->procs_x[i] = m_impl->Mx/m_impl->Nx + ((m_impl->Mx % m_impl->Nx) > i);
+  const unsigned int Mx = m_impl->Mx, Nx = m_impl->Nx;
+  const unsigned int My = m_impl->My, Ny = m_impl->Ny;
+
+  for (unsigned int i=0; i < Nx; i++) {
+    m_impl->procs_x[i] = Mx / Nx + ((Mx % Nx) > i);
   }
 
-  for (unsigned int i=0; i < m_impl->Ny; i++) {
-    m_impl->procs_y[i] = m_impl->My/m_impl->Ny + ((m_impl->My % m_impl->Ny) > i);
+  for (unsigned int i=0; i < Ny; i++) {
+    m_impl->procs_y[i] = My / Ny + ((My % Ny) > i);
   }
 }
 
