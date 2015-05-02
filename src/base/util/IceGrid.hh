@@ -66,6 +66,15 @@ private:
   void reset();
 };
 
+grid_info grid_info_from_bootstraping_file(MPI_Comm com,
+                                           units::System::Ptr sys,
+                                           const std::string &filename,
+                                           unsigned int Mx_default,
+                                           unsigned int My_default,
+                                           unsigned int Mz_default,
+                                           double Lz_default,
+                                           Periodicity periodicity);
+
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
   This class holds parameters describing the grid, including the vertical

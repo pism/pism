@@ -1149,4 +1149,69 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
   }
 }
 
+grid_info grid_info_from_bootstraping_file(MPI_Comm com,
+                                           units::System::Ptr sys,
+                                           const std::string &filename,
+                                           unsigned int Mx_default,
+                                           unsigned int My_default,
+                                           unsigned int Mz_default,
+                                           double Lz_default,
+                                           Periodicity periodicity) {
+  // Logical (as opposed to physical) grid dimensions should not be
+  // deduced from a bootstrapping file, so we check if these options
+  // are set and stop if they are not.
+  options::Integer
+    Mx("-Mx", "grid size in X direction", Mx_default),
+    My("-My", "grid size in Y direction", My_default),
+    Mz("-Mz", "grid size in vertical direction", Mz_default);
+  options::Real Lz("-Lz", "height of the computational domain", Lz_default);
+
+  if (not (Mx.is_set() and My.is_set() and Mz.is_set() and Lz.is_set())) {
+    throw RuntimeError("All of -bootstrap, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
+  }
+
+  // Use a bootstrapping file to set some grid parameters (they can be
+  // overridden later, in IceModel::set_grid_from_options()).
+
+  PIO nc(com, "netcdf3"); // OK to use netcdf3, we read very little data here.
+
+  // Try to deduce grid information from present spatial fields. This is bad,
+  // because theoretically these fields may use different grids. We need a
+  // better way of specifying PISM's computational grid at bootstrapping.
+  grid_info input;
+  {
+    std::vector<std::string> names;
+    names.push_back("land_ice_thickness");
+    names.push_back("bedrock_altitude");
+    names.push_back("thk");
+    names.push_back("topg");
+    bool grid_info_found = false;
+    nc.open(filename, PISM_READONLY);
+    for (unsigned int i = 0; i < names.size(); ++i) {
+
+      grid_info_found = nc.inq_var(names[i]);
+      if (not grid_info_found) {
+        // Failed to find using a short name. Try using names[i] as a
+        // standard name...
+        std::string dummy1;
+        bool dummy2;
+        nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+      }
+
+      if (grid_info_found) {
+        input = grid_info(nc, names[i], sys, periodicity);
+        break;
+      }
+    }
+
+    if (grid_info_found == false) {
+      throw RuntimeError::formatted("no geometry information found in '%s'",
+                                    filename.c_str());
+    }
+    nc.close();
+  }
+
+  return input;
+}
+
 } // end of namespace pism
