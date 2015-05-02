@@ -40,11 +40,6 @@ struct IceGrid::Impl {
   int rank;
   int size;
 
-  //! number of processors in the x-direction
-  unsigned int Nx;
-  //! number of processors in the y-direction
-  unsigned int Ny;
-
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
   std::vector<PetscInt> procs_x;
   //! @brief array containing lenghts (in the y-direction) of processor sub-domains
@@ -158,9 +153,6 @@ IceGrid::IceGrid(Context::Ptr ctx)
   m_impl->Mx  = static_cast<int>(config->get_double("grid_Mx"));
   m_impl->My  = static_cast<int>(config->get_double("grid_My"));
 
-  m_impl->Nx = 0;
-  m_impl->Ny = 0;                  // will be set to a correct value in allocate()
-
   m_impl->bsearch_accel = gsl_interp_accel_alloc();
   if (m_impl->bsearch_accel == NULL) {
     throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
@@ -193,7 +185,7 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
 
   result->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, p);
   result->set_vertical_levels(z);
-
+  result->ownership_ranges_from_options();
   result->allocate();
 
   return result;
@@ -226,7 +218,7 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
                                 input.x_len, input.y_len,
                                 periodicity);
     output.set_vertical_levels(input.z);
-
+    output.ownership_ranges_from_options();
     // We're ready to call output.allocate().
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from \"%s\"",
@@ -369,9 +361,6 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
 
 //! \brief Computes processor ownership ranges corresponding to equal area
 //! distribution among processors.
-/*!
- * Expects grid.Nx and grid.Ny to be valid.
- */
 static std::vector<PetscInt> ownership_ranges(unsigned int Mx,
                                               unsigned int Nx) {
 
@@ -383,60 +372,82 @@ static std::vector<PetscInt> ownership_ranges(unsigned int Mx,
   return result;
 }
 
-void IceGrid::ownership_ranges_from_options() {
-  options::Integer Nx("-Nx", "Number of processors in the x direction", m_impl->Nx);
-  options::Integer Ny("-Ny", "Number of processors in the y direction", m_impl->Ny);
-  m_impl->Nx = Nx;
-  m_impl->Ny = Ny;
-
-  if (Nx.is_set() ^ Ny.is_set()) {
-    throw RuntimeError("Please set both -Nx and -Ny.");
+void IceGrid::set_ownership_ranges(const std::vector<unsigned int> &procs_x,
+                                   const std::vector<unsigned int> &procs_y) {
+  if (procs_x.size() * procs_y.size() != size()) {
+    throw RuntimeError("length(procs_x) * length(procs_y) != MPI size");
   }
 
-  if ((not Nx.is_set()) && (not Ny.is_set())) {
-    compute_nprocs(Mx(), My(), size(), m_impl->Nx, m_impl->Ny);
-    m_impl->procs_x = ownership_ranges(Mx(), m_impl->Nx);
-    m_impl->procs_y = ownership_ranges(My(), m_impl->Ny);
+  m_impl->procs_x.resize(procs_x.size());
+  for (unsigned int k = 0; k < procs_x.size(); ++k) {
+    m_impl->procs_x[k] = procs_x[k];
+  }
+
+  m_impl->procs_y.resize(procs_y.size());
+  for (unsigned int k = 0; k < procs_y.size(); ++k) {
+    m_impl->procs_y[k] = procs_y[k];
+  }
+}
+
+void IceGrid::ownership_ranges_from_options() {
+  unsigned int Nx_default, Ny_default;
+  compute_nprocs(Mx(), My(), size(), Nx_default, Ny_default);
+
+  // check -Nx and -Ny
+  options::Integer Nx("-Nx", "Number of processors in the x direction", Nx_default);
+  options::Integer Ny("-Ny", "Number of processors in the y direction", Ny_default);
+
+  // validate results
+  if ((Mx() / Nx) < 2) {
+    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                  Mx(), (int)Nx);
+  }
+
+  if ((My() / Ny) < 2) {
+    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                  My(), (int)Ny);
+  }
+
+  if (Nx * Ny != (int)size()) {
+    throw RuntimeError::formatted("Nx * Ny has to be equal to %d.", size());
+  }
+
+  // check -procs_x and -procs_y
+  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)");
+  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)");
+
+  if (procs_x.is_set()) {
+    if (procs_x->size() != (unsigned int)Nx) {
+      throw RuntimeError("-Nx has to be equal to the -procs_x size.");
+    }
+
+    m_impl->procs_x.resize(procs_x->size());
+    for (unsigned int k = 0; k < procs_x->size(); ++k) {
+      m_impl->procs_x[k] = procs_x[k];
+    }
+
   } else {
+    m_impl->procs_x = ownership_ranges(Mx(), Nx);
+  }
 
-    if ((Mx() / Nx) < 2) {
-      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    Mx(), Nx.value());
+  if (procs_y.is_set()) {
+    if (procs_y->size() != (unsigned int)Ny) {
+      throw RuntimeError("-Ny has to be equal to the -procs_y size.");
     }
 
-    if ((My() / Ny) < 2) {
-      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                    My(), Ny.value());
+
+    m_impl->procs_y.resize(procs_y->size());
+    for (unsigned int k = 0; k < procs_y->size(); ++k) {
+      m_impl->procs_y[k] = procs_y[k];
     }
 
-    if (Nx * Ny != m_impl->size) {
-      throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
-                                    m_impl->size);
-    }
+  } else {
+    m_impl->procs_y = ownership_ranges(My(), Ny);
+  }
 
-    options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)");
-    options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)");
-
-    if (procs_x.is_set() ^ procs_y.is_set()) {
-      throw RuntimeError("Please set both -procs_x and -procs_y.");
-    }
-
-    if (procs_x.is_set() && procs_y.is_set()) {
-      if (procs_x->size() != (unsigned int)Nx) {
-        throw RuntimeError("-Nx has to be equal to the -procs_x size.");
-      }
-
-      if (procs_y->size() != (unsigned int)Ny) {
-        throw RuntimeError("-Ny has to be equal to the -procs_y size.");
-      }
-
-      m_impl->procs_x = procs_x;
-      m_impl->procs_y = procs_y;
-    } else {
-      m_impl->procs_x = ownership_ranges(Mx(), m_impl->Nx);
-      m_impl->procs_y = ownership_ranges(My(), m_impl->Ny);
-    }
-  } // -Nx and -Ny set
+  if (m_impl->procs_x.size() * m_impl->procs_y.size() != size()) {
+    throw RuntimeError("length(procs_x) * length(procs_y) != MPI size");
+  }
 }
 
 //! \brief Create the PETSc DM for the horizontal grid. Determine how
@@ -467,15 +478,13 @@ void IceGrid::allocate() {
 
   compute_horizontal_coordinates();
 
-  ownership_ranges_from_options();
-
-  unsigned int max_stencil_width = (unsigned int)m_impl->ctx->config()->get_double("grid_max_stencil_width");
+  unsigned int max_stencil_width = (unsigned int)ctx()->config()->get_double("grid_max_stencil_width");
 
   try {
     petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
   } catch (RuntimeError) {
-    throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
-                                  m_impl->Mx, m_impl->My, m_impl->size);
+    throw RuntimeError::formatted("can't distribute a %d x %d grid across %d processors.",
+                                  Mx(), My(), size());
   }
 
   // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
@@ -643,7 +652,7 @@ void IceGrid::report_parameters() const {
                km(dx()), km(dy()));
     log.message(3,
                "            Nx = %d, Ny = %d]\n",
-               m_impl->Nx, m_impl->Ny);
+               m_impl->procs_x.size(), m_impl->procs_y.size());
 
   }
 
@@ -806,16 +815,17 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
   DM result;
   PetscErrorCode ierr = DMDACreate2d(com,
 #if PETSC_VERSION_LT(3,5,0)
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                                     DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
 #else
-                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+                                     DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
 #endif
-                      DMDA_STENCIL_BOX,
-                      m_impl->My, m_impl->Mx, // N, M
-                      m_impl->Ny, m_impl->Nx, // n, m
-                      da_dof, stencil_width,
-                      &m_impl->procs_y[0], &m_impl->procs_x[0], // ly, lx
-                      &result);
+                                     DMDA_STENCIL_BOX,
+                                     m_impl->My, m_impl->Mx, // N, M
+                                     (PetscInt)m_impl->procs_y.size(),
+                                     (PetscInt)m_impl->procs_x.size(), // n, m
+                                     da_dof, stencil_width,
+                                     &m_impl->procs_y[0], &m_impl->procs_x[0], // ly, lx
+                                     &result);
   PISM_CHK(ierr,"DMDACreate2d");
 
   return petsc::DM::Ptr(new petsc::DM(result));

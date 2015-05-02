@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
     double Lx = 1200e3;
     IceGrid::Ptr grid(new IceGrid(ctx));
     grid->set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
+    grid->ownership_ranges_from_options();
     grid->allocate();
 
     ierr = PetscPrintf(grid->com,"BedSmoother TEST\n");

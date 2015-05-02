@@ -342,6 +342,7 @@ int main(int argc, char *argv[]) {
 
     grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
     grid->set_vertical_levels(IceGrid::compute_vertical_levels(Lz, Mz, EQUAL));
+    grid->ownership_ranges_from_options();
     grid->allocate();
 
     setVerbosityLevel(5);

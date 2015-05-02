@@ -172,6 +172,12 @@ public:
                            unsigned int Mx, unsigned int My, Periodicity p);
   void set_vertical_levels(const std::vector<double> &z_levels);
 
+  void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
+                            const std::vector<unsigned int> &procs_y);
+
+  void ownership_ranges_from_options();
+
+
   // static Ptr Bootstrapping(MPI_Comm c, Config::ConstPtr config,
   //                          const std::string &filename);
 
@@ -240,8 +246,6 @@ private:
   Impl *m_impl;
 
   void check_parameters();
-
-  void ownership_ranges_from_options();
 
   void compute_horizontal_coordinates();
 

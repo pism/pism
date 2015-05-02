@@ -339,6 +339,7 @@ void IceModel::grid_setup() {
     set_grid_from_options();
   }
 
+  m_grid->ownership_ranges_from_options();
   m_grid->allocate();
 
   {

@@ -176,10 +176,10 @@ int main(int argc, char *argv[]) {
 
     grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
     grid->set_vertical_levels(IceGrid::compute_vertical_levels(Lz, Mz, EQUAL));
-
-    // complete grid initialization based on user options
-    ctx->time()->init(*ctx->log());
+    grid->ownership_ranges_from_options();
     grid->allocate();
+
+    ctx->time()->init(*ctx->log());
 
     // allocate tools and IceModelVecs
     IceModelVec2S bedtoptemp, ghf;
