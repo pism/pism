@@ -52,9 +52,9 @@ public:
 
 Context::Context(MPI_Comm c, UnitsSystemPtr sys,
                  ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
-                 LoggerPtr log,
+                 LoggerPtr L,
                  const std::string &p)
-  : m_impl(new Impl(c, sys, conf, EC, t, log, p)) {
+  : m_impl(new Impl(c, sys, conf, EC, t, L, p)) {
   // empty
 }
 

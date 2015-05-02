@@ -116,9 +116,9 @@ SpacingType string_to_spacing(const std::string &keyword) {
   }
 }
 
-IceGrid::IceGrid(Context::Ptr ctx)
-  : com(ctx->com()), m_impl(new Impl) {
-  m_impl->ctx = ctx;
+IceGrid::IceGrid(Context::Ptr context)
+  : com(context->com()), m_impl(new Impl) {
+  m_impl->ctx = context;
 
   Config::ConstPtr config = m_impl->ctx->config();
 
@@ -144,8 +144,8 @@ IceGrid::IceGrid(Context::Ptr ctx)
   SpacingType spacing = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
 
   double lambda = config->get_double("grid_lambda");
-  std::vector<double> z = compute_vertical_levels(tmp_Lz, tmp_Mz, spacing, lambda);
-  set_vertical_levels(z);
+  std::vector<double> Z = compute_vertical_levels(tmp_Lz, tmp_Mz, spacing, lambda);
+  set_vertical_levels(Z);
 
   m_impl->Lx  = config->get_double("grid_Lx");
   m_impl->Ly  = config->get_double("grid_Ly");

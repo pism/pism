@@ -34,8 +34,8 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr ctx, char experiment)
-  : IceModel(g, ctx), m_experiment(experiment) {
+IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
+  : IceModel(g, context), m_experiment(experiment) {
   m_config->set_string("EISMINT_II_experiment", std::string(1, m_experiment));
 
   // the following flag must be here in constructor because

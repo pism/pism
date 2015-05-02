@@ -50,13 +50,13 @@
 
 namespace pism {
 
-IceModel::IceModel(IceGrid::Ptr g, Context::Ptr ctx)
+IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
-    m_config(ctx->config()),
-    m_ctx(ctx),
-    m_sys(ctx->unit_system()),
-    m_log(ctx->log()),
-    m_time(ctx->time()),
+    m_config(context->config()),
+    m_ctx(context),
+    m_sys(context->unit_system()),
+    m_log(context->log()),
+    m_time(context->time()),
     global_attributes("PISM_GLOBAL", m_sys),
     mapping("mapping", m_sys),
     run_stats("run_stats", m_sys),

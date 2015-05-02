@@ -161,7 +161,7 @@ public:
                                                             bool periodic);
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
-                                                     SpacingType spacing, double lambda = 0.0);
+                                                     SpacingType spacing, double Lambda = 0.0);
   struct OwnershipRanges {
     std::vector<unsigned int> x, y;
   };
