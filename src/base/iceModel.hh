@@ -217,7 +217,8 @@ public:
 protected:
 
   //! Computational grid
-  const IceGrid::Ptr m_grid;
+  // FIXME: make this const again
+  IceGrid::Ptr m_grid;
   //! Configuration flags and parameters
   const Config::Ptr m_config;
   //! Execution context

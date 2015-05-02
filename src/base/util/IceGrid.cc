@@ -171,9 +171,34 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
   z[1] = 0.5 * ctx->config()->get_double("grid_Lz");
   z[2] = 1.0 * ctx->config()->get_double("grid_Lz");
 
-  return IceGrid::Create(ctx, Lx, Ly, x0, y0, z, Mx, My, p);
+  int size = 0;
+  MPI_Comm_size(ctx->com(), &size);
+
+  OwnershipRanges o = IceGrid::ownership_ranges_from_options(Mx, My, size);
+
+  return IceGrid::Create(ctx, Lx, Ly, x0, y0, z, Mx, My, p, o.x, o.y);
 }
 
+IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
+                             double Lx, double Ly,
+                             double x0, double y0,
+                             const std::vector<double> &z,
+                             unsigned int Mx, unsigned int My,
+                             Periodicity p,
+                             const std::vector<unsigned int> &procs_x,
+                             const std::vector<unsigned int> &procs_y) {
+
+  Ptr result(new IceGrid(ctx));
+
+  result->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, p);
+  result->set_vertical_levels(z);
+  result->set_ownership_ranges(procs_x, procs_y);
+  result->allocate();
+
+  return result;
+}
+
+//! Create a grid, set processor ownership ranges from options.
 IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
                              double Lx, double Ly,
                              double x0, double y0,
@@ -183,27 +208,47 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
 
   Ptr result(new IceGrid(ctx));
 
+  int size = 0;
+  MPI_Comm_size(ctx->com(), &size);
+  OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx, My, size);
+  result->set_ownership_ranges(procs.x, procs.y);
+
   result->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, p);
   result->set_vertical_levels(z);
-  result->ownership_ranges_from_options();
+
   result->allocate();
 
   return result;
 }
 
+//! Create a grid using one of variables in `var_names` in `file`.
+IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
+                               const PIO &file, const std::vector<std::string> &var_names,
+                               Periodicity periodicity) {
+  for (unsigned int k = 0; k < var_names.size(); ++k) {
+    if (file.inq_var(var_names[k])) {
+      return FromFile(ctx, file, var_names[k], periodicity);
+    }
+  }
+
+  throw RuntimeError::formatted("file %s does not have any of %s",
+                                file.inq_filename().c_str(),
+                                join(var_names, ",").c_str());
+}
+
 //! \brief Sets grid parameters using data read from the file.
-void IceGrid::FromFile(const PIO &file, const std::string &var_name,
-                       Periodicity periodicity,
-                       IceGrid &output) {
+IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
+                               const PIO &file, const std::string &var_name,
+                               Periodicity periodicity) {
   try {
-    const Logger &log = *output.ctx()->log();
+    const Logger &log = *ctx->log();
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input(file, var_name, output.ctx()->unit_system(), periodicity);
+    grid_info input(file, var_name, ctx->unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
-      double Lz = output.ctx()->config()->get_double("grid_Lz");
+      double Lz = ctx->config()->get_double("grid_Lz");
       log.message(3,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
@@ -214,15 +259,16 @@ void IceGrid::FromFile(const PIO &file, const std::string &var_name,
       input.z.push_back(Lz);
     }
 
-    output.set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
-                                input.x_len, input.y_len,
-                                periodicity);
-    output.set_vertical_levels(input.z);
-    output.ownership_ranges_from_options();
-    // We're ready to call output.allocate().
+    int size = 0;
+    MPI_Comm_size(ctx->com(), &size);
+    OwnershipRanges o = IceGrid::ownership_ranges_from_options(input.x_len, input.y_len, size);
+
+    return IceGrid::Create(ctx, input.Lx, input.Ly, input.x0, input.y0,
+                           input.z, input.x_len, input.y_len, periodicity,
+                           o.x, o.y);
   } catch (RuntimeError &e) {
-    e.add_context("initializing computational grid from \"%s\"",
-                  file.inq_filename().c_str());
+    e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
+                  var_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }
@@ -361,10 +407,10 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
 
 //! \brief Computes processor ownership ranges corresponding to equal area
 //! distribution among processors.
-static std::vector<PetscInt> ownership_ranges(unsigned int Mx,
+static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
                                               unsigned int Nx) {
 
-  std::vector<PetscInt> result(Nx);
+  std::vector<unsigned int> result(Nx);
 
   for (unsigned int i=0; i < Nx; i++) {
     result[i] = Mx / Nx + ((Mx % Nx) > i);
@@ -389,27 +435,31 @@ void IceGrid::set_ownership_ranges(const std::vector<unsigned int> &procs_x,
   }
 }
 
-void IceGrid::ownership_ranges_from_options() {
+IceGrid::OwnershipRanges IceGrid::ownership_ranges_from_options(unsigned int Mx,
+                                                                unsigned int My,
+                                                                unsigned int size) {
+  OwnershipRanges result;
+
   unsigned int Nx_default, Ny_default;
-  compute_nprocs(Mx(), My(), size(), Nx_default, Ny_default);
+  compute_nprocs(Mx, My, size, Nx_default, Ny_default);
 
   // check -Nx and -Ny
   options::Integer Nx("-Nx", "Number of processors in the x direction", Nx_default);
   options::Integer Ny("-Ny", "Number of processors in the y direction", Ny_default);
 
   // validate results
-  if ((Mx() / Nx) < 2) {
+  if ((Mx / Nx) < 2) {
     throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                  Mx(), (int)Nx);
+                                  Mx, (int)Nx);
   }
 
-  if ((My() / Ny) < 2) {
+  if ((My / Ny) < 2) {
     throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
-                                  My(), (int)Ny);
+                                  My, (int)Ny);
   }
 
-  if (Nx * Ny != (int)size()) {
-    throw RuntimeError::formatted("Nx * Ny has to be equal to %d.", size());
+  if (Nx * Ny != (int)size) {
+    throw RuntimeError::formatted("Nx * Ny has to be equal to %d.", size);
   }
 
   // check -procs_x and -procs_y
@@ -421,13 +471,13 @@ void IceGrid::ownership_ranges_from_options() {
       throw RuntimeError("-Nx has to be equal to the -procs_x size.");
     }
 
-    m_impl->procs_x.resize(procs_x->size());
+    result.x.resize(procs_x->size());
     for (unsigned int k = 0; k < procs_x->size(); ++k) {
-      m_impl->procs_x[k] = procs_x[k];
+      result.x[k] = procs_x[k];
     }
 
   } else {
-    m_impl->procs_x = ownership_ranges(Mx(), Nx);
+    result.x = ownership_ranges(Mx, Nx);
   }
 
   if (procs_y.is_set()) {
@@ -435,19 +485,19 @@ void IceGrid::ownership_ranges_from_options() {
       throw RuntimeError("-Ny has to be equal to the -procs_y size.");
     }
 
-
-    m_impl->procs_y.resize(procs_y->size());
+    result.y.resize(procs_y->size());
     for (unsigned int k = 0; k < procs_y->size(); ++k) {
-      m_impl->procs_y[k] = procs_y[k];
+      result.y[k] = procs_y[k];
     }
-
   } else {
-    m_impl->procs_y = ownership_ranges(My(), Ny);
+    result.y = ownership_ranges(My, Ny);
   }
 
-  if (m_impl->procs_x.size() * m_impl->procs_y.size() != size()) {
+  if (result.x.size() * result.y.size() != size) {
     throw RuntimeError("length(procs_x) * length(procs_y) != MPI size");
   }
+
+  return result;
 }
 
 //! \brief Create the PETSc DM for the horizontal grid. Determine how
@@ -477,6 +527,10 @@ void IceGrid::allocate() {
   check_parameters();
 
   compute_horizontal_coordinates();
+
+  // FIXME: remove this
+  OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx(), My(), size());
+  set_ownership_ranges(procs.x, procs.y);
 
   unsigned int max_stencil_width = (unsigned int)ctx()->config()->get_double("grid_max_stencil_width");
 
@@ -611,56 +665,56 @@ void IceGrid::report_parameters() const {
 
   // report on grid
   log.message(2,
-             "                grid size   %d x %d x %d\n",
-             Mx(), My(), Mz());
+              "                grid size   %d x %d x %d\n",
+              Mx(), My(), Mz());
 
   // report on computational box
   log.message(2,
-             "           spatial domain   %.2f km x %.2f km x %.2f m\n",
-             km(2*Lx()), km(2*Ly()), Lz());
+              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
+              km(2*Lx()), km(2*Ly()), Lz());
 
   // report on grid cell dims
   log.message(2,
-             "     horizontal grid cell   %.2f km x %.2f km\n",
-             km(dx()), km(dy()));
+              "     horizontal grid cell   %.2f km x %.2f km\n",
+              km(dx()), km(dy()));
 
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
     log.message(2,
-               "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
-               dz_min());
+                "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
+                dz_min());
   } else {
     log.message(2,
-               "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-               Mz(), dz_min(), dz_max());
+                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
+                Mz(), dz_min(), dz_max());
   }
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   {
     log.message(3,
-               "  IceGrid parameters:\n");
+                "  IceGrid parameters:\n");
     log.message(3,
-               "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
-               km(Lx()), km(Ly()), Lz());
+                "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
+                km(Lx()), km(Ly()), Lz());
     log.message(3,
-               "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
-               km(x0()), km(y0()));
+                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
+                km(x0()), km(y0()));
     log.message(3,
-               "            Mx = %d, My = %d, Mz = %d, \n",
-               Mx(), My(), Mz());
+                "            Mx = %d, My = %d, Mz = %d, \n",
+                Mx(), My(), Mz());
     log.message(3,
-               "            dx = %6.3f km, dy = %6.3f km, \n",
-               km(dx()), km(dy()));
+                "            dx = %6.3f km, dy = %6.3f km, \n",
+                km(dx()), km(dy()));
     log.message(3,
-               "            Nx = %d, Ny = %d]\n",
-               m_impl->procs_x.size(), m_impl->procs_y.size());
+                "            Nx = %d, Ny = %d]\n",
+                (int)m_impl->procs_x.size(), (int)m_impl->procs_y.size());
 
   }
 
   {
     log.message(5,
-               "  REALLY verbose output on IceGrid:\n");
+                "  REALLY verbose output on IceGrid:\n");
     log.message(5,
-               "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
+                "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
     for (unsigned int k=0; k < Mz(); k++) {
       log.message(5, " %5.4f, ", z(k));
     }
@@ -745,11 +799,11 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
 //! \brief Checks grid parameters usually set at bootstrapping for validity.
 void IceGrid::check_parameters() {
 
-  if (m_impl->Mx < 3) {
+  if (Mx() < 3) {
     throw RuntimeError("Mx has to be at least 3.");
   }
 
-  if (m_impl->My < 3) {
+  if (My() < 3) {
     throw RuntimeError("My has to be at least 3.");
   }
 
@@ -757,11 +811,11 @@ void IceGrid::check_parameters() {
     throw RuntimeError("Mz must be at least 2.");
   }
 
-  if (m_impl->Lx <= 0) {
+  if (Lx() <= 0) {
     throw RuntimeError("Lx has to be positive.");
   }
 
-  if (m_impl->Ly <= 0) {
+  if (Ly() <= 0) {
     throw RuntimeError("Ly has to be positive.");
   }
 

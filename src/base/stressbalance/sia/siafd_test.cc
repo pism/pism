@@ -328,8 +328,6 @@ int main(int argc, char *argv[]) {
       PISM_CHK(ierr, "PetscPrintf");
     }
 
-    IceGrid::Ptr grid(new IceGrid(ctx));
-
     double
       Lx = 900e3,
       Ly = Lx,
@@ -340,10 +338,12 @@ int main(int argc, char *argv[]) {
     options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
     options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
 
-    grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
-    grid->set_vertical_levels(IceGrid::compute_vertical_levels(Lz, Mz, EQUAL));
-    grid->ownership_ranges_from_options();
-    grid->allocate();
+    std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+
+    // create grid and set defaults
+    IceGrid::Ptr grid = IceGrid::Create(ctx, Lx, Ly, 0.0, 0.0, z,
+                                        Mx, My, XY_PERIODIC);
+
 
     setVerbosityLevel(5);
 

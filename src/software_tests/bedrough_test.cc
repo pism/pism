@@ -49,10 +49,14 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     double Lx = 1200e3;
-    IceGrid::Ptr grid(new IceGrid(ctx));
-    grid->set_size_and_extent(0.0, 0.0, Lx, Lx, 81, 81, NOT_PERIODIC);
-    grid->ownership_ranges_from_options();
-    grid->allocate();
+    int Mx = 81;
+    double Lz = config->get_double("grid_Lz");
+    int Mz = (int)config->get_double("grid_Mz");
+    std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+
+    // create grid
+    IceGrid::Ptr grid = IceGrid::Create(ctx, Lx, Lx, 0.0, 0.0, z,
+                                        Mx, Mx, NOT_PERIODIC);
 
     ierr = PetscPrintf(grid->com,"BedSmoother TEST\n");
     PISM_CHK(ierr, "PetscPrintf");

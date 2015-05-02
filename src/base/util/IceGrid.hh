@@ -153,6 +153,13 @@ public:
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double lambda = 0.0);
+  struct OwnershipRanges {
+    std::vector<unsigned int> x, y;
+  };
+  static OwnershipRanges ownership_ranges_from_options(unsigned int Mx,
+                                                       unsigned int My,
+                                                       unsigned int size);
+
   static Ptr Shallow(Context::Ptr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
@@ -163,11 +170,27 @@ public:
                     double x0, double y0,
                     const std::vector<double> &z,
                     unsigned int Mx, unsigned int My,
+                    Periodicity p,
+                    const std::vector<unsigned int> &procs_x,
+                    const std::vector<unsigned int> &procs_y);
+
+  static Ptr Create(Context::Ptr ctx,
+                    double Lx, double Ly,
+                    double x0, double y0,
+                    const std::vector<double> &z,
+                    unsigned int Mx, unsigned int My,
                     Periodicity p);
 
-  static void FromFile(const PIO &file, const std::string &var_name, Periodicity p,
-                       IceGrid &output);
+  //! Create a grid from a file.
+  static Ptr FromFile(Context::Ptr ctx,
+                      const PIO &file, const std::string &var_name,
+                      Periodicity periodicity);
 
+  static Ptr FromFile(Context::Ptr ctx,
+                      const PIO &file, const std::vector<std::string> &var_names,
+                      Periodicity periodicity);
+
+  // parameter settings methods
   void set_size_and_extent(double x0, double y0, double Lx, double Ly,
                            unsigned int Mx, unsigned int My, Periodicity p);
   void set_vertical_levels(const std::vector<double> &z_levels);
@@ -175,8 +198,7 @@ public:
   void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
                             const std::vector<unsigned int> &procs_y);
 
-  void ownership_ranges_from_options();
-
+  // end of parameter setting methods
 
   // static Ptr Bootstrapping(MPI_Comm c, Config::ConstPtr config,
   //                          const std::string &filename);

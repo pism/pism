@@ -187,9 +187,7 @@ output_file = PISM.optionsString("-o", "output file", default="tauc2tillphi_" + 
 verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 PISM.set_config_from_options(context.com, config)
 
-grid = PISM.Context().newgrid()
-PISM.model.initGridFromFile(grid, bootfile,
-                            periodicity=PISM.XY_PERIODIC)
+grid = PISM.model.initGridFromFile(context.ctx, bootfile, periodicity=PISM.XY_PERIODIC)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() > 3:

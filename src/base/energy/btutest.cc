@@ -150,8 +150,6 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = btutest_context(com, "btutest");
     Config::Ptr config = ctx->config();
 
-    // create grid and set defaults
-    IceGrid::Ptr grid(new IceGrid(ctx));
     double
       Lx = 1500e3,
       Ly = Lx;
@@ -174,10 +172,11 @@ int main(int argc, char *argv[]) {
 
     options::Real Lz("-Lz", "height of ice/atmosphere boxr", 4000.0);
 
-    grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, XY_PERIODIC);
-    grid->set_vertical_levels(IceGrid::compute_vertical_levels(Lz, Mz, EQUAL));
-    grid->ownership_ranges_from_options();
-    grid->allocate();
+    std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+
+    // create grid and set defaults
+    IceGrid::Ptr grid = IceGrid::Create(ctx, Lx, Ly, 0.0, 0.0, z,
+                                        Mx, My, XY_PERIODIC);
 
     ctx->time()->init(*ctx->log());
 

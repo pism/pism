@@ -52,8 +52,7 @@ verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 periodicity = PISM.XY_PERIODIC
 if is_regional:
     periodicity = PISM.NOT_PERIODIC
-grid = PISM.Context().newgrid()
-PISM.model.initGridFromFile(grid, input_file, periodicity)
+grid = PISM.model.initGridFromFile(context.ctx, input_file, periodicity)
 
 config.set_boolean("do_pseudo_plastic_till", False)
 

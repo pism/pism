@@ -179,7 +179,7 @@ def grid_from_file_test():
 
     grid2 = PISM.Context().newgrid()
 
-    PISM.model.initGridFromFile(grid, output_file, PISM.NOT_PERIODIC)
+    grid = PISM.model.initGridFromFile(PISM.Context().ctx, output_file, PISM.NOT_PERIODIC)
 
 
 def create_special_vecs_test():

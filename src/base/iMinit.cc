@@ -306,21 +306,8 @@ void IceModel::grid_setup() {
 
     nc.open(input_file, PISM_READONLY);
 
-    bool var_exists = false;
-    for (unsigned int i = 0; i < names.size(); ++i) {
-      var_exists = nc.inq_var(names[i]);
-
-      if (var_exists == true) {
-        IceGrid::FromFile(nc, names[i], m_grid->periodicity(), *m_grid);
-        break;
-      }
-    }
-
-    if (var_exists == false) {
-      nc.close();
-      throw RuntimeError::formatted("file %s has neither enthalpy nor temperature in it",
-                                    input_file->c_str());
-    }
+    Periodicity p = string_to_periodicity(m_config->get_string("grid_periodicity"));
+    m_grid = IceGrid::FromFile(m_ctx, nc, names, p);
 
     nc.close();
 
@@ -339,7 +326,6 @@ void IceModel::grid_setup() {
     set_grid_from_options();
   }
 
-  m_grid->ownership_ranges_from_options();
   m_grid->allocate();
 
   {
