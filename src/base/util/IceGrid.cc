@@ -199,6 +199,16 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
   return result;
 }
 
+IceGrid::Ptr IceGrid::Create(Context::Ptr ctx, const Parameters &p) {
+  return IceGrid::Create(ctx,
+                         p.Lx, p.Ly,
+                         p.x0, p.y0,
+                         p.z,
+                         p.Mx, p.My,
+                         p.periodicity,
+                         p.procs_x, p.procs_y);
+}
+
 //! Create a grid, set processor ownership ranges from options.
 IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
                              double Lx, double Ly,
@@ -236,34 +246,26 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
     const Logger &log = *ctx->log();
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input_grid(file, var_name, ctx->unit_system(), periodicity);
+    // Note that this sets defaults using configuration parameters, too.
+    Parameters p(ctx, file, var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
-    if (input_grid.z.size() < 2) {
+    if (p.z.size() < 2) {
       double Lz = ctx->config()->get_double("grid_Lz");
       log.message(3,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
                  var_name.c_str(), file.inq_filename().c_str(), Lz);
 
-      input_grid.z.clear();
-      input_grid.z.push_back(0);
-      input_grid.z.push_back(Lz);
+      p.z.clear();
+      p.z.push_back(0);
+      p.z.push_back(Lz);
     }
 
-    int size = 0;
-    MPI_Comm_size(ctx->com(), &size);
-    OwnershipRanges procs = IceGrid::ownership_ranges_from_options(input_grid.x_len,
-                                                                   input_grid.y_len,
-                                                                   size);
+    // override periodicity
+    p.periodicity = periodicity;
 
-    return IceGrid::Create(ctx,
-                           input_grid.Lx, input_grid.Ly,
-                           input_grid.x0, input_grid.y0,
-                           input_grid.z,
-                           input_grid.x_len, input_grid.y_len,
-                           periodicity,
-                           procs.x, procs.y);
+    return IceGrid::Create(ctx, p);
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
                   var_name.c_str(), file.inq_filename().c_str());
@@ -1145,44 +1147,136 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
   }
 }
 
-grid_info grid_info_from_bootstraping_file(MPI_Comm com,
-                                           units::System::Ptr sys,
-                                           const std::string &filename,
-                                           unsigned int Mx_default,
-                                           unsigned int My_default,
-                                           unsigned int Mz_default,
-                                           double Lz_default,
-                                           Periodicity periodicity) {
-  // Logical (as opposed to physical) grid dimensions should not be
-  // deduced from a bootstrapping file, so we check if these options
-  // are set and stop if they are not.
-  options::Integer
-    Mx("-Mx", "grid size in X direction", Mx_default),
-    My("-My", "grid size in Y direction", My_default),
-    Mz("-Mz", "grid size in vertical direction", Mz_default);
-  options::Real Lz("-Lz", "height of the computational domain", Lz_default);
+IceGrid::Parameters::Parameters(Config::ConstPtr config, unsigned int size) {
 
-  if (not (Mx.is_set() and My.is_set() and Mz.is_set() and Lz.is_set())) {
-    throw RuntimeError("All of -bootstrap, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
+  Lx = config->get_double("grid_Lx");
+  Ly = config->get_double("grid_Ly");
+
+  x0 = 0.0;
+  y0 = 0.0;
+
+  Mx = config->get_double("grid_Mx");
+  My = config->get_double("grid_My");
+
+  periodicity = string_to_periodicity(config->get_string("grid_periodicity"));
+
+  double Lz = config->get_double("grid_Lz");
+  unsigned int Mz = config->get_double("grid_Mz");
+  double lambda = config->get_double("grid_lambda");
+  SpacingType s = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
+  z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
+
+  IceGrid::OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx, My, size);
+  procs_x = procs.x;
+  procs_y = procs.y;
+}
+
+IceGrid::Parameters::Parameters(Context::Ptr ctx,
+                                const PIO &file,
+                                const std::string &variable_name,
+                                Periodicity p) {
+  int size = 0;
+  MPI_Comm_size(ctx->com(), &size);
+
+  // set defaults from configuration parameters
+  *this = Parameters(ctx->config(), size);
+
+  grid_info input_grid(file, variable_name, ctx->unit_system(), p);
+
+  Lx = input_grid.Lx;
+  Ly = input_grid.Ly;
+  x0 = input_grid.x0;
+  y0 = input_grid.y0;
+  Mx = input_grid.x_len;
+  My = input_grid.y_len;
+  periodicity = p;
+  z = input_grid.z;
+  // procs_x and procs_y are unchanged
+}
+
+IceGrid::Parameters::Parameters(Context::Ptr ctx,
+                                const std::string &filename,
+                                const std::string &variable_name,
+                                Periodicity p) {
+  PIO nc(ctx->com(), "netcdf3");
+  nc.open(filename, PISM_READONLY);
+  *this = Parameters(ctx, nc, variable_name, p);
+  nc.close();
+}
+
+
+void IceGrid::Parameters::horizontal_size_from_options() {
+  Mx = options::Integer("-Mx", "grid size in X direction", Mx);
+  My = options::Integer("-My", "grid size in Y direction", My);
+}
+
+void IceGrid::Parameters::horizontal_extent_from_options() {
+  // Domain size
+  {
+    Lx = 1000.0 * options::Real("-Lx", "Half of the grid extent in the Y direction, in km",
+                                Lx / 1000.0);
+    Ly = 1000.0 * options::Real("-Ly", "Half of the grid extent in the X direction, in km",
+                                Ly / 1000.0);
   }
 
-  // Use a bootstrapping file to set some grid parameters (they can be
-  // overridden later, in IceModel::set_grid_from_options()).
-
-  PIO nc(com, "netcdf3"); // OK to use netcdf3, we read very little data here.
-
-  // Try to deduce grid information from present spatial fields. This is bad,
-  // because theoretically these fields may use different grids. We need a
-  // better way of specifying PISM's computational grid at bootstrapping.
-  grid_info input;
+  // Alternatively: domain size and extent
   {
+    options::RealList x_range("-x_range", "min,max x coordinate values");
+    options::RealList y_range("-y_range", "min,max y coordinate values");
+
+    if (x_range.is_set() and y_range.is_set()) {
+      if (x_range->size() != 2 or y_range->size() != 2) {
+        throw RuntimeError("-x_range and/or -y_range argument is invalid.");
+      }
+      x0 = (x_range[0] + x_range[1]) / 2.0;
+      y0 = (y_range[0] + y_range[1]) / 2.0;
+      Lx = (x_range[1] - x_range[0]) / 2.0;
+      Ly = (y_range[1] - y_range[0]) / 2.0;
+    }
+  }
+}
+
+void IceGrid::Parameters::vertical_grid_from_options(Config::ConstPtr config) {
+  options::Real Lz("-Lz", "height of the computational domain", z.back());
+  options::Integer Mz("-My", "grid size in Y direction", z.size());
+
+  double lambda = config->get_double("grid_lambda");
+  SpacingType s = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
+  z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
+}
+
+IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
+  options::String input_file("-i", "Specifies a PISM input file");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+
+  Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+
+  if (input_file.is_set() and (not bootstrap)) {
+    // get grid from a PISM input file
+    std::vector<std::string> names;
+    names.push_back("enthalpy");
+    names.push_back("temp");
+
+    PIO nc(ctx->com(), "netcdf3");
+    nc.open(input_file, PISM_READONLY); // will be closed automatically
+    return IceGrid::FromFile(ctx, nc, names, p);
+  } else if (input_file.is_set() and bootstrap) {
+    // bootstrapping; get domain size defaults from an input file, allow overriding all grid
+    // parameters using command-line options
+
+    int size = 0;
+    MPI_Comm_size(ctx->com(), &size);
+    Parameters input_grid(ctx->config(), size);
+
     std::vector<std::string> names;
     names.push_back("land_ice_thickness");
     names.push_back("bedrock_altitude");
     names.push_back("thk");
     names.push_back("topg");
     bool grid_info_found = false;
-    nc.open(filename, PISM_READONLY);
+
+    PIO nc(ctx->com(), "netcdf3");
+    nc.open(input_file, PISM_READONLY); // will be closed automatically
     for (unsigned int i = 0; i < names.size(); ++i) {
 
       grid_info_found = nc.inq_var(names[i]);
@@ -1195,19 +1289,27 @@ grid_info grid_info_from_bootstraping_file(MPI_Comm com,
       }
 
       if (grid_info_found) {
-        input = grid_info(nc, names[i], sys, periodicity);
+        input_grid = Parameters(ctx, nc, names[i], p);
         break;
       }
     }
 
-    if (grid_info_found == false) {
+    if (not grid_info_found) {
       throw RuntimeError::formatted("no geometry information found in '%s'",
-                                    filename.c_str());
+                                    input_file->c_str());
     }
-    nc.close();
-  }
 
-  return input;
+    // process all possible options controlling grid parameters, overriding values read from a file
+    input_grid.horizontal_size_from_options();
+    input_grid.horizontal_extent_from_options();
+    input_grid.vertical_grid_from_options(ctx->config());
+
+    return IceGrid::Create(ctx, input_grid);
+  } else {
+    // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
+    // -bootstrap is not set either".
+    throw RuntimeError("Please set the input file using the \"-i\" command-line option.");
+  }
 }
 
 } // end of namespace pism
