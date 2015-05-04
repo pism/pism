@@ -167,9 +167,10 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My, Periodicity p) {
 
+  double Lz = ctx->config()->get_double("grid_Lz");
   std::vector<double> z(3, 0.0);
-  z[1] = 0.5 * ctx->config()->get_double("grid_Lz");
-  z[2] = 1.0 * ctx->config()->get_double("grid_Lz");
+  z[1] = 0.5 * Lz;
+  z[2] = 1.0 * Lz;
 
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
@@ -205,20 +206,11 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
                              const std::vector<double> &z,
                              unsigned int Mx, unsigned int My,
                              Periodicity p) {
-
-  Ptr result(new IceGrid(ctx));
-
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
-  OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx, My, size);
-  result->set_ownership_ranges(procs.x, procs.y);
+  OwnershipRanges procs = ownership_ranges_from_options(Mx, My, size);
 
-  result->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, p);
-  result->set_vertical_levels(z);
-
-  result->allocate();
-
-  return result;
+  return Create(ctx, Lx, Ly, x0, y0, z, Mx, My, p, procs.x, procs.y);
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
@@ -244,36 +236,40 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
     const Logger &log = *ctx->log();
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    grid_info input(file, var_name, ctx->unit_system(), periodicity);
+    grid_info input_grid(file, var_name, ctx->unit_system(), periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
-    if (input.z.size() < 2) {
+    if (input_grid.z.size() < 2) {
       double Lz = ctx->config()->get_double("grid_Lz");
       log.message(3,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
                  var_name.c_str(), file.inq_filename().c_str(), Lz);
 
-      input.z.clear();
-      input.z.push_back(0);
-      input.z.push_back(Lz);
+      input_grid.z.clear();
+      input_grid.z.push_back(0);
+      input_grid.z.push_back(Lz);
     }
 
     int size = 0;
     MPI_Comm_size(ctx->com(), &size);
-    OwnershipRanges o = IceGrid::ownership_ranges_from_options(input.x_len, input.y_len, size);
+    OwnershipRanges procs = IceGrid::ownership_ranges_from_options(input_grid.x_len,
+                                                                   input_grid.y_len,
+                                                                   size);
 
-    return IceGrid::Create(ctx, input.Lx, input.Ly, input.x0, input.y0,
-                           input.z, input.x_len, input.y_len, periodicity,
-                           o.x, o.y);
+    return IceGrid::Create(ctx,
+                           input_grid.Lx, input_grid.Ly,
+                           input_grid.x0, input_grid.y0,
+                           input_grid.z,
+                           input_grid.x_len, input_grid.y_len,
+                           periodicity,
+                           procs.x, procs.y);
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
                   var_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }
-
-
 
 IceGrid::~IceGrid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);

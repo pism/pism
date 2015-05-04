@@ -86,9 +86,6 @@ grid_info grid_info_from_bootstraping_file(MPI_Comm com,
   The creation of this `DA` is the point at which PISM gets distributed across
   multiple processors.
 
-  It computes grid parameters for the fine and equally-spaced vertical grid
-  used in the conservation of energy and age equations.
-
   \section computational_grid Organization of PISM's computational grid
 
   PISM uses the class IceGrid to manage computational grids and their
@@ -101,44 +98,10 @@ grid_info grid_info_from_bootstraping_file(MPI_Comm com,
   is stored on one processor only),
   - are periodic in both X and Y directions (in the topological sence).
 
-  Each processor "owns" a rectangular patch of xm times ym grid points with
-  indices starting at xs and ys in the X and Y directions respectively.
+  Each processor "owns" a rectangular patch of `xm` times `ym` grid points with
+  indices starting at `xs` and `ys` in the X and Y directions respectively.
 
   The typical code performing a point-wise computation will look like
-
-  \code
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-  for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-  // compute something at i,j
-  }
-  }
-  \endcode
-
-  For finite difference (and some other) computations we often need to know
-  values at map-plane neighbors of a grid point. 
-
-  We say that a patch owned by a processor is surrounded by a strip of "ghost"
-  grid points belonging to patches next to the one in question. This lets us to
-  access (read) values at all the eight neighbors of a grid point for \e all
-  the grid points, including ones at an edge of a processor patch \e and at an
-  edge of a computational domain.
-
-  All the values \e written to ghost points will be lost next time ghost values
-  are updated.
-
-  Sometimes it is beneficial to update ghost values locally (for instance when
-  a computation A uses finite differences to compute derivatives of a quantity
-  produced using a purely local (point-wise) computation B). In this case the
-  double loop above can be modified to look like
-
-  \code
-  for (PointsWithGhosts p(grid, ghost_width); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    field(i,j) = value;
-  }
-  \endcode
-
-  to iterate over points without ghosts, do
 
   \code
   for (Points p(grid); p; p.next()) {
@@ -147,6 +110,29 @@ grid_info grid_info_from_bootstraping_file(MPI_Comm com,
   }
   \endcode
 
+  For finite difference (and some other) computations we often need to know
+  values at map-plane neighbors of a grid point. 
+
+  We say that a patch owned by a processor is surrounded by a strip of "ghost"
+  grid points belonging to patches next to the one in question. This lets us to
+  access (read) values at all the eight neighbors of a grid point for *all*
+  the grid points, including ones at an edge of a processor patch *and* at an
+  edge of a computational domain.
+
+  All the values *written* to ghost points will be lost next time ghost values
+  are updated.
+
+  Sometimes it is beneficial to update ghost values locally (for instance when
+  a computation A uses finite differences to compute derivatives of a quantity
+  produced using a purely local (point-wise) computation B). In this case the
+  loop above can be modified to look like
+
+  \code
+  for (PointsWithGhosts p(grid, ghost_width); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    field(i,j) = value;
+  }
+  \endcode
 */
 class IceGrid {
 public:
