@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <cstdio>
 #include <petscvec.h>
 
 #include "PIO.hh"
@@ -111,6 +112,15 @@ PIO::PIO(const PIO &other) {
 }
 
 PIO::~PIO() {
+  if (not inq_filename().empty()) {
+    try {
+      // a file is still open, so we try to close it
+      this->close();
+    } catch (...) {
+      // don't ever throw from here
+      fprintf(stderr, "Failed to close a file in PIO::~PIO()!\n");
+    }
+  }
 }
 
 MPI_Comm PIO::com() const {
