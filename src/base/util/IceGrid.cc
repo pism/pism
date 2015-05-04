@@ -200,6 +200,7 @@ IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
 }
 
 IceGrid::Ptr IceGrid::Create(Context::Ptr ctx, const Parameters &p) {
+  p.validate();
   return IceGrid::Create(ctx,
                          p.Lx, p.Ly,
                          p.x0, p.y0,
@@ -1244,6 +1245,55 @@ void IceGrid::Parameters::vertical_grid_from_options(Config::ConstPtr config) {
   SpacingType s = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
 }
+
+void IceGrid::Parameters::validate() const {
+  if (Mx < 3) {
+    throw RuntimeError::formatted("Mx = %d is invalid (has to be 3 or greater)", Mx);
+  }
+
+  if (My < 3) {
+    throw RuntimeError::formatted("My = %d is invalid (has to be 3 or greater)", My);
+  }
+
+  if (Lx <= 0.0) {
+    throw RuntimeError::formatted("Lx = %f is invalid (negative)", Lx);
+  }
+
+  if (Ly <= 0.0) {
+    throw RuntimeError::formatted("Ly = %f is invalid (negative)", Ly);
+  }
+
+  if (not is_increasing(z)) {
+    throw RuntimeError("z levels are not increasing");
+  }
+
+  if (z[0] > 1e-6) {
+    throw RuntimeError::formatted("first z level is not zero: %f", z[0]);
+  }
+
+  if (z.back() < 0.0) {
+    throw RuntimeError::formatted("last z level is negative: %f", z.back());
+  }
+
+  unsigned int sum = 0;
+  for (unsigned int k = 0; k < procs_x.size(); ++k) {
+    sum += procs_x[k];
+  }
+
+  if (sum != Mx) {
+    throw RuntimeError("procs_x don't sum up to Mx");
+  }
+
+  sum = 0;
+  for (unsigned int k = 0; k < procs_y.size(); ++k) {
+    sum += procs_y[k];
+  }
+
+  if (sum != My) {
+    throw RuntimeError("procs_y don't sum up to My");
+  }
+}
+
 
 IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
   options::String input_file("-i", "Specifies a PISM input file");

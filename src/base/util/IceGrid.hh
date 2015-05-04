@@ -155,6 +155,8 @@ public:
     //! Process -Mz and -Lz.
     void vertical_grid_from_options(Config::ConstPtr config);
 
+    void validate() const;
+
     //! Domain half-width in the X direction.
     double Lx;
     //! Domain half-width in the Y direction.
