@@ -66,6 +66,18 @@ MPI_Comm Context::com() const {
   return m_impl->com;
 }
 
+int Context::size() const {
+  int size = 0;
+  MPI_Comm_size(m_impl->com, &size);
+  return size;
+}
+
+int Context::rank() const {
+  int rank = 0;
+  MPI_Comm_rank(m_impl->com, &rank);
+  return rank;
+}
+
 Context::UnitsSystemPtr Context::unit_system() const {
   return m_impl->unit_system;
 }

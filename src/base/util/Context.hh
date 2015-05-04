@@ -59,6 +59,8 @@ public:
   ~Context();
 
   MPI_Comm com() const;
+  int size() const;
+  int rank() const;
   UnitsSystemPtr unit_system() const;
   ConstConfigPtr config() const;
   EnthalpyConverterPtr enthalpy_converter() const;
