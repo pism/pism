@@ -1167,10 +1167,16 @@ IceGrid::Parameters::Parameters(Config::ConstPtr config, unsigned int size) {
   SpacingType s = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
 
+  this->ownership_ranges_from_options(size);
+}
+
+void IceGrid::Parameters::ownership_ranges_from_options(unsigned int size) {
   IceGrid::OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx, My, size);
   procs_x = procs.x;
   procs_y = procs.y;
 }
+
+
 
 IceGrid::Parameters::Parameters(Context::Ptr ctx,
                                 const PIO &file,
@@ -1192,7 +1198,7 @@ IceGrid::Parameters::Parameters(Context::Ptr ctx,
   My = input_grid.y_len;
   periodicity = p;
   z = input_grid.z;
-  // procs_x and procs_y are unchanged
+  this->ownership_ranges_from_options(ctx->size());
 }
 
 IceGrid::Parameters::Parameters(Context::Ptr ctx,

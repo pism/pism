@@ -155,6 +155,9 @@ public:
     //! Process -Mz and -Lz.
     void vertical_grid_from_options(Config::ConstPtr config);
 
+    //! Re-compute ownership ranges. Used current valued of Mx and My.
+    void ownership_ranges_from_options(unsigned int size);
+
     void validate() const;
 
     //! Domain half-width in the X direction.
