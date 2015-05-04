@@ -179,11 +179,6 @@ public:
     std::vector<unsigned int> procs_y;
   };
 
-  //! Compute horizontal grid coordinates (either X or Y dimension).
-  static std::vector<double> compute_horizontal_coordinates(unsigned int M, double delta,
-                                                            double v_min, double v_max,
-                                                            bool periodic);
-
   //! Compute vertical grid levels.
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double Lambda = 0.0);

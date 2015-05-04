@@ -603,9 +603,9 @@ static double compute_horizontal_spacing(double half_width, unsigned int M, bool
   }
 }
 
-std::vector<double> IceGrid::compute_horizontal_coordinates(unsigned int M, double delta,
-                                                            double v_min, double v_max,
-                                                            bool periodic) {
+static std::vector<double> compute_coordinates(unsigned int M, double delta,
+                                               double v_min, double v_max,
+                                               bool periodic) {
   std::vector<double> result(M);
 
   // Here v_min, v_max define the extent of the computational domain,
@@ -639,17 +639,17 @@ void IceGrid::compute_horizontal_coordinates() {
     x_min = m_impl->x0 - m_impl->Lx,
     x_max = m_impl->x0 + m_impl->Lx;
 
-  m_impl->x = compute_horizontal_coordinates(m_impl->Mx, m_impl->dx,
-                                             x_min, x_max,
-                                             m_impl->periodicity & X_PERIODIC);
+  m_impl->x = compute_coordinates(m_impl->Mx, m_impl->dx,
+                                  x_min, x_max,
+                                  m_impl->periodicity & X_PERIODIC);
 
   double
     y_min = m_impl->y0 - m_impl->Ly,
     y_max = m_impl->y0 + m_impl->Ly;
 
-  m_impl->y = compute_horizontal_coordinates(m_impl->My, m_impl->dy,
-                                             y_min, y_max,
-                                             m_impl->periodicity & Y_PERIODIC);
+  m_impl->y = compute_coordinates(m_impl->My, m_impl->dy,
+                                  y_min, y_max,
+                                  m_impl->periodicity & Y_PERIODIC);
 }
 
 //! \brief Report grid parameters.
