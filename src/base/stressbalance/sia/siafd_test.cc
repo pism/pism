@@ -328,22 +328,20 @@ int main(int argc, char *argv[]) {
       PISM_CHK(ierr, "PetscPrintf");
     }
 
-    double
-      Lx = 900e3,
-      Ly = Lx,
-      Lz = 4000.0;
-
-    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
-    options::Integer My("-My", "Number of grid points in the X direction", 61);
-    options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
     options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
 
-    std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+    GridParameters P(config, ctx->size());
+    P.Lx = 900e3;
+    P.Ly = P.Lx;
+    P.horizontal_size_from_options(ctx->size());
+
+    double Lz = 4000.0;
+    options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
+
+    P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
 
     // create grid and set defaults
-    IceGrid::Ptr grid = IceGrid::Create(ctx, Lx, Ly, 0.0, 0.0, z,
-                                        Mx, My, XY_PERIODIC);
-
+    IceGrid::Ptr grid(new IceGrid(ctx, P));
 
     setVerbosityLevel(5);
 

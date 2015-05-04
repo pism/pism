@@ -105,6 +105,20 @@ Periodicity string_to_periodicity(const std::string &keyword) {
   }
 }
 
+std::string periodicity_to_string(Periodicity p) {
+  switch (p) {
+  case NOT_PERIODIC:
+    return "none";
+  case X_PERIODIC:
+    return "x";
+  case Y_PERIODIC:
+    return "y";
+  default:
+  case XY_PERIODIC:
+    return "xy";
+  }
+}
+
 SpacingType string_to_spacing(const std::string &keyword) {
   if (keyword == "quadratic") {
     return QUADRATIC;
@@ -116,46 +130,13 @@ SpacingType string_to_spacing(const std::string &keyword) {
   }
 }
 
-IceGrid::IceGrid(Context::Ptr context)
-  : com(context->com()), m_impl(new Impl) {
-  m_impl->ctx = context;
-
-  Config::ConstPtr config = m_impl->ctx->config();
-
-  MPI_Comm_rank(com, &m_impl->rank);
-  MPI_Comm_size(com, &m_impl->size);
-
-  // The grid in symmetric with respect to zero by default.
-  m_impl->x0 = 0.0;
-  m_impl->y0 = 0.0;
-
-  // initialize these data members to get rid of a valgrind warning;
-  // correct values will be set in IceGrid::allocate()
-  m_impl->xs = 0;
-  m_impl->ys = 0;
-  m_impl->xm = 0;
-  m_impl->ym = 0;
-
-  std::string word = config->get_string("grid_periodicity");
-  m_impl->periodicity = string_to_periodicity(word);
-
-  unsigned int tmp_Mz = config->get_double("grid_Mz");
-  double tmp_Lz = config->get_double("grid_Lz");
-  SpacingType spacing = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
-
-  double lambda = config->get_double("grid_lambda");
-  std::vector<double> Z = compute_vertical_levels(tmp_Lz, tmp_Mz, spacing, lambda);
-  set_vertical_levels(Z);
-
-  m_impl->Lx  = config->get_double("grid_Lx");
-  m_impl->Ly  = config->get_double("grid_Ly");
-
-  m_impl->Mx  = static_cast<int>(config->get_double("grid_Mx"));
-  m_impl->My  = static_cast<int>(config->get_double("grid_My"));
-
-  m_impl->bsearch_accel = gsl_interp_accel_alloc();
-  if (m_impl->bsearch_accel == NULL) {
-    throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+std::string spacing_to_string(SpacingType s) {
+  switch (s) {
+  case EQUAL:
+    return "equal";
+  default:
+  case QUADRATIC:
+    return "quadratic";
   }
 }
 
@@ -165,90 +146,80 @@ IceGrid::IceGrid(Context::Ptr context)
 IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
                               double Lx, double Ly,
                               double x0, double y0,
-                              unsigned int Mx, unsigned int My, Periodicity p) {
+                              unsigned int Mx, unsigned int My,
+                              Periodicity periodicity) {
+
+  GridParameters p(ctx->config(), ctx->size());
+  p.Lx = Lx;
+  p.Ly = Ly;
+  p.x0 = x0;
+  p.y0 = y0;
+  p.Mx = Mx;
+  p.My = My;
+  p.periodicity = periodicity;
 
   double Lz = ctx->config()->get_double("grid_Lz");
-  std::vector<double> z(3, 0.0);
-  z[1] = 0.5 * Lz;
-  z[2] = 1.0 * Lz;
+  p.z.resize(3);
+  p.z[0] = 0.0;
+  p.z[1] = 0.5 * Lz;
+  p.z[2] = 1.0 * Lz;
 
-  int size = 0;
-  MPI_Comm_size(ctx->com(), &size);
+  p.ownership_ranges_from_options(ctx->size());
 
-  OwnershipRanges o = IceGrid::ownership_ranges_from_options(Mx, My, size);
-
-  return IceGrid::Create(ctx, Lx, Ly, x0, y0, z, Mx, My, p, o.x, o.y);
+  return IceGrid::Ptr(new IceGrid(ctx, p));
 }
 
-IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
-                             double Lx, double Ly,
-                             double x0, double y0,
-                             const std::vector<double> &z,
-                             unsigned int Mx, unsigned int My,
-                             Periodicity p,
-                             const std::vector<unsigned int> &procs_x,
-                             const std::vector<unsigned int> &procs_y) {
+IceGrid::IceGrid(Context::Ptr ctx, const GridParameters &p)
+  : com(ctx->com()), m_impl(new Impl) {
 
-  Ptr result(new IceGrid(ctx));
+  m_impl->ctx = ctx;
 
-  result->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, p);
-  result->set_vertical_levels(z);
-  result->set_ownership_ranges(procs_x, procs_y);
-  result->allocate();
+  m_impl->bsearch_accel = gsl_interp_accel_alloc();
+  if (m_impl->bsearch_accel == NULL) {
+    throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+  }
 
-  return result;
-}
+  MPI_Comm_rank(com, &m_impl->rank);
+  MPI_Comm_size(com, &m_impl->size);
 
-IceGrid::Ptr IceGrid::Create(Context::Ptr ctx, const Parameters &p) {
   p.validate();
-  return IceGrid::Create(ctx,
-                         p.Lx, p.Ly,
-                         p.x0, p.y0,
-                         p.z,
-                         p.Mx, p.My,
-                         p.periodicity,
-                         p.procs_x, p.procs_y);
-}
 
-//! Create a grid, set processor ownership ranges from options.
-IceGrid::Ptr IceGrid::Create(Context::Ptr ctx,
-                             double Lx, double Ly,
-                             double x0, double y0,
-                             const std::vector<double> &z,
-                             unsigned int Mx, unsigned int My,
-                             Periodicity p) {
-  int size = 0;
-  MPI_Comm_size(ctx->com(), &size);
-  OwnershipRanges procs = ownership_ranges_from_options(Mx, My, size);
-
-  return Create(ctx, Lx, Ly, x0, y0, z, Mx, My, p, procs.x, procs.y);
+  this->set_size_and_extent(p.x0, p.y0, p.Lx, p.Ly, p.Mx, p.My, p.periodicity);
+  this->set_vertical_levels(p.z);
+  this->set_ownership_ranges(p.procs_x, p.procs_y);
+  this->allocate();
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
 IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
-                               const PIO &file, const std::vector<std::string> &var_names,
+                               const std::string &filename, const std::vector<std::string> &var_names,
                                Periodicity periodicity) {
   for (unsigned int k = 0; k < var_names.size(); ++k) {
+    PIO file(ctx->com(), "netcdf3");
+    file.open(filename, PISM_READONLY); // will be closed automatically
     if (file.inq_var(var_names[k])) {
-      return FromFile(ctx, file, var_names[k], periodicity);
+      return FromFile(ctx, filename, var_names[k], periodicity);
     }
   }
 
   throw RuntimeError::formatted("file %s does not have any of %s",
-                                file.inq_filename().c_str(),
+                                filename.c_str(),
                                 join(var_names, ",").c_str());
 }
 
 //! \brief Sets grid parameters using data read from the file.
 IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
-                               const PIO &file, const std::string &var_name,
+                               const std::string &filename, const std::string &var_name,
                                Periodicity periodicity) {
   try {
     const Logger &log = *ctx->log();
 
+    PIO file(ctx->com(), "netcdf3");
+    file.open(filename, PISM_READONLY); // will be closed automatically
+
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    Parameters p(ctx, file, var_name, periodicity);
+    GridParameters p(ctx, file, var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -266,10 +237,10 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
     // override periodicity
     p.periodicity = periodicity;
 
-    return IceGrid::Create(ctx, p);
+    return IceGrid::Ptr(new IceGrid(ctx, p));
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
-                  var_name.c_str(), file.inq_filename().c_str());
+                  var_name.c_str(), filename.c_str());
     throw;
   }
 }
@@ -704,9 +675,12 @@ void IceGrid::report_parameters() const {
                 "            dx = %6.3f km, dy = %6.3f km, \n",
                 km(dx()), km(dy()));
     log.message(3,
-                "            Nx = %d, Ny = %d]\n",
+                "            Nx = %d, Ny = %d\n",
                 (int)m_impl->procs_x.size(), (int)m_impl->procs_y.size());
 
+    log.message(3,
+                "            Periodicity: %s\n",
+                periodicity_to_string(m_impl->periodicity).c_str());
   }
 
   {
@@ -719,6 +693,7 @@ void IceGrid::report_parameters() const {
     }
     log.message(5, "\n");
   }
+
 }
 
 
@@ -1148,7 +1123,22 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
   }
 }
 
-IceGrid::Parameters::Parameters(Config::ConstPtr config, unsigned int size) {
+GridParameters::GridParameters() {
+
+  // set to something invalid
+  Lx = -1.0;
+  Ly = -1.0;
+
+  x0 = 0.0;
+  y0 = 0.0;
+
+  Mx = 0;
+  My = 0;
+
+  periodicity = NONE;
+}
+
+GridParameters::GridParameters(Config::ConstPtr config, unsigned int size) {
 
   Lx = config->get_double("grid_Lx");
   Ly = config->get_double("grid_Ly");
@@ -1170,23 +1160,21 @@ IceGrid::Parameters::Parameters(Config::ConstPtr config, unsigned int size) {
   this->ownership_ranges_from_options(size);
 }
 
-void IceGrid::Parameters::ownership_ranges_from_options(unsigned int size) {
+void GridParameters::ownership_ranges_from_options(unsigned int size) {
   IceGrid::OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx, My, size);
   procs_x = procs.x;
   procs_y = procs.y;
 }
 
-
-
-IceGrid::Parameters::Parameters(Context::Ptr ctx,
-                                const PIO &file,
-                                const std::string &variable_name,
-                                Periodicity p) {
+GridParameters::GridParameters(Context::Ptr ctx,
+                               const PIO &file,
+                               const std::string &variable_name,
+                               Periodicity p) {
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
   // set defaults from configuration parameters
-  *this = Parameters(ctx->config(), size);
+  *this = GridParameters(ctx->config(), size);
 
   grid_info input_grid(file, variable_name, ctx->unit_system(), p);
 
@@ -1201,23 +1189,24 @@ IceGrid::Parameters::Parameters(Context::Ptr ctx,
   this->ownership_ranges_from_options(ctx->size());
 }
 
-IceGrid::Parameters::Parameters(Context::Ptr ctx,
-                                const std::string &filename,
-                                const std::string &variable_name,
-                                Periodicity p) {
+GridParameters::GridParameters(Context::Ptr ctx,
+                               const std::string &filename,
+                               const std::string &variable_name,
+                               Periodicity p) {
   PIO nc(ctx->com(), "netcdf3");
   nc.open(filename, PISM_READONLY);
-  *this = Parameters(ctx, nc, variable_name, p);
+  *this = GridParameters(ctx, nc, variable_name, p);
   nc.close();
 }
 
 
-void IceGrid::Parameters::horizontal_size_from_options() {
+void GridParameters::horizontal_size_from_options(unsigned int size) {
   Mx = options::Integer("-Mx", "grid size in X direction", Mx);
   My = options::Integer("-My", "grid size in Y direction", My);
+  ownership_ranges_from_options(size);
 }
 
-void IceGrid::Parameters::horizontal_extent_from_options() {
+void GridParameters::horizontal_extent_from_options() {
   // Domain size
   {
     Lx = 1000.0 * options::Real("-Lx", "Half of the grid extent in the Y direction, in km",
@@ -1243,16 +1232,16 @@ void IceGrid::Parameters::horizontal_extent_from_options() {
   }
 }
 
-void IceGrid::Parameters::vertical_grid_from_options(Config::ConstPtr config) {
+void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
   options::Real Lz("-Lz", "height of the computational domain", z.back());
-  options::Integer Mz("-My", "grid size in Y direction", z.size());
+  options::Integer Mz("-Mz", "grid size in Y direction", z.size());
 
   double lambda = config->get_double("grid_lambda");
   SpacingType s = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
 }
 
-void IceGrid::Parameters::validate() const {
+void GridParameters::validate() const {
   if (Mx < 3) {
     throw RuntimeError::formatted("Mx = %d is invalid (has to be 3 or greater)", Mx);
   }
@@ -1308,21 +1297,30 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
   Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
 
   if (input_file.is_set() and (not bootstrap)) {
+    // These options are ignored because we're getting *all* the grid
+    // parameters from a file.
+    options::ignored(*ctx->log(), "-Mx");
+    options::ignored(*ctx->log(), "-My");
+    options::ignored(*ctx->log(), "-Mz");
+    options::ignored(*ctx->log(), "-Mbz");
+    options::ignored(*ctx->log(), "-Lx");
+    options::ignored(*ctx->log(), "-Ly");
+    options::ignored(*ctx->log(), "-Lz");
+    options::ignored(*ctx->log(), "-z_spacing");
+
     // get grid from a PISM input file
     std::vector<std::string> names;
     names.push_back("enthalpy");
     names.push_back("temp");
 
-    PIO nc(ctx->com(), "netcdf3");
-    nc.open(input_file, PISM_READONLY); // will be closed automatically
-    return IceGrid::FromFile(ctx, nc, names, p);
+    return IceGrid::FromFile(ctx, input_file, names, p);
   } else if (input_file.is_set() and bootstrap) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
     int size = 0;
     MPI_Comm_size(ctx->com(), &size);
-    Parameters input_grid(ctx->config(), size);
+    GridParameters input_grid(ctx->config(), size);
 
     std::vector<std::string> names;
     names.push_back("land_ice_thickness");
@@ -1345,7 +1343,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = Parameters(ctx, nc, names[i], p);
+        input_grid = GridParameters(ctx, nc, names[i], p);
         break;
       }
     }
@@ -1356,11 +1354,11 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     }
 
     // process all possible options controlling grid parameters, overriding values read from a file
-    input_grid.horizontal_size_from_options();
+    input_grid.horizontal_size_from_options(ctx->size());
     input_grid.horizontal_extent_from_options();
     input_grid.vertical_grid_from_options(ctx->config());
 
-    return IceGrid::Create(ctx, input_grid);
+    return IceGrid::Ptr(new IceGrid(ctx, input_grid));
   } else {
     // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
     // -bootstrap is not set either".

@@ -65,88 +65,7 @@ namespace pism {
   grid initialization when no -i option is set.
  */
 void IceModel::set_grid_defaults() {
-  // Logical (as opposed to physical) grid dimensions should not be
-  // deduced from a bootstrapping file, so we check if these options
-  // are set and stop if they are not.
-  options::Integer
-    Mx("-Mx", "grid size in X direction", m_grid->Mx()),
-    My("-My", "grid size in Y direction", m_grid->My()),
-    Mz("-Mz", "grid size in vertical direction", m_grid->Mz());
-  options::Real Lz("-Lz", "height of the computational domain", m_grid->Lz());
-
-  if (not (Mx.is_set() and My.is_set() and Mz.is_set() and Lz.is_set())) {
-    throw RuntimeError("All of -bootstrap, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
-  }
-
-  // Get the bootstrapping file name:
-
-  options::String input_file("-i", "Specifies the input file");
-  std::string filename = input_file;
-
-  if (not input_file.is_set()) {
-    throw RuntimeError("Please specify an input file using -i.");
-  }
-
-  // Use a bootstrapping file to set some grid parameters (they can be
-  // overridden later, in IceModel::set_grid_from_options()).
-
-  PIO nc(m_grid->com, "netcdf3"); // OK to use netcdf3, we read very little data here.
-
-  // Try to deduce grid information from present spatial fields. This is bad,
-  // because theoretically these fields may use different grids. We need a
-  // better way of specifying PISM's computational grid at bootstrapping.
-  grid_info input;
-  {
-    std::vector<std::string> names;
-    names.push_back("land_ice_thickness");
-    names.push_back("bedrock_altitude");
-    names.push_back("thk");
-    names.push_back("topg");
-    bool grid_info_found = false;
-    nc.open(filename, PISM_READONLY);
-    for (unsigned int i = 0; i < names.size(); ++i) {
-
-      grid_info_found = nc.inq_var(names[i]);
-      if (not grid_info_found) {
-        // Failed to find using a short name. Try using names[i] as a
-        // standard name...
-        std::string dummy1;
-        bool dummy2;
-        nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
-      }
-
-      if (grid_info_found) {
-        input = grid_info(nc, names[i], m_sys, m_grid->periodicity());
-        break;
-      }
-    }
-
-    if (grid_info_found == false) {
-      throw RuntimeError::formatted("no geometry information found in '%s'",
-                                    filename.c_str());
-    }
-    nc.close();
-  }
-
-  // proj.4 and mapping
-  {
-    nc.open(filename, PISM_READONLY);
-    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-    if (proj4_string.empty() == false) {
-      global_attributes.set_string("proj4", proj4_string);
-    }
-
-    bool mapping_exists = nc.inq_var("mapping");
-    if (mapping_exists) {
-      io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(*m_log, 4);
-    }
-    nc.close();
-  }
-
-  // Set the grid center and horizontal extent:
-  m_grid->set_size_and_extent(input.x0, input.y0, input.Lx, input.Ly,
-                              Mx, My, m_grid->periodicity());
+  // FIXME: remove this
 }
 
 //! Initalizes the grid from options.
@@ -154,110 +73,13 @@ void IceModel::set_grid_defaults() {
     -zb_spacing. Sets corresponding grid parameters.
  */
 void IceModel::set_grid_from_options() {
-
-  double
-    x0 = m_grid->x0(),
-    y0 = m_grid->y0(),
-    Lx = m_grid->Lx(),
-    Ly = m_grid->Ly(),
-    Lz = m_grid->Lz();
-  int
-    Mx = m_grid->Mx(),
-    My = m_grid->My(),
-    Mz = m_grid->Mz();
-  SpacingType spacing = QUADRATIC; // irrelevant (it is reset below)
-
-  // Process options:
-  {
-    // Domain size
-    {
-      Lx = 1000.0 * options::Real("-Lx", "Half of the grid extent in the Y direction, in km",
-                                  Lx / 1000.0);
-      Ly = 1000.0 * options::Real("-Ly", "Half of the grid extent in the X direction, in km",
-                                  Ly / 1000.0);
-      Lz = options::Real("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-                         Lz);
-    }
-
-    // Alternatively: domain size and extent
-    {
-      options::RealList x_range("-x_range", "min,max x coordinate values");
-      options::RealList y_range("-y_range", "min,max y coordinate values");
-
-      if (x_range.is_set() && y_range.is_set()) {
-        if (x_range->size() != 2 || y_range->size() != 2) {
-          throw RuntimeError("-x_range and/or -y_range argument is invalid.");
-        }
-        x0 = (x_range[0] + x_range[1]) / 2.0;
-        y0 = (y_range[0] + y_range[1]) / 2.0;
-        Lx = (x_range[1] - x_range[0]) / 2.0;
-        Ly = (y_range[1] - y_range[0]) / 2.0;
-      }
-    }
-
-    // Number of grid points
-    options::Integer mx("-Mx", "Number of grid points in the X direction",
-                        Mx);
-    options::Integer my("-My", "Number of grid points in the Y direction",
-                        My);
-    options::Integer mz("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-                        Mz);
-    Mx = mx;
-    My = my;
-    Mz = mz;
-
-    // validate inputs
-    {
-      if (Mx < 3 || My < 3 || Mz < 2) {
-        throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
-                                      "(have to have Mx >= 3, My >= 3, Mz >= 2).",
-                                      Mx, My, Mz);
-      }
-
-      if (Lx <= 0.0 || Ly <= 0.0 || Lz <= 0.0) {
-        throw RuntimeError::formatted("-Lx %f -Ly %f -Lz %f is invalid\n"
-                                      "(Lx, Ly, Lz have to be positive).",
-                                      Lx / 1000.0, Ly / 1000.0, Lz);
-      }
-    }
-
-    // Vertical spacing (respects -z_spacing)
-    {
-      spacing = string_to_spacing(m_config->get_string("grid_ice_vertical_spacing"));
-    }
-  }
-
-  // Use the information obtained above:
-  //
-  // Note that grid.periodicity() includes the result of processing
-  // the -periodicity option.
-  m_grid->set_size_and_extent(x0, y0, Lx, Ly, Mx, My, m_grid->periodicity());
-  double lambda = m_config->get_double("grid_lambda");
-  std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, spacing, lambda);
-  m_grid->set_vertical_levels(z);
-
-  // At this point all the fields except for da2, xs, xm, ys, ym should be
-  // filled. We're ready to call grid.allocate().
 }
 
-//! Sets up the computational grid.
-/*!
-  There are two cases here:
-
-  1) Initializing from a PISM ouput file, in which case all the options
-  influencing the grid (currently: -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -z_spacing,
-  -zb_spacing) are ignored.
-
-  2) Initializing using defaults, command-line options and (possibly) a
-  bootstrapping file. Derived classes requiring special grid setup should
-  reimplement IceGrid::set_grid_from_options().
-
-  No memory allocation should happen here.
- */
+//! FIXME: rename this.
 void IceModel::grid_setup() {
 
   m_log->message(3,
-             "Setting up the computational grid...\n");
+                 "Setting up the computational grid...\n");
 
   // Check if we are initializing from a PISM output file:
   options::String input_file("-i", "Specifies a PISM input file");
@@ -299,34 +121,7 @@ void IceModel::grid_setup() {
                  "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
                  input_file->c_str());
     }
-
-    std::vector<std::string> names;
-    names.push_back("enthalpy");
-    names.push_back("temp");
-
-    nc.open(input_file, PISM_READONLY);
-
-    Periodicity p = string_to_periodicity(m_config->get_string("grid_periodicity"));
-    m_grid = IceGrid::FromFile(m_ctx, nc, names, p);
-
-    nc.close();
-
-    // These options are ignored because we're getting *all* the grid
-    // parameters from a file.
-    options::ignored(*m_log, "-Mx");
-    options::ignored(*m_log, "-My");
-    options::ignored(*m_log, "-Mz");
-    options::ignored(*m_log, "-Mbz");
-    options::ignored(*m_log, "-Lx");
-    options::ignored(*m_log, "-Ly");
-    options::ignored(*m_log, "-Lz");
-    options::ignored(*m_log, "-z_spacing");
-  } else {
-    set_grid_defaults();
-    set_grid_from_options();
   }
-
-  m_grid->allocate();
 
   {
     // A single record of a time-dependent variable cannot exceed 2^32-4

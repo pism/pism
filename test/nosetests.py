@@ -17,10 +17,8 @@ import sys
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
-    grid = ctx.newgrid()
-    PISM.model.initShallowGrid(grid, 1e5, 1e5, 100, 100, PISM.NOT_PERIODIC)
-    return grid
-
+    params = PISM.GridParameters(ctx.config, ctx.size)
+    return PISM.IceGrid(ctx.ctx, params)
 
 def context_test():
     "Test creating a new PISM context"
@@ -177,10 +175,7 @@ def grid_from_file_test():
 
     enthalpy.write(output_file)
 
-    grid2 = PISM.Context().newgrid()
-
-    grid = PISM.model.initGridFromFile(PISM.Context().ctx, output_file, PISM.NOT_PERIODIC)
-
+    grid2 = PISM.IceGrid.FromFile(grid.ctx(), output_file, "enthalpy", PISM.NOT_PERIODIC)
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -402,8 +397,16 @@ def modelvecs_test():
 def sia_test():
     "Test the PISM.sia module"
     ctx = PISM.Context()
-    grid = ctx.newgrid()
-    PISM.model.initGrid(grid, 1e5, 1e5, 1000.0, 100, 100, 11, PISM.NOT_PERIODIC)
+    params = PISM.GridParameters(ctx.config, ctx.size)
+    params.Lx = 1e5
+    params.Ly = 1e5
+    params.Lz = 1000
+    params.Mx = 100
+    params.My = 100
+    params.Mz = 11
+    params.periodicity = PISM.NOT_PERIODIC
+    params.ownership_ranges_from_options(ctx.size)
+    grid = PISM.IceGrid(ctx.ctx, params)
 
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
 

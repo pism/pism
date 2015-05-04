@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     // initialize the ice dynamics model
-    IceGrid::Ptr g(new IceGrid(ctx));
+    IceGrid::Ptr g = IceGrid::FromOptions(ctx);
     IceRegionalModel m(g, ctx);
 
     m.init();

@@ -27,7 +27,10 @@ class testj(PISM.ssa.SSAExactTestCase):
         halfWidth = 300.0e3
         Lx = halfWidth
         Ly = halfWidth
-        PISM.model.initShallowGrid(self.grid, Lx, Ly, self.Mx, self.My, PISM.XY_PERIODIC)
+        ctx = PISM.Context()
+        self.grid = PISM.model.initShallowGrid(ctx, Lx, Ly,
+                                               self.Mx, self.My,
+                                               PISM.XY_PERIODIC)
 
     def _initPhysics(self):
         config = self.modeldata.config

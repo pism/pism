@@ -68,9 +68,6 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
 }
 
 void IceEISModel::set_grid_defaults() {
-  double Lx = 750e3;
-  m_grid->set_size_and_extent(0.0, 0.0, Lx, Lx,
-                              m_grid->Mx(), m_grid->My(), m_grid->periodicity());
 }
 
 

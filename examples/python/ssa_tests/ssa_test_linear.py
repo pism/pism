@@ -35,7 +35,7 @@ tauc0 = 1.e4  # // 1kPa
 class test_linear(PISM.ssa.SSAExactTestCase):
 
     def _initGrid(self):
-        PISM.model.initShallowGrid(self.grid, L, L, self.Mx, self.My, PISM.NONE)
+        self.grid = PISM.model.initShallowGrid(PISM.Context(), L, L, self.Mx, self.My, PISM.NONE)
 
     def _initPhysics(self):
         config = self.config

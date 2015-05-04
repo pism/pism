@@ -60,11 +60,12 @@ def u_exact(x):
 class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     def _initGrid(self):
-        self.grid = PISM.Context().newgrid()
+        self.grid = None
         halfWidth = 250.0e3  # 500.0 km length
         Lx = halfWidth
         Ly = halfWidth
-        PISM.model.initShallowGrid(self.grid, Lx, Ly, self.Mx, self.My, PISM.Y_PERIODIC)
+        self.grid = PISM.model.initShallowGrid(PISM.Context(),
+                                               Lx, Ly, self.Mx, self.My, PISM.Y_PERIODIC)
 
     def _initPhysics(self):
         config = self.config

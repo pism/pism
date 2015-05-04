@@ -150,16 +150,13 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = btutest_context(com, "btutest");
     Config::Ptr config = ctx->config();
 
-    double
-      Lx = 1500e3,
-      Ly = Lx;
-    int
-      Mx = 3,
-      My = Mx;
-
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
     config->set_double("grid_Mbz", 11);
     config->set_double("grid_Lbz", 1000);
+
+    // Set default vertical grid parameters.
+    config->set_double("grid_Mz", 41);
+    config->set_double("grid_Lz", 4000);
 
     verbPrintf(2,com,
                "  initializing IceGrid from options ...\n");
@@ -168,15 +165,17 @@ int main(int argc, char *argv[]) {
 
     options::Real dt_years("-dt", "Time-step, in years", 1.0);
 
-    options::Integer Mz("-Mz", "number of vertical layers in ice", 41);
+    GridParameters P(config, ctx->size());
+    P.Mx = 3;
+    P.My = P.Mx;
+    P.Lx = 1500e3;
+    P.Ly = P.Lx;
 
-    options::Real Lz("-Lz", "height of ice/atmosphere boxr", 4000.0);
-
-    std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+    P.ownership_ranges_from_options(ctx->size());
+    P.vertical_grid_from_options(config);
 
     // create grid and set defaults
-    IceGrid::Ptr grid = IceGrid::Create(ctx, Lx, Ly, 0.0, 0.0, z,
-                                        Mx, My, XY_PERIODIC);
+    IceGrid::Ptr grid(new IceGrid(ctx, P));
 
     ctx->time()->init(*ctx->log());
 

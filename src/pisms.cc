@@ -33,6 +33,7 @@ static char help[] =
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
 #include "base/enthalpyConverter.hh"
+#include "base/util/io/PIO.hh"
 
 using namespace pism;
 
@@ -47,6 +48,8 @@ Context::Ptr pisms_context(MPI_Comm com) {
   Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("calendar", "none");
+  config->set_double("grid_Lx", 750e3);
+  config->set_double("grid_Ly", 750e3);
 
   set_config_from_options(*config);
 
@@ -58,6 +61,31 @@ Context::Ptr pisms_context(MPI_Comm com) {
 
   return Context::Ptr(new Context(com, sys, config, EC, time, logger, "pisms"));
 }
+
+IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
+  options::String input_file("-i", "Specifies a PISM input file");
+  options::forbidden("-bootstrap");
+
+  if (input_file.is_set()) {
+    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+
+    // get grid from a PISM input file
+    std::vector<std::string> names;
+    names.push_back("enthalpy");
+    names.push_back("temp");
+
+    return IceGrid::FromFile(ctx, input_file, names, p);
+  } else {
+    // use defaults set by pismv_grid_defaults()
+    GridParameters P(ctx->config(), ctx->size());
+    P.horizontal_size_from_options(ctx->size());
+    P.horizontal_extent_from_options();
+    P.vertical_grid_from_options(ctx->config());
+
+    return IceGrid::Ptr(new IceGrid(ctx, P));
+  }
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -95,7 +123,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = pisms_context(com);
     Config::Ptr config = ctx->config();
 
-    IceGrid::Ptr g(new IceGrid(ctx));
+    IceGrid::Ptr g = pisms_grid(ctx);
     IceEISModel m(g, ctx, experiment[0]);
 
     m.init();

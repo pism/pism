@@ -60,7 +60,7 @@
 
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
-// Conversions between python lists and certain std::vector's
+// Conversions between python lists and certain STL vectors
 %include std_vector.i
 %include std_set.i
 
@@ -71,6 +71,7 @@
 %include <std_shared_ptr.i>
 
 %template(IntVector) std::vector<int>;
+%template(UnsignedIntVector) std::vector<unsigned int>;
 %template(DoubleVector) std::vector<double>;
 %template(StringVector) std::vector<std::string>;
 %template(StringSet) std::set<std::string>;

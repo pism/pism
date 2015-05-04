@@ -61,6 +61,103 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
+GridParameters pismv_grid_defaults(Config::Ptr config,
+                                   char testname) {
+  // This sets the defaults for each test; command-line options can override this.
+
+  GridParameters P;
+
+  // use the non-periodic grid:
+  P.periodicity = NOT_PERIODIC;
+  // equal spacing is the default for all the tests except K
+  P.Lx = config->get_double("grid_Lx");
+  P.Ly = config->get_double("grid_Ly");
+
+  P.Mx = config->get_double("grid_Mx");
+  P.My = config->get_double("grid_My");
+
+  SpacingType spacing = EQUAL;
+  double Lz = config->get_double("grid_Lz");
+  unsigned int Mz = config->get_double("grid_Mz");
+
+  switch (testname) {
+  case 'A':
+  case 'E':
+    // use 1600km by 1600km by 4000m rectangular domain
+    P.Lx = 800e3;
+    P.Ly = P.Lx;
+    Lz = 4000;
+    break;
+  case 'B':
+  case 'H':
+    // use 2400km by 2400km by 4000m rectangular domain
+    P.Lx = 1200e3;
+    P.Ly = P.Lx;
+    Lz = 4000;
+    break;
+  case 'C':
+  case 'D':
+    // use 2000km by 2000km by 4000m rectangular domain
+    P.Lx = 1000e3;
+    P.Ly = P.Lx;
+    Lz = 4000;
+    break;
+  case 'F':
+  case 'G':
+  case 'L':
+    // use 1800km by 1800km by 4000m rectangular domain
+    P.Lx = 900e3;
+    P.Ly = P.Lx;
+    Lz = 4000;
+    break;
+  case 'K':
+  case 'O':
+    // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
+    config->set_double("grid_Mbz", 2);
+    config->set_double("grid_Lbz", 1000);
+    P.Lx = 1000e3;
+    P.Ly = P.Lx;
+    Lz = 4000;
+    P.periodicity = XY_PERIODIC;
+    spacing = QUADRATIC;
+    break;
+  case 'V':
+    P.My = 3;             // it's a flow-line setup
+    P.Lx = 500e3;            // 500 km long
+    P.periodicity = Y_PERIODIC;
+    break;
+  default:
+    throw RuntimeError("desired test not implemented\n");
+  }
+
+  P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing,
+                                         config->get_double("grid_lambda"));
+  return P;
+}
+
+IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
+  options::String input_file("-i", "Specifies a PISM input file");
+  options::forbidden("-bootstrap");
+
+  if (input_file.is_set()) {
+    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+
+    // get grid from a PISM input file
+    std::vector<std::string> names;
+    names.push_back("enthalpy");
+    names.push_back("temp");
+
+    return IceGrid::FromFile(ctx, input_file, names, p);
+  } else {
+    // use defaults set by pismv_grid_defaults()
+    GridParameters P = pismv_grid_defaults(ctx->config(), testname);
+    P.horizontal_size_from_options(ctx->size());
+    P.horizontal_extent_from_options();
+    P.vertical_grid_from_options(ctx->config());
+
+    return IceGrid::Ptr(new IceGrid(ctx, P));
+  }
+}
 
 int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
@@ -98,13 +195,13 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = pismv_context(com, "pismv");
     Config::Ptr config = ctx->config();
 
-    config->set_boolean("use_eta_transformation", false);
-
-    IceGrid::Ptr g(new IceGrid(ctx));
-
     // determine test (and whether to report error)
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",
                                             "A,B,C,D,E,F,G,H,K,L", "A");
+
+    config->set_boolean("use_eta_transformation", false);
+
+    IceGrid::Ptr g = pismv_grid(ctx, testname[0]);
 
     // actually construct and run one of the derived classes of IceModel
     // run derived class for compensatory source SIA solutions
@@ -126,7 +223,6 @@ int main(int argc, char *argv[]) {
   catch (...) {
     handle_fatal_errors(com);
   }
-
 
   return 0;
 }

@@ -28,7 +28,7 @@ namespace energy {
 class BTU_Verification : public BedThermalUnit
 {
 public:
-  BTU_Verification(IceGrid::ConstPtr g, int test, bool bii);
+  BTU_Verification(IceGrid::ConstPtr g, int test, bool bedrock_is_ice);
   virtual ~BTU_Verification();
 
   virtual const IceModelVec3Custom* temperature();

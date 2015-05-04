@@ -48,15 +48,18 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "bedrough_test");
     Config::Ptr config = ctx->config();
 
-    double Lx = 1200e3;
-    int Mx = 81;
-    double Lz = config->get_double("grid_Lz");
-    int Mz = (int)config->get_double("grid_Mz");
-    std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+    GridParameters P(config, ctx->size());
+
+    P.Lx = 1200e3;
+    P.Ly = P.Lx;
+    P.Mx = 81;
+    P.My = P.Mx;
+    P.vertical_grid_from_options(config);
+    P.ownership_ranges_from_options(ctx->size());
+    P.periodicity = NOT_PERIODIC;
 
     // create grid
-    IceGrid::Ptr grid = IceGrid::Create(ctx, Lx, Lx, 0.0, 0.0, z,
-                                        Mx, Mx, NOT_PERIODIC);
+    IceGrid::Ptr grid(new IceGrid(ctx, P));
 
     ierr = PetscPrintf(grid->com,"BedSmoother TEST\n");
     PISM_CHK(ierr, "PetscPrintf");

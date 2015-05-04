@@ -92,77 +92,7 @@ void IceCompModel::createVecs() {
 }
 
 void IceCompModel::set_grid_defaults() {
-
-  // This sets the defaults for each test; command-line options can override this.
-
-  // use the non-periodic grid:
-  Periodicity periodicity = NOT_PERIODIC;
-  // equal spacing is the default for all the tests except K
-  SpacingType spacing = EQUAL;
-
-  double Lx = 0.0, Ly = 0.0, Lz = 0.0;
-
-  unsigned int
-    Mx = m_grid->Mx(),
-    My = m_grid->My(),
-    Mz = m_grid->Mz();
-
-  switch (testname) {
-  case 'A':
-  case 'E':
-    // use 1600km by 1600km by 4000m rectangular domain
-    Lx = 800e3;
-    Ly = Lx;
-    Lz = 4000;
-    break;
-  case 'B':
-  case 'H':
-    // use 2400km by 2400km by 4000m rectangular domain
-    Lx = 1200e3;
-    Ly = Lx;
-    Lz = 4000;
-    break;
-  case 'C':
-  case 'D':
-    // use 2000km by 2000km by 4000m rectangular domain
-    Lx = 1000e3;
-    Ly = Lx;
-    Lz = 4000;
-    break;
-  case 'F':
-  case 'G':
-  case 'L':
-    // use 1800km by 1800km by 4000m rectangular domain
-    Lx = 900e3;
-    Ly = Lx;
-    Lz = 4000;
-    break;
-  case 'K':
-  case 'O':
-    // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    m_config->set_double("grid_Mbz", 2);
-    m_config->set_double("grid_Lbz", 1000);
-    Lx = 1000e3;
-    Ly = Lx;
-    Lz = 4000;
-    periodicity = XY_PERIODIC;
-    spacing = QUADRATIC;
-    break;
-  case 'V':
-    My = 3;             // it's a flow-line setup
-    Lx = 500e3;            // 500 km long
-    Ly = m_grid->Ly();
-    Lz = m_grid->Lz();
-    periodicity = Y_PERIODIC;
-    break;
-  default:
-    throw RuntimeError("desired test not implemented\n");
-  }
-
-  m_grid->set_size_and_extent(0.0, 0.0, Lx, Ly, Mx, My, periodicity);
-  double lambda = m_config->get_double("grid_lambda");
-  std::vector<double> z = IceGrid::compute_vertical_levels(Lz, Mz, spacing, lambda);
-  m_grid->set_vertical_levels(z);
+  // FIXME: remove this
 }
 
 void IceCompModel::setFromOptions() {

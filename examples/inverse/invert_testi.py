@@ -130,7 +130,7 @@ def testi_tauc(grid, tauc):
 class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
     def __init__(self, Mx, My):
-        self.grid = PISM.Context().newgrid()
+        self.grid = None
         self.Mx = Mx
         self.My = My
 
@@ -139,7 +139,9 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         My = self.My
         Ly = 3 * L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
         Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
-        PISM.model.initShallowGrid(self.grid, Lx, Ly, Mx, My, PISM.X_PERIODIC)
+
+        ctx = PISM.Context().ctx
+        self.grid = PISM.IceGrid.Shallow(ctx, Lx, Ly, x0, y0, Mx, My, PISM.X_PERIODIC)
 
     def _initPhysics(self):
         config = self.config

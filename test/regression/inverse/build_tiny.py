@@ -64,9 +64,19 @@ if __name__ == '__main__':
     verbosity = PISM.optionsInt("-verbose", "verbosity level", default=3)
 
     # Build the grid.
-    grid = PISM.Context().newgrid()
-    config = grid.ctx().config()
-    PISM.util.PISM.model.initGrid(grid, Lx, Ly, Lz, Mx, My, Mz, PISM.NOT_PERIODIC)
+    config = PISM.Context().config
+
+    p = PISM.GridParameters(config, context.size)
+    p.Mx = Mx
+    p.My = My
+    p.Lx = Lx
+    p.Ly = Ly
+    z = PISM.IceGrid.compute_vertical_levels(Lz, Mz, PISM.EQUAL, 4.0)
+    p.z = PISM.DoubleVector(z)
+    p.ownership_ranges_from_options(context.size)
+    p.periodicity = PISM.NOT_PERIODIC
+    grid = PISM.IceGrid(context.ctx, p)
+
     vecs = PISM.model.ModelVecs(grid.variables())
     vecs.add(PISM.model.createIceSurfaceVec(grid))
     vecs.add(PISM.model.createIceThicknessVec(grid))

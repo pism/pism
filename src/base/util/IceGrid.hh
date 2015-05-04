@@ -42,7 +42,10 @@ typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 Periodicity string_to_periodicity(const std::string &keyword);
+std::string periodicity_to_string(Periodicity p);
+
 SpacingType string_to_spacing(const std::string &keyword);
+std::string spacing_to_string(SpacingType s);
 
 //! \brief Contains parameters of an input file grid.
 class grid_info {
@@ -64,6 +67,59 @@ public:
   std::vector<double> x, y, z;       //!< coordinates
 private:
   void reset();
+};
+
+//! Grid parameters; used to collect defaults before an IceGrid is allocated.
+struct GridParameters {
+  //! Create an uninitialized GridParameters instance.
+  GridParameters();
+
+  //! Initialize grid defaults from a configuration database.
+  GridParameters(Config::ConstPtr config, unsigned int size);
+
+  //! Initialize grid default from a configuration database and a NetCDF variable.
+  GridParameters(Context::Ptr ctx,
+                 const std::string &filename,
+                 const std::string &variable_name,
+                 Periodicity p);
+  //! Initialize grid default from a configuration database and a NetCDF variable.
+  GridParameters(Context::Ptr ctx,
+                 const PIO &file,
+                 const std::string &variable_name,
+                 Periodicity p);
+
+  //! Process -Mx and -My.
+  void horizontal_size_from_options(unsigned int size);
+  //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0. Resets ownership ranges.
+  void horizontal_extent_from_options();
+  //! Process -Mz and -Lz; set z;
+  void vertical_grid_from_options(Config::ConstPtr config);
+  //! Re-compute ownership ranges. Uses current values of Mx and My.
+  void ownership_ranges_from_options(unsigned int size);
+
+  //! Validate data members.
+  void validate() const;
+
+  //! Domain half-width in the X direction.
+  double Lx;
+  //! Domain half-width in the Y direction.
+  double Ly;
+  //! Domain center in the X direction.
+  double x0;
+  //! Domain center in the Y direction.
+  double y0;
+  //! Number of grid points in the X direction.
+  unsigned int Mx;
+  //! Number of grid points in the Y direction.
+  unsigned int My;
+  //! Grid periodicity.
+  Periodicity periodicity;
+  //! Vertical levels.
+  std::vector<double> z;
+  //! Processor ownership ranges in the X direction.
+  std::vector<unsigned int> procs_x;
+  //! Processor ownership ranges in the Y direction.
+  std::vector<unsigned int> procs_y;
 };
 
 //! Describes the PISM grid and the distribution of data across processors.
@@ -127,60 +183,15 @@ private:
 */
 class IceGrid {
 public:
-  IceGrid(Context::Ptr ctx);
   ~IceGrid();
 
   typedef PISM_SHARED_PTR(IceGrid) Ptr;
   typedef PISM_SHARED_PTR(const IceGrid) ConstPtr;
 
-  //! Grid parameters; used to collect defaults before an IceGrid is allocated.
-  struct Parameters {
-    //! Initialize grid defaults from a configuration database.
-    Parameters(Config::ConstPtr config, unsigned int size);
 
-    //! Initialize grid default from a configuration database and a NetCDF variable.
-    Parameters(Context::Ptr ctx,
-               const std::string &filename,
-               const std::string &variable_name,
-               Periodicity p);
-    Parameters(Context::Ptr ctx,
-               const PIO &file,
-               const std::string &variable_name,
-               Periodicity p);
 
-    //! Process -Mx and -My.
-    void horizontal_size_from_options();
-    //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range.
-    void horizontal_extent_from_options();
-    //! Process -Mz and -Lz.
-    void vertical_grid_from_options(Config::ConstPtr config);
-
-    //! Re-compute ownership ranges. Used current valued of Mx and My.
-    void ownership_ranges_from_options(unsigned int size);
-
-    void validate() const;
-
-    //! Domain half-width in the X direction.
-    double Lx;
-    //! Domain half-width in the Y direction.
-    double Ly;
-    //! Domain center in the X direction.
-    double x0;
-    //! Domain center in the Y direction.
-    double y0;
-    //! Number of grid points in the X direction.
-    unsigned int Mx;
-    //! Number of grid points in the Y direction.
-    unsigned int My;
-    //! Grid periodicity.
-    Periodicity periodicity;
-    //! Vertical levels.
-    std::vector<double> z;
-    //! Processor ownership ranges in the X direction.
-    std::vector<unsigned int> procs_x;
-    //! Processor ownership ranges in the Y direction.
-    std::vector<unsigned int> procs_y;
-  };
+  //! Create a grid using parameters in `p`.
+  IceGrid(Context::Ptr ctx, const GridParameters &p);
 
   //! Compute vertical grid levels.
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
@@ -193,41 +204,20 @@ public:
                                                        unsigned int My,
                                                        unsigned int size);
 
-  //! Create a shallow computational grid (3 equally-spaced vertical levels).
+  //! Create a shallow computational grid (uses 3 equally-spaced vertical levels).
   static Ptr Shallow(Context::Ptr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My, Periodicity p);
 
-  //! Create a grid by providing *all* the necessary information.
-  static Ptr Create(Context::Ptr ctx,
-                    double Lx, double Ly,
-                    double x0, double y0,
-                    const std::vector<double> &z,
-                    unsigned int Mx, unsigned int My,
-                    Periodicity p,
-                    const std::vector<unsigned int> &procs_x,
-                    const std::vector<unsigned int> &procs_y);
-
-  //! Create a grid using parameters in `p`.
-  static Ptr Create(Context::Ptr ctx, const Parameters &p);
-
-  //! @brief Create a grid by providing all the information except for processor ownership ranges.
-  static Ptr Create(Context::Ptr ctx,
-                    double Lx, double Ly,
-                    double x0, double y0,
-                    const std::vector<double> &z,
-                    unsigned int Mx, unsigned int My,
-                    Periodicity p);
-
   //! Create a grid from a file, get information from variable `var_name`.
   static Ptr FromFile(Context::Ptr ctx,
-                      const PIO &file, const std::string &var_name,
+                      const std::string &file, const std::string &var_name,
                       Periodicity periodicity);
 
   //! Create a grid from a file, get information from one of variables in `var_names`.
   static Ptr FromFile(Context::Ptr ctx,
-                      const PIO &file, const std::vector<std::string> &var_names,
+                      const std::string &file, const std::vector<std::string> &var_names,
                       Periodicity periodicity);
 
   //! Create a grid using command-line options and (possibly) an input file.
