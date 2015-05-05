@@ -39,7 +39,9 @@ def context_missing_attribute_test():
 
 def create_grid_test():
     "Test the creation of the IceGrid object"
-    create_dummy_grid()
+    grid1 = create_dummy_grid()
+
+    grid2 = PISM.model.initGrid(PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.NOT_PERIODIC)
 
 
 def algorithm_failure_exception_test():

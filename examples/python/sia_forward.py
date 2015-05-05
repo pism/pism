@@ -52,7 +52,7 @@ verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 periodicity = PISM.XY_PERIODIC
 if is_regional:
     periodicity = PISM.NOT_PERIODIC
-grid = PISM.model.initGridFromFile(context.ctx, input_file, periodicity)
+grid = PISM.IceGrid.FromFile(context.ctx, input_file, "enthalpy", periodicity)
 
 config.set_boolean("do_pseudo_plastic_till", False)
 

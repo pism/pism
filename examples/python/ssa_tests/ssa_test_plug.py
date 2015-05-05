@@ -32,9 +32,8 @@ glen_n = 3.
 class test_plug(PISM.ssa.SSAExactTestCase):
 
     def _initGrid(self):
-        Mx = self.Mx
-        My = self.My
-        self.grid = PISM.model.initShallowGrid(PISM.Context(), L, L, Mx, My, PISM.NONE)
+        self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
+                                         self.Mx, self.My, PISM.NONE)
 
     def _initPhysics(self):
         config = self.config

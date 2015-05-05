@@ -39,7 +39,8 @@ class testi(PISM.ssa.SSAExactTestCase):
         My = self.My
         Ly = 3 * L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
         Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
-        self.grid = PISM.model.initShallowGrid(PISM.Context(), Lx, Ly, Mx, My, PISM.NOT_PERIODIC)
+        self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, Lx, Ly, 0, 0,
+                                         Mx, My, PISM.NOT_PERIODIC)
 
     def _initPhysics(self):
         config = self.config

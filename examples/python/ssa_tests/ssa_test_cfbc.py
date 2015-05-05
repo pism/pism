@@ -64,8 +64,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         halfWidth = 250.0e3  # 500.0 km length
         Lx = halfWidth
         Ly = halfWidth
-        self.grid = PISM.model.initShallowGrid(PISM.Context(),
-                                               Lx, Ly, self.Mx, self.My, PISM.Y_PERIODIC)
+        self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, Lx, Ly, 0, 0,
+                                         self.Mx, self.My, PISM.Y_PERIODIC)
 
     def _initPhysics(self):
         config = self.config
