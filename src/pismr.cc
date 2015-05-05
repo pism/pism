@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "pismr");
     Config::Ptr config = ctx->config();
 
+    ctx->log()->message(3, "* Setting the computational grid...\n");
     IceGrid::Ptr g = IceGrid::FromOptions(ctx);
 
     IceModel m(g, ctx);

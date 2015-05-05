@@ -46,7 +46,6 @@ public:
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
-  virtual void set_grid_defaults();     // called by IceModel::grid_setup()
   virtual void setFromOptions();
   virtual void createVecs();
   virtual void allocate_stressbalance();

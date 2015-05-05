@@ -67,10 +67,6 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
                        m_config->get_double("ice_specific_heat_capacity"));
 }
 
-void IceEISModel::set_grid_defaults() {
-}
-
-
 //! \brief Decide which stress balance model to use.
 void IceEISModel::allocate_stressbalance() {
 

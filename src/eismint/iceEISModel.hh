@@ -36,7 +36,6 @@ public:
   virtual void set_vars_from_options();
   virtual void allocate_stressbalance();
   virtual void allocate_couplers();
-  virtual void set_grid_defaults();
 protected:
   char m_experiment;
 

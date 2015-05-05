@@ -59,92 +59,6 @@
 
 namespace pism {
 
-//! Set default values of grid parameters.
-/*!
-  Derived classes (IceCompModel, for example) reimplement this to change the
-  grid initialization when no -i option is set.
- */
-void IceModel::set_grid_defaults() {
-  // FIXME: remove this
-}
-
-//! Initalizes the grid from options.
-/*! Reads all of -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -Lbz, -z_spacing and
-    -zb_spacing. Sets corresponding grid parameters.
- */
-void IceModel::set_grid_from_options() {
-}
-
-//! FIXME: rename this.
-void IceModel::grid_setup() {
-
-  m_log->message(3,
-                 "Setting up the computational grid...\n");
-
-  // Check if we are initializing from a PISM output file:
-  options::String input_file("-i", "Specifies a PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
-
-  if (input_file.is_set() and not bootstrap) {
-    PIO nc(m_grid->com, "guess_mode");
-
-    // Get the 'source' global attribute to check if we are given a PISM output
-    // file:
-    nc.open(input_file, PISM_READONLY);
-    std::string source = nc.get_att_text("PISM_GLOBAL", "source");
-
-    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-    if (proj4_string.empty() == false) {
-      global_attributes.set_string("proj4", proj4_string);
-    }
-
-    bool mapping_exists = nc.inq_var("mapping");
-    if (mapping_exists) {
-      io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(*m_log, 4);
-    }
-
-    nc.close();
-
-    // If it's missing, print a warning
-    if (source.empty()) {
-      m_log->message(1,
-                 "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
-                 "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
-                 "     ncatted -a source,global,c,c,PISM %s\n",
-                 input_file->c_str(), input_file->c_str(), input_file->c_str());
-    } else if (source.find("PISM") == std::string::npos) {
-      // If the 'source' attribute does not contain the string "PISM", then print
-      // a message and stop:
-      m_log->message(1,
-                 "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
-                 "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-                 input_file->c_str());
-    }
-  }
-
-  {
-    // A single record of a time-dependent variable cannot exceed 2^32-4
-    // bytes in size. See the NetCDF User's Guide
-    // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
-    // Here we use "long int" to avoid integer overflow.
-    const long int two_to_thirty_two = 4294967296L;
-    const long int
-      Mx_long = m_grid->Mx(),
-      My_long = m_grid->My(),
-      Mz_long = m_grid->Mz();
-    std::string output_format = m_config->get_string("output_format");
-    if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 and
-        (output_format == "netcdf3" or output_format == "pnetcdf")) {
-      throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
-                                    "Each 3D variable requires %lu Mb.\n"
-                                    "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
-                                    "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
-                                    Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
-    }
-  }
-}
-
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
   initialize_time(m_grid->com,
@@ -652,6 +566,69 @@ void IceModel::allocate_internal_objects() {
 void IceModel::misc_setup() {
 
   m_log->message(3, "Finishing initialization...\n");
+
+  // Check if we are initializing from a PISM output file:
+  options::String input_file("-i", "Specifies a PISM input file");
+  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+
+  if (input_file.is_set() and not bootstrap) {
+    PIO nc(m_grid->com, "guess_mode");
+
+    // Get the 'source' global attribute to check if we are given a PISM output
+    // file:
+    nc.open(input_file, PISM_READONLY);
+    std::string source = nc.get_att_text("PISM_GLOBAL", "source");
+
+    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
+    if (proj4_string.empty() == false) {
+      global_attributes.set_string("proj4", proj4_string);
+    }
+
+    bool mapping_exists = nc.inq_var("mapping");
+    if (mapping_exists) {
+      io::read_attributes(nc, mapping.get_name(), mapping);
+      mapping.report_to_stdout(*m_log, 4);
+    }
+
+    nc.close();
+
+    // If it's missing, print a warning
+    if (source.empty()) {
+      m_log->message(1,
+                 "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
+                 "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
+                 "     ncatted -a source,global,c,c,PISM %s\n",
+                 input_file->c_str(), input_file->c_str(), input_file->c_str());
+    } else if (source.find("PISM") == std::string::npos) {
+      // If the 'source' attribute does not contain the string "PISM", then print
+      // a message and stop:
+      m_log->message(1,
+                 "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
+                 "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
+                 input_file->c_str());
+    }
+  }
+
+  {
+    // A single record of a time-dependent variable cannot exceed 2^32-4
+    // bytes in size. See the NetCDF User's Guide
+    // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
+    // Here we use "long int" to avoid integer overflow.
+    const long int two_to_thirty_two = 4294967296L;
+    const long int
+      Mx_long = m_grid->Mx(),
+      My_long = m_grid->My(),
+      Mz_long = m_grid->Mz();
+    std::string output_format = m_config->get_string("output_format");
+    if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 and
+        (output_format == "netcdf3" or output_format == "pnetcdf")) {
+      throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
+                                    "Each 3D variable requires %lu Mb.\n"
+                                    "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
+                                    "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
+                                    Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
+    }
+  }
 
   output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
                                         "medium");

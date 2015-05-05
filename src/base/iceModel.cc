@@ -917,8 +917,7 @@ void IceModel::init() {
 #endif
   //! The IceModel initialization sequence is this:
 
-  //! 1) Initialize the computational grid and time:
-  grid_setup();
+  //! 1) Initialize model time:
   time_setup();
 
   //! 2) Process the options:

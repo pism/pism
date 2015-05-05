@@ -147,10 +147,9 @@ public:
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
-  virtual void grid_setup();
   virtual void time_setup();
 
-  IceGrid::Ptr  grid() const;
+  IceGrid::Ptr grid() const;
 
   Context::Ptr ctx() const;
 
@@ -165,8 +164,6 @@ public:
 
   virtual void init_couplers();
   virtual void init_step_couplers();
-  virtual void set_grid_from_options();
-  virtual void set_grid_defaults();
   virtual void model_state_setup();
   virtual void set_vars_from_options();
   virtual void allocate_internal_objects();
@@ -217,8 +214,7 @@ public:
 protected:
 
   //! Computational grid
-  // FIXME: make this const again
-  IceGrid::Ptr m_grid;
+  const IceGrid::Ptr m_grid;
   //! Configuration flags and parameters
   const Config::Ptr m_config;
   //! Execution context

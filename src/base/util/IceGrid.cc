@@ -33,6 +33,7 @@
 
 namespace pism {
 
+//! Internal structures of IceGrid.
 struct IceGrid::Impl {
   Context::Ptr ctx;
 
@@ -90,6 +91,7 @@ struct IceGrid::Impl {
   gsl_interp_accel *bsearch_accel;
 };
 
+//! Convert a string to Periodicity.
 Periodicity string_to_periodicity(const std::string &keyword) {
     if (keyword == "none") {
     return NOT_PERIODIC;
@@ -105,6 +107,7 @@ Periodicity string_to_periodicity(const std::string &keyword) {
   }
 }
 
+//! Convert Periodicity to a STL string.
 std::string periodicity_to_string(Periodicity p) {
   switch (p) {
   case NOT_PERIODIC:
@@ -119,6 +122,7 @@ std::string periodicity_to_string(Periodicity p) {
   }
 }
 
+//! Convert an STL string to SpacingType.
 SpacingType string_to_spacing(const std::string &keyword) {
   if (keyword == "quadratic") {
     return QUADRATIC;
@@ -130,6 +134,7 @@ SpacingType string_to_spacing(const std::string &keyword) {
   }
 }
 
+//! Convert SpacingType to an STL string.
 std::string spacing_to_string(SpacingType s) {
   switch (s) {
   case EQUAL:
@@ -140,8 +145,8 @@ std::string spacing_to_string(SpacingType s) {
   }
 }
 
-/*! @brief Initialize a uniform, shallow (3 z-levels), doubly periodic grid
- * with half-widths (Lx,Ly) and Mx by My nodes.
+/*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
+ * nodes.
  */
 IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
                               double Lx, double Ly,
@@ -169,6 +174,21 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
   return IceGrid::Ptr(new IceGrid(ctx, p));
 }
 
+//! @brief Create a PISM distributed computational grid.
+/*!
+  This class contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"
+  in the DMDACreate2d call; this transpose allows us to index arrays by "[i][j]"
+  (where 'i' corresponds to 'x' and 'j' to 'y') and be consistent about
+  meanings of 'x', 'y', 'u' and 'v'.
+
+  Unfortunately this means that PETSc viewers appear transposed.
+
+  This choice should be virtually invisible, unless you're using DALocalInfo
+  and MatStencil structures.
+
+  @note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
+  order: x in rows, y in columns, indexing as array[x][y].
+ */
 IceGrid::IceGrid(Context::Ptr ctx, const GridParameters &p)
   : com(ctx->com()), m_impl(new Impl) {
 
@@ -184,16 +204,51 @@ IceGrid::IceGrid(Context::Ptr ctx, const GridParameters &p)
 
   p.validate();
 
-  this->set_size_and_extent(p.x0, p.y0, p.Lx, p.Ly, p.Mx, p.My, p.periodicity);
-  this->set_vertical_levels(p.z);
+  m_impl->Mx = p.Mx;
+  m_impl->My = p.My;
+  m_impl->x0 = p.x0;
+  m_impl->y0 = p.y0;
+  m_impl->Lx = p.Lx;
+  m_impl->Ly = p.Ly;
+  m_impl->periodicity = p.periodicity;
+  m_impl->z = p.z;
   this->set_ownership_ranges(p.procs_x, p.procs_y);
-  this->allocate();
+
+  compute_horizontal_coordinates();
+
+  {
+    unsigned int max_stencil_width = (unsigned int)ctx->config()->get_double("grid_max_stencil_width");
+
+    try {
+      petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
+    } catch (RuntimeError) {
+      throw RuntimeError::formatted("can't distribute a %d x %d grid across %d processors.",
+                                    Mx(), My(), size());
+    }
+
+    // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
+    // be needed for I/O operations)
+    m_impl->dm_scalar_global = this->get_dm(1, 0);
+
+    DMDALocalInfo info;
+    PetscErrorCode ierr = DMDAGetLocalInfo(*m_impl->dm_scalar_global, &info);
+    PISM_CHK(ierr, "DMDAGetLocalInfo");
+
+    // this continues the fundamental transpose
+    m_impl->xs = info.ys;
+    m_impl->xm = info.ym;
+    m_impl->ys = info.xs;
+    m_impl->ym = info.xm;
+
+  }
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
 IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
-                               const std::string &filename, const std::vector<std::string> &var_names,
+                               const std::string &filename,
+                               const std::vector<std::string> &var_names,
                                Periodicity periodicity) {
+
   for (unsigned int k = 0; k < var_names.size(); ++k) {
     PIO file(ctx->com(), "netcdf3");
     file.open(filename, PISM_READONLY); // will be closed automatically
@@ -207,19 +262,17 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
                                 join(var_names, ",").c_str());
 }
 
-//! \brief Sets grid parameters using data read from the file.
+//! Create a grid from a file, get information from variable `var_name`.
 IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
-                               const std::string &filename, const std::string &var_name,
+                               const std::string &filename,
+                               const std::string &var_name,
                                Periodicity periodicity) {
   try {
     const Logger &log = *ctx->log();
 
-    PIO file(ctx->com(), "netcdf3");
-    file.open(filename, PISM_READONLY); // will be closed automatically
-
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    GridParameters p(ctx, file, var_name, periodicity);
+    GridParameters p(ctx, filename, var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -227,7 +280,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
       log.message(3,
                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                  "         Using 2 levels and Lz of %3.3fm\n",
-                 var_name.c_str(), file.inq_filename().c_str(), Lz);
+                 var_name.c_str(), filename.c_str(), Lz);
 
       p.z.clear();
       p.z.push_back(0);
@@ -250,16 +303,9 @@ IceGrid::~IceGrid() {
   delete m_impl;
 }
 
-//! \brief Set the vertical levels in the ice according to values in Mz, Lz,
-//! and the ice_vertical_spacing data member.
+//! \brief Set the vertical levels in the ice according to values in `Mz` (number of levels), `Lz`
+//! (domain height), `spacing` (quadratic or equal) and `lambda` (quadratic spacing parameter).
 /*!
-Uses `Mz`, `Lz`, and `ice_vertical_spacing`.  (Note that `ice_vertical_spacing`
-cannot be UNKNOWN.)
-
-This procedure is only called when a grid is determined from scratch, %e.g.
-by a derived class or when bootstrapping from 2D data only, but not when
-reading a model state input file (which will have its own grid,
-which may not even be a grid created by this routine).
   - When `vertical_spacing` == EQUAL, the vertical grid in the ice is equally spaced:
     `zlevels[k] = k dz` where `dz = Lz / (Mz - 1)`.
   - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent
@@ -315,7 +361,6 @@ std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int
 
   return result;
 }
-
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) const {
@@ -388,6 +433,7 @@ static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
   return result;
 }
 
+//! Set processor ownership ranges. Takes care of type conversion (`unsigned int` -> `PetscInt`).
 void IceGrid::set_ownership_ranges(const std::vector<unsigned int> &procs_x,
                                    const std::vector<unsigned int> &procs_y) {
   if (procs_x.size() * procs_y.size() != size()) {
@@ -405,9 +451,15 @@ void IceGrid::set_ownership_ranges(const std::vector<unsigned int> &procs_x,
   }
 }
 
-IceGrid::OwnershipRanges IceGrid::ownership_ranges_from_options(unsigned int Mx,
-                                                                unsigned int My,
-                                                                unsigned int size) {
+struct OwnershipRanges {
+  std::vector<unsigned int> x, y;
+};
+
+//! Compute processor ownership ranges using the grid size, MPI communicator size, and command-line
+//! options `-Nx`, `-Ny`, `-procs_x`, `-procs_y`.
+static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
+                                                unsigned int My,
+                                                unsigned int size) {
   OwnershipRanges result;
 
   unsigned int Nx_default, Ny_default;
@@ -470,102 +522,7 @@ IceGrid::OwnershipRanges IceGrid::ownership_ranges_from_options(unsigned int Mx,
   return result;
 }
 
-//! \brief Create the PETSc DM for the horizontal grid. Determine how
-//! the horizontal grid is divided among processors.
-/*!
-  This procedure should only be called after the parameters describing the
-  horizontal computational box (Lx,Ly) and the parameters for the horizontal
-  grid (Mx,My) are already determined. In particular, the input file (set using the
-  '-i' command-line option) and user options (like `-Mx`) must have already been
-  read to determine the parameters, and any conflicts must have been resolved.
-
-  This method contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"
-  in the DMDACreate2d call; this transpose allows us to index arrays by "[i][j]"
-  (where 'i' corresponds to 'x' and 'j' to 'y') and be consistent about
-  meanings of 'x', 'y', 'u' and 'v'.
-
-  Unfortunately this means that PETSc viewers appear transposed.
-
-  This choice should be virtually invisible, unless you're using DALocalInfo
-  structures.
-
-  \note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
-  order: x in rows, y in columns, indexing as array[x][y].
- */
-void IceGrid::allocate() {
-
-  check_parameters();
-
-  compute_horizontal_coordinates();
-
-  // FIXME: remove this
-  OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx(), My(), size());
-  set_ownership_ranges(procs.x, procs.y);
-
-  unsigned int max_stencil_width = (unsigned int)ctx()->config()->get_double("grid_max_stencil_width");
-
-  try {
-    petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
-  } catch (RuntimeError) {
-    throw RuntimeError::formatted("can't distribute a %d x %d grid across %d processors.",
-                                  Mx(), My(), size());
-  }
-
-  // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
-  // be needed for I/O operations)
-  m_impl->dm_scalar_global = this->get_dm(1, 0);
-
-  DMDALocalInfo info;
-  PetscErrorCode ierr = DMDAGetLocalInfo(*m_impl->dm_scalar_global, &info);
-  PISM_CHK(ierr, "DMDAGetLocalInfo");
-
-  // this continues the fundamental transpose
-  m_impl->xs = info.ys;
-  m_impl->xm = info.ym;
-  m_impl->ys = info.xs;
-  m_impl->ym = info.xm;
-}
-
-//! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
-void IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
-
-  if (new_zlevels.size() < 2) {
-    throw RuntimeError("IceGrid::set_vertical_levels(): Mz has to be at least 2.");
-  }
-
-  if ((not is_increasing(new_zlevels)) || (fabs(new_zlevels[0]) > 1.0e-10)) {
-    throw RuntimeError("IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
-  }
-
-  m_impl->z = new_zlevels;
-}
-
-void IceGrid::set_size_and_extent(double new_x0, double new_y0, double new_Lx, double new_Ly,
-                                  unsigned int new_Mx, unsigned int new_My, Periodicity p) {
-  m_impl->Mx = new_Mx;
-  m_impl->My = new_My;
-  m_impl->x0 = new_x0;
-  m_impl->y0 = new_y0;
-  m_impl->Lx = new_Lx;
-  m_impl->Ly = new_Ly;
-  m_impl->periodicity = p;
-}
-
-//! Compute horizontal spacing parameters `dx` and `dy` using `Mx`, `My`, `Lx`, `Ly` and periodicity.
-/*!
-The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
-This means that the ghosted values ` foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]`
-for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
-That is, they are available even if i,j is a point at the edge of the grid.  On the other
-hand, by default, `dx`  is the full width  `2 * Lx`  divided by  `Mx - 1`.
-This means that we conceive of the computational domain as starting at the `i = 0`
-grid location and ending at the  `i = Mx - 1`  grid location, in particular.
-This idea is not quite compatible with the periodic nature of the grid.
-
-The upshot is that if one computes in a truly periodic way then the gap between the
-`i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
-Thus we compute  `dx = 2 * Lx / Mx`.
- */
+//! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
 static double compute_horizontal_spacing(double half_width, unsigned int M, bool periodic) {
   if (periodic) {
     return 2.0 * half_width / M;
@@ -574,6 +531,7 @@ static double compute_horizontal_spacing(double half_width, unsigned int M, bool
   }
 }
 
+//! Compute grid coordinates for one direction (X or Y).
 static std::vector<double> compute_coordinates(unsigned int M, double delta,
                                                double v_min, double v_max,
                                                bool periodic) {
@@ -596,8 +554,21 @@ static std::vector<double> compute_coordinates(unsigned int M, double delta,
   return result;
 }
 
-//! \brief Computes values of x and y corresponding to the computational grid,
-//! with accounting for periodicity.
+//! Compute horizontal spacing parameters `dx` and `dy` and grid coordinates using `Mx`, `My`, `Lx`, `Ly` and periodicity.
+/*!
+The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
+This means that the ghosted values ` foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]`
+for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
+That is, they are available even if i,j is a point at the edge of the grid.  On the other
+hand, by default, `dx`  is the full width  `2 * Lx`  divided by  `Mx - 1`.
+This means that we conceive of the computational domain as starting at the `i = 0`
+grid location and ending at the  `i = Mx - 1`  grid location, in particular.
+This idea is not quite compatible with the periodic nature of the grid.
+
+The upshot is that if one computes in a truly periodic way then the gap between the
+`i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
+Thus we compute  `dx = 2 * Lx / Mx`.
+ */
 void IceGrid::compute_horizontal_coordinates() {
 
   m_impl->dx = compute_horizontal_spacing(m_impl->Lx, m_impl->Mx,
@@ -770,39 +741,13 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
   return result;
 }
 
-//! \brief Checks grid parameters usually set at bootstrapping for validity.
-void IceGrid::check_parameters() {
-
-  if (Mx() < 3) {
-    throw RuntimeError("Mx has to be at least 3.");
-  }
-
-  if (My() < 3) {
-    throw RuntimeError("My has to be at least 3.");
-  }
-
-  if (Mz() < 2) {
-    throw RuntimeError("Mz must be at least 2.");
-  }
-
-  if (Lx() <= 0) {
-    throw RuntimeError("Lx has to be positive.");
-  }
-
-  if (Ly() <= 0) {
-    throw RuntimeError("Ly has to be positive.");
-  }
-
-  if (Lz() <= 0) {
-    throw RuntimeError("Lz must be positive.");
-  }
-}
-
 // Computes the key corresponding to the DM with given dof and stencil_width.
 static int grid_dm_key(int da_dof, int stencil_width) {
   return 10000 * da_dof + stencil_width;
 }
 
+//! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
+//! freedom per grid point) and stencil width.
 petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   petsc::DM::Ptr result;
 
@@ -826,14 +771,18 @@ petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   return result;
 }
 
+//! Return grid periodicity.
 Periodicity IceGrid::periodicity() const {
   return m_impl->periodicity;
 }
 
+//! Return execution context this grid corresponds to.
 Context::ConstPtr IceGrid::ctx() const {
   return m_impl->ctx;
 }
 
+//! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
+//! stencil width.
 petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
 
   ctx()->log()->message(3,
@@ -859,82 +808,102 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
   return petsc::DM::Ptr(new petsc::DM(result));
 }
 
+//! MPI rank.
 int IceGrid::rank() const {
   return m_impl->rank;
 }
 
+//! MPI communicator size.
 unsigned int IceGrid::size() const {
   return m_impl->size;
 }
 
+//! Dictionary of variables (2D and 3D fields) associated with this grid.
 Vars& IceGrid::variables() {
   return m_impl->variables;
 }
 
+//! Dictionary of variables (2D and 3D fields) associated with this grid.
 const Vars& IceGrid::variables() const {
   return m_impl->variables;
 }
 
+//! Global starting index of this processor's subset.
 int IceGrid::xs() const {
   return m_impl->xs;
 }
 
+//! Global starting index of this processor's subset.
 int IceGrid::ys() const {
   return m_impl->ys;
 }
 
+//! Width of this processor's sub-domain.
 int IceGrid::xm() const {
   return m_impl->xm;
 }
 
+//! Width of this processor's sub-domain.
 int IceGrid::ym() const {
   return m_impl->ym;
 }
 
+//! Total grid size in the X direction.
 unsigned int IceGrid::Mx() const {
   return m_impl->Mx;
 }
 
+//! Total grid size in the Y direction.
 unsigned int IceGrid::My() const {
   return m_impl->My;
 }
 
+//! Number of vertical levels.
 unsigned int IceGrid::Mz() const {
   return m_impl->z.size();
 }
 
+//! X-coordinates.
 const std::vector<double>& IceGrid::x() const {
   return m_impl->x;
 }
 
+//! Get a particular x coordinate.
 double IceGrid::x(size_t i) const {
   return m_impl->x[i];
 }
 
+//! Y-coordinates.
 const std::vector<double>& IceGrid::y() const {
   return m_impl->y;
 }
 
+//! Get a particular y coordinate.
 double IceGrid::y(size_t i) const {
   return m_impl->y[i];
 }
 
+//! Z-coordinates within the ice.
 const std::vector<double>& IceGrid::z() const {
   return m_impl->z;
 }
 
+//! Get a particular z coordinate.
 double IceGrid::z(size_t i) const {
   return m_impl->z[i];
 }
 
+//! Horizontal grid spacing.
 double IceGrid::dx() const {
   return m_impl->dx;
 }
 
+//! Horizontal grid spacing.
 double IceGrid::dy() const {
   return m_impl->dy;
 }
 
+//! Minimum vertical spacing.
 double IceGrid::dz_min() const {
   double result = m_impl->z.back();
   for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
@@ -944,6 +913,7 @@ double IceGrid::dz_min() const {
   return result;
 }
 
+//! Maximum vertical spacing.
 double IceGrid::dz_max() const {
   double result = 0.0;
   for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
@@ -953,27 +923,32 @@ double IceGrid::dz_max() const {
   return result;
 }
 
+//! Half-width of the computational domain.
 double IceGrid::Lx() const {
   return m_impl->Lx;
 }
 
+//! Half-width of the computational domain.
 double IceGrid::Ly() const {
   return m_impl->Ly;
 }
 
+//! Height of the computational domain.
 double IceGrid::Lz() const {
   return m_impl->z.back();
 }
 
+//! X-coordinate of the center of the domain.
 double IceGrid::x0() const {
   return m_impl->x0;
 }
 
+//! Y-coordinate of the center of the domain.
 double IceGrid::y0() const {
   return m_impl->y0;
 }
 
-//! \brief Returns the distance from the point (i,j) to the origin.
+//! @brief Returns the distance from the point (i,j) to the origin.
 double radius(const IceGrid &grid, int i, int j) {
   return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
 }
@@ -1161,7 +1136,7 @@ GridParameters::GridParameters(Config::ConstPtr config, unsigned int size) {
 }
 
 void GridParameters::ownership_ranges_from_options(unsigned int size) {
-  IceGrid::OwnershipRanges procs = IceGrid::ownership_ranges_from_options(Mx, My, size);
+  OwnershipRanges procs = compute_ownership_ranges(Mx, My, size);
   procs_x = procs.x;
   procs_y = procs.y;
 }
@@ -1289,7 +1264,9 @@ void GridParameters::validate() const {
   }
 }
 
-
+//! Create a grid using command-line options and (possibly) an input file.
+/** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
+ */
 IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
   options::String input_file("-i", "Specifies a PISM input file");
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");

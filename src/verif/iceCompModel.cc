@@ -91,10 +91,6 @@ void IceCompModel::createVecs() {
                                  "W m-3", "");
 }
 
-void IceCompModel::set_grid_defaults() {
-  // FIXME: remove this
-}
-
 void IceCompModel::setFromOptions() {
 
   m_log->message(2, "starting Test %c ...\n", testname);

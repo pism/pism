@@ -47,7 +47,7 @@ std::string periodicity_to_string(Periodicity p);
 SpacingType string_to_spacing(const std::string &keyword);
 std::string spacing_to_string(SpacingType s);
 
-//! \brief Contains parameters of an input file grid.
+//! @brief Contains parameters of an input file grid.
 class grid_info {
 public:
   grid_info();
@@ -188,61 +188,29 @@ public:
   typedef PISM_SHARED_PTR(IceGrid) Ptr;
   typedef PISM_SHARED_PTR(const IceGrid) ConstPtr;
 
-
-
-  //! Create a grid using parameters in `p`.
   IceGrid(Context::Ptr ctx, const GridParameters &p);
 
-  //! Compute vertical grid levels.
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double Lambda = 0.0);
-  struct OwnershipRanges {
-    std::vector<unsigned int> x, y;
-  };
-  //! Compute ownership ranges using command-line options `-Nx`, `-Ny`, `-procs_x`, `-procs_y`.
-  static OwnershipRanges ownership_ranges_from_options(unsigned int Mx,
-                                                       unsigned int My,
-                                                       unsigned int size);
 
-  //! Create a shallow computational grid (uses 3 equally-spaced vertical levels).
   static Ptr Shallow(Context::Ptr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My, Periodicity p);
 
-  //! Create a grid from a file, get information from variable `var_name`.
   static Ptr FromFile(Context::Ptr ctx,
                       const std::string &file, const std::string &var_name,
                       Periodicity periodicity);
 
-  //! Create a grid from a file, get information from one of variables in `var_names`.
   static Ptr FromFile(Context::Ptr ctx,
                       const std::string &file, const std::vector<std::string> &var_names,
                       Periodicity periodicity);
 
-  //! Create a grid using command-line options and (possibly) an input file.
-  /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
-   */
   static Ptr FromOptions(Context::Ptr ctx);
-
-  // parameter settings methods
-  void set_size_and_extent(double x0, double y0, double Lx, double Ly,
-                           unsigned int Mx, unsigned int My, Periodicity p);
-  void set_vertical_levels(const std::vector<double> &z_levels);
-
-  void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
-                            const std::vector<unsigned int> &procs_y);
-
-  // end of parameter setting methods
-
-  // static Ptr Bootstrapping(MPI_Comm c, Config::ConstPtr config,
-  //                          const std::string &filename);
 
   petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
 
   void report_parameters() const;
-
-  void allocate();  // FIXME! allocate in the constructor!
 
   void compute_point_neighbors(double X, double Y,
                                int &i_left, int &i_right,
@@ -251,16 +219,11 @@ public:
 
   unsigned int kBelowHeight(double height) const;
 
-  //! Context this grid belongs to.
   Context::ConstPtr ctx() const;
 
-  //! Starting x-index of a processor sub-domain
   int xs() const;
-  //! Number of grid points (in the x-direction) in a processor sub-domain
   int xm() const;
-  //! Starting y-index of a processor sub-domain
   int ys() const;
-  //! Number of grid points (in the y-direction) in a processor sub-domain
   int ym() const;
 
   const std::vector<double>& x() const;
@@ -302,7 +265,8 @@ private:
   struct Impl;
   Impl *m_impl;
 
-  void check_parameters();
+  void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
+                            const std::vector<unsigned int> &procs_y);
 
   void compute_horizontal_coordinates();
 
