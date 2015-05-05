@@ -59,10 +59,8 @@ int PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
 
   init_hints();
 
-  m_filename = fname;
-
   int nc_mode = integer_open_mode(mode);
-  stat = ncmpi_open(m_com, m_filename.c_str(), nc_mode, mpi_info, &m_file_id); check(stat);
+  stat = ncmpi_open(m_com, fname.c_str(), nc_mode, mpi_info, &m_file_id); check(stat);
 
   m_define_mode = false;
 
@@ -75,9 +73,7 @@ int PNCFile::create_impl(const std::string &fname) {
 
   init_hints();
 
-  m_filename = fname;
-
-  stat = ncmpi_create(m_com, m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
+  stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
                       mpi_info, &m_file_id); check(stat);
   m_define_mode = true;
 

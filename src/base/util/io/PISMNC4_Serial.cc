@@ -39,10 +39,8 @@ int NC4_Serial::integer_open_mode(IO_Mode input) const {
 int NC4_Serial::open_impl(const std::string &fname, IO_Mode mode) {
   int stat;
 
-  m_filename = fname;
-
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id);
+  stat = nc_open(fname.c_str(), nc_mode, &m_file_id);
 
   m_define_mode = false;
 
@@ -52,9 +50,7 @@ int NC4_Serial::open_impl(const std::string &fname, IO_Mode mode) {
 int NC4_Serial::create_impl(const std::string &fname) {
   int stat;
 
-  m_filename = fname;
-
-  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &m_file_id);
+  stat = nc_create(fname.c_str(), NC_NETCDF4, &m_file_id);
 
   m_define_mode = true;
 

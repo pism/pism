@@ -116,6 +116,10 @@ PIO::~PIO() {
     try {
       // a file is still open, so we try to close it
       this->close();
+    } catch (RuntimeError &e) {
+      // don't ever throw from here
+      fprintf(stderr, "Failed to close a file in PIO::~PIO()!\n");
+      fprintf(stderr, "Got a RuntimeError exception: %s\n", e.what());
     } catch (...) {
       // don't ever throw from here
       fprintf(stderr, "Failed to close a file in PIO::~PIO()!\n");

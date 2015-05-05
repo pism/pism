@@ -154,10 +154,12 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
 
 void NCFile::open(const std::string &filename, IO_Mode mode) {
   int stat = this->open_impl(filename, mode); check(stat);
+  m_filename = filename;
 }
 
 void NCFile::create(const std::string &filename) {
   int stat = this->create_impl(filename); check(stat);
+  m_filename = filename;
 }
 
 void NCFile::close() {

@@ -61,11 +61,9 @@ int NC3File::integer_open_mode(IO_Mode input) const {
 int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
   int stat;
 
-  m_filename = fname;
-
   if (m_rank == 0) {
     int nc_mode = integer_open_mode(mode);
-    stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id);
+    stat = nc_open(fname.c_str(), nc_mode, &m_file_id);
   }
 
   MPI_Barrier(m_com);
@@ -81,10 +79,8 @@ int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
 int NC3File::create_impl(const std::string &fname) {
   int stat;
 
-  m_filename = fname;
-
   if (m_rank == 0) {
-    stat = nc_create(m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &m_file_id);
+    stat = nc_create(fname.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &m_file_id);
   }
 
   MPI_Barrier(m_com);
@@ -334,7 +330,7 @@ int NC3File::get_var_double(const std::string &variable_name,
     imap_tag =  4,
     chunk_size_tag = 5;
   int stat = 0, com_size, ndims = static_cast<int>(start.size());
-  double *processor_0_buffer = NULL;
+  std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
@@ -375,7 +371,7 @@ int NC3File::get_var_double(const std::string &variable_name,
     // Note: this could be optimized: if processor_0_chunk_size <=
     // max(local_chunk_size) we can avoid allocating this buffer. The inner for
     // loop will have to be re-ordered, though.
-    processor_0_buffer = new double[processor_0_chunk_size];
+    processor_0_buffer.resize(processor_0_chunk_size);
 
     // MPI calls below require C datatypes (so that we don't have to worry
     // about sizes of size_t and ptrdiff_t), so we make local copies of start,
@@ -410,14 +406,14 @@ int NC3File::get_var_double(const std::string &variable_name,
 
       if (mapped) {
         stat = nc_get_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  processor_0_buffer); check(stat);
+                                  &processor_0_buffer[0]); check(stat);
       } else {
         stat = nc_get_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  processor_0_buffer); check(stat);
+                                  &processor_0_buffer[0]); check(stat);
       }
 
       if (r != 0) {
-        MPI_Send(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
+        MPI_Send(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           ip[k] = processor_0_buffer[k];
@@ -426,7 +422,6 @@ int NC3File::get_var_double(const std::string &variable_name,
 
     } // end of the for loop
 
-    delete[] processor_0_buffer;
   } else {
     MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
     MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
@@ -472,7 +467,7 @@ int NC3File::put_var_double(const std::string &variable_name,
     imap_tag =  4,
     chunk_size_tag = 5;
   int stat = 0, com_size = 0, ndims = static_cast<int>(start.size());
-  double *processor_0_buffer = NULL;
+  std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
@@ -510,7 +505,7 @@ int NC3File::put_var_double(const std::string &variable_name,
 
   // now we need to send start, count and imap data to processor 0 and receive data
   if (m_rank == 0) {
-    processor_0_buffer = new double[processor_0_chunk_size];
+    processor_0_buffer.resize(processor_0_chunk_size);
 
     // MPI calls below require C datatypes (so that we don't have to worry
     // about sizes of size_t and ptrdiff_t), so we make local copies of start,
@@ -531,7 +526,7 @@ int NC3File::put_var_double(const std::string &variable_name,
         MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
         MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
 
-        MPI_Recv(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
+        MPI_Recv(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           processor_0_buffer[k] = op[k];
@@ -551,10 +546,10 @@ int NC3File::put_var_double(const std::string &variable_name,
 
       if (mapped) {
         stat = nc_put_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  processor_0_buffer); check(stat);
+                                  &processor_0_buffer[0]); check(stat);
       } else {
         stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  processor_0_buffer); check(stat);
+                                  &processor_0_buffer[0]); check(stat);
       }
 
       if (stat != NC_NOERR) {
@@ -577,8 +572,6 @@ int NC3File::put_var_double(const std::string &variable_name,
       }
 
     } // end of the for loop
-
-    delete[] processor_0_buffer;
   } else {
     MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
     MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);

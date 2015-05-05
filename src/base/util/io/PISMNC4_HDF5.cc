@@ -476,8 +476,6 @@ int NC4_HDF5::open_impl(const std::string &filename, IO_Mode mode) {
   int rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  m_filename = filename;
-
   hid_t plist_id = create_file_access_plist(m_com, MPI_INFO_NULL, m_xm, m_ym);
 
   herr_t stat = H5Fis_hdf5(filename.c_str()); check(stat);

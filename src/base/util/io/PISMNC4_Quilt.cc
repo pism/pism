@@ -59,10 +59,10 @@ int NC4_Quilt::open_impl(const std::string &fname, IO_Mode mode) {
   int stat, rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  m_filename = patch_filename(fname, rank);
+  std::string patch_fname = patch_filename(fname, rank).c_str();
 
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id); check(stat);
+  stat = nc_open(patch_fname.c_str(), nc_mode, &m_file_id); check(stat);
 
   m_define_mode = false;
 
@@ -74,9 +74,9 @@ int NC4_Quilt::create_impl(const std::string &fname) {
   int stat = 0, rank = 0;
 
   MPI_Comm_rank(m_com, &rank);
-  m_filename = patch_filename(fname, rank);
+  std::string patch_fname = patch_filename(fname, rank);
 
-  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &m_file_id); check(stat);
+  stat = nc_create(patch_fname.c_str(), NC_NETCDF4, &m_file_id); check(stat);
 
   m_define_mode = true;
 

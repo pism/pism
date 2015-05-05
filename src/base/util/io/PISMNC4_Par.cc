@@ -39,10 +39,8 @@ int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  m_filename = fname;
-
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open_par(m_filename.c_str(),
+  stat = nc_open_par(fname.c_str(),
                      nc_mode | NC_MPIIO,
                      m_com, info, &m_file_id);
 
@@ -55,9 +53,7 @@ int NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  m_filename = fname;
-
-  stat = nc_create_par(m_filename.c_str(),
+  stat = nc_create_par(fname.c_str(),
                        NC_NETCDF4 | NC_MPIIO,
                        m_com, info, &m_file_id);
   m_define_mode = true;
