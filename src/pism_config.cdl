@@ -25,6 +25,9 @@ netcdf pism_config {
     pism_config:do_age = "no";
     pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";
 
+    pism_config:stress_balance_model_type = "keyword";
+    pism_config:stress_balance_model_option = "stress_balance";
+    pism_config:stress_balance_model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";
     pism_config:stress_balance_model = "sia_only";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
@@ -37,6 +40,9 @@ netcdf pism_config {
     pism_config:summary_time_use_calendar = "yes";
     pism_config:summary_time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
 
+    pism_config:ssa_method_type = "keyword";
+    pism_config:ssa_method_option = "ssa_method";
+    pism_config:ssa_method_choices = "fd,fem";
     pism_config:ssa_method = "fd";
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
 
@@ -77,6 +83,9 @@ netcdf pism_config {
     pism_config:write_fd_fields = "no";
     pism_config:write_fd_fields_doc = "Writing of fracture density related fields to nc-file.";
 
+    pism_config:bed_deformation_model_type = "keyword";
+    pism_config:bed_deformation_model_option = "bed_def";
+    pism_config:bed_deformation_model_choices = "none,iso,lc";
     pism_config:bed_deformation_model = "none";
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [@ref LingleClark], requires FFTW3).";
 
@@ -104,6 +113,9 @@ netcdf pism_config {
     pism_config:ssa_dirichlet_bc = "no";
     pism_config:ssa_dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
 
+    pism_config:hydrology_model_type = "keyword";
+    pism_config:hydrology_model_option = "hydrology";
+    pism_config:hydrology_model_choices = "null,routing,distributed";
     pism_config:hydrology_model = "null";
     pism_config:hydrology_model_doc = "Choose the hydrology sub-model from 'null', 'routing', 'distributed'.";
 
@@ -178,6 +190,9 @@ netcdf pism_config {
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
 
+    pism_config:bootstrapping_temperature_heuristic_type = "keyword";
+    pism_config:bootstrapping_temperature_heuristic_option = "boot_temperature_heuristic";
+    pism_config:bootstrapping_temperature_heuristic_choices = "smb,quartic_guess";
     pism_config:bootstrapping_temperature_heuristic = "smb";
     pism_config:bootstrapping_temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
 
@@ -246,6 +261,9 @@ netcdf pism_config {
     pism_config:energy_advection_ice_thickness_threshold = 100.0;
     pism_config:energy_advection_ice_thickness_threshold_doc = "ignore advection and strain heating in ice columns thinner than this";
 
+    pism_config:yield_stress_model_type = "keyword";
+    pism_config:yield_stress_model_option = "yield_stress";
+    pism_config:yield_stress_model_choices = "constant,mohr_coulomb";
     pism_config:yield_stress_model = "mohr_coulomb";
     pism_config:yield_stress_model_doc = "The basal yield stress model to use when sliding is active; choose from 'mohr_coulomb' and 'constant'";
 
@@ -576,15 +594,27 @@ netcdf pism_config {
 
     // SSA inversion constants
     
+    pism_config:inv_ssa_method_type = "keyword";
+    pism_config:inv_ssa_method_option = "inv_method";
+    pism_config:inv_ssa_method_choices = "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
     pism_config:inv_ssa_method = "tikhonov_lmvm";
     pism_config:inv_ssa_method_doc = "algorithm to use for SSA inversions";
 
+    pism_config:inv_design_param_type = "keyword";
+    pism_config:inv_design_param_option = "inv_design_param";
+    pism_config:inv_design_param_choices = "ident,trunc,square,exp";
     pism_config:inv_design_param = "exp";
     pism_config:inv_design_param_doc = "parameterization of design variables used during inversion";
 
+    pism_config:inv_state_func_type = "keyword";
+    pism_config:inv_state_func_option = "inv_state_func";
+    pism_config:inv_state_func_choices = "meansquare,log_ratio,log_relative";
     pism_config:inv_state_func = "meansquare";
     pism_config:inv_state_func_doc = "functional used for inversion design variables";
 
+    pism_config:inv_design_func_type = "keyword";
+    pism_config:inv_design_func_option = "inv_design_func";
+    pism_config:inv_design_func_choices = "sobolevH1,tv";
     pism_config:inv_design_func = "sobolevH1";
     pism_config:inv_design_func_doc = "functional used for inversion design variables";
 
@@ -779,9 +809,15 @@ netcdf pism_config {
     pism_config:temperature_allow_above_melting = "no";
     pism_config:temperature_allow_above_melting_doc = "If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
 
+    pism_config:sia_flow_law_type = "keyword";
+    pism_config:sia_flow_law_option = "sia_flow_law";
+    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
     pism_config:sia_flow_law = "gpbld";
     pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
+    pism_config:ssa_flow_law_type = "keyword";
+    pism_config:ssa_flow_law_option = "ssa_flow_law";
+    pism_config:ssa_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
@@ -899,6 +935,9 @@ netcdf pism_config {
     pism_config:summary_time_unit_name = "year";
     pism_config:summary_time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
 
+    pism_config:calendar_type = "keyword";
+    pism_config:calendar_option = "calendar";
+    pism_config:calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none";
     pism_config:calendar = "365_day";
     pism_config:calendar_doc = "The calendar to use. Choose from standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian.";
 
@@ -911,6 +950,9 @@ netcdf pism_config {
     pism_config:reference_date = "1-1-1";
     pism_config:reference_date_doc = "year-month-day; reference date used for calendar computations and in PISM output files";
 
+    pism_config:surface_gradient_method_type = "keyword";
+    pism_config:surface_gradient_method_option = "gradient";
+    pism_config:surface_gradient_method_choices = "eta,haseloff,mahaffy";
     pism_config:surface_gradient_method = "haseloff";
     pism_config:surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
 
@@ -919,8 +961,14 @@ netcdf pism_config {
     pism_config:grid_max_stencil_width_doc = "Maximum width of the finite-difference stencil used in PISM.";
 
     pism_config:grid_periodicity = "xy";
+    pism_config:grid_periodicity_option = "periodicity";
+    pism_config:grid_periodicity_type = "keyword";
+    pism_config:grid_periodicity_choices = "none,x,y,xy";
     pism_config:grid_periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
 
+    pism_config:grid_ice_vertical_spacing_type = "keyword";
+    pism_config:grid_ice_vertical_spacing_option = "z_spacing";
+    pism_config:grid_ice_vertical_spacing_choices = "quadratic,equal";
     pism_config:grid_ice_vertical_spacing = "quadratic";
     pism_config:grid_ice_vertical_spacing_doc = "Default vertical spacing in the ice. Possible values: 'quadratic' and 'equal'.";
 
@@ -967,9 +1015,15 @@ netcdf pism_config {
     pism_config:correct_cell_areas = "yes";
     pism_config:correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
 
+    pism_config:output_format_type = "keyword";
+    pism_config:output_format_option = "o_format";
+    pism_config:output_format_choices = "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5";
     pism_config:output_format = "netcdf3";
     pism_config:output_format_doc = "The I/O format used for spatial fields; allowed values are 'netcdf3' (the default), 'netcd4_parallel' (available if PISM was built against NetCDF with parallel I/O enabled), and 'pnetcdf' (available if PISM was built againts PnetCDF).";
 
+    pism_config:output_variable_order_type = "keyword";
+    pism_config:output_variable_order_option = "o_order";
+    pism_config:output_variable_order_choices = "xyz,yxz,zyx";
     pism_config:output_variable_order = "xyz";
     pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 

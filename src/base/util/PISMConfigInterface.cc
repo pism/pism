@@ -424,8 +424,23 @@ void set_parameter_from_options(Config &config, const std::string &name) {
 
 void set_config_from_options(Config &config) {
 
-  set_keyword_from_option(config, "periodicity", "grid_periodicity", "none,x,y,xy");
-  set_keyword_from_option(config, "z_spacing", "grid_ice_vertical_spacing", "quadratic,equal");
+  Config::Doubles doubles = config.all_doubles();
+  Config::Doubles::const_iterator i = doubles.begin();
+  for (; i != doubles.end(); ++i) {
+    set_parameter_from_options(config, i->first);
+  }
+
+  Config::Strings strings = config.all_strings();
+  Config::Strings::const_iterator j = strings.begin();
+  for (; j != strings.end(); ++j) {
+    set_parameter_from_options(config, j->first);
+  }
+
+  Config::Booleans booleans = config.all_booleans();
+  Config::Booleans::const_iterator k = booleans.begin();
+  for (; k != booleans.end(); ++k) {
+    set_parameter_from_options(config, k->first);
+  }
 
   // Energy modeling
   set_boolean_from_option(config, "use_Kirchhoff_law", "use_Kirchhoff_law");
@@ -457,11 +472,6 @@ void set_config_from_options(Config &config) {
     }
   }
 
-  // at bootstrapping, choose whether the method uses smb as upper boundary for
-  // vertical velocity
-  set_keyword_from_option(config, "boot_temperature_heuristic",
-                            "bootstrapping_temperature_heuristic", "smb,quartic_guess");
-
   set_scalar_from_option(config, "low_temp", "global_min_allowed_temp");
   set_scalar_from_option(config, "max_low_temps", "max_low_temp_count");
 
@@ -470,8 +480,6 @@ void set_config_from_options(Config &config) {
   set_boolean_from_option(config, "mass", "do_mass_conserve");
 
   // hydrology
-  set_keyword_from_option(config, "hydrology", "hydrology_model",
-                            "null,routing,distributed");
   set_boolean_from_option(config, "hydrology_use_const_bmelt",
                             "hydrology_use_const_bmelt");
   set_scalar_from_option(config, "hydrology_const_bmelt",
@@ -497,9 +505,6 @@ void set_config_from_options(Config &config) {
                            "hydrology_regularizing_porosity");
 
   // Time-stepping
-  set_keyword_from_option(config, "calendar", "calendar",
-                            "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none");
-
   set_scalar_from_option(config, "adapt_ratio",
                            "adaptive_timestepping_ratio");
 
@@ -513,18 +518,9 @@ void set_config_from_options(Config &config) {
   // SIA-related
   set_scalar_from_option(config, "bed_smoother_range", "bed_smoother_range");
 
-  set_keyword_from_option(config, "gradient", "surface_gradient_method",
-                            "eta,haseloff,mahaffy");
-
   // rheology-related
   set_scalar_from_option(config, "sia_n", "sia_Glen_exponent");
   set_scalar_from_option(config, "ssa_n", "ssa_Glen_exponent");
-
-  set_keyword_from_option(config, "sia_flow_law", "sia_flow_law",
-                            "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb");
-
-  set_keyword_from_option(config, "ssa_flow_law", "ssa_flow_law",
-                            "arr,arrwarm,gpbld,hooke,isothermal_glen,pb");
 
   set_scalar_from_option(config, "sia_e", "sia_enhancement_factor");
   set_scalar_from_option(config, "ssa_e", "ssa_enhancement_factor");
@@ -538,9 +534,6 @@ void set_config_from_options(Config &config) {
                             "compute_grain_size_using_age");
 
   // SSA
-  // Decide on the algorithm for solving the SSA
-  set_keyword_from_option(config, "ssa_method", "ssa_method", "fd,fem");
-
   set_scalar_from_option(config, "ssa_eps",  "epsilon_ssa");
   set_scalar_from_option(config, "ssa_maxi", "max_iterations_ssafd");
   set_scalar_from_option(config, "ssa_rtol", "ssafd_relative_convergence");
@@ -559,24 +552,12 @@ void set_config_from_options(Config &config) {
 
   // SSA Inversion
 
-  set_keyword_from_option(config, "inv_method","inv_ssa_method",
-                            "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
-
-  set_keyword_from_option(config, "inv_design_param",
-                            "inv_design_param","ident,trunc,square,exp");
-
   set_scalar_from_option(config, "inv_target_misfit","inv_target_misfit");
 
   set_scalar_from_option(config, "tikhonov_penalty","tikhonov_penalty_weight");
   set_scalar_from_option(config, "tikhonov_atol","tikhonov_atol");
   set_scalar_from_option(config, "tikhonov_rtol","tikhonov_rtol");
   set_scalar_from_option(config, "tikhonov_ptol","tikhonov_ptol");
-
-  set_keyword_from_option(config, "inv_state_func",
-                            "inv_state_func",
-                            "meansquare,log_ratio,log_relative");
-  set_keyword_from_option(config, "inv_design_func",
-                            "inv_design_func","sobolevH1,tv");
 
   set_scalar_from_option(config, "inv_design_cL2","inv_design_cL2");
   set_scalar_from_option(config, "inv_design_cH1","inv_design_cH1");
@@ -613,9 +594,6 @@ void set_config_from_options(Config &config) {
                             "tauc_slippery_grounding_lines");
   set_boolean_from_option(config, "tauc_add_transportable_water",
                             "tauc_add_transportable_water");
-
-  set_keyword_from_option(config, "yield_stress", "yield_stress_model",
-                            "constant,mohr_coulomb");
 
   // all basal strength models use this in ice-free areas
   set_scalar_from_option(config, "high_tauc", "high_tauc");
@@ -670,11 +648,6 @@ void set_config_from_options(Config &config) {
   set_boolean_from_option(config, "kill_icebergs", "kill_icebergs");
 
   // Output
-  set_keyword_from_option(config, "o_order", "output_variable_order",
-                            "xyz,yxz,zyx");
-
-  set_keyword_from_option(config, "o_format", "output_format",
-                            "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5");
 
   set_scalar_from_option(config, "summary_vol_scale_factor_log10",
                            "summary_vol_scale_factor_log10");
@@ -720,9 +693,6 @@ void set_config_from_options(Config &config) {
     config.set_boolean("part_grid", true, Config::USER);
   }
 
-  set_keyword_from_option(config, "stress_balance", "stress_balance_model",
-                            "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia");
-
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
@@ -732,8 +702,6 @@ void set_config_from_options(Config &config) {
     // let the user decide if they want to use "-no_mass" or not
   }
 
-  set_keyword_from_option(config, "bed_def",
-                            "bed_deformation_model", "none,iso,lc");
   set_boolean_from_option(config, "bed_def_lc_elastic_model", "bed_def_lc_elastic_model");
 
   set_boolean_from_option(config, "dry", "is_dry_simulation");
