@@ -39,7 +39,7 @@ struct Config::Impl {
     : unit_system(sys) {
     // empty
   }
-  //! Unit system. @fixme: this should be moved to the Context class.
+
   units::System::Ptr unit_system;
 
   std::string filename;
@@ -238,11 +238,21 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
     std::string name  = j->first;
     std::string value = j->second;
 
-    if (value.empty() or ends_with(name, "_doc") or ends_with(name, "_units")) {
+    if (value.empty() or
+        ends_with(name, "_doc") or
+        ends_with(name, "_units") or
+        ends_with(name, "_type") or
+        ends_with(name, "_option") or
+        ends_with(name, "_choices")) {
       continue;
     }
 
-    log.message(v, "  %s = \"%s\"\n", name.c_str(), value.c_str());
+    if (strings[name + "_type"] == "keyword") {
+      log.message(v, "  %s = \"%s\" (allowed choices: %s)\n", name.c_str(), value.c_str(),
+                  strings[name + "_choices"].c_str());
+    } else {
+      log.message(v, "  %s = \"%s\"\n", name.c_str(), value.c_str());
+    }
   }
 
   log.message(v,
