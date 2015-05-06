@@ -443,13 +443,6 @@ void set_config_from_options(Config &config) {
   }
 
   // Energy modeling
-  set_boolean_from_option(config, "use_Kirchhoff_law", "use_Kirchhoff_law");
-  set_boolean_from_option(config, "varc", "use_linear_in_temperature_heat_capacity");
-  set_boolean_from_option(config, "vark",
-                            "use_temperature_dependent_thermal_conductivity");
-
-  set_boolean_from_option(config, "bmr_in_cont", "include_bmr_in_continuity");
-
   {
     options::Keyword energy("-energy",
                             "choose the energy model (one of 'none', 'cold', 'enthalpy')",
@@ -472,110 +465,6 @@ void set_config_from_options(Config &config) {
     }
   }
 
-  set_scalar_from_option(config, "low_temp", "global_min_allowed_temp");
-  set_scalar_from_option(config, "max_low_temps", "max_low_temp_count");
-
-  // Sub-models
-  set_boolean_from_option(config, "age", "do_age");
-  set_boolean_from_option(config, "mass", "do_mass_conserve");
-
-  // hydrology
-  set_boolean_from_option(config, "hydrology_use_const_bmelt",
-                            "hydrology_use_const_bmelt");
-  set_scalar_from_option(config, "hydrology_const_bmelt",
-                           "hydrology_const_bmelt");
-  set_scalar_from_option(config, "hydrology_tillwat_max",
-                           "hydrology_tillwat_max");
-  set_scalar_from_option(config, "hydrology_tillwat_decay_rate",
-                           "hydrology_tillwat_decay_rate");
-  set_scalar_from_option(config, "hydrology_hydraulic_conductivity",
-                           "hydrology_hydraulic_conductivity");
-  set_scalar_from_option(config, "hydrology_thickness_power_in_flux",
-                           "hydrology_thickness_power_in_flux");
-  set_scalar_from_option(config, "hydrology_gradient_power_in_flux",
-                           "hydrology_gradient_power_in_flux");
-  // additional to hydrology::Routing, these apply to hydrology::Distributed:
-  set_scalar_from_option(config, "hydrology_roughness_scale",
-                           "hydrology_roughness_scale");
-  set_scalar_from_option(config, "hydrology_cavitation_opening_coefficient",
-                           "hydrology_cavitation_opening_coefficient");
-  set_scalar_from_option(config, "hydrology_creep_closure_coefficient",
-                           "hydrology_creep_closure_coefficient");
-  set_scalar_from_option(config, "hydrology_regularizing_porosity",
-                           "hydrology_regularizing_porosity");
-
-  // Time-stepping
-  set_scalar_from_option(config, "adapt_ratio",
-                           "adaptive_timestepping_ratio");
-
-  set_scalar_from_option(config, "timestep_hit_multiples",
-                           "timestep_hit_multiples");
-
-  set_boolean_from_option(config, "count_steps", "count_time_steps");
-  set_scalar_from_option(config, "max_dt", "maximum_time_step_years");
-
-
-  // SIA-related
-  set_scalar_from_option(config, "bed_smoother_range", "bed_smoother_range");
-
-  // rheology-related
-  set_scalar_from_option(config, "sia_n", "sia_Glen_exponent");
-  set_scalar_from_option(config, "ssa_n", "ssa_Glen_exponent");
-
-  set_scalar_from_option(config, "sia_e", "sia_enhancement_factor");
-  set_scalar_from_option(config, "ssa_e", "ssa_enhancement_factor");
-
-  set_boolean_from_option(config, "e_age_coupling", "e_age_coupling");
-
-  // This parameter is used by the Goldsby-Kohlstedt flow law.
-  set_scalar_from_option(config, "ice_grain_size", "ice_grain_size");
-
-  set_boolean_from_option(config, "grain_size_age_coupling",
-                            "compute_grain_size_using_age");
-
-  // SSA
-  set_scalar_from_option(config, "ssa_eps",  "epsilon_ssa");
-  set_scalar_from_option(config, "ssa_maxi", "max_iterations_ssafd");
-  set_scalar_from_option(config, "ssa_rtol", "ssafd_relative_convergence");
-
-  set_scalar_from_option(config, "ssafd_nuH_iter_failure_underrelaxation", "ssafd_nuH_iter_failure_underrelaxation");
-
-  set_boolean_from_option(config, "ssa_dirichlet_bc", "ssa_dirichlet_bc");
-  set_boolean_from_option(config, "cfbc", "calving_front_stress_boundary_condition");
-
-  // Basal sliding fiddles
-  set_boolean_from_option(config, "brutal_sliding", "brutal_sliding");
-  set_scalar_from_option(config, "brutal_sliding_scale","brutal_sliding_scale");
-
-  set_scalar_from_option(config, "sliding_scale_factor_reduces_tauc",
-                           "sliding_scale_factor_reduces_tauc");
-
-  // SSA Inversion
-
-  set_scalar_from_option(config, "inv_target_misfit","inv_target_misfit");
-
-  set_scalar_from_option(config, "tikhonov_penalty","tikhonov_penalty_weight");
-  set_scalar_from_option(config, "tikhonov_atol","tikhonov_atol");
-  set_scalar_from_option(config, "tikhonov_rtol","tikhonov_rtol");
-  set_scalar_from_option(config, "tikhonov_ptol","tikhonov_ptol");
-
-  set_scalar_from_option(config, "inv_design_cL2","inv_design_cL2");
-  set_scalar_from_option(config, "inv_design_cH1","inv_design_cH1");
-  set_scalar_from_option(config, "inv_ssa_tv_exponent","inv_ssa_tv_exponent");
-  set_scalar_from_option(config, "inv_log_ratio_scale","inv_log_ratio_scale");
-
-  // Basal strength
-  set_scalar_from_option(config, "tauc", "default_tauc");
-  set_scalar_from_option(config, "till_cohesion", "till_cohesion");
-  set_scalar_from_option(config, "till_reference_void_ratio",
-                           "till_reference_void_ratio");
-  set_scalar_from_option(config, "till_compressibility_coefficient",
-                           "till_compressibility_coefficient");
-  set_scalar_from_option(config, "till_effective_fraction_overburden",
-                           "till_effective_fraction_overburden");
-  set_scalar_from_option(config, "till_log_factor_transportable_water",
-                           "till_log_factor_transportable_water");
-
   // read the comma-separated list of four values
   options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max");
   if (topg_to_phi.is_set()) {
@@ -590,79 +479,12 @@ void set_config_from_options(Config &config) {
     config.set_double("till_topg_to_phi_topg_max", topg_to_phi[3]);
   }
 
-  set_boolean_from_option(config, "tauc_slippery_grounding_lines",
-                            "tauc_slippery_grounding_lines");
-  set_boolean_from_option(config, "tauc_add_transportable_water",
-                            "tauc_add_transportable_water");
-
-  // all basal strength models use this in ice-free areas
-  set_scalar_from_option(config, "high_tauc", "high_tauc");
-
-  // controls regularization of plastic basal sliding law
-  set_scalar_from_option(config, "plastic_reg", "plastic_regularization");
-
-  // "friction angle" in degrees.
-  set_scalar_from_option(config, "plastic_phi", "default_till_phi");
-
-  // use pseudo plastic instead of pure plastic; see iMbasal.cc
-  set_boolean_from_option(config, "pseudo_plastic", "do_pseudo_plastic_till");
-
-  // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
-  set_scalar_from_option(config, "pseudo_plastic_q", "pseudo_plastic_q");
-
-  // threshold; at this velocity tau_c is basal shear stress
-  set_scalar_from_option(config, "pseudo_plastic_uthreshold",
-                           "pseudo_plastic_uthreshold");
-
-  set_boolean_from_option(config, "subgl", "sub_groundingline");
-
   // Ice shelves
-  set_boolean_from_option(config, "part_grid", "part_grid");
 
-  set_boolean_from_option(config, "part_grid_reduce_frontal_thickness",
-                            "part_grid_reduce_frontal_thickness");
-
-  set_boolean_from_option(config, "part_redist", "part_redist");
-
-  set_scalar_from_option(config, "nu_bedrock", "nu_bedrock");
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
     config.set_boolean("nu_bedrock_set", true, Config::USER);
   }
-
-  // fracture density
-  set_boolean_from_option(config, "fractures", "do_fracture_density");
-  set_boolean_from_option(config, "write_fd_fields", "write_fd_fields");
-  set_scalar_from_option(config, "fracture_softening",
-                           "fracture_density_softening_lower_limit");
-
-  // Calving
-  set_string_from_option(config, "calving", "calving_methods");
-
-  set_scalar_from_option(config, "thickness_calving_threshold", "thickness_calving_threshold");
-
-  // evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
-  set_boolean_from_option(config, "cfl_eigen_calving", "cfl_eigen_calving");
-  set_scalar_from_option(config, "eigen_calving_K", "eigen_calving_K");
-
-  set_boolean_from_option(config, "kill_icebergs", "kill_icebergs");
-
-  // Output
-
-  set_scalar_from_option(config, "summary_vol_scale_factor_log10",
-                           "summary_vol_scale_factor_log10");
-  set_scalar_from_option(config, "summary_area_scale_factor_log10",
-                           "summary_area_scale_factor_log10");
-
-  set_scalar_from_option(config, "view_size", "viewer_size");
-
-  // Metadata
-  set_string_from_option(config, "title", "run_title");
-  set_string_from_option(config, "institution", "institution");
-
-  // Skipping
-  set_boolean_from_option(config, "skip", "do_skip");
-  set_scalar_from_option(config, "skip_max", "skip_max");
 
   // Shortcuts
 
@@ -701,15 +523,6 @@ void set_config_from_options(Config &config) {
     config.set_boolean("do_age", false, Config::USER);
     // let the user decide if they want to use "-no_mass" or not
   }
-
-  set_boolean_from_option(config, "bed_def_lc_elastic_model", "bed_def_lc_elastic_model");
-
-  set_boolean_from_option(config, "dry", "is_dry_simulation");
-
-  set_boolean_from_option(config, "clip_shelf_base_salinity",
-                            "ocean_three_equation_model_clip_salinity");
-
-  set_scalar_from_option(config, "meltfactor_pik", "ocean_pik_melt_factor");
 
   // old options
   options::deprecated("-sliding_scale_brutal",
