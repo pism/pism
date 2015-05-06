@@ -671,7 +671,7 @@ def pism_context_test():
 
 def flowlaw_test():
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
-    EC = PISM.EnthalpyConverter(ctx.config())
+    EC = ctx.enthalpy_converter()
     ff = PISM.FlowLawFactory("sia_", ctx.config(), EC)
     law = ff.create()
 
@@ -695,3 +695,55 @@ def flowlaw_test():
             E = EC.enthalpy(T, omega[j], p)
             flowcoeff = law.flow(sigma[i], E, p, gs)
             print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega[j], flowcoeff)
+
+def ssa_trivial_test():
+    "Test the SSA solver using a trivial setup."
+
+    context = PISM.Context()
+    unit_system = context.unit_system
+
+    L = 50.e3  # // 50km half-width
+    H0 = 500  # // m
+    dhdx = 0.005  # // pure number, slope of surface & bed
+    nu0 = PISM.convert(unit_system, 30.0, "MPa year", "Pa s")
+    tauc0 = 1.e4  # // 1kPa
+
+    class TrivialSSARun(PISM.ssa.SSAExactTestCase):
+        def _initGrid(self):
+            self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
+                                             self.Mx, self.My, PISM.NONE)
+
+        def _initPhysics(self):
+            self.modeldata.setPhysics(context.enthalpy_converter)
+
+        def _initSSACoefficients(self):
+            self._allocStdSSACoefficients()
+            self._allocateBCs()
+
+            vecs = self.modeldata.vecs
+
+            vecs.land_ice_thickness.set(H0)
+            vecs.surface_altitude.set(H0)
+            vecs.bedrock_altitude.set(0.0)
+            vecs.tauc.set(tauc0)
+
+            # zero Dirichler B.C. everywhere
+            vecs.vel_bc.set(0.0)
+            vecs.bc_mask.set(1.0)
+
+        def _initSSA(self):
+            # The following ensure that the strength extension is used everywhere
+            se = self.ssa.strength_extension
+            se.set_notional_strength(nu0 * H0)
+            se.set_min_thickness(4000 * 10)
+
+            # For the benefit of SSAFD on a non-periodic grid
+            self.config.set_boolean("compute_surf_grad_inward_ssa", True)
+
+        def exactSolution(self, i, j, x, y):
+            return [0, 0]
+
+    Mx = 11
+    My = 11
+    test_case = TrivialSSARun(Mx, My)
+    test_case.run("ssa_trivial.nc")
