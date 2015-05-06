@@ -199,8 +199,6 @@ int main(int argc, char *argv[]) {
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",
                                             "A,B,C,D,E,F,G,H,K,L", "A");
 
-    config->set_boolean("use_eta_transformation", false);
-
     IceGrid::Ptr g = pismv_grid(ctx, testname[0]);
 
     // actually construct and run one of the derived classes of IceModel

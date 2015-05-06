@@ -372,6 +372,15 @@ void set_scalar_from_option(Config &config, const std::string &name, const std::
   }
 }
 
+void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
+  options::Integer option("-" + name,
+                          config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+                          config.get_double(parameter, Config::FORGET_THIS_USE));
+  if (option.is_set()) {
+    config.set_double(parameter, option, Config::USER);
+  }
+}
+
 void set_string_from_option(Config &config, const std::string &name, const std::string &parameter) {
 
   options::String value("-" + name,
@@ -404,11 +413,21 @@ void set_keyword_from_option(Config &config, const std::string &name,
 
 void set_parameter_from_options(Config &config, const std::string &name) {
 
-  if (not config.is_set(name + "_option")) {
+  // skip special parameters ("attributes" of parameters)
+  if (ends_with(name, "_doc") or
+      ends_with(name, "_units") or
+      ends_with(name, "_type") or
+      ends_with(name, "_option") or
+      ends_with(name, "_choices")) {
     return;
   }
 
-  std::string option = config.get_string(name + "_option");
+  // Use parameter name as its own command-line option by default. parameter_name_option can specify
+  // a different (possibly shorter) command-line option.
+  std::string option = name;
+  if (config.is_set(name + "_option")) {
+    option = config.get_string(name + "_option");
+  }
 
   std::string type = "string";
   if (config.is_set(name + "_type")) {
@@ -422,6 +441,8 @@ void set_parameter_from_options(Config &config, const std::string &name) {
     set_boolean_from_option(config, option, name);
   } else if (type == "scalar") {
     set_scalar_from_option(config, option, name);
+  } else if (type == "integer") {
+    set_integer_from_option(config, option, name);
   } else if (type == "keyword") {
     // will be marked as "used" and will fail if not set
     std::string choices = config.get_string(name + "_choices");

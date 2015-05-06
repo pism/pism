@@ -37,6 +37,7 @@ namespace pism {
 IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   : IceModel(g, context), m_experiment(experiment) {
   m_config->set_string("EISMINT_II_experiment", std::string(1, m_experiment));
+  m_config->set_string("EISMINT_II_experiment_doc", "EISMINT II experiment name");
 
   // the following flag must be here in constructor because
   // IceModel::createVecs() uses it non-polythermal methods; can be
