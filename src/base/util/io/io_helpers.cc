@@ -1345,6 +1345,7 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
  * Same as `write_attributes(nc, var, PISM_DOUBLE, false)`, but
  * prepends the history string.
  *
+ * @param nc file to write to
  * @param var metadata object containing attributes
  *
  * @return 0 on success
