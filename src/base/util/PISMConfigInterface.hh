@@ -85,8 +85,7 @@ public:
   Doubles all_doubles() const;
 
   double get_double(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
-  double get_double(const std::string &name,
-                    const std::string &u1, const std::string &u2,
+  double get_double(const std::string &name, const std::string &units,
                     UseFlag flag = REMEMBER_THIS_USE) const;
   void set_double(const std::string &name, double value, SettingFlag flag = FORCE);
 

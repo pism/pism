@@ -145,10 +145,18 @@ double Config::get_double(const std::string &name, UseFlag flag) const {
 }
 
 double Config::get_double(const std::string &name,
-                          const std::string &u1, const std::string &u2,
+                          const std::string &units,
                           UseFlag flag) const {
   double value = this->get_double(name, flag);
-  return units::convert(m_impl->unit_system, value, u1, u2);
+  std::string input_units = this->get_string(name + "_units");
+
+  try {
+    return units::convert(m_impl->unit_system, value, input_units, units);
+  } catch (RuntimeError &e) {
+    e.add_context("converting \"%s\" from \"%s\" to \"%s\"",
+                  name.c_str(), input_units.c_str(), units.c_str());
+    throw;
+  }
 }
 
 void Config::set_double(const std::string &name, double value,

@@ -48,8 +48,7 @@ The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
 double IceModel::max_timestep_cfl_3d() {
-  double max_dt = m_config->get_double("maximum_time_step_years",
-                             "years", "seconds");
+  double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
 
   const IceModelVec3
     &u3 = stress_balance->velocity_u(),
@@ -117,7 +116,7 @@ double IceModel::max_timestep_cfl_3d() {
   sliding case we have a CFL condition.
  */
 double IceModel::max_timestep_cfl_2d() {
-  double max_dt = m_config->get_double("maximum_time_step_years", "years", "seconds");
+  double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -167,7 +166,7 @@ double IceModel::max_timestep_diffusivity() {
 
     return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
   } else {
-    return m_config->get_double("maximum_time_step_years", "years", "seconds");
+    return m_config->get_double("maximum_time_step_years", "seconds");
   }
 }
 
@@ -224,7 +223,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // Always consider the maximum allowed time-step length.
   if (m_config->get_double("maximum_time_step_years") > 0.0) {
-    dt_restrictions["max"] = m_config->get_double("maximum_time_step_years", "years", "seconds");
+    dt_restrictions["max"] = m_config->get_double("maximum_time_step_years", "seconds");
   }
 
   // Always consider maxdt_temporary.

@@ -38,7 +38,7 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
     m_climatic_mass_balance_original(m_sys, "climatic_mass_balance_original"),
     m_ice_surface_temp(m_sys, "ice_surface_temp") {
 
-  m_alpha = m_config->get_double("force_to_thickness_alpha", "yr-1", "s-1");
+  m_alpha = m_config->get_double("force_to_thickness_alpha", "s-1");
   m_alpha_ice_free_factor = m_config->get_double("force_to_thickness_ice_free_alpha_factor");
   m_ice_free_thickness_threshold = m_config->get_double("force_to_thickness_ice_free_thickness_threshold");
 

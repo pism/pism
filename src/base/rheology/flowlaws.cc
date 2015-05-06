@@ -80,8 +80,8 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_Q_cold = config.get_double("Paterson_Budd_Q_cold");
   m_Q_warm = config.get_double("Paterson_Budd_Q_warm");
   m_crit_temp = config.get_double("Paterson_Budd_critical_temperature");
-  m_schoofLen = config.get_double("Schoof_regularizing_length", "km", "m"); // convert to meters
-  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
+  m_schoofLen = config.get_double("Schoof_regularizing_length", "m"); // convert to meters
+  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/s"); // convert to m/s
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
 }
 

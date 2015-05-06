@@ -103,7 +103,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config->get_double("start_year", "years", "seconds");
+    result = m_config->get_double("start_year", "seconds");
   }
   return ys.is_set();
 }
@@ -119,7 +119,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config->get_double("run_length_years", "years", "seconds");
+    result = m_config->get_double("run_length_years", "seconds");
   }
   return y.is_set();
 }
@@ -137,8 +137,8 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config->get_double("start_year", "years", "seconds") +
-              m_config->get_double("run_length_years", "years", "seconds"));
+    result = (m_config->get_double("start_year", "seconds") +
+              m_config->get_double("run_length_years", "seconds"));
   }
   return ye.is_set();
 }

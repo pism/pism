@@ -70,7 +70,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
         m_log->message(2,
                    " - setting initial age to %.4f years\n",
                    m_config->get_double("initial_age_of_ice_years"));
-        age3.set(m_config->get_double("initial_age_of_ice_years", "years", "seconds"));
+        age3.set(m_config->get_double("initial_age_of_ice_years", "seconds"));
 
       } else {
         m_log->message(2,

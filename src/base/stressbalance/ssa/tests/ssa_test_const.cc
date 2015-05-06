@@ -155,7 +155,7 @@ void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                      double *u, double *v) {
   double earth_grav = m_config->get_double("standard_gravity"),
     tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
-                                           "m/year", "m/second"),
+                                                   "m/second"),
     ice_rho = m_config->get_double("ice_density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;

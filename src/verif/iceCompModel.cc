@@ -796,7 +796,7 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
 void IceCompModel::additionalAtStartTimestep() {
 
   if (exactOnly == true && testname != 'K') {
-    dt_force = m_config->get_double("maximum_time_step_years", "years", "seconds");
+    dt_force = m_config->get_double("maximum_time_step_years", "seconds");
   }
 
   if (testname == 'F' || testname == 'G') {

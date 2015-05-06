@@ -413,6 +413,9 @@ void IceModel::createVecs() {
     m_grid->variables().add(vBCMask);
 
 
+    Config::ConstPtr config = m_grid->ctx()->config();
+    units::System::Ptr sys = m_grid->ctx()->unit_system();
+    double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
     // vel_bc
     vBCvel.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
     vBCvel.set_attrs("model_state",
@@ -425,7 +428,7 @@ void IceModel::createVecs() {
       vBCvel.metadata(j).set_string("glaciological_units", "m year-1");
       vBCvel.metadata(j).set_double("valid_min",  units::convert(m_sys, -1e6, "m/year", "m/second"));
       vBCvel.metadata(j).set_double("valid_max",  units::convert(m_sys,  1e6, "m/year", "m/second"));
-      vBCvel.metadata(j).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
+      vBCvel.metadata(j).set_double("_FillValue", fill_value);
     }
     //just for diagnostics...
     m_grid->variables().add(vBCvel);

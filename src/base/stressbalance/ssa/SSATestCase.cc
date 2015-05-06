@@ -76,18 +76,23 @@ void SSATestCase::buildSSACoefficients()
   m_bc_values.set_attrs("intent",
                      "Y-component of the SSA velocity boundary conditions",
                      "m s-1", "", 1);
+
+  Config::ConstPtr config = m_grid->ctx()->config();
+  units::System::Ptr sys = m_grid->ctx()->unit_system();
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
-  m_bc_values.metadata(0).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(0).set_double("_FillValue", fill_value);
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
   m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
-  m_bc_values.metadata(1).set_double("_FillValue", m_config->get_double("fill_value", "m/year", "m/s"));
+  m_bc_values.metadata(1).set_double("_FillValue", fill_value);
 
   m_bc_values.write_in_glaciological_units = true;
-  m_bc_values.set(m_config->get_double("fill_value", "m/year", "m/s"));
+  m_bc_values.set(fill_value);
 
   // grounded_dragging_floating integer mask
   m_ice_mask.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
