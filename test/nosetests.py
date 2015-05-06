@@ -604,7 +604,7 @@ def pism_ends_with_test():
     "Test PISM.ends_with()"
     assert PISM.ends_with("foo.nc", ".nc") == True
     assert PISM.ends_with("foo.nc and more text", ".nc") == False
-    assert PISM.ends_with("", "suffix") == False
+    assert PISM.ends_with("short_string", "longer_suffix") == False
 
 
 def linear_interpolation_test(plot=False):

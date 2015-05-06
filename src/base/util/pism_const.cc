@@ -103,7 +103,7 @@ void verbPrintf(const int threshold,
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(const std::string &str, const std::string &suffix) {
-  if (str.empty() and (not suffix.empty())) {
+  if (suffix.size() > str.size()) {
     return false;
   }
 
