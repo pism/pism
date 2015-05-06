@@ -67,15 +67,15 @@ MPI_Comm Context::com() const {
 }
 
 int Context::size() const {
-  int size = 0;
-  MPI_Comm_size(m_impl->com, &size);
-  return size;
+  int S = 0;
+  MPI_Comm_size(m_impl->com, &S);
+  return S;
 }
 
 int Context::rank() const {
-  int rank = 0;
-  MPI_Comm_rank(m_impl->com, &rank);
-  return rank;
+  int R = 0;
+  MPI_Comm_rank(m_impl->com, &R);
+  return R;
 }
 
 Context::UnitsSystemPtr Context::unit_system() const {

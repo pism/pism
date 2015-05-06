@@ -189,10 +189,10 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
   @note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
   order: x in rows, y in columns, indexing as array[x][y].
  */
-IceGrid::IceGrid(Context::Ptr ctx, const GridParameters &p)
-  : com(ctx->com()), m_impl(new Impl) {
+IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
+  : com(context->com()), m_impl(new Impl) {
 
-  m_impl->ctx = ctx;
+  m_impl->ctx = context;
 
   m_impl->bsearch_accel = gsl_interp_accel_alloc();
   if (m_impl->bsearch_accel == NULL) {
@@ -217,7 +217,7 @@ IceGrid::IceGrid(Context::Ptr ctx, const GridParameters &p)
   compute_horizontal_coordinates();
 
   {
-    unsigned int max_stencil_width = (unsigned int)ctx->config()->get_double("grid_max_stencil_width");
+    unsigned int max_stencil_width = (unsigned int)context->config()->get_double("grid_max_stencil_width");
 
     try {
       petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
