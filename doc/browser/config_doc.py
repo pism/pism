@@ -104,7 +104,15 @@ def get_docstring(var, name):
 
 def is_special(var, name):
     "Check if the name is 'special' and should not be included."
-    return (name in ("long_name")) or name.endswith("_doc") or name.endswith("_units")
+
+    if name == "long_name":
+        return True
+
+    for n in ["_doc", "_units", "_type", "_option", "_choices"]:
+        if name.endswith(n):
+            return True
+
+    return False
 
 def is_boolean(var, name):
     "Check if a name corresponds to a boolean flag."
@@ -118,13 +126,18 @@ def is_string(var, name):
     "Check if a name corresponds to a string."
     return (not is_special(var, name)) and isinstance(getattr(var, name), (str, unicode)) and (not is_boolean(var, name))
 
-def print_parameters(var, parameter_list, transform=lambda x: "\"%s\"" % x, use_units=False):
+def print_parameters(var, parameter_list, transform=lambda x: "\"%s\"" % x, use_units=False, use_choices=False):
     "Print table rows corresponding to parameters in a list."
     for name in sorted(parameter_list):
         if use_units:
             print_row((name,
                        transform(getattr(var, name)),
                        get_units(var, name),
+                       get_docstring(var, name)))
+        elif use_choices:
+            print_row((name,
+                       transform(getattr(var, name)),
+                       getattr(var, name + "_choices", "---"),
                        get_docstring(var, name)))
         else:
             print_row((name,
@@ -162,10 +175,10 @@ def print_scalars(var):
 
 def print_strings(var):
     print "@section strings String parameters"
-    print_header(("Parameter name", "Value", "Description"))
+    print_header(("Parameter name", "Value", "Allowed values", "Description"))
     print_parameters(var,
                      filter(lambda name: is_string(var, name),
-                            var.ncattrs()))
+                            var.ncattrs()), use_choices=True)
     print_footer()
 
 if __name__ == "__main__":
