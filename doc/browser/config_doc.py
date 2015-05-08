@@ -129,19 +129,25 @@ def is_string(var, name):
 def print_parameters(var, parameter_list, transform=lambda x: "\"%s\"" % x, use_units=False, use_choices=False):
     "Print table rows corresponding to parameters in a list."
     for name in sorted(parameter_list):
+        option = "`-" + getattr(var, name + "_option", name) + "`"
         if use_units:
             print_row((name,
                        transform(getattr(var, name)),
                        get_units(var, name),
+                       option,
                        get_docstring(var, name)))
         elif use_choices:
+            # replace comma with comma-space to allow wrapping
+            choices = "`" + getattr(var, name + "_choices", "---").replace(",", ", ") + "`"
             print_row((name,
                        transform(getattr(var, name)),
-                       getattr(var, name + "_choices", "---"),
+                       choices,
+                       option,
                        get_docstring(var, name)))
         else:
             print_row((name,
                        transform(getattr(var, name)),
+                       option,
                        get_docstring(var, name)))
 
 def number_to_string(number):
@@ -157,7 +163,7 @@ def number_to_string(number):
 
 def print_booleans(var):
     print "@section flags Boolean flags"
-    print_header(("Flag name", "Value", "Description"))
+    print_header(("Flag name", "Value", "Command-line option", "Description"))
     print_parameters(var,
                      filter(lambda name: is_boolean(var, name),
                             var.ncattrs()))
@@ -165,7 +171,7 @@ def print_booleans(var):
 
 def print_scalars(var):
     print "@section params Scalar parameters"
-    print_header(("Parameter name", "Value", "Units", "Description"))
+    print_header(("Parameter name", "Value", "Units", "Command-line option", "Description"))
     print_parameters(var,
                      filter(lambda name: is_number(var, name),
                             var.ncattrs()),
@@ -175,7 +181,7 @@ def print_scalars(var):
 
 def print_strings(var):
     print "@section strings String parameters"
-    print_header(("Parameter name", "Value", "Allowed values", "Description"))
+    print_header(("Parameter name", "Value", "Allowed values", "Command-line option", "Description"))
     print_parameters(var,
                      filter(lambda name: is_string(var, name),
                             var.ncattrs()), use_choices=True)
