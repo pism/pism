@@ -644,6 +644,11 @@ $ diff -U 1 earth_config.txt mars_config.txt
 \end{verbatim}
 \normalsize
 
+\subsubsection*{Saving PISM's configuration for post-processing}
+\label{sec:saving-pism-config}
+
+In addition to saving \texttt{pism_overrides} and \texttt{pism_config} in the output file, PISM autmatically adds those two variables to all files it writes (snap shots, time series of scalar and spatially-varying diagnostic quantities, and backups). This may be useful for post-processing and analysis of parameter sties as the user has easy access to all configuration options, model choices, etc., without the need to keep run scripts around. 
+
 \subsection{Regridding}
 \label{sec:regridding}
 \optsection{Regridding}
