@@ -91,7 +91,7 @@ Now let's actually get the run going:
 \begin{verbatim}
 $ ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc &> out.g20km_10ka &
 \end{verbatim}
-\noindent The terminating ``\verb|&|'' asks unix to run the command in the background, so we can keep working in the current shell.  Because we have re-directed the text output (``\verb|&> out.g20km_10ka|''), PISM will show what it is doing in the text file \texttt{out.g20km_10ka}.  Using \texttt{less} is a good way to watch such a growing text-output file.  This run should take only 20 minutes or so.
+\noindent The terminating ``\verb|&|'', which is optional, asks unix to run the command in the background, so we can keep working in the current shell.  Because we have re-directed the text output (``\verb|&> out.g20km_10ka|''), PISM will show what it is doing in the text file \texttt{out.g20km_10ka}.  Using \texttt{less} is a good way to watch such a growing text-output file.  This run should take 20 minutes or less.
 
 
 \subsection{Watching the first run}  \label{subsect:watchrun}  As soon as the run starts it creates time-dependent NetCDF files \texttt{ts_g20km_10ka.nc} and \texttt{ex_g20km_10ka.nc}.  The latter file, which has spatially-dependent fields at each time, is created after the first 100 model years, a few wall clock seconds in this case.  The command \texttt{-extra_file ex_g20km_10ka.nc -extra_times -10000:100:0} adds a spatially-dependent ``frame'' at model times -9900, -9800, \dots, 0.
@@ -146,13 +146,13 @@ Now remove ``\texttt{PISM_DO=echo}'' and redirect the text output into a file to
 \begin{verbatim}
 $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hy.nc &> out.g20km_10ka_hy &
 \end{verbatim}
-This run might take 30 minutes or so.\footnote{Regarding the relative speeds of the runs that produce \texttt{g20km_10ka.nc} and \texttt{g20km_10ka_hy.nc}, note that the computation of the SSA stress balance is substantially more expensive than the SIA in a per-step sense.  However, the SSA stress balance in combination with the mass continuity equation causes the maximum diffusivity in the ice sheet to be substantially lower during the run.  Because the maximum diffusivity controls the time-step in the PISM adaptive time-stepping scheme \cite{BBL}, the number of time steps is reduced in the hybrid run.  To see this contrast do\, \texttt{ncview ts_g20km_10ka*nc}\, and view variables \texttt{max_diffusivity} and \texttt{dt}. }
+This run should take 30 minutes or less.\footnote{Regarding the relative speeds of the runs that produce \texttt{g20km_10ka.nc} and \texttt{g20km_10ka_hy.nc}, note that the computation of the SSA stress balance is substantially more expensive than the SIA in a per-step sense.  However, the SSA stress balance in combination with the mass continuity equation causes the maximum diffusivity in the ice sheet to be substantially lower during the run.  Because the maximum diffusivity controls the time-step in the PISM adaptive time-stepping scheme \cite{BBL}, the number of time steps is reduced in the hybrid run.  To see this contrast use\, \texttt{ncview ts_g20km_10ka*nc}\, to view variables \texttt{max_diffusivity} and \texttt{dt}.}
 
 When this run is finished it produces \texttt{g20km_10ka_hy.nc}.  As before do
 \begin{verbatim}
 $ ncdump -h g20km_10ka_hy.nc |grep history
 \end{verbatim}
-to see performance results for your machine.  The number reported as ``\texttt{PETSc MFlops}'' from this run is about $2.6 \times 10^5$, much larger than the previous run, because now calls to the PETSc library are used when solving the non-linear and non-local SSA stress balance in parallel.
+to see performance results for your machine.  The number reported as ``\texttt{PETSc MFlops}'' from this run is about $3 \times 10^5$, much larger than the previous run, because now calls to the PETSc library are used when solving the non-local SSA stress balance in parallel.
 
 The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  We show the basal sliding speed field \texttt{velbase_mag} in this Figure, where Figure \ref{fig:firstoutput} had the \texttt{mask}, but the reader can check that \texttt{velbase_mag}=0 in the nonsliding SIA-only result \texttt{g20km_10ka.nc}.
 
@@ -163,7 +163,9 @@ The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  We sh
 \label{fig:secondoutputcoarse}
 \end{figure}
 
-The hybrid model includes sliding, and it is important to evaluate that aspect of the output.  However, though it is critical to the response of the ice to changes in climate, basal sliding velocity is essentially unobservable in real ice sheets.  On the other hand, because of relatively-recent advances in radar and image technology and processing \cite{Joughin2002}, the surface velocity of an ice sheet is an observable.  So, how good is our model result for this quantity, namely \texttt{velsurf_mag}?  Figure \ref{fig:csurfvsobserved} compares the radar-observed \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.
+The hybrid model includes sliding, and it is important to evaluate that aspect of the output.  However, though it is critical to the response of the ice to changes in climate, basal sliding velocity is essentially unobservable in real ice sheets.  On the other hand, because of relatively-recent advances in radar and image technology and processing \cite{Joughin2002}, the surface velocity of an ice sheet is an observable.
+
+So, how good is our model result \texttt{velsurf_mag}?  Figure \ref{fig:csurfvsobserved} compares the radar-observed \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.  The reader might agree with these broad qualitative judgements:
 
 \begin{figure}[ht]
 \centering
@@ -172,27 +174,26 @@ The hybrid model includes sliding, and it is important to evaluate that aspect o
 \label{fig:csurfvsobserved}
 \end{figure}
 
-The reader might agree with these broad qualitative judgements:
 \begin{itemize}
-\item the model results and the observed surface velocity look similar, but
-\item the slow flow near the divide is generally in the right areas and of generally the right magnitude, and
-\item the observed Northeast Greenland ice stream is much more distinct in observations than in the model.
+\item the model results and the observed surface velocity look similar, and
+\item slow near-divide flow is generally in the right areas and of generally the right magnitude, but
+\item the observed Northeast Greenland ice stream is more distinct than in the model.
 \end{itemize}
 
-We can compare these easily-generated PISM results to some recent observed-vs-model comparisons of surface velocity maps, of exactly this type, for example Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}.  Note that only ice-sheet-wide parameters and models were used here in PISM, that is, each location in the ice sheet was modeled by the same physics.  By comparison, those published comparisons involved tuning a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques are usually called ``inversion'' or ``assimilation'' of the surface velocity data.  Such methods are also possible in PISM if desired,\footnote{See \cite{vanPeltetal2013} (inversion of DEMs for basal topography) and \cite{Habermannetal2013} (inversion surface velocities for basal shear stress) for PISM-based inversion methods and analysis.} but the advantage of having few parameters in a model is well-known: the results reflect the underlying model not the flexibility of fitting many parameters.
+We can compare these PISM results to other observed-vs-model comparisons of surface velocity maps, for example Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}.  Only ice-sheet-wide parameters and models were used here in PISM, that is, each location in the ice sheet was modeled by the same physics.  By comparison, those published comparisons involved tuning a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques, called ``inversion'' or ``assimilation'' of the surface velocity data, are also possible in PISM,\footnote{See \cite{vanPeltetal2013} (inversion of DEMs for basal topography) and \cite{Habermannetal2013} (inversion surface velocities for basal shear stress) for PISM-based inversion methods and analysis.} but the advantage of having few parameters in a model is well-known: the results reflect the underlying model not the flexibility of many parameters.
 
-Of course, we have only tried two of the many models possible in PISM.  We are free to identify and adjust important parameters.  The first parameter change we consider, in the next subsection, is one of the most important: grid resolution.
+We have only tried two of the many models possible in PISM, and we are free to identify and adjust important parameters.  The first parameter change we consider, in the next subsection, is one of the most important: grid resolution.
 
 
 \subsection{Third run: higher resolution}  \label{subsect:higherresrun}
 
-Now we change one key parameter, the grid resolution.  If you can let it run overnight, do
+Now we change one key parameter, the grid resolution.  Model results differ even when the only change is the resolution.  Using higher resolution ``picks up'' more detail in the bed elevation and climate data.
+
+If you can let it run overnight, do
 \begin{verbatim}
 $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc &> out.g10km_10ka_hy &
 \end{verbatim}
 This run might take 4 to 6 hours.  However, supposing you have a larger parallel computer, you can change ``\texttt{mpiexec -n 4}'' to ``\texttt{mpiexec -n N}'' where \texttt{N} is a substantially larger number, up to 100 or so with an expectation of reasonable scaling on this grid \cite{BBssasliding,DickensMorey2013}.
-
-Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20\,km and 10\,km grids.  Model results differ even when the only change is the resolution!  Importantly for ice sheet modeling, using higher resolution ``picks up'' more detail in the bed elevation and climate data.
 
 \begin{figure}[ht]
 \centering
@@ -201,9 +202,9 @@ Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig
 \label{fig:secondoutputfiner}
 \end{figure}
 
-As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20\,km and 10\,km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20\,km and 10\,km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20\,km to 10\,km.
+Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20\,km and 10\,km grids.  As a different comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20\,km and 10\,km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20\,km and 10\,km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20\,km to 10\,km.
 
-Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already ``getting'' a given feature!
+Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already ``getting'' a given feature or result.
 
 \begin{figure}[ht]
 \centering
@@ -215,13 +216,13 @@ Roughly speaking, the reader should only consider trusting those model results w
 
 \subsection{Fourth run: paleo-climate model spin-up}  \label{subsect:paleorun}  
 
-A this point we have barely mentioned one of the most important players in the ice sheet modeling game: the surface mass balance (SMB) model.  Specifically, an SMB model combines precipitation (e.g.~\cite{Balesetal2001} for present-day Greenland) and a model for melt.  Melt models are always based on some approximation of the energy available at the ice surface \cite{Hock05}.  Previous runs in this section used a ``constant-climate'' assumption, which specifically meant using the modeled present-day SMB rates from the regional climate model RACMO \cite{Ettemaetal2009}, as contained in the SeaRISE-Greenland data set \verb|Greenland_5km_v1.1.nc|.
+A this point we have barely mentioned one of the most important players in an ice sheet model: the surface mass balance (SMB) model.  Specifically, an SMB model combines precipitation (e.g.~\cite{Balesetal2001} for present-day Greenland) and a model for melt.  Melt models are always based on some approximation of the energy available at the ice surface \cite{Hock05}.  Previous runs in this section used a ``constant-climate'' assumption, which specifically meant using the modeled present-day SMB rates from the regional climate model RACMO \cite{Ettemaetal2009}, as contained in the SeaRISE-Greenland data set \verb|Greenland_5km_v1.1.nc|.
 
 While a physical model of ice dynamics only describes the movement of the ice, the SMB (and the sub-shelf melt rate) are key inputs which directly determine changes in the boundary geometry.  Boundary geometry changes then feedback to determine the stresses seen by the stress balance and thus the motion.
 
-There are other methods for producing SMB than to use present-day modeled values.  We now try such a method, a ``paleo-climate spin-up'' for our Greenland ice sheet model.  Of course, direct measurements of prior climates in Greenland are not available as data!  There are, however, estimates of past surface temperatures at the locations of ice cores \cite[for GRIP]{JohnsenetalGRIP}, along with estimates of past global sea level \cite{Imbrieetal1984} which can be used to determine where the flotation criterion is applied---this is how PISM's \verb|mask| variable is determined.  Also, models have been constructed for how precipitation differs from the present-day values \cite{Huybrechts02}.  For demonstration purposes, these are all used in the next run.  The relevant options are further documented in PISM's Climate Forcing Manual.
+There are other methods for producing SMB than using present-day modeled values.  We now try such a method, a ``paleo-climate spin-up'' for our Greenland ice sheet model.  Of course, direct measurements of prior climates in Greenland are not available as data!  There are, however, estimates of past surface temperatures at the locations of ice cores \cite[for GRIP]{JohnsenetalGRIP}, along with estimates of past global sea level \cite{Imbrieetal1984} which can be used to determine where the flotation criterion is applied---this is how PISM's \verb|mask| variable is determined.  Also, models have been constructed for how precipitation differs from the present-day values \cite{Huybrechts02}.  For demonstration purposes, these are all used in the next run.  The relevant options are further documented in PISM's Climate Forcing Manual.
 
-As noted, one must compute melt in order to compute SMB.  This is done using a temperature-index, ``positive degree-day'' (PDD) model \cite{Hock05}.  Such a PDD model has parameters for how much snow and/or ice is melted when surface temperatures spend time near or above zero degrees.  Again, see the PISM Climate Forcing Manual for relevant options.
+As noted, one must compute melt in order to compute SMB.  Here this is done using a temperature-index, ``positive degree-day'' (PDD) model \cite{Hock05}.  Such a PDD model has parameters for how much snow and/or ice is melted when surface temperatures spend time near or above zero degrees.  Again, see the PISM Climate Forcing Manual for relevant options.
 
 To summarize the paleo-climate model applied here, temperature offsets from the GRIP core record affect the snow energy balance, and thus the rates of melting and runoff calculated by the PDD model.  In warm periods there is more marginal ablation, but precipitation may also increase (according to a temperature-offset model \cite{Huybrechts02}).  Additionally sea level undergoes changes in time and this affects which ice is floating.  Finally we add an earth deformation model, which responds to changes in ice load by changing the bedrock elevation \cite{BLKfastearth}.
 
@@ -238,7 +239,7 @@ $ PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
 \label{fig:ivolconstpaleo}
 \end{figure}
 
-You will see an impressive command, which you can compare to the one on page \pageref{firstcommand}.  There are several key changes.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
+You will see an impressively-long command, which you can compare to the one on page \pageref{firstcommand}.  There are several key changes.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
 \begin{verbatim}
   -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt
 \end{verbatim}
