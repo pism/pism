@@ -30,7 +30,7 @@ Some of the changes listed below were included in v0.6.1 or v0.6.2.
 
 -   Implement `KirchhoffEnthalpyConverter`, an enthalpy converter
     which approximates L, the latent heat of fusion of ice, using
-    Kitchhoff's law of thermochemistry.
+    Kirchhoff's law of thermochemistry.
 -   Implement `-atmosphere weather_station`. Reads scalar time-series
     of near-surface air temperature and precipitation and applies
     them to the whole domain. (Use with lapse rate corrections to add
