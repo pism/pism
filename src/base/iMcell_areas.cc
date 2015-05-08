@@ -140,7 +140,7 @@ void IceModel::compute_cell_areas() {
 
 void IceModel::compute_cell_areas() {
   // proj.4 was not found; use uncorrected areas.
-  cell_area.set(grid.dx() * grid.dy());
+  cell_area.set(m_grid->dx() * m_grid->dy());
 }
 
 #else  // PISM_USE_PROJ4 is not set
