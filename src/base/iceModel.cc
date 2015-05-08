@@ -196,7 +196,7 @@ void IceModel::createVecs() {
   const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   m_log->message(3,
-             "Allocating memory...\n");
+                 "Allocating memory...\n");
 
   // get the list of selected calving methods:
   std::istringstream calving_methods_list(m_config->get_string("calving_methods"));

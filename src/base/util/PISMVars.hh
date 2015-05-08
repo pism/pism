@@ -35,7 +35,6 @@ class IceModelVec3;
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
-// FIXME: use smart pointers
 class Vars {
 public:
   Vars();

@@ -62,9 +62,11 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   m_topg_to_phi = false;
   m_tauc_to_phi = false;
 
-  m_hydrology      = hydro;
+  m_hydrology = hydro;
 
-  m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+  unsigned int stencil_width = m_config->get_double("grid_max_stencil_width");
+
+  m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, stencil_width);
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");
@@ -74,7 +76,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   // internal working space; stencil width needed because redundant computation
   // on overlaps
   m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb",
-                   WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+                   WITH_GHOSTS, stencil_width);
   m_tillwat.set_attrs("internal",
                       "copy of till water thickness held by MohrCoulombYieldStress",
                       "m", "");
@@ -86,7 +88,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
                      "m", "");
   }
   m_Po.create(m_grid, "overburden_pressure_for_MohrCoulomb",
-              WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+              WITH_GHOSTS, stencil_width);
   m_Po.set_attrs("internal",
                  "copy of overburden pressure held by MohrCoulombYieldStress",
                  "Pa", "");
