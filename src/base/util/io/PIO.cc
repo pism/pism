@@ -112,7 +112,7 @@ PIO::PIO(const PIO &other) {
 }
 
 PIO::~PIO() {
-  if (not inq_filename().empty()) {
+  if (m_nc and not inq_filename().empty()) {
     try {
       // a file is still open, so we try to close it
       this->close();
