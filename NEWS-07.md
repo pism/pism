@@ -380,26 +380,25 @@ as to reduce dependencies on the rest of PISM.
 It should now be easy to create a `Config` derived classes that get
 parameter values from a model PISM is coupled to, for example.
 
-1.  PISM processes command-line options automatically
+PISM processes command-line options automatically
 
-    `pism_config.cdl` provides all the information needed to
-    associate a configuration parameter with an option and process
-    this command-line option (if `set_config_from_options()` is
-    called):
+`pism_config.cdl` provides all the information needed to
+associate a configuration parameter with an option and process
+this command-line option (if `set_config_from_options()` is
+called):
 
-    For example:
+For example:
 
 ```
-        pism_config:bed_deformation_model_type = "keyword";
-        pism_config:bed_deformation_model_option = "bed_def";
-        pism_config:bed_deformation_model_choices = "none,iso,lc";
-        pism_config:bed_deformation_model = "none";
-        pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use...";
+    pism_config:bed_deformation_model_type = "keyword";
+    pism_config:bed_deformation_model_option = "bed_def";
+    pism_config:bed_deformation_model_choices = "none,iso,lc";
+    pism_config:bed_deformation_model = "none";
+    pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use...";
 ```
-
-    Each configuration parameter has a corresponding command-line
-    option, either the one specified using `..._option` or the one
-    that matches the parameter name.
+Each configuration parameter has a corresponding command-line
+option, either the one specified using `..._option` or the one
+that matches the parameter name.
 
 ### Overhaul pism::Vars
 
