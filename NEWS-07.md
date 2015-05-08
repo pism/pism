@@ -54,11 +54,11 @@ listed below were included in v0.6.1 or v0.6.2.
     pressure (`pressure`) ([#280](https://github.com/pism/pism/issues/280)).
 -   Add the bed parallel basal shear stress (`taub`) and its
     magnitude (`taub_mag`) ([#266](https://github.com/pism/pism/issues/266)).
--   New names of vector diagnostic quantities.
-    -   `cbar`  renamed to `velbar_mag`
-    -   `cbase` renamed to `velbase_mag`
-    -   `csurf` renamed to `velsurf_mag`
-    -   `cflx`  renamed to `flux_mag`
+-   New names of vector diagnostic quantities:
+    -   `cbar`  was renamed to `velbar_mag`,
+    -   `cbase` was renamed to `velbase_mag`,
+    -   `csurf` was renamed to `velsurf_mag`,
+    -   `cflx`  was renamed to `flux_mag`.
 -   Mass-conserving hydrology models add conservation-related scalar
     diagnostics ([#256](https://github.com/pism/pism/issues/256)).
 -   Add `flux_divergence` ([#165](https://github.com/pism/pism/issues/165)).
@@ -80,7 +80,7 @@ listed below were included in v0.6.1 or v0.6.2.
 -   `-topg_to_phi` arguments are configuration parameters ([#289](https://github.com/pism/pism/issues/289)).
 -   Add `energy_advection_ice_thickness_threshold` ([#292](https://github.com/pism/pism/issues/292)).
 -   Allow using a different `ftt_alpha` in "ice-free" areas.
-    (<https://github.com/pism/pism/commit/93c09d3d>)
+    ([commit 93c09d3d](https://github.com/pism/pism/commit/93c09d3d))
 -   Close [#254](https://github.com/pism/pism/issues/254). Adds `-timestep_hit_multiples X`.
 -   Close [#255](https://github.com/pism/pism/issues/255). (add ability to start `-hydrology distributed` model
     if `bwp` is missing)
@@ -96,8 +96,8 @@ listed below were included in v0.6.1 or v0.6.2.
     empty ice-free, but this is not necessary now.)
 -   Remove Storglaciaren example.
 -   Separate Glen exponents for SIA and SSA flow laws ([#285](https://github.com/pism/pism/issues/285)).
--   Use latitude and longitude bounds names compatible with CDO
--   Use the global attribute "proj4" instead of "mapping:proj4".
+-   Use latitude and longitude bounds names compatible with CDO.
+-   Use the global attribute "`proj4`" instead of "`mapping:proj4`".
 
 # Some bug fixes
 
@@ -105,11 +105,11 @@ listed below were included in v0.6.1 or v0.6.2.
 -   [#277](https://github.com/pism/pism/issues/277) (the time axis length of `ts_times`).
 -   [#278](https://github.com/pism/pism/issues/278) (`-energy none` should start with either `temp` or `enthalpy`).
 -   [#281](https://github.com/pism/pism/issues/281) (a bug related to (now-removed) vertical grid extension).
--   [#283](https://github.com/pism/pism/issues/283) (unreasonable SSAFD velocities near the "cliff" at periodic boundary)
+-   [#283](https://github.com/pism/pism/issues/283) (unreasonable SSAFD velocities near the "cliff" at periodic boundary).
 -   [#297](https://github.com/pism/pism/issues/297) (record bed deformation choice in a configuration parameter).
 -   [#299](https://github.com/pism/pism/issues/299) (fix verbPrintf).
 -   [#315](https://github.com/pism/pism/issues/315) (segfault in the PDD model).
--   unreported: Fix snow depth reset code in the PDD model. <https://github.com/pism/pism/commit/cae55774>
+-   unreported: Fix snow depth reset code in the PDD model [commit cae55774](https://github.com/pism/pism/commit/cae55774).
 
 # Code changes that may be of interest to developers
 
@@ -199,11 +199,12 @@ Accessing PETSc `Vec` arrays requires wrapping code in
 `DMDAVecGetArray` and `DMDAVecRestoreArray` calls. This is a
 problem if we assume that all code can throw an exception.
 
+``` c++
     DMDAVecGetArray(...);
     // if do_work(...) throws, DMDAVecRestoreArray will not be called.
     do_work(i, j);
     DMDAVecRestoreArray(...);
-
+```
 This issue affects `IceModelVec` fields, too.
 
 To get around this I created `IceModelVec::AccessList` which calls
@@ -211,10 +212,12 @@ To get around this I created `IceModelVec::AccessList` which calls
 the destructor. This guarantees that `DMDAVecRestoreArray` is
 called when we exit the scope. Here's how to use it:
 
+``` c++
     IceModelVec::AccessList list(f);
     list.add(g);
 
     f(i, j) = g(i, j);
+```
 
 ### Accessing "raw" PETSc Vecs
 
@@ -262,7 +265,7 @@ See this code from `IcebergRemover` for an example:
 
 ### `IceModelVec::has_nan()` is gone
 
-Use PETSc's option `-fp_trap` to detect NaNs (on Linux).
+Use PETSc's option `-fp_trap` to detect `NaNs` (on Linux).
 
 ### Wrappers for all PETSc objects used in PISM
 
@@ -273,11 +276,12 @@ These wrappers ensure that the corresponding `...Destroy()`
 function is called when a `DM`, `Mat`, etc needs to be destroyed.
 
 To use, write code similar to
-
+``` c++
     pism::petsc::Vec my_vec;
     ierr = VecCreateSeq(PETSC_COMM_SELF, size, my_vec.rawptr());
     PISM_CHK(ierr, "VecCreateSeq");
     // my_vec will be destroyed automatically when we exit the scope
+```
 
 ## Making PISM more library-like
 
@@ -368,12 +372,11 @@ as to reduce dependencies on the rest of PISM.
 It should now be easy to create a `Config` derived classes that get
 parameter values from a model PISM is coupled to, for example.
 
-PISM processes command-line options automatically
-
-`pism_config.cdl` provides all the information needed to
-associate a configuration parameter with an option and process
-this command-line option (if `set_config_from_options()` is
-called):
+PISM automatically processes command-line options corresponding to
+configuration parameters: `pism_config.cdl` provides all the
+information needed to associate a configuration parameter with an
+option and process this command-line option (if
+`set_config_from_options()` is called):
 
 For example:
 
@@ -414,14 +417,15 @@ Previously `IceModel` was responsible for getting grid parameters
 from a file or command-line options and allocating a grid; now we
 can allocate an `IceGrid` using one of these methods:
 
--   Fill all members of `GridParameters` and use the constructor of `IceGrid`
--   Create a shallow grid using `IceGrid::Shallow` (a static method)
+-   Fill all members of `GridParameters` and use the constructor of `IceGrid`.
+-   Create a shallow grid using `IceGrid::Shallow` (a static method).
 -   Create a grid by getting its parameters from a variable in a
     file (or using a variable from a list of candidates) with
     `IceGrid::FromFile`.
 -   Create a grid by processing command-line options `-i`,
     `-bootstrap`, `-Mx`, `-My`, `-Mz`, `-Lx`, `-Ly`, `-Lz`,
-    `-x_range`, `-y_range` the way `pismr` does.
+    `-x_range`, `-y_range`, and `-periodicity` by calling
+    `IceGrid::FromOptions`. (This is what `pismr` does.)
 
 (This makes it easier to run PISM's sub-models independently from
 `IceModel`.)
@@ -498,6 +502,6 @@ for (PointsWithGhosts p(grid, ghost_width); p; p.next()) {
 -   Don't pass classes by value ([#269](https://github.com/pism/pism/issues/269)).
 -   Use namespaces to organize PISM code (see [#188](https://github.com/pism/pism/issues/188)).
 -   Reduce inter-dependencies of PISM code.
--   Code formatting (see [`coding_style.md`](https://github.com/pism/pism/blob/dev/doc/browser/coding_style.md))
--   `autopep8` the Python code, `pylint` support
+-   Code formatting (see [`coding_style.md`](https://github.com/pism/pism/blob/dev/doc/browser/coding_style.md)).
+-   `autopep8` the Python code, `pylint` support.
 -   Clean up FEM code.
