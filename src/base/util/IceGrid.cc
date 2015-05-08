@@ -306,13 +306,15 @@ IceGrid::~IceGrid() {
 //! \brief Set the vertical levels in the ice according to values in `Mz` (number of levels), `Lz`
 //! (domain height), `spacing` (quadratic or equal) and `lambda` (quadratic spacing parameter).
 /*!
-  - When `vertical_spacing` == EQUAL, the vertical grid in the ice is equally spaced:
+  - When `vertical_spacing == EQUAL`, the vertical grid in the ice is equally spaced:
     `zlevels[k] = k dz` where `dz = Lz / (Mz - 1)`.
-  - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent
-    is that the spacing is smaller near the base than near the top.  In particular, if
-    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *
+  - When `vertical_spacing == QUADRATIC`, the spacing is a quadratic function.  The intent
+    is that the spacing is smaller near the base than near the top.
+
+    In particular, if
+    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *`
     ((\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
-    * \f$\zeta_k\f$))` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
+    * \f$\zeta_k\f$)) where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
     indicates the slope of the quadratic function as it leaves the base.
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
