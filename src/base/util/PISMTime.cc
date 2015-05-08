@@ -99,6 +99,7 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
       // Set the default starting time to be equal to the last time saved in the input file
       nc.inq_dim_limits(dimension_name, NULL, &T);
       time.set_start(T);
+      time.set(T);
       log.message(2,
                    "* Time t = %s found in '%s'; setting current time\n",
                    time.date().c_str(), input_file->c_str());
