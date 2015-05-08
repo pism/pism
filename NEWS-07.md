@@ -4,11 +4,12 @@ Most of the work on PISM since the release of v0.6 was aimed at making
 PISM easier to maintain, test, extend, and couple to other models.
 
 The code changes between PISM v0.6 and v0.7 consist of approximately
-1200 individual modifications (Git commits). These changes touched
+1200 individual Git commits.  These changes touched
 over 650 files, more than half of PISM's C++ code (44,000 out of
 84,000 lines).
 
-Some of the changes listed below were included in v0.6.1 or v0.6.2.
+Click on "#xxx" links to see issues for more information.  Some of the changes
+listed below were included in v0.6.1 or v0.6.2.
 
 # User-visible changes
 
@@ -22,7 +23,7 @@ Some of the changes listed below were included in v0.6.1 or v0.6.2.
 -   Allow building PISM with GSL <= 1.15 ([#304](https://github.com/pism/pism/issues/304)).
 -   Updated installation instructions for Cray systems  ([#316](https://github.com/pism/pism/issues/316)).
 -   Put quick installation instructions in one spot ([#314](https://github.com/pism/pism/issues/314)).
--   Allow building documentation on systems without PISM's
+-   Allow building documentation on systems without full PISM
     prerequisites ([#251](https://github.com/pism/pism/issues/251)). Give better warnings about missing
     tools needed to build the source code browser ([#137](https://github.com/pism/pism/issues/137)).
 
@@ -33,8 +34,8 @@ Some of the changes listed below were included in v0.6.1 or v0.6.2.
     Kirchhoff's law of thermochemistry.
 -   Implement `-atmosphere weather_station`. Reads scalar time-series
     of near-surface air temperature and precipitation and applies
-    them to the whole domain. (Use with lapse rate corrections to add
-    spatial variability.)
+    them to the whole domain.  Use with lapse rate corrections to add
+    spatial variability.
 -   Re-implement and document the ocean model which uses the
     3-equation sub-shelf melting parameterization (Hellmer and
     Olbers, `-ocean th`).
@@ -89,27 +90,14 @@ Some of the changes listed below were included in v0.6.1 or v0.6.2.
     scalar time-series).
 -   Include `pism_config` in output files ([#270](https://github.com/pism/pism/issues/270)).
 -   Pressure is set to overburden in grounded-ice areas with
-    empty subglacial aquifer.
-
-    While dry sliding can in theory generate cavities, the more significant issue
-    with W=0 and P=0 areas is that waves of water pass into such areas from areas
-    where W>0.  This is surely-unphysical over typical ice sheet spatial scales.
-
-    This change means that the connected aquifer is bounded by high potential at
-    its margin.
-
-    The runs which went into Bueler & van Pelt (2014, TCD) had high "negativegain"
-    because bmelt = -1 m/a was used to empty these areas.  This fiddle will not be
-    necessary now.  (See `pism/green-hydro/edrun/preprocess.sh` on
-    <https://github.com/pism>.)  Runs with this new version have negative gain two
-    orders of magnitude smaller than marginal losses (i.e. icefreelandloss and
-    oceanloss).
-
-    This is a change of "`-hydrology distributed`" behavior relative to v0.6.
+    empty subglacial aquifer, a change of "`-hydrology distributed`" behavior
+    relative to v0.6 which avoids "sucking" water out at the margin.
+    (The runs which went into Bueler & van Pelt (2015) used bmelt = -1 m/a to
+    empty ice-free, but this is not necessary now.)
 -   Remove Storglaciaren example.
 -   Separate Glen exponents for SIA and SSA flow laws ([#285](https://github.com/pism/pism/issues/285)).
 -   Use latitude and longitude bounds names compatible with CDO
--   Use the global attribute "proj4" instead of "mapping:porj4".
+-   Use the global attribute "proj4" instead of "mapping:proj4".
 
 # Some bug fixes
 
