@@ -438,6 +438,27 @@ can allocate an `IceGrid` using one of these methods:
 (This makes it easier to run PISM's sub-models independently from
 `IceModel`.)
 
+### Point iterators `Points` and `PointsWithGhosts`
+
+To simplify iterating over the part of the computational domain of the
+current processor PISM has an iterator `Points`. This code is
+equivalent to the double for loop but hides the grid traversal order.
+
+``` c++
+for (Points p(grid); p; p.next()) {
+  const int i = p.i(), j = p.j();
+  field(i,j) = value;
+}
+```
+
+To update ghost points locally, use `PointsWithGhosts`:
+``` c++
+for (PointsWithGhosts p(grid, ghost_width); p; p.next()) {
+  const int i = p.i(), j = p.j();
+  field(i,j) = value;
+}
+```
+
 ### Other
 
 -   Add `make retest` (re-run failed tests), `make test-python` (run
