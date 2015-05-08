@@ -96,10 +96,10 @@ void Vars::remove(const std::string &name) {
   const SpatialVariableMetadata &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
+    m_variables.erase(name);
     if (m.has_attribute("standard_name")) {
       std::string std_name = m.get_string("standard_name");
 
-      m_variables.erase(name);
       m_standard_names.erase(std_name);
     }
   } else {
