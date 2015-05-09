@@ -64,8 +64,8 @@ def create_config():
     config.adaptive_timestepping_ratio = 0.08
     config.adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?"
 
-    config.Glen_exponent = 5.9
-    config.Glen_exponent_doc = "; = n;  Sayag & Worster (2013) give n = 5.9 +- 0.2"
+    config.sia_Glen_exponent = 5.9
+    config.sia_Glen_exponent_doc = "; = n;  Sayag & Worster (2013) give n = 5.9 +- 0.2"
 
     config.ice_softness = 9.7316e-09  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
     config.ice_softness_doc = "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"

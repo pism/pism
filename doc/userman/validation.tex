@@ -28,20 +28,20 @@ $ python preprocess.py
 %$ - match dollar signs to make emacs happy
 and then do a run for 746 model seconds \cite{SayagWorster2013} on an 10 mm grid (520 mm / 52 subintervals) using 4 processors:
 \begin{verbatim}
-$ ./rungum.sh 4 53 &> out.lab53 &
+$ ./rungum.sh 4 52 &> out.lab52 &
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
-This run generates text file \texttt{out.lab53}, diagnostic files \texttt{ts_lab53.nc} and \texttt{ex_lab53.nc}, and final output \texttt{lab53.nc}.  The run took about 5 minutes on a 2013 laptop; roughly real time!
+This run generates text file \texttt{out.lab52}, diagnostic files \texttt{ts_lab52.nc} and \texttt{ex_lab52.nc}, and final output \texttt{lab52.nc}.  The run took about 5 minutes on a 2013 laptop, thus roughly real time!
 
 When it is done, you can compare the modeled radius to the experimental data:
 \begin{verbatim}
-$ ./showradius.py -o r53.png -d constantflux3.txt ts_lab53.nc
+$ ./showradius.py -o r52.png -d constantflux3.txt ts_lab52.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
 You can also redo the whole thing on a higher resolution grid (here: 2.5 mm), and when that run is done after several hours, make a combined figure just like Figure \ref{fig:labgumresult}:
 \begin{verbatim}
-$ ./preprocess.py -Mx 209 -o initlab209.nc
-$ ./rungum.sh 4 209 &> out.lab209 &
+$ ./preprocess.py -Mx 208 -o initlab208.nc
+$ ./rungum.sh 4 208 &> out.lab208 &
 $ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
@@ -49,11 +49,11 @@ $ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
 \begin{figure}[ht]
 \centering
 \includegraphics[width=6.0in,keepaspectratio=true]{labgumradius}
-\caption{Radius $r_N(t)$ for runs with 10 mm (\texttt{ts_lab53.nc}) and 2.5 mm (\texttt{ts_lab209.nc}) grids, compared to observations from Sayag \& Worster's \cite{SayagWorster2013} table-top ``ice cap'' (gravity current) made from a 1 \% Xanthan gum suspension, as shown in Figure \ref{fig:labgumexperiment}.}
+\caption{Radius $r_N(t)$ for runs with 10 mm (\texttt{ts_lab52.nc}) and 2.5 mm (\texttt{ts_lab208.nc}) grids, compared to observations from Sayag \& Worster's \cite{SayagWorster2013} table-top ``ice cap'' (gravity current) made from a 1 \% Xanthan gum suspension, as shown in Figure \ref{fig:labgumexperiment}.}
 \label{fig:labgumresult}
 \end{figure}
 
-Results are better on finer grids, especially at small times, because the input hole has radius of only 8 mm.  Furthermore the ``ice cap'' has radius comparable to the hole for the first few model seconds.  Also the early evolution is distinctly non-shallow, but increasing resolution reduces most of the observations-simulation difference.  In fact, we know there is little need for ``higher-order'' stresses because the exact similarity solution of the shallow continuum equations, used by Sayag \& Worster, closely-fits the data even for small radius and time \cite[Figure 4]{SayagWorster2013}.  In any case, the large-time observations are closely-fit by the numerical results at all grid resolutions.
+Results are better on finer grids, especially at small times, because the input hole has radius of only 8 mm.  Furthermore this ``ice cap'' has radius comparable to the hole for the first few model seconds.  The early evolution is distinctly non-shallow, but we see that increasing the model resolution reduces most of the observation-model difference.  In fact there is little need for ``higher-order'' stresses because the exact similarity solution of the \emph{shallow} continuum equations, used by Sayag \& Worster, closely-fits the data even for small radius and time \cite[Figure 4]{SayagWorster2013}.  In any case, the large-time observations are very closely-fit by the numerical results at all grid resolutions.
 
 
 \subsection{An SSA flow model for the Ross Ice Shelf in Antarctica}\label{sec:ross} \index{PISM!diagnostic Ross ice shelf model}\index{Ice Sheets!Antarctic ice sheet!Ross ice shelf} \index{PISM!validation of SSA ice shelf model}\index{validation!SSA ice shelf model} \index{Ross ice shelf}
