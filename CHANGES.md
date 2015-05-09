@@ -1,8 +1,8 @@
-  * [Changes since 0.6 (February 2013)](#changes-since-06-february-2013)
+  * [Changes since 0.6 (February 2014)](#changes-since-06-february-2014)
   * [Changes since 0.5 (May 2012)](#changes-since-05-may-2012)
   * [Changes from 0.4 (June 2011) to 0.5](#changes-from-04-june-2011-to-05)
 
-# Changes since 0.6 (February 2013)
+# Changes since 0.6 (February 2014)
 
 Most of the work on PISM since the release of v0.6 was aimed at making PISM easier to maintain, test, extend, and couple to other models.  These changes consist of approximately 1200 individual Git commits.  They touched over 650 files, more than half of PISM's C++ code (44,000 out of 84,000 lines).
 
