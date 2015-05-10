@@ -42,7 +42,7 @@ if args.datafile != None:
     A = np.loadtxt(args.datafile)
     data_t = A[:, 0]
     data_rN = A[:, 1]
-    plt.loglog(data_t, 100.0 * data_rN, 'kx', label='observed')  # cm versus s
+    plt.loglog(data_t, 100.0 * data_rN, 'ko', label='observed', ms=4)  # cm versus s
 
 plt.hold(False)
 plt.legend(loc='upper left')
