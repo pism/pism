@@ -64,8 +64,6 @@ int NC4_Quilt::open_impl(const std::string &fname, IO_Mode mode) {
   int nc_mode = integer_open_mode(mode);
   stat = nc_open(patch_fname.c_str(), nc_mode, &m_file_id); check(stat);
 
-  m_define_mode = false;
-
   return global_stat(stat);
 }
 
@@ -77,8 +75,6 @@ int NC4_Quilt::create_impl(const std::string &fname) {
   std::string patch_fname = patch_filename(fname, rank);
 
   stat = nc_create(patch_fname.c_str(), NC_NETCDF4, &m_file_id); check(stat);
-
-  m_define_mode = true;
 
   return global_stat(stat);
 }

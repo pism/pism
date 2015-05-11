@@ -44,8 +44,6 @@ int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
                      nc_mode | NC_MPIIO,
                      m_com, info, &m_file_id);
 
-  m_define_mode = false;
-
   return stat;
 }
 
@@ -56,7 +54,6 @@ int NC4_Par::create_impl(const std::string &fname) {
   stat = nc_create_par(fname.c_str(),
                        NC_NETCDF4 | NC_MPIIO,
                        m_com, info, &m_file_id);
-  m_define_mode = true;
 
   return stat;
 }

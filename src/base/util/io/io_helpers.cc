@@ -249,12 +249,10 @@ void define_time(const PIO &nc, const std::string &name, const std::string &cale
 //! \brief Append to the time dimension.
 void append_time(const PIO &nc, const std::string &name, double value) {
   try {
-    std::vector<unsigned int> start(1), count(1);
+    unsigned int start = nc.inq_dimlen(name);
+    std::vector<double> data(1, value);
 
-    start[0] = nc.inq_dimlen(name);
-    count[0] = 1;
-
-    nc.put_vara_double(name, start, count, &value);
+    nc.put_1d_var(name, start, 1, data);
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + nc.inq_filename() + "\"");
     throw;
@@ -282,7 +280,8 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   if (not z_name.empty()) {
     if (not nc.inq_dim(z_name)) {
       const std::vector<double>& levels = var.get_levels();
-      unsigned int nlevels = std::max(levels.size(), (size_t)1); // make sure we have at least one level
+      // make sure we have at least one level
+      unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(nc, nlevels, var.get_z());
       nc.put_1d_var(z_name, 0, levels.size(), levels);
     }
@@ -892,8 +891,6 @@ void define_timeseries(const TimeseriesMetadata& var,
   if (nc.inq_var(name)) {
     return;
   }
-
-  nc.redef();
 
   if (not nc.inq_dim(dimension_name)) {
     define_dimension(nc, PISM_UNLIMITED,

@@ -60,26 +60,14 @@ int NC4File::close_impl() {
 // redef/enddef
 int NC4File::enddef_impl() const {
 
-  if (m_define_mode == false) {
-    return 0;
-  }
-
   int stat = nc_enddef(m_file_id); check(stat);
-
-  m_define_mode = false;
 
   return stat;
 }
 
 int NC4File::redef_impl() const {
 
-  if (m_define_mode == true) {
-    return 0;
-  }
-
   int stat = nc_redef(m_file_id); check(stat);
-
-  m_define_mode = true;
 
   return stat;
 }
@@ -426,7 +414,7 @@ int NC4File::get_att_text_impl(const std::string &variable_name, const std::stri
 int NC4File::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
   int stat = 0;
 
-  stat = redef_impl(); check(stat);
+  redef();
 
   int varid = -1;
 
@@ -445,7 +433,7 @@ int NC4File::put_att_double_impl(const std::string &variable_name, const std::st
 int NC4File::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
 
-  stat = redef_impl(); check(stat);
+  redef();
 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;

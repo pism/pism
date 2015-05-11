@@ -155,11 +155,13 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
 void NCFile::open(const std::string &filename, IO_Mode mode) {
   int stat = this->open_impl(filename, mode); check(stat);
   m_filename = filename;
+  m_define_mode = false;
 }
 
 void NCFile::create(const std::string &filename) {
   int stat = this->create_impl(filename); check(stat);
   m_filename = filename;
+  m_define_mode = true;
 }
 
 void NCFile::close() {
@@ -167,11 +169,17 @@ void NCFile::close() {
 }
 
 void NCFile::enddef() const {
-  int stat = this->enddef_impl(); check(stat);
+  if (m_define_mode) {
+    int stat = this->enddef_impl(); check(stat);
+    m_define_mode = false;
+  }
 }
 
 void NCFile::redef() const {
-  int stat = this->redef_impl(); check(stat);
+  if (not m_define_mode) {
+    int stat = this->redef_impl(); check(stat);
+    m_define_mode = true;
+  }
 }
 
 void NCFile::def_dim(const std::string &name, size_t length) const {

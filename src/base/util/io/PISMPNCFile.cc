@@ -62,8 +62,6 @@ int PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
   int nc_mode = integer_open_mode(mode);
   stat = ncmpi_open(m_com, fname.c_str(), nc_mode, mpi_info, &m_file_id); check(stat);
 
-  m_define_mode = false;
-
   return stat;
 }
 
@@ -75,7 +73,6 @@ int PNCFile::create_impl(const std::string &fname) {
 
   stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
                       mpi_info, &m_file_id); check(stat);
-  m_define_mode = true;
 
   return stat;
 }
@@ -94,13 +91,7 @@ int PNCFile::close_impl() {
 
 int PNCFile::enddef_impl() const {
 
-  if (m_define_mode == false) {
-    return 0;
-  }
-
   int stat = ncmpi_enddef(m_file_id); check(stat);
-
-  m_define_mode = false;
 
   return stat;
 }
@@ -108,13 +99,7 @@ int PNCFile::enddef_impl() const {
 
 int PNCFile::redef_impl() const {
 
-  if (m_define_mode == true) {
-    return 0;
-  }
-
   int stat = ncmpi_redef(m_file_id); check(stat);
-
-  m_define_mode = true;
 
   return stat;
 }
@@ -456,7 +441,7 @@ int PNCFile::get_att_text_impl(const std::string &variable_name, const std::stri
 int PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
 
-  stat = redef_impl(); check(stat);
+  stat = redef(); check(stat);
 
   int varid = -1;
 
@@ -476,7 +461,7 @@ int PNCFile::put_att_double_impl(const std::string &variable_name, const std::st
 int PNCFile::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
 
-  stat = redef_impl(); check(stat);
+  stat = redef(); check(stat);
 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;

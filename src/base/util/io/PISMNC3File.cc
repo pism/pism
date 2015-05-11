@@ -70,8 +70,6 @@ int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Bcast(&m_file_id, 1, MPI_INT, 0, m_com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  m_define_mode = false;
-
   return stat;
 }
 
@@ -86,8 +84,6 @@ int NC3File::create_impl(const std::string &fname) {
   MPI_Barrier(m_com);
   MPI_Bcast(&m_file_id, 1, MPI_INT, 0, m_com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
-
-  m_define_mode = true;
 
   return stat;
 }
@@ -115,10 +111,6 @@ int NC3File::close_impl() {
 int NC3File::enddef_impl() const {
   int stat;
 
-  if (m_define_mode == false) {
-    return 0;
-  }
-
   if (m_rank == 0) {
     //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
     //! created by PISM.
@@ -128,8 +120,6 @@ int NC3File::enddef_impl() const {
   MPI_Barrier(m_com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  m_define_mode = false;
-
   return stat;
 }
 
@@ -137,18 +127,12 @@ int NC3File::enddef_impl() const {
 int NC3File::redef_impl() const {
   int stat;
 
-  if (m_define_mode == true) {
-    return 0;
-  }
-
   if (m_rank == 0) {
     stat = nc_redef(m_file_id);
   }
 
   MPI_Barrier(m_com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
-
-  m_define_mode = true;
 
   return stat;
 }
@@ -845,10 +829,9 @@ int NC3File::get_att_text_impl(const std::string &variable_name, const std::stri
  */
 int NC3File::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
                                IO_Type nctype, const std::vector<double> &data) const {
-
   int stat = 0;
 
-  stat = redef_impl(); check(stat);
+  redef();
 
   if (m_rank == 0) {
     int varid = -1;
@@ -875,10 +858,11 @@ int NC3File::put_att_double_impl(const std::string &variable_name, const std::st
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
+int NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                               const std::string &value) const {
   int stat = 0;
 
-  stat = redef_impl(); check(stat);
+  redef();
 
   if (m_rank == 0) {
     int varid = -1;

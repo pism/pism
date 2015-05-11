@@ -115,13 +115,15 @@ void IceModel::dumpToFile(const std::string &filename) {
   // Prepare the file
   std::string time_name = m_config->get_string("time_dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
+
+  // Write metadata *before* everything else:
+  write_metadata(nc, true, true);
+
   io::define_time(nc, time_name, m_time->calendar(),
                   m_time->CF_units_string(),
                   m_sys);
-  io::append_time(nc, time_name, m_time->current());
 
-  // Write metadata *before* variables:
-  write_metadata(nc, true, true);
+  io::append_time(nc, time_name, m_time->current());
 
   write_model_state(nc);
 
