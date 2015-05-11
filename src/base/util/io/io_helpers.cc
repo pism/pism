@@ -377,6 +377,9 @@ static void get_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
 static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_name,
                     unsigned int z_count, const double *input) {
   try {
+    // switch to data mode and perform all delayed write operations
+    nc.enddef();
+
     unsigned int t_length = nc.inq_dimlen(grid.ctx()->config()->get_string("time_dimension_name"));
 
     assert(t_length >= 1);
