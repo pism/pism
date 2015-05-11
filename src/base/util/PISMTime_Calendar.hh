@@ -36,6 +36,10 @@ public:
 
   virtual void init_from_file(const std::string &filename, const Logger &log);
 
+  virtual void init_from_input_file(const PIO &nc,
+                                    const std::string &time_name,
+                                    const Logger &log);
+
   virtual double mod(double time, unsigned int) const;
 
   virtual double year_fraction(double T) const;

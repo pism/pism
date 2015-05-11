@@ -61,11 +61,6 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   : Time(conf, calendar_string, units_system),
     m_com(c) {
 
-  // init_calendar() was called by the constructor of Time.
-  if (pism_is_valid_calendar_name(m_calendar_string) == false) {
-    throw RuntimeError::formatted("unsupported calendar: %s", m_calendar_string.c_str());
-  }
-
   std::string ref_date = m_config->get_string("reference_date");
 
   try {
@@ -143,9 +138,51 @@ bool Time_Calendar::process_ye(double &result) {
   return ye.is_set();
 }
 
+void Time_Calendar::init_from_input_file(const PIO &nc,
+                                         const std::string &time_name,
+                                         const Logger &log) {
+  try {
+    // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
+    // calendar.
+    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    if (not new_calendar.empty() and
+        not (new_calendar == "none")) {
+      init_calendar(new_calendar);
+    }
+
+    // Set the reference date of internal units.
+    {
+      std::string date = reference_date_from_file(nc, time_name);
+      m_time_units = units::Unit(m_unit_system, "seconds " + date);
+    }
+
+    // Read time information from the file. (PISM output files don't have time bounds, so we don't
+    // bother checking for them.)
+    std::vector<double> time;
+    {
+      TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
+      time_axis.set_string("units", m_time_units.format());
+
+      io::read_timeseries(nc, time_axis, *this, log, time);
+    }
+
+    // Set time.
+    this->set_start(time.front());
+    this->set(time.front());
+    log.message(2,
+                "* Time t = %s (calendar: %s) found in '%s'; setting current time\n",
+                this->date().c_str(),
+                this->calendar().c_str(),
+                nc.inq_filename().c_str());
+  } catch (RuntimeError &e) {
+    e.add_context("initializing model time from \"%s\"", nc.inq_filename().c_str());
+    throw;
+  }
+}
 
 void Time_Calendar::init(const Logger &log) {
 
+  // process command-line options -y, -ys, -ye
   Time::init(log);
 
   options::String time_file("-time_file", "Reads time information from a file");
@@ -163,88 +200,55 @@ void Time_Calendar::init(const Logger &log) {
   }
 }
 
-//! \brief Sets the time from a NetCDF with forcing data.
+//! \brief Sets the time from a NetCDF file with a time dimension (`-time_file`).
 /*!
  * This allows running PISM for the duration of the available forcing.
  */
 void Time_Calendar::init_from_file(const std::string &filename, const Logger &log) {
-  std::vector<double> time, time_bounds;
-  std::string time_units, time_bounds_name, new_calendar,
-    time_name = m_config->get_string("time_dimension_name");
-  bool exists;
+  try {
+    std::string time_name = m_config->get_string("time_dimension_name");
 
-  TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
-  time_axis.set_string("units", m_time_units.format());
+    PIO nc(m_com, "netcdf3"); // OK to use netcdf3
 
-  PIO nc(m_com, "netcdf3"); // OK to use netcdf3
+    nc.open(filename, PISM_READONLY); // will be closed automatically
 
-  nc.open(filename, PISM_READONLY);
-  exists = nc.inq_var(time_name);
-  if (exists == false) {
-    nc.close();
-
-    throw RuntimeError::formatted("'%s' variable is not present in '%s'.",
-                                  time_name.c_str(), filename.c_str());
-  }
-  time_units = nc.get_att_text(time_name, "units");      
-  time_bounds_name = nc.get_att_text(time_name, "bounds");
-
-  new_calendar = nc.get_att_text(time_name, "calendar");
-  if (new_calendar.empty() == false) {
-    if (pism_is_valid_calendar_name(new_calendar) == false) {
-      throw RuntimeError::formatted("unsupported calendar name '%s' found in a -time_file '%s'.",
-                                    new_calendar.c_str(), filename.c_str());
-    }
-    init_calendar(new_calendar);
-  }
-
-  if (time_bounds_name.empty() == false) {
-    exists = nc.inq_var(time_bounds_name);
-
-    if (exists == false) {
-      nc.close();
-
-      throw RuntimeError::formatted("variable '%s' is not present in '%s'.",
-                                    time_bounds_name.c_str(), filename.c_str());
-    }
-  }
-
-  {
-    // Check if the time_file has a reference date set:
-    size_t position = time_units.find("since");
-    if (position == std::string::npos) {
-      throw RuntimeError::formatted("time units string '%s' does not contain a reference date.\n",
-                                    time_units.c_str());
+    // Set the calendar name from file.
+    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    if (not new_calendar.empty()) {
+      init_calendar(new_calendar);
     }
 
-    try {
-      m_time_units = units::Unit(m_time_units.get_system(),
-                                 "seconds " + time_units.substr(position));
+    // Set the reference date of internal units.
+    {
+      std::string date = reference_date_from_file(nc, time_name);
+      m_time_units = units::Unit(m_unit_system, "seconds " + date);
     }
-    catch (RuntimeError &e) {
-      e.add_context("processing -time_file %s", filename.c_str());
-      throw;
+
+    // Read time information from the file.
+    std::vector<double> time;
+    std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
+    if (not time_bounds_name.empty()) {
+      // use the time bounds
+      TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
+      bounds.set_string("units", m_time_units.format());
+
+      io::read_time_bounds(nc, bounds, *this, log, time);
+    } else {
+      // use the time axis
+      TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
+      time_axis.set_string("units", m_time_units.format());
+
+      io::read_timeseries(nc, time_axis, *this, log, time);
     }
+
+    // Set time.
+    this->set_start(time.front());
+    this->set(time.front());
+    this->set_end(time.back());
+  } catch (RuntimeError &e) {
+    e.add_context("initializing model time from \"%s\"", filename.c_str());
+    throw;
   }
-
-  // set the time
-  if (time_bounds_name.empty() == false) {
-    // use the time bounds
-    TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
-    bounds.set_string("units", m_time_units.format());
-
-    io::read_time_bounds(nc, bounds, *this, log, time);
-  } else {
-    // use the time axis
-
-    io::read_timeseries(nc, time_axis, *this, log, time);
-  }
-
-  m_run_start       = time.front();
-  m_run_end         = time.back();
-  m_time_in_seconds = m_run_start;
-
-  nc.close();
 }
 
 double Time_Calendar::mod(double time, unsigned int) const {
@@ -372,11 +376,8 @@ double Time_Calendar::increment_date(double T, int years) const {
  * not try to convert to seconds since the reference date. This makes
  * it possible to validate the reference date itself.
  *
- * @return 0 on success, 1 otherwise
  */
 void Time_Calendar::parse_date(const std::string &input, double *result) const {
-  int errcode, dummy;
-  calcalcs_cal *cal = NULL;
   std::vector<int> numbers;
   bool year_is_negative = false;
   std::string tmp, spec = input;
@@ -427,12 +428,13 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
     numbers[0] *= -1;
   }
 
-  cal = ccs_init_calendar(m_calendar_string.c_str());
+  calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
   if (cal == NULL) {
     throw RuntimeError::formatted("calendar string '%s' is invalid", m_calendar_string.c_str());
   }
 
-  errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
+  int dummy = 0;
+  int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
   ccs_free_calendar(cal);
   if (errcode != 0) {
     throw RuntimeError::formatted("date %s is invalid in the %s calendar",
@@ -442,7 +444,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
   // result is the *output* argument. If it is not NULL, then the user
   // asked us to convert a date to seconds since the reference time.
   if (result != NULL) {
-    double time;
+    double time = 0.0;
     errcode = utInvCalendar2_cal(numbers[0], numbers[1], numbers[2], 0, 0, 0.0,
                                  m_time_units.get(), &time, m_calendar_string.c_str());
     if (errcode != 0) {

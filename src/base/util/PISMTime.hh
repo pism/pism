@@ -102,6 +102,10 @@ public:
   //! \brief Intialize using command-line options.
   virtual void init(const Logger &log);
 
+  virtual void init_from_input_file(const PIO &nc,
+                                    const std::string &time_name,
+                                    const Logger &log);
+
   void init_calendar(const std::string &calendar);
 
   void parse_times(const std::string &spec, std::vector<double> &result) const;
@@ -197,6 +201,9 @@ protected:
     m_run_end;                    //!< run end tim, in seconds since the reference time
   std::string m_calendar_string;       //!< CF calendar string
 };
+
+std::string reference_date_from_file(const PIO &nc,
+                                     const std::string &time_name);
 
 //! Create a Time instance by processing command-line options.
 Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System::Ptr system);

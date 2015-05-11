@@ -52,7 +52,7 @@ std::string calendar_from_options(MPI_Comm com, const Config &config) {
       bool time_exists = nc.inq_var(time_name);
       if (time_exists) {
         std::string tmp = nc.get_att_text(time_name, "calendar");
-        if (tmp.empty() == false) {
+        if (not tmp.empty()) {
           result = tmp;
         }
       }
@@ -81,6 +81,7 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
   }
 }
 
+//! Initialize model time using command-line options and (possibly) files.
 void initialize_time(MPI_Comm com, const std::string &dimension_name,
                      const Logger &log, Time &time) {
 
@@ -91,24 +92,33 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
     PIO nc(com, "guess_mode");
 
     nc.open(input_file, PISM_READONLY);
-    unsigned int time_length = nc.inq_dimlen(dimension_name);
-
-    bool ys = options::Bool("-ys", "starting time");
-    if (not ys and time_length > 0) {
-      double T = 0.0;
-      // Set the default starting time to be equal to the last time saved in the input file
-      nc.inq_dim_limits(dimension_name, NULL, &T);
-      time.set_start(T);
-      time.set(T);
-      log.message(2,
-                   "* Time t = %s found in '%s'; setting current time\n",
-                   time.date().c_str(), input_file->c_str());
-    }
+    time.init_from_input_file(nc, dimension_name, log);
     nc.close();
   }
 
   time.init(log);
 }
+
+//! Get the reference date from a file.
+std::string reference_date_from_file(const PIO &nc,
+                                     const std::string &time_name) {
+
+  if (not nc.inq_var(time_name)) {
+    throw RuntimeError::formatted("'%s' variable is not present in '%s'.",
+                                  time_name.c_str(), nc.inq_filename().c_str());
+  }
+  std::string time_units = nc.get_att_text(time_name, "units");
+
+  // Check if the time_units includes a reference date.
+  size_t position = time_units.find("since");
+  if (position == std::string::npos) {
+    throw RuntimeError::formatted("time units string '%s' does not contain a reference date",
+                                  time_units.c_str());
+  }
+
+  return time_units.substr(position);
+}
+
 
 //! Convert model years into seconds using the year length
 //! corresponding to the current calendar.
@@ -146,6 +156,11 @@ Time::~Time() {
 }
 
 void Time::init_calendar(const std::string &calendar_string) {
+
+  if (not pism_is_valid_calendar_name(calendar_string)) {
+    throw RuntimeError::formatted("unsupported calendar: %s", calendar_string.c_str());
+  }
+
   m_calendar_string = calendar_string;
 
   double seconds_per_day = convert(m_unit_system, 1.0, "day", "seconds");
@@ -250,6 +265,30 @@ bool Time::process_ye(double &result) {
   result = years_to_seconds(ye);
   return ye.is_set();
 }
+
+
+//! Set start time from a PISM input file.
+/**
+ * FIXME: This crude implementation does not use reference dates and does not convert units.
+ */
+void Time::init_from_input_file(const PIO &nc,
+                                const std::string &time_name,
+                                const Logger &log) {
+  unsigned int time_length = nc.inq_dimlen(time_name);
+
+  bool ys = options::Bool("-ys", "starting time");
+  if (not ys and time_length > 0) {
+    double T = 0.0;
+    // Set the default starting time to be equal to the last time saved in the input file
+    nc.inq_dim_limits(time_name, NULL, &T);
+    this->set_start(T);
+    this->set(T);
+    log.message(2,
+                "* Time t = %s found in '%s'; setting current time\n",
+                this->date().c_str(), nc.inq_filename().c_str());
+  }
+}
+
 
 void Time::init(const Logger &log) {
 
