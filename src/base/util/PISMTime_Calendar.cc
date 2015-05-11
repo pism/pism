@@ -196,7 +196,9 @@ void Time_Calendar::init(const Logger &log) {
     options::ignored(log, "-ys");
     options::ignored(log, "-ye");
 
-    init_from_file(time_file, log);
+    bool continue_run = options::Bool("-time_file_continue_run",
+                                      "continue a run using start time in the -i file");
+    init_from_file(time_file, log, not continue_run);
   }
 }
 
@@ -204,7 +206,8 @@ void Time_Calendar::init(const Logger &log) {
 /*!
  * This allows running PISM for the duration of the available forcing.
  */
-void Time_Calendar::init_from_file(const std::string &filename, const Logger &log) {
+void Time_Calendar::init_from_file(const std::string &filename, const Logger &log,
+                                   bool set_start_time) {
   try {
     std::string time_name = m_config->get_string("time_dimension_name");
 
@@ -242,8 +245,12 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
     }
 
     // Set time.
-    this->set_start(time.front());
-    this->set(time.front());
+    if (set_start_time) {
+      this->set_start(time.front());
+      this->set(time.front());
+    } else {
+      log.message(2, "* Using start time from an -i file to continue an interrupted run.\n");
+    }
     this->set_end(time.back());
   } catch (RuntimeError &e) {
     e.add_context("initializing model time from \"%s\"", filename.c_str());

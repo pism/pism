@@ -184,8 +184,26 @@ $ pismr -calendar gregorian -time_file forcing.nc
 %$ - match dollar signs to make emacs happy
 will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
 
-It is also possible to save spatial and/or scalar time-series daily, monthly or yearly using these calendric computations. See sections~\ref{sec:saving-time-series} and~\ref{sec:saving-spat-vari}.
+When a non-trivial calendar is selected, spatial and scalar time-series can be saved daily, monthly or yearly using these calendric computations. See sections~\ref{sec:saving-time-series} and~\ref{sec:saving-spat-vari}.
 
+\subsubsection{Re-starting an interrupted run using \texttt{-time_file}}
+\label{sec:time-file-restart}
+
+If a run using \texttt{-time_file} gets interrupted but manages to save a backup, re-starting with \texttt{-time_file} will attempt to re-do the entire run because options \texttt{-y}, \texttt{-ys}, and \texttt{-ye} are ignored:
+\begin{verbatim}
+# This run gets killed but leaves backup.nc:
+$ pismr -i input.nc -time_file time.nc -o output.nc
+# This WILL NOT start from the time saved in backup.nc
+# and continue until the end time in time.nc
+$ pismr -i backup.nc -time_file time.nc -o output.nc
+\end{verbatim}
+In this case we want to set the start time of the run from \texttt{backup.nc}, but use the end time from \texttt{time.nc}. To achieve this, use the option \intextoption{time_file_continue_run}.
+\begin{verbatim}
+# This run gets killed but leaves backup.nc:
+$ pismr -i input.nc -time_file time.nc -o output.nc
+# This WILL continue until the end time in time.nc, starting from backup.nc
+$ pismr -i backup.nc -time_file time.nc -o output.nc -time_file_continue_run
+\end{verbatim}
 
 \subsection{Diagnostic computations}
 \label{sec:diagnostic-computations}
