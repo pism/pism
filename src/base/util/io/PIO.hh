@@ -21,9 +21,10 @@
 
 #include <vector>
 #include <string>
+#include <mpi.h>
 
 #include "base/util/PISMUnits.hh"
-#include "PISMNCFile.hh"
+#include "base/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -37,7 +38,6 @@ class PIO
 {
 public:
   PIO(MPI_Comm com, const std::string &mode);
-  PIO(const PIO &other);
   ~PIO();
 
   MPI_Comm com() const;
@@ -74,7 +74,7 @@ public:
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
   void def_dim(const std::string &name, size_t length) const;
-  
+
   void def_var(const std::string &name, IO_Type nctype,
                const std::vector<std::string> &dims) const;
 
@@ -134,11 +134,14 @@ public:
 
   std::string backend_type() const;
 private:
-  MPI_Comm m_com;
-  std::string m_backend_type;
-  io::NCFile::Ptr m_nc;
+  struct Impl;
+  Impl *m_impl;
 
   void detect_mode(const std::string &filename);
+
+  // disable copying and assignments
+  PIO(const PIO &other);
+  PIO & operator=(const PIO &);
 };
 
 } // end of namespace pism

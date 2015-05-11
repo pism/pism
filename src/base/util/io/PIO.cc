@@ -52,6 +52,12 @@ namespace pism {
 using std::string;
 using std::vector;
 
+struct PIO::Impl {
+  MPI_Comm com;
+  std::string backend_type;
+  io::NCFile::Ptr nc;
+};
+
 static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3") {
     return io::NCFile::Ptr(new io::NC3File(com));
@@ -95,24 +101,19 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   }
 }
 
-PIO::PIO(MPI_Comm c, const string &mode) {
-  m_com  = c;
-  m_backend_type = mode;
-  m_nc   = create_backend(m_com, m_backend_type);
+PIO::PIO(MPI_Comm c, const string &mode)
+  : m_impl(new Impl) {
+  m_impl->com  = c;
+  m_impl->backend_type = mode;
+  m_impl->nc   = create_backend(m_impl->com, m_impl->backend_type);
 
-  if (mode != "guess_mode" && not m_nc) {
+  if (mode != "guess_mode" && not m_impl->nc) {
     throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
 }
 
-PIO::PIO(const PIO &other) {
-  m_com  = other.m_com;
-  m_nc   = other.m_nc;
-  m_backend_type = other.m_backend_type;
-}
-
 PIO::~PIO() {
-  if (m_nc and not inq_filename().empty()) {
+  if (m_impl->nc and not inq_filename().empty()) {
     try {
       // a file is still open, so we try to close it
       this->close();
@@ -125,19 +126,20 @@ PIO::~PIO() {
       fprintf(stderr, "Failed to close a file in PIO::~PIO()!\n");
     }
   }
+  delete m_impl;
 }
 
 MPI_Comm PIO::com() const {
-  return m_com;
+  return m_impl->com;
 }
 
 // Chooses the best I/O backend for reading from 'filename'.
 void PIO::detect_mode(const string &filename) {
-  assert(not (bool)m_nc);
+  assert(not (bool)m_impl->nc);
 
   string format;
   {
-    io::NC3File nc3(m_com);
+    io::NC3File nc3(m_impl->com);
 
     // detect_mode is private, so the caller will handle the failure
     // of open and add context
@@ -156,12 +158,12 @@ void PIO::detect_mode(const string &filename) {
   }
 
   for (unsigned int j = 0; j < modes.size(); ++j) {
-    m_nc = create_backend(m_com, modes[j]);
+    m_impl->nc = create_backend(m_impl->com, modes[j]);
 
-    if (m_nc) {
-      m_backend_type = modes[j];
+    if (m_impl->nc) {
+      m_impl->backend_type = modes[j];
 #if (PISM_DEBUG==1)
-      verbPrintf(3, m_com,
+      verbPrintf(3, m_impl->com,
                  "  - Using the %s backend to read from %s...\n",
                  modes[j].c_str(), filename.c_str());
 #endif
@@ -169,20 +171,20 @@ void PIO::detect_mode(const string &filename) {
     }
   }
 
-  if (not m_nc) {
+  if (not m_impl->nc) {
     throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
 }
 
 std::string PIO::backend_type() const {
-  return m_backend_type;
+  return m_impl->backend_type;
 }
 
 void PIO::open(const string &filename, IO_Mode mode) {
   try {
 
     if (mode == PISM_READONLY || mode == PISM_READWRITE) {
-      if (not m_nc and m_backend_type == "guess_mode") {
+      if (not m_impl->nc and m_impl->backend_type == "guess_mode") {
         detect_mode(filename);
       }
     }
@@ -190,31 +192,31 @@ void PIO::open(const string &filename, IO_Mode mode) {
     // opening for reading
     if (mode == PISM_READONLY) {
 
-      assert((bool)m_nc);
-      m_nc->open(filename, mode);
+      assert((bool)m_impl->nc);
+      m_impl->nc->open(filename, mode);
 
     } else if (mode == PISM_READWRITE_CLOBBER ||
                mode == PISM_READWRITE_MOVE) {
 
-      assert((bool)m_nc);
+      assert((bool)m_impl->nc);
 
       if (mode == PISM_READWRITE_MOVE) {
-        m_nc->move_if_exists(filename);
+        m_impl->nc->move_if_exists(filename);
       } else {
-        m_nc->remove_if_exists(filename);
+        m_impl->nc->remove_if_exists(filename);
       }
 
-      m_nc->create(filename);
+      m_impl->nc->create(filename);
 
       int old_fill;
-      m_nc->set_fill(PISM_NOFILL, old_fill);
+      m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
-      assert((bool)m_nc);
+      assert((bool)m_impl->nc);
 
-      m_nc->open(filename, mode);
+      m_impl->nc->open(filename, mode);
 
       int old_fill;
-      m_nc->set_fill(PISM_NOFILL, old_fill);
+      m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else {
       throw RuntimeError::formatted("invalid mode: %d", mode);
     }
@@ -227,7 +229,7 @@ void PIO::open(const string &filename, IO_Mode mode) {
 
 void PIO::close() {
   try {
-    m_nc->close();
+    m_impl->nc->close();
   } catch (RuntimeError &e) {
     e.add_context("closing \"" + inq_filename() + "\"");
     throw;
@@ -236,7 +238,7 @@ void PIO::close() {
 
 void PIO::redef() const {
   try {
-    m_nc->redef();
+    m_impl->nc->redef();
   } catch (RuntimeError &e) {
     e.add_context("switching to define mode; file \"" + inq_filename() + "\"");
     throw;
@@ -246,7 +248,7 @@ void PIO::redef() const {
 
 void PIO::enddef() const {
   try {
-    m_nc->enddef();
+    m_impl->nc->enddef();
   } catch (RuntimeError &e) {
     e.add_context("switching to data mode; file \"" + inq_filename() + "\"");
     throw;
@@ -254,7 +256,7 @@ void PIO::enddef() const {
 }
 
 string PIO::inq_filename() const {
-  return m_nc->get_filename();
+  return m_impl->nc->get_filename();
 }
 
 
@@ -262,7 +264,7 @@ string PIO::inq_filename() const {
 unsigned int PIO::inq_nrecords() const {
   try {
     string dim;
-    m_nc->inq_unlimdim(dim);
+    m_impl->nc->inq_unlimdim(dim);
 
     if (dim.empty()) {
       return 1;                 // one record
@@ -290,7 +292,7 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name,
     }
 
     vector<string> dims;
-    m_nc->inq_vardimid(name_found, dims);
+    m_impl->nc->inq_vardimid(name_found, dims);
 
     for (unsigned int j = 0; j < dims.size(); ++j) {
       AxisType dimtype = inq_dimtype(dims[j], unit_system);
@@ -322,11 +324,11 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
     if (std_name.empty() == false) {
 
       int nvars;
-      m_nc->inq_nvars(nvars);
+      m_impl->nc->inq_nvars(nvars);
 
       for (int j = 0; j < nvars; ++j) {
         string name;
-        m_nc->inq_varname(j, name);
+        m_impl->nc->inq_varname(j, name);
 
         string attribute = get_att_text(name, "standard_name");
 
@@ -351,7 +353,7 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
     } // end of if (std_name.empty() == false)
 
     if (exists == false) {
-      m_nc->inq_varid(short_name, exists);
+      m_impl->nc->inq_varid(short_name, exists);
       if (exists == true) {
         result = short_name;
       } else {
@@ -371,7 +373,7 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 bool PIO::inq_var(const string &name) const {
   try {
     bool exists = false;
-    m_nc->inq_varid(name, exists);
+    m_impl->nc->inq_varid(name, exists);
     return exists;
   } catch (RuntimeError &e) {
     e.add_context("searching for variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
@@ -382,7 +384,7 @@ bool PIO::inq_var(const string &name) const {
 vector<string> PIO::inq_vardims(const string &name) const {
   try {
     vector<string> result;
-    m_nc->inq_vardimid(name, result);
+    m_impl->nc->inq_vardimid(name, result);
     return result;
   } catch (RuntimeError &e) {
     e.add_context("getting dimensions of variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
@@ -395,7 +397,7 @@ vector<string> PIO::inq_vardims(const string &name) const {
 bool PIO::inq_dim(const string &name) const {
   try {
     bool exists = false;
-    m_nc->inq_dimid(name, exists);
+    m_impl->nc->inq_dimid(name, exists);
     return exists;
   } catch (RuntimeError &e) {
     e.add_context("searching for dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
@@ -410,10 +412,10 @@ bool PIO::inq_dim(const string &name) const {
 unsigned int PIO::inq_dimlen(const string &name) const {
   try {
     bool exists = false;
-    m_nc->inq_dimid(name, exists);
+    m_impl->nc->inq_dimid(name, exists);
     if (exists == true) {
       unsigned int result = 0;
-      m_nc->inq_dimlen(name, result);
+      m_impl->nc->inq_dimlen(name, result);
       return result;
     } else {
       return 0;
@@ -435,7 +437,7 @@ AxisType PIO::inq_dimtype(const string &name,
     units::Unit tmp_units(unit_system, "1");
     bool exists;
 
-    m_nc->inq_varid(name, exists);
+    m_impl->nc->inq_varid(name, exists);
     
     if (exists == false) {
       throw RuntimeError("coordinate variable " + name + " is missing");
@@ -527,7 +529,7 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
 
 void PIO::def_dim(const std::string &name, size_t length) const {
   try {
-    m_nc->def_dim(name, length);
+    m_impl->nc->def_dim(name, length);
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
@@ -538,7 +540,7 @@ void PIO::def_dim(const std::string &name, size_t length) const {
 //! \brief Define a variable.
 void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
   try {
-    m_nc->def_var(name, nctype, dims);
+    m_impl->nc->def_var(name, nctype, dims);
   } catch (RuntimeError &e) {
     e.add_context("defining variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
@@ -575,7 +577,7 @@ void PIO::put_1d_var(const string &name, unsigned int s, unsigned int c,
 void PIO::get_dim(const string &name, vector<double> &data) const {
   try {
     unsigned int dim_length = 0;
-    m_nc->inq_dimlen(name, dim_length);
+    m_impl->nc->inq_dimlen(name, dim_length);
 
     get_1d_var(name, 0, dim_length, data);
   } catch (RuntimeError &e) {
@@ -602,8 +604,8 @@ void PIO::append_history(const string &history) const {
 void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
                          const vector<double> &values) const {
   try {
-    m_nc->redef();
-    m_nc->put_att_double(var_name, att_name, nctype, values);
+    m_impl->nc->redef();
+    m_impl->nc->put_att_double(var_name, att_name, nctype, values);
   } catch (RuntimeError &e) {
     e.add_context("writing double attribute '%s:%s' in '%s'",
                   var_name.c_str(), att_name.c_str(), inq_filename().c_str());
@@ -624,11 +626,11 @@ void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type
 void PIO::put_att_text(const string &var_name, const string &att_name,
                        const string &value) const {
   try {
-    m_nc->redef();
+    m_impl->nc->redef();
 
     string tmp = value + "\0";    // ensure that the string is null-terminated
 
-    m_nc->put_att_text(var_name, att_name, tmp);
+    m_impl->nc->put_att_text(var_name, att_name, tmp);
   } catch (RuntimeError &e) {
     e.add_context("writing text attribute '%s:%s' in '%s'",
                   var_name.c_str(), att_name.c_str(), inq_filename().c_str());
@@ -640,7 +642,7 @@ void PIO::put_att_text(const string &var_name, const string &att_name,
 vector<double> PIO::get_att_double(const string &var_name, const string &att_name) const {
   try {
     IO_Type att_type;
-    m_nc->inq_atttype(var_name, att_name, att_type);
+    m_impl->nc->inq_atttype(var_name, att_name, att_type);
 
     // Give an understandable error message if a string attribute was found when
     // a number (or a list of numbers) was expected. (We've seen datasets with
@@ -654,7 +656,7 @@ vector<double> PIO::get_att_double(const string &var_name, const string &att_nam
       // In this case att_type might be PISM_NAT (if an attribute does not
       // exist), but get_att_double can handle that.
       vector<double> result;
-      m_nc->get_att_double(var_name, att_name, result);
+      m_impl->nc->get_att_double(var_name, att_name, result);
       return result;
     }
   } catch (RuntimeError &e) {
@@ -668,7 +670,7 @@ vector<double> PIO::get_att_double(const string &var_name, const string &att_nam
 string PIO::get_att_text(const string &var_name, const string &att_name) const {
   try {
     string result;
-    m_nc->get_att_text(var_name, att_name, result);
+    m_impl->nc->get_att_text(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {
     e.add_context("reading text attribute '%s:%s' from %s", var_name.c_str(), att_name.c_str(), inq_filename().c_str());
@@ -679,7 +681,7 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
 unsigned int PIO::inq_nattrs(const string &var_name) const {
   try {
     int result = 0;
-    m_nc->inq_varnatts(var_name, result);
+    m_impl->nc->inq_varnatts(var_name, result);
     return result;
   } catch (RuntimeError &e) {
     e.add_context("getting the number of attributes of variable '%s' in '%s'", var_name.c_str(), inq_filename().c_str());
@@ -691,7 +693,7 @@ unsigned int PIO::inq_nattrs(const string &var_name) const {
 string PIO::inq_attname(const string &var_name, unsigned int n) const {
   try {
     string result;
-    m_nc->inq_attname(var_name, n, result);
+    m_impl->nc->inq_attname(var_name, n, result);
     return result;
   } catch (RuntimeError &e) {
     e.add_context("getting the name of an attribute of variable '%s' in '%s'", var_name.c_str(), inq_filename().c_str());
@@ -703,7 +705,7 @@ string PIO::inq_attname(const string &var_name, unsigned int n) const {
 IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
   try {
     IO_Type result;
-    m_nc->inq_atttype(var_name, att_name, result);
+    m_impl->nc->inq_atttype(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {
     e.add_context("getting the type of an attribute of variable '%s' in '%s'", var_name.c_str(), inq_filename().c_str());
@@ -717,8 +719,8 @@ void PIO::get_vara_double(const string &variable_name,
                           const vector<unsigned int> &count,
                           double *ip) const {
   try {
-    m_nc->enddef();
-    m_nc->get_vara_double(variable_name, start, count, ip);
+    m_impl->nc->enddef();
+    m_impl->nc->get_vara_double(variable_name, start, count, ip);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
@@ -731,8 +733,8 @@ void PIO::put_vara_double(const string &variable_name,
                           const vector<unsigned int> &count,
                           const double *op) const {
   try {
-    m_nc->enddef();
-    m_nc->put_vara_double(variable_name, start, count, op);
+    m_impl->nc->enddef();
+    m_impl->nc->put_vara_double(variable_name, start, count, op);
   } catch (RuntimeError &e) {
     e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
@@ -744,8 +746,8 @@ void PIO::get_varm_double(const string &variable_name,
                           const vector<unsigned int> &count,
                           const vector<unsigned int> &imap, double *ip) const {
   try {
-    m_nc->enddef();
-    m_nc->get_varm_double(variable_name, start, count, imap, ip);
+    m_impl->nc->enddef();
+    m_impl->nc->get_varm_double(variable_name, start, count, imap, ip);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
@@ -758,8 +760,8 @@ void PIO::put_varm_double(const string &variable_name,
                           const vector<unsigned int> &imap,
                           const double *op) const {
   try {
-    m_nc->enddef();
-    m_nc->put_varm_double(variable_name, start, count, imap, op);
+    m_impl->nc->enddef();
+    m_impl->nc->put_varm_double(variable_name, start, count, imap, op);
   } catch (RuntimeError &e) {
     e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
@@ -768,7 +770,7 @@ void PIO::put_varm_double(const string &variable_name,
 
 void PIO::set_local_extent(unsigned int xs, unsigned int xm,
                            unsigned int ys, unsigned int ym) const {
-  m_nc->set_local_extent(xs, xm, ys, ym);
+  m_impl->nc->set_local_extent(xs, xm, ys, ym);
 }
 
 
