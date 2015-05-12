@@ -412,12 +412,12 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
   }
 
   if ((Mx / Nx) < 2) {          // note: integer division
-    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+    throw RuntimeError::formatted("Can't split %d grid points into %d parts (X-direction).",
                                   Mx, (int)Nx);
   }
 
   if ((My / Ny) < 2) {          // note: integer division
-    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+    *throw RuntimeError::formatted("Can't split %d grid points into %d parts (Y-direction).",
                                   My, (int)Ny);
   }
 }
@@ -472,14 +472,15 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
   options::Integer Nx("-Nx", "Number of processors in the x direction", Nx_default);
   options::Integer Ny("-Ny", "Number of processors in the y direction", Ny_default);
 
-  // validate results
+  // validate results (compute_nprocs checks its results, but we also need to validate command-line
+  // options)
   if ((Mx / Nx) < 2) {
-    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+    throw RuntimeError::formatted("Can't split %d grid points into %d parts (X-direction).",
                                   Mx, (int)Nx);
   }
 
   if ((My / Ny) < 2) {
-    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+    throw RuntimeError::formatted("Can't split %d grid points into %d parts (Y-direction).",
                                   My, (int)Ny);
   }
 
