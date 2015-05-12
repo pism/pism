@@ -1117,7 +1117,16 @@ GridParameters::GridParameters() {
 }
 
 GridParameters::GridParameters(Config::ConstPtr config, unsigned int size) {
+  init_from_config(config, size);
+}
 
+void GridParameters::ownership_ranges_from_options(unsigned int size) {
+  OwnershipRanges procs = compute_ownership_ranges(Mx, My, size);
+  procs_x = procs.x;
+  procs_y = procs.y;
+}
+
+void GridParameters::init_from_config(Config::ConstPtr config, unsigned int size) {
   Lx = config->get_double("grid_Lx");
   Ly = config->get_double("grid_Ly");
 
@@ -1138,21 +1147,15 @@ GridParameters::GridParameters(Config::ConstPtr config, unsigned int size) {
   this->ownership_ranges_from_options(size);
 }
 
-void GridParameters::ownership_ranges_from_options(unsigned int size) {
-  OwnershipRanges procs = compute_ownership_ranges(Mx, My, size);
-  procs_x = procs.x;
-  procs_y = procs.y;
-}
-
-GridParameters::GridParameters(Context::Ptr ctx,
-                               const PIO &file,
-                               const std::string &variable_name,
-                               Periodicity p) {
+void GridParameters::init_from_file(Context::Ptr ctx,
+                                    const PIO &file,
+                                    const std::string &variable_name,
+                                    Periodicity p) {
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
   // set defaults from configuration parameters
-  *this = GridParameters(ctx->config(), size);
+  init_from_config(ctx->config(), size);
 
   grid_info input_grid(file, variable_name, ctx->unit_system(), p);
 
@@ -1168,12 +1171,19 @@ GridParameters::GridParameters(Context::Ptr ctx,
 }
 
 GridParameters::GridParameters(Context::Ptr ctx,
+                               const PIO &file,
+                               const std::string &variable_name,
+                               Periodicity p) {
+  init_from_file(ctx, file, variable_name, p);
+}
+
+GridParameters::GridParameters(Context::Ptr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                Periodicity p) {
   PIO nc(ctx->com(), "netcdf3");
   nc.open(filename, PISM_READONLY);
-  *this = GridParameters(ctx, nc, variable_name, p);
+  init_from_file(ctx, nc, variable_name, p);
   nc.close();
 }
 
