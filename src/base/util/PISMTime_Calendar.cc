@@ -152,8 +152,8 @@ void Time_Calendar::init_from_input_file(const PIO &nc,
 
     // Set the reference date of internal units.
     {
-      std::string date = reference_date_from_file(nc, time_name);
-      m_time_units = units::Unit(m_unit_system, "seconds " + date);
+      std::string date_string = reference_date_from_file(nc, time_name);
+      m_time_units = units::Unit(m_unit_system, "seconds " + date_string);
     }
 
     // Read time information from the file. (PISM output files don't have time bounds, so we don't
@@ -223,8 +223,8 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
 
     // Set the reference date of internal units.
     {
-      std::string date = reference_date_from_file(nc, time_name);
-      m_time_units = units::Unit(m_unit_system, "seconds " + date);
+      std::string date_string = reference_date_from_file(nc, time_name);
+      m_time_units = units::Unit(m_unit_system, "seconds " + date_string);
     }
 
     // Read time information from the file.
