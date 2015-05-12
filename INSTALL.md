@@ -6,7 +6,7 @@ Welcome to PISM!  All information about PISM can be found at
 
 To download the latest stable release use [GIT](http://git-scm.com/):
 
-    git clone git://github.com/pism/pism.git pism0.6
+    git clone git://github.com/pism/pism.git pism0.7
 
 For complete installation instructions get the PISM Installation Manual (PDF)
 from http://www.pism-docs.org.  Major installation requirements:
@@ -24,7 +24,7 @@ from http://www.pism-docs.org.  Major installation requirements:
 
 To build PISM locally (within the PISM source tree), do
 
-    cd pism0.6
+    cd pism0.7
     mkdir build
     cd build
     ccmake ..     # hit 'c' to see initial config, 'c' again to configure,
@@ -78,7 +78,7 @@ To generate Doxygen source code documentation:
 
 To generate PDF and Doxygen documentation on a system without PETSc and other prerequisites, do
 
-    cd pism0.6
+    cd pism0.7
     mkdir build-doc
     cd build-doc
     cmake ../doc
