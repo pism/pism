@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <deque>
 #include <petscvec.h>
 
 #include "PIO.hh"
@@ -79,13 +80,13 @@ struct PIO::Impl {
   MPI_Comm com;
   std::string backend_type;
   io::NCFile::Ptr nc;
-  std::vector<WriteOperation> delayed_writes;
+  std::deque<WriteOperation> delayed_writes;
 };
 
-static void execute_ops(const PIO &nc, std::vector<WriteOperation> &ops) {
+static void execute_ops(const PIO &nc, std::deque<WriteOperation> &ops) {
   while (not ops.empty()) {
-    ops.back().execute(nc);
-    ops.pop_back();
+    ops.front().execute(nc);
+    ops.pop_front();
   }
 }
 
