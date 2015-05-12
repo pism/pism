@@ -1118,7 +1118,9 @@ GridParameters::GridParameters() {
 }
 
 GridParameters::GridParameters(Config::ConstPtr config, unsigned int size) {
-  init_from_config(config, size);
+  init_from_config(config);
+  // set ownership ranges (Mx and My are final)
+  this->ownership_ranges_from_options(size);
 }
 
 void GridParameters::ownership_ranges_from_options(unsigned int size) {
@@ -1127,7 +1129,8 @@ void GridParameters::ownership_ranges_from_options(unsigned int size) {
   procs_y = procs.y;
 }
 
-void GridParameters::init_from_config(Config::ConstPtr config, unsigned int size) {
+//! Initialize from a configuration database. Does not try to compute ownership ranges.
+void GridParameters::init_from_config(Config::ConstPtr config) {
   Lx = config->get_double("grid_Lx");
   Ly = config->get_double("grid_Ly");
 
@@ -1144,8 +1147,7 @@ void GridParameters::init_from_config(Config::ConstPtr config, unsigned int size
   double lambda = config->get_double("grid_lambda");
   SpacingType s = string_to_spacing(config->get_string("grid_ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
-
-  this->ownership_ranges_from_options(size);
+  // does not set ownership ranges because we don't know if these settings are final
 }
 
 void GridParameters::init_from_file(Context::Ptr ctx,
@@ -1155,8 +1157,8 @@ void GridParameters::init_from_file(Context::Ptr ctx,
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
-  // set defaults from configuration parameters
-  init_from_config(ctx->config(), size);
+  // set defaults (except for ownership ranges) from configuration parameters
+  init_from_config(ctx->config());
 
   grid_info input_grid(file, variable_name, ctx->unit_system(), p);
 
@@ -1168,6 +1170,7 @@ void GridParameters::init_from_file(Context::Ptr ctx,
   My = input_grid.y_len;
   periodicity = p;
   z = input_grid.z;
+  // set ownership ranges (Mx and My are final)
   this->ownership_ranges_from_options(ctx->size());
 }
 

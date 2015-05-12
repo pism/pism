@@ -122,7 +122,7 @@ public:
   //! Processor ownership ranges in the Y direction.
   std::vector<unsigned int> procs_y;
 private:
-  void init_from_config(Config::ConstPtr config, unsigned int size);
+  void init_from_config(Config::ConstPtr config);
   void init_from_file(Context::Ptr ctx, const PIO &file,
                       const std::string &variable_name,
                       Periodicity p);
