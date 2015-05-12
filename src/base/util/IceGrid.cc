@@ -417,7 +417,7 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
   }
 
   if ((My / Ny) < 2) {          // note: integer division
-    *throw RuntimeError::formatted("Can't split %d grid points into %d parts (Y-direction).",
+    throw RuntimeError::formatted("Can't split %d grid points into %d parts (Y-direction).",
                                   My, (int)Ny);
   }
 }
