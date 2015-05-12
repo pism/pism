@@ -441,7 +441,7 @@ int PNCFile::get_att_text_impl(const std::string &variable_name, const std::stri
 int PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
 
-  stat = redef(); check(stat);
+  redef();
 
   int varid = -1;
 
@@ -461,7 +461,7 @@ int PNCFile::put_att_double_impl(const std::string &variable_name, const std::st
 int PNCFile::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
 
-  stat = redef(); check(stat);
+  redef();
 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
