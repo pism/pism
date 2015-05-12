@@ -89,19 +89,20 @@ to be somewhat fragile, though, so use at your own risk.)
 \label{sec:saving-time-series}
 \optsection{Saving scalar time-series}
 
+\newcommand{\alltsvars}{\ref{tab:time-series-1},~\ref{tab:time-series-2},~and~\ref{tab:time-series-3}}
+
  It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \texttt{-ts_file}, \texttt{-ts_times}, and \texttt{-ts_vars}.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
         -ts_times 0:1:1e4 -ts_vars ivol,iareag
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
-will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series-1}~and~\ref{tab:time-series-2} for the full list of supported time-series.
+will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and tables \alltsvars{} for the full list of supported time-series.
 
 Note that, similarly to the snapshot-saving code (section \ref{sec:snapshots}), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
 Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} available
-variables, as listed in tables
-\ref{tab:time-series-1}~and~\ref{tab:time-series-2}.  Because scalar
+variables, as listed in tables \alltsvars{}.  Because scalar
 time-series take minimal storage space, compared to spatially-varying data,
 this is usually a reasonable choice. Run PISM with the
 \intextoption{list_diagnostics} option to see the list of all available time-series.
@@ -122,7 +123,7 @@ PISM's signal handling.)
     \fileopt{ts_file} & Specifies the file to save to.\\
     \timeopt{ts_times} & Specifies times to save at as a MATLAB-style range $a:\Delta t:b$, a comma-separated list, or a keyword (\texttt{hourly}, \texttt{daily}, \texttt{monthly}, \texttt{yearly}). See section \ref{sec:saving-spat-vari}. \\
     \listopt{ts_vars} & Comma-separated list of variables, see
-    tables~\ref{tab:time-series-1}~and~\ref{tab:time-series-2}. Omitting this
+    tables~\alltsvars. Omitting this
     option is equivalent to listing the \emph{all} variables.\\
     \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \bottomrule
@@ -131,7 +132,7 @@ PISM's signal handling.)
 \label{tab:time-series-opts}
 \end{table}
 
-Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics which appear in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}:\index{PISM!physical meaning of scalar diagnostics}
+Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics which appear in tables \alltsvars:\index{PISM!physical meaning of scalar diagnostics}
 \begin{itemize}
   \item For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.
   \item The \texttt{sub_shelf_ice_flux} may be non-zero even if \texttt{iareaf} (floating ice area) is zero. This is due to the fact that during time-stepping fluxes are computed before calving is applied, and the ice area is computed \emph{after} calving. Hence ice that is calved off experiences top-surface and basal fluxes, but does not contribute to the reported area. This is a small error that approaches zero as the grid is refined. In this case \texttt{sub_shelf_ice_flux} should be added to the calving flux during post-processing.
@@ -150,18 +151,15 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \toprule
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \midrule
-    \texttt{cumulative_grounded_basal_ice_flux} & \textsl{kg} &  cumulative total grounded basal ice flux \\
-    \texttt{cumulative_discharge_flux} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
-    \texttt{cumulative_float_kill_flux} & \textsl{kg} &  cumulative \texttt{-float_kill} flux \\
-    \texttt{cumulative_nonneg_rule_flux} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{cumulative_ocean_kill_flux} & \textsl{kg} &  cumulative \texttt{-calving ocean_kill} flux \\
-    \texttt{cumulative_sub_shelf_ice_flux} & \textsl{kg} &  cumulative total sub-shelf ice flux \\
-    \texttt{cumulative_surface_ice_flux} & \textsl{kg} &  cumulative total over ice domain of top surface ice mass flux \\
+    \texttt{grounded_basal_ice_flux_cumulative} & \textsl{kg} &  cumulative total grounded basal ice flux \\
+    \texttt{discharge_flux_cumulative} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
+    \texttt{nonneg_rule_flux_cumulative} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
+    \texttt{sub_shelf_ice_flux_cumulative} & \textsl{kg} &  cumulative total sub-shelf ice flux \\
+    \texttt{surface_ice_flux_cumulative} & \textsl{kg} &  cumulative total over ice domain of top surface ice mass flux \\
     \texttt{dimassdt} & \textsl{kg  / s} &  total ice mass rate of change \\
     \texttt{discharge_flux} & \textsl{kg  / s} &  discharge (calving and icebergs) flux \\
     \texttt{divoldt} & \textsl{$m^{3}$  / s} &  total ice volume rate of change \\
     \texttt{dt} & \textsl{second} &  mass continuity time step \\
-    \texttt{float_kill_flux} & \textsl{kg  / s} &  \texttt{-float_kill} flux \\
     \texttt{grounded_basal_ice_flux} & \textsl{kg  / s} &  total, over grounded ice, of basal ice flux \\
     \texttt{iarea} & \textsl{$m^{2}$} &  total ice area \\
     \texttt{iareacold} & \textsl{$m^{2}$} &  ice-covered area where basal ice is cold \\
@@ -192,14 +190,35 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
     \texttt{max_hor_vel} & \textsl{m  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
     \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-calving ocean_kill} flux \\
     \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\
     \texttt{sub_shelf_ice_flux} & \textsl{kg  / s} &  total sub-shelf ice flux \\
     \texttt{surface_ice_flux} & \textsl{kg  / s} &  total over ice domain of top surface ice mass flux \\
+    \multicolumn{3}{c}{Continued in Table \ref{tab:time-series-3}}\\
     \bottomrule
   \end{tabular}
 \caption{Scalar time-series supported by PISM, part 2}
 \label{tab:time-series-2}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description}\\
+    \midrule
+    \multicolumn{3}{c}{Continued from Table \ref{tab:time-series-2}}\\
+    \texttt{hydro_ice_free_land_loss_cumulative} & \textsl{kg} & cumulative liquid water loss from subglacial hydrology into cells with mask as ice free land \\
+    \texttt{hydro_ice_free_land_loss} & \textsl{ks / s} & rate of liquid water loss from subglacial hydrology into cells with mask as ice free land \\
+    \texttt{hydro_ocean_loss_cumulative} & \textsl{kg} & cumulative liquid water loss from subglacial hydrology into cells with mask as ocean \\
+    \texttt{hydro_ocean_loss} & \textsl{kg / s} & rate of liquid water loss from subglacial hydrology into cells with mask as ocean \\
+    \texttt{hydro_negative_thickness_gain_cumulative} & \textsl{kg} & cumulative non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero \\
+    \texttt{hydro_negative_thickness_gain} & \textsl{kg / s} & rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero \\
+    \texttt{hydro_null_strip_loss_cumulative} & \textsl{kg} & cumulative liquid water loss from subglacial hydrology into cells inside the null strip \\
+    \texttt{hydro_null_strip_loss} & \textsl{kg / s} & rate of liquid water loss from subglacial hydrology into cells inside the null strip\\
+    \bottomrule
+  \end{tabular}
+\caption{Scalar time-series supported by PISM (with a mass-conserving subglacial hydrology model), part 3}
+\label{tab:time-series-3}
 \end{table}
 
 \clearpage
