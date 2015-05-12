@@ -1166,6 +1166,7 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
     count[0] = static_cast<unsigned int>(tmp.size()) / 2;
     count[1] = 2;
 
+    nc.enddef();
     nc.put_vara_double(name, start, count, &tmp[0]);
 
   } catch (RuntimeError &e) {

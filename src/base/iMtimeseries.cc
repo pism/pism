@@ -469,11 +469,16 @@ void IceModel::write_extras() {
   double      current_time = m_time->current();
   std::string time_name    = m_config->get_string("time_dimension_name");
 
-  io::append_time(nc, time_name, current_time);
 
   unsigned int time_length = nc.inq_dimlen(time_name);
+  size_t time_start = static_cast<size_t>(time_length);
 
-  size_t time_start = static_cast<size_t>(time_length - 1);
+  // This call will extend the time dimension, but that will not
+  // happen until nc.enddef() is called. (We don't want to switch to
+  // "data mode" before we're done defining all variables, including
+  // time bounds). This is why time_start = time_length above (and not
+  // time_length - 1).
+  io::append_time(nc, time_name, current_time);
 
   std::vector<double> data(2);
   data[0] = last_extra;
