@@ -221,9 +221,10 @@ IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
 
     try {
       petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
-    } catch (RuntimeError) {
-      throw RuntimeError::formatted("can't distribute a %d x %d grid across %d processors.",
-                                    Mx(), My(), size());
+    } catch (RuntimeError &e) {
+      e.add_context("distributing a %d x %d grid across %d processors.",
+                    Mx(), My(), size());
+      throw;
     }
 
     // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
@@ -411,13 +412,13 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
   }
 
   if ((Mx / Nx) < 2) {          // note: integer division
-    throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  Mx, My, size);
+    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                  Mx, (int)Nx);
   }
 
   if ((My / Ny) < 2) {          // note: integer division
-    throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
-                                  Mx, My, size);
+    throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                  My, (int)Ny);
   }
 }
 
