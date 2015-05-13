@@ -42,6 +42,7 @@ option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
+option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
 option (Pism_USE_TR1 "Use the std::tr1 namespace to access shared pointer definitions. Disable to get shared pointers from the std namespace (might be needed with some compilers)." ON)
@@ -79,6 +80,13 @@ if (Pism_ADD_FPIC)
   if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
     message (STATUS "Adding -fPIC to C++ compiler flags.")
     set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+  endif()
+endif ()
+
+if (Pism_CODE_COVERAGE)
+  if (NOT CMAKE_CXX_FLAGS MATCHES "-fprofile-arcs")
+    message (STATUS "Adding -fprofile-arcs -ftest-coverage to C++ compiler flags.")
+    set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
   endif()
 endif ()
 
