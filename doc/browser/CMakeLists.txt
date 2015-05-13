@@ -14,7 +14,6 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   endif()
 
   set (browser_helpers
-    initialization-sequence.dot
     config_doc.py
     doxybib.bst
     doxybib.py

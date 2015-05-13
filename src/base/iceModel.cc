@@ -948,10 +948,6 @@ void IceModel::init() {
   //! regridding.
   misc_setup();
 
-  //! The following flow-chart illustrates the process.
-  //!
-  //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
-
   // Get the start time in seconds and ensure that it is consistent
   // across all processors.
   start_time = GlobalMax(m_grid->com, GetTime());
