@@ -1,5 +1,5 @@
   * [Changes since 0.6 (February 2014)](#changes-since-06-february-2014)
-  * [Changes since 0.5 (May 2012)](#changes-since-05-may-2012)
+  * [Changes from 0.5 (May 2012) to 0.6](#changes-since-05-may-2012)
   * [Changes from 0.4 (June 2011) to 0.5](#changes-from-04-june-2011-to-05)
 
 # Changes since 0.6 (February 2014)
