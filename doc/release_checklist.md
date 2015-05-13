@@ -22,7 +22,7 @@ git push --tags
     -   [ ] installation manual: "make installation"
     -   [ ] forcing manual: "make forcing"
     -   [ ] source code browser: "make browser.tgz"
-    -   [ ] Python docs: "make pismpython<sub>docs</sub>"
+    -   [ ] Python docs: "make pismpython_docs"
 10. [ ] Upload these docs.
 11. [ ] Switch the default branch on [github.com/pism/pism](http:github.com/pism/pism)
 12. [ ] Write a news item for `pism-docs.org`.
