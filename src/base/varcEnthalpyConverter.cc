@@ -98,7 +98,7 @@ double varcEnthalpyConverter::enthalpy_cts_impl(double p) const {
   \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
   \f$T_r = 256.82\f$ K.
 */
-double varcEnthalpyConverter::c_from_T_impl(double T) const {
+double varcEnthalpyConverter::c_impl(double T) const {
   return m_c_i + m_c_gradient * (T - m_T_r);
 }
 
@@ -107,13 +107,7 @@ double varcEnthalpyConverter::c_from_T_impl(double T) const {
 Calls TfromE().
  */
 double varcEnthalpyConverter::temperature_impl(double E, double p) const {
-
-#if (PISM_DEBUG==1)
-  if (E >= enthalpy_liquid(p)) {
-    throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
-                                  E, p);
-  }
-#endif
+  validate_E_P(E, p);
 
   if (E < enthalpy_cts(p)) {
     return TfromE(E);
@@ -128,26 +122,14 @@ double varcEnthalpyConverter::temperature_impl(double E, double p) const {
 Calls EfromT().
  */
 double varcEnthalpyConverter::enthalpy_impl(double T, double omega, double p) const {
-  const double T_m = melting_temperature(p);
+  validate_T_omega_P(T, omega, p);
 
-  if (T <= 0.0) {
-    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
-  }
-  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
-  }
-  if (T > T_m + 1.0e-6) {
-    throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
-  }
-  if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory; got T=%f, T_m=%f, omega=%f",
-                                  T, T_m, omega);
-  }
+  const double T_m = melting_temperature(p);
 
   if (T < T_m) {
     return EfromT(T);
   } else {
-    return enthalpy_cts(p) + omega * m_L;
+    return enthalpy_cts(p) + omega * L(T_m);
   }
 }
 

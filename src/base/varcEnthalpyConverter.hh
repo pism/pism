@@ -39,7 +39,7 @@ public:
 
 protected:
   double enthalpy_cts_impl(double p) const;
-  double c_from_T_impl(double T) const;
+  double c_impl(double T) const;
   double enthalpy_impl(double T, double omega, double p) const;
   double temperature_impl(double E, double p) const;
 

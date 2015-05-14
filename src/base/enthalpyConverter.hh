@@ -88,6 +88,9 @@ protected:
 
   virtual bool is_temperate_impl(double E, double P) const;
 
+  void validate_E_P(double E, double P) const;
+  void validate_T_omega_P(double T, double omega, double P) const;
+
   //! melting temperature of pure water at atmospheric pressure
   double m_T_melting;
   //! latent heat of fusion of water at atmospheric pressure

@@ -76,6 +76,35 @@ bool EnthalpyConverter::is_temperate(double E, double P) const {
   return this->is_temperate_impl(E, P);
 }
 
+void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
+#if (PISM_DEBUG==1)
+  const double T_melting = melting_temperature(P);
+  if (T <= 0.0) {
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
+  }
+  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
+    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
+  }
+  if (T > T_melting + 1.0e-6) {
+    throw RuntimeError::formatted("T=%f exceeds T_melting=%f; not allowed",T,T_melting);
+  }
+  if ((T < T_melting - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
+    throw RuntimeError::formatted("T < T_melting AND omega > 0 is contradictory;"
+                                  " got T=%f, T_melting=%f, omega=%f",
+                                  T, T_melting, omega);
+  }
+#endif
+}
+
+void EnthalpyConverter::validate_E_P(double E, double P) const {
+#if (PISM_DEBUG==1)
+  if (E >= enthalpy_liquid(P)) {
+    throw RuntimeError::formatted("E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",
+                                  E, P, enthalpy_liquid(P));
+  }
+#endif
+}
+
 //! Return temperature of ice at `(E, P)`.
 double EnthalpyConverter::temperature(double E, double P) const {
   return this->temperature_impl(E, P);
@@ -173,13 +202,7 @@ We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::temperature_impl(double E, double P) const {
-
-#if (PISM_DEBUG==1)
-  if (E >= enthalpy_liquid(P)) {
-    throw RuntimeError::formatted("E=%f at P=%f equals or exceeds that of liquid water",
-                                  E, P);
-  }
-#endif
+  validate_E_P(E, P);
 
   if (E < enthalpy_cts(P)) {
     return (E / m_c_i) + m_T_0;
@@ -213,11 +236,6 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
    We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
 double EnthalpyConverter::water_fraction(double E, double P) const {
-  return this->water_fraction_impl(E, P);
-}
-
-double EnthalpyConverter::water_fraction_impl(double E, double P) const {
-
 #if (PISM_DEBUG==1)
   if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted("E=%f and pressure=%f correspond to liquid water",
@@ -225,6 +243,10 @@ double EnthalpyConverter::water_fraction_impl(double E, double P) const {
   }
 #endif
 
+  return this->water_fraction_impl(E, P);
+}
+
+double EnthalpyConverter::water_fraction_impl(double E, double P) const {
   double E_s = enthalpy_cts(P);
   if (E <= E_s) {
     return 0.0;
@@ -254,24 +276,9 @@ double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
 }
 
 double EnthalpyConverter::enthalpy_impl(double T, double omega, double P) const {
-  const double T_melting = melting_temperature(P);
+  validate_T_omega_P(T, omega, P);
 
-#if (PISM_DEBUG==1)
-  if (T <= 0.0) {
-    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
-  }
-  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
-  }
-  if (T > T_melting + 1.0e-6) {
-    throw RuntimeError::formatted("T=%f exceeds T_melting=%f; not allowed",T,T_melting);
-  }
-  if ((T < T_melting - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    throw RuntimeError::formatted("T < T_melting AND omega > 0 is contradictory;"
-                                  " got T=%f, T_melting=%f, omega=%f",
-                                  T, T_melting, omega);
-  }
-#endif
+  const double T_melting = melting_temperature(P);
 
   if (T < T_melting) {
     return m_c_i * (T - m_T_0);
