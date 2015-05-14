@@ -88,6 +88,18 @@ if (Pism_CODE_COVERAGE)
     message (STATUS "Adding -fprofile-arcs -ftest-coverage to C++ compiler flags.")
     set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
   endif()
+  add_custom_target (coverage_report
+    COMMAND lcov -d . -c -o pism-coverage.info
+    COMMAND lcov -q -r pism-coverage.info PISMPYTHON
+    COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
+    WORKING_DIRECTORY ${Pism_BINARY_DIR}
+    VERBATIM
+    )
+  add_custom_target (coverage_reset
+    COMMAND lcov -d . -z
+    WORKING_DIRECTORY ${Pism_BINARY_DIR}
+    VERBATIM
+    )
 endif ()
 
 if (Pism_PEDANTIC_WARNINGS)
