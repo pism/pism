@@ -21,60 +21,61 @@ PISM_TEMPSERIES=pism_dT.nc
 PISM_SLSERIES=pism_dSL.nc
 
 if [ $# -lt 5 ] ; then
-  echo "spinup.sh ERROR: needs 5 or 6 or 7 positional arguments ... ENDING NOW"
-  echo
-  echo "usage:"
-  echo
-  echo "    spinup.sh PROCS CLIMATE DURATION GRID DYNAMICS [OUTFILE] [BOOTFILE]"
-  echo
-  echo "  where:"
-  echo "    PROCS     = 1,2,3,... is number of MPI processes"
-  echo "    CLIMATE   in $CLIMLIST"
-  echo "    DURATION  = model run time in years; does '-ys -DURATION -ye 0'"
-  echo "    GRID      in $GRIDLIST (km)"
-  echo "    DYNAMICS  in $DYNALIST; sia is non-sliding; default = sia"
-  echo "    OUTFILE   optional name of output file; default = unnamed.nc"
-  echo "    BOOTFILE  optional name of input file; default = $PISM_DATANAME"
-  echo
-  echo "consider setting optional environment variables (see script for meaning):"
-  echo "    EXSTEP       spacing in years between -extra_files outputs; defaults to 100"
-  echo "    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,"
-  echo "                   tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'"
-  echo "                   plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid"
-  echo "    NODIAGS      if set, DON'T use -ts_file or -extra_file"
-  echo "    USEPIK       if set, add -pik -subgl"
-  echo "    PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ"
-  echo "                   [default=0.25]"
-  echo "    PARAM_SIAE   sets option -sia_e \$PARAM_SIAE   [default=3.0]"
-  echo "    PARAM_TEFO   sets (hybrid-only) option -till_effective_fraction_overburden"
-  echo "                   \$PARAM_TEFO   [default=0.02]"
-  echo "    PARAM_TTPHI  sets (hybrid-only) option -topg_to_phi \$PARAM_TTPHI"
-  echo "                   [default=15.0,40.0,-300.0,700.0]"
-  echo "    PARAM_NOSGL  if set, DON'T use -tauc_slippery_grounding_lines"
-  echo "    PISM_DO      set to 'echo' if no run desired; defaults to empty"
-  echo "    PISM_MPIDO   defaults to 'mpiexec -n'"
-  echo "    PISM_PREFIX  set to path to pismr executable if desired; defaults to empty"
-  echo "    PISM_EXEC    defaults to 'pismr'"
-  echo "    REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)"
-  echo "    REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;"
-  echo "                   defaults to 'bmelt,enthalpy,litho_temp,thk,tillwat'"
-  echo
-  echo "example usage 1:"
-  echo
-  echo "    $ ./spinup.sh 4 const 1000 20 sia"
-  echo
-  echo "  Does spinup with 4 processors, constant-climate, 1000 year run, 20 km"
-  echo "  grid, and non-sliding SIA stress balance.  Bootstraps from and outputs to"
-  echo "  default files."
-  echo
-  echo "example usage 2:"
-  echo
-  echo "    $ PISM_DO=echo ./spinup.sh 128 paleo 100.0 5 hybrid out.nc boot.nc &> foo.sh"
-  echo
-  echo "  Creates a script foo.sh for spinup with 128 processors, simulated paleo-climate,"
-  echo "  5 km grid, sliding with SIA+SSA hybrid, output to {out.nc,ts_out.nc,ex_out.nc},"
-  echo "  and bootstrapping from boot.nc."
-  echo
+  cat - <<EOF
+spinup.sh ERROR: needs 5 or 6 or 7 positional arguments ... ENDING NOW
+
+usage:
+
+    spinup.sh PROCS CLIMATE DURATION GRID DYNAMICS [OUTFILE] [BOOTFILE]
+
+  where:
+    PROCS     = 1,2,3,... is number of MPI processes
+    CLIMATE   in $CLIMLIST
+    DURATION  = model run time in years; does '-ys -DURATION -ye 0'
+    GRID      in $GRIDLIST (km)
+    DYNAMICS  in $DYNALIST; sia is non-sliding; default = sia
+    OUTFILE   optional name of output file; default = unnamed.nc
+    BOOTFILE  optional name of input file; default = $PISM_DATANAME
+
+consider setting optional environment variables (see script for meaning):
+    EXSTEP       spacing in years between -extra_files outputs; defaults to 100
+    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,
+                   tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'
+                   plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid
+    NODIAGS      if set, DON'T use -ts_file or -extra_file
+    USEPIK       if set, add -pik -subgl
+    PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ
+                   [default=0.25]
+    PARAM_SIAE   sets option -sia_e \$PARAM_SIAE   [default=3.0]
+    PARAM_TEFO   sets (hybrid-only) option -till_effective_fraction_overburden
+                   \$PARAM_TEFO   [default=0.02]
+    PARAM_TTPHI  sets (hybrid-only) option -topg_to_phi \$PARAM_TTPHI
+                   [default=15.0,40.0,-300.0,700.0]
+    PARAM_NOSGL  if set, DON'T use -tauc_slippery_grounding_lines
+    PISM_DO      set to 'echo' if no run desired; defaults to empty
+    PISM_MPIDO   defaults to 'mpiexec -n'
+    PISM_PREFIX  set to path to pismr executable if desired; defaults to empty
+    PISM_EXEC    defaults to 'pismr'
+    REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)
+    REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;
+                   defaults to 'bmelt,enthalpy,litho_temp,thk,tillwat'
+
+example usage 1:
+
+    $ ./spinup.sh 4 const 1000 20 sia
+
+  Does spinup with 4 processors, constant-climate, 1000 year run, 20 km
+  grid, and non-sliding SIA stress balance.  Bootstraps from and outputs to
+  default files.
+
+example usage 2:
+
+    $ PISM_DO=echo ./spinup.sh 128 paleo 100.0 5 hybrid out.nc boot.nc &> foo.sh
+
+  Creates a script foo.sh for spinup with 128 processors, simulated paleo-climate,
+  5 km grid, sliding with SIA+SSA hybrid, output to {out.nc,ts_out.nc,ex_out.nc},
+  and bootstrapping from boot.nc.
+EOF
   exit
 fi
 
