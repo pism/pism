@@ -65,7 +65,9 @@ int NC4_Par::set_access_mode(int varid, bool mapped) const {
     // Use independent parallel access mode because it works. It would be
     // better to use collective mode, but I/O performance is ruined by
     // "mapping" anyway.
-
+    //
+    // See https://bugtracking.unidata.ucar.edu/browse/NCF-152 for the description of the bug we're
+    // avoiding here.
     stat = nc_var_par_access(m_file_id, varid, NC_INDEPENDENT); check(stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
