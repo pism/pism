@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 
     // determine test (and whether to report error)
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",
-                                            "A,B,C,D,E,F,G,H,K,L", "A");
+                                            "A,B,C,D,E,F,G,H,K,L,V", "A");
 
     IceGrid::Ptr g = pismv_grid(ctx, testname[0]);
 

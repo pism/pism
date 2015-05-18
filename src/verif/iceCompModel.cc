@@ -139,10 +139,7 @@ void IceCompModel::setFromOptions() {
     // this test is isothermal
     m_config->set_boolean("do_energy", false);
 
-    // do not use the SIA stress balance
-    m_config->set_boolean("do_sia", false);
-
-    // do use the SSA solver
+    // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
