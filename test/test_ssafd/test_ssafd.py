@@ -46,7 +46,7 @@ def generate_input(N):
 
     nc.create_dimensions(x, x)
     nc.write("topg", topg, attrs={"units": "m", "long_name": "bed_topography"})
-    nc.write("climatic_mass_balance", zeros, attrs={"units": "m year-1"})
+    nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m-2 year-1"})
     nc.write("ice_surface_temp", zeros, attrs={"units": "Celsius"})
     nc.write("thk", thk.reshape(M, M),
              attrs={"units": "m", "long_name": "land_ice_thickness"})
@@ -57,7 +57,7 @@ def generate_input(N):
 
 
 def run_pismr((input_filename, output_filename)):
-    command = "pismr -i %s -bootstrap -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0 -verbose 1" % (input_filename, output_filename, M, M)
+    command = "pismr -i %s -bootstrap -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0.001 -verbose 1" % (input_filename, output_filename, M, M)
     print "Running %s" % command
     subprocess.call(shlex.split(command))
 
