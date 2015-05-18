@@ -116,8 +116,7 @@ void IceEISModel::generateTroughTopography(IceModelVec2S &result) {
   const double slope = b0/L;
   const double dx61  = (2*L) / 60; // = 25.0e3
 
-  IceModelVec::AccessList list;
-  list.add(result);
+  IceModelVec::AccessList list(result);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -139,8 +138,7 @@ void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
 
-  IceModelVec::AccessList list;
-  list.add(result);
+  IceModelVec::AccessList list(result);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
