@@ -563,7 +563,7 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
   loop.check();
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(m_grid.com);
+  ierr = PetscSynchronizedFlush(m_grid->com);
   PISM_CHK(ierr, "PetscSynchronizedFlush");
 #else
   ierr = PetscSynchronizedFlush(m_grid->com, NULL);
