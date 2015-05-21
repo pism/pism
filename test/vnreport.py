@@ -62,6 +62,8 @@ class Plotter:
             # Variable label:
             var_label = "%s, $O(%s^{%1.2f})$" % (name, dim_name, p[0])
 
+            print "Test {} {}: convergence rate: O(dx^{:1.4f})".format(testname, name, p[0])
+
             # Plot errors and the linear fit:
             plot(dim, data, label=var_label, marker='o', color=c)
             plot(dim, polyval(p, dim), ls="--", color=c)
@@ -207,6 +209,7 @@ p = Plotter(options.save_figures, input_file, options.file_format)
 p.plot_tests(tests_to_plot)
 try:
     # show() will break if we didn't plot anything
-    show()
+    if not options.save_figures:
+        show()
 except:
     pass
