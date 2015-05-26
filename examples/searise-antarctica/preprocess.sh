@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014  PISM authors
+# Copyright (C) 2009-2015  PISM authors
 
 # downloads development version of SeaRISE "Present Day Antarctica" master
 # dataset NetCDF file, adjusts metadata, breaks up, saves under new names,
@@ -43,7 +43,11 @@ ncatted -O -a units,bheatflx,m,c,"W m-2" $PISMVERSION
 ncatted -O -a standard_name,bheatflx,d,, $PISMVERSION
 # keep only the fields we actually use at bootstrapping
 ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precipitation,air_temp,mapping \
-  $PISMVERSION $PISMVERSION
+     $PISMVERSION $PISMVERSION
+# remove the time dimension
+ncwa -O -a t $PISMVERSION $PISMVERSION
+# remove the time (t) coordinate variable
+ncks -O -x -v t $PISMVERSION $PISMVERSION
 echo "  PISM-readable file $PISMVERSION created; only has fields"
 echo "    used in bootstrapping."
 
