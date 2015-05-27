@@ -51,7 +51,7 @@ PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
     m_packing_dimensions(std::vector<unsigned int>(3, 8)),
     m_d_iso(m_packing_dimensions, 0.0)
-  {
+{
  
   unsigned int n_particles = (unsigned int)config.get("fevor_n_particles");
                 
@@ -187,9 +187,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
        *            3, 4, 5,
        *            6, 7, 8}
        */
-      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] = -P*m_dt;
-      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = txz*m_dt; 
-      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = tyz*m_dt; 
+      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] += -P*m_dt;
+      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] += txz*m_dt; 
+      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] += tyz*m_dt; 
 
 
 
