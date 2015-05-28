@@ -56,6 +56,7 @@
 #include "varcEnthalpyConverter.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/projection.hh"
 
 namespace pism {
 
@@ -561,6 +562,91 @@ void IceModel::allocate_internal_objects() {
                     "", "");
 }
 
+/** 
+ * Process the "mapping" variable and the "proj4" global attribute in the input file.
+ */
+void IceModel::get_projection_info(const PIO &input_file) {
+  std::string proj4_string = input_file.get_att_text("PISM_GLOBAL", "proj4");
+  if (not proj4_string.empty()) {
+    global_attributes.set_string("proj4", proj4_string);
+  }
+
+  bool input_has_mapping = input_file.inq_var(mapping.get_name());
+  if (input_has_mapping) {
+    // Note: read_attributes clears attributes before reading
+    io::read_attributes(input_file, mapping.get_name(), mapping);
+    mapping.report_to_stdout(*m_log, 4);
+  }
+
+  std::string::size_type pos = proj4_string.find("+init=epsg:");
+  if (pos == std::string::npos) {
+    // if the PROJ.4 string does not contain "+init=epsg:", we're done
+    return;
+  }
+
+  VariableMetadata epsg_mapping = epsg_to_cf(m_ctx->unit_system(), proj4_string);
+
+  // Check that the EPSG code matches the projection information stored in the "mapping" variable
+  // *unless* this variable has no attributes, in which case initialize it.
+  if (input_has_mapping and
+      ((not mapping.get_all_strings().empty()) or (not mapping.get_all_doubles().empty()))) {
+    // Check if the "mapping" variable in the input file matches the EPSG code.
+    // Check strings.
+    VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
+    VariableMetadata::StringAttrs::const_iterator j;
+    for (j = strings.begin(); j != strings.end(); ++j) {
+      if (not mapping.has_attribute(j->first)) {
+        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
+                                      "%s requires %s = \"%s\",\n"
+                                      "but the mapping variable has no %s.",
+                                      input_file.inq_filename().c_str(),
+                                      proj4_string.c_str(),
+                                      j->first.c_str(), j->second.c_str(),
+                                      j->first.c_str());
+      }
+
+      if (not (mapping.get_string(j->first) == j->second)) {
+        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
+                                      "%s requires %s = \"%s\",\n"
+                                      "but the mapping variable has %s = \"%s\".",
+                                      input_file.inq_filename().c_str(),
+                                      proj4_string.c_str(),
+                                      j->first.c_str(), j->second.c_str(),
+                                      j->first.c_str(),
+                                      mapping.get_string(j->first).c_str());
+      }
+    }
+
+    // Check doubles
+    VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
+    VariableMetadata::DoubleAttrs::const_iterator k;
+    for (k = doubles.begin(); k != doubles.end(); ++k) {
+      if (not mapping.has_attribute(k->first)) {
+        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
+                                      "%s requires %s = %f,\n"
+                                      "but the mapping variable has no %s.",
+                                      input_file.inq_filename().c_str(),
+                                      proj4_string.c_str(),
+                                      k->first.c_str(), k->second[0],
+                                      k->first.c_str());
+      }
+
+      if (fabs(mapping.get_double(k->first) - k->second[0]) > 1e-12) {
+        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
+                                      "%s requires %s = %f,\n"
+                                      "but the mapping variable has %s = %f.",
+                                      input_file.inq_filename().c_str(),
+                                      proj4_string.c_str(),
+                                      k->first.c_str(), k->second[0],
+                                      k->first.c_str(),
+                                      mapping.get_double(k->first));
+      }
+    }
+  } else {
+    // Set "mapping" using the EPSG code.
+    mapping = epsg_mapping;
+  }
+}
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
 void IceModel::misc_setup() {
@@ -576,15 +662,7 @@ void IceModel::misc_setup() {
 
     nc.open(input_file, PISM_READONLY);
 
-    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-    if (not proj4_string.empty()) {
-      global_attributes.set_string("proj4", proj4_string);
-    }
-
-    if (nc.inq_var(mapping.get_name())) {
-      io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(*m_log, 4);
-    }
+    get_projection_info(nc);
 
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
     nc.close();
@@ -635,10 +713,9 @@ void IceModel::misc_setup() {
   // Quietly re-initialize couplers (they might have done one
   // time-step during initialization)
   {
-    int user_verbosity = getVerbosityLevel();
-    setVerbosityLevel(1);
+    m_log->disable();
     init_couplers();
-    setVerbosityLevel(user_verbosity);
+    m_log->enable();
   }
 
   init_calving();

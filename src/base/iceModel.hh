@@ -168,6 +168,7 @@ public:
   virtual void set_vars_from_options();
   virtual void allocate_internal_objects();
   virtual void misc_setup();
+  virtual void get_projection_info(const PIO &input_file);
   virtual void init_diagnostics();
   virtual void init_calving();
 
