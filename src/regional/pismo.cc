@@ -487,6 +487,7 @@ int main(int argc, char *argv[]) {
   }
   catch (...) {
     handle_fatal_errors(com);
+    return 1;
   }
 
   return 0;
