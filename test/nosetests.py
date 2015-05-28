@@ -747,3 +747,37 @@ def ssa_trivial_test():
     My = 11
     test_case = TrivialSSARun(Mx, My)
     test_case.run("ssa_trivial.nc")
+
+def epsg_test():
+    "Test EPSG to CF conversion."
+    l = PISM.StringLogger(PISM.PETSc.COMM_WORLD, 2)
+    system = PISM.Context().unit_system
+
+    # test supported EPSG codes
+    for code in [3413, 3031]:
+        print "Trying code {}".format(code)
+        l.reset()
+        # +init at the beginning
+        v = PISM.epsg_to_cf(system, "+init=epsg:%d" % code)
+        # +init not at the beginning of the string
+        v = PISM.epsg_to_cf(system, "+units=m +init=epsg:%d" % code)
+        # +init followed by more options
+        v = PISM.epsg_to_cf(system, "+init=epsg:%d +units=m" % code)
+        v.report_to_stdout(l, 2)
+        print l.get(),
+        print "done."
+
+    # test that unsupported codes trigger an exception
+    try:
+        v = PISM.epsg_to_cf(system, "+init=epsg:3032")
+        raise AssertionError("should fail with 3032: only 3413 and 3031 are supported")
+    except RuntimeError as e:
+        print "unsupported codes trigger exceptions: {}".format(e)
+
+    # test that an invalid PROJ.4 string (e.g. an EPSG code is not a
+    # number) triggers an exception
+    try:
+        v = PISM.epsg_to_cf(system, "+init=epsg:not-a-number +units=m")
+        # raise AssertionError("an invalid PROJ.4 string failed to trigger an exception")
+    except RuntimeError as e:
+        print "invalid codes trigger exceptions: {}".format(e)
