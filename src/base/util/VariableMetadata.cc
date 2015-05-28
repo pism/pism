@@ -375,27 +375,39 @@ std::string VariableMetadata::get_string(const std::string &name) const {
 
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
-  // Print text attributes:
   const VariableMetadata::StringAttrs &strings = this->get_all_strings();
-  VariableMetadata::StringAttrs::const_iterator i;
-  for (i = strings.begin(); i != strings.end(); ++i) {
-    std::string name  = i->first;
-    std::string value = i->second;
+  VariableMetadata::StringAttrs::const_iterator s;
+  const VariableMetadata::DoubleAttrs &doubles = this->get_all_doubles();
+  VariableMetadata::DoubleAttrs::const_iterator d;
+
+  // Find the maximum name length so that we can pad output below:
+  size_t max_name_length = 0;
+  for (s = strings.begin(); s != strings.end(); ++s) {
+    max_name_length = std::max(max_name_length, s->first.size());
+  }
+  for (d = doubles.begin(); d != doubles.end(); ++d) {
+    max_name_length = std::max(max_name_length, d->first.size());
+  }
+
+  // Print text attributes:
+  for (s = strings.begin(); s != strings.end(); ++s) {
+    std::string name  = s->first;
+    std::string value = s->second;
+    std::string padding(max_name_length - name.size(), ' ');
 
     if (value.empty()) {
       continue;
     }
 
-    log.message(verbosity_threshold, "  %s = \"%s\"\n",
-                name.c_str(), value.c_str());
+    log.message(verbosity_threshold, "  %s%s = \"%s\"\n",
+                name.c_str(), padding.c_str(), value.c_str());
   }
 
   // Print double attributes:
-  const VariableMetadata::DoubleAttrs &doubles = this->get_all_doubles();
-  VariableMetadata::DoubleAttrs::const_iterator j;
-  for (j = doubles.begin(); j != doubles.end(); ++j) {
-    std::string name  = j->first;
-    std::vector<double> values = j->second;
+  for (d = doubles.begin(); d != doubles.end(); ++d) {
+    std::string name  = d->first;
+    std::vector<double> values = d->second;
+    std::string padding(max_name_length - name.size(), ' ');
 
     if (values.empty()) {
       continue;
@@ -403,11 +415,11 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
 
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
-      log.message(verbosity_threshold, "  %s = %12.3e\n",
-                  name.c_str(), values[0]);
+      log.message(verbosity_threshold, "  %s%s = %12.3e\n",
+                  name.c_str(), padding.c_str(), values[0]);
     } else {
-      log.message(verbosity_threshold, "  %s = %12.5f\n",
-                  name.c_str(), values[0]);
+      log.message(verbosity_threshold, "  %s%s = %12.5f\n",
+                  name.c_str(), padding.c_str(), values[0]);
     }
 
   }

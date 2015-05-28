@@ -233,6 +233,14 @@ void Config::set_boolean(const std::string& name, bool value,
   this->set_boolean_impl(name, value);
 }
 
+static bool special_parameter(const std::string &name) {
+  return (ends_with(name, "_doc") or
+          ends_with(name, "_units") or
+          ends_with(name, "_type") or
+          ends_with(name, "_option") or
+          ends_with(name, "_choices"));
+}
+
 void print_config(const Logger &log, int verbosity_threshhold, const Config &config) {
   const int v = verbosity_threshhold;
 
@@ -241,25 +249,34 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
              "###\n");
 
   Config::Strings strings = config.all_strings();
-  Config::Strings::const_iterator j;
-  for (j = strings.begin(); j != strings.end(); ++j) {
-    std::string name  = j->first;
-    std::string value = j->second;
+  Config::Strings::const_iterator s;
 
-    if (value.empty() or
-        ends_with(name, "_doc") or
-        ends_with(name, "_units") or
-        ends_with(name, "_type") or
-        ends_with(name, "_option") or
-        ends_with(name, "_choices")) {
+  // find max. name size
+  size_t max_name_size = 0;
+  for (s = strings.begin(); s != strings.end(); ++s) {
+    if (special_parameter(s->first)) {
+      continue;
+    }
+    max_name_size = std::max(max_name_size, s->first.size());
+  }
+
+  // print strings
+  for (s = strings.begin(); s != strings.end(); ++s) {
+    std::string name  = s->first;
+    std::string value = s->second;
+
+    if (value.empty() or special_parameter(name)) {
       continue;
     }
 
+    std::string padding(max_name_size - name.size(), ' ');
+
     if (strings[name + "_type"] == "keyword") {
-      log.message(v, "  %s = \"%s\" (allowed choices: %s)\n", name.c_str(), value.c_str(),
+      log.message(v, "  %s%s = \"%s\" (allowed choices: %s)\n",
+                  name.c_str(), padding.c_str(), value.c_str(),
                   strings[name + "_choices"].c_str());
     } else {
-      log.message(v, "  %s = \"%s\"\n", name.c_str(), value.c_str());
+      log.message(v, "  %s%s = \"%s\"\n", name.c_str(), padding.c_str(), value.c_str());
     }
   }
 
@@ -268,17 +285,25 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
              "###\n");
 
   Config::Doubles doubles = config.all_doubles();
-  Config::Doubles::const_iterator k;
-  for (k = doubles.begin(); k != doubles.end(); ++k) {
-    std::string name  = k->first;
-    double value = k->second;
+  Config::Doubles::const_iterator d;
+
+  // find max. name size
+  max_name_size = 0;
+  for (d = doubles.begin(); d != doubles.end(); ++d) {
+    max_name_size = std::max(max_name_size, d->first.size());
+  }
+  // print doubles
+  for (d = doubles.begin(); d != doubles.end(); ++d) {
+    std::string name  = d->first;
+    double value = d->second;
     std::string units = strings[name + "_units"]; // will be empty if not set
+    std::string padding(max_name_size - name.size(), ' ');
 
     if (fabs(value) >= 1.0e7 or fabs(value) <= 1.0e-4) {
       // use scientific notation if a number is big or small
-      log.message(v, "  %s = %12.3e (%s)\n", name.c_str(), value, units.c_str());
+      log.message(v, "  %s%s = %13.3e (%s)\n", name.c_str(), padding.c_str(), value, units.c_str());
     } else {
-      log.message(v, "  %s = %12.5f (%s)\n", name.c_str(), value, units.c_str());
+      log.message(v, "  %s%s = %13.5f (%s)\n", name.c_str(), padding.c_str(), value, units.c_str());
     }
   }
 
@@ -287,12 +312,20 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
              "###\n");
 
   Config::Booleans booleans = config.all_booleans();
-  Config::Booleans::const_iterator p;
-  for (p = booleans.begin(); p != booleans.end(); ++p) {
-    std::string name  = p->first;
-    std::string value = p->second ? "true" : "false";
+  Config::Booleans::const_iterator b;
 
-    log.message(v, "  %s = %s\n", name.c_str(), value.c_str());
+  // find max. name size
+  max_name_size = 0;
+  for (b = booleans.begin(); b != booleans.end(); ++b) {
+    max_name_size = std::max(max_name_size, b->first.size());
+  }
+  // print booleans
+  for (b = booleans.begin(); b != booleans.end(); ++b) {
+    std::string name  = b->first;
+    std::string value = b->second ? "true" : "false";
+    std::string padding(max_name_size - name.size(), ' ');
+
+    log.message(v, "  %s%s = %s\n", name.c_str(), padding.c_str(), value.c_str());
   }
 
   log.message(v,
@@ -422,11 +455,7 @@ void set_keyword_from_option(Config &config, const std::string &name,
 void set_parameter_from_options(Config &config, const std::string &name) {
 
   // skip special parameters ("attributes" of parameters)
-  if (ends_with(name, "_doc") or
-      ends_with(name, "_units") or
-      ends_with(name, "_type") or
-      ends_with(name, "_option") or
-      ends_with(name, "_choices")) {
+  if (special_parameter(name)) {
     return;
   }
 
