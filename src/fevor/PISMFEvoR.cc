@@ -182,20 +182,25 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
      
-      m_p_avg_temp[i] += T*m_dt;
+      //m_p_avg_temp[i] += T*m_dt;
+      m_p_avg_temp[i] += T;
       /* Indexing: {0, 1, 2,
        *            3, 4, 5,
        *            6, 7, 8}
        */
-      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] += -P*m_dt;
-      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] += txz*m_dt; 
-      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] += tyz*m_dt; 
+      //m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] += -P*m_dt;
+      //m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] += txz*m_dt; 
+      //m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] += tyz*m_dt; 
+      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] = -P;
+      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = txz; 
+      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = tyz; 
 
 
 
       if (step_flag) {
         double fevor_begin = m_t + m_dt - fevor_step;
-        double temp = m_p_avg_temp[i]/fevor_step;
+        //double temp = m_p_avg_temp[i]/fevor_step;
+        double temp = m_p_avg_temp[i];
         m_p_avg_temp[i] = 0.;
         /* Indexing: {0, 1, 2,
          *            3, 4, 5,
@@ -203,7 +208,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
          */
         std::vector<double> stress(9,0.0);
         for (unsigned int s = 0; s < 9; ++s){
-          stress[s] = m_p_avg_stress[i*9+s]/fevor_step;
+          //stress[s] = m_p_avg_stress[i*9+s]/fevor_step;
+          stress[s] = m_p_avg_stress[i*9+s];
           m_p_avg_stress[i*9+s] = 0.;
         }
 
