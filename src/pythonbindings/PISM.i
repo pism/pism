@@ -51,6 +51,8 @@
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/Profiling.hh"
+
+#include "base/util/projection.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -186,6 +188,7 @@
 /* End of independent PISM classes. */
 
 %shared_ptr(pism::Logger);
+%shared_ptr(pism::StringLogger);
 %include "base/util/Logger.hh"
 
 %shared_ptr(pism::Config);
@@ -259,5 +262,8 @@
 #include "regional/regional.hh"
 %}
 %include "regional/regional.hh"
+
+%include "base/util/projection.hh"
+
 
 %include pism_inverse.i

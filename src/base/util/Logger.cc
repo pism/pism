@@ -18,6 +18,7 @@
  */
 
 #include <unistd.h>
+#include <sstream>
 
 #include "Logger.hh"
 #include "pism_const.hh"
@@ -96,5 +97,31 @@ Logger::Ptr logger_from_options(MPI_Comm com) {
 
   return result;
 }
+
+struct StringLogger::Impl {
+  std::ostringstream data;
+};
+
+StringLogger::StringLogger(MPI_Comm com, int threshold)
+  : Logger(com, threshold), m_impl(new Impl) {
+  // empty
+}
+
+StringLogger::~StringLogger() {
+  delete m_impl;
+}
+
+void StringLogger::message_impl(const char buffer[]) const {
+  m_impl->data << buffer;
+}
+
+std::string StringLogger::get() const {
+  return m_impl->data.str();
+}
+
+void StringLogger::reset() {
+  m_impl->data.str("");
+}
+
 
 } // end of namespace pism

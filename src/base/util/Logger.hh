@@ -74,6 +74,21 @@ private:
   Logger & operator=(const Logger &);
 };
 
+//! A logger that accumulates messages and reports them as a string.
+class StringLogger : public Logger {
+public:
+  StringLogger(MPI_Comm com, int threshold);
+  virtual ~StringLogger();
+
+  void reset();
+
+  std::string get() const;
+  virtual void message_impl(const char buffer[]) const;
+private:
+  struct Impl;
+  Impl *m_impl;
+};
+
 Logger::Ptr logger_from_options(MPI_Comm com);
 
 } // end of namespace pism
