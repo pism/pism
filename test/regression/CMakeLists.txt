@@ -98,6 +98,8 @@ pism_test (distributed_hydrology test_29.py)
 
 pism_test (initialization_without_enthalpy test_31.sh)
 
+pism_test (epsg_code_processing test_epsg_processing.py)
+
 if(Pism_BUILD_EXTRA_EXECS)
   # These tests require special executables. They are disabled unless
   # these executables are built. This way we don't need to explain why
