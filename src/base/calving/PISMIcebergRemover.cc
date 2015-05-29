@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -151,7 +151,7 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
 PetscErrorCode PISMIcebergRemover::allocate() {
   PetscErrorCode ierr;
 
-  ierr = m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_iceberg_mask.create(grid, "iceberg_mask", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = m_iceberg_mask.allocate_proc0_copy(m_mask_p0); CHKERRQ(ierr);
 
   return 0;
