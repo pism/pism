@@ -59,7 +59,7 @@ public:
   ~VecArray2D();
 
   inline double& operator()(int i, int j) {
-    return m_array[i + m_i_offset][j + m_j_offset];
+    return m_array[j + m_j_offset][i + m_i_offset];
   }
 private:
   int m_Mx, m_My, m_i_offset, m_j_offset;

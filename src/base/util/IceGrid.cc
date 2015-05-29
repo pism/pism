@@ -175,20 +175,6 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
 }
 
 //! @brief Create a PISM distributed computational grid.
-/*!
-  This class contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"
-  in the DMDACreate2d call; this transpose allows us to index arrays by "[i][j]"
-  (where 'i' corresponds to 'x' and 'j' to 'y') and be consistent about
-  meanings of 'x', 'y', 'u' and 'v'.
-
-  Unfortunately this means that PETSc viewers appear transposed.
-
-  This choice should be virtually invisible, unless you're using DALocalInfo
-  and MatStencil structures.
-
-  @note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
-  order: x in rows, y in columns, indexing as array[x][y].
- */
 IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl) {
 
@@ -236,10 +222,10 @@ IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
     PISM_CHK(ierr, "DMDAGetLocalInfo");
 
     // this continues the fundamental transpose
-    m_impl->xs = info.ys;
-    m_impl->xm = info.ym;
-    m_impl->ys = info.xs;
-    m_impl->ym = info.xm;
+    m_impl->xs = info.xs;
+    m_impl->xm = info.xm;
+    m_impl->ys = info.ys;
+    m_impl->ym = info.ym;
 
   }
 }
@@ -801,11 +787,11 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
                                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
 #endif
                                      DMDA_STENCIL_BOX,
-                                     m_impl->My, m_impl->Mx, // N, M
-                                     (PetscInt)m_impl->procs_y.size(),
-                                     (PetscInt)m_impl->procs_x.size(), // n, m
+                                     m_impl->Mx, m_impl->My, // M, N
+                                     (PetscInt)m_impl->procs_x.size(),
+                                     (PetscInt)m_impl->procs_y.size(), // n, m
                                      da_dof, stencil_width,
-                                     &m_impl->procs_y[0], &m_impl->procs_x[0], // ly, lx
+                                     &m_impl->procs_x[0], &m_impl->procs_y[0], // ly, lx
                                      &result);
   PISM_CHK(ierr,"DMDACreate2d");
 

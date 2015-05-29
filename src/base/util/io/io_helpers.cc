@@ -186,14 +186,14 @@ static void compute_start_and_count(const PIO& nc,
       count[j] = t_count;
       imap[j]  = x_count * y_count * z_count;
       break;
-    case X_AXIS:
-      start[j] = x_start;
-      count[j] = x_count;
-      imap[j]  = y_count * z_count;
-      break;
     case Y_AXIS:
       start[j] = y_start;
       count[j] = y_count;
+      imap[j]  = x_count * z_count;
+      break;
+    case X_AXIS:
+      start[j] = x_start;
+      count[j] = x_count;
       imap[j]  = z_count;
       break;
     default:
@@ -294,9 +294,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
  * matches the memory storage order used by PISM.
  *
  * @param var_name name of the variable to check
- * @param result set to false if storage orders match, true otherwise
- *
- * @return 0 on success
+ * @returns false if storage orders match, true otherwise
  */
 static bool use_mapped_io(const PIO &nc,
                           units::System::Ptr unit_system,
@@ -305,8 +303,8 @@ static bool use_mapped_io(const PIO &nc,
   std::vector<std::string> dimnames = nc.inq_vardims(var_name);
 
   std::vector<AxisType> storage, memory;
-  memory.push_back(X_AXIS);
   memory.push_back(Y_AXIS);
+  memory.push_back(X_AXIS);
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
     AxisType dimtype = nc.inq_dimtype(dimnames[j], unit_system);
@@ -320,7 +318,7 @@ static bool use_mapped_io(const PIO &nc,
     if (dimtype == X_AXIS || dimtype == Y_AXIS) {
       storage.push_back(dimtype);
     } else if (dimtype == Z_AXIS) {
-      memory.push_back(dimtype); // now memory = {X_AXIS, Y_AXIS, Z_AXIS}
+      memory.push_back(dimtype); // now memory = {Y_AXIS, X_AXIS, Z_AXIS}
       // assume that this variable has only one Z_AXIS in the file
       storage.push_back(dimtype);
     } else {
@@ -450,7 +448,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
                             start, count, imap);
 
     bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
-    if (mapped_io == true) {
+    if (mapped_io) {
       nc.get_varm_double(var_name, start, count, imap, buffer);
     } else {
       nc.get_vara_double(var_name, start, count, buffer);

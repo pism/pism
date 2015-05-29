@@ -1349,7 +1349,7 @@ netcdf pism_config {
     pism_config:output_variable_order_type = "keyword";
     pism_config:output_variable_order_option = "o_order";
     pism_config:output_variable_order_choices = "xyz,yxz,zyx";
-    pism_config:output_variable_order = "xyz";
+    pism_config:output_variable_order = "yxz";
     pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
     pism_config:output_medium_type = "string";

@@ -567,7 +567,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
         }
         const double uex = (xx/r) * radialUex;
         const double vex = (yy/r) * radialUex;
-        // note that because getValZ does linear interpolation and H[i][j] is not exactly at
+        // note that because getValZ does linear interpolation and H(i, j) is not exactly at
         // a grid point, this causes nonzero errors even with option -eo
         const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, ice_thickness(i, j)) - uex)
                                  + PetscSqr(v3.getValZ(i, j, ice_thickness(i, j)) - vex));

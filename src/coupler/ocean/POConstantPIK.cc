@@ -125,7 +125,7 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // compute T_f[i][j] according to beckmann_goosse03, which has the
+    // compute T_f(i, j) according to beckmann_goosse03, which has the
     // meaning of the freezing temperature of the ocean water directly
     // under the shelf, (of salinity 35psu) [this is related to the
     // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
