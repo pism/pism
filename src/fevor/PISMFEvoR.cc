@@ -183,7 +183,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
      
       //m_p_avg_temp[i] += T*m_dt;
-      m_p_avg_temp[i] += T;
+      m_p_avg_temp[i] = T;
       /* Indexing: {0, 1, 2,
        *            3, 4, 5,
        *            6, 7, 8}
@@ -191,9 +191,11 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       //m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] += -P*m_dt;
       //m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] += txz*m_dt; 
       //m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] += tyz*m_dt; 
-      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] = -P;
-      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = txz; 
-      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = tyz; 
+      m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] = 0.;
+      //m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = txz; 
+      //m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = tyz; 
+      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = 910.0*9.81*0.05*(510.0 - m_p_z[i]); // Pa  
+      m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = 0.; 
 
 
 
@@ -201,7 +203,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         double fevor_begin = m_t + m_dt - fevor_step;
         //double temp = m_p_avg_temp[i]/fevor_step;
         double temp = m_p_avg_temp[i];
-        m_p_avg_temp[i] = 0.;
+        //m_p_avg_temp[i] = 0.;
         /* Indexing: {0, 1, 2,
          *            3, 4, 5,
          *            6, 7, 8}
@@ -212,6 +214,18 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
           stress[s] = m_p_avg_stress[i*9+s];
           m_p_avg_stress[i*9+s] = 0.;
         }
+
+        if (i == 0) {
+          std::cout << "\n"
+            << "***************************" << "\n"
+            << " FEvoR Step averages:" << "\n"
+            << "***************************" << "\n"
+            << "  Tempurature: " << temp << "\n"
+            << "  Stess: " << std::endl;
+          FEvoR::tensorDisplay(stress, 3, 3);
+          std::cout << " " << std::endl;
+        }
+
 
         std::vector<double> bulkEdot(9, 0.0);
         std::vector<double> bulkM(81, 0.0);
@@ -225,7 +239,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         
         std::vector<double> bulkEdot_iso(9, 0.0);
         std::vector<double> bulkM_iso(81, 0.0);
-        
+        m_d_iso = FEvoR::Distribution(m_packing_dimensions, 0.0); // make sure this is a clean distribution. 
+
         bulkM_iso = m_d_iso.stepInTime(temp, stress, fevor_begin, fevor_step, bulkEdot_iso);
 
         if (bulkEdot_iso[2] != 0.0) {
