@@ -788,8 +788,8 @@ def regridding_test():
 
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config, ctx.size)
-    params.Mx = 5
-    params.My = 5
+    params.Mx = 3
+    params.My = 3
     params.ownership_ranges_from_options(1)
 
     grid = PISM.IceGrid(ctx.ctx, params)
