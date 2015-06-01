@@ -199,7 +199,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.Mx = [5] * 5
     I.My = [49, 193, 769, 3073, 12289]
     I.executable = "ssa_testi"
-    I.opts = "-ssa_method fd -ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.opts = "-ssa_method fd -ssa_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I'] = I
     # J
     J = PISMVerificationTest()
@@ -211,7 +211,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     J.My = J.Mx
     J.Mz = [11] * 5
     J.executable = "ssa_testj"
-    J.opts = "-ssa_method fd -pc_type asm -sub_pc_type lu -ksp_rtol %1.e" % KSPRTOL
+    J.opts = "-ssa_method fd -ssafd_pc_type asm -ssafd_sub_pc_type lu -ssafd_ksp_rtol %1.e" % KSPRTOL
     tests['J'] = J
     # K
     K = PISMVerificationTest()
@@ -298,7 +298,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.path = "(lots of levels)"
     I.My = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx = [5] * len(I.My)
-    I.opts = "-ssa_method fd -ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.opts = "-ssa_method fd -ssa_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I_userman'] = I
 
     return tests
