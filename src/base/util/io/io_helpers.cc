@@ -138,20 +138,19 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
         a_pp = input_array[Y_p * x_count + X_p];
       }
 
+      // interpolation coefficient in the x direction
+      const double x_alpha = lic->x_alpha[i];
       // interpolation coefficient in the y direction
       const double y_alpha = lic->y_alpha[j];
 
-      // interpolate in y direction
-      const double a_m = a_mm * (1.0 - y_alpha) + a_mp * y_alpha;
-      const double a_p = a_pm * (1.0 - y_alpha) + a_pp * y_alpha;
-
-      // interpolation coefficient in the x direction
-      const double x_alpha = lic->x_alpha[i];
+      // interpolate in x direction
+      const double a_m = a_mm * (1.0 - x_alpha) + a_mp * x_alpha;
+      const double a_p = a_pm * (1.0 - x_alpha) + a_pp * x_alpha;
 
       int index = (j * grid.xm() + i) * nlevels + k;
 
       // index into the new array and interpolate in x direction
-      output_array[index] = a_m * (1.0 - x_alpha) + a_p * x_alpha;
+      output_array[index] = a_m * (1.0 - y_alpha) + a_p * y_alpha;
       // done with the point at (x,y,z)
     }
   }
