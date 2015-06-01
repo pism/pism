@@ -781,3 +781,43 @@ def epsg_test():
         # raise AssertionError("an invalid PROJ.4 string failed to trigger an exception")
     except RuntimeError as e:
         print "invalid codes trigger exceptions: {}".format(e)
+
+def regridding_test():
+    "Test 2D regridding: same input and target grids."
+    import numpy as np
+
+    ctx = PISM.Context()
+    params = PISM.GridParameters(ctx.config, ctx.size)
+    params.Mx = 5
+    params.My = 5
+    params.ownership_ranges_from_options(1)
+
+    grid = PISM.IceGrid(ctx.ctx, params)
+
+    thk1 = PISM.model.createIceThicknessVec(grid)
+    thk2 = PISM.model.createIceThicknessVec(grid)
+    x = grid.x()
+    x_min = np.min(x)
+    x_max = np.max(x)
+    y = grid.y()
+    y_min = np.min(y)
+    y_max = np.max(y)
+    with PISM.vec.Access(nocomm=[thk1]):
+        for (i, j) in grid.points():
+            F_x = (x[i] - x_min) / (x_max - x_min)
+            F_y = (y[j] - y_min) / (y_max - y_min)
+            thk1[i, j] = (F_x + F_y) / 2.0
+    thk1.dump("thk1.nc")
+
+    thk2.regrid("thk1.nc", critical=True)
+
+    with PISM.vec.Access(nocomm=[thk1, thk2]):
+        for (i, j) in grid.points():
+            v1 = thk1[i,j]
+            v2 = thk2[i,j]
+            if np.abs(v1 - v2) > 1e-12:
+                raise AssertionError("mismatch at {},{}: {} != {}".format(i, j, v1, v2))
+
+    import os
+    os.remove("thk1.nc")
+
