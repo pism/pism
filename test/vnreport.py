@@ -147,7 +147,7 @@ class Plotter:
             if test_name in ['J', 'M']:
                 self.plot('dx', ["relative_velocity"],
                           test_name, "relative velocity errors")
-                self.plot('dx', ["maximum_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
+                self.plot('dx', ["max_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
                           test_name, "velocity errors")
 
             # test K temperature errors:
