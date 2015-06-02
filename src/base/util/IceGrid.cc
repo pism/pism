@@ -221,7 +221,6 @@ IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
     PetscErrorCode ierr = DMDAGetLocalInfo(*m_impl->dm_scalar_global, &info);
     PISM_CHK(ierr, "DMDAGetLocalInfo");
 
-    // this continues the fundamental transpose
     m_impl->xs = info.xs;
     m_impl->xm = info.xm;
     m_impl->ys = info.ys;

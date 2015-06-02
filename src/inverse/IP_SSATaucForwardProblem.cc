@@ -268,8 +268,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    du_a[i][j].u = 0.0;
-    du_a[i][j].v = 0.0;
+    du_a[j][i].u = 0.0;
+    du_a[j][i].v = 0.0;
   }
 
   // Aliases to help with notation consistency below.
@@ -456,7 +456,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    dzeta_a[i][j] = 0;
+    dzeta_a[j][i] = 0;
   }
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -522,7 +522,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 
     double dtauc_dzeta;
     m_tauc_param.toDesignVariable((*m_zeta)(i, j), NULL, &dtauc_dzeta);
-    dzeta_a[i][j] *= dtauc_dzeta;
+    dzeta_a[j][i] *= dtauc_dzeta;
   }
 
   if (m_fixed_tauc_locations) {

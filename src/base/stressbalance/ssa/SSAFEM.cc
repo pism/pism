@@ -431,8 +431,8 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    residual_global[i][j].u = 0.0;
-    residual_global[i][j].v = 0.0;
+    residual_global[j][i].u = 0.0;
+    residual_global[j][i].v = 0.0;
   }
 
   // Start access to Dirichlet data if present.
@@ -553,8 +553,8 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
       ierr = PetscSynchronizedPrintf(m_grid->com,
                                      "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
                                      i, j,
-                                     velocity_global[i][j].u, velocity_global[i][j].v,
-                                     residual_global[i][j].u, residual_global[i][j].v);
+                                     velocity_global[j][i].u, velocity_global[j][i].v,
+                                     residual_global[j][i].u, residual_global[j][i].v);
       PISM_CHK(ierr, "PetscSynchronizedPrintf");
     }
   } catch (...) {
