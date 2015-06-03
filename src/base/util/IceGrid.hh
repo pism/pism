@@ -323,13 +323,13 @@ public:
 
   void next() {
     assert(m_done == false);
-    m_j += 1;
-    if (m_j > m_j_last) {
-      m_j = m_j_first;        // wrap around
-      m_i += 1;
-    }
+    m_i += 1;
     if (m_i > m_i_last) {
-      m_i = m_i_first;        // ensure that indexes are valid
+      m_i = m_i_first;        // wrap around
+      m_j += 1;
+    }
+    if (m_j > m_j_last) {
+      m_j = m_j_first;        // ensure that indexes are valid
       m_done = true;
     }
   }
