@@ -167,20 +167,14 @@ void DOFMap::localToGlobal(int k, int *i, int *j) const {
 void DOFMap::reset(int i, int j) {
   m_i = i; m_j = j;
 
-  m_col[0].j = j;
-  m_col[1].j = j;
-  m_col[2].j = j + 1;
-  m_col[3].j = j + 1;
-
-  m_col[0].i = i;
-  m_col[1].i = i + 1;
-  m_col[2].i = i + 1;
-  m_col[3].i = i;
-
   for (unsigned int k = 0; k < Nk; ++k) {
+    m_col[k].i = i + kIOffset[k];
+    m_col[k].j = j + kJOffset[k];
+    m_col[k].k = 0;
+
     m_row[k].i = m_col[k].i;
     m_row[k].j = m_col[k].j;
-    m_row[k].k = m_col[k].k = 0;
+    m_row[k].k = m_col[k].k;
   }
 }
 
