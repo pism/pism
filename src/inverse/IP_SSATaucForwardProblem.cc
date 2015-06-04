@@ -141,8 +141,8 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
     xm = m_element_index.xm,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
@@ -306,8 +306,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
            ys = m_element_index.ys, ym = m_element_index.ym;
   ParallelSection loop(m_grid->com);
   try {
-    for (int i = xs; i < xs + xm; i++) {
-      for (int j = ys; j < ys + ym; j++) {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
 
         // Zero out the element - local residual in prep for updating it.
         for (unsigned int k = 0; k < Quadrature::Nk; k++) {
@@ -463,8 +463,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
            ys = m_element_index.ys, ym = m_element_index.ym;
   ParallelSection loop(m_grid->com);
   try {
-    for (int i=xs; i<xs+xm; i++) {
-      for (int j=ys; j<ys+ym; j++) {
+    for (int j=ys; j<ys+ym; j++) {
+      for (int i=xs; i<xs+xm; i++) {
         // Index into coefficient storage in m_coefficients
         const int ij = m_element_index.flatten(i, j);
 

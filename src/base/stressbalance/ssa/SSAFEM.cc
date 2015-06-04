@@ -277,8 +277,8 @@ void SSAFEM::cacheQuadPtValues() {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (int i=xs; i<xs+xm; i++) {
-      for (int j=ys; j<ys+ym; j++) {
+    for (int j=ys; j<ys+ym; j++) {
+      for (int i=xs; i<xs+xm; i++) {
         double hq[Quadrature::Nq], hxq[Quadrature::Nq], hyq[Quadrature::Nq];
         double ds_xq[Quadrature::Nq], ds_yq[Quadrature::Nq];
         if (driving_stress_explicit) {
@@ -455,8 +455,8 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
     ys   = m_element_index.ys,
     ym   = m_element_index.ym;
 
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
       // Storage for element-local solution and residuals.
       Vector2 velocity_local[Quadrature::Nk], residual[Quadrature::Nk];
 
@@ -620,8 +620,8 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (int i = xs; i < xs + xm; i++) {
-      for (int j = ys; j < ys + ym; j++) {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
         // Values of the solution at the nodes of the current element.
         Vector2 velocity_local[Quadrature::Nk];
 

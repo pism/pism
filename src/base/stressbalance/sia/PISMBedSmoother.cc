@@ -209,8 +209,8 @@ void BedSmoother::compute_coefficients_on_proc0() {
         c3(*C3p0,         Mx, My),
         c4(*C4p0,         Mx, My);
 
-      for (int i=0; i < (int)Mx; i++) {
-        for (int j=0; j < (int)My; j++) {
+      for (int j=0; j < (int)My; j++) {
+        for (int i=0; i < (int)Mx; i++) {
           // average only over those points which are in the grid
           // do not wrap periodically
           double

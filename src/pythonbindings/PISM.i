@@ -132,8 +132,7 @@
     len = $1->size();
     $result = PyList_New(len);
      int i;
-     for(i=0; i<len; i++)
-     {
+     for (i=0; i<len; i++) {
          PyList_SetItem($result, i, PyFloat_FromDouble((*$1)[i]));
      }
 }

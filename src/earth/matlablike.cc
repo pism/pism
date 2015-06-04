@@ -32,8 +32,8 @@ void conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
     B(vB, mB, nB),
     result(vresult, mA, nA);
 
-  for (int i=0; i < mA; i++) {
-    for (int j=0; j < nA; j++) {
+  for (int j=0; j < nA; j++) {
+    for (int i=0; i < mA; i++) {
       double sum = 0.0;
       for (int r = std::max(0, i - mB + 1); r < std::min(mA, i); r++) {
         for (int s = std::max(0, j - nB + 1); s < std::min(nA, j); s++) {

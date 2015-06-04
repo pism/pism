@@ -79,7 +79,6 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
     x_count = lic->count[X],
     z_count = lic->count[Z];
 
-  // NOTE: make sure that the traversal order is correct!
   for (Points p(grid); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
 
