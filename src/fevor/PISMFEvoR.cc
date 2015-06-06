@@ -49,7 +49,7 @@ namespace pism {
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
-    m_packing_dimensions(std::vector<unsigned int>(3, 8)),
+    m_packing_dimensions(std::vector<unsigned int>(3, 16)),
     m_d_iso(m_packing_dimensions, 0.0)
 {
  
@@ -194,7 +194,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       m_p_avg_stress[i*9 + 0] = m_p_avg_stress[i*9 + 4] = m_p_avg_stress[i*9 + 8] = 0.;
       //m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = txz; 
       //m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = tyz; 
-      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = 910.0*9.81*0.05*(510.0 - m_p_z[i]); // Pa  
+      double slope = (config.get("sia_fevor_bed_slope_degrees") / 180.0) * M_PI;
+      m_p_avg_stress[i*9 + 2] = m_p_avg_stress[i*9 + 6] = 910.0*9.81*slope*(510.0 - m_p_z[i]); // Pa  
       m_p_avg_stress[i*9 + 5] = m_p_avg_stress[i*9 + 7] = 0.; 
 
 
@@ -220,6 +221,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
             << "***************************" << "\n"
             << " FEvoR Step averages:" << "\n"
             << "***************************" << "\n"
+            << "  Slope: " << slope << "\n"
             << "  Tempurature: " << temp << "\n"
             << "  Stess: " << std::endl;
           FEvoR::tensorDisplay(stress, 3, 3);
