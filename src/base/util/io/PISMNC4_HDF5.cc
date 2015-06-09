@@ -16,6 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/*
+  This code is *very* experimental and is not actively maintained. It is kept as a starting point
+  for somebody who might be interested in implementing HDF5-only I/O in PISM.
+
+  As far as I know it is used by exactly one person.
+
+  Use at your own risk and please do *not* treat this as a supported PISM feature. For example, one
+  should be very careful when using comparisons of PISM's I/O performance with "-o_format hdf5"
+  option and "-o_format netcdf4_parallel" to reason about HDF5 and NetCDF libraries and their
+  performance.
+*/
+
 // Defining H5_NO_DEPRECATED_SYMBOLS is supposed to be enough
 // to select the v1.8 HDF5 API even if the library was built
 // with v1.6 API set as the default...
@@ -661,10 +673,6 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
     return 0;
   }
 
-  unsigned int max_xm = 0, max_ym = 0;
-  MPI_Allreduce(&m_xm, &max_xm, 1, MPI_UNSIGNED, MPI_MAX, m_com);
-  MPI_Allreduce(&m_ym, &max_ym, 1, MPI_UNSIGNED, MPI_MAX, m_com);
-
   std::vector<hsize_t> extent, max_extent, chunk;
 
   std::vector<std::string>::const_iterator j;
@@ -683,8 +691,14 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
     max_extent.push_back(dim_maxextent);
 
     if (*j == "x") {
+      int max_xm = 0;
+      assert(m_xm > 0);
+      MPI_Allreduce(&m_xm, &max_xm, 1, MPI_INT, MPI_MAX, m_com);
       chunk.push_back(max_xm);
     } else if (*j == "y") {
+      int max_ym = 0;
+      assert(m_ym > 0);
+      MPI_Allreduce(&m_ym, &max_ym, 1, MPI_INT, MPI_MAX, m_com);
       chunk.push_back(max_ym);
     } else {
       chunk.push_back(1);
