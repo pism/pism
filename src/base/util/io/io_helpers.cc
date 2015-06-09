@@ -543,6 +543,8 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     return;
   }
 
+  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
+
   define_dimensions(var, grid, nc);
 
   std::string order = variable_order;
