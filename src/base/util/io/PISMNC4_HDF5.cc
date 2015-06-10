@@ -178,39 +178,7 @@ static hid_t H5DS_get_REFLIST_type(void)
   return -1;
 }
 
-/*!
- * All tuning parameters are here and in create_file_access_plist().
- */
-static unsigned int compute_stripe_size(MPI_Comm com, int xm, int ym) {
-  unsigned int stripe_size = 0;
-
-  assert(xm >= 0 && ym >= 0);
-
-  int max_xm = 0, max_ym = 0;
-  MPI_Allreduce(&xm, &max_xm, 1, MPI_INT, MPI_MAX, com);
-  MPI_Allreduce(&ym, &max_ym, 1, MPI_INT, MPI_MAX, com);
-
-  // round the chunk size up to the nearest megabyte
-  stripe_size = (unsigned int)ceil(static_cast<double>(sizeof(double) * max_xm * max_ym) / (1024.0 * 1024.0));
-
-  // don't use stipes of more that 32 Mbytes
-  if (stripe_size > 32) {
-    stripe_size = 32;
-  }
-
-  // Convert to bytes
-  stripe_size *= 1024 * 1024;
-
-  return stripe_size;
-}
-
-/*!
- * All tuning parameters are here and in compute_stripe_size().
- */
-static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info,
-                                      int xm, int ym) {
-
-  unsigned int stripe_size = compute_stripe_size(com, xm, ym);
+static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info) {
 
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   assert(plist_id >= 0);
@@ -223,9 +191,6 @@ static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info,
   {
     // Allocate a 1 Mb block for metadata (I bet this is overkill.)
     H5Pset_meta_block_size(plist_id, 1024*1024);
-
-    // Align anything larger than 16Kb to stripe boundaries
-    H5Pset_alignment(plist_id, 16*1024, stripe_size);
   }
 
   // Disable metadata cache evictions. This may not be necessary.
@@ -241,15 +206,6 @@ static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info,
     mdc_config.flash_incr_mode = H5C_flash_incr__off;
 
     H5Pset_mdc_config(plist_id, &mdc_config);
-  }
-
-  // Set MPI hints
-  {
-    char hint_value[100];
-    snprintf(hint_value, 100, "%d", stripe_size);
-    MPI_Info_set(info, const_cast<char*>("striping_unit"), hint_value);
-
-    MPI_Info_set(info, const_cast<char*>("striping_factor"), const_cast<char*>("-1"));
   }
 
   return plist_id;
@@ -476,7 +432,7 @@ int NC4_HDF5::open_impl(const std::string &filename, IO_Mode mode) {
   int rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  hid_t plist_id = create_file_access_plist(m_com, MPI_INFO_NULL, m_xm, m_ym);
+  hid_t plist_id = create_file_access_plist(m_com, MPI_INFO_NULL);
 
   herr_t stat = H5Fis_hdf5(filename.c_str()); check(stat);
   if (stat == 0) {
@@ -504,7 +460,7 @@ int NC4_HDF5::create_impl(const std::string &filename) {
   MPI_Info info = (MPI_Info)NULL;
   MPI_Info_create(&info);
 
-  hid_t plist_id = create_file_access_plist(m_com, info, m_xm, m_ym); check(plist_id);
+  hid_t plist_id = create_file_access_plist(m_com, info); check(plist_id);
 
   m_hdf5_file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 
