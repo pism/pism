@@ -76,11 +76,12 @@ IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
 
     return IceGrid::FromFile(ctx, input_file, names, p);
   } else {
-    // use defaults set by pismv_grid_defaults()
-    GridParameters P(ctx->config(), ctx->size());
-    P.horizontal_size_from_options(ctx->size());
+    // use defaults from the configuration database
+    GridParameters P(ctx->config());
+    P.horizontal_size_from_options();
     P.horizontal_extent_from_options();
     P.vertical_grid_from_options(ctx->config());
+    P.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, P));
   }
