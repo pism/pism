@@ -136,6 +136,7 @@ add_library (pismbase
   base/iMreport.cc
   base/iMtemp.cc
   base/iMtimeseries.cc
+  base/iMtracer.cc
   base/iMutil.cc
   base/iMcell_areas.cc
   base/iMviewers.cc

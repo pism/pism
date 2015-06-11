@@ -34,6 +34,11 @@ netcdf pism_config {
     pism_config:do_age = "no";
     pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";
 
+    pism_config:do_tracer_type = "boolean";
+    pism_config:do_tracer_option = "tracer";
+    pism_config:do_tracer = "no";
+    pism_config:do_tracer_doc = "Solve tracer equation (advection equation for ice tracers).";
+
     pism_config:stress_balance_model_type = "keyword";
     pism_config:stress_balance_model_option = "stress_balance";
     pism_config:stress_balance_model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";
@@ -329,6 +334,26 @@ netcdf pism_config {
     pism_config:initial_age_of_ice_years_type = "scalar";
     pism_config:initial_age_of_ice_years = 0.0;
     pism_config:initial_age_of_ice_years_doc = "Initial age of ice";
+
+    pism_config:initial_x_of_ice_units = "m";
+    pism_config:initial_x_of_ice_type = "scalar";
+    pism_config:initial_x_of_ice = 0.0;
+    pism_config:initial_x_of_ice_doc = "Initial x of ice";
+
+		pism_config:initial_y_of_ice_units = "m";
+    pism_config:initial_y_of_ice_type = "scalar";
+    pism_config:initial_y_of_ice = 0.0;
+    pism_config:initial_y_of_ice_doc = "Initial y of ice";
+
+		pism_config:initial_z_of_ice_units = "m";
+    pism_config:initial_z_of_ice_type = "scalar";
+    pism_config:initial_z_of_ice = 0.0;
+    pism_config:initial_z_of_ice_doc = "Initial z of ice";
+
+		pism_config:initial_t_of_ice_units = "years";
+    pism_config:initial_t_of_ice_type = "scalar";
+    pism_config:initial_t_of_ice = 0.0;
+    pism_config:initial_t_of_ice_doc = "Initial t of ice";
 
     pism_config:maximum_time_step_years_option = "max_dt";
     pism_config:maximum_time_step_years_units = "years";

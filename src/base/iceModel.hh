@@ -181,7 +181,7 @@ public:
   virtual void run();
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
-  virtual void step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
+  virtual void step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_tracer, bool do_skip);
   void reset_counters();
 
   // see iMbootstrap.cc
@@ -297,8 +297,11 @@ protected:
   IceModelVec3
   T3,             //!< absolute temperature of ice; K (ghosted)
     Enth3,          //!< enthalpy; J / kg (ghosted)
-    age3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
-
+    age3,           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
+    tracer_x,      /// trace x-position a partice entered the ice
+		tracer_y,      /// trace y-position a partice entered the ice
+		tracer_z,      /// trace z-position a partice entered the ice
+		tracer_t;      // trace time a particle entered the ice
   // parameters
   double   dt,     //!< mass continuity time step, s
     t_TempAge,  //!< time of last update for enthalpy/temperature
@@ -338,6 +341,9 @@ protected:
 
   // see iMage.cc
   virtual void ageStep();
+
+	// see iMtracer.cc
+  virtual void tracerStep();
 
   // see iMenergy.cc
   virtual void energyStep();

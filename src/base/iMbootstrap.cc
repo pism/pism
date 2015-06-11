@@ -55,7 +55,8 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
   // regridding.
   int age_revision = age3.get_state_counter(),
     temperature_revision = T3.get_state_counter(),
-    enthalpy_revision = Enth3.get_state_counter();
+    enthalpy_revision = Enth3.get_state_counter(),
+		tracer_revision = tracer_x.get_state_counter();
 
   regrid(3);
 
@@ -75,6 +76,33 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
       } else {
         m_log->message(2,
                    " - age of the ice was set already\n");
+      }
+    }
+
+
+		if (m_config->get_boolean("do_tracer")) {
+      if (tracer_revision == tracer_x.get_state_counter()) {
+        m_log->message(2,
+                   " - setting initial x position to %.4f m -- THIS NEEDS TO BE CHANGED -- TODO\n",
+                   m_config->get_double("initial_x_of_ice_"));
+        tracer_x.set(m_config->get_double("initial_x_of_ice", "m"));
+
+				m_log->message(2,
+                   " - setting initial y position to %.4f m -- THIS NEEDS TO BE CHANGED -- TODO\n",
+                   m_config->get_double("initial_y_of_ice_"));
+        tracer_y.set(m_config->get_double("initial_y_of_ice", "m"));
+
+        m_log->message(2,
+                   " - setting initial z position to %.4f m -- THIS NEEDS TO BE CHANGED -- TODO\n",
+                   m_config->get_double("initial_z_of_ice_"));
+        tracer_z.set(m_config->get_double("initial_z_of_ice", "m"));
+
+        m_log->message(2,
+											 " - setting initial time of time tracer to current model time\n");
+        tracer_t.set(m_time->current());
+      } else {
+        m_log->message(2,
+                   " - tracers were set already\n");
       }
     }
 

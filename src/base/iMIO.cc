@@ -415,6 +415,53 @@ void IceModel::initFromFile(const std::string &filename) {
     }
   }
 
+  // read the tracer field if present, otherwise set to zero
+  if (m_config->get_boolean("do_tracer")) {
+    bool tracer_exists = nc.inq_var("tracer_x");
+
+    if (tracer_exists) {
+      tracer_x.read(filename, last_record);
+    } else {
+      m_log->message(2,
+                 "PISM WARNING: input file '%s' does not have the 'tracer_x' variable.\n"
+                 "  Setting it to zero...\n",
+                 filename.c_str());
+      tracer_x.set(0.0);
+    }
+    tracer_exists = nc.inq_var("tracer_y");
+
+    if (tracer_exists) {
+      tracer_y.read(filename, last_record);
+    } else {
+      m_log->message(2,
+                 "PISM WARNING: input file '%s' does not have the 'tracer_y' variable.\n"
+                 "  Setting it to zero...\n",
+                 filename.c_str());
+      tracer_y.set(0.0);
+    }
+    tracer_exists = nc.inq_var("tracer_z");
+
+    if (tracer_exists) {
+      tracer_z.read(filename, last_record);
+    } else {
+      m_log->message(2,
+                 "PISM WARNING: input file '%s' does not have the 'tracer_z' variable.\n"
+                 "  Setting it to zero...\n",
+                 filename.c_str());
+      tracer_z.set(0.0);
+    }
+    tracer_exists = nc.inq_var("tracer_t");
+
+    if (tracer_exists) {
+      tracer_t.read(filename, last_record);
+    } else {
+      m_log->message(2,
+                 "PISM WARNING: input file '%s' does not have the 'tracer_t' variable.\n"
+                 "  Setting it to zero...\n",
+                 filename.c_str());
+      tracer_t.set(0.0);
+    }
+  }
 
   // Initialize the enthalpy field by reading from a file or by using
   // temperature and liquid water fraction, or by using temperature

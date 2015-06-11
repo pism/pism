@@ -245,6 +245,29 @@ void IceModel::createVecs() {
     age3.metadata().set_double("valid_min", 0.0);
     m_grid->variables().add(age3);
   }
+  if (m_config->get_boolean("do_tracer")) {
+    tracer_x.create(m_grid, "tracer_x", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_x.set_attrs("model_state", "x-origin of ice",
+                   "m", "");
+    m_grid->variables().add(tracer_x);
+
+    tracer_y.create(m_grid, "tracer_y", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_y.set_attrs("model_state", "y-origin of ice",
+                   "m", "");
+    m_grid->variables().add(tracer_y);
+
+    tracer_z.create(m_grid, "tracer_z", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_z.set_attrs("model_state", "z-origin of ice",
+                   "m", "");
+    m_grid->variables().add(tracer_z);
+
+    tracer_t.create(m_grid, "tracer_t", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_t.set_attrs("model_state", "time of creation of ice",
+                   "s", "");
+    tracer_t.metadata().set_string("glaciological_units", "years");
+    tracer_t.write_in_glaciological_units = true;
+    m_grid->variables().add(tracer_t);
+  }
 
   // ice upper surface elevation
   ice_surface_elevation.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -601,6 +624,7 @@ During the time-step we perform the following actions:
 void IceModel::step(bool do_mass_continuity,
                               bool do_energy,
                               bool do_age,
+           										bool do_tracer,
                               bool do_skip) {
 
   const Profiling &profiling = m_ctx->profiling();
@@ -693,6 +717,16 @@ void IceModel::step(bool do_mass_continuity,
     ageStep();
     profiling.end("age");
     stdout_flags += "a";
+  } else {
+    stdout_flags += "$";
+  }
+
+  //! \li update the tracers in the ice (if appropriate)
+  if (do_tracer && updateAtDepth) {
+    profiling.begin("tracer");
+    tracerStep();
+    profiling.end("tracer");
+    stdout_flags += "t";
   } else {
     stdout_flags += "$";
   }
@@ -826,6 +860,7 @@ void IceModel::run() {
   bool do_mass_conserve = m_config->get_boolean("do_mass_conserve");
   bool do_energy = m_config->get_boolean("do_energy");
   bool do_age = m_config->get_boolean("do_age");
+  bool do_tracer = m_config->get_boolean("do_tracer");
   bool do_skip = m_config->get_boolean("do_skip");
 
   int stepcount = m_config->get_boolean("count_time_steps") ? 0 : -1;
@@ -856,11 +891,11 @@ void IceModel::run() {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
 
-    step(do_mass_conserve, do_energy, do_age, do_skip);
+    step(do_mass_conserve, do_energy, do_age, do_tracer, do_skip);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = skipCountDown == 0;
-    bool tempAgeStep = updateAtDepth && (do_energy || do_age);
+    bool tempAgeStep = updateAtDepth && (do_energy || do_age || do_tracer);
 
     const bool show_step = tempAgeStep || m_adaptive_timestep_reason == "end of the run";
     summary(show_step);
