@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "bedrough_test");
     Config::Ptr config = ctx->config();
 
-    GridParameters P(config, ctx->size());
+    GridParameters P(config);
 
     P.Lx = 1200e3;
     P.Ly = P.Lx;

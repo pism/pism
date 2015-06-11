@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # Build the grid.
     config = PISM.Context().config
 
-    p = PISM.GridParameters(config, context.size)
+    p = PISM.GridParameters(config)
     p.Mx = Mx
     p.My = My
     p.Lx = Lx
