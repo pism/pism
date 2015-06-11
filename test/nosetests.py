@@ -17,7 +17,8 @@ import sys
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config, ctx.size)
+    params = PISM.GridParameters(ctx.config)
+    params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
 
 def context_test():
@@ -399,7 +400,7 @@ def modelvecs_test():
 def sia_test():
     "Test the PISM.sia module"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config, ctx.size)
+    params = PISM.GridParameters(ctx.config)
     params.Lx = 1e5
     params.Ly = 1e5
     params.Lz = 1000

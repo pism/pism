@@ -151,9 +151,10 @@ IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
   } else {
     // use defaults set by pismv_grid_defaults()
     GridParameters P = pismv_grid_defaults(ctx->config(), testname);
-    P.horizontal_size_from_options(ctx->size());
+    P.horizontal_size_from_options();
     P.horizontal_extent_from_options();
     P.vertical_grid_from_options(ctx->config());
+    P.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, P));
   }

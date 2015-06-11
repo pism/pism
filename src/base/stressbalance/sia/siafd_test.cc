@@ -330,15 +330,16 @@ int main(int argc, char *argv[]) {
 
     options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
 
-    GridParameters P(config, ctx->size());
+    GridParameters P(config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
-    P.horizontal_size_from_options(ctx->size());
+    P.horizontal_size_from_options();
 
     double Lz = 4000.0;
     options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
 
     P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+    P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
     IceGrid::Ptr grid(new IceGrid(ctx, P));
@@ -356,7 +357,7 @@ int main(int argc, char *argv[]) {
 
     Vars &vars = grid->variables();
 
-    bed_topography.create(grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
     bed_topography.set_attrs("model_state", "bedrock surface elevation",
                              "m", "bedrock_altitude");
     vars.add(bed_topography);

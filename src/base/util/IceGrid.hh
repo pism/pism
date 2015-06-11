@@ -70,28 +70,39 @@ private:
 };
 
 //! Grid parameters; used to collect defaults before an IceGrid is allocated.
+/* Make sure that all of
+   - `horizontal_size_from_options()`
+   - `horizontal_extent_from_options()`
+   - `vertical_grid_from_options()`
+   - `ownership_ranges_from_options()`
+
+   are called *or* all data members (`Lx`, `Ly`, `x0`, `y0`, `Mx`, `My`, `z`, `periodicity`,
+   `procs_x`, `procs_y`) are set manually before using an instance of GridParameters.
+
+   Call `validate()` to check current parameters.
+*/
 class GridParameters {
 public:
   //! Create an uninitialized GridParameters instance.
   GridParameters();
 
   //! Initialize grid defaults from a configuration database.
-  GridParameters(Config::ConstPtr config, unsigned int size);
+  GridParameters(Config::ConstPtr config);
 
-  //! Initialize grid default from a configuration database and a NetCDF variable.
+  //! Initialize grid defaults from a configuration database and a NetCDF variable.
   GridParameters(Context::Ptr ctx,
                  const std::string &filename,
                  const std::string &variable_name,
                  Periodicity p);
-  //! Initialize grid default from a configuration database and a NetCDF variable.
+  //! Initialize grid defaults from a configuration database and a NetCDF variable.
   GridParameters(Context::Ptr ctx,
                  const PIO &file,
                  const std::string &variable_name,
                  Periodicity p);
 
-  //! Process -Mx and -My.
-  void horizontal_size_from_options(unsigned int size);
-  //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0. Resets ownership ranges.
+  //! Process -Mx and -My; set Mx and My.
+  void horizontal_size_from_options();
+  //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
   void horizontal_extent_from_options();
   //! Process -Mz and -Lz; set z;
   void vertical_grid_from_options(Config::ConstPtr config);
