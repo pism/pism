@@ -787,7 +787,7 @@ def regridding_test():
     import numpy as np
 
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config, ctx.size)
+    params = PISM.GridParameters(ctx.config)
     params.Mx = 3
     params.My = 3
     params.ownership_ranges_from_options(1)
