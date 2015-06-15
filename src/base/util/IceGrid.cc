@@ -153,79 +153,87 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
                               Periodicity periodicity) {
+  try {
+    GridParameters p(ctx->config());
+    p.Lx = Lx;
+    p.Ly = Ly;
+    p.x0 = x0;
+    p.y0 = y0;
+    p.Mx = Mx;
+    p.My = My;
+    p.periodicity = periodicity;
 
-  GridParameters p(ctx->config(), ctx->size());
-  p.Lx = Lx;
-  p.Ly = Ly;
-  p.x0 = x0;
-  p.y0 = y0;
-  p.Mx = Mx;
-  p.My = My;
-  p.periodicity = periodicity;
+    double Lz = ctx->config()->get_double("grid_Lz");
+    p.z.resize(3);
+    p.z[0] = 0.0;
+    p.z[1] = 0.5 * Lz;
+    p.z[2] = 1.0 * Lz;
 
-  double Lz = ctx->config()->get_double("grid_Lz");
-  p.z.resize(3);
-  p.z[0] = 0.0;
-  p.z[1] = 0.5 * Lz;
-  p.z[2] = 1.0 * Lz;
+    p.ownership_ranges_from_options(ctx->size());
 
-  p.ownership_ranges_from_options(ctx->size());
-
-  return IceGrid::Ptr(new IceGrid(ctx, p));
+    return IceGrid::Ptr(new IceGrid(ctx, p));
+  } catch (RuntimeError &e) {
+    e.add_context("initializing a shallow grid");
+    throw;
+  }
 }
 
 //! @brief Create a PISM distributed computational grid.
 IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl) {
 
-  m_impl->ctx = context;
+  try {  m_impl->ctx = context;
 
-  m_impl->bsearch_accel = gsl_interp_accel_alloc();
-  if (m_impl->bsearch_accel == NULL) {
-    throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
-  }
-
-  MPI_Comm_rank(com, &m_impl->rank);
-  MPI_Comm_size(com, &m_impl->size);
-
-  p.validate();
-
-  m_impl->Mx = p.Mx;
-  m_impl->My = p.My;
-  m_impl->x0 = p.x0;
-  m_impl->y0 = p.y0;
-  m_impl->Lx = p.Lx;
-  m_impl->Ly = p.Ly;
-  m_impl->periodicity = p.periodicity;
-  m_impl->z = p.z;
-  this->set_ownership_ranges(p.procs_x, p.procs_y);
-
-  compute_horizontal_coordinates();
-
-  {
-    unsigned int max_stencil_width = (unsigned int)context->config()->get_double("grid_max_stencil_width");
-
-    try {
-      petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
-    } catch (RuntimeError &e) {
-      e.add_context("distributing a %d x %d grid across %d processors.",
-                    Mx(), My(), size());
-      throw;
+    m_impl->bsearch_accel = gsl_interp_accel_alloc();
+    if (m_impl->bsearch_accel == NULL) {
+      throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
     }
 
-    // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
-    // be needed for I/O operations)
-    m_impl->dm_scalar_global = this->get_dm(1, 0);
+    MPI_Comm_rank(com, &m_impl->rank);
+    MPI_Comm_size(com, &m_impl->size);
 
-    DMDALocalInfo info;
-    PetscErrorCode ierr = DMDAGetLocalInfo(*m_impl->dm_scalar_global, &info);
-    PISM_CHK(ierr, "DMDAGetLocalInfo");
+    p.validate();
 
-    m_impl->xs = info.xs;
-    m_impl->xm = info.xm;
-    m_impl->ys = info.ys;
-    m_impl->ym = info.ym;
+    m_impl->Mx = p.Mx;
+    m_impl->My = p.My;
+    m_impl->x0 = p.x0;
+    m_impl->y0 = p.y0;
+    m_impl->Lx = p.Lx;
+    m_impl->Ly = p.Ly;
+    m_impl->periodicity = p.periodicity;
+    m_impl->z = p.z;
+    this->set_ownership_ranges(p.procs_x, p.procs_y);
 
+    compute_horizontal_coordinates();
+
+    {
+      unsigned int max_stencil_width = (unsigned int)context->config()->get_double("grid_max_stencil_width");
+
+      try {
+        petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
+      } catch (RuntimeError &e) {
+        e.add_context("distributing a %d x %d grid across %d processors.",
+                      Mx(), My(), size());
+        throw;
+      }
+
+      // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
+      // be needed for I/O operations)
+      m_impl->dm_scalar_global = this->get_dm(1, 0);
+
+      DMDALocalInfo info;
+      PetscErrorCode ierr = DMDAGetLocalInfo(*m_impl->dm_scalar_global, &info);
+      PISM_CHK(ierr, "DMDAGetLocalInfo");
+
+      m_impl->xs = info.xs;
+      m_impl->xm = info.xm;
+      m_impl->ys = info.ys;
+      m_impl->ym = info.ym;
+
+    }
+  } catch (RuntimeError &e) {
+    e.add_context("allocating IceGrid");
+    throw;
   }
 }
 
@@ -243,7 +251,8 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
     }
   }
 
-  throw RuntimeError::formatted("file %s does not have any of %s",
+  throw RuntimeError::formatted("file %s does not have any of %s."
+                                " Cannot initialize the grid.",
                                 filename.c_str(),
                                 join(var_names, ",").c_str());
 }
@@ -275,6 +284,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
     // override periodicity
     p.periodicity = periodicity;
+    p.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, p));
   } catch (RuntimeError &e) {
@@ -1102,10 +1112,8 @@ GridParameters::GridParameters() {
   periodicity = NONE;
 }
 
-GridParameters::GridParameters(Config::ConstPtr config, unsigned int size) {
+GridParameters::GridParameters(Config::ConstPtr config) {
   init_from_config(config);
-  // set ownership ranges (Mx and My are final)
-  this->ownership_ranges_from_options(size);
 }
 
 void GridParameters::ownership_ranges_from_options(unsigned int size) {
@@ -1155,8 +1163,6 @@ void GridParameters::init_from_file(Context::Ptr ctx,
   My = input_grid.y_len;
   periodicity = p;
   z = input_grid.z;
-  // set ownership ranges (Mx and My are final)
-  this->ownership_ranges_from_options(ctx->size());
 }
 
 GridParameters::GridParameters(Context::Ptr ctx,
@@ -1177,10 +1183,9 @@ GridParameters::GridParameters(Context::Ptr ctx,
 }
 
 
-void GridParameters::horizontal_size_from_options(unsigned int size) {
+void GridParameters::horizontal_size_from_options() {
   Mx = options::Integer("-Mx", "grid size in X direction", Mx);
   My = options::Integer("-My", "grid size in Y direction", My);
-  ownership_ranges_from_options(size);
 }
 
 void GridParameters::horizontal_extent_from_options() {
@@ -1297,9 +1302,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
-    int size = 0;
-    MPI_Comm_size(ctx->com(), &size);
-    GridParameters input_grid(ctx->config(), size);
+    GridParameters input_grid(ctx->config());
 
     std::vector<std::string> names;
     names.push_back("land_ice_thickness");
@@ -1333,9 +1336,10 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     }
 
     // process all possible options controlling grid parameters, overriding values read from a file
-    input_grid.horizontal_size_from_options(ctx->size());
+    input_grid.horizontal_size_from_options();
     input_grid.horizontal_extent_from_options();
     input_grid.vertical_grid_from_options(ctx->config());
+    input_grid.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, input_grid));
   } else {

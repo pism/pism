@@ -165,14 +165,14 @@ int main(int argc, char *argv[]) {
 
     options::Real dt_years("-dt", "Time-step, in years", 1.0);
 
-    GridParameters P(config, ctx->size());
+    GridParameters P(config);
     P.Mx = 3;
     P.My = P.Mx;
     P.Lx = 1500e3;
     P.Ly = P.Lx;
 
-    P.ownership_ranges_from_options(ctx->size());
     P.vertical_grid_from_options(config);
+    P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
     IceGrid::Ptr grid(new IceGrid(ctx, P));

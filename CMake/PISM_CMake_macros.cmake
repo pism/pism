@@ -256,7 +256,7 @@ macro(pism_set_dependencies)
   # more than one HDF5 library installed--- one serial, built with NetCDF, and one parallel.
   # We want to use the latter.)
   if (Pism_USE_PARALLEL_HDF5)
-    include_directories (${HDF5_C_INCLUDE_DIR})
+    include_directories (BEFORE ${HDF5_C_INCLUDE_DIR})
     list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
   endif()
 

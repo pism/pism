@@ -25,7 +25,7 @@
 #  Always runs the given test, use this when you need to re-run tests
 #  because parent variables have made old cache entries stale. The LANGUAGE
 #  variable is either C or CXX indicating which compiler the test should
-#  use. 
+#  use.
 # MULTIPASS_C_SOURCE_RUNS (Name INCLUDES LIBRARIES SOURCE RUNS)
 #  DEPRECATED! This is only included for backwards compatability. Use
 #  the more general MULTIPASS_SOURCE_RUNS instead.
@@ -46,7 +46,7 @@ macro (FIND_PACKAGE_MULTIPASS _name _current)
       # The name of the stored value for the given state
       set (_stored_var PACKAGE_MULTIPASS_${_NAME}_${_state})
       if (NOT "${${_stored_var}}" STREQUAL "${${_NAME}_${_state}}")
-	set (_states_current "NO")
+        set (_states_current "NO")
       endif (NOT "${${_stored_var}}" STREQUAL "${${_NAME}_${_state}}")
       set (${_stored_var} "${${_NAME}_${_state}}" CACHE INTERNAL "Stored state for ${_name}." FORCE)
       list (REMOVE_AT _args 0)
@@ -68,7 +68,7 @@ macro (FIND_PACKAGE_MULTIPASS _name _current)
     if (_cmd STREQUAL "DEPENDENTS")
       list (REMOVE_AT _args 0)
       foreach (dep ${_args})
-	set (${_NAME}_${dep} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
+        set (${_NAME}_${dep} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
       endforeach (dep)
     endif (_cmd STREQUAL "DEPENDENTS")
     set (${_NAME}_FOUND "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
