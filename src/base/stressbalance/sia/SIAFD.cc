@@ -840,6 +840,8 @@ void SIAFD::compute_I() {
   assert(m_delta[1].get_stencil_width() >= 1);
   assert(thk_smooth.get_stencil_width() >= 2);
 
+  const unsigned int Mz = m_grid->Mz();
+
   for (int o = 0; o < 2; ++o) {
     ParallelSection loop(m_grid->com);
     try {
@@ -865,7 +867,7 @@ void SIAFD::compute_I() {
           I_ij[k] = I_current;
         }
         // above the ice:
-        for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        for (unsigned int k = ks + 1; k < Mz; ++k) {
           I_ij[k] = I_current;
         }
       }
