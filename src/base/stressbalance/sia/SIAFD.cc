@@ -16,6 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cstdlib>
+
 #include "SIAFD.hh"
 #include "PISMBedSmoother.hh"
 #include "base/enthalpyConverter.hh"
@@ -1010,7 +1012,7 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
       l = j;
     }
   }
-  if ((r == l) || (fabs(r - l) > 1)) {
+  if ((r == l) || (std::abs(r - l) > 1)) {
     throw RuntimeError("binary search in grainSizeVostok: oops");
   }
   // Linear interpolation on the interval
