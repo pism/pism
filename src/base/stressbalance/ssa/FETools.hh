@@ -349,7 +349,7 @@ public:
     element (`i`, `j`) to be iterated over corresponding to flattened index 0. */
   int flatten(int i, int j)
   {
-    return (i-xs)*ym+(j-ys);
+    return (i-xs) + (j-ys)*xm;
   }
   
   int xs, //!< x-coordinate of the first element to loop over.

@@ -118,12 +118,12 @@ void IceModelVec3D::set_column(int i, int j, double c) {
   double ***arr = (double***) array;
 
   if (c == 0.0) {
-    ierr = PetscMemzero(arr[i][j], zlevels.size() * sizeof(double));
+    ierr = PetscMemzero(arr[j][i], zlevels.size() * sizeof(double));
     PISM_CHK(ierr, "PetscMemzero");
   } else {
     unsigned int nlevels = zlevels.size();
     for (unsigned int k=0; k < nlevels; k++) {
-      arr[i][j][k] = c;
+      arr[j][i][k] = c;
     }
   }
 }
@@ -143,16 +143,16 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
   double ***arr = (double***) array;
   if (z >= zlevels.back()) {
     unsigned int nlevels = zlevels.size();
-    return arr[i][j][nlevels - 1];
+    return arr[j][i][nlevels - 1];
   } else if (z <= zlevels.front()) {
-    return arr[i][j][0];
+    return arr[j][i][0];
   }
 
   unsigned int mcurr = gsl_interp_accel_find(m_bsearch_accel, &zlevels[0], zlevels.size(), z);
 
   const double incr = (z - zlevels[mcurr]) / (zlevels[mcurr+1] - zlevels[mcurr]);
-  const double valm = arr[i][j][mcurr];
-  return valm + incr * (arr[i][j][mcurr+1] - valm);
+  const double valm = arr[j][i][mcurr];
+  return valm + incr * (arr[j][i][mcurr+1] - valm);
 }
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into a Vec gslice.
@@ -172,7 +172,7 @@ void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      slice_val[i][j] = getValZ(i,j,z);
+      slice_val[j][i] = getValZ(i,j,z);
     }
   } catch (...) {
     loop.failed();
@@ -225,14 +225,14 @@ double* IceModelVec3D::get_column(int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return ((double***) array)[i][j];
+  return ((double***) array)[j][i];
 }
 
 const double* IceModelVec3D::get_column(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return ((double***) array)[i][j];
+  return ((double***) array)[j][i];
 }
 
 void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
@@ -240,7 +240,7 @@ void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
   check_array_indices(i, j, 0);
 #endif
   double ***arr = (double***) array;
-  PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, zlevels.size()*sizeof(double));
+  PetscErrorCode ierr = PetscMemcpy(arr[j][i], valsIN, zlevels.size()*sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 

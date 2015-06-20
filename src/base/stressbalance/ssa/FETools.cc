@@ -98,10 +98,10 @@ DOFMap::~DOFMap() {
   local vector `x_local` (scalar-valued DOF version). */
 void DOFMap::extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const
 {
-  x_local[0] = x_global[i][j];
-  x_local[1] = x_global[i + 1][j];
-  x_local[2] = x_global[i + 1][j + 1];
-  x_local[3] = x_global[i][j + 1];
+  x_local[0] = x_global[j][i];
+  x_local[1] = x_global[j][i + 1];
+  x_local[2] = x_global[j + 1][i + 1];
+  x_local[3] = x_global[j + 1][i];
 }
 
 void DOFMap::extractLocalDOFs(int i, int j,
@@ -119,10 +119,10 @@ void DOFMap::extractLocalDOFs(int i, int j,
 void DOFMap::extractLocalDOFs(int i, int j, Vector2 const*const*x_global,
                               Vector2 *x_local) const
 {
-  x_local[0] = x_global[i][j];
-  x_local[1] = x_global[i + 1][j];
-  x_local[2] = x_global[i + 1][j + 1];
-  x_local[3] = x_global[i][j + 1];
+  x_local[0] = x_global[j][i];
+  x_local[1] = x_global[j][i + 1];
+  x_local[2] = x_global[j + 1][i + 1];
+  x_local[3] = x_global[j + 1][i];
 }
 
 void DOFMap::extractLocalDOFs(int i, int j,
@@ -166,23 +166,15 @@ void DOFMap::localToGlobal(int k, int *i, int *j) const {
 
 void DOFMap::reset(int i, int j) {
   m_i = i; m_j = j;
-  // The meaning of i and j for a PISM IceGrid and for a Petsc DA are swapped (the so-called
-  // fundamental transpose.  The interface between PISM and Petsc is the stencils, so all
-  // interactions with the stencils involve a transpose.
-  m_col[0].i = j;
-  m_col[1].i = j;
-  m_col[2].i = j + 1;
-  m_col[3].i = j + 1;
-
-  m_col[0].j = i;
-  m_col[1].j = i + 1;
-  m_col[2].j = i + 1;
-  m_col[3].j = i;
 
   for (unsigned int k = 0; k < Nk; ++k) {
+    m_col[k].i = i + kIOffset[k];
+    m_col[k].j = j + kJOffset[k];
+    m_col[k].k = 0;
+
     m_row[k].i = m_col[k].i;
     m_row[k].j = m_col[k].j;
-    m_row[k].k = m_col[k].k = 0;
+    m_row[k].k = m_col[k].k;
   }
 }
 
@@ -193,7 +185,7 @@ void DOFMap::reset(int i, int j, const IceGrid &grid) {
   reset(i, j);
   // We do not ever sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < Nk; k++) {
-    int pism_i = m_row[k].j, pism_j = m_row[k].i;
+    int pism_i = m_row[k].i, pism_j = m_row[k].j;
     if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
         pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
       markRowInvalid(k);
@@ -246,8 +238,8 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
     if (m_row[k].k == 1) {
       continue;
     }
-    y_global(m_row[k].j, m_row[k].i).u += y[k].u;
-    y_global(m_row[k].j, m_row[k].i).v += y[k].v;
+    y_global(m_row[k].i, m_row[k].j).u += y[k].u;
+    y_global(m_row[k].i, m_row[k].j).v += y[k].v;
   }
 }
 
@@ -256,7 +248,7 @@ void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
     if (m_row[k].k == 1) {
       continue;
     }
-    y_global(m_row[k].j, m_row[k].i) += y[k];
+    y_global(m_row[k].i, m_row[k].j) += y[k];
   }
 }
 
@@ -624,7 +616,7 @@ void DirichletData_Scalar::fix_residual(const double **x_global, double **r_glob
 
     if ((*m_indices)(i, j) > 0.5) {
       // Enforce explicit dirichlet data.
-      r_global[i][j] = m_weight * (x_global[i][j] - (*m_values)(i,j));
+      r_global[j][i] = m_weight * (x_global[j][i] - (*m_values)(i,j));
     }
   }
 }
@@ -638,7 +630,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
 
     if ((*m_indices)(i, j) > 0.5) {
       // Enforce explicit dirichlet data.
-      r_global[i][j] = 0.0;
+      r_global[j][i] = 0.0;
     }
   }
 }
@@ -660,8 +652,7 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        // Transpose shows up here!
-        row.j = i; row.i = j;
+        row.j = j; row.i = i;
         PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
                                                          ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
@@ -726,8 +717,8 @@ void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_gl
 
     if ((*m_indices)(i, j) > 0.5) {
       // Enforce explicit dirichlet data.
-      r_global[i][j].u = m_weight * (x_global[i][j].u - (*m_values)(i, j).u);
-      r_global[i][j].v = m_weight * (x_global[i][j].v - (*m_values)(i, j).v);
+      r_global[j][i].u = m_weight * (x_global[j][i].u - (*m_values)(i, j).u);
+      r_global[j][i].v = m_weight * (x_global[j][i].v - (*m_values)(i, j).v);
     }
   }
 }
@@ -741,8 +732,8 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
 
     if ((*m_indices)(i, j) > 0.5) {
       // Enforce explicit dirichlet data.
-      r_global[i][j].u = 0.0;
-      r_global[i][j].v = 0.0;
+      r_global[j][i].u = 0.0;
+      r_global[j][i].v = 0.0;
     }
   }
 }
@@ -765,8 +756,7 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        // Transpose shows up here!
-        row.j = i; row.i = j;
+        row.j = j; row.i = i;
         PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
                                                          ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw

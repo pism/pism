@@ -168,15 +168,16 @@ void BedSmoother::smooth_the_bed_on_proc0() {
         b0(*topgp0,       grid->Mx(), grid->My()),
         bs(*topgsmoothp0, grid->Mx(), grid->My());
 
-      for (int i=0; i < (int)grid->Mx(); i++) {
-        for (int j=0; j < (int)grid->My(); j++) {
+      for (int j=0; j < (int)grid->My(); j++) {
+        for (int i=0; i < (int)grid->Mx(); i++) {
           // average only over those points which are in the grid; do
           // not wrap periodically
           double sum = 0.0, count = 0.0;
           for (int r = -Nx; r <= Nx; r++) {
             for (int s = -Ny; s <= Ny; s++) {
-              if ((i+r >= 0) && (i+r < (int)grid->Mx()) && (j+s >= 0) && (j+s < (int)grid->My())) {
-                sum += b0(i+r,j+s);
+              if ((i+r >= 0) and (i+r < (int)grid->Mx()) and
+                  (j+s >= 0) and (j+s < (int)grid->My())) {
+                sum += b0(i+r, j+s);
                 count += 1.0;
               }
             }
@@ -208,8 +209,8 @@ void BedSmoother::compute_coefficients_on_proc0() {
         c3(*C3p0,         Mx, My),
         c4(*C4p0,         Mx, My);
 
-      for (int i=0; i < (int)Mx; i++) {
-        for (int j=0; j < (int)My; j++) {
+      for (int j=0; j < (int)My; j++) {
+        for (int i=0; i < (int)Mx; i++) {
           // average only over those points which are in the grid
           // do not wrap periodically
           double

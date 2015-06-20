@@ -55,7 +55,7 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
-  const int Y = 2, Z = 3; // indices, just for clarity
+  const int X = 1, Z = 3; // indices, just for clarity
 
   std::vector<double> &zlevels_in = lic->zlevels;
   unsigned int nlevels = zlevels_out.size();
@@ -76,22 +76,22 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
 
   // array sizes for mapping from logical to "flat" indices
   int
-    y_count = lic->count[Y],
+    x_count = lic->count[X],
     z_count = lic->count[Z];
 
-  // NOTE: make sure that the traversal order is correct!
   for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    const int i_global = p.i(), j_global = p.j();
 
-    const int i0 = i - grid.xs(), j0 = j - grid.ys();
+    const int i = i_global - grid.xs(), j = j_global - grid.ys();
+
+    // Indices of neighboring points.
+    const int
+      X_m = lic->x_left[i],
+      X_p = lic->x_right[i],
+      Y_m = lic->y_left[j],
+      Y_p = lic->y_right[j];
 
     for (unsigned int k = 0; k < nlevels; k++) {
-      // Indices of neighboring points.
-      const int
-        Im = lic->x_left[i0],
-        Ip = lic->x_right[i0],
-        Jm = lic->y_left[j0],
-        Jp = lic->y_right[j0];
 
       double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
@@ -102,17 +102,17 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
         // those neighbors.
-        const int mmm = (Im * y_count + Jm) * z_count + kc;
-        const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
-        const int mpm = (Im * y_count + Jp) * z_count + kc;
-        const int mpp = (Im * y_count + Jp) * z_count + kc + 1;
-        const int pmm = (Ip * y_count + Jm) * z_count + kc;
-        const int pmp = (Ip * y_count + Jm) * z_count + kc + 1;
-        const int ppm = (Ip * y_count + Jp) * z_count + kc;
-        const int ppp = (Ip * y_count + Jp) * z_count + kc + 1;
+        const int mmm = (Y_m * x_count + X_m) * z_count + kc;
+        const int mmp = (Y_m * x_count + X_m) * z_count + kc + 1;
+        const int mpm = (Y_m * x_count + X_p) * z_count + kc;
+        const int mpp = (Y_m * x_count + X_p) * z_count + kc + 1;
+        const int pmm = (Y_p * x_count + X_m) * z_count + kc;
+        const int pmp = (Y_p * x_count + X_m) * z_count + kc + 1;
+        const int ppm = (Y_p * x_count + X_p) * z_count + kc;
+        const int ppp = (Y_p * x_count + X_p) * z_count + kc + 1;
 
         // We know how to index the neighbors, but we don't yet know where the
-        // point lies within this box.  This is represented by kk in [0,1].
+        // point lies within this box.  This is represented by alpha_z in [0,1].
         const double zkc = zlevels_in[kc];
         double dz;
         if (kc == z_count - 1) {
@@ -122,35 +122,34 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
         }
         // location (x,y,z) is in target computational domain
         const double z = zlevels_out[k];
-        const double kk = (z - zkc) / dz;
+        const double alpha_z = (z - zkc) / dz;
 
         // linear interpolation in the z-direction
-        a_mm = input_array[mmm] * (1.0 - kk) + input_array[mmp] * kk;
-        a_mp = input_array[mpm] * (1.0 - kk) + input_array[mpp] * kk;
-        a_pm = input_array[pmm] * (1.0 - kk) + input_array[pmp] * kk;
-        a_pp = input_array[ppm] * (1.0 - kk) + input_array[ppp] * kk;
+        a_mm = input_array[mmm] * (1.0 - alpha_z) + input_array[mmp] * alpha_z;
+        a_mp = input_array[mpm] * (1.0 - alpha_z) + input_array[mpp] * alpha_z;
+        a_pm = input_array[pmm] * (1.0 - alpha_z) + input_array[pmp] * alpha_z;
+        a_pp = input_array[ppm] * (1.0 - alpha_z) + input_array[ppp] * alpha_z;
       } else {
         // we don't need to interpolate vertically for the 2-D case
-        a_mm = input_array[Im * y_count + Jm];
-        a_mp = input_array[Im * y_count + Jp];
-        a_pm = input_array[Ip * y_count + Jm];
-        a_pp = input_array[Ip * y_count + Jp];
+        a_mm = input_array[Y_m * x_count + X_m];
+        a_mp = input_array[Y_m * x_count + X_p];
+        a_pm = input_array[Y_p * x_count + X_m];
+        a_pp = input_array[Y_p * x_count + X_p];
       }
 
-      // interpolation coefficient in the y direction
-      const double jj = lic->y_alpha[j0];
-
-      // interpolate in y direction
-      const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
-      const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
-
       // interpolation coefficient in the x direction
-      const double ii = lic->x_alpha[i0];
+      const double x_alpha = lic->x_alpha[i];
+      // interpolation coefficient in the y direction
+      const double y_alpha = lic->y_alpha[j];
 
-      int index = (i0 * grid.ym() + j0) * nlevels + k;
+      // interpolate in x direction
+      const double a_m = a_mm * (1.0 - x_alpha) + a_mp * x_alpha;
+      const double a_p = a_pm * (1.0 - x_alpha) + a_pp * x_alpha;
+
+      int index = (j * grid.xm() + i) * nlevels + k;
 
       // index into the new array and interpolate in x direction
-      output_array[index] = a_m * (1.0 - ii) + a_p * ii;
+      output_array[index] = a_m * (1.0 - y_alpha) + a_p * y_alpha;
       // done with the point at (x,y,z)
     }
   }
@@ -186,14 +185,14 @@ static void compute_start_and_count(const PIO& nc,
       count[j] = t_count;
       imap[j]  = x_count * y_count * z_count;
       break;
-    case X_AXIS:
-      start[j] = x_start;
-      count[j] = x_count;
-      imap[j]  = y_count * z_count;
-      break;
     case Y_AXIS:
       start[j] = y_start;
       count[j] = y_count;
+      imap[j]  = x_count * z_count;
+      break;
+    case X_AXIS:
+      start[j] = x_start;
+      count[j] = x_count;
       imap[j]  = z_count;
       break;
     default:
@@ -294,9 +293,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
  * matches the memory storage order used by PISM.
  *
  * @param var_name name of the variable to check
- * @param result set to false if storage orders match, true otherwise
- *
- * @return 0 on success
+ * @returns false if storage orders match, true otherwise
  */
 static bool use_mapped_io(const PIO &nc,
                           units::System::Ptr unit_system,
@@ -305,8 +302,8 @@ static bool use_mapped_io(const PIO &nc,
   std::vector<std::string> dimnames = nc.inq_vardims(var_name);
 
   std::vector<AxisType> storage, memory;
-  memory.push_back(X_AXIS);
   memory.push_back(Y_AXIS);
+  memory.push_back(X_AXIS);
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
     AxisType dimtype = nc.inq_dimtype(dimnames[j], unit_system);
@@ -320,7 +317,7 @@ static bool use_mapped_io(const PIO &nc,
     if (dimtype == X_AXIS || dimtype == Y_AXIS) {
       storage.push_back(dimtype);
     } else if (dimtype == Z_AXIS) {
-      memory.push_back(dimtype); // now memory = {X_AXIS, Y_AXIS, Z_AXIS}
+      memory.push_back(dimtype); // now memory = {Y_AXIS, X_AXIS, Z_AXIS}
       // assume that this variable has only one Z_AXIS in the file
       storage.push_back(dimtype);
     } else {
@@ -450,7 +447,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
                             start, count, imap);
 
     bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
-    if (mapped_io == true) {
+    if (mapped_io) {
       nc.get_varm_double(var_name, start, count, imap, buffer);
     } else {
       nc.get_vara_double(var_name, start, count, buffer);

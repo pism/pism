@@ -775,12 +775,11 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
                                       " location: i = %d, j = %d\n", i, j);
       }
 
-      // build equations: NOTE TRANSPOSE
-      row.j = i;
-      row.i = j;
+      row.i = i;
+      row.j = j;
       for (int m = 0; m < sten; m++) {
-        col[m].j = I[m];
-        col[m].i = J[m];
+        col[m].i = I[m];
+        col[m].j = J[m];
         col[m].c = C[m];
       }
 
@@ -1621,11 +1620,10 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
                                       double value) {
   PetscErrorCode ierr;
   MatStencil row, col;
-  // NB: Transpose shows up here.
-  row.j = i;
-  row.i = j;
-  col.j = i;
-  col.i = j;
+  row.i = i;
+  row.j = j;
+  col.i = i;
+  col.j = j;
 
   row.c = 0;
   col.c = 0;

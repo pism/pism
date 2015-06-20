@@ -36,8 +36,8 @@ namespace energy {
   foo.dx = ...  // set public constants
   foo.u = ...   // set public pointers
   foo.initAllColumns();
-  for (i in ownership) {
   for (j in ownership) {
+  for (i in ownership) {
   ks = ...
   foo.setIndicesThisColumn(i,j,ks);
   [COMPUTE OTHER PARAMS]

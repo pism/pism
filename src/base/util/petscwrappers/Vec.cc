@@ -59,18 +59,18 @@ double* VecArray::get() {
 
 VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My)
     : m_Mx(my_Mx), m_My(my_My), m_i_offset(0), m_j_offset(0), m_v(vec) {
-  PetscErrorCode ierr = VecGetArray2d(m_v, m_Mx, m_My, 0, 0, &m_array);
+  PetscErrorCode ierr = VecGetArray2d(m_v, m_My, m_Mx, 0, 0, &m_array);
   PISM_CHK(ierr, "VecGetArray2d");
 }
 
 VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My, int i0, int j0)
   : m_Mx(my_Mx), m_My(my_My), m_i_offset(i0), m_j_offset(j0), m_v(vec) {
-  PetscErrorCode ierr = VecGetArray2d(m_v, m_Mx, m_My, 0, 0, &m_array);
+  PetscErrorCode ierr = VecGetArray2d(m_v, m_My, m_Mx, 0, 0, &m_array);
   PISM_CHK(ierr, "VecGetArray2d");
 }
 
 VecArray2D::~VecArray2D() {
-  PetscErrorCode ierr = VecRestoreArray2d(m_v, m_Mx, m_My, 0, 0, &m_array); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = VecRestoreArray2d(m_v, m_My, m_Mx, 0, 0, &m_array); CHKERRCONTINUE(ierr);
 }
 
 // Wrapper around DMDAVecGetArray / DMDAVecRestoreArray

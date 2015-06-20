@@ -41,8 +41,8 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
     ys = m_element_index.lys, ym = m_element_index.lym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int j=ys; j<ys+ym; j++) {
+    for (int i=xs; i<xs+xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i, j, x, x_e);
@@ -78,8 +78,8 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int j=ys; j<ys+ym; j++) {
+    for (int i=xs; i<xs+xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, a, a_q);
@@ -116,8 +116,8 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int j=ys; j<ys+ym; j++) {
+    for (int i=xs; i<xs+xm; i++) {
 
       // Reset the DOF map for this element.
       m_dofmap.reset(i, j, *m_grid);
@@ -159,8 +159,8 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   // Loop through all local and ghosted elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int j=ys; j<ys+ym; j++) {
+    for (int i=xs; i<xs+xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i, j, x, x_e);
@@ -196,8 +196,8 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int j=ys; j<ys+ym; j++) {
+    for (int i=xs; i<xs+xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, a, a_q);
@@ -234,8 +234,8 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int j=ys; j<ys+ym; j++) {
+    for (int i=xs; i<xs+xm; i++) {
 
       // Reset the DOF map for this element.
       m_dofmap.reset(i, j, *m_grid);

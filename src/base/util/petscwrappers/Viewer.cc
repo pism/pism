@@ -33,9 +33,8 @@ Viewer::Viewer(MPI_Comm com,  const std::string &title, unsigned int target_size
 
   compute_size(target_size, Lx, Ly, X, Y);
 
-  // note we reverse x <-> y; see IceGrid::allocate() for original reversal
   ierr = PetscViewerDrawOpen(com, NULL, title.c_str(),
-                             PETSC_DECIDE, PETSC_DECIDE, Y, X, &m_value);
+                             PETSC_DECIDE, PETSC_DECIDE, X, Y, &m_value);
   PISM_CHK(ierr, "PetscViewerDrawOpen");
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where

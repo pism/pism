@@ -376,7 +376,7 @@ void IceModelVec2T::discard(int number) {
     const int i = p.i(), j = p.j();
 
     for (unsigned int k = 0; k < N; ++k) {
-      a3[i][j][k] = a3[i][j][k + number];
+      a3[j][i][k] = a3[j][i][k + number];
     }
   }
   end_access();
@@ -389,7 +389,7 @@ void IceModelVec2T::set_record(int n) {
   double ***a3 = get_array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    a3[i][j][n] = a2[i][j];
+    a3[j][i][n] = a2[j][i];
   }
   end_access();
   end_access();
@@ -402,7 +402,7 @@ void IceModelVec2T::get_record(int n) {
   double ***a3 = get_array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    a2[i][j] = a3[i][j][n];
+    a2[j][i] = a3[j][i][n];
   }
   end_access();
   end_access();
@@ -487,7 +487,7 @@ void IceModelVec2T::average(double my_t, double my_dt) {
   double **a2 = get_array();         // calls begin_access()
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    a2[i][j] = average(i, j); // NB! i,j order (transpose)
+    a2[j][i] = average(i, j);
   }
   end_access();
 }
@@ -570,7 +570,7 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   unsigned int ts_length = m_interp_indices.size();
 
   for (unsigned int k = 0; k < ts_length; ++k) {
-    result[k] = a3[i][j][m_interp_indices[k]];
+    result[k] = a3[j][i][m_interp_indices[k]];
   }
 }
 
@@ -585,7 +585,7 @@ double IceModelVec2T::average(int i, int j) {
 
   if (N == 1) {
     double ***a3 = (double***) array3;
-    result = a3[i][j][0];
+    result = a3[j][i][0];
   } else {
     std::vector<double> values(M);
 

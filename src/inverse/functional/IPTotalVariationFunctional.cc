@@ -51,8 +51,8 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
       m_dofmap.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
@@ -100,8 +100,8 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
       m_dofmap.reset(i, j, *m_grid);

@@ -97,7 +97,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     try {
       if (m_grid->rank() == 0) {
         petsc::VecArray mask(*m_mask_p0);
-        cc(mask.get(), m_grid->Mx(), m_grid->My(), true, mask_grounded_ice);
+        cc(mask.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
       }
     } catch (...) {
       rank0.failed();

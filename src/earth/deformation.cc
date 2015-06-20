@@ -126,8 +126,8 @@ BedDeformLC::BedDeformLC(const Config &config,
   // fftw manipulates the data in setting up a plan, so fill with nonconstant junk
   {
     VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
-    for (int i = 0; i < m_Nx; i++) {
-      for (int j = 0; j < m_Ny; j++) {
+    for (int j = 0; j < m_Ny; j++) {
+      for (int i = 0; i < m_Nx; i++) {
         tmp(i, j)[0] = i - 3;
         tmp(i, j)[1] = j*j + 2;
       }
@@ -197,8 +197,8 @@ void BedDeformLC::precompute_coefficients() {
     ge_params ge_data;
     ge_data.dx = m_dx;
     ge_data.dy = m_dy;
-    for (int i = 0; i < m_Nxge; i++) {
-      for (int j = 0; j < m_Nyge; j++) {
+    for (int j = 0; j < m_Nyge; j++) {
+      for (int i = 0; i < m_Nxge; i++) {
         ge_data.p = i;
         ge_data.q = j;
         II(i, j) = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
@@ -233,8 +233,8 @@ void BedDeformLC::uplift_init() {
   fftw_execute(m_dft_forward);
 
   // compute left and right coefficients
-  for (int i = 0; i < m_Nx; i++) {
-    for (int j = 0; j < m_Ny; j++) {
+  for (int j = 0; j < m_Ny; j++) {
+    for (int i = 0; i < m_Nx; i++) {
       const double cclap = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j];
       left(i, j) = m_rho * m_standard_gravity + m_D * cclap * cclap;
       right(i, j) = -2.0 * m_eta * sqrt(cclap);
@@ -248,8 +248,8 @@ void BedDeformLC::uplift_init() {
     VecAccessor2D<fftw_complex> u0_hat(m_fftw_input, m_Nx, m_Ny),
       uplift_hat(m_fftw_output, m_Nx, m_Ny);
 
-    for (int i = 0; i < m_Nx; i++) {
-      for (int j = 0; j < m_Ny; j++) {
+    for (int j = 0; j < m_Ny; j++) {
+      for (int i = 0; i < m_Nx; i++) {
         u0_hat(i, j)[0] = (right(i, j) * uplift_hat(i, j)[0]) / left(i, j);
         u0_hat(i, j)[1] = (right(i, j) * uplift_hat(i, j)[1]) / left(i, j);
       }
@@ -315,8 +315,8 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
 
   // Compute left and right coefficients; note they depend on the length of a
   // time-step and thus cannot be precomputed
-  for (int i = 0; i < m_Nx; i++) {
-    for (int j = 0; j < m_Ny; j++) {
+  for (int j = 0; j < m_Ny; j++) {
+    for (int i = 0; i < m_Nx; i++) {
       const double cclap = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
         part1 = 2.0 * m_eta * sqrt(cclap),
         part2 = (dt_seconds / 2.0) * (m_rho * m_standard_gravity + m_D * cclap * cclap);
@@ -330,8 +330,8 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   {
     VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
       u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
-    for (int i = 0; i < m_Nx; i++) {
-      for (int j = 0; j < m_Ny; j++) {
+    for (int j = 0; j < m_Ny; j++) {
+      for (int i = 0; i < m_Nx; i++) {
         input(i, j)[0] = (right(i, j) * u_hat(i, j)[0] + load_hat(i, j)[0]) / left(i, j);
         input(i, j)[1] = (right(i, j) * u_hat(i, j)[1] + load_hat(i, j)[1]) / left(i, j);
       }
@@ -363,8 +363,8 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
     petsc::VecArray2D b(m_bed, m_Mx, m_My), b_start(m_bed_start, m_Mx, m_My), db_elastic(m_dbedElastic, m_Mx, m_My),
       u(m_U, m_Nx, m_Ny, m_i0_plate, m_j0_plate), u_start(m_U_start, m_Nx, m_Ny, m_i0_plate, m_j0_plate);
 
-    for (int i = 0; i < m_Mx; i++) {
-      for (int j = 0; j < m_My; j++) {
+    for (int j = 0; j < m_My; j++) {
+      for (int i = 0; i < m_Mx; i++) {
         b(i, j) = b_start(i, j) + db_elastic(i, j) + (u(i, j) - u_start(i, j));
       }
     }
@@ -410,8 +410,8 @@ void BedDeformLC::tweak(double seconds_from_start) {
 //! \brief Fill fftw_input with zeros.
 void BedDeformLC::clear_fftw_input() {
   VecAccessor2D<fftw_complex> fftw_in(m_fftw_input, m_Nx, m_Ny);
-  for (int i = 0; i < m_Nx; ++i) {
-    for (int j = 0; j < m_Ny; ++j) {
+  for (int j = 0; j < m_Ny; ++j) {
+    for (int i = 0; i < m_Nx; ++i) {
       fftw_in(i, j)[0] = 0;
       fftw_in(i, j)[1] = 0;
     }
@@ -421,8 +421,8 @@ void BedDeformLC::clear_fftw_input() {
 //! \brief Copy fftw_output to `output`.
 void BedDeformLC::copy_fftw_output(fftw_complex *output) {
   VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny), out(output, m_Nx, m_Ny);
-  for (int i = 0; i < m_Nx; ++i) {
-    for (int j = 0; j < m_Ny; ++j) {
+  for (int j = 0; j < m_Ny; ++j) {
+    for (int i = 0; i < m_Nx; ++i) {
       out(i, j)[0] = fftw_out(i, j)[0];
       out(i, j)[1] = fftw_out(i, j)[1];
     }
@@ -436,8 +436,8 @@ void BedDeformLC::copy_fftw_output(fftw_complex *output) {
 void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int N, int i0, int j0) {
   petsc::VecArray2D in(vec_input, M, N);
   VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
-  for (int i = 0; i < M; ++i) {
-    for (int j = 0; j < N; ++j) {
+  for (int j = 0; j < N; ++j) {
+    for (int i = 0; i < M; ++i) {
       input(i, j)[0] = in(i, j) * normalization;
       input(i, j)[1] = 0.0;
     }
@@ -448,8 +448,8 @@ void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int
 void BedDeformLC::get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0) {
   petsc::VecArray2D out(output, M, N);
   VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
-  for (int i = 0; i < M; ++i) {
-    for (int j = 0; j < N; ++j) {
+  for (int j = 0; j < N; ++j) {
+    for (int i = 0; i < M; ++i) {
       out(i, j) = fftw_out(i, j)[0] * normalization;
     }
   }

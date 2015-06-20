@@ -63,7 +63,7 @@ The following sections describe more input and output options, especially relate
 
 When working with fine grids\footnote{For example, resolutions of 2km and higher on the whole-Greenland scale.}, the time PISM spends writing output files, spatially-varying diagnostic files, or backup files can become significant.
 
-It turns out that it is a lot faster to read and write files using the \texttt{t,x,y,z} storage order, as opposed to the more convenient (e.g.~for NetCDF tools) \texttt{t,z,y,x} order.  The reason is that PISM uses the \texttt{x,y,z} order internally,\footnote{This is not likely to change.} and therefore writing an array in a different order is an inherently-expensive operation.
+It turns out that it is a lot faster to read and write files using the \texttt{t,y,x,z} storage order, as opposed to the more convenient (e.g.~for NetCDF tools) \texttt{t,z,y,x} order.  The reason is that PISM uses the \texttt{y,x,z} order internally,\footnote{This is not likely to change.} and therefore writing an array in a different order is an inherently-expensive operation.
 
 You can, however, choose any one of the three supported output orders using the \intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and \texttt{zyx} as the argument.
 

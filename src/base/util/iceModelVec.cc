@@ -283,7 +283,7 @@ void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      PetscErrorCode ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
+      PetscErrorCode ierr = PetscMemcpy(result_a[j][i], &source_a[j][i][start],
                                         count*sizeof(PetscScalar));
       PISM_CHK(ierr, "PetscMemcpy");
     }
@@ -309,7 +309,7 @@ void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      PetscErrorCode ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
+      PetscErrorCode ierr = PetscMemcpy(&result_a[j][i][start], source_a[j][i],
                                         count*sizeof(PetscScalar));
       PISM_CHK(ierr, "PetscMemcpy");
     }
@@ -464,7 +464,7 @@ void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
     io::define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
-                            order, write_in_glaciological_units);
+                                order, write_in_glaciological_units);
   }
 }
 

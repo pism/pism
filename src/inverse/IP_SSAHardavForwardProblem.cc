@@ -117,8 +117,8 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, m_hardav, hardav_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
@@ -254,8 +254,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    du_a[i][j].u = 0.0;
-    du_a[i][j].v = 0.0;
+    du_a[j][i].u = 0.0;
+    du_a[j][i].v = 0.0;
   }
 
   // Aliases to help with notation consistency below.
@@ -296,8 +296,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (int i =xs; i<xs+xm; i++) {
-      for (int j =ys; j<ys+ym; j++) {
+    for (int j =ys; j<ys+ym; j++) {
+      for (int i =xs; i<xs+xm; i++) {
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Quadrature::Nk; k++) {
@@ -460,15 +460,15 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    dzeta_a[i][j] = 0;
+    dzeta_a[j][i] = 0;
   }
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   ParallelSection loop(m_grid->com);
   try {
-    for (int i = xs; i < xs + xm; i++) {
-      for (int j = ys; j < ys + ym; j++) {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
         // Index into coefficient storage in m_coefficients
         const int ij = m_element_index.flatten(i, j);
 
@@ -530,7 +530,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
     double dB_dzeta;
     m_design_param.toDesignVariable((*m_zeta)(i, j), NULL, &dB_dzeta);
-    dzeta_a[i][j] *= dB_dzeta;
+    dzeta_a[j][i] *= dB_dzeta;
   }
 
   if (m_fixed_design_locations) {

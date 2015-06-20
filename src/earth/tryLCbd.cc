@@ -190,8 +190,8 @@ int main(int argc, char *argv[]) {
 
       {
         petsc::VecArray2D HH(H, Mx, My);
-        for (int i=0; i<Mx; i++) {
-          for (int j=0; j<My; j++) {
+        for (int j=0; j<My; j++) {
+          for (int i=0; i<Mx; i++) {
             const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
             if (r < R0) {
               HH(i, j) = H0;
@@ -212,8 +212,8 @@ int main(int argc, char *argv[]) {
       // initialize uplift
       if (do_uplift == true) {
         petsc::VecArray2D upl(uplift, Mx, My);
-        for (int i=0; i<Mx; i++) {
-          for (int j=0; j<My; j++) {
+        for (int j=0; j<My; j++) {
+          for (int i=0; i<Mx; i++) {
             const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
             if (r < 1.5 * R0) {
               upl(i, j) = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0;
