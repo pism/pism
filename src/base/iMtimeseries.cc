@@ -121,7 +121,7 @@ void IceModel::init_timeseries() {
     }
   }
 
-  write_metadata(nc, false, false);
+  write_metadata(nc, false, true);
 
   nc.close();
 
@@ -458,7 +458,7 @@ void IceModel::write_extras() {
     nc.put_att_text(m_config->get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
-    write_metadata(nc, true, false);
+    write_metadata(nc, true, true);
 
     extra_file_is_ready = true;
   } else {
