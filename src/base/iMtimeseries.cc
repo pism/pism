@@ -71,7 +71,7 @@ void IceModel::init_timeseries() {
   try {
     m_time->parse_times(times, ts_times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the -ts_times argument");
+    e.add_context("parsing the -ts_times argument %s", times->c_str());
     throw;
   }
 
@@ -229,7 +229,7 @@ void IceModel::init_extras() {
   try {
     m_time->parse_times(times, extra_times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the -extra_times argument");
+    e.add_context("parsing the -extra_times argument %s", times->c_str());
     throw;
   }
 
