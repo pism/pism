@@ -418,7 +418,7 @@ void Time::parse_list(const std::string &spec, std::vector<double> &result) cons
       parse_date(tmp, &d);
       result.push_back(d);
     } catch (RuntimeError &e) {
-      e.add_context("parsing a list of dates");
+      e.add_context("parsing a list of dates %s", spec.c_str());
       throw;
     }
   }
@@ -575,13 +575,12 @@ void Time::parse_date(const std::string &spec, double *result) const {
 void Time::compute_times_simple(double time_start, double delta, double time_end,
                                 std::vector<double> &result) const {
   if (time_start >= time_end) {
-    throw RuntimeError::formatted("a >= b in time range a:dt:b (got %f:%f:%f)",
-                                  time_start, delta, time_end);
+    throw RuntimeError::formatted("a >= b in time range a:dt:b (got a = %s, b = %s)",
+                                  this->date(time_start).c_str(), this->date(time_end).c_str());
   }
 
   if (delta <= 0) {
-    throw RuntimeError::formatted("dt <= 0 in time range a:dt:b (got %f:%f:%f)",
-                                  time_start, delta, time_end);
+    throw RuntimeError::formatted("dt <= 0 in time range a:dt:b (got dt = %f seconds)", delta);
   }
 
   int k = 0;
