@@ -731,8 +731,8 @@ void IceModel::misc_setup() {
   // it is faster.)
   std::string o_format = m_config->get_string("output_format");
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
-      m_config->get_string("output_variable_order") != "xyz") {
-    throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.");
+      m_config->get_string("output_variable_order") != "yxz") {
+    throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order yxz.");
   }
 }
 
