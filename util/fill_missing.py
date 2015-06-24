@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package fill_missing
+# @package fill_missing
 # \brief This script solves the Laplace equation as a method of filling holes in map-plane data.
 #
 # \details The script is an implementation of the SOR method with Chebyshev
@@ -39,12 +39,14 @@
 
 from numpy import *
 
-## Computes \f$\rho_{Jacobi}\f$, see formula (19.5.24), page 858.
-def rho_jacobi((J,L)):
+# Computes \f$\rho_{Jacobi}\f$, see formula (19.5.24), page 858.
 
-    return (cos(pi/J) + cos(pi/L))/2
 
-## This makes the stencil wrap around the grid. It is unclear if this should be
+def rho_jacobi((J, L)):
+
+    return (cos(pi / J) + cos(pi / L)) / 2
+
+# This makes the stencil wrap around the grid. It is unclear if this should be
 #  done, but it allows using a 4-point stencil for all points, even if they
 #  are on the edge of the grid (otherwise we need to use three points on the
 #  sides and two in the corners).
@@ -52,15 +54,16 @@ def rho_jacobi((J,L)):
 #  Is and Js are arrays with row- and column-indices, M and N are the grid
 #  dimensions.
 
+
 def fix_indices(Is, Js, (M, N)):
 
-    Is[Is ==  M] = 0
-    Is[Is == -1] = M-1
-    Js[Js ==  N] = 0
-    Js[Js == -1] = N-1
+    Is[Is == M] = 0
+    Is[Is == -1] = M - 1
+    Js[Js == N] = 0
+    Js[Js == -1] = N - 1
     return (Is, Js)
 
-## \brief laplace solves the Laplace equation
+# \brief laplace solves the Laplace equation
 # \details laplace solves the Laplace equation using the SOR method with Chebyshev
 #    acceleration as described in 'Numerical Recipes in Fortran: the art of
 #    scientific computing' by William H. Press et al -- 2nd edition, section
@@ -90,6 +93,8 @@ def fix_indices(Is, Js, (M, N)):
 #         or a number.
 #
 #    max_iter is the maximum number of iterations allowed. The default is 10000.
+
+
 def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
 
     dimensions = data.shape
@@ -97,10 +102,10 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
     i, j = indices(dimensions)
     # This splits the grid into 'odd' and 'even' parts, according to the
     # checkerboard pattern:
-    odd  = (i % 2 == 1) ^ (j % 2 == 0) 
+    odd = (i % 2 == 1) ^ (j % 2 == 0)
     even = (i % 2 == 0) ^ (j % 2 == 0)
     # odd and even parts _in_ the domain:
-    odd_part  = zip(i[mask & odd], j[mask & odd])
+    odd_part = zip(i[mask & odd], j[mask & odd])
     even_part = zip(i[mask & even], j[mask & even])
     # relative indices of the stencil points:
     k = array([0, 1, 0, -1])
@@ -123,38 +128,38 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
 
     # compute the initial norm of residual
     initial_norm = 0.0
-    for m in [0,1]:
-        for i,j in parts[m]:
+    for m in [0, 1]:
+        for i, j in parts[m]:
             Is, Js = fix_indices(i + k, j + l, dimensions)
-            xi = sum(data[Is, Js]) - 4 * data[i,j]
+            xi = sum(data[Is, Js]) - 4 * data[i, j]
             initial_norm += abs(xi)
     print "Initial norm of residual =", initial_norm
-    print "Criterion is (change < %f) OR (res norm < %f (initial norm))." %         (eps2,eps1)
+    print "Criterion is (change < %f) OR (res norm < %f (initial norm))." % (eps2, eps1)
 
     omega = 1.0
     # The main loop:
     for n in arange(max_iter):
         anorm = 0.0
         change = 0.0
-        for m in [0,1]:
-            for i,j in parts[m]:
+        for m in [0, 1]:
+            for i, j in parts[m]:
                 # stencil points:
                 Is, Js = fix_indices(i + k, j + l, dimensions)
-                residual = sum(data[Is, Js]) - 4 * data[i,j]
+                residual = sum(data[Is, Js]) - 4 * data[i, j]
                 delta = omega * 0.25 * residual
-                data[i,j] += delta
-                
+                data[i, j] += delta
+
                 # record the maximal change and the residual norm:
                 anorm += abs(residual)
                 if abs(delta) > change:
                     change = abs(delta)
                 # Chebyshev acceleration (see formula 19.5.30):
                 if n == 1 and m == 1:
-                    omega = 1.0/(1.0 - 0.5 * rjac**2)
+                    omega = 1.0 / (1.0 - 0.5 * rjac ** 2)
                 else:
-                    omega = 1.0/(1.0 - 0.25 * rjac**2 * omega)
+                    omega = 1.0 / (1.0 - 0.25 * rjac ** 2 * omega)
         print "max change = %10f, residual norm = %10f" % (change, anorm)
-        if (anorm < eps1*initial_norm) or (change < eps2):
+        if (anorm < eps1 * initial_norm) or (change < eps2):
             print "Exiting with change=%f, anorm=%f after %d iteration(s)." % (change,
                                                                                anorm, n + 1)
             return
@@ -218,7 +223,7 @@ if __name__ == "__main__":
     print "Creating the temporary file..."
     try:
         (handle, tmp_filename) = mkstemp()
-        close(handle) # mkstemp returns a file handle (which we don't need)
+        close(handle)  # mkstemp returns a file handle (which we don't need)
         copy(input_filename, tmp_filename)
     except IOError:
         print "ERROR: Can't create %s, Exiting..." % tmp_filename
@@ -226,17 +231,17 @@ if __name__ == "__main__":
     try:
         nc = NC(tmp_filename, 'a')
     except Exception, message:
-       print message
-       print "Note: %s was not modified." % output_filename
-       exit(-1)
+        print message
+        print "Note: %s was not modified." % output_filename
+        exit(-1)
 
-    ## add history global attribute (after checking if present)
+    # add history global attribute (after checking if present)
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(argv) + '\n'
     if 'history' in nc.ncattrs():
-      nc.history = historystr + nc.history  # prepend to history string
+        nc.history = historystr + nc.history  # prepend to history string
     else:
-      nc.history = historystr
+        nc.history = historystr
 
     t_zero = time()
     for name in variables:
@@ -261,7 +266,7 @@ if __name__ == "__main__":
                 for t in range(0, nt):
                     print("\nInterpolating time step %i of %i\n" % (t, nt))
 
-                    data = asarray(squeeze(var[t,:,:].data))
+                    data = asarray(squeeze(var[t, :, :].data))
 
                     if adict.has_key("valid_range"):
                         range = adict["valid_range"]
@@ -288,14 +293,14 @@ if __name__ == "__main__":
                     elif adict.has_key("_FillValue"):
                         fill_value = adict["_FillValue"]
                         if fill_value <= 0:
-                            mask = data <= fill_value + 2*finfo(float).eps
+                            mask = data <= fill_value + 2 * finfo(float).eps
                         else:
-                            mask = data >= fill_value - 2*finfo(float).eps
+                            mask = data >= fill_value - 2 * finfo(float).eps
                         print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
 
                     elif adict.has_key("missing_value"):
                         missing = adict["missing_value"]
-                        mask = abs(data - missing) < 2*finfo(float).eps
+                        mask = abs(data - missing) < 2 * finfo(float).eps
                         print """Using the missing_value attribute; missing_value = %10f
         Warning: this attribute is deprecated by the NUG.""" % missing
 
@@ -310,7 +315,7 @@ if __name__ == "__main__":
                     print "Filling in %5d missing values..." % count
                     t0 = time()
                     laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
-                    var[t,:,:] = data
+                    var[t, :, :] = data
 
                     # now REMOVE missing_value and _FillValue attributes
                     try:
@@ -352,14 +357,14 @@ if __name__ == "__main__":
                 elif adict.has_key("_FillValue"):
                     fill_value = adict["_FillValue"]
                     if fill_value <= 0:
-                        mask = data <= fill_value + 2*finfo(float).eps
+                        mask = data <= fill_value + 2 * finfo(float).eps
                     else:
-                        mask = data >= fill_value - 2*finfo(float).eps
+                        mask = data >= fill_value - 2 * finfo(float).eps
                     print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
 
                 elif adict.has_key("missing_value"):
                     missing = adict["missing_value"]
-                    mask = abs(data - missing) < 2*finfo(float).eps
+                    mask = abs(data - missing) < 2 * finfo(float).eps
                     print """Using the missing_value attribute; missing_value = %10f
     Warning: this attribute is deprecated by the NUG.""" % missing
 
@@ -393,7 +398,6 @@ if __name__ == "__main__":
             print "ERROR:", message
             print "Note: %s was not modified." % output_filename
             exit(-1)
-
 
     print "Processing all the variables took %5f seconds." % (time() - t_zero)
     nc.close()

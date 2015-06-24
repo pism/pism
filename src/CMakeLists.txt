@@ -1,25 +1,4 @@
-include_directories (
-  base
-  base/stressbalance
-  base/stressbalance/sia
-  base/stressbalance/ssa
-  base/stressbalance/blatter
-  base/calving
-  base/util
-  base/util/io
-  base/energy
-  base/rheology
-  base/basalstrength
-  base/hydrology
-  earth
-  coupler
-  coupler/atmosphere
-  coupler/surface
-  coupler/ocean
-  coupler/util
-  calcalcs
-  fevor
-  )
+include_directories (.)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
@@ -28,12 +7,29 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  base/util/petscwrappers/PetscInitializer.cc
+  base/util/petscwrappers/DM.cc
+  base/util/petscwrappers/IS.cc
+  base/util/petscwrappers/KSP.cc
+  base/util/petscwrappers/Mat.cc
+  base/util/petscwrappers/SNES.cc
+  base/util/petscwrappers/Vec.cc
+  base/util/petscwrappers/VecScatter.cc
+  base/util/petscwrappers/Viewer.cc
+  base/util/Logger.cc
+  base/util/error_handling.cc
+  base/util/options.cc
+  base/util/interpolation.cc
+  base/util/Context.cc
+  base/util/MaxTimestep.cc
+  base/util/PISMDiagnostic.cc
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
-  base/util/IceGrid.cc
+  base/util/ColumnInterpolation.cc
   base/util/Mask.cc
-  base/util/NCVariable.cc
+  base/util/VariableMetadata.cc
   base/util/PISMConfig.cc
+  base/util/PISMConfigInterface.cc
   base/util/PISMComponent.cc
   base/util/PISMTime.cc
   base/util/PISMTime_Calendar.cc
@@ -45,6 +41,7 @@ set(PISMUTIL_SRC
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
   base/util/iceModelVec3Custom.cc
+  base/util/io/io_helpers.cc
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
@@ -52,12 +49,17 @@ set(PISMUTIL_SRC
   base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
+  base/util/Profiling.cc
   base/util/pism_default_config.cc
   base/util/pism_options.cc
   base/util/TerminationReason.cc
   base/util/PISMUnits.cc
   base/varcEnthalpyConverter.cc
   )
+
+if(Pism_USE_TAO)
+  list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
+endif()
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
@@ -139,6 +141,7 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
+  base/basalstrength/PISMYieldStress.cc
   base/basalstrength/PISMMohrCoulombYieldStress.cc
   base/basalstrength/PISMConstantYieldStress.cc
   base/hydrology/PISMHydrology.cc
@@ -160,6 +163,7 @@ set(PISMEARTH_SRC
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
   earth/PBLingleClark.cc
+  earth/PBNull.cc
   earth/deformation.cc
   earth/greens.cc
   earth/cubature.c

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,14 @@
 #ifndef _SSA_H_
 #define _SSA_H_
 
-#include "ShallowStressBalance.hh"
-#include "PISMDiagnostic.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
+
+class Diagnostic;
+class TSDiagnostic;
+
+namespace stressbalance {
 
 //! Gives an extension coefficient to maintain ellipticity of SSA where ice is thin.
 /*!
@@ -52,44 +56,14 @@ namespace pism {
 */
 class SSAStrengthExtension {
 public:
-  SSAStrengthExtension(const Config &c) : config(c) {
-    min_thickness = config.get("min_thickness_strength_extension_ssa");
-    constant_nu = config.get("constant_nu_strength_extension_ssa");
-  }
+  SSAStrengthExtension(const Config &c);
 
-  virtual ~SSAStrengthExtension() {}
-
-  //! Set strength = (viscosity times thickness).
-  /*! Determines nu by input strength and current min_thickness. */
-  virtual PetscErrorCode set_notional_strength(double my_nuH) {
-    if (my_nuH <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"nuH must be positive");
-    constant_nu = my_nuH / min_thickness;
-    return 0;
-  }
-
-  //! Set minimum thickness to trigger use of extension.
-  /*! Preserves strength (nuH) by also updating using current nu.  */
-  virtual PetscErrorCode set_min_thickness(double my_min_thickness) {
-    if (my_min_thickness <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"min_thickness must be positive");
-    double nuH = constant_nu * min_thickness;
-    min_thickness = my_min_thickness;
-    constant_nu = nuH / min_thickness;
-    return 0;
-  }
-
-  //! Returns strength = (viscosity times thickness).
-  double get_notional_strength() const {
-    return constant_nu * min_thickness;
-  }
-
-  //! Returns minimum thickness to trigger use of extension.
-  double get_min_thickness() const {
-    return min_thickness;
-  }
-
+  void set_notional_strength(double my_nuH);
+  void set_min_thickness(double my_min_thickness);
+  double get_notional_strength() const;
+  double get_min_thickness() const;
 private:
-  const Config &config;
-  double  min_thickness, constant_nu;
+  double m_min_thickness, m_constant_nu;
 };
 
 //! Callback for constructing a new SSA subclass.  The caller is
@@ -100,7 +74,7 @@ private:
   Subclasses of SSA should provide an associated function pointer matching the
   SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &, const Config &);
+typedef SSA * (*SSAFactory)(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
 
 
 //! PISM's SSA solver.
@@ -133,80 +107,55 @@ typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &, const Config &);
   to be common to all implementations (%i.e. regular grid implementations) and it
   provides the basic fields.
 */
-class SSA : public ShallowStressBalance
-{
-  friend class SSA_taud;
-  friend class SSA_taub;
-  friend class SSA_beta;
+class SSA : public ShallowStressBalance {
 public:
-  SSA(IceGrid &g, EnthalpyConverter &e, const Config &c);
+  SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+  void set_initial_guess(const IceModelVec2V &guess);
 
-  virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
+  virtual std::string stdout_report();
 
-  virtual PetscErrorCode stdout_report(std::string &result);
+  virtual void compute_driving_stress(IceModelVec2V &taud);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
-
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
-  virtual PetscErrorCode allocate();
+  virtual void init_impl();
 
-  virtual PetscErrorCode deallocate();
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
 
-  virtual PetscErrorCode solve() = 0;
+  virtual void solve() = 0;
 
-  IceModelVec2Int *mask;
-  IceModelVec2S *thickness, *tauc, *surface, *bed;
-  IceModelVec2S *driving_stress_x;
-  IceModelVec2S *driving_stress_y;
-  IceModelVec2V taud;
-  IceModelVec3 *enthalpy;
-  IceModelVec2S *gl_mask;
+  const IceModelVec2Int *m_mask;
+  const IceModelVec2S *m_thickness;
+  const IceModelVec2S *m_tauc;
+  const IceModelVec2S *m_surface;
+  const IceModelVec2S *m_bed;
+  const IceModelVec2S *m_driving_stress_x;
+  const IceModelVec2S *m_driving_stress_y;
+  IceModelVec2V m_taud;
+  const IceModelVec3 *m_enthalpy;
+  const IceModelVec2S *m_gl_mask;
 
-  std::string stdout_ssa;
+  std::string m_stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  PISMDM::Ptr  m_da;               // dof=2 DA
+  petsc::DM::Ptr  m_da;               // dof=2 DA
   IceModelVec2V m_velocity_global; // global vector for solution
 
   // profiling
-  int event_ssa;
+  int m_event_ssa;
 };
 
-
-//! \brief Computes the magnitude of the driving shear stress at the base of
-//! ice (diagnostically).
-class SSA_taud_mag : public Diag<SSA>
-{
-public:
-  SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! @brief Computes the driving shear stress at the base of ice
-//! (diagnostically).
-/*! This is *not* a duplicate of SSB_taud: SSA_taud::compute() uses
-  SSA::compute_driving_stress(), which tries to be smarter near ice margins.
-*/
-class SSA_taud : public Diag<SSA>
-{
-public:
-  SSA_taud(SSA *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSA_H_ */

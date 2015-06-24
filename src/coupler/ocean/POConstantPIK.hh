@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,11 @@
 #ifndef _POCONSTANTPIK_H_
 #define _POCONSTANTPIK_H_
 
-#include "PISMOcean.hh"
-#include "NCVariable.hh"
+#include "coupler/PISMOcean.hh"
+#include "base/util/VariableMetadata.hh"
 
 namespace pism {
-
+namespace ocean {
 //! \brief Implements the ocean model used in [@ref Martinetal2011].
 //!
 //! Uses a parameterization of sub-shelf melting with respect to
@@ -37,31 +37,29 @@ namespace pism {
 //! @f$T_{o}@f$ are the heat capacity and temperature of the ocean mixed
 //! layer, @f$T_{f}@f$ is the freezing temperature of ocean water at the
 //! shelf bottom.
-class POConstantPIK : public OceanModel {
+class PIK : public OceanModel {
 public:
-  POConstantPIK(IceGrid &g, const Config &conf);
-  virtual ~POConstantPIK();
+  PIK(IceGrid::ConstPtr g);
+  virtual ~PIK();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode sea_level_elevation(double &result);
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
-
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
-  IceModelVec2S *ice_thickness; // is not owned by this class
-  NCSpatialVariable shelfbmassflux, shelfbtemp;
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double my_t, double my_dt);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual void init_impl();
+  virtual void sea_level_elevation_impl(double &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
+protected:
+  SpatialVariableMetadata m_shelfbmassflux, m_shelfbtemp;
 private:
-  PetscErrorCode allocate_POConstantPIK();
-
   //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
-  double meltfactor;
+  double m_meltfactor;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
-
 #endif /* _POCONSTANTPIK_H_ */

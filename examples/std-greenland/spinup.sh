@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014 The PISM Authors
+# Copyright (C) 2009-2015 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -140,7 +140,7 @@ elif [ "$4" -eq "3" ]; then
   dx=3
   myMx=501
   myMy=934
-  vgrid=$FINESTVGRID
+  vgrid=$FINEVGRID
 elif [ "$4" -eq "2" ]; then
   dx=2
   myMx=750
@@ -313,7 +313,7 @@ else
 fi
 
 # construct command
-cmd="$PISM_MPIDO $NN $PISM -boot_file $INNAME -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $regridcommand $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
+cmd="$PISM_MPIDO $NN $PISM -i $INNAME -bootstrap -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $regridcommand $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
 echo
 $PISM_DO $cmd
 

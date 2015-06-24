@@ -10,8 +10,8 @@ except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
-pism_path=argv[1]
-mpiexec=argv[2]
+pism_path = argv[1]
+mpiexec = argv[2]
 
 stderr.write("Testing: temperature continuity at ice-bed interface (polythermal case).\n")
 
@@ -20,7 +20,7 @@ stderr.write(cmd + '\n')
 
 e = system(cmd)
 if e != 0:
-  exit(1)
+    exit(1)
 
 deltas = []
 dts = [200, 100]                # FIXME: this is fragile and the test fails if I add smaller dt like 50 here
@@ -59,4 +59,3 @@ if any(diff(deltas) > 0):
 
 system("rm foo-temp-continuity.nc foo-temp-continuity.nc~ bar-temp-continuity.nc temp-temp-continuity.nc litho_temp-temp-continuity.nc")
 exit(0)
-

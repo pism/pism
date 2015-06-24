@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 The PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,10 +17,21 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "pism_const.hh"
+#include "base/util/pism_const.hh"
 #include "varcEnthalpyConverter.hh"
 
+#include "base/util/error_handling.hh"
+
 namespace pism {
+
+varcEnthalpyConverter::varcEnthalpyConverter(const Config &config)
+  : EnthalpyConverter(config), m_T_r(256.81786846822), m_c_gradient(7.253) {
+  // empty
+}
+
+varcEnthalpyConverter::~varcEnthalpyConverter() {
+  // empty
+}
 
 /*!
 A calculation only used in the cold case.
@@ -38,8 +49,8 @@ temperature is:
  */
 double varcEnthalpyConverter::EfromT(double T) const {
   const double
-     Trefdiff = 0.5 * (T + T_0) - T_r; 
-  return (c_i + c_gradient * Trefdiff) * (T - T_0);
+     Trefdiff = 0.5 * (T + m_T_0) - m_T_r; 
+  return (m_c_i + m_c_gradient * Trefdiff) * (T - m_T_0);
 }
 
 
@@ -64,66 +75,51 @@ Of course, \f$T=T_0 + \Delta T\f$.
  */
 double varcEnthalpyConverter::TfromE(double E) const {
   if (E < 0.0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\n\nE < 0 in varcEnthalpyConverter is not allowed.  FIXME.\n\n");
-    PISMEnd();
+    throw RuntimeError("E < 0 in varcEnthalpyConverter is not allowed.");
   }
   const double
-    ALPHA = 2.0 / c_gradient,
-    BETA  = ALPHA * c_i + 2.0 * (T_0 - T_r),
+    ALPHA = 2.0 / m_c_gradient,
+    BETA  = ALPHA * m_c_i + 2.0 * (m_T_0 - m_T_r),
     tmp   = 2.0 * ALPHA * E,
     dT    = tmp / (sqrt(BETA*BETA + 2.0*tmp) + BETA);
-  return T_0 + dT;
-}
-
-
-PetscErrorCode varcEnthalpyConverter::viewConstants(PetscViewer viewer) const {
-  PetscErrorCode ierr;
-
-  PetscBool iascii;
-  if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
-  }
-  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for EnthalpyConverter\n"); }
-
-  ierr = PetscViewerASCIIPrintf(viewer,
-    "\n<class varcEnthalpyConverter has two additional constants, so as to implement\n"
-       "  equation (4.39) from Greve & Blatter (2009):"); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   T_r   = %12.5f (K)\n",         T_r); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   c_gradient = %12.8f  >\n",    c_gradient); CHKERRQ(ierr);
-
-  ierr = EnthalpyConverter::viewConstants(viewer); CHKERRQ(ierr);
-  return 0;
+  return m_T_0 + dT;
 }
 
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
 /*!
 Calls EfromT().
  */
-double varcEnthalpyConverter::getEnthalpyCTS(double p) const {
-  return EfromT(getMeltingTemp(p));
+double varcEnthalpyConverter::enthalpy_cts_impl(double p) const {
+  return EfromT(melting_temperature(p));
 }
 
+/*!
+  Equation (4.39) in [\ref GreveBlatter2009] is
+  \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
+  \f$T_r = 256.82\f$ K.
+*/
+double varcEnthalpyConverter::c_from_T_impl(double T) const {
+  return m_c_i + m_c_gradient * (T - m_T_r);
+}
 
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
 /*!
 Calls TfromE().
  */
-PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
-  double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
-  if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
-    T = getMeltingTemp(p);
-    return 1;
+double varcEnthalpyConverter::temperature_impl(double E, double p) const {
+
+#if (PISM_DEBUG==1)
+  if (E >= enthalpy_liquid(p)) {
+    throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
+                                  E, p);
   }
-  if (E < E_s) {
-    T = TfromE(E);
+#endif
+
+  if (E < enthalpy_cts(p)) {
+    return TfromE(E);
   } else {
-    T = getMeltingTemp(p);
+    return melting_temperature(p);
   }
-  return 0;
 }
 
 
@@ -131,27 +127,28 @@ PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) 
 /*!
 Calls EfromT().
  */
-PetscErrorCode varcEnthalpyConverter::getEnth(
-                  double T, double omega, double p, double &E) const {
-  const double T_m = getMeltingTemp(p);
+double varcEnthalpyConverter::enthalpy_impl(double T, double omega, double p) const {
+  const double T_m = melting_temperature(p);
+
   if (T <= 0.0) {
-    SETERRQ1(PETSC_COMM_SELF, 1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
   }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
   if (T > T_m + 1.0e-6) {
-    SETERRQ2(PETSC_COMM_SELF, 3,"T=%f exceeds T_m=%f; not allowed\n\n",T,T_m);
+    throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    SETERRQ3(PETSC_COMM_SELF, 4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
+    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory; got T=%f, T_m=%f, omega=%f",
+                                  T, T_m, omega);
   }
+
   if (T < T_m) {
-    E = EfromT(T);
+    return EfromT(T);
   } else {
-    E = getEnthalpyCTS(p) + omega * L;
+    return enthalpy_cts(p) + omega * m_L;
   }
-  return 0;
 }
 
 

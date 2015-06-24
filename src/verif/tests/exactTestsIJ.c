@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008, 2011, 2014 Ed Bueler
+   Copyright (C) 2007-2008, 2011, 2014, 2015 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -26,12 +26,13 @@
 #define pi      3.14159265358979
 #define secpera 31556926.0        /* seconds per year; 365.2422 days */
 
-int exactI(const double m, const double x, const double y, 
-           double *bed, double *tauc, double *u, double *v) {
+struct TestIParameters exactI(const double m, const double x, const double y) {
   /* see exact solution for an ice stream sliding over plastic till described
      on pages 237 and 238 of C. Schoof 2006 "A variational approach to ice streams"
      J Fluid Mech 556 pp 227--251 */
   /* const double n = 3.0, p = 1.0 + 1.0/n; // p = 4/3 */
+
+  struct TestIParameters result;
   
   const double L = 40e3;        /* = 40km; y in [-3L,3L]; full width is 6L = 240 km */
   const double aspect = 0.05;
@@ -48,11 +49,11 @@ int exactI(const double m, const double x, const double y,
 
   double C0, C1, C2, C3, C4, z1, z2, z3, z4;
   
-  *tauc = f * pow(s,m);
+  result.tauc = f * pow(s,m);
 
   /* to compute bed, assume bed(x=0)=0 and bed is sloping down for increasing x;
      if tan(theta) = 0.001 and -Lx < x < Lx with Lx = 240km then bed(x=Lx) = -240 m */
-  *bed = - x * tan(theta);
+  result.bed = - x * tan(theta);
 
   /* formula (4.3) in Schoof; note u is indep of aspect because f/h0 ratio gives C0 */
   if (fabs(y) < W) {
@@ -67,19 +68,19 @@ int exactI(const double m, const double x, const double y,
     z3 = (pow(s,2.0*m+4.0) - C3) / ((m+1.0)*(m+1.0) * (2.0*m+4.0));
     z4 = (pow(s,3.0*m+4.0) - C4) / (pow((m+1.0),3.0) * (3.0*m+4.0));
     /* printf("  u / C0 = %10.5e\n",- (z1 - 3.0 * z2 + 3.0 * z3 - z4)); */
-    *u = - C0 * (z1 - 3.0 * z2 + 3.0 * z3 - z4);  /* comes out positive */
+    result.u = - C0 * (z1 - 3.0 * z2 + 3.0 * z3 - z4);  /* comes out positive */
   } else {
-    *u = 0.0;
+    result.u = 0.0;
   }
-  *v = 0.0;  /* no transverse flow */
-  return 0;
+  result.v = 0.0;  /* no transverse flow */
+  return result;
 }
 
 
-int exactJ(const double x, const double y, 
-           double *H, double *nu, double *u, double *v) {
+struct TestJParameters exactJ(const double x, const double y) {
   /* documented only in preprint by Bueler */
-  /* return 0 if successful */
+
+  struct TestJParameters result;
 
   const double L = 300.0e3;      /* 300 km half-width */
   const double H0 = 500.0;       /* 500 m typical thickness */
@@ -97,8 +98,8 @@ int exactJ(const double x, const double y,
   double       uu = 0.0, vv = 0.0, denom, trig, kx, ly, B;
   int          k,l;
  
-  *H = H0 * (1.0 + 0.4 * cos(pi * x / L)) * (1.0 + 0.1 * cos(pi * y / L));
-  *nu = (nu0 * H0) / *H;     /* so \nu(x,y) H(x,y) = \nu_0 H_0 */
+  result.H = H0 * (1.0 + 0.4 * cos(pi * x / L)) * (1.0 + 0.1 * cos(pi * y / L));
+  result.nu = (nu0 * H0) / result.H;     /* so \nu(x,y) H(x,y) = \nu_0 H_0 */
   for (k=-2; k<=2; k++) {
     for (l=-2; l<=2; l++) {
       if ((k != 0) || (l != 0)) {  /* note alpha_00 = beta_00 = 0 */
@@ -112,7 +113,9 @@ int exactJ(const double x, const double y,
       }
     }
   }
-  *u = uu;  *v = vv;
-  return 0;
+  result.u = uu;
+  result.v = vv;
+
+  return result;
 }
 

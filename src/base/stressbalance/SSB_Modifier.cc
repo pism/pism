@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -17,67 +17,99 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSB_Modifier.hh"
-#include "flowlaws.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
-#include "flowlaw_factory.hh"
-#include "PISMConfig.hh"
+#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/flowlaws.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
+namespace stressbalance {
 
-PetscErrorCode SSB_Modifier::allocate() {
-  PetscErrorCode ierr;
+SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
+  : Component(g), m_EC(e) {
 
-  ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-                          "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
-  ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  u.write_in_glaciological_units = true;
+  m_D_max = 0.0;
 
-  ierr =     v.create(grid, "vvel", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-                          "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
-  ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  v.write_in_glaciological_units = true;
+  m_u.create(m_grid, "uvel", WITH_GHOSTS);
+  m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+              "m s-1", "land_ice_x_velocity");
+  m_u.metadata().set_string("glaciological_units", "m year-1");
+  m_u.write_in_glaciological_units = true;
 
-  ierr = strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr); // never diff'ed in hor dirs
-  ierr = strain_heating.set_attrs("internal",
-                          "rate of strain heating in ice (dissipation heating)",
-                          "W m-3", ""); CHKERRQ(ierr);
-  ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
+  m_v.create(m_grid, "vvel", WITH_GHOSTS);
+  m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+              "m s-1", "land_ice_y_velocity");
+  m_v.metadata().set_string("glaciological_units", "m year-1");
+  m_v.write_in_glaciological_units = true;
 
-  ierr = diffusive_flux.create(grid, "diffusive_flux", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = diffusive_flux.set_attrs("internal", 
-                                  "diffusive (SIA) flux components on the staggered grid",
-                                  "", ""); CHKERRQ(ierr);
+  m_strain_heating.create(m_grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
+  m_strain_heating.set_attrs("internal",
+                           "rate of strain heating in ice (dissipation heating)",
+                           "W m-3", "");
+  m_strain_heating.metadata().set_string("glaciological_units", "mW m-3");
 
-  return 0;
+  m_diffusive_flux.create(m_grid, "diffusive_flux", WITH_GHOSTS, 1);
+  m_diffusive_flux.set_attrs("internal", 
+                           "diffusive (SIA) flux components on the staggered grid",
+                           "", "");
+  
 }
 
-PetscErrorCode ConstantInColumn::init(Vars &vars) {
-  PetscErrorCode ierr;
-
-  ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
-
-  return 0;
+SSB_Modifier::~SSB_Modifier() {
+  // empty
 }
 
-ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : SSB_Modifier(g, e, c)
+void SSB_Modifier::init() {
+}
+
+const IceModelVec2Stag& SSB_Modifier::diffusive_flux() {
+  return m_diffusive_flux;
+}
+
+//! \brief Get the max diffusivity (for the adaptive time-stepping).
+double SSB_Modifier::max_diffusivity() {
+  return m_D_max;
+}
+
+const IceModelVec3& SSB_Modifier::velocity_u() {
+  return m_u;
+}
+
+const IceModelVec3& SSB_Modifier::velocity_v() {
+  return m_v;
+}
+
+const IceModelVec3& SSB_Modifier::volumetric_strain_heating() {
+  return m_strain_heating;
+}
+
+std::string SSB_Modifier::stdout_report() {
+  return "";
+}
+
+rheology::FlowLaw* SSB_Modifier::flow_law() {
+  return m_flow_law;
+}
+
+
+void ConstantInColumn::init() {
+  SSB_Modifier::init();
+}
+
+ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
+  : SSB_Modifier(g, e)
 {
-  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+  rheology::FlowLawFactory ice_factory("sia_", m_grid->ctx()->config(), m_EC);
 
-  ice_factory.setType(config.get_string("sia_flow_law"));
-
-  ice_factory.setFromOptions();
-  ice_factory.create(&flow_law);
+  m_flow_law = ice_factory.create();
 }
 
 ConstantInColumn::~ConstantInColumn()
 {
-  if (flow_law != NULL) {
-    delete flow_law;
-    flow_law = NULL;
+  if (m_flow_law != NULL) {
+    delete m_flow_law;
+    m_flow_law = NULL;
   }
 }
 
@@ -91,34 +123,54 @@ ConstantInColumn::~ConstantInColumn()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
-  PetscErrorCode ierr;
+void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
 
-  if (fast)
-    return 0;
+  if (fast) {
+    return;
+  }
 
   // horizontal velocity and its maximum:
   IceModelVec::AccessList list;
-  list.add(u);
-  list.add(v);
-  list.add(*vel_input);
+  list.add(m_u);
+  list.add(m_v);
+  list.add(vel_input);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
-    ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
+    m_u.set_column(i,j, vel_input(i,j).u);
+    m_v.set_column(i,j, vel_input(i,j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):
-  ierr = u.update_ghosts(); CHKERRQ(ierr);
-  ierr = v.update_ghosts(); CHKERRQ(ierr);
+  m_u.update_ghosts();
+  m_v.update_ghosts();
 
   // diffusive flux and maximum diffusivity
-  ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);
-  D_max = 0.0;
-
-  return 0;
+  m_diffusive_flux.set(0.0);
+  m_D_max = 0.0;
 }
 
+void ConstantInColumn::add_vars_to_output_impl(const std::string &keyword,
+                                          std::set<std::string> &result) {
+  (void)keyword;
+  (void)result;
+}
+
+void ConstantInColumn::define_variables_impl(const std::set<std::string> &vars,
+                                        const PIO &nc,
+                                        IO_Type nctype) {
+  (void)vars;
+  (void)nc;
+  (void)nctype;
+}
+
+void ConstantInColumn::write_variables_impl(const std::set<std::string> &vars,
+                                       const PIO &nc) {
+  (void)vars;
+  (void)nc;
+}
+
+
+} // end of namespace stressbalance
 } // end of namespace pism

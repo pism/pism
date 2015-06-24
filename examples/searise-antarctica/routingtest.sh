@@ -27,7 +27,7 @@ dorun () {
   LABEL=$2
 
   #(from antspinCC.sh)  bootstrapping plus short SIA run for 100 years
-  cmd="$PISMGO -skip -skip_max 10 -boot_file pism_Antarctica_5km.nc $GRID $VERTGRID $OPTIONS -ocean_kill_file pism_Antarctica_5km.nc -y 100 -o pre${LABEL}.nc"
+  cmd="$PISMGO -skip -skip_max 10 -i pism_Antarctica_5km.nc -bootstrap $GRID $VERTGRID $OPTIONS -ocean_kill_file pism_Antarctica_5km.nc -y 100 -o pre${LABEL}.nc"
   $DOIT $cmd
 
   EXTRA="-extra_file ex_routing${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,hydroinput"

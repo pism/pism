@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,40 +23,13 @@
 #include <string>
 #include <vector>
 
+#include "base/util/pism_memory.hh"
+#include "IO_Flags.hh"
+
 namespace pism {
 
-// This is a subset of NetCDF data-types.
-enum IO_Type {
-  PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
-  PISM_BYTE   = 1,              /* signed 1 byte integer */
-  PISM_CHAR   = 2,              /* ISO/ASCII character */
-  PISM_SHORT  = 3,              /* signed 2 byte integer */
-  PISM_INT    = 4,              /* signed 4 byte integer */
-  PISM_FLOAT  = 5,              /* single precision floating point number */
-  PISM_DOUBLE = 6               /* double precision floating point number */
-};
-
-// This is a subset of NetCDF file modes. Use values that don't match
-// NetCDF flags so that we can detect errors caused by passing these
-// straight to NetCDF.
-enum IO_Mode {
-  PISM_READONLY          = 7,   //!< open an existing file for reading only
-  PISM_READWRITE         = 8,   //!< open an existing file for reading and writing
-  PISM_READWRITE_CLOBBER = 9,   //!< create a file for writing, overwrite if present
-  PISM_READWRITE_MOVE    = 10   //!< create a file for writing, move foo.nc to foo.nc~ if present
-};
-
-// This is the special value corresponding to the "unlimited" dimension length.
-// Gets cast to "int", so it should match the value used by NetCDF.
-enum Dim_Length {
-  PISM_UNLIMITED = 0
-};
-
-// "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
-enum Fill_Mode {
-  PISM_FILL   = 0,
-  PISM_NOFILL = 0x100
-};
+//! Input and output code (NetCDF wrappers, etc)
+namespace io {
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.
 /*!
@@ -80,94 +53,96 @@ enum Fill_Mode {
 class NCFile
 {
 public:
+  typedef PISM_SHARED_PTR(NCFile) Ptr;
+
   NCFile(MPI_Comm com);
   virtual ~NCFile();
 
   // open/create/close
-  int open(const std::string &filename, IO_Mode mode);
+  void open(const std::string &filename, IO_Mode mode);
 
-  int create(const std::string &filename);
+  void create(const std::string &filename);
 
-  int close();
+  void close();
 
   // redef/enddef
-  int enddef() const;
+  void enddef() const;
 
-  int redef() const;
+  void redef() const;
 
   // dim
-  int def_dim(const std::string &name, size_t length) const;
+  void def_dim(const std::string &name, size_t length) const;
 
-  int inq_dimid(const std::string &dimension_name, bool &exists) const;
+  void inq_dimid(const std::string &dimension_name, bool &exists) const;
 
-  int inq_dimlen(const std::string &dimension_name, unsigned int &result) const;
+  void inq_dimlen(const std::string &dimension_name, unsigned int &result) const;
 
-  int inq_unlimdim(std::string &result) const;
+  void inq_unlimdim(std::string &result) const;
 
-  int inq_dimname(int j, std::string &result) const;
+  void inq_dimname(int j, std::string &result) const;
 
-  int inq_ndims(int &result) const;
+  void inq_ndims(int &result) const;
 
   // var
-  int def_var(const std::string &name, IO_Type nctype,
-              const std::vector<std::string> &dims) const;
+  void def_var(const std::string &name, IO_Type nctype,
+               const std::vector<std::string> &dims) const;
 
-  int get_vara_double(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      double *ip) const;
+  void get_vara_double(const std::string &variable_name,
+                       const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count,
+                       double *ip) const;
 
-  int put_vara_double(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const double *op) const;
+  void put_vara_double(const std::string &variable_name,
+                       const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count,
+                       const double *op) const;
 
-  int get_varm_double(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const std::vector<unsigned int> &imap,
-                      double *ip) const;
+  void get_varm_double(const std::string &variable_name,
+                       const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count,
+                       const std::vector<unsigned int> &imap,
+                       double *ip) const;
 
-  int put_varm_double(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const std::vector<unsigned int> &imap,
-                      const double *op) const;
+  void put_varm_double(const std::string &variable_name,
+                       const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count,
+                       const std::vector<unsigned int> &imap,
+                       const double *op) const;
 
-  int inq_nvars(int &result) const;
+  void inq_nvars(int &result) const;
 
-  int inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const;
+  void inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const;
 
-  int inq_varnatts(const std::string &variable_name, int &result) const;
+  void inq_varnatts(const std::string &variable_name, int &result) const;
 
-  int inq_varid(const std::string &variable_name, bool &exists) const;
+  void inq_varid(const std::string &variable_name, bool &exists) const;
 
-  int inq_varname(unsigned int j, std::string &result) const;
+  void inq_varname(unsigned int j, std::string &result) const;
 
-  int inq_vartype(const std::string &variable_name, IO_Type &result) const;
+  void inq_vartype(const std::string &variable_name, IO_Type &result) const;
 
   // att
-  int get_att_double(const std::string &variable_name, const std::string &att_name,
-                     std::vector<double> &result) const;
+  void get_att_double(const std::string &variable_name, const std::string &att_name,
+                      std::vector<double> &result) const;
 
-  int get_att_text(const std::string &variable_name, const std::string &att_name,
-                   std::string &result) const;
+  void get_att_text(const std::string &variable_name, const std::string &att_name,
+                    std::string &result) const;
 
-  int put_att_double(const std::string &variable_name, const std::string &att_name,
-                     IO_Type xtype, const std::vector<double> &data) const;
+  void put_att_double(const std::string &variable_name, const std::string &att_name,
+                      IO_Type xtype, const std::vector<double> &data) const;
 
-  int put_att_double(const std::string &variable_name, const std::string &att_name,
-                     IO_Type xtype, double value) const;
+  void put_att_double(const std::string &variable_name, const std::string &att_name,
+                      IO_Type xtype, double value) const;
 
-  int put_att_text(const std::string &variable_name, const std::string &att_name,
-                   const std::string &value) const;
+  void put_att_text(const std::string &variable_name, const std::string &att_name,
+                    const std::string &value) const;
 
-  int inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const;
+  void inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const;
 
-  int inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
+  void inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
 
   // misc
-  int set_fill(int fillmode, int &old_modep) const;
+  void set_fill(int fillmode, int &old_modep) const;
 
   std::string get_filename() const;
 
@@ -176,8 +151,8 @@ public:
   void set_local_extent(unsigned int xs, unsigned int xm,
                         unsigned int ys, unsigned int ym) const;
 
-  int move_if_exists(const std::string &filename, int rank_to_use = 0);
-  int remove_if_exists(const std::string &filename, int rank_to_use = 0);
+  void move_if_exists(const std::string &filename, int rank_to_use = 0);
+  void remove_if_exists(const std::string &filename, int rank_to_use = 0);
 
 protected:
   // implementations:
@@ -285,6 +260,7 @@ protected:                      // data members
   mutable unsigned int m_xs, m_xm, m_ys, m_ym;
 };
 
+} // end of namespace io
 } // end of namespace pism
 
 #endif /* _PISMNCWRAPPER_H_ */

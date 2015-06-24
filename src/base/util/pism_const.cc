@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,17 +21,17 @@
 #include <petsctime.h>
 #include <petscsys.h>
 
-#include "PIO.hh"
-#include "pism_const.hh"
 #include <sstream>
 #include <ctime>
 #include <algorithm>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
-#include "NCVariable.hh"
+#include "pism_const.hh"
+#include "error_handling.hh"
 
 extern FILE *petsc_history;
 
@@ -42,12 +42,11 @@ namespace pism {
 static int verbosityLevel;
 
 //! \brief Set the PISM verbosity level.
-PetscErrorCode setVerbosityLevel(int level) {
+void setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
-    SETERRQ(PETSC_COMM_SELF, 1,"verbosity level invalid");
+    throw RuntimeError::formatted("verbosity level %d is invalid", level);
   }
   verbosityLevel = level;
-  return 0;  
 }
 
 //! \brief Get the verbosity level.
@@ -74,81 +73,84 @@ ranks are ignored.
 
 Should not be used for reporting fatal errors.
  */
-PetscErrorCode verbPrintf(const int threshold, 
-                          MPI_Comm comm, const char format[], ...) {
+void verbPrintf(const int threshold, 
+                MPI_Comm comm, const char format[], ...) {
   PetscErrorCode ierr;
   int            rank;
 
-  PetscFunctionBegin;
-
   assert(1 <= threshold && threshold <= 5);
 
-  ierr = MPI_Comm_rank(comm, &rank); CHKERRQ(ierr);
+  ierr = MPI_Comm_rank(comm, &rank); PISM_C_CHK(ierr, 0, "MPI_Comm_rank");
   if (rank == 0) {
     va_list Argp;
     if (verbosityLevel >= threshold) {
       va_start(Argp, format);
-      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp); CHKERRQ(ierr);
+      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
+      PISM_CHK(ierr, "PetscVFPrintf");
+
       va_end(Argp);
     }
     if (petsc_history) { // always print to history
       va_start(Argp, format);
-      ierr = PetscVFPrintf(petsc_history, format, Argp); CHKERRQ(ierr);
+      ierr = PetscVFPrintf(petsc_history, format, Argp);
+      PISM_CHK(ierr, "PetscVFPrintf");
+
       va_end(Argp);
     }
   }
-  PetscFunctionReturn(0);
-}
-
-
-//! Prints rank (in process group PETSC_COMM_WORLD) to stderr.  Then attempts to end all processes.
-/*!
-Avoid using this if possible.  SETERRQ() should be used for all procedures that
-return PetscErrorCode.  Generally needed for errors in constructors.
-
-Printing the rank seems to be redundant because it will appear in brackets at start
-of each call to PetscErrorPrintf().  But emphasis is useful, perhaps ...
-
-Calls "MPI_Abort(PETSC_COMM_WORLD,3155)" to attempt to end all processes.
-If this works main() will return value 3155.  The problem with PetscEnd() for
-this purpose is that it is collective (presumably over PETSC_COMM_WORLD).
- */
-void endPrintRank() {
-  int rank;
-  if (!MPI_Comm_rank(PETSC_COMM_WORLD, &rank)) {
-    PetscErrorPrintf("\n\n    rank %d process called endPrintRank()\n"
-                         "    ending ...  \n\n",rank);
-  } else {
-    PetscErrorPrintf("\n\n    process with undeterminable rank called endPrintRank()\n"
-                         "    ending ...  \n\n");
-  }
-  MPI_Abort(PETSC_COMM_WORLD,3155);
 }
 
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
-bool ends_with(std::string str, std::string suffix) {
-  if (str.empty() == true && suffix.empty() == false)
+bool ends_with(const std::string &str, const std::string &suffix) {
+  if (suffix.size() > str.size()) {
     return false;
+  }
 
-  if (str.rfind(suffix) + suffix.size() == str.size())
+  if (str.rfind(suffix) + suffix.size() == str.size()) {
     return true;
+  }
 
   return false;
 }
 
+//! Concatenate `strings`, inserting `separator` between elements.
+std::string join(const std::vector<std::string> &strings, const std::string &separator) {
+  std::vector<std::string>::const_iterator j = strings.begin();
+  std::string result = *j;
+  ++j;
+  while (j != strings.end()) {
+    result += separator + *j;
+    ++j;
+  }
+  return result;
+}
+
+//! Transform a `separator`-separated list (a string) into a vector of strings.
+std::vector<std::string> split(const std::string &input, char separator) {
+  std::istringstream input_list(input);
+  std::string token;
+  std::vector<std::string> result;
+
+  while (getline(input_list, token, separator)) {
+    result.push_back(token);
+  }
+  return result;
+}
 
 //! Checks if a vector of doubles is strictly increasing.
 bool is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();
   for (int k = 0; k < len-1; k++) {
-    if (a[k] >= a[k+1])  return false;
+    if (a[k] >= a[k+1]) {
+      return false;
+    }
   }
   return true;
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
-std::string pism_timestamp() {
+std::string pism_timestamp(MPI_Comm com) {
   time_t now;
   tm tm_now;
   char date_str[50];
@@ -157,6 +159,8 @@ std::string pism_timestamp() {
   // Format specifiers for strftime():
   //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
   strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+
+  MPI_Bcast(date_str, 50, MPI_CHAR, 0, com);
 
   return std::string(date_str);
 }
@@ -167,19 +171,23 @@ std::string pism_username_prefix(MPI_Comm com) {
 
   char username[50];
   ierr = PetscGetUserName(username, sizeof(username));
-  if (ierr != 0)
+  PISM_CHK(ierr, "PetscGetUserName");
+  if (ierr != 0) {
     username[0] = '\0';
+  }
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname));
-  if (ierr != 0)
+  PISM_CHK(ierr, "PetscGetHostName");
+  if (ierr != 0) {
     hostname[0] = '\0';
+  }
   
   std::ostringstream message;
-  message << username << "@" << hostname << " " << pism_timestamp() << ": ";
+  message << username << "@" << hostname << " " << pism_timestamp(com) << ": ";
 
   std::string result = message.str();
-  int length = result.size();
-  MPI_Bcast(&length, 1, MPI_INT, 0, com);
+  unsigned int length = result.size();
+  MPI_Bcast(&length, 1, MPI_UNSIGNED, 0, com);
 
   result.resize(length);
   MPI_Bcast(&result[0], length, MPI_CHAR, 0, com);
@@ -192,14 +200,17 @@ std::string pism_username_prefix(MPI_Comm com) {
 std::string pism_args_string() {
   int argc;
   char **argv;
-  PetscGetArgs(&argc, &argv);
+  PetscErrorCode ierr = PetscGetArgs(&argc, &argv);
+  PISM_CHK(ierr, "PetscGetArgs");
 
   std::string cmdstr, argument;
   for (int j = 0; j < argc; j++) {
     argument = argv[j];
 
     // enclose arguments containing spaces with double quotes:
-    if (argument.find(" ") != std::string::npos) argument = "\"" + argument + "\"";
+    if (argument.find(" ") != std::string::npos) {
+      argument = "\"" + argument + "\"";
+    }
 
     cmdstr += std::string(" ") + argument;
   }
@@ -215,7 +226,9 @@ std::string pism_args_string() {
  * "name + separator + more stuff + .nc", then removes the string after the
  * separator.
  */
-std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix) {
+std::string pism_filename_add_suffix(const std::string &filename,
+                                     const std::string &separator,
+                                     const std::string &suffix) {
   std::string basename = filename, result;
 
   // find where the separator begins:
@@ -234,89 +247,63 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
 
   result = basename + separator + suffix;
 
-  if (ends_with(filename, ".nc"))
+  if (ends_with(filename, ".nc")) {
     result += ".nc";
+  }
 
   return result;
 }
 
-//! \brief Finalizes PETSc and MPI. Replaces PetscEnd().
-/*!
- * This is necessary if PETSc is using a subset of all the processors in
- * MPI_COMM_WORLD. Using PetscEnd() in this case leaves processes \b not
- * running PETSc hanging waiting for a MPI_Finalize() call. (PetscFinalize()
- * only calls MPI_Finalize() if PetscInitialize() called MPI_Init().)
- */
-void PISMEnd() {
-  int flag;
-  PetscFinalize();
-
-  MPI_Finalized(&flag);
-  if (flag == false)
-    MPI_Finalize();
-
-  exit(0);
-}
-
-void PISMEndQuiet() {
-  PetscOptionsSetValue("-options_left","no");
-  PISMEnd();
-}
-
-PetscErrorCode GetTime(PetscLogDouble *result) {
+PetscLogDouble GetTime() {
+  PetscLogDouble result;
 #if PETSC_VERSION_LT(3,4,0)
-  PetscErrorCode ierr = PetscGetTime(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = PetscGetTime(&result);
+  PISM_CHK(ierr, "PetscGetTime");
 #else
-  PetscErrorCode ierr = PetscTime(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = PetscTime(&result);
+  PISM_CHK(ierr, "PetscTime");
 #endif
-  return 0;
+  return result;
 }
 
-// PETSc profiling events
-
-Profiling::Profiling() {
-  PetscClassIdRegister("PISM", &m_classid);
+bool set_contains(const std::set<std::string> &S, const std::string &name) {
+  return (S.find(name) != S.end());
 }
 
-void Profiling::begin(const char * name) {
-  PetscLogEvent event = 0;
-
-  if (m_events.find(name) == m_events.end()) {
-    // not registered yet
-    PetscLogEventRegister(name, m_classid, &event);
-    m_events[name] = event;
-  } else {
-    event = m_events[name];
-  }
-  PetscLogEventBegin(event, 0, 0, 0, 0);
+void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
+  int err = MPI_Allreduce(local, result, count, MPIU_REAL, op, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
 
-void Profiling::end(const char * name) {
-  PetscLogEvent event = 0;
-  if (m_events.find(name) == m_events.end()) {
-    abort();                    // should never happen
-  } else {
-    event = m_events[name];
-  }
-  PetscLogEventEnd(event, 0, 0, 0, 0);
+void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MIN);
 }
 
-void Profiling::stage_begin(const char * name) {
-  PetscLogStage stage = 0;
-
-  if (m_stages.find(name) == m_stages.end()) {
-    // not registered yet
-    PetscLogStageRegister(name, &stage);
-    m_stages[name] = stage;
-  } else {
-    stage = m_stages[name];
-  }
-  PetscLogStagePush(stage);
+void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MAX);
 }
 
-void Profiling::stage_end(const char * name) {
-  (void) name;
-  PetscLogStagePop();
+void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_SUM);
 }
+
+double GlobalMin(MPI_Comm comm, double local) {
+  double result;
+  GlobalMin(comm, &local, &result, 1);
+  return result;
+}
+
+double GlobalMax(MPI_Comm comm, double local) {
+  double result;
+  GlobalMax(comm, &local, &result, 1);
+  return result;
+}
+
+double GlobalSum(MPI_Comm comm, double local) {
+  double result;
+  GlobalSum(comm, &local, &result, 1);
+  return result;
+}
+
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Constantine Khroulev
+// Copyright (C) 2009--2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define __IceModelVec2T_hh
 
 #include "iceModelVec.hh"
+#include "MaxTimestep.hh"
 
 namespace pism {
 
@@ -45,9 +46,9 @@ namespace pism {
   Usage example:
   \code
   // initialization:
-  char filename[] = "climate_inputs.nc";
+  std::string filename = "climate_inputs.nc";
   IceModelVec2T v;
-  v.set_n_records(config.get("climate_forcing_buffer_size"))));
+  v.set_n_records(config.get_double("climate_forcing_buffer_size"))));
   ierr = v.create(grid, "snowtemp", false); CHKERRQ(ierr);
   ierr = v.set_attrs("climate_forcing", "snow surface temperature", "K", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);
@@ -102,34 +103,32 @@ public:
   virtual void set_n_records(unsigned int N);
   virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
-  using IceModelVec2S::create;
-  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
-                                bool local, int width = 1);
-  virtual PetscErrorCode init(const std::string &filename, unsigned int period,
+  void create(IceGrid::ConstPtr mygrid, const std::string &my_short_name);
+  virtual void init(const std::string &filename, unsigned int period,
                               double reference_time);
-  virtual PetscErrorCode init_constant(double value);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode set_record(int n);
-  virtual PetscErrorCode get_record(int n);
-  virtual double         max_timestep(double my_t);
+  virtual void init_constant(double value);
+  virtual void update(double my_t, double my_dt);
+  virtual void set_record(int n);
+  virtual void get_record(int n);
+  MaxTimestep max_timestep(double my_t);
 
-  virtual PetscErrorCode interp(double my_t);
+  virtual void interp(double my_t);
 
-  virtual PetscErrorCode interp(int i, int j, std::vector<double> &results);
+  virtual void interp(int i, int j, std::vector<double> &results);
 
-  virtual PetscErrorCode average(double my_t, double my_dt);
-  virtual PetscErrorCode average(int i, int j, double &result);
+  virtual void average(double my_t, double my_dt);
+  virtual double average(int i, int j);
 
-  virtual PetscErrorCode begin_access() const;
-  virtual PetscErrorCode end_access() const;
-  virtual PetscErrorCode init_interpolation(const std::vector<double> &ts);
+  virtual void begin_access() const;
+  virtual void end_access() const;
+  virtual void init_interpolation(const std::vector<double> &ts);
 
 protected:
   std::vector<double> time,             //!< all the times available in filename
     time_bounds;                //!< time bounds
   std::string filename;         //!< file to read (regrid) from
-  PISMDM::Ptr m_da3;
-  Vec m_v3;                       //!< a 3D Vec used to store records
+  petsc::DM::Ptr m_da3;
+  petsc::Vec m_v3;                       //!< a 3D Vec used to store records
   mutable void ***array3;
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory
@@ -142,10 +141,9 @@ protected:
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 
-  virtual PetscErrorCode destroy();
-  virtual PetscErrorCode get_array3(double*** &a3);
-  virtual PetscErrorCode update(unsigned int start);
-  virtual PetscErrorCode discard(int N);
+  double*** get_array3();
+  virtual void update(unsigned int start);
+  virtual void discard(int N);
 };
 
 

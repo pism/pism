@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "iceModel.hh"
-#include "IceGrid.hh"
-
 #if (PISM_USE_PROJ4==1)
 #include <proj_api.h>
 #endif
+
+#include "iceModel.hh"
+
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
 
@@ -40,44 +44,40 @@ static double triangle_area(double *A, double *B, double *C) {
                   PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
 }
 
-PetscErrorCode IceModel::compute_cell_areas() {
-  PetscErrorCode ierr;
+void IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
-  if (config.get_flag("correct_cell_areas") == false ||
+  if (m_config->get_boolean("correct_cell_areas") == false ||
       global_attributes.has_attribute("proj4") == false) {
 
-    ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
+    cell_area.set(m_grid->dx() * m_grid->dy());
 
-    return 0;
+    return;
   }
 
   std::string proj_string = global_attributes.get_string("proj4");
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
-                "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
-    PISMEnd();
+    throw RuntimeError("projection initialization failed\n"
+                       "('+proj=latlong +datum=WGS84 +ellps=WGS84').");
   }
 
   geocent = pj_init_plus("+proj=geocent +datum=WGS84 +ellps=WGS84");
   if (geocent == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
-                "('+proj=geocent +datum=WGS84 +ellps=WGS84').\n");
-    PISMEnd();
+    throw RuntimeError("projection initialization failed\n"
+                       "('+proj=geocent +datum=WGS84 +ellps=WGS84').");
   }
 
   pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: proj.4 string '%s' is invalid. Exiting...\n",
-                proj_string.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("proj.4 string '%s' is invalid.",
+                                  proj_string.c_str());
   }
 
-  ierr = verbPrintf(2,grid.com,
-                    "* Computing cell areas, latitude and longitude\n"
-                    "  using projection parameters...\n"); CHKERRQ(ierr);
+  m_log->message(2,
+             "* Computing cell areas, latitude and longitude\n"
+             "  using projection parameters...\n");
 
 // Cell layout:
 // (nw)        (ne)
@@ -90,16 +90,16 @@ PetscErrorCode IceModel::compute_cell_areas() {
 // +-----------+
 // (sw)        (se)
 
-  double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
+  double dx2 = 0.5 * m_grid->dx(), dy2 = 0.5 * m_grid->dy();
 
   IceModelVec::AccessList list;
   list.add(vLatitude);
   list.add(vLongitude);
   list.add(cell_area);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double x = grid.x[i], y = grid.y[j], Z;
+    double x = m_grid->x(i), y = m_grid->y(j), Z;
 
     // compute the cell area:
     double x_nw = x - dx2, y_nw = y + dy2;
@@ -134,19 +134,13 @@ PetscErrorCode IceModel::compute_cell_areas() {
   pj_free(pism);
   pj_free(lonlat);
   pj_free(geocent);
-
-  return 0;
 }
 
 #elif (PISM_USE_PROJ4==0)      // no proj.4
 
-PetscErrorCode IceModel::compute_cell_areas() {
-  PetscErrorCode ierr;
-
+void IceModel::compute_cell_areas() {
   // proj.4 was not found; use uncorrected areas.
-  ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
-
-  return 0;
+  cell_area.set(m_grid->dx() * m_grid->dy());
 }
 
 #else  // PISM_USE_PROJ4 is not set

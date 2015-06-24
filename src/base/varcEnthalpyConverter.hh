@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 Ed Bueler
+// Copyright (C) 2011, 2014, 2015 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -34,41 +34,21 @@ namespace pism {
 */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
-  varcEnthalpyConverter(const Config &config)
-    : EnthalpyConverter(config),
-      T_r(256.81786846822),
-      c_gradient(7.253)
-  {
-  }
-  virtual ~varcEnthalpyConverter() {}
-
-  virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
-
-  virtual double         getEnthalpyCTS(double p) const;
-
-  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
-
-  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
-
-  /*!
-    Equation (4.39) in [\ref GreveBlatter2009] is
-    \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
-    \f$T_r = 256.82\f$ K.
-  */
-  virtual double c_from_T(double T) const
-  { return c_i + c_gradient * (T - T_r); }
-
-  virtual double c_from_enth(double E, double p) const
-  {
-    double T;
-    getAbsTemp(E, p, T);
-    return c_from_T(T);
-  }
+  varcEnthalpyConverter(const Config &config);
+  virtual ~varcEnthalpyConverter();
 
 protected:
-  const double T_r,  //!< reference temperature in the parameterization of C(T)
-    c_gradient;      //!< \brief the rate of change of C with respect to T in
-  //!< the parameterization of C(T)
+  double enthalpy_cts_impl(double p) const;
+  double c_from_T_impl(double T) const;
+  double enthalpy_impl(double T, double omega, double p) const;
+  double temperature_impl(double E, double p) const;
+
+  //!< reference temperature in the parameterization of C(T)
+  const double m_T_r;
+  //!< \brief the rate of change of C with respect to T in the
+  //! parameterization of C(T)
+  const double m_c_gradient;
+
   double EfromT(double T) const;
   double TfromE(double E) const;
 };

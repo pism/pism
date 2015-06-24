@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2008, 2014 Ed Bueler and Jed Brown
+   Copyright (C) 2004-2008, 2014, 2015 Ed Bueler and Jed Brown and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -33,7 +33,7 @@ static double p4(double x) {
   return 24.0 + x*(-24.0 + x*(12.0 + x*(-4.0 + x)));
 }
 
-int bothexact(double t, double r, double *z, int Mz, double Cp,
+int bothexact(double t, double r, const double *z, int Mz, double Cp,
 	      double *Hreturn, double *M, double *TT,
 	      double *Ureturn, double *wreturn, 
               double *Sigreturn, double *Sigc) {
@@ -75,16 +75,41 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   double *I3;
 
   I3 = (double *) malloc((size_t)Mz * sizeof(double)); /* need temporary arrays */
+  if (I3 == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    return -9999;
+  }
+
   U = (double *) malloc((size_t)Mz * sizeof(double));
+  if (U == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    free(I3);
+    return -9999;
+  }
+
   w = (double *) malloc((size_t)Mz * sizeof(double));
+  if (w == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    free(I3);
+    free(U);
+    return -9999;
+  }
+
   Sig = (double *) malloc((size_t)Mz * sizeof(double));
-  if ((I3 == NULL) || (U == NULL) || (w == NULL) || (Sig == NULL)) { 
-    fprintf(stderr, "\nERROR bothexact(): couldn't allocate memory!\n\n");
+  if (Sig == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    free(I3);
+    free(U);
+    free(w);
     return -9999;
   }
   
   if ((r<=0) || (r>=L)) {
     fprintf(stderr, "\nERROR bothexact(): code and derivation assume 0<r<L  !\n\n");
+    free(I3);
+    free(U);
+    free(w);
+    free(Sig);
     return 1;
   }
 
@@ -122,6 +147,10 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   Hr = Hconst * power * pow(lamhat,power-1) * lamhatr + goft*fr;   /* chain rule */
   if (Hr>0) {
     fprintf(stderr, "\nERROR bothexact(): assumes H_r negative for all 0<r<L !\n\n");
+    free(I3);
+    free(U);
+    free(w);
+    free(Sig);
     return 2;
   }
   mu = Q/(Rgas*Ts*(nu+H));

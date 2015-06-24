@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,196 +19,138 @@
 #ifndef __PISMDiagnostic_hh
 #define __PISMDiagnostic_hh
 
-#include "NCVariable.hh"
+#include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code
 #include "PISMTime.hh"
 #include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "PISMConfigInterface.hh"
+#include "iceModelVec.hh"
 
 namespace pism {
 
-class IceModelVec;
-class Vars;
-
-//! \brief Class representing diagnostic computations in PISM.
+//! @brief Class representing diagnostic computations in PISM.
 /*!
  * The main goal of this abstraction is to allow accessing metadata
- * corresponding to a diagnostic quantity \e before it is computed.
+ * corresponding to a diagnostic quantity *before* it is computed.
  *
- * Another goal is to create an interface for computing diagnostics \e without
+ * Another goal is to create an interface for computing diagnostics *without*
  * knowing which PISM module is responsible for the computation.
  *
  * Technical note: to compute some diagnostic quantities we need access to
  * protected members of classes. C++ forbids obtaining pointers to non-static
  * methods of a class, but it is possible to define a (friend) function
  *
- * \code
- * PetscErrorCode compute_bar(Foo* model, ..., IceModelVec* &result);
- * \endcode
+ * @code
+ * IceModelVec::Ptr compute_bar(Foo* model, ...);
+ * @endcode
  *
- * which is the same as creating a method Foo::compute_bar(), but you \e can
+ * which is the same as creating a method `Foo::compute_bar()`, but you *can*
  * get a pointer to it.
  *
  * Diagnostic creates a common interface for all these compute_bar
  * functions.
  */
-class Diagnostic
-{
+class Diagnostic {
 public:
-  Diagnostic(IceGrid &g, Vars &my_vars)
-    : variables(my_vars), grid(g) {
-    output_datatype = PISM_FLOAT;
-    dof = 1;
-    vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  }
-  virtual ~Diagnostic() {}
+  Diagnostic(IceGrid::ConstPtr g);
+  virtual ~Diagnostic();
 
-  //! \brief Update a cumulative quantity needed to compute a rate of change.
-  //! So far we there is only one such quantity: the rate of change of the ice
-  //! thickness.
-  virtual PetscErrorCode update_cumulative()
-  {
-    return 0;
-  }
+  virtual void update_cumulative();
 
-  //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
-  //! IceModelVec. NB: The caller needs to de-allocate it.
-  virtual PetscErrorCode compute(IceModelVec* &result) = 0;
+  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
+  //! IceModelVec.
+  virtual IceModelVec::Ptr compute() = 0;
 
-  //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
-  virtual int get_nvars() { return dof; }
+  virtual int get_nvars();
 
-  //! Reset vertical levels corresponding to the z dimension.
-  /** This is called after the automatic grid extension.
-   */
-  virtual void set_zlevels(std::vector<double> &zlevels)
-  {
-    for (int j = 0; j < dof; ++j) {
-      if (vars[j].get_z().get_name() == "z") {
-        vars[j].set_levels(zlevels);
-      }
-    }
-  }
+  virtual void set_zlevels(std::vector<double> &zlevels);
 
-  //! Get a pointer to a metadata object corresponding to variable number N.
-  virtual NCSpatialVariable get_metadata(int N = 0)
-  {
-    if (N >= dof) return NCSpatialVariable(grid.get_unit_system());
+  virtual SpatialVariableMetadata get_metadata(int N = 0);
 
-    return vars[N];
-  }
+  virtual void define(const PIO &nc);
 
-  //! Define NetCDF variables corresponding to a diagnostic quantity.
-  virtual PetscErrorCode define(const PIO &nc)
-  {
-    PetscErrorCode ierr;
-
-    for (int j = 0; j < dof; ++j) {
-      ierr = vars[j].define(nc, output_datatype, true); CHKERRQ(ierr);
-    }
-
-    return 0;
-  }
-
-  //! \brief A method for setting common variable attributes.
-  PetscErrorCode set_attrs(std::string my_long_name,
-                           std::string my_standard_name,
-                           std::string my_units,
-                           std::string my_glaciological_units,
-                           int N = 0) {
-    PetscErrorCode ierr;
-
-    if (N >= dof) SETERRQ(grid.com, 1, "invalid N (>= dof)");
-
-    vars[N].set_string("pism_intent", "diagnostic");
-
-    vars[N].set_string("long_name", my_long_name);
-
-    vars[N].set_string("standard_name", my_standard_name);
-
-    ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
-
-    if (my_glaciological_units != "") {
-      ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
-    }
-
-    return 0;
-  }
+  void set_attrs(const std::string &my_long_name,
+                 const std::string &my_standard_name,
+                 const std::string &my_units,
+                 const std::string &my_glaciological_units,
+                 int N = 0);
 protected:
-  Vars &variables;          //!< dictionary of variables
-  IceGrid &grid;                //!< the grid
-  int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  IO_Type output_datatype;      //!< data type to use in the file
-  std::vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
+  //! the grid
+  IceGrid::ConstPtr m_grid;
+  //! the unit system
+  const units::System::Ptr m_sys;
+  //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
+  int m_dof;
+  //! data type to use in the file
+  IO_Type m_output_datatype;
+  //! metadata corresponding to NetCDF variables
+  std::vector<SpatialVariableMetadata> m_vars;
 };
 
 //! A template derived from Diagnostic, adding a "Model".
 template <class Model>
-class Diag : public Diagnostic
-{
+class Diag : public Diagnostic {
 public:
-  Diag(Model *m, IceGrid &g, Vars &my_vars)
-    : Diagnostic(g, my_vars), model(m) {}
+  Diag(Model *m)
+    : Diagnostic(m->grid()), model(m) {}
 protected:
   Model *model;
 };
 
-//! \brief PISM's scalar time-series diagnostics.
-class TSDiagnostic
-{
+//! @brief PISM's scalar time-series diagnostics.
+class TSDiagnostic {
 public:
-  TSDiagnostic(IceGrid &g, Vars &my_vars)
-    : variables(my_vars), grid(g), ts(NULL) {
+  TSDiagnostic(IceGrid::ConstPtr g)
+    : m_grid(g), m_sys(g->ctx()->unit_system()), m_ts(NULL) {
   }
 
   virtual ~TSDiagnostic() {
-    delete ts;
+    delete m_ts;
   }
 
-  virtual PetscErrorCode update(double a, double b) = 0;
+  virtual void update(double a, double b) = 0;
 
-  virtual PetscErrorCode save(double a, double b) {
-    if (ts)
-      return ts->interp(a, b);
-
-    return 0;
+  virtual void save(double a, double b) {
+    if (m_ts) {
+      m_ts->interp(a, b);
+    }
   }
 
-  virtual PetscErrorCode flush() {
-    if (ts)
-      return ts->flush();
-
-    return 0;
+  virtual void flush() {
+    if (m_ts) {
+      m_ts->flush();
+    }
   }
 
-  virtual PetscErrorCode init(std::string filename) {
-    if (ts)
-      return ts->init(filename);
-    return 0;
+  virtual void init(const std::string &filename) {
+    if (m_ts) {
+      m_ts->init(filename);
+    }
   }
 
-  virtual std::string get_string(std::string name) {
-    return ts->get_metadata().get_string(name);
+  virtual std::string get_string(const std::string &name) {
+    return m_ts->metadata().get_string(name);
   }
 
 protected:
-  Vars &variables;          //!< dictionary of variables
-  IceGrid &grid;                //!< the grid
-  DiagnosticTimeseries *ts;
+  //! the grid
+  IceGrid::ConstPtr m_grid;
+  //! the unit system
+  const units::System::Ptr m_sys;
+  DiagnosticTimeseries *m_ts;
 };
 
 template <class Model>
-class TSDiag : public TSDiagnostic
-{
+class TSDiag : public TSDiagnostic {
 public:
-  TSDiag(Model *m, IceGrid &g, Vars &my_vars)
-    : TSDiagnostic(g, my_vars), model(m) {
-    time_units = grid.time->CF_units_string();
-    time_dimension_name = grid.config.get_string("time_dimension_name");
+  TSDiag(Model *m)
+    : TSDiagnostic(m->grid()), model(m) {
+    m_time_units = m_grid->ctx()->time()->CF_units_string();
+    m_time_dimension_name = m_grid->ctx()->config()->get_string("time_dimension_name");
   }
 protected:
   Model *model;
-  std::string time_units, time_dimension_name;
+  std::string m_time_units, m_time_dimension_name;
 };
 
 } // end of namespace pism

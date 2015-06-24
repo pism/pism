@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,11 @@
 #ifndef _PISMICEBERGREMOVER_H_
 #define _PISMICEBERGREMOVER_H_
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
+namespace calving {
 
 /*! \brief PISM iceberg remover */
 /*!
@@ -45,26 +46,23 @@ namespace pism {
 class IcebergRemover : public Component
 {
 public:
-  IcebergRemover(IceGrid &g, const Config &conf);
+  IcebergRemover(IceGrid::ConstPtr g);
   virtual ~IcebergRemover();
 
-  virtual PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  virtual void init();
+  void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 protected:
-  PetscErrorCode allocate();
-  PetscErrorCode deallocate();
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
-  
+protected:  
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   IceModelVec2S m_iceberg_mask;
-  Vec m_mask_p0;
-
-  IceModelVec2Int *m_bcflag;
+  petsc::Vec::Ptr m_mask_p0;
 };
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMICEBERGREMOVER_H_ */

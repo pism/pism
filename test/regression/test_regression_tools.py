@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import os, sys
+import os
+import sys
 
 print "Test # 0: presence of tools and Python modules needed by other tests."
 

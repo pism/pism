@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "PISMNC4File.hh"
 
 namespace pism {
+namespace io {
 
 class NC4_Par : public NC4File
 {
@@ -40,6 +41,7 @@ protected:
 };
 
 
+} // end of namespace io
 } // end of namespace pism
 
 #endif /* _PISMNC4_PAR_H_ */

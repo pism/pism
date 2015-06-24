@@ -21,12 +21,12 @@ args = options.FILE
 
 if len(args) == 1:
     pism_output = args[0]
-    plotname=pism_output.split('.')[0]
+    plotname = pism_output.split('.')[0]
 else:
     print("wrong number of arguments, 1 expected, %i given" % int(len(args)))
     import sys
     exit(1)
-    
+
 try:
     nc = NC.Dataset(pism_output, 'r')
 except:
@@ -39,21 +39,22 @@ def get(name):
     global nc
     return np.squeeze(nc.variables[name][:])
 
+
 def floating(a):
     global mask
-    return np.ma.array(a, mask=mask!=3)
+    return np.ma.array(a, mask=mask != 3)
 
 # load data and restrict velocities to floating areas
 seconds_per_year = 3.1556926e7
-x     = get('x')
-y     = get('y')
+x = get('x')
+y = get('y')
 velsurf_mag = get('velsurf_mag')
-mask  = get('mask')
-u     = floating(get('u_ssa'))
-v     = floating(get('v_ssa'))
+mask = get('mask')
+u = floating(get('u_ssa'))
+v = floating(get('v_ssa'))
 # B.C.s are observations, so a PISM output file contains everything we need
-u_bc  = floating(get('u_ssa_bc')) * seconds_per_year # convert to m/year
-v_bc  = floating(get('v_ssa_bc')) * seconds_per_year
+u_bc = floating(get('u_ssa_bc')) * seconds_per_year  # convert to m/year
+v_bc = floating(get('v_ssa_bc')) * seconds_per_year
 
 # dark background
 plt.figure(1)
@@ -69,17 +70,17 @@ plt.colorbar(extend='both', ticks=[1, 10, 100, 250, 500, 1000], format="%d")
 
 # quiver plot of velocities
 s = 10                                  # stride in grid points
-plt.quiver(x[::s], y[::s], u_bc[::s,::s], v_bc[::s,::s], color='white')
-plt.quiver(x[::s], y[::s], u[::s,::s], v[::s,::s], color='black')
+plt.quiver(x[::s], y[::s], u_bc[::s, ::s], v_bc[::s, ::s], color='white')
+plt.quiver(x[::s], y[::s], u[::s, ::s], v[::s, ::s], color='black')
 plt.xticks([])
 plt.yticks([])
 plt.title(r"Ross ice velocity (m/year); white=observed, black=model")
-plt.savefig(plotname+'_quiver.png', dpi=300)
-print("saving figure %s" % plotname+'_quiver.png')
+plt.savefig(plotname + '_quiver.png', dpi=300)
+print("saving figure %s" % plotname + '_quiver.png')
 
 # do the scatter plot
-magnitude = np.sqrt(np.abs(u[::s,::s])**2 + np.abs(v[::s,::s])**2)
-bc_magnitude = np.sqrt(np.abs(u_bc[::s,::s])**2 + np.abs(v_bc[::s,::s])**2)
+magnitude = np.sqrt(np.abs(u[::s, ::s]) ** 2 + np.abs(v[::s, ::s]) ** 2)
+bc_magnitude = np.sqrt(np.abs(u_bc[::s, ::s]) ** 2 + np.abs(v_bc[::s, ::s]) ** 2)
 
 max_velocity = np.maximum(magnitude.max(), bc_magnitude.max())
 plt.figure(2)
@@ -90,5 +91,5 @@ plt.axis(xmin=0, xmax=max_velocity, ymin=0, ymax=max_velocity)
 plt.xlabel('modeled speed')
 plt.ylabel('observed speed')
 plt.title("Observed versus modeled speed (m/year), at points in quiver plot")
-plt.savefig(plotname+'_scatter.png', dpi=300)
-print("saving figure %s" % plotname+'_scatter.png')
+plt.savefig(plotname + '_scatter.png', dpi=300)
+print("saving figure %s" % plotname + '_scatter.png')

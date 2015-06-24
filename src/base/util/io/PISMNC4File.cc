@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@
 #include <netcdf.h>
 
 namespace pism {
+namespace io {
 
 #include "pism_type_conversion.hh"
 
@@ -59,24 +60,14 @@ int NC4File::close_impl() {
 // redef/enddef
 int NC4File::enddef_impl() const {
 
-  if (m_define_mode == false)
-    return 0;
-
   int stat = nc_enddef(m_file_id); check(stat);
-
-  m_define_mode = false;
 
   return stat;
 }
 
 int NC4File::redef_impl() const {
 
-  if (m_define_mode == true)
-    return 0;
-
   int stat = nc_redef(m_file_id); check(stat);
-
-  m_define_mode = true;
 
   return stat;
 }
@@ -108,7 +99,7 @@ int NC4File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &re
   int stat, dimid = -1;
   size_t len;
 
-  stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid);
+  stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid); check(stat);
 
   stat = nc_inq_dimlen(m_file_id, dimid, &len); check(stat);
 
@@ -292,10 +283,11 @@ int NC4File::inq_varid_impl(const std::string &variable_name, bool &exists) cons
 
   stat = nc_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     flag = 1;
-  else
+  } else {
     flag = 0;
+  }
 
   exists = (flag == 1);
 
@@ -343,11 +335,11 @@ int NC4File::get_att_double_impl(const std::string &variable_name, const std::st
 
   stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
-  else if (stat == NC_ENOTATT)
+  } else if (stat == NC_ENOTATT) {
     len = 0;
-  else {
+  } else {
     check(stat);
     len = 0;
   }
@@ -386,10 +378,11 @@ int NC4File::get_att_text_impl(const std::string &variable_name, const std::stri
   }
 
   stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
-  else
+  } else {
     len = 0;
+  }
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
@@ -421,7 +414,7 @@ int NC4File::get_att_text_impl(const std::string &variable_name, const std::stri
 int NC4File::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
   int stat = 0;
 
-  stat = redef(); check(stat);
+  redef();
 
   int varid = -1;
 
@@ -440,7 +433,7 @@ int NC4File::put_att_double_impl(const std::string &variable_name, const std::st
 int NC4File::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
 
-  stat = redef(); check(stat);
+  redef();
 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
@@ -534,8 +527,9 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false)
+  if (mapped == false) {
     imap.resize(ndims);
+  }
 
   std::vector<size_t> nc_start(ndims), nc_count(ndims);
   std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
@@ -543,15 +537,15 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
   for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
+    nc_start[j]  = start[j];
+    nc_count[j]  = count[j];
+    nc_imap[j]   = imap[j];
     nc_stride[j] = 1;
   }
 
   if (mapped) {
 
-    stat = set_access_mode(varid, mapped);
+    stat = set_access_mode(varid, mapped); check(stat);
 
     if (get == true) {
       stat = nc_get_varm_double(m_file_id, varid,
@@ -564,7 +558,7 @@ int NC4File::get_put_var_double(const std::string &variable_name,
     }
   } else {
 
-    stat = set_access_mode(varid, mapped);
+    stat = set_access_mode(varid, mapped); check(stat);
 
     if (get == true) {
       stat = nc_get_vara_double(m_file_id, varid,
@@ -596,4 +590,5 @@ std::string NC4File::get_format_impl() const {
   }
 }
 
+} // end of namespace io
 } // end of namespace pism

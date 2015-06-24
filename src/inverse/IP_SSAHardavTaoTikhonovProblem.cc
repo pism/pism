@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,36 +20,41 @@
 #include "IP_SSAHardavTaoTikhonovProblem.hh"
 
 namespace pism {
+namespace inverse {
 
-PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(Tao tao) {
+void IP_SSAHardavTaoTikhonovProblem::connect(Tao tao) {
   PetscErrorCode ierr;
 
-  ierr = IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>::connect(tao); CHKERRQ(ierr);
+  IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>::connect(tao);
 
   const char *type;
-  ierr = TaoGetType(tao,&type); CHKERRQ(ierr);
+  ierr = TaoGetType(tao,&type);
+  PISM_CHK(ierr, "TaoGetType");
+
   if (strcmp(type,"blmvm") == 0) {
-    ierr = TaoGetVariableBoundsCallback<IP_SSAHardavTaoTikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
+    taoutil::TaoGetVariableBoundsCallback<IP_SSAHardavTaoTikhonovProblem>::connect(tao,*this);
   }  
-  return 0;
 }
 
 
-PetscErrorCode IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi) {
-  PetscErrorCode ierr;
+void IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi) {
+
   double zeta_min, zeta_max, hardav_min, hardav_max;
 
-  hardav_min = m_grid->config.get("inv_ssa_hardav_min");
-  hardav_max = m_grid->config.get("inv_ssa_hardav_max");
+  hardav_min = m_grid->ctx()->config()->get_double("inv_ssa_hardav_min");
+  hardav_max = m_grid->ctx()->config()->get_double("inv_ssa_hardav_max");
 
   IPDesignVariableParameterization &design_param = m_forward.design_param();
-  ierr = design_param.fromDesignVariable(hardav_min,&zeta_min); CHKERRQ(ierr);
-  ierr = design_param.fromDesignVariable(hardav_max,&zeta_max); CHKERRQ(ierr);
+  design_param.fromDesignVariable(hardav_min,&zeta_min);
+  design_param.fromDesignVariable(hardav_max,&zeta_max);
 
-  ierr = VecSet(lo,zeta_min); CHKERRQ(ierr);
-  ierr = VecSet(hi,zeta_max); CHKERRQ(ierr);
-  return 0;
+  PetscErrorCode ierr = VecSet(lo,zeta_min);
+  PISM_CHK(ierr, "VecSet");
+
+  ierr = VecSet(hi,zeta_max);
+  PISM_CHK(ierr, "VecSet");
 }
 
 
+} // end of namespace inverse
 } // end of namespace pism

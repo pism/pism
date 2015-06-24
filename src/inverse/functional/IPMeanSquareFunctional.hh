@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
 /*! If the vector has components \f$x_i\f$ the functional is
@@ -33,16 +34,16 @@ namespace pism {
 */
 class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IPMeanSquareFunctional2S(IceGrid &grid, 
+  IPMeanSquareFunctional2S(IceGrid::ConstPtr grid, 
                            IceModelVec2S *weights=NULL) :  ///< Vector of weights (NULL implies all weights are 1)
     IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
-  virtual PetscErrorCode normalize(double scale);
+  virtual void normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:
   IceModelVec2S *m_weights;
@@ -64,15 +65,15 @@ private:
 */
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  IPMeanSquareFunctional2V(IceGrid &grid, IceModelVec2S *weights=NULL) :
+  IPMeanSquareFunctional2V(IceGrid::ConstPtr grid, IceModelVec2S *weights=NULL) :
     IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 
-  virtual PetscErrorCode normalize(double scale);
+  virtual void normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
+  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
   IceModelVec2S *m_weights;
@@ -84,6 +85,7 @@ private:
 };
 
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C */

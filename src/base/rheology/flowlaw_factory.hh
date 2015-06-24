@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,45 +19,45 @@
 #ifndef __flowlaw_factory
 #define __flowlaw_factory
 
-#include "flowlaws.hh"
 #include <map>
 #include <string>
 
+#include "flowlaws.hh"
+#include "base/util/PISMConfigInterface.hh"
+
 namespace pism {
+namespace rheology {
 
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
-#define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
-#define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
-#define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */
+#define ICE_PB      "pb"            /* Paterson-Budd (PatersonBudd) */
+#define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) */
+#define ICE_HOOKE   "hooke"         /* Hooke (Hooke) */
 #define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
-typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const std::string &,
-                                           const Config &, EnthalpyConverter*, IceFlowLaw **);
+typedef FlowLaw*(*FlowLawCreator)(const std::string &,
+                                  const Config &, EnthalpyConverter::Ptr);
 
-class IceFlowLawFactory {
+class FlowLawFactory {
 public:
-  IceFlowLawFactory(MPI_Comm, const std::string &prefix,
-                    const Config &conf,
-                    EnthalpyConverter *my_EC);
-  ~IceFlowLawFactory();
-  PetscErrorCode setType(const std::string &name);
-  PetscErrorCode setFromOptions();
-  PetscErrorCode registerType(const std::string &name, IceFlowLawCreator);
-  PetscErrorCode removeType(const std::string &name);
-  PetscErrorCode create(IceFlowLaw **);
+  FlowLawFactory(const std::string &prefix,
+                 Config::ConstPtr conf,
+                 EnthalpyConverter::Ptr my_EC);
+  ~FlowLawFactory();
+  void set_default_type(const std::string &name);
+  void add_type(const std::string &name, FlowLawCreator);
+  void remove_type(const std::string &name);
+  FlowLaw* create();
 private:
-  PetscErrorCode registerAll();
-private:
-  MPI_Comm com;
-  std::string type_name, prefix;
-  std::map<std::string, IceFlowLawCreator> flow_laws;
-  const Config &config;
-  EnthalpyConverter *EC;
+  std::string m_type_name, m_prefix;
+  std::map<std::string, FlowLawCreator> m_flow_laws;
+  const Config::ConstPtr m_config;
+  EnthalpyConverter::Ptr m_EC;
 };
 
 
+} // end of namespace rheology
 } // end of namespace pism
 
 #endif  // __flowlaw_factory

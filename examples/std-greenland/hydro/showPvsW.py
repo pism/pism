@@ -65,131 +65,130 @@ except:
     sys.exit(3)
 
 if args.s != None:
-  print "  reading '%s' field, for point selection, from file %s ..." % (args.s, args.filename)
-  try:
-      ss = nc.variables[args.s]
-  except:
-      print "ERROR: variable '%s' not found ..." % (args.s)
-      sys.exit(5)
-  if args.smin != None:
-    print "    minimum value of '%s' for selection is %f" % (args.s, args.smin)
-  if args.smax != None:
-    print "    maximum value of '%s' for selection is %f" % (args.s, args.smax)
+    print "  reading '%s' field, for point selection, from file %s ..." % (args.s, args.filename)
+    try:
+        ss = nc.variables[args.s]
+    except:
+        print "ERROR: variable '%s' not found ..." % (args.s)
+        sys.exit(5)
+    if args.smin != None:
+        print "    minimum value of '%s' for selection is %f" % (args.s, args.smin)
+    if args.smax != None:
+        print "    maximum value of '%s' for selection is %f" % (args.s, args.smax)
 
 if args.c != None:
-  print "  reading '%s' field, for point color, from file %s ..." % (args.c, args.filename)
-  try:
-      cc = nc.variables[args.c]
-  except:
-      print "ERROR: variable '%s' not found ..." % (args.c)
-      sys.exit(4)
-  if args.cmin != None:
-    print '    color minimum value is %f' % args.cmin
-  if args.cmax != None:
-    print '    color maximum value is %f' % args.cmax
+    print "  reading '%s' field, for point color, from file %s ..." % (args.c, args.filename)
+    try:
+        cc = nc.variables[args.c]
+    except:
+        print "ERROR: variable '%s' not found ..." % (args.c)
+        sys.exit(4)
+    if args.cmin != None:
+        print '    color minimum value is %f' % args.cmin
+    if args.cmax != None:
+        print '    color maximum value is %f' % args.cmax
 
 if args.d >= 0:
-   if np.shape(bwprel)[0] <= args.d:
-       print "ERROR: frame %d not available in variable bwprel" % args.d
-       sys.exit(4)
-   if np.shape(bwat)[0] <= args.d:
-       print "ERROR: frame %d not available in variable bwat" % args.d
-       sys.exit(5)
-   print "  using frame %d of %d frames" % (args.d, np.shape(bwat)[0])
+    if np.shape(bwprel)[0] <= args.d:
+        print "ERROR: frame %d not available in variable bwprel" % args.d
+        sys.exit(4)
+    if np.shape(bwat)[0] <= args.d:
+        print "ERROR: frame %d not available in variable bwat" % args.d
+        sys.exit(5)
+    print "  using frame %d of %d frames" % (args.d, np.shape(bwat)[0])
 else:
-   args.d = -1
-   print "  reading last frame of %d frames" % (np.shape(bwat)[0])
+    args.d = -1
+    print "  reading last frame of %d frames" % (np.shape(bwat)[0])
 
-bwat   = np.asarray(np.squeeze(bwat[args.d,:,:])).flatten()
-bwprel = np.asarray(np.squeeze(bwprel[args.d,:,:])).flatten()
+bwat = np.asarray(np.squeeze(bwat[args.d, :, :])).flatten()
+bwprel = np.asarray(np.squeeze(bwprel[args.d, :, :])).flatten()
 
-bwprel[bwprel>1.0] = 1.0
-bwprel[bwprel<0.0] = 0.0
+bwprel[bwprel > 1.0] = 1.0
+bwprel[bwprel < 0.0] = 0.0
 
 if args.c != None:
-  ccc = np.asarray(np.squeeze(cc[args.d,:,:])).flatten()
-  if args.cmin != None:
-    ccc[ccc<args.cmin] = args.cmin
-  if args.cmax != None:
-    ccc[ccc>args.cmax] = args.cmax
+    ccc = np.asarray(np.squeeze(cc[args.d, :, :])).flatten()
+    if args.cmin != None:
+        ccc[ccc < args.cmin] = args.cmin
+    if args.cmax != None:
+        ccc[ccc > args.cmax] = args.cmax
 
 if args.s != None:
-  sss = np.asarray(np.squeeze(ss[args.d,:,:])).flatten()
-  if args.smin != None:
-    bwat = bwat[sss>=args.smin]
-    bwprel = bwprel[sss>=args.smin]
-    if args.c != None:
-      ccc = ccc[sss>=args.smin]
-    sss = sss[sss>=args.smin]
-  if args.smax != None:
-    bwat = bwat[sss<=args.smax]
-    bwprel = bwprel[sss<=args.smax]
-    if args.c != None:
-      ccc = ccc[sss<=args.smax]
-    sss = sss[sss<=args.smax]
+    sss = np.asarray(np.squeeze(ss[args.d, :, :])).flatten()
+    if args.smin != None:
+        bwat = bwat[sss >= args.smin]
+        bwprel = bwprel[sss >= args.smin]
+        if args.c != None:
+            ccc = ccc[sss >= args.smin]
+        sss = sss[sss >= args.smin]
+    if args.smax != None:
+        bwat = bwat[sss <= args.smax]
+        bwprel = bwprel[sss <= args.smax]
+        if args.c != None:
+            ccc = ccc[sss <= args.smax]
+        sss = sss[sss <= args.smax]
 
 nc.close()
 
 # to reduce file size, remove zero water points
 if args.c != None:
-  ccc = ccc[bwat>0]
-bwprel = bwprel[bwat>0.0]
-bwat = bwat[bwat>0.0]
+    ccc = ccc[bwat > 0]
+bwprel = bwprel[bwat > 0.0]
+bwat = bwat[bwat > 0.0]
 
 # to reduce file size, remove zero pressure points
 if args.c != None:
-  ccc = ccc[bwprel>0]
-bwat = bwat[bwprel>0.0]
-bwprel = bwprel[bwprel>0.0]
+    ccc = ccc[bwprel > 0]
+bwat = bwat[bwprel > 0.0]
+bwprel = bwprel[bwprel > 0.0]
 
 print "  scatter plot has %d points ...\n" % len(bwat)
 
 # W axis limits
 if args.wmin == None:
-  wwmin = min(bwat)
+    wwmin = min(bwat)
 else:
-  wwmin = args.wmin
+    wwmin = args.wmin
 if args.wmax == None:
-  wwmax = max(bwat)
+    wwmax = max(bwat)
 else:
-  wwmax = args.wmax
+    wwmax = args.wmax
 
 # color axis limits
 if args.c != None:
-  if args.cmin == None:
-    ccmin = min(ccc)
-  else:
-    ccmin = args.cmin
-  if args.cmax == None:
-    ccmax = max(ccc)
-  else:
-    ccmax = args.cmax
+    if args.cmin == None:
+        ccmin = min(ccc)
+    else:
+        ccmin = args.cmin
+    if args.cmax == None:
+        ccmax = max(ccc)
+    else:
+        ccmax = args.cmax
 
 import matplotlib
 if args.colorbar:
-  matplotlib.rcParams['figure.figsize'] = (3.8,3.0)
+    matplotlib.rcParams['figure.figsize'] = (3.8, 3.0)
 else:
-  matplotlib.rcParams['figure.figsize'] = (3.0,3.0)
+    matplotlib.rcParams['figure.figsize'] = (3.0, 3.0)
 
 plt.figure(1)
 if args.c != None:
-  plt.scatter(bwat,bwprel,c=ccc,vmin=ccmin,vmax=ccmax,linewidth=0.0,cmap='hsv')
+    plt.scatter(bwat, bwprel, c=ccc, vmin=ccmin, vmax=ccmax, linewidth=0.0, cmap='hsv')
 else:
-  plt.scatter(bwat,bwprel,c='k')
+    plt.scatter(bwat, bwprel, c='k')
 plt.axis('tight')
-plt.gca().set_xlim((wwmin,wwmax))
-plt.gca().set_ylim((-0.02,1.05))
-plt.gca().set_xticks((0.0,0.05,0.10,0.15))
-plt.gca().set_xticklabels(('0','.05','.10','.15'))
+plt.gca().set_xlim((wwmin, wwmax))
+plt.gca().set_ylim((-0.02, 1.05))
+plt.gca().set_xticks((0.0, 0.05, 0.10, 0.15))
+plt.gca().set_xticklabels(('0', '.05', '.10', '.15'))
 plt.text(0.07, 0.25, '%d' % int(args.smin) + r'$ < |\mathbf{v}_b| < $' + '%d' % int(args.smax))
 if args.colorbar:
-  plt.colorbar()
+    plt.colorbar()
 plt.xlabel(r'$W$  (m)')
 plt.ylabel(r'$P/P_0$')
 
 if args.o == None:
-  plt.show()
+    plt.show()
 else:
-  print "  saving scatter plot in %s ...\n" % args.o
-  plt.savefig(args.o, dpi=300, bbox_inches='tight')
-
+    print "  saving scatter plot in %s ...\n" % args.o
+    plt.savefig(args.o, dpi=300, bbox_inches='tight')

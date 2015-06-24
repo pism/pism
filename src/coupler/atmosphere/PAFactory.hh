@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 PISM Authors
+// Copyright (C) 2011, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,24 +19,18 @@
 #ifndef _PAFACTORY_H_
 #define _PAFACTORY_H_
 
-#include "PISMAtmosphere.hh"
+#include "coupler/PISMAtmosphere.hh"
 #include "PAModifier.hh"
-#include "PCFactory.hh"
+#include "coupler/util/PCFactory.hh"
 
 namespace pism {
-
-class PAFactory : public PCFactory<AtmosphereModel,PAModifier> {
+namespace atmosphere {
+class Factory : public PCFactory<AtmosphereModel,PAModifier> {
 public:
-  PAFactory(IceGrid& g, const Config& conf)
-    : PCFactory<AtmosphereModel,PAModifier>(g, conf)
-  {
-    add_standard_types();
-    m_option = "atmosphere";
-  }
-  virtual ~PAFactory() {}
-  virtual void add_standard_types();
+  Factory(IceGrid::ConstPtr g);
+  ~Factory();
 };
-
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAFACTORY_H_ */

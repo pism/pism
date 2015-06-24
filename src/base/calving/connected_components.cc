@@ -21,21 +21,25 @@
 #include <cmath>
 
 void run_union(std::vector<unsigned int> &parent, unsigned int run1, unsigned int run2) {
-  if (parent[run1] == run2 || parent[run2] == run1)
+  if (parent[run1] == run2 || parent[run2] == run1) {
     return;
+  }
 
-  while (parent[run1] != 0)
+  while (parent[run1] != 0) {
     run1 = parent[run1];
+  }
 
-  while (parent[run2] != 0)
+  while (parent[run2] != 0) {
     run2 = parent[run2];
+  }
 
-  if (run1 > run2)
+  if (run1 > run2) {
     parent[run1] = run2;
-  else if (run1 < run2)
+  } else if (run1 < run2) {
     parent[run2] = run1;
-  else
+  } else {
     return;
+  }
 
 }
 
@@ -54,17 +58,18 @@ void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_i
 
       if (image[r*n_cols + c] > 0.0) {
         // looking at a foreground pixel
-        if (c > 0 && image[r*n_cols + (c-1)] > 0.0)
+        if (c > 0 && image[r*n_cols + (c-1)] > 0.0) {
           // one to the left is also a foreground pixel; continue the run
           lengths[run_number] += 1;
-        else {
+        } else {
           // one to the left is a background pixel (or this is column 0); start a new run
 
           // set the run just above as a parent (if present)
-          if (r > 0 && image[(r-1)*n_cols + c] > 0.0)
+          if (r > 0 && image[(r-1)*n_cols + c] > 0.0) {
             parent = (unsigned int)image[(r-1)*n_cols + c];
-          else
+          } else {
             parent = 0;
+          }
 
           run_number += 1;
 
@@ -86,11 +91,13 @@ void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_i
           mask[run_number]    = 0;
         }
 
-        if (r > 0 && image[(r-1)*n_cols + c] > 0.0)
+        if (r > 0 && image[(r-1)*n_cols + c] > 0.0) {
           run_union(parents, (unsigned int)image[(r-1)*n_cols + c], run_number);
+        }
 
-        if (mask[run_number] == 0 && fabs(image[r*n_cols + c] - mask_grounded) < eps)
+        if (mask[run_number] == 0 && fabs(image[r*n_cols + c] - mask_grounded) < eps) {
           mask[run_number] = 1;
+        }
 
         image[r*n_cols + c] = run_number;
       }
@@ -117,20 +124,23 @@ void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_i
 
     // remember current blob (parents[r]) as "grounded" if the current run is
     // "grounded"
-    if (mask[r] == 1)
+    if (mask[r] == 1) {
       grounded[parents[r]] = 1;
+    }
   }
 
   // Second scan (re-label)
   if (identify_icebergs) {
     for (r = 0; r <= run_number; ++r) {
-      for (c = 0; c < lengths[r]; ++c)
+      for (c = 0; c < lengths[r]; ++c) {
         image[rows[r]*n_cols + columns[r] + c] = 1 - grounded[parents[r]];
+      }
     }
   } else {
     for (r = 0; r <= run_number; ++r) {
-      for (c = 0; c < lengths[r]; ++c)
+      for (c = 0; c < lengths[r]; ++c) {
         image[rows[r]*n_cols + columns[r] + c] = parents[r];
+      }
     }
   }
 

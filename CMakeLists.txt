@@ -13,7 +13,7 @@ set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true )
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
-set (Pism_BRANCH "development")
+set (Pism_BRANCH "stable")
 
 # Set Pism_REVISION_TAG
 pism_set_revision_tag()
@@ -34,11 +34,11 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
-option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." ON)
-option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
-option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
-option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
-option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
+option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
+option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
+option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
+option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." OFF)
+option (Pism_USE_TAO "Use TAO in inverse solvers." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -142,7 +142,14 @@ add_custom_target (etags
 
 # re-run tests that failed
 add_custom_target (retest
-  COMMAND ${CMAKE_CTEST_COMMAND} --rerun-failed
+  COMMAND ${CMAKE_CTEST_COMMAND} --rerun-failed --output-on-failure
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  VERBATIM
+)
+
+# run Python tests
+add_custom_target (test-python
+  COMMAND ${CMAKE_CTEST_COMMAND} -R "Python:"
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   VERBATIM
 )

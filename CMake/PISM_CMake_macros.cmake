@@ -180,9 +180,9 @@ macro(pism_find_prerequisites)
 
   # Use TAO included in PETSc 3.5.
   if (Pism_PETSC_VERSION VERSION_LESS "3.5")
-    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
     message(STATUS "Disabling TAO-based inversion tools. Install PETSc 3.5 or later to use them.")
   else()
+    set (Pism_USE_TAO ON CACHE BOOL "Use TAO in inverse solvers.")
     if (Pism_USE_TAO)
       message(STATUS "PETSc 3.5 and later includes TAO; using it...")
     else()
@@ -211,34 +211,9 @@ macro(pism_find_prerequisites)
     message (STATUS "Selected HDF5 library does not support parallel I/O.")
   endif()
 
-  if (NOT PROJ4_FOUND)
-    set (Pism_USE_PROJ4 OFF CACHE BOOL "Use Proj.4 to compute cell areas, longitude, and latitude." FORCE)
-  endif()
-
-  if (Pism_PETSC_VERSION VERSION_LESS "3.5")
-
-  endif()
-
-  # Use option values to set compiler and linker flags
-  set (Pism_EXTERNAL_LIBS "")
-
-  # Put HDF5 includes near the beginning of the list. (It is possible that the system has
-  # more than one HDF5 library installed--- one serial, built with NetCDF, and one parallel.
-  # We want to use the latter.)
-  if (Pism_USE_PARALLEL_HDF5)
-    include_directories (${HDF5_C_INCLUDE_DIR})
-    list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
-  endif()
-
-  # optional
-  if (Pism_USE_PROJ4)
-    include_directories (${PROJ4_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
-  endif()
-
-  if (Pism_USE_PNETCDF)
-    include_directories (${PNETCDF_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
+  if (PROJ4_FOUND)
+    set (Pism_USE_PROJ4 ON CACHE BOOL
+      "Use Proj.4 to compute cell areas, longitude, and latitude.")
   endif()
 
 endmacro()
@@ -256,6 +231,10 @@ macro(pism_set_dependencies)
     ${MPI_C_INCLUDE_PATH}
     ${FEvoR_INCLUDES})
 
+  # Use option values to set compiler and linker flags
+  set (Pism_EXTERNAL_LIBS "")
+
+  # required libraries
   list (APPEND Pism_EXTERNAL_LIBS
     ${PETSC_LIBRARIES}
     ${UDUNITS2_LIBRARIES}
@@ -263,6 +242,25 @@ macro(pism_set_dependencies)
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
     ${MPI_C_LIBRARIES})
+
+  # optional libraries
+  if (Pism_USE_PROJ4)
+    include_directories (${PROJ4_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
+  endif()
+
+  if (Pism_USE_PNETCDF)
+    include_directories (${PNETCDF_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
+  endif()
+
+  # Put HDF5 includes near the beginning of the list. (It is possible that the system has
+  # more than one HDF5 library installed--- one serial, built with NetCDF, and one parallel.
+  # We want to use the latter.)
+  if (Pism_USE_PARALLEL_HDF5)
+    include_directories (${HDF5_C_INCLUDE_DIR})
+    list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+  endif()
 
   # Hide distracting CMake variables
   mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY

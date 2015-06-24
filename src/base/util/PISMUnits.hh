@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,23 +22,17 @@
 
 #include <udunits2.h>
 #include <string>
-#include <petscvec.h>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
+#include "pism_memory.hh"
 
 namespace pism {
+
+namespace units {
 
 /** @file PISMUnits.hh This file contains thin wrappers around
  * UDUNITS-2 objects. Nothing fancy. The only purpose is to simplify
  * memory management for objects that are stored as data members of
  * other C++ classes.
- *
- * The `cv_converter` object is *not* wrapped, because we deallocate
- * these right away.
  *
  * One thing is worth mentioning, though: in UDUNITS-2, every ut_unit
  * object contains a pointer to the unit system that was used to create it.
@@ -49,80 +43,73 @@ namespace pism {
  * having a "dangling" pointer.)
  */
 
-class UnitSystem {
-  friend class Unit;
+class System {
 public:
-  UnitSystem(const std::string &path = "");
-#ifdef PISM_USE_TR1
-  typedef std::tr1::shared_ptr<ut_system> Ptr;
-#else
-  typedef std::shared_ptr<ut_system> Ptr;
-#endif
-
-  UnitSystem::Ptr get() const;
-
-  double convert(double input, const std::string &spec1, const std::string &spec2) const;
+  System(const std::string &path = "");
+  typedef PISM_SHARED_PTR(System) Ptr;
 private:
-  UnitSystem::Ptr m_system;
+  friend class Unit;
+  PISM_SHARED_PTR(ut_system) m_system;
+  System(const System &);
+  System& operator=(System const &);
 };
+
+double convert(System::Ptr system, double input,
+               const std::string &spec1, const std::string &spec2);
 
 class Unit {
 public:
-  Unit(const UnitSystem &system);
+  Unit(System::Ptr system, const std::string &spec);
   Unit(const Unit &other);
   ~Unit();
 
-  void reset();
-
   Unit& operator=(const Unit& other);
-  int parse(const std::string &spec);
   std::string format() const;
 
   ut_unit* get() const;
-  UnitSystem get_system() const;
-  cv_converter* get_converter_from(const Unit &from) const;
-
-  bool is_valid() const;
+  System::Ptr get_system() const;
 private:
+  void reset();
   ut_unit *m_unit;
-  UnitSystem m_system;
+  System::Ptr m_system;
   std::string m_unit_string;
 };
 
-/**
- * Check if two units are convertible.
+/** Check if units are convertible without creating a converter.
  *
- * @param[in] from source units
- * @param[in] to destination units
+ * @param[in] u1 first Unit instance
+ * @param[in] u2 second Unit instance
  *
  * @return true if units are convertible, false otherwise
  */
-bool units_are_convertible(Unit from, Unit to);
+bool are_convertible(const Unit &u1, const Unit &u2);
 
-PetscErrorCode units_check(std::string name, Unit from, Unit to);
-
-/**
- * Convert a PETSc Vec from the units in `from` into units in `to` (in place).
+/** Unit converter.
+ * 
+ * Throws pism::RuntimeError() if the conversion is not possible.
  *
- * @param[in,out] v data
- * @param[in] from source units
- * @param[in] to destination units
- *
- * @return 0 on success
  */
-PetscErrorCode convert_vec(Vec v, Unit from, Unit to);
+class Converter {
+public:
+  Converter();
+  Converter(const Unit &u1, const Unit &u2);
+  Converter(System::Ptr sys, const std::string &u1, const std::string &u2);
+  ~Converter();
+  /** Convert an array of doubles in place
+   *
+   * @param[in,out] data array to process
+   * @param length length of the array
+   */
+  void convert_doubles(double *data, size_t length) const;
+  double operator()(double input) const;
+private:
+  cv_converter *m_converter;
+  // hide copy constructor and the assignment operator
+  Converter(const Converter &);
+  Converter& operator=(Converter const &);
+};
 
-/**
- * Convert 
- *
- * @param[in,out] data data to convert
- * @param[in] length number of elements in `data`
- * @param[in] from source units
- * @param[in] to destination units
- *
- * @return 0 on success
- */
-PetscErrorCode convert_doubles(double *data, size_t length, Unit from, Unit to);
+} // end of namespace units
 
 } // end of namespace pism
 

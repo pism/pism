@@ -12,7 +12,5 @@ Classes used for solving the SIA without creating a full-blown :cpp:class:`iceMo
 
 .. automodule:: PISM.sia
    :members:
-   :undoc-members:
    :private-members:
-   :special-members:
    :show-inheritance:

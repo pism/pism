@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,96 +16,85 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "PA_frac_P.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
+namespace atmosphere {
 
-PA_frac_P::PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
-    air_temp(g.get_unit_system()),
-    precipitation(g.get_unit_system())
+Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
+    air_temp(m_sys, "air_temp"),
+    precipitation(m_sys, "precipitation")
 {
   offset = NULL;
-  PetscErrorCode ierr = allocate_PA_frac_P(); CHKERRCONTINUE(ierr);
-  if (ierr != 0) {
-    PISMEnd();
-  }
-}
-
-PetscErrorCode PA_frac_P::allocate_PA_frac_P() {
-  PetscErrorCode ierr;
 
   option_prefix = "-atmosphere_frac_P";
   offset_name = "frac_P";
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->get_metadata().set_units("1");
-  offset->get_metadata().set_string("long_name", "precipitation multiplier, pure fraction");
-  offset->get_dimension_metadata().set_units(grid.time->units_string());
+  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  offset->metadata().set_string("units", "1");
+  offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
+  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
-  air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  air_temp.set_string("units", "K");
 
-  precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
-
-  return 0;
+  precipitation.set_string("units", "m / s");
+  precipitation.set_string("glaciological_units", "m / year");
 }
 
-PA_frac_P::~PA_frac_P()
+Frac_P::~Frac_P()
 {
   // empty; "offset" is deleted by ~PScalarForcing().
 }
 
-PetscErrorCode PA_frac_P::init(Vars &vars) {
-  PetscErrorCode ierr;
+void Frac_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init();
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing precipitation forcing using scalar multipliers...\n"); CHKERRQ(ierr);
+  m_log->message(2,
+             "* Initializing precipitation forcing using scalar multipliers...\n");
 
-  ierr = init_internal(); CHKERRQ(ierr);
-
-  return 0;
+  init_internal();
 }
 
-PetscErrorCode PA_frac_P::init_timeseries(const std::vector<double> &ts) {
-  PetscErrorCode ierr;
+MaxTimestep Frac_P::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
-  ierr = PAModifier::init_timeseries(ts); CHKERRQ(ierr);
+void Frac_P::init_timeseries(const std::vector<double> &ts) {
+
+  PAModifier::init_timeseries(ts);
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     m_offset_values[k] = (*offset)(m_ts_times[k]);
   }
-
-  return 0;
 }
 
-PetscErrorCode PA_frac_P::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = scale_data(result); CHKERRQ(ierr);
-  return 0;
+void Frac_P::mean_precipitation(IceModelVec2S &result) {
+  input_model->mean_precipitation(result);
+  scale_data(result);
 }
 
-PetscErrorCode PA_frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
-  PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
+void Frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
+  input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] *= m_offset_values[k];
   }
-  return 0;
 }
 
-void PA_frac_P::add_vars_to_output(const std::string &keyword,
+void Frac_P::add_vars_to_output_impl(const std::string &keyword,
                                    std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
@@ -115,59 +104,55 @@ void PA_frac_P::add_vars_to_output(const std::string &keyword,
   }
 }
 
-PetscErrorCode PA_frac_P::define_variables(const std::set<std::string> &vars_input,
+void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
                                            const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.define(nc, nctype, false); CHKERRQ(ierr);
+    io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.define(nc, nctype, true); CHKERRQ(ierr);
+    io::define_spatial_variable(precipitation, *m_grid, nc, nctype, order, true);
     vars.erase("precipitation");
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode PA_frac_P::write_variables(const std::set<std::string> &vars_input,
+void Frac_P::write_variables_impl(const std::set<std::string> &vars_input,
                                           const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp;
 
-    ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
+    mean_annual_temp(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = precipitation;
 
-    ierr = mean_precipitation(tmp); CHKERRQ(ierr);
+    mean_precipitation(tmp);
 
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("precipitation");
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
+} // end of namespace atmosphere
 } // end of namespace pism

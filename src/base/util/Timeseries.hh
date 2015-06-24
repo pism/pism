@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,17 @@
 #ifndef __Timeseries_hh
 #define __Timeseries_hh
 
-#include "NCVariable.hh"
 #include <deque>
+#include <mpi.h>
+
+#include "VariableMetadata.hh"
 
 namespace pism {
 
 class IceGrid;
-
+class PIO;
+class Time;
+class Logger;
 
 //! \brief A general class for reading and accessing time-series.
 /*!
@@ -47,15 +51,11 @@ class IceGrid;
 
   \code
   delta_T = new Timeseries(grid.com, grid.rank, "delta_T", "time");
-  ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+  ierr = delta_T->set_string("units", "Kelvin", ""); CHKERRQ(ierr);
   ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
   ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
   CHKERRQ(ierr);
   
-  ierr = verbPrintf(2, grid.com, 
-  "  reading delta T data from forcing file %s...\n", dT_file);
-  CHKERRQ(ierr);
-         
   ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
 
@@ -73,36 +73,36 @@ class IceGrid;
 */
 class Timeseries {
 public:
-  Timeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
-  Timeseries(MPI_Comm com, const UnitSystem &units_system,
+  Timeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
+  Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
   
-  PetscErrorCode read(const PIO &nc, Time *time);
-  PetscErrorCode write(const PIO &nc);
+  void read(const PIO &nc, const Time &time_manager, const Logger &log);
+  void write(const PIO &nc);
   double operator()(double time);
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N);
-  PetscErrorCode append(double value, double a, double b);
+  void append(double value, double a, double b);
   int length();
-  NCTimeseries& get_metadata();
-  NCTimeseries& get_dimension_metadata();
+
+  TimeseriesMetadata& metadata();
+  TimeseriesMetadata& dimension_metadata();
 
   void scale(double scaling_factor);
 
   std::string short_name;
 protected:
   void set_bounds_units();
-  UnitSystem m_unit_system;
-  NCTimeseries dimension, var;
-  MPI_Comm com;
-  NCTimeBounds bounds;
-  bool use_bounds;
-  std::vector<double> time;
-  std::vector<double> values;
-  std::vector<double> time_bounds;
+  TimeseriesMetadata m_dimension, m_variable;
+  MPI_Comm m_com;
+  TimeBoundsMetadata m_bounds;
+  bool m_use_bounds;
+  std::vector<double> m_time;
+  std::vector<double> m_values;
+  std::vector<double> m_time_bounds;
 private:
   void private_constructor(MPI_Comm com, const std::string &name, const std::string &dimension_name);
-  PetscErrorCode report_range();
+  void report_range(const Logger &log);
 };
 
 //! A class for storing and writing diagnostic time-series.
@@ -114,7 +114,7 @@ private:
   First, prepare a file for writing:
 
   \code
-  char seriesname[] = "ser_delta_T.nc";
+  std::string seriesname = "ser_delta_T.nc";
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   nc.open_for_writing(seriesname, true, false);
   nc.close();
@@ -128,7 +128,7 @@ private:
 
   \code
   offsets = new DiagnosticTimeseries(g, "delta_T", "time");
-  offsets->set_units("Kelvin", "Celsius");
+  offsets->set_string("units", "Kelvin", "Celsius");
   offsets->set_dimension_units("seconds", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000
   offsets->output_filename = seriesname;
@@ -161,23 +161,23 @@ private:
 */
 class DiagnosticTimeseries : public Timeseries {
 public:
-  DiagnosticTimeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
+  DiagnosticTimeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
   ~DiagnosticTimeseries();
 
-  PetscErrorCode init(const std::string &filename);
-  PetscErrorCode append(double V, double a, double b);
-  PetscErrorCode interp(double a, double b);
+  void init(const std::string &filename);
+  void append(double V, double a, double b);
+  void interp(double a, double b);
   void reset();
-  PetscErrorCode flush();
+  void flush();
 
   size_t buffer_size;
   std::string output_filename;
   bool rate_of_change;
 
 protected:
-  size_t start;
-  std::deque<double> t, v;
-  double v_previous;
+  size_t m_start;
+  std::deque<double> m_t, m_v;
+  double m_v_previous;
 };
 
 } // end of namespace pism

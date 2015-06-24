@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,203 +19,171 @@
 #ifndef _PLAPSERATES_H_
 #define _PLAPSERATES_H_
 
-#include "IceGrid.hh"
-#include "iceModelVec2T.hh"
-#include "pism_options.hh"
-#include "PIO.hh"
-#include "PISMVars.hh"
-#include "PISMTime.hh"
-#include "PISMConfig.hh"
-#include <assert.h>
+#include <cassert>
+
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec2T.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 
 template <class Model, class Mod>
-class PLapseRates : public Mod
-{
+class PLapseRates : public Mod {
 public:
-  PLapseRates(IceGrid &g, const Config &conf, Model* in)
-    : Mod(g, conf, in)
-  {
-    surface = thk = NULL;
-    temp_lapse_rate = 0.0;
+  PLapseRates(IceGrid::ConstPtr g, Model* in)
+    : Mod(g, in) {
+    m_temp_lapse_rate = 0.0;
   }
 
-  virtual ~PLapseRates() {}
+  virtual ~PLapseRates() {
+    // empty
+  }
 
-  virtual PetscErrorCode update(double my_t, double my_dt)
-  {
-    PetscErrorCode ierr;
+protected:
+  virtual MaxTimestep max_timestep_impl(double t) {
+    // "Periodize" the climate:
+    t = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
+    MaxTimestep input_max_dt = Mod::input_model->max_timestep(t);
+    MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
+
+    if (input_max_dt.is_finite()) {
+      return std::min(surface_max_dt, input_max_dt);
+    } else {
+      return surface_max_dt;
+    }
+  }
+
+  virtual void update_impl(double my_t, double my_dt) {
     // a convenience
     double &t = Mod::m_t;
     double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
-    my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
+    my_t = Mod::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
-        (fabs(my_dt - dt) < 1e-12))
-      return 0;
+        (fabs(my_dt - dt) < 1e-12)) {
+      return;
+    }
 
     t  = my_t;
     dt = my_dt;
 
     // NB! Input model uses original t and dt
-    ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
+    Mod::input_model->update(my_t, my_dt);
 
-    ierr = reference_surface.update(t, dt); CHKERRQ(ierr);
+    m_reference_surface.update(t, dt);
 
-    ierr = reference_surface.interp(t + 0.5*dt); CHKERRQ(ierr);
-
-    return 0;
+    m_reference_surface.interp(t + 0.5*dt);
   }
 
-  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict) {
-    PetscErrorCode ierr;
-    double max_dt = -1;
+  virtual void init_internal() {
+    IceGrid::ConstPtr g = Mod::m_grid;
 
-    // "Periodize" the climate:
-    t = Mod::grid.time->mod(t - bc_reference_time, bc_period);
+    options::String file(m_option_prefix + "_file",
+                         "Specifies a file with top-surface boundary conditions");
 
-    ierr = Mod::input_model->max_timestep(t, dt, restrict); CHKERRQ(ierr);
+    options::Integer period(m_option_prefix + "_period",
+                            "Specifies the length of the climate data period", 0.0);
 
-    max_dt = reference_surface.max_timestep(t);
+    options::Real reference_year(m_option_prefix + "_reference_year",
+                                 "Boundary condition reference year", 0.0);
 
-    if (restrict == true) {
-      if (max_dt > 0)
-        dt = PetscMin(max_dt, dt);
-    }
-    else dt = max_dt;
+    options::Real T_lapse_rate("-temp_lapse_rate",
+                               "Elevation lapse rate for the temperature, in K per km",
+                               m_temp_lapse_rate);
+    m_temp_lapse_rate = T_lapse_rate;
 
-    if (dt > 0)
-      restrict = true;
-    else
-      restrict = false;
-
-    return 0;
-  }
-
-protected:
-  IceModelVec2T reference_surface;
-  IceModelVec2S *surface, *thk;
-  unsigned int bc_period;
-  double bc_reference_time,          // in seconds
-    temp_lapse_rate;
-  std::string option_prefix;
-
-  virtual PetscErrorCode init_internal(Vars &vars)
-  {
-    PetscErrorCode ierr;
-    std::string filename;
-    bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
-
-    IceGrid &g = Mod::grid;
-
-    double bc_period_years = 0,
-      bc_reference_year = 0;
-
-    ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
-    {
-      ierr = OptionsString(option_prefix + "_file",
-                               "Specifies a file with top-surface boundary conditions",
-                               filename, bc_file_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_period",
-                             "Specifies the length of the climate data period",
-                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_reference_year",
-                             "Boundary condition reference year",
-                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = OptionsReal("-temp_lapse_rate",
-                             "Elevation lapse rate for the temperature, in K per km",
-                             temp_lapse_rate, temp_lapse_rate_set); CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-    if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s_file is required.\n", option_prefix.c_str());
-      PISMEnd();
+    if (not file.is_set()) {
+      throw RuntimeError::formatted("command-line option %s_file is required.",
+                                    m_option_prefix.c_str());
     }
 
-    if (bc_ref_year_set) {
-      bc_reference_time = Model::grid.convert(bc_reference_year, "years", "seconds");
+    if (reference_year.is_set()) {
+      m_bc_reference_time = units::convert(Model::m_sys, reference_year, "years", "seconds");
     } else {
-      bc_reference_time = 0;
+      m_bc_reference_time = 0;
     }
 
-    if (bc_period_set) {
-      bc_period = (unsigned int)bc_period_years;
-    } else {
-      bc_period = 0;
+    if (period.value() < 0.0) {
+      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+                                    m_option_prefix.c_str(), period.value());
     }
+    m_bc_period = (unsigned int)period;
 
-    if (reference_surface.was_created() == false) {
-      unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
+    if (not m_reference_surface.was_created()) {
+      unsigned int buffer_size = (unsigned int) Mod::m_config->get_double("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
-      PIO nc(g.com, "netcdf3", g.get_unit_system());
-      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-      ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
-      ierr = nc.close(); CHKERRQ(ierr);
+      PIO nc(g->com, "netcdf3");
+      nc.open(file, PISM_READONLY);
+      ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
+                                              Mod::m_sys);
+      nc.close();
 
       // if -..._period is not set, make n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
-      if (bc_period_set == false) {
-        ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
+      if (not period.is_set()) {
+        ref_surface_n_records = std::min(ref_surface_n_records, buffer_size);
       }
 
       if (ref_surface_n_records == 0) {
-        PetscPrintf(g.com, "PISM ERROR: can't find reference surface elevation (usurf) in %s.\n",
-                    filename.c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("can't find reference surface elevation (usurf) in %s.\n",
+                                      file->c_str());
       }
 
-      reference_surface.set_n_records(ref_surface_n_records);
-      ierr = reference_surface.create(g, "usurf", false); CHKERRQ(ierr);
-      ierr = reference_surface.set_attrs("climate_forcing",
-                                         "reference surface for lapse rate corrections",
-                                         "m", "surface_altitude"); CHKERRQ(ierr);
-      reference_surface.set_n_evaluations_per_year((unsigned int)Mod::config.get("climate_forcing_evaluations_per_year"));
+      m_reference_surface.set_n_records(ref_surface_n_records);
+      m_reference_surface.create(g, "usurf");
+      m_reference_surface.set_attrs("climate_forcing",
+                                  "reference surface for lapse rate corrections",
+                                  "m", "surface_altitude");
+      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config->get_double("climate_forcing_evaluations_per_year"));
     }
 
-    ierr = verbPrintf(2, g.com,
-                      "    reading reference surface elevation from %s ...\n",
-                      filename.c_str()); CHKERRQ(ierr);
+    Mod::m_log->message(2,
+               "    reading reference surface elevation from %s ...\n",
+               file->c_str());
 
-    ierr = reference_surface.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-
-    surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-    assert(surface != NULL);
-
-    thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-    assert(thk != NULL);
-
-    return 0;
+    m_reference_surface.init(file, m_bc_period, m_bc_reference_time);
   }
 
-  PetscErrorCode lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
-  {
-    if (PetscAbs(lapse_rate) < 1e-12)
-      return 0;
+  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) {
+    if (fabs(lapse_rate) < 1e-12) {
+      return;
+    }
+
+    const IceModelVec2S
+      *surface = Mod::m_grid->variables().get_2d_scalar("surface_altitude"),
+      *thk     = Mod::m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     IceModelVec::AccessList list;
     list.add(*thk);
     list.add(*surface);
-    list.add(reference_surface);
+    list.add(m_reference_surface);
     list.add(result);
 
-    for (Points p(Mod::grid); p; p.next()) {
+    for (Points p(*Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*thk)(i,j) > 0) {
-        const double correction = lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+        const double correction = lapse_rate * ((*surface)(i,j) - m_reference_surface(i,j));
         result(i,j) -= correction;
       }
     }
-
-    return 0;
   }
+protected:
+  IceModelVec2T m_reference_surface;
+  unsigned int m_bc_period;
+  double m_bc_reference_time,          // in seconds
+    m_temp_lapse_rate;
+  std::string m_option_prefix;
 };
 
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+
 #include "iceModelVec3Custom.hh"
-#include <assert.h>
+#include "PISMConfigInterface.hh"
+#include "IceGrid.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -44,45 +48,37 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @return 0 on success
  */
 
-PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
-                                          const std::string &short_name,
-                                          const std::string &z_name,
-                                          const std::vector<double> &my_zlevels,
-                                          const std::map<std::string, std::string> &z_attrs) {
+void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
+                                const std::string &short_name,
+                                const std::string &z_name,
+                                const std::vector<double> &my_zlevels,
+                                const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
 
   m_has_ghosts = false;
-  grid         = &mygrid;
+  m_grid       = mygrid;
   m_name       = short_name;
   zlevels      = my_zlevels;
-  m_n_levels   = zlevels.size();
 
   m_da_stencil_width = 1;
 
-  ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
+  m_da = m_grid->get_dm(this->zlevels.size(), this->m_da_stencil_width);
 
-  ierr = DMCreateGlobalVector(*m_da, &m_v); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
+  PISM_CHK(ierr, "DMCreateGlobalVector");
 
   m_dof = 1;
 
-  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
-  m_metadata[0].init_3d(m_name, mygrid, zlevels);
+  m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
+                                               m_name, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();
   while (j != z_attrs.end()) {
-    if (j->first == "units") {
-      m_metadata[0].get_z().set_units(j->second);
-    } else if (j->first == "glaciological_units") {
-      m_metadata[0].get_z().set_glaciological_units(j->second);
-    } else {
-      m_metadata[0].get_z().set_string(j->first, j->second);
-    }
+    m_metadata[0].get_z().set_string(j->first, j->second);
     ++j;
   }
-
-  return 0;
 }
 
 } // end of namespace pism

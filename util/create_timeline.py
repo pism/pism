@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package create_timeline
+# @package create_timeline
 # \author Andy Aschwanden, University of Alaska Fairbanks, USA
 # \brief Script creates a timeline for enviornmental forcing.
 # \details Script creates a timeline file that can be used with
@@ -122,8 +122,8 @@ time_var.axis = "T"
 
 # create time bounds variable
 time_bnds_var = nc.createVariable(bnds_var_name, 'd', dimensions=(time_dim, bnds_dim))
-time_bnds_var[:,0] = bnds_interval_since_refdate[0:-1]
-time_bnds_var[:,1] = bnds_interval_since_refdate[1::]
+time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
+time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
 
 # writing global attributes
 script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],

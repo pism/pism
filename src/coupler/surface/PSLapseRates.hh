@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,32 +19,34 @@
 #ifndef _PSLAPSERATES_H_
 #define _PSLAPSERATES_H_
 
-#include "PLapseRates.hh"
-#include "PISMSurface.hh"
+#include "coupler/util/PLapseRates.hh"
+#include "coupler/PISMSurface.hh"
 #include "PSModifier.hh"
 
 namespace pism {
+namespace surface {
 
-class PSLapseRates : public PLapseRates<SurfaceModel,PSModifier>
+class LapseRates : public PLapseRates<SurfaceModel,SurfaceModifier>
 {
 public:
-  PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in);
-  virtual ~PSLapseRates();
-
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  LapseRates(IceGrid::ConstPtr g, SurfaceModel* in);
+  virtual ~LapseRates();
 protected:
-  double smb_lapse_rate;
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
-private:
-  PetscErrorCode allocate_PSLapseRates();
+  virtual void init_impl();
+
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
+
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+protected:
+  double m_smb_lapse_rate;
+  SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSLAPSERATES_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,22 +19,22 @@
 #ifndef _PISMYIELDSTRESS_H_
 #define _PISMYIELDSTRESS_H_
 
-#include "PISMComponent.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
-class IceModelVec2S;
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
-class YieldStress : public Component_TS
-{
+class YieldStress : public Component_TS {
 public:
-  YieldStress(IceGrid &g, const Config &conf)
-    : Component_TS(g, conf) {}
-  virtual ~YieldStress() {}
+  YieldStress(IceGrid::ConstPtr g);
+  virtual ~YieldStress();
 
-  virtual PetscErrorCode init(Vars &vars) = 0;
-
-  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result) = 0;
+  void init();
+  const IceModelVec2S& basal_material_yield_stress();
+protected:
+  virtual void init_impl() = 0;
+  IceModelVec2S m_tauc;
 };
 
 } // end of namespace pism

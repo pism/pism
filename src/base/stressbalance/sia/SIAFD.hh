@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,14 @@
 #ifndef _SIAFD_H_
 #define _SIAFD_H_
 
-#include "SSB_Modifier.hh"      // derivesfrom SSB_Modifier
-#include "PISMDiagnostic.hh"    // derives from Diag
+#include "base/stressbalance/SSB_Modifier.hh"      // derivesfrom SSB_Modifier
 
 namespace pism {
+
+class Diagnostic;
+class TSDiagnostic;
+
+namespace stressbalance {
 
 class BedSmoother;
 
@@ -54,148 +58,65 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
-  SIAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
-    : SSB_Modifier(g, e, c) { allocate(); }
+  SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
 
   virtual ~SIAFD();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
-
-  //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
-  { }
-
-  //! Defines requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/)
-  { return 0; }
-
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/)
-  { return 0; }
+  virtual void update(const IceModelVec2V &vel_input, bool fast);
 
 protected:
-  virtual PetscErrorCode allocate();
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword,
+                                  std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 
-  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                                IceModelVec2Stag &result, bool fast);
+  virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
+                                      IceModelVec2Stag &result, bool fast);
 
-  virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                                        IceModelVec2V *vel_input,
-                                                        IceModelVec3 &u_out, IceModelVec3 &v_out);
+  virtual void compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x,
+                                              const IceModelVec2Stag &h_y,
+                                              const IceModelVec2V &vel_input,
+                                              IceModelVec3 &u_out, IceModelVec3 &v_out);
 
-  virtual PetscErrorCode compute_I();
+  virtual void compute_I();
 
   virtual double grainSizeVostok(double age) const;
 
-  virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
-  virtual PetscErrorCode compute_diffusivity_staggered(IceModelVec2Stag &result);
+  virtual void compute_diffusivity(IceModelVec2S &result);
+  virtual void compute_diffusivity_staggered(IceModelVec2Stag &result);
 
-  // pointers to input fields:
-  IceModelVec2S *bed, *thickness, *surface;
-  IceModelVec2Int *mask;
-  IceModelVec3 *age, *enthalpy;
+  //! temporary storage for eta, theta and the smoothed thickness
+  IceModelVec2S m_work_2d[2];
+  //! temporary storage for the surface gradient
+  IceModelVec2Stag m_work_2d_stag[2];
+  //! temporary storage for delta on the staggered grid
+  IceModelVec3 m_delta[2];
+  //! temporary storage used to store I and strain_heating on the staggered grid
+  IceModelVec3 m_work_3d[2];
 
-  // temporary storage:
-  IceModelVec2S work_2d[2];         // for eta, theta and the smoothed thickness
-  IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
-  IceModelVec3 delta[2];            // store delta on the staggered grid
-  IceModelVec3 work_3d[2];      // used to store I and strain_heating
-  // on the staggered grid
-
-  BedSmoother *bed_smoother;
-  int bed_state_counter;
+  BedSmoother *m_bed_smoother;
+  int m_bed_state_counter;
 
   // profiling
-  int event_sia;
+  int m_event_sia;
 
   // unit conversion
-  double second_to_kiloyear;
+  double m_second_to_kiloyear;
 };
 
-//! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the
-//! effect of bed roughness on the diffusivity of the SIA.
-/*!
-  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
-*/
-class SIAFD_schoofs_theta : public Diag<SIAFD>
-{
-public:
-  SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
 
-//! \brief Computes the smoothed bed elevation from Schoof's (2003) theory of the
-//! effect of bed roughness on the SIA.
-/*!
-  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
-*/
-class SIAFD_topgsmooth : public Diag<SIAFD>
-{
-public:
-  SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Computes the thickness relative to the smoothed bed elevation in
-//! Schoof's (2003) theory of the effect of bed roughness on the SIA.
-/*!
-  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
-*/
-class SIAFD_thksmooth : public Diag<SIAFD>
-{
-public:
-  SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Compute diffusivity of the SIA flow.
-class SIAFD_diffusivity : public Diag<SIAFD>
-{
-public:
-  SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Compute diffusivity of the SIA flow (on the staggered grid).
-class SIAFD_diffusivity_staggered : public Diag<SIAFD>
-{
-public:
-  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Reports the x-component of the ice surface gradient on the staggered
-//! grid as computed by SIAFD.
-class SIAFD_h_x : public Diag<SIAFD>
-{
-public:
-  SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Reports the y-component of the ice surface gradient on the staggered
-//! grid as computed by SIAFD.
-class SIAFD_h_y : public Diag<SIAFD>
-{
-public:
-  SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SIAFD_H_ */

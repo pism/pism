@@ -26,7 +26,7 @@ extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_e
 
 misc_options="-cfbc -part_grid -part_redist -o_order zyx -energy none"
 
-pismopts="-boot_file $infile $grid $stressbalance $calving $viewers $extra $misc_options"
+pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $misc_options"
 
 doit="mpiexec -n $N pismr $pismopts"
 

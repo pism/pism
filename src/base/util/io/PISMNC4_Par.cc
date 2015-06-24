@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@ extern "C" {
 }
 
 namespace pism {
+namespace io {
 
 int NC4_Par::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
@@ -38,14 +39,10 @@ int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  m_filename = fname;
-
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open_par(m_filename.c_str(),
+  stat = nc_open_par(fname.c_str(),
                      nc_mode | NC_MPIIO,
                      m_com, info, &m_file_id);
-
-  m_define_mode = false;
 
   return stat;
 }
@@ -54,12 +51,9 @@ int NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  m_filename = fname;
-
-  stat = nc_create_par(m_filename.c_str(),
+  stat = nc_create_par(fname.c_str(),
                        NC_NETCDF4 | NC_MPIIO,
                        m_com, info, &m_file_id);
-  m_define_mode = true;
 
   return stat;
 }
@@ -84,4 +78,5 @@ int NC4_Par::set_access_mode(int varid, bool mapped) const {
 
 
 
+} // end of namespace io
 } // end of namespace pism

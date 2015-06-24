@@ -29,7 +29,7 @@ STRONGKSP=""
 
 # preliminary bootstrap and diagnostic run:
 STARTNAME=startfile_Mx${M}.nc
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa \
   -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e $SSAE \
   $STRONGKSP -y 0.1 -ys 0.0 -o $STARTNAME -o_order zyx "

@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #23: comparing restart: \"-i\" vs \"-boot_file\" & \"-regrid_file\"."
+echo "Test #23: comparing restart: '-i file.nc' vs '-i file.nc -bootstrap' & '-regrid_file'."
 # The list of files to delete when done.
 files="foo-23.nc bar-23.nc"
 
@@ -19,7 +19,7 @@ set -e -x
 $MPIEXEC -n 2 $PISM_PATH/pisms -energy enthalpy -y 6500 $opts -o foo-23.nc
 
 # bootstrap from it, re-gridding all the variables we can
-$PISM_PATH/pismr -boot_file foo-23.nc -regrid_file foo-23.nc -y 0 -no_temp $opts -o bar-23.nc
+$PISM_PATH/pismr -i foo-23.nc -bootstrap -regrid_file foo-23.nc -y 0 -no_temp $opts -o bar-23.nc
 
 set +e
 

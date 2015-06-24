@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,38 +18,38 @@
  */
 
 #include "PS_EISMINTII.hh"
-#include "PISMConfig.hh"
-#include "pism_options.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
+namespace surface {
 
-PS_EISMINTII::PS_EISMINTII(IceGrid &g, const Config &conf, int experiment)
-  : PSFormulas(g, conf), m_experiment(experiment) {
+EISMINTII::EISMINTII(IceGrid::ConstPtr g, int experiment)
+  : PSFormulas(g), m_experiment(experiment) {
   // empty
 }
 
-PS_EISMINTII::~PS_EISMINTII() {
+EISMINTII::~EISMINTII() {
   // empty
 }
 
-PetscErrorCode PS_EISMINTII::init(Vars &vars) {
-  PetscErrorCode ierr;
+void EISMINTII::init_impl() {
 
-  (void) vars;
-
-  ierr = PetscOptionsBegin(grid.com, "", "EISMINT II climate input options", ""); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com, 
-                    "setting parameters for surface mass balance"
-                    " and temperature in EISMINT II experiment %c ... \n", 
-                    m_experiment); CHKERRQ(ierr);
+  m_log->message(2,
+             "setting parameters for surface mass balance"
+             " and temperature in EISMINT II experiment %c ... \n",
+             m_experiment);
 
   // EISMINT II specified values for parameters
-  m_S_b = grid.convert(1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
+  m_S_b = units::convert(m_sys, 1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
   m_S_T = 1.67e-2 * 1e-3;       // K/m  Temp gradient
 
   // these are for A,E,G,H,I,K:
-  m_M_max = grid.convert(0.5, "m/year", "m/s"); // Max accumulation
+  m_M_max = units::convert(m_sys, 0.5, "m/year", "m/s"); // Max accumulation
   m_R_el  = 450.0e3;            // Distance to equil line (SMB=0)
   m_T_min = 238.15;
 
@@ -61,7 +61,7 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
   case 'J':
   case 'L':                     // supposed to start from end of experiment A (for C;
     //   resp I and K for J and L) and:
-    m_M_max = grid.convert(0.25, "m/year", "m/s");
+    m_M_max = units::convert(m_sys, 0.25, "m/year", "m/s");
     m_R_el  = 425.0e3;
     break;
   case 'D':                     // supposed to start from end of experiment A and:
@@ -73,46 +73,43 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  bool option_set = false;
-  ierr = OptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set); CHKERRQ(ierr);
+  m_T_min = options::Real("-Tmin", "T min, Kelvin", m_T_min);
 
-  double
-    myMmax = grid.convert(m_M_max, "m/s",        "m/year"),
-    mySb   = grid.convert(m_S_b,   "m/second/m", "m/year/km"),
-    myST   = grid.convert(m_S_T,   "K/m",        "K/km"),
-    myRel  = grid.convert(m_R_el,  "m",          "km");
+  options::Real Mmax("-Mmax", "Maximum accumulation, m/year",
+                     units::convert(m_sys, m_M_max, "m/s", "m/year"));
+  if (Mmax.is_set()) {
+    m_M_max = units::convert(m_sys, Mmax, "m/year", "m/second");
+  }
 
-  ierr = OptionsReal("-Mmax", "Maximum accumulation, m/year",
-                         myMmax, option_set); CHKERRQ(ierr);
-  if (option_set)
-    m_M_max = grid.convert(myMmax, "m/year", "m/second");
+  options::Real Sb("-Sb", "radial gradient of accumulation rate, (m/year)/km",
+                   units::convert(m_sys, m_S_b,   "m/second/m", "m/year/km"));
+  if (Sb.is_set()) {
+    m_S_b = units::convert(m_sys, Sb, "m/year/km", "m/second/m");
+  }
 
-  ierr = OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
-                         mySb, option_set); CHKERRQ(ierr);
-  if (option_set)
-    m_S_b = grid.convert(mySb, "m/year/km", "m/second/m");
+  options::Real ST("-ST", "radial gradient of surface temperature, K/km",
+                   units::convert(m_sys, m_S_T, "K/m", "K/km"));
+  if (ST.is_set()) {
+    m_S_T = units::convert(m_sys, ST, "K/km", "K/m");
+  }
 
-  ierr = OptionsReal("-ST", "radial gradient of surface temperature, K/km",
-                         myST, option_set); CHKERRQ(ierr);
-  if (option_set)
-    m_S_T = grid.convert(myST, "K/km", "K/m");
+  options::Real Rel("-Rel", "radial distance to equilibrium line, km",
+                    units::convert(m_sys, m_R_el, "m", "km"));
+  if (Rel.is_set()) {
+    m_R_el = units::convert(m_sys, Rel, "km", "m");
+  }
 
-  ierr = OptionsReal("-Rel", "radial distance to equilibrium line, km",
-                         myRel, option_set); CHKERRQ(ierr);
-  if (option_set)
-    m_R_el = grid.convert(myRel, "km", "m");
-
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  ierr = initialize_using_formulas(); CHKERRQ(ierr);
-
-  return 0;
+  initialize_using_formulas();
 }
 
-PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
-  PetscErrorCode ierr;
+MaxTimestep EISMINTII::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
 
-  PetscScalar cx = grid.Lx, cy = grid.Ly;
+void EISMINTII::initialize_using_formulas() {
+
+  PetscScalar cx = m_grid->Lx(), cy = m_grid->Ly();
   if (m_experiment == 'E') {
     // shift center
     cx += 100.0e3;
@@ -124,31 +121,28 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
   list.add(m_ice_surface_temp);
   list.add(m_climatic_mass_balance);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // r is distance from center of grid; if E then center is shifted (above)
-    const double r = sqrt(PetscSqr(-cx + grid.dx*i)
-                          + PetscSqr(-cy + grid.dy*j));
+    const double r = sqrt(PetscSqr(-cx + m_grid->dx()*i)
+                          + PetscSqr(-cy + m_grid->dy()*j));
     // set accumulation from formula (7) in (Payne et al 2000)
-    m_climatic_mass_balance(i,j) = PetscMin(m_M_max, m_S_b * (m_R_el-r));
+    m_climatic_mass_balance(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
     // set surface temperature
     m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;  // formula (8) in (Payne et al 2000)
   }
 
   // convert from [m/s] to [kg m-2 s-1]
-  ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
-
-  return 0;
+  m_climatic_mass_balance.scale(m_config->get_double("ice_density"));
 }
 
-PetscErrorCode PS_EISMINTII::update(PetscReal t, PetscReal dt) {
+void EISMINTII::update_impl(PetscReal t, PetscReal dt) {
   (void) t;
   (void) dt;
 
   // do nothing (but an implementation is required)
-
-  return 0;
 }
 
+} // end of namespace surface
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,13 +21,15 @@
 
 #include <vector>
 
-#include "columnSystem.hh"
+#include "base/columnSystem.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 
 class Config;
 class IceModelVec3;
-class EnthalpyConverter;
+
+namespace energy {
 
 //! Tridiagonal linear system for conservation of energy in vertical column of ice enthalpy.
 /*!
@@ -37,75 +39,78 @@ class EnthalpyConverter;
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(const Config &config,
-                IceModelVec3 &my_Enth3,
-                double my_dx,  double my_dy,
-                double my_dt,  double my_dz,
-                int my_Mz, const std::string &my_prefix,
-                const EnthalpyConverter &my_EC);
-  virtual ~enthSystemCtx();
+  enthSystemCtx(const std::vector<double>& storage_grid,
+                const std::string &prefix,
+                double dx,  double dy, double dt,
+                const Config &config,
+                const IceModelVec3 &Enth3,
+                const IceModelVec3 &u3,
+                const IceModelVec3 &v3,
+                const IceModelVec3 &w3,
+                const IceModelVec3 &strain_heating3,
+                EnthalpyConverter::Ptr EC);
+  ~enthSystemCtx();
 
-  PetscErrorCode initThisColumn(int i, int j, bool my_ismarginal,
-                                double ice_thickness,
-                                IceModelVec3 *u3,
-                                IceModelVec3 *v3,
-                                IceModelVec3 *w3,
-                                IceModelVec3 *strain_heating3);
+  void initThisColumn(int i, int j, bool my_ismarginal,
+                      double ice_thickness);
 
   double k_from_T(double T);
 
-  PetscErrorCode setDirichletSurface(double my_Enth_surface);
-  PetscErrorCode setDirichletBasal(double Y);
-  PetscErrorCode setBasalHeatFlux(double hf);
+  void setDirichletSurface(double my_Enth_surface);
+  void setDirichletBasal(double Y);
+  void setBasalHeatFlux(double hf);
 
-  PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
-  PetscErrorCode viewSystem(PetscViewer viewer, unsigned int M) const;
+  virtual void save_system(std::ostream &output, unsigned int M) const;
 
-  PetscErrorCode solveThisColumn(std::vector<double> &result);
+  void solveThisColumn(std::vector<double> &result);
 
-  double lambda()
-  { return m_lambda; }
-public:
-  // arrays must be filled before calling solveThisColumn():
+  double lambda() {
+    return m_lambda;
+  }
 
-  // enthalpy in ice at previous time step
-  std::vector<double> Enth;
-  // enthalpy level for CTS; function only of pressure
-  std::vector<double> Enth_s;
+  double Enth(size_t i) {
+    return m_Enth[i];
+  }
+
+  double Enth_s(size_t i) {
+    return m_Enth_s[i];
+  }
 protected:
-  //! u-component if the ice velocity
-  std::vector<double> u;
-  //! v-component if the ice velocity
-  std::vector<double> v;
-  //! w-component if the ice velocity
-  std::vector<double> w;
+  // enthalpy in ice at previous time step
+  std::vector<double> m_Enth;
+  // enthalpy level for CTS; function only of pressure
+  std::vector<double> m_Enth_s;
+
+  // temporary storage for ice enthalpy at (i,j), as well as north,
+  // east, south, and west from (i,j)
+  std::vector<double> m_E_ij, m_E_n, m_E_e, m_E_s, m_E_w;
+
   //! strain heating in the ice column
-  std::vector<double> strain_heating;
+  std::vector<double> m_strain_heating;
 
   //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
-  std::vector<double> R;
+  std::vector<double> m_R;
 
-  unsigned int Mz;
+  double m_ice_density, m_ice_c, m_ice_k, m_ice_K, m_ice_K0, m_p_air,
+    m_nu, m_R_cold, m_R_temp, m_R_factor;
 
-  double ice_rho, ice_c, ice_k, ice_K, ice_K0, p_air,
-    dx, dy, dz, dt, nu, R_cold, R_temp, R_factor;
-
-  double ice_thickness,
+  double m_ice_thickness,
     m_lambda,              //!< implicit FD method parameter
-    Enth_ks;             //!< top surface Dirichlet B.C.
-  double D0, U0, B0;   // coefficients of the first (basal) equation
-  bool ismarginal, c_depends_on_T, k_depends_on_T;
+    m_Enth_ks;             //!< top surface Dirichlet B.C.
+  double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
+  bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
 
-  IceModelVec3 *Enth3;
-  const EnthalpyConverter &EC;  // conductivity has known dependence on T, not enthalpy
+  const IceModelVec3 &m_Enth3, &m_strain_heating3;
+  EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy
 
-  PetscErrorCode compute_enthalpy_CTS();
+  void compute_enthalpy_CTS();
   double compute_lambda();
 
-  virtual PetscErrorCode assemble_R();
-  PetscErrorCode checkReadyToSolve();
+  void assemble_R();
+  void checkReadyToSolve();
 };
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif   //  ifndef __enthSystem_hh

@@ -27,15 +27,15 @@ N = 6667
 print "reading bedmap2 binary files from %s ..." % (BM2PATH)
 
 fname = BM2PATH + 'bedmap2_bed.flt'
-bed = ma.masked_equal(np.reshape(np.fromfile(fname,dtype=np.float32),(N,N)),-9999.0)
+bed = ma.masked_equal(np.reshape(np.fromfile(fname, dtype=np.float32), (N, N)), -9999.0)
 fname = BM2PATH + 'bedmap2_thickness.flt'
-thk = ma.masked_equal(np.reshape(np.fromfile(fname,dtype=np.float32),(N,N)),-9999.0)
+thk = ma.masked_equal(np.reshape(np.fromfile(fname, dtype=np.float32), (N, N)), -9999.0)
 fname = BM2PATH + 'bedmap2_icemask_grounded_and_shelves.flt'
-msk = ma.masked_equal(np.reshape(np.fromfile(fname,dtype=np.float32),(N,N)),-9999.0)
+msk = ma.masked_equal(np.reshape(np.fromfile(fname, dtype=np.float32), (N, N)), -9999.0)
 
-print "  range of bed = [%.2f, %.2f]" % (bed.min(),bed.max())
-print "  range of thk = [%.2f, %.2f]" % (thk.min(),thk.max())
-print "  range of msk = [%.2f, %.2f]" % (msk.min(),msk.max())
+print "  range of bed = [%.2f, %.2f]" % (bed.min(), bed.max())
+print "  range of thk = [%.2f, %.2f]" % (thk.min(), thk.max())
+print "  range of msk = [%.2f, %.2f]" % (msk.min(), msk.max())
 
 if showgeom:
     print "showing fields ..."
@@ -53,11 +53,11 @@ if showgeom:
     fig.colorbar(ax)
 
     plt.show()
-    
+
     sys.exit(0)
 
 #err = abs(bed[msk<0.5] + thk[msk<0.5] - srf[msk<0.5])
-#print err.max()
+# print err.max()
 
 outname = 'ant1kmgeom.nc'
 
@@ -71,24 +71,24 @@ except:
 print "  writing x,y ..."
 dx = 1000.0
 dy = 1000.0
-x = np.linspace(0.0,(N-1)*dx,N)
-y = np.linspace(0.0,(N-1)*dy,N)
-nc.create_dimensions(x, y, time_dependent = False)
+x = np.linspace(0.0, (N - 1) * dx, N)
+y = np.linspace(0.0, (N - 1) * dy, N)
+nc.create_dimensions(x, y, time_dependent=False)
 
 print "  writing topg ..."
-nc.define_2d_field("topg", time_dependent = False,
-                   attrs = {"long_name"   : "elevation of bedrock",
-                            "valid_range" : (-9000.0, 9000.0),
-                            "standard_name" : "bedrock_altitude",
-                            "units" : "meters"})
+nc.define_2d_field("topg", time_dependent=False,
+                   attrs={"long_name": "elevation of bedrock",
+                          "valid_range": (-9000.0, 9000.0),
+                          "standard_name": "bedrock_altitude",
+                          "units": "meters"})
 nc.write_2d_field("topg", bed)
 
 print "  writing thk ..."
-nc.define_2d_field("thk", time_dependent = False,
-                   attrs = {"long_name"   : "thickness of ice sheet or ice shelf",
-                            "valid_range" : (0.0, 9000.0),
-                            "standard_name" : "land_ice_thickness",
-                            "units" : "meters"})
+nc.define_2d_field("thk", time_dependent=False,
+                   attrs={"long_name": "thickness of ice sheet or ice shelf",
+                          "valid_range": (0.0, 9000.0),
+                          "standard_name": "land_ice_thickness",
+                          "units": "meters"})
 nc.write_2d_field("thk", thk)
 
 nc.close()

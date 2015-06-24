@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPLogRelativeFunctional.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Determine the normalization constant for the functional.
 /*! Sets the normalization constant \f$c_N\f$ so that
@@ -27,8 +30,7 @@ J(x)=1
 \f]
 if \f$|x| = \mathtt{scale}\f$ everywhere.
 */
-PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
-  PetscErrorCode   ierr;
+void IPLogRelativeFunctional::normalize(double scale) {
 
   // The local value of the weights
   double value = 0;
@@ -44,7 +46,7 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2 &u_obs_ij = m_u_observed(i, j);
@@ -55,12 +57,10 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
     value += log(1 + w*scale_sq/obsMagSq);
   }
 
-  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
-  return 0;
+  m_normalization = GlobalSum(m_grid->com, value);
 }
 
-PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
-  PetscErrorCode   ierr;
+void IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -74,7 +74,7 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2 &x_ij = x(i, j);
@@ -88,12 +88,10 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
 
   value /= m_normalization;
 
-  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
-
-  return 0;
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   gradient.set(0);
 
   double w = 1;
@@ -106,7 +104,7 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
     list.add(*m_weights);
   }
 
-  for (Points p(m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2 &x_ij = x(i, j);
@@ -120,8 +118,7 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
     gradient(i, j).u = dJdxsq*2*x_ij.u/m_normalization;
     gradient(i, j).v = dJdxsq*2*x_ij.v/m_normalization;
   }
-
-  return 0;
 }
 
+} // end of namespace inverse
 } // end of namespace pism

@@ -12,7 +12,7 @@ We use data assembled by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRI
 
 This example is a hands-on first look at PISM.  It is not an in-depth tutorial, and some details of what is happening are only explained later in this Manual, which thoroughly discusses PISM options, nontrivial modeling choices, and how to preprocess input data.
 
-The basic runs here, mostly on coarse $20$ and $10\,\textrm{km}$ grids, can be done on a typical workstation or laptop.  PISM is, however, designed to make high resolution (e.g.~$5\,\textrm{km}$ to $1\,\textrm{km}$ grids for whole-Greenland ice sheet modeling) possible by exploiting large-scale parallel processing.  See \cite{AschwandenAdalgeirsdottirKhroulev,Golledgeetal2012,Golledgeetal2013}, among other published high-resolution PISM examples.
+The basic runs here, mostly on coarse $20$ and $10\,\textrm{km}$ grids, can be done on a typical workstation or laptop.  PISM is, however, designed to make high resolution (e.g.~$5\,\textrm{km}$ to $\sim500\,\textrm{m}$ grids for whole-Greenland ice sheet modeling) possible by exploiting large-scale parallel processing.  See \cite{AschwandenAdalgeirsdottirKhroulev,Golledgeetal2012,Golledgeetal2013}, among other published high-resolution PISM examples.
 
 
 \subsection{Input data}
@@ -63,7 +63,7 @@ Setting the environment variable \texttt{PISM_DO} in this way tells \texttt{spin
 \label{firstcommand}
 \small
 \begin{verbatim}
-mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
+mpiexec -n 4 pismr -i pism_Greenland_5km_v1.1.nc -bootstrap -Mx 76 -My 141 \
   -Mz 101 -Mbz 11 -z_spacing equal -Lz 4000 -Lbz 2000 -skip -skip_max 10 \
   -ys -10000 -ye 0 -surface given -surface_given_file pism_Greenland_5km_v1.1.nc \
   -calving ocean_kill pism_Greenland_5km_v1.1.nc -sia_e 3.0 \
@@ -77,7 +77,7 @@ Let's briefly deconstruct this run.
 
 At the front is ``\texttt{mpiexec -n 4 pismr}''.  This means that the PISM executable \texttt{pismr} is run in parallel on four processes parallel standard (e.g.~cores) under the Message Passing Interface (``MPI''; \url{http://www.mcs.anl.gov/mpi/}).  Though we are assuming you have a workstation or laptop with at least 4 cores, this example will work with 1 to about 50 processors, with reasonably good scaling in speed.  Scaling can be good with more processors if we run at higher spatial resolution \cite{BBssasliding,DickensMorey2013}.  The executable name ``\texttt{pismr}'' stands for the standard ``run'' mode of PISM (in contrast to specialized modes described later in sections \ref{sec:verif} and \ref{sec:simp}).
 
-Next, the proposed run uses option \texttt{-boot_file} to start the run by ``bootstrapping.'' This term describes the creation, by heuristics and highly-simplified models, of the mathematical initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.  After that we see a description of the time-axis, with a start and end time given: ``\texttt{-ys -10000 -ye 0}''.
+Next, the proposed run uses option \texttt{-bootstrap} to start the run by ``bootstrapping.'' This term describes the creation, by heuristics and highly-simplified models, of the mathematical initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a $76\times 141$ point grid in the horizontal, which gives 20\,km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.  After that we see a description of the time-axis, with a start and end time given: ``\texttt{-ys -10000 -ye 0}''.
 
 Then we get the instructions that tell PISM to read the upper surface boundary conditions (i.e.~climate) from a file: ``\texttt{-surface given -surface_given_file pism_Greenland_5km_v1.1.nc}''.  For more on these choices, see subsection \ref{sec:climate-inputs}, and also the PISM Climate Forcing Manual.
 
@@ -91,7 +91,7 @@ Now let's actually get the run going:
 \begin{verbatim}
 $ ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc &> out.g20km_10ka &
 \end{verbatim}
-\noindent The terminating ``\verb|&|'' asks unix to run the command in the background, so we can keep working in the current shell.  Because we have re-directed the text output (``\verb|&> out.g20km_10ka|''), PISM will show what it is doing in the text file \texttt{out.g20km_10ka}.  Using \texttt{less} is a good way to watch such a growing text-output file.  This run should take only 20 minutes or so.
+\noindent The terminating ``\verb|&|'', which is optional, asks unix to run the command in the background, so we can keep working in the current shell.  Because we have re-directed the text output (``\verb|&> out.g20km_10ka|''), PISM will show what it is doing in the text file \texttt{out.g20km_10ka}.  Using \texttt{less} is a good way to watch such a growing text-output file.  This run should take 20 minutes or less.
 
 
 \subsection{Watching the first run}  \label{subsect:watchrun}  As soon as the run starts it creates time-dependent NetCDF files \texttt{ts_g20km_10ka.nc} and \texttt{ex_g20km_10ka.nc}.  The latter file, which has spatially-dependent fields at each time, is created after the first 100 model years, a few wall clock seconds in this case.  The command \texttt{-extra_file ex_g20km_10ka.nc -extra_times -10000:100:0} adds a spatially-dependent ``frame'' at model times -9900, -9800, \dots, 0.
@@ -146,13 +146,13 @@ Now remove ``\texttt{PISM_DO=echo}'' and redirect the text output into a file to
 \begin{verbatim}
 $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hy.nc &> out.g20km_10ka_hy &
 \end{verbatim}
-This run might take 30 minutes or so.\footnote{Regarding the relative speeds of the runs that produce \texttt{g20km_10ka.nc} and \texttt{g20km_10ka_hy.nc}, note that the computation of the SSA stress balance is substantially more expensive than the SIA in a per-step sense.  However, the SSA stress balance in combination with the mass continuity equation causes the maximum diffusivity in the ice sheet to be substantially lower during the run.  Because the maximum diffusivity controls the time-step in the PISM adaptive time-stepping scheme \cite{BBL}, the number of time steps is reduced in the hybrid run.  To see this contrast do\, \texttt{ncview ts_g20km_10ka*nc}\, and view variables \texttt{max_diffusivity} and \texttt{dt}. }
+This run should take 30 minutes or less.\footnote{Regarding the relative speeds of the runs that produce \texttt{g20km_10ka.nc} and \texttt{g20km_10ka_hy.nc}, note that the computation of the SSA stress balance is substantially more expensive than the SIA in a per-step sense.  However, the SSA stress balance in combination with the mass continuity equation causes the maximum diffusivity in the ice sheet to be substantially lower during the run.  Because the maximum diffusivity controls the time-step in the PISM adaptive time-stepping scheme \cite{BBL}, the number of time steps is reduced in the hybrid run.  To see this contrast use\, \texttt{ncview ts_g20km_10ka*nc}\, to view variables \texttt{max_diffusivity} and \texttt{dt}.}
 
 When this run is finished it produces \texttt{g20km_10ka_hy.nc}.  As before do
 \begin{verbatim}
 $ ncdump -h g20km_10ka_hy.nc |grep history
 \end{verbatim}
-to see performance results for your machine.  The number reported as ``\texttt{PETSc MFlops}'' from this run is about $2.6 \times 10^5$, much larger than the previous run, because now calls to the PETSc library are used when solving the non-linear and non-local SSA stress balance in parallel.
+to see performance results for your machine.  The number reported as ``\texttt{PETSc MFlops}'' from this run is about $3 \times 10^5$, much larger than the previous run, because now calls to the PETSc library are used when solving the non-local SSA stress balance in parallel.
 
 The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  We show the basal sliding speed field \texttt{velbase_mag} in this Figure, where Figure \ref{fig:firstoutput} had the \texttt{mask}, but the reader can check that \texttt{velbase_mag}=0 in the nonsliding SIA-only result \texttt{g20km_10ka.nc}.
 
@@ -163,7 +163,9 @@ The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  We sh
 \label{fig:secondoutputcoarse}
 \end{figure}
 
-The hybrid model includes sliding, and it is important to evaluate that aspect of the output.  However, though it is critical to the response of the ice to changes in climate, basal sliding velocity is essentially unobservable in real ice sheets.  On the other hand, because of relatively-recent advances in radar and image technology and processing \cite{Joughin2002}, the surface velocity of an ice sheet is an observable.  So, how good is our model result for this quantity, namely \texttt{velsurf_mag}?  Figure \ref{fig:csurfvsobserved} compares the radar-observed \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.
+The hybrid model includes sliding, and it is important to evaluate that aspect of the output.  However, though it is critical to the response of the ice to changes in climate, basal sliding velocity is essentially unobservable in real ice sheets.  On the other hand, because of relatively-recent advances in radar and image technology and processing \cite{Joughin2002}, the surface velocity of an ice sheet is an observable.
+
+So, how good is our model result \texttt{velsurf_mag}?  Figure \ref{fig:csurfvsobserved} compares the radar-observed \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.  The reader might agree with these broad qualitative judgements:
 
 \begin{figure}[ht]
 \centering
@@ -172,27 +174,26 @@ The hybrid model includes sliding, and it is important to evaluate that aspect o
 \label{fig:csurfvsobserved}
 \end{figure}
 
-The reader might agree with these broad qualitative judgements:
 \begin{itemize}
-\item the model results and the observed surface velocity look similar, but
-\item the slow flow near the divide is generally in the right areas and of generally the right magnitude, and
-\item the observed Northeast Greenland ice stream is much more distinct in observations than in the model.
+\item the model results and the observed surface velocity look similar, and
+\item slow near-divide flow is generally in the right areas and of generally the right magnitude, but
+\item the observed Northeast Greenland ice stream is more distinct than in the model.
 \end{itemize}
 
-We can compare these easily-generated PISM results to some recent observed-vs-model comparisons of surface velocity maps, of exactly this type, for example Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}.  Note that only ice-sheet-wide parameters and models were used here in PISM, that is, each location in the ice sheet was modeled by the same physics.  By comparison, those published comparisons involved tuning a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques are usually called ``inversion'' or ``assimilation'' of the surface velocity data.  Such methods are also possible in PISM if desired,\footnote{See \cite{vanPeltetal2013} (inversion of DEMs for basal topography) and \cite{Habermannetal2013} (inversion surface velocities for basal shear stress) for PISM-based inversion methods and analysis.} but the advantage of having few parameters in a model is well-known: the results reflect the underlying model not the flexibility of fitting many parameters.
+We can compare these PISM results to other observed-vs-model comparisons of surface velocity maps, for example Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}.  Only ice-sheet-wide parameters and models were used here in PISM, that is, each location in the ice sheet was modeled by the same physics.  By comparison, those published comparisons involved tuning a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques, called ``inversion'' or ``assimilation'' of the surface velocity data, are also possible in PISM,\footnote{See \cite{vanPeltetal2013} (inversion of DEMs for basal topography) and \cite{Habermannetal2013} (inversion surface velocities for basal shear stress) for PISM-based inversion methods and analysis.} but the advantage of having few parameters in a model is well-known: the results reflect the underlying model not the flexibility of many parameters.
 
-Of course, we have only tried two of the many models possible in PISM.  We are free to identify and adjust important parameters.  The first parameter change we consider, in the next subsection, is one of the most important: grid resolution.
+We have only tried two of the many models possible in PISM, and we are free to identify and adjust important parameters.  The first parameter change we consider, in the next subsection, is one of the most important: grid resolution.
 
 
 \subsection{Third run: higher resolution}  \label{subsect:higherresrun}
 
-Now we change one key parameter, the grid resolution.  If you can let it run overnight, do
+Now we change one key parameter, the grid resolution.  Model results differ even when the only change is the resolution.  Using higher resolution ``picks up'' more detail in the bed elevation and climate data.
+
+If you can let it run overnight, do
 \begin{verbatim}
 $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc &> out.g10km_10ka_hy &
 \end{verbatim}
 This run might take 4 to 6 hours.  However, supposing you have a larger parallel computer, you can change ``\texttt{mpiexec -n 4}'' to ``\texttt{mpiexec -n N}'' where \texttt{N} is a substantially larger number, up to 100 or so with an expectation of reasonable scaling on this grid \cite{BBssasliding,DickensMorey2013}.
-
-Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20 km and 10 km grids.  Model results differ even when the only change is the resolution!  Importantly for ice sheet modeling, using higher resolution ``picks up'' more detail in the bed elevation and climate data.
 
 \begin{figure}[ht]
 \centering
@@ -201,9 +202,9 @@ Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig
 \label{fig:secondoutputfiner}
 \end{figure}
 
-As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20km and 10km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20km and 10km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20km to 10km.
+Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20\,km and 10\,km grids.  As a different comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20\,km and 10\,km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20\,km and 10\,km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20\,km to 10\,km.
 
-Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already ``getting'' a given feature!
+Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already ``getting'' a given feature or result.
 
 \begin{figure}[ht]
 \centering
@@ -215,13 +216,13 @@ Roughly speaking, the reader should only consider trusting those model results w
 
 \subsection{Fourth run: paleo-climate model spin-up}  \label{subsect:paleorun}  
 
-A this point we have barely mentioned one of the most important players in the ice sheet modeling game: the surface mass balance (SMB) model.  Specifically, an SMB model combines precipitation (e.g.~\cite{Balesetal2001} for present-day Greenland) and a model for melt.  Melt models are always based on some approximation of the energy available at the ice surface \cite{Hock05}.  Previous runs in this section used a ``constant-climate'' assumption, which specifically meant using the modeled present-day SMB rates from the regional climate model RACMO \cite{Ettemaetal2009}, as contained in the SeaRISE-Greenland data set \verb|Greenland_5km_v1.1.nc|.
+A this point we have barely mentioned one of the most important players in an ice sheet model: the surface mass balance (SMB) model.  Specifically, an SMB model combines precipitation (e.g.~\cite{Balesetal2001} for present-day Greenland) and a model for melt.  Melt models are always based on some approximation of the energy available at the ice surface \cite{Hock05}.  Previous runs in this section used a ``constant-climate'' assumption, which specifically meant using the modeled present-day SMB rates from the regional climate model RACMO \cite{Ettemaetal2009}, as contained in the SeaRISE-Greenland data set \verb|Greenland_5km_v1.1.nc|.
 
 While a physical model of ice dynamics only describes the movement of the ice, the SMB (and the sub-shelf melt rate) are key inputs which directly determine changes in the boundary geometry.  Boundary geometry changes then feedback to determine the stresses seen by the stress balance and thus the motion.
 
-There are other methods for producing SMB than to use present-day modeled values.  We now try such a method, a ``paleo-climate spin-up'' for our Greenland ice sheet model.  Of course, direct measurements of prior climates in Greenland are not available as data!  There are, however, estimates of past surface temperatures at the locations of ice cores \cite[for GRIP]{JohnsenetalGRIP}, along with estimates of past global sea level \cite{Imbrieetal1984} which can be used to determine where the flotation criterion is applied---this is how PISM's \verb|mask| variable is determined.  Also, models have been constructed for how precipitation differs from the present-day values \cite{Huybrechts02}.  For demonstration purposes, these are all used in the next run.  The relevant options are further documented in PISM's Climate Forcing Manual.
+There are other methods for producing SMB than using present-day modeled values.  We now try such a method, a ``paleo-climate spin-up'' for our Greenland ice sheet model.  Of course, direct measurements of prior climates in Greenland are not available as data!  There are, however, estimates of past surface temperatures at the locations of ice cores \cite[for GRIP]{JohnsenetalGRIP}, along with estimates of past global sea level \cite{Imbrieetal1984} which can be used to determine where the flotation criterion is applied---this is how PISM's \verb|mask| variable is determined.  Also, models have been constructed for how precipitation differs from the present-day values \cite{Huybrechts02}.  For demonstration purposes, these are all used in the next run.  The relevant options are further documented in PISM's Climate Forcing Manual.
 
-As noted, one must compute melt in order to compute SMB.  This is done using a temperature-index, ``positive degree-day'' (PDD) model \cite{Hock05}.  Such a PDD model has parameters for how much snow and/or ice is melted when surface temperatures spend time near or above zero degrees.  Again, see the PISM Climate Forcing Manual for relevant options.
+As noted, one must compute melt in order to compute SMB.  Here this is done using a temperature-index, ``positive degree-day'' (PDD) model \cite{Hock05}.  Such a PDD model has parameters for how much snow and/or ice is melted when surface temperatures spend time near or above zero degrees.  Again, see the PISM Climate Forcing Manual for relevant options.
 
 To summarize the paleo-climate model applied here, temperature offsets from the GRIP core record affect the snow energy balance, and thus the rates of melting and runoff calculated by the PDD model.  In warm periods there is more marginal ablation, but precipitation may also increase (according to a temperature-offset model \cite{Huybrechts02}).  Additionally sea level undergoes changes in time and this affects which ice is floating.  Finally we add an earth deformation model, which responds to changes in ice load by changing the bedrock elevation \cite{BLKfastearth}.
 
@@ -238,7 +239,7 @@ $ PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
 \label{fig:ivolconstpaleo}
 \end{figure}
 
-You will see an impressive command, which you can compare to the one on page \pageref{firstcommand}.  There are several key changes.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
+You will see an impressively-long command, which you can compare to the one on page \pageref{firstcommand}.  There are several key changes.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
 \begin{verbatim}
   -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt
 \end{verbatim}
@@ -254,7 +255,7 @@ To actually start the run, which we rather arbitrarily start at year -25000, ess
 $ PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
   ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc &> out.g20km_25ka_paleo &
 \end{verbatim}
-This run should only take one or two hours, noting it is at a coarse 20 km resolution.
+This run should only take one or two hours, noting it is at a coarse 20\,km resolution.
 
 The fields \texttt{usurf}, \texttt{velsurf_mag}, and \texttt{velbase_mag} from file \texttt{g20km_25ka_paleo.nc} are sufficiently similar to those shown in Figure \ref{fig:secondoutputcoarse} that they are not shown here.  Close inspection reveals differences, but of course these runs only differ in the applied climate and run duration and not in resolution or ice dynamics parameters.
 
@@ -274,23 +275,23 @@ Another time-series comparison, of the variable \verb|ivoltemp|, the total volum
 
 The previous sections were not very ambitious.  We were just getting started!  Now we demonstrate a serious PISM capability, the ability to change, specifically to \emph{refine}, the grid resolution at runtime.
 
-One can of course do the longest model runs using a coarse grid, like the 20 km grid used first.  It is, however, only possible to pick up detail from high quality data, for instance bed elevation and/or high-resolution climate data, using high grid resolution.
+One can of course do the longest model runs using a coarse grid, like the 20\,km grid used first.  It is, however, only possible to pick up detail from high quality data, for instance bed elevation and/or high-resolution climate data, using high grid resolution.
 
-A 20 or 10 km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at Jakobshavn Isbrae in the west Greenland ice sheet \cite{Joughinetal08}, an important outlet glacier which both flows fast and drains a large fraction of the ice sheet.  One possibility is to set up an even higher-resolution PISM regional model covering only one outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.  (See section \ref{sec:jako}.)  But here we will work on high resolution for the whole ice sheet, and thus all outlet glaciers.
+A 20 or 10\,km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at Jakobshavn Isbrae in the west Greenland ice sheet \cite{Joughinetal08}, an important outlet glacier which both flows fast and drains a large fraction of the ice sheet.  One possibility is to set up an even higher-resolution PISM regional model covering only one outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.  (See section \ref{sec:jako}.)  But here we will work on high resolution for the whole ice sheet, and thus all outlet glaciers.
 
 Consider the following command; compare it to the one on page \pageref{firstcommand}:
 \begin{verbatim}
-mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 301 -My 561 \
+mpiexec -n 4 pismr -i pism_Greenland_5km_v1.1.nc -bootstrap -Mx 301 -My 561 \
   -Mz 201 -Mbz 21 -z_spacing equal -Lz 4000 -Lbz 2000 -ys -200 -ye 0 \
   -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt ...
 \end{verbatim}
-Instead of a 20 km grid in the horizontal (\verb|-Mx 76 -My 141|) we ask for a 5 km grid (\verb|-Mx 301 -My 561|).  Instead of vertical grid resolution of 40 m (\verb|-Mz 101 -z_spacing equal -Lz 4000|) we ask for a vertical resolution of 20 m (\verb|-Mz 201 -z_spacing equal -Lz 4000|).\footnote{See subsections \ref{sec:bootstrapping}, \ref{subsect:coords}, and \ref{subsect:grid} for more about determining the computation domain and grid at bootstrapping.}  Most significantly, however, we say \verb|-regrid_file g20km_10ka_hy.nc| to regrid---specifically, to bilinearly-interpolate---fields from a model result computed on the coarser 20 km grid.  The regridded fields (\verb|-regrid_vars litho_temp,...|) are the evolving mass and energy state variables which are already approximately at equilibrium on the coarse grid.  Because we are bootstrapping (i.e.~using \verb|-boot_file|), the other variables, especially the bedrock topography \verb|topg| and the climate data, are brought in to PISM at ``full'' resolution, that is, on the original 5 km grid in the data file \texttt{pism_Greenland_5km_v1.1.nc}.
+Instead of a 20\,km grid in the horizontal (\verb|-Mx 76 -My 141|) we ask for a 5\,km grid (\verb|-Mx 301 -My 561|).  Instead of vertical grid resolution of 40\,m (\verb|-Mz 101 -z_spacing equal -Lz 4000|) we ask for a vertical resolution of 20\,m (\verb|-Mz 201 -z_spacing equal -Lz 4000|).\footnote{See subsections \ref{sec:bootstrapping}, \ref{subsect:coords}, and \ref{subsect:grid} for more about determining the computation domain and grid at bootstrapping.}  Most significantly, however, we say \verb|-regrid_file g20km_10ka_hy.nc| to regrid---specifically, to bilinearly-interpolate---fields from a model result computed on the coarser 20\,km grid.  The regridded fields (\verb|-regrid_vars litho_temp,...|) are the evolving mass and energy state variables which are already approximately at equilibrium on the coarse grid.  Because we are bootstrapping (i.e.~using the \texttt{-bootstrap} option), the other variables, especially the bedrock topography \verb|topg| and the climate data, are brought in to PISM at ``full'' resolution, that is, on the original 5\,km grid in the data file \texttt{pism_Greenland_5km_v1.1.nc}.
 
-This technique could be called ``grid sequencing''.\footnote{It is not quite ``multigrid.''  That would both involve refinement and coarsening stages in computing the fine grid solution.}  The result of the above command will be to compute the near-equilibrium result on the fine 5 km grid, taking advantage of the coarse-gridded computation of approximate equilibrium, and despite a run of only 200 model years (\verb|-ys -200 -ye 0|).  How close to equilibrium we get depends on both durations, i.e.~on both the coarse and fine grid run durations, but certainly the computational effort is reduced by doing a short run on the fine grid.  Note that in the previous subsection we also used regridding.  In that application, however, \verb|-regrid_file| only ``brings in'' fields from a run on the same resolution.
+This technique could be called ``grid sequencing''.\footnote{It is not quite ``multigrid.''  That would both involve refinement and coarsening stages in computing the fine grid solution.}  The result of the above command will be to compute the near-equilibrium result on the fine 5\,km grid, taking advantage of the coarse-gridded computation of approximate equilibrium, and despite a run of only 200 model years (\verb|-ys -200 -ye 0|).  How close to equilibrium we get depends on both durations, i.e.~on both the coarse and fine grid run durations, but certainly the computational effort is reduced by doing a short run on the fine grid.  Note that in the previous subsection we also used regridding.  In that application, however, \verb|-regrid_file| only ``brings in'' fields from a run on the same resolution.
 
-Generally the fine grid run duration in grid sequencing should be at least $t = \Delta x / v_{\text{min}}$ where $\Delta x$ is the fine grid resolution and $v_{\text{min}}$ is the lowest ice flow speed that we expect to be relevant to our modeling purposes.  That is, the duration should be such that slow ice at least has a chance to cross one grid cell.  In this case, if $\Delta x = 5$ km and $v_{\text{min}} = 25$ m/a then we get $t=200$ a.  Though we use this as the duration, it is a bit short, and the reader might compare $t=500$ results (i.e.~using $v_{\text{min}} = 10$ m/a).
+Generally the fine grid run duration in grid sequencing should be at least $t = \Delta x / v_{\text{min}}$ where $\Delta x$ is the fine grid resolution and $v_{\text{min}}$ is the lowest ice flow speed that we expect to be relevant to our modeling purposes.  That is, the duration should be such that slow ice at least has a chance to cross one grid cell.  In this case, if $\Delta x = 5$\,km and $v_{\text{min}} = 25$\,m/a then we get $t=200$\,a.  Though we use this as the duration, it is a bit short, and the reader might compare $t=500$ results (i.e.~using $v_{\text{min}} = 10$\,m/a).
 
-Actually we will demonstrate how to go from $20\,\text{km}$ to $5\,\text{km}$ in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10 ka, 2 ka, and 200 a, respectively.  The 20 km coarse grid run is already done; the result is in \texttt{g20km_10ka_hy.nc}.  So we run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls \texttt{spinup.sh} to collect all the right PISM options:
+Actually we will demonstrate how to go from $20\,\text{km}$ to $5\,\text{km}$ in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10\,ka, 2\,ka, and 200\,a, respectively.  The 20\,km coarse grid run is already done; the result is in \texttt{g20km_10ka_hy.nc}.  So we run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls \texttt{spinup.sh} to collect all the right PISM options:
 \begin{scriptvrb}
 #!/bin/bash
 NN=4
@@ -307,38 +308,38 @@ Environment variable \verb|EXSTEP| specifies the time in years between writing t
 Before you run the above script, however, an important
 
 \medskip
-\centerline{\large\underline{\emph{WARNING:} the 5km run requires 8 Gb of memory at minimum!}\normalsize}
+\centerline{\large\underline{\emph{WARNING:} the 5\,km run requires 8\,Gb of memory at minimum!}\normalsize}
 
 \medskip
-\noindent If you try it without at least 8 Gb of memory then your machine will ``bog down'' and start using the hard disk for swap space!  The run will not complete and your hard disk will get a lot of wear!  (If you have less than 8 Gb memory, comment out the last three lines of the above script---e.g.~using the ``\verb|#|'' character at the beginning of the line---so that you only do the 20 km $\to$ 10 km refinement.)
+\noindent If you try it without at least 8 Gb of memory then your machine will ``bog down'' and start using the hard disk for swap space!  The run will not complete and your hard disk will get a lot of wear!  (If you have less than 8 Gb memory, comment out the last three lines of the above script---e.g.~using the ``\verb|#|'' character at the beginning of the line---so that you only do the 20\,km $\to$ 10\,km refinement.)
 
 Run the script like this:
 \begin{verbatim}
 $ ./gridseq.sh &> out.gridseq &
 \end{verbatim}
-The 10 km run takes under two wall-clock hours (8 processor-hours) and the 5 km run takes about 6 wall-clock hours (24 processor-hours).
+The 10\,km run takes under two wall-clock hours (8 processor-hours) and the 5\,km run takes about 6 wall-clock hours (24 processor-hours).
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[width=1.65in,keepaspectratio=true]{g40km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g20km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g10km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g5km-detail} }
-\caption{Detail of field \texttt{velsurf_mag} showing the central western coast of Greenland, including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5 km (left-to-right).  Color scheme and scale, including 100 m/a contour (solid black), are all identical to \texttt{velsurf_mag} Figures \ref{fig:secondoutputcoarse}, \ref{fig:csurfvsobserved}, and \ref{fig:secondoutputfiner}.}
+\caption{Detail of field \texttt{velsurf_mag} showing the central western coast of Greenland, including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5\,km (left-to-right).  Color scheme and scale, including 100\,m/a contour (solid black), are all identical to \texttt{velsurf_mag} Figures \ref{fig:secondoutputcoarse}, \ref{fig:csurfvsobserved}, and \ref{fig:secondoutputfiner}.}
 \label{fig:gridseqdetail}
 \end{figure}
 
-Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed \texttt{velsurf_mag} from files \texttt{g10km_gridseq.nc} and \texttt{g5km_gridseq.nc} is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files \texttt{g40km_10ka_hy.nc} and \texttt{g20km_10ka_hy.nc}; the former is an added 40 km result using an obvious modification of the run in section \ref{subsect:ssarun}.
+Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed \texttt{velsurf_mag} from files \texttt{g10km_gridseq.nc} and \texttt{g5km_gridseq.nc} is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files \texttt{g40km_10ka_hy.nc} and \texttt{g20km_10ka_hy.nc}; the former is an added 40\,km result using an obvious modification of the run in section \ref{subsect:ssarun}.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-gridseq}
-\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20 km for 10 ka = \texttt{ts_g20km_10ka_hy.nc}, 10 km for 2 ka = \texttt{ts_g10km_gridseq.nc}, and 5 km for 200 a = \texttt{ts_g5km_gridseq.nc}.}
+\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20\,km for 10\,ka = \texttt{ts_g20km_10ka_hy.nc}, 10\,km for 2\,ka = \texttt{ts_g10km_gridseq.nc}, and 5\,km for 200\,a = \texttt{ts_g5km_gridseq.nc}.}
 \label{fig:ivolgridseq}
 \end{figure}
 
-Figure \ref{fig:ivolgridseq}, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200 a run on the 5 km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10 ka run on a 20 km grid.  The fact that the time series for ice volume on 10 km and 5 km grids are not very ``steady'' also suggests that these runs should actually be longer.
+Figure \ref{fig:ivolgridseq}, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200\,a run on the 5\,km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10\,ka run on a 20\,km grid.  The fact that the time series for ice volume on 10\,km and 5\,km grids are not very ``steady'' also suggests that these runs should actually be longer.
 
-In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3 km or 2 km resolutions \cite{AschwandenAdalgeirsdottirKhroulev}; these grids are already supported in the script \texttt{spinup.sh}.  Note that the vertical grid also generally gets refined as the horizontal grid is refined.
+In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3\,km or 2\,km resolutions \cite{AschwandenAdalgeirsdottirKhroulev}; these grids are already supported in the script \texttt{spinup.sh}.  Note that the vertical grid also generally gets refined as the horizontal grid is refined.
 
-Going to a 1km grid is possible, but you will start to see the limitations of distributed file systems in writing the enormous NetCDF files in question \cite{DickensMorey2013}.  Notice that a factor-of-five refinement in all three dimensions, e.g.~from 5 km to 1 km in the horizontal, and from 20 m to 4 m in the vertical, generates an output NetCDF file which is 125 times larger.  Since the already-generated 5 km result \texttt{g5km_gridseq.nc} is over 0.5 Gb, the result is a very large file at 1 km.
+Going to a 1km grid is possible, but you will start to see the limitations of distributed file systems in writing the enormous NetCDF files in question \cite{DickensMorey2013}.  Notice that a factor-of-five refinement in all three dimensions, e.g.~from 5\,km to 1\,km in the horizontal, and from 20\,m to 4\,m in the vertical, generates an output NetCDF file which is 125 times larger.  Since the already-generated 5 km result \texttt{g5km_gridseq.nc} is over 0.5\,Gb, the result is a very large file at 1\,km.
 
 On the other hand, on fine grids we observe that \emph{memory} parallelism, i.e.~spreading the stored model state over the separated memory of many nodes of supercomputers, is as important as the usual \emph{computation} (CPU) parallelism.
 
@@ -436,11 +437,11 @@ On the same old 2012-era 4 core laptop, \texttt{runsequential.sh} took a total o
 
 \mbox{\includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-1-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-3-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-6-csurf.png} \qquad \hspace{1.81in}}
 
-\caption{Surface speed \texttt{velsurf_mag} from a 10 km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
+\caption{Surface speed \texttt{velsurf_mag} from a 10\,km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
 \label{fig:paramstudy}
 \end{figure}
 
-On a supercomputer, the \texttt{runparallel.sh} script generally should be modified to submit jobs to the scheduler.  See example scripts \texttt{advanced/paramspawn.sh} and \texttt{advanced/paramsubmit.sh} for a parameter study that does this.  (But see your system administrator if you don't know what a ``job scheduler'' is!)  Of course, if you have a supercomputer then you can redo this parameter study on a 5 km grid.
+On a supercomputer, the \texttt{runparallel.sh} script generally should be modified to submit jobs to the scheduler.  See example scripts \texttt{advanced/paramspawn.sh} and \texttt{advanced/paramsubmit.sh} for a parameter study that does this.  (But see your system administrator if you don't know what a ``job scheduler'' is!)  Of course, if you have a supercomputer then you can redo this parameter study on a 5\,km grid.
 
 Results from these runs are seen in Figures \ref{fig:ivolparamstudy} and \ref{fig:paramstudy}.  In the former we see that the $(0.5,3)$ run simply continues the previous initialization run.  In some other graphs we see abrupt initial changes, caused by abrupt parameter change, e.g.~when the basal sliding becomes much more plastic ($q=0.1$).  In all cases with $e=1$ the flow slows and the sheet grows in volume as discharge decreases, while in all cases with $e=6$ the flow accelerates and the sheet shrinks in volume as discharge increases.
 
@@ -450,9 +451,9 @@ From such figures we can make an informal assessment and comparison of the resul
 
 \clearpage  % does not lengthen pages, and puts Figure \ref{fig:paramstudy} before Table \ref{tab:NetCDFview}
 
-\subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  PISM takes one or more NetCDF files as input, then it does some computation, and then it produces one or more NetCDF files as output.  Usually, other tools help to extract meaning from these NetCDF files, and yet more tools help with creating PISM input files or post-processing PISM output files.  Thus we conclude this Getting Started section with a list of some NetCDF tools in Table \ref{tab:NetCDFview}.
+\subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  PISM takes one or more NetCDF files as input, then it does some computation, and then it produces one or more NetCDF files as output.  But other tools are usually needed to help to extract meaning from NetCDF files, and yet more NetCDF tools help with creating PISM input files or post-processing PISM output files.  Thus we finish this section with a list of NetCDF tools in Table \ref{tab:NetCDFview}.
 
-We frequently use \texttt{ncview} and ``\texttt{ncdump -h}'' for quick visualization and metadata examination.  NCO has powerful command-line manipulation of NetCDF files, but requires some learning.  Often python scripts (using the \texttt{netcdf4-python} package; see the PISM Installation Manual), or Matlab or other languages, are the fastest way to fix up a NetCDF file or extract fields from it.  To use CDO on PISM files, first run the script \texttt{nc2cdo.py}, from the \texttt{util/} PISM directory, on the file.  This fixes the metadata so that CDO will understand the mapping.
+The PISM authors use \texttt{ncview} and ``\texttt{ncdump -h}'' for quick visualization and metadata examination.  NCO has powerful command-line manipulation of NetCDF files, but requires some learning.  Another such command-line tool is CDO, but to use CDO on PISM files first run the script \texttt{nc2cdo.py}, from the \texttt{util/} PISM directory, on the file to fix the metadata so that CDO will understand the mapping.  Finally, Python scripts using the \texttt{netcdf4-python} package (see the PISM Installation Manual) are often the best way to non-trivially change a NetCDF file or make publishable figures from it.  Matlab also has good NetCDF I/O capabilities.
 
 See Table \ref{tab:modelhierarchy} in subsection \ref{sec:model-hierarchy} for an overview on the data necessary for modeling.  For more information on the format of input files for PISM, see section \ref{sec:initboot}.
 

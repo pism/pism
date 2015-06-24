@@ -22,10 +22,9 @@ Run a grid sequencing like in Chapter 1 of the User's Manual to get
 
     $ ./run-decoupled.sh 5 g2km_gridseq.nc              # 5 year runs
 
-This run produces four files of importance, namely `routing-decoupled.nc`,
-`ex_routing-decoupled.nc`, `distributed-decoupled.nc`, `ex_distributed-decoupled.nc`.
+This run produces six files: `routing-decoupled.nc`, `ex_routing-decoupled.nc`, `ts_routing-decoupled.nc`, `distributed-decoupled.nc`, `ex_distributed-decoupled.nc`, `ts_distributed-decoupled.nc`.
 
-To generate figures from the paper do:
+To generate map-plane figures from the paper do:
 
     $ ln -s ../basemapfigs.py
     $ ./allfigs.sh g2km_gridseq
@@ -33,3 +32,9 @@ To generate figures from the paper do:
 The second script `allfigs.sh` calls other figure-generating
 scripts: `basemapfigs.py`, `genGreenfig.sh`, `genscatfig.sh`,
 and `showPvsW.py`.  It also uses `mogrify` from the [Imagemagick](http://www.imagemagick.org/) tools.)
+
+To show some additional hydrology time-series do
+
+    $ ./hydro-tsshow.py ts-routing.png ts_routing-decoupled.nc
+    $ ./hydro-tsshow.py ts-distributed.png ts_distributed-decoupled.nc
+

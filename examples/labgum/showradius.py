@@ -20,29 +20,29 @@ import argparse
 
 parser = argparse.ArgumentParser(description='A script to show margin radius time series.  Requires one or more NetCDF files with "time" dimension and "time" and "iarea" variables.  Generates a .png image file with the graph.')
 parser.add_argument('-o', '--outfile', metavar='FILENAME',
-                   help='output file name (PNG)',default='foo.png')
+                    help='output file name (PNG)', default='foo.png')
 parser.add_argument('-d', '--datafile', metavar='FILENAME',
-                   help='data file name (ASCII with two columns:  t r_N)')
+                    help='data file name (ASCII with two columns:  t r_N)')
 parser.add_argument('infiles', metavar='FILENAME', nargs='+',
-                   help='input file name (NetCDF)')
+                    help='input file name (NetCDF)')
 args = parser.parse_args()
 
-plt.figure(figsize=(12,6))
+plt.figure(figsize=(12, 6))
 plt.hold(True)
 
 for j in range(len(args.infiles)):
-  nc = netCDF.Dataset(args.infiles[j], "r")
-  t = nc.variables["time"][:]
-  iarea = nc.variables["iarea"][:]
-  nc.close()
-  plt.loglog(t[t>2], np.sqrt(iarea[t>2]/np.pi) * 100.0, linewidth=2.0,  # after t=2s, and in cm
-             label=args.infiles[j])
+    nc = netCDF.Dataset(args.infiles[j], "r")
+    t = nc.variables["time"][:]
+    iarea = nc.variables["iarea"][:]
+    nc.close()
+    plt.loglog(t[t > 2], np.sqrt(iarea[t > 2] / np.pi) * 100.0, linewidth=2.0,  # after t=2s, and in cm
+               label=args.infiles[j])
 
 if args.datafile != None:
-  A = np.loadtxt(args.datafile)
-  data_t = A[:,0]
-  data_rN = A[:,1]
-  plt.loglog(data_t, 100.0 * data_rN, 'kx', label='observed')  # cm versus s
+    A = np.loadtxt(args.datafile)
+    data_t = A[:, 0]
+    data_rN = A[:, 1]
+    plt.loglog(data_t, 100.0 * data_rN, 'ko', label='observed', ms=4)  # cm versus s
 
 plt.hold(False)
 plt.legend(loc='upper left')
@@ -54,4 +54,3 @@ plt.ylabel(r"$r_N$  (cm)", size=14)
 plt.grid(True)
 
 plt.savefig(args.outfile)
-

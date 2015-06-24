@@ -6,16 +6,17 @@ except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
+
 class PISMDataset(netCDF.Dataset):
 
     def create_time(self, use_bounds=False, length=None, units=None):
-        self.createDimension('time', size = length)
+        self.createDimension('time', size=length)
         t_var = self.createVariable('time', 'f8', ('time',))
 
         t_var.axis = "T"
         t_var.long_name = "time"
         if not units:
-            t_var.units = "seconds since 1-1-1" # just a default
+            t_var.units = "seconds since 1-1-1"  # just a default
         else:
             t_var.units = units
 
@@ -23,7 +24,7 @@ class PISMDataset(netCDF.Dataset):
             self.createDimension('n_bounds', 2)
             self.createVariable("time_bounds", 'f8', ('time', 'n_bounds'))
             t_var.bounds = "time_bounds"
-    
+
     def create_dimensions(self, x, y, time_dependent=False, use_time_bounds=False):
         """
         Create PISM-compatible dimensions in a NetCDF file.
@@ -66,13 +67,13 @@ class PISMDataset(netCDF.Dataset):
         """attrs should be a list of (name, value) tuples."""
         if not attrs:
             return
-        
+
         for (name, value) in attrs.iteritems():
             if name == "_FillValue":
                 continue
             setattr(self.variables[var_name], name, value)
 
-    def define_2d_field(self, var_name, time_dependent=False, dims=None, nc_type = 'f8', attrs=None):
+    def define_2d_field(self, var_name, time_dependent=False, dims=None, nc_type='f8', attrs=None):
         """
         time_dependent: boolean
 
@@ -135,7 +136,7 @@ class PISMDataset(netCDF.Dataset):
 
         if time_dependent:
             last_record = self.variables['time'].size - 1
-            var[last_record,:,:] = data
+            var[last_record, :, :] = data
         else:
             var[:] = data
 
@@ -148,7 +149,7 @@ class PISMDataset(netCDF.Dataset):
         var[:] = data
 
         return var
-    
+
 if __name__ == "__main__":
     # produce a NetCDF file for testing
     from numpy import linspace, meshgrid
@@ -160,17 +161,17 @@ if __name__ == "__main__":
 
     xx, yy = meshgrid(x, y)
 
-    nc.create_dimensions(x, y, time_dependent = True, use_time_bounds = True)
+    nc.create_dimensions(x, y, time_dependent=True, use_time_bounds=True)
 
-    nc.define_2d_field("xx", time_dependent = True,
-                       attrs = {"long_name"   : "xx",
-                                "comment"     : "test variable",
-                                "valid_range" : (-200.0, 200.0)})
+    nc.define_2d_field("xx", time_dependent=True,
+                       attrs={"long_name": "xx",
+                              "comment": "test variable",
+                              "valid_range": (-200.0, 200.0)})
 
     for t in [0, 1, 2, 3]:
-        nc.append_time(t, (t-1, t))
+        nc.append_time(t, (t - 1, t))
 
-        nc.write("xx", xx + t, time_dependent = True)
-        nc.write("yy", yy + 2*t, time_dependent = True)
+        nc.write("xx", xx + t, time_dependent=True)
+        nc.write("yy", yy + 2 * t, time_dependent=True)
 
     nc.close()

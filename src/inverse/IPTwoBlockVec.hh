@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IPTWOBLOCKVEC_HH_51CJ6YY0
-#define IPTWOBLOCKVEC_HH_51CJ6YY0
+#ifndef IPTWOBLOCKVEC_HH
+#define IPTWOBLOCKVEC_HH
 
-#include <petsc.h>
+#include <petscis.h>
+#include <petscvec.h>
+
+#include "base/util/petscwrappers/Vec.hh"
+#include "base/util/petscwrappers/IS.hh"
+#include "base/util/petscwrappers/VecScatter.hh"
 
 namespace pism {
+namespace inverse {
 
 class IPTwoBlockVec {
 public:
@@ -31,41 +37,40 @@ public:
   IS blockAIndexSet();
   IS blockBIndexSet();
 
-  PetscErrorCode scatter(Vec a, Vec b);
-  PetscErrorCode scatterToA(Vec a);
-  PetscErrorCode scatterToB(Vec b);
+  void scatter(Vec a, Vec b);
+  void scatterToA(Vec a);
+  void scatterToB(Vec b);
 
-  PetscErrorCode scatter(Vec ab, Vec a, Vec b);
-  PetscErrorCode scatterToA(Vec ab, Vec a);
-  PetscErrorCode scatterToB(Vec ab, Vec b);
+  void scatter(Vec ab, Vec a, Vec b);
+  void scatterToA(Vec ab, Vec a);
+  void scatterToB(Vec ab, Vec b);
 
-  PetscErrorCode gather(Vec a, Vec b);
-  PetscErrorCode gatherFromA(Vec a);
-  PetscErrorCode gatherFromB(Vec b);
+  void gather(Vec a, Vec b);
+  void gatherFromA(Vec a);
+  void gatherFromB(Vec b);
 
-  PetscErrorCode gather(Vec a, Vec b, Vec ab);
-  PetscErrorCode gatherFromA(Vec a, Vec ab);
-  PetscErrorCode gatherFromB(Vec b, Vec ab);
+  void gather(Vec a, Vec b, Vec ab);
+  void gatherFromA(Vec a, Vec ab);
+  void gatherFromB(Vec b, Vec ab);
 
-  operator Vec &() {
+  operator Vec () {
     return m_ab;
   }
 
 protected:
-  PetscErrorCode construct(Vec a, Vec b);
-  PetscErrorCode destruct();
-
-  Vec m_ab;
+  void scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m);
+  petsc::Vec m_ab;
   
   PetscInt m_na_local, m_na_global, m_nb_local, m_nb_global;
   
-  IS m_a_in_ab;
-  IS m_b_in_ab;
+  petsc::IS m_a_in_ab;
+  petsc::IS m_b_in_ab;
   
-  VecScatter m_scatter_a;
-  VecScatter m_scatter_b;
+  petsc::VecScatter m_scatter_a;
+  petsc::VecScatter m_scatter_b;
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
-#endif /* end of include guard: IPTWOBLOCKVEC_HH_51CJ6YY0 */
+#endif /* end of include guard: IPTWOBLOCKVEC_HH */

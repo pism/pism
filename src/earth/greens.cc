@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007, 2015 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,8 @@
 
 #include "greens.hh"
 
-
+namespace pism {
+namespace bed {
 double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN) {
   // Matlab:  function z=integrand(xi,eta,dx,dy,p,q)
 
@@ -132,3 +133,5 @@ double viscDisc(double t, double H0, double R0, double r,
   return rho * grav * H0 * R0 * sum;
 }
 
+} // end of namespace bed
+} // end of namespace pism

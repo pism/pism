@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,14 @@
 #ifndef __basal_resistance_hh
 #define __basal_resistance_hh
 
-#include <petscsys.h>
+#include <mpi.h>
 
-#include "PISMUnits.hh"
+#include "base/util/PISMUnits.hh"
 
 namespace pism {
 
 class Config;
+class Logger;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
@@ -35,26 +36,25 @@ class Config;
 class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const Config &config);
-  virtual ~IceBasalResistancePlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual ~IceBasalResistancePlasticLaw();
+  virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
-  double plastic_regularize;
-  UnitSystem m_unit_system;
+  double m_plastic_regularize;
 };
 
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const Config &config);
-  virtual ~IceBasalResistancePseudoPlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual ~IceBasalResistancePseudoPlasticLaw();
+  virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
-  double pseudo_q, pseudo_u_threshold, sliding_scale_factor_reduces_tauc;
+  double m_pseudo_q, m_pseudo_u_threshold, m_sliding_scale_factor_reduces_tauc;
 };
 
 } // end of namespace pism
