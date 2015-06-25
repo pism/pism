@@ -121,6 +121,9 @@ netcdf pism_config {
     pism_config:sub_groundingline  = "false";
     pism_config:sub_groundingline_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
 
+    pism_config:sub_groundingline_basal_melt  = "true";
+    pism_config:sub_groundingline_basal_melt_doc = "If sub_groundingline is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.";
+
     pism_config:tauc_slippery_grounding_lines = "no";
     pism_config:tauc_slippery_grounding_lines_doc = "If yes, replace normally-computed tauc from Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation.";
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2014 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2015 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -278,7 +278,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
-  const bool sub_gl = config.get_flag("sub_groundingline");
+  const bool sub_gl = (config.get_flag("sub_groundingline") and
+                       config.get_flag("sub_groundingline_basal_melt"));
   if (sub_gl == true) {
     ierr = gl_mask.begin_access(); CHKERRQ(ierr);
   }

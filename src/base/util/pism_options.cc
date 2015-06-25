@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -784,6 +784,12 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
                                    "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("subgl_basal_melt", "sub_groundingline_basal_melt"); CHKERRQ(ierr);
+
+  // sub_groundingline is implied by sub_groundingline_basal_melt
+  if (config.get_flag("sub_groundingline_basal_melt")) {
+    ierr = config.set_flag_from_option("sub_groundingline", true); CHKERRQ(ierr);
+  }
 
   // Ice shelves
 
