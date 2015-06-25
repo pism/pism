@@ -22,6 +22,7 @@
 #include <petscdmda.h>
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 #include "iceModel.hh"
 #include "base/basalstrength/PISMConstantYieldStress.hh"
@@ -58,7 +59,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/stressbalance/sia/SIAFD_FEvoR.hh"
-#include "fevor/PISMFEvoR.hh"
+
 
 namespace pism {
 
@@ -163,8 +164,12 @@ void IceModel::model_state_setup() {
   }
 
   if (m_fevor != NULL) {
+      m_log->message(2,
+                 "\n\n INITIALIZING FEVOR \n\n");
     m_fevor->init();
-  }
+      m_log->message(2,
+                 "\n\n INITIALIZED FEVOR \n\n");
+ }
 
   if (climatic_mass_balance_cumulative.was_created()) {
     if (input_file.is_set()) {
@@ -488,7 +493,8 @@ void IceModel::allocate_submodels() {
 void IceModel::allocate_fevor() {
   if (m_fevor == NULL &&
       m_config->get_string("stress_balance_model") == "sia_fevor") {
-    m_fevor = new PISMFEvoR(m_grid);
+    m_fevor = new PISMFEvoR(m_grid, stress_balance);
+    m_grid->variables().add(* (m_fevor->get_enhancement_factor()));
   } else {
     m_fevor = NULL;
   }

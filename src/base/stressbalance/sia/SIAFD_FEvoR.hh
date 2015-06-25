@@ -21,6 +21,7 @@
 #define _SIAFD_FEVOR_H_
 
 #include "SIAFD.hh"
+#include "fevor/PISMFEvoR.hh"
 
 namespace pism {
   namespace stressbalance{
@@ -33,10 +34,10 @@ namespace pism {
       virtual void init();
     protected:
       virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-      virtual void compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
+      virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
 					  IceModelVec2Stag &result, bool fast);
       //private:
-
+      const IceModelVec3*  enhancement_factor;
     };
   } // end of namespace stressbalance
 } // end of namespace pism

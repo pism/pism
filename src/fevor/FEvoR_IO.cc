@@ -105,7 +105,9 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
 
 
   // FIXME: these should be configurable
-  nc.def_dim("time",pism::PISM_UNLIMITED);
+  bool dim_exists = nc.inq_dim("time");
+  if (! dim_exists)
+    nc.def_dim("time",pism::PISM_UNLIMITED);
 
   // save packing dimensions
   {
@@ -125,8 +127,9 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
   std::vector<double> index;
   std::vector<unsigned int> start(1, 0), count(1, 0);
   // distributions
-  bool dim_exists = false;
   dim_exists = nc.inq_dim("distribution_index");
+
+  
   if (dim_exists == false) {
  
     nc.def_dim("distribution_index", n_distributions);
@@ -136,6 +139,9 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
       index[j] = j;
     }
     count[0] = n_distributions;
+    std::vector<std::string> dimensions;
+    dimensions.push_back("distribution_index");
+    nc.def_var("distribution_index", PISM_DOUBLE, dimensions);
     nc.put_vara_double("distribution_index",
                               start, count, &index[0]);
   }
@@ -143,6 +149,7 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
   // crystals
   dim_exists = nc.inq_dim("crystal_index");
   if (dim_exists == false) {
+    nc.redef();
     nc.def_dim("crystal_index", n_crystals);
 
     index.resize(n_crystals);
@@ -150,6 +157,9 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
       index[j] = j;
     }
     count[0] = n_crystals;
+    std::vector<std::string> dimensions;
+    dimensions.push_back("crystal_index");
+    nc.def_var("crystal_index", PISM_DOUBLE, dimensions);
     nc.put_vara_double("crystal_index",
                               start, count, &index[0]);
   }
@@ -157,6 +167,7 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
   // parameters
   dim_exists = nc.inq_dim("parameter_index");
   if (dim_exists == false)  {
+    nc.redef();
     nc.def_dim("parameter_index", FEvoR::Distribution::numberParameters);
 
     index.resize(FEvoR::Distribution::numberParameters);
@@ -164,6 +175,9 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
       index[j] = j;
     }
     count[0] = FEvoR::Distribution::numberParameters;
+    std::vector<std::string> dimensions;
+    dimensions.push_back("parameter_index");
+    nc.def_var("parameter_index", PISM_DOUBLE, dimensions);
     nc.put_vara_double("parameter_index",
                               start, count, &index[0]);
   }
@@ -191,11 +205,13 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
     bool exists = false;
     exists = nc.inq_var("p_x");
     if (not exists) {
+      nc.redef();
       nc.def_var("p_x", PISM_DOUBLE, dims);
     }
 
     exists = nc.inq_var("p_y");
     if (not exists) {
+      nc.redef();
       nc.def_var("p_y", PISM_DOUBLE, dims);
     }
 

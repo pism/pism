@@ -34,7 +34,8 @@
 namespace pism {
   namespace stressbalance{
     StressBalance_FEvoR::StressBalance_FEvoR(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod)
-  : StressBalance(g, sb, ssb_mod) {
+      : StressBalance(g, sb, ssb_mod) {
+       
   // empty
 }
 
@@ -49,6 +50,8 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
 
 void StressBalance_FEvoR::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
+  m_log->message(4,
+                    "\n Beginning compute_volumetric_strain_heating()\n"); 
 
   const rheology::FlowLaw *flow_law = m_shallow_stress_balance->flow_law();
   EnthalpyConverter::Ptr EC = m_shallow_stress_balance->enthalpy_converter();
@@ -192,6 +195,9 @@ void StressBalance_FEvoR::compute_volumetric_strain_heating() {
     loop.failed();
   }
   loop.check();
+  m_log->message(4,
+                    "\n Done with compute_volumetric_strain_heating()\n"); 
+
 }
   } // end of namespace stressbalance
 } // end of namespace pism

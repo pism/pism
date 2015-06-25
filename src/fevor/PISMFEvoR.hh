@@ -20,11 +20,11 @@
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/enthalpyConverter.hh"
 #include <fevor_distribution.hh>
 
 namespace pism {
 
-class EnthalpyConverter;
 
   namespace stressbalance{
   class StressBalance;
@@ -47,11 +47,12 @@ class PSB_tauyz;
  */
 class PISMFEvoR : public Component_TS {
 public:
-  PISMFEvoR(IceGrid::ConstPtr g);
+  PISMFEvoR(IceGrid::ConstPtr g, stressbalance::StressBalance *sb);
   virtual ~PISMFEvoR();
 
   void init();
 
+  IceModelVec3 * get_enhancement_factor(); 
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double t, double dt);
 
@@ -62,8 +63,8 @@ public:
 
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
 private:
-  stressbalance::StressBalance *m_stress_balance;
-  EnthalpyConverter *m_EC;
+  stressbalance::StressBalance* m_stress_balance;
+  EnthalpyConverter::Ptr m_EC; 
 
   // containers for the average stress and temperature from one fevor_step 
   // to another for every particle!
@@ -108,7 +109,7 @@ private:
                                     const std::vector<double> &values,
                                     IceModelVec3 &result);
 
-  IceModelVec3 m_enhancement_factor;
+  IceModelVec3 * m_enhancement_factor;
   const  IceModelVec3 *m_enthalpy;
   stressbalance::PSB_pressure *m_pressure;
   stressbalance::PSB_tauxz *m_tauxz;

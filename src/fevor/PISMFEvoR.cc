@@ -53,11 +53,12 @@ using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 
 namespace pism {
 
-  PISMFEvoR::PISMFEvoR(IceGrid::ConstPtr g)
-  : Component_TS(g), 
-    m_packing_dimensions(std::vector<unsigned int>(3, 8)),
-    m_d_iso(m_packing_dimensions, 0.0)
-{
+  PISMFEvoR::PISMFEvoR(IceGrid::ConstPtr g, stressbalance::StressBalance *sb)
+  : Component_TS(g),
+    m_stress_balance(sb),
+      m_packing_dimensions(std::vector<unsigned int>(3, 8)),
+      m_d_iso(m_packing_dimensions, 0.0)
+  {
  
   unsigned int n_particles = (unsigned int)m_config->get_double("fevor_n_particles");
                 
@@ -65,10 +66,20 @@ namespace pism {
   m_p_avg_stress = std::vector<double>(n_particles * 9, 0.0);
   m_p_avg_temp = std::vector<double>(n_particles, 0.0);
 
-  assert(m_EC != NULL);
+  m_EC = m_grid->ctx()->enthalpy_converter();
   assert(m_stress_balance != NULL);
 
-  allocate(); 
+  //  allocate(); 
+
+  const unsigned int stencil_width = 2;
+
+  m_enhancement_factor = new IceModelVec3;
+  m_enhancement_factor->create(m_grid, "enhancement_factor", WITH_GHOSTS,
+                                     stencil_width);
+  m_enhancement_factor->set_attrs("diagnostic", // i.e. not needed to re-start the model
+                                        "flow law enhancement factor",
+                                        "1", // dimensionless
+                                        "" /* no standard name */);
 
   // will be allocated in init()
   m_pressure = NULL;
@@ -88,7 +99,6 @@ PISMFEvoR::~PISMFEvoR() {
 MaxTimestep PISMFEvoR::max_timestep_impl(double t) {
   // uses current calander definition of a year
   //m_grid->ctx()->time()->current()
-  MaxTimestep dt (0) ;
   const double years_per_second = m_grid->ctx()->time()->convert_time_interval(1., "years");
   
   const double m_start_time = m_grid->ctx()->time()->start();
@@ -100,13 +110,20 @@ MaxTimestep PISMFEvoR::max_timestep_impl(double t) {
 
   const double epsilon = 1.0; // 1 second tolerance
   if (fevor_dt > epsilon) { 
-    dt = fevor_dt;
-  }
-  return dt;
-  
+    MaxTimestep dt = fevor_dt;
+    return dt;
+  }  else
+    {
+      MaxTimestep dt; 
+      return dt;
+    }
 }
 
 void PISMFEvoR::update_impl(double t, double dt) {
+  m_log->message(4,
+                    "\n Beginning update_impl in FEvoR()\n"); 
+
+
   m_t = t;
   m_dt = dt;
 
@@ -172,8 +189,8 @@ void PISMFEvoR::update_impl(double t, double dt) {
 
       // check if the point (x,y,z) is within the domain:
       assert(0.0 <= m_p_z[i] && m_p_z[i] <= m_grid->Lz());
-      assert(m_grid->x.front() <= m_p_x[i] && m_p_x[i] <= m_grid->x.back());
-      assert(m_grid->y.front() <= m_p_y[i] && m_p_y[i] <= m_grid->y.back());
+      assert(m_grid->x().front() <= m_p_x[i] && m_p_x[i] <= m_grid->x().back());
+      assert(m_grid->y().front() <= m_p_y[i] && m_p_y[i] <= m_grid->y().back());
 
       evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    
       evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  
@@ -255,9 +272,9 @@ void PISMFEvoR::update_impl(double t, double dt) {
     
     if (step_flag) {
       // set the enhancement factor for every grid point from our particle cloud
-      pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); 
+      pointcloud_to_grid(m_p_x, m_p_z, m_p_e, *m_enhancement_factor); 
 
-      m_enhancement_factor.update_ghosts(); 
+      m_enhancement_factor->update_ghosts(); 
     }
 
     // update particle positions -- don't want to update until gridded
@@ -275,11 +292,13 @@ void PISMFEvoR::update_impl(double t, double dt) {
     }
   }
 
-  delete & (* pressure);
-  delete & (* tauxz);
-  delete & (* tauyz);
+  //  delete & (* pressure);
+  //  delete & (* tauxz);
+  //  delete & (* tauyz);
 
-  
+    m_log->message(4,
+                    "\n END update_impl in FEvoR()\n"); 
+
 }
 
 /**
@@ -466,7 +485,7 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
 
 void PISMFEvoR::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword != "none") {
-    result.insert(m_enhancement_factor.metadata().get_string("short_name"));
+    result.insert(m_enhancement_factor->metadata().get_string("short_name"));
     result.insert("distributions");
   }
 }
@@ -474,7 +493,7 @@ void PISMFEvoR::add_vars_to_output_impl(const std::string &keyword, std::set<std
 void PISMFEvoR::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
   if (set_contains(vars, "enhancement_factor")) {
-     m_enhancement_factor.define(nc, nctype);
+     m_enhancement_factor->define(nc, nctype);
   }
 
   if (set_contains(vars, "distributions") or set_contains(vars, "recrystallizations")) {
@@ -487,7 +506,7 @@ void PISMFEvoR::define_variables_impl(const std::set<std::string> &vars, const P
 
 void PISMFEvoR::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
   if (set_contains(vars, "enhancement_factor")) {
-     m_enhancement_factor.write(nc);
+     m_enhancement_factor->write(nc);
   }
 
   if (set_contains(vars, "distributions")) {
@@ -506,14 +525,6 @@ void PISMFEvoR::allocate() {
   // SIAFD diffusive flux computation requires stencil width of 2 (we
   // traverse the grid *with ghosts* and we need staggered grid offset
   // data at each point)
-  const unsigned int stencil_width = 2;
-
-   m_enhancement_factor.create(m_grid, "enhancement_factor", WITH_GHOSTS,
-                                     stencil_width);
-   m_enhancement_factor.set_attrs("diagnostic", // i.e. not needed to re-start the model
-                                        "flow law enhancement factor",
-                                        "1", // dimensionless
-                                        "" /* no standard name */);
 
   
 }
@@ -524,7 +535,7 @@ void PISMFEvoR::init() {
                     " (FEvoR) model...\n");
 
   // set enhancement factor to something reasonable
-  m_enhancement_factor.set(m_config->get_double("sia_enhancement_factor")); 
+  m_enhancement_factor->set(m_config->get_double("sia_enhancement_factor")); 
   // make enhancement factor available to other PISM components:
   //   m_grid->variables().add(m_enhancement_factor);  //IceModelVec // FLO ! // NEEDS TO HAPPEN // ERROR // TODO
 
@@ -532,6 +543,10 @@ void PISMFEvoR::init() {
   if (m_enthalpy == NULL) {
     throw RuntimeError("enthalpy field is not available");
   }
+
+  m_log->message(2,
+                    "sorting stressbalance stuff"
+                    " (FEvoR) model...\n");
 
   // FIXME: load packing dimensions here
 
@@ -552,22 +567,34 @@ void PISMFEvoR::init() {
     m_tauyz = new stressbalance::PSB_tauyz(m_stress_balance);
     assert(m_tauyz != NULL);
   }
+   m_log->message(2,
+                    "Going to load distributions"
+                    " (FEvoR) model...\n");
 
   std::string input_file;
   int start = 0;
   bool boot = false;
   bool use_input_file = find_pism_input(input_file, boot, start);
 
-  if (use_input_file) {
+  if (use_input_file && ! boot) {
      load_distributions(input_file);
   } else {
      set_initial_distribution_parameters();
   }
 
 
+   m_log->message(2,
+                    "Loaded distributions"
+                    " (FEvoR) model...\n");
   
 }
+  IceModelVec3 * PISMFEvoR::get_enhancement_factor(){
+    std::cerr<<"testing for ndims before returning\n";
+    std::cerr<<m_enhancement_factor->get_ndims()<<"\n";
+    std::cerr<<"tested for ndims before returning\n";
 
+    return (m_enhancement_factor);
+  }
 
 /** Create an initial state (cloud of "particles").
  *

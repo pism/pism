@@ -311,6 +311,9 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     if (m_fevor != NULL) {
       MaxTimestep m_fevor_dt = m_fevor->max_timestep(current_time); 
       if (m_fevor_dt.is_finite()) {
+	  m_log->message(4,
+			 "\n fevor dt is %f\n",m_fevor_dt.value()); 
+
         dt_restrictions["FEvoR"] = m_fevor_dt.value();
       }
     }

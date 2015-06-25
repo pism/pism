@@ -30,6 +30,7 @@ public:
   virtual ~StressBalance_FEvoR();
 protected:
   virtual void compute_volumetric_strain_heating();
+  IceModelVec3* enhancement_factor;
 };
   } // end of namespace stressbalance
 } // end of namespace pism

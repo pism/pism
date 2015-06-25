@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <iostream>
+
 #include "base/stressbalance/sia/SIAFD_FEvoR.hh"
 
 #include "SIAFD.hh"
@@ -30,11 +32,13 @@
 #include "base/util/pism_const.hh"
 #include "base/util/Profiling.hh"
 
+
 namespace pism {
 
 namespace stressbalance {
-  SIAFD_FEvoR::SIAFD_FEvoR(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SIAFD(g, e) {
+  SIAFD_FEvoR::SIAFD_FEvoR(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e )
+    : SIAFD(g, e) {
+
   // empty
 }
 
@@ -52,7 +56,6 @@ void SIAFD_FEvoR::init() {
 }
 
 void SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
 
   if (m_config->get_boolean("sia_fevor_use_constant_slope")) {
     double slope = (m_config->get_double("sia_fevor_bed_slope_degrees") / 180.0) * M_PI;
@@ -64,7 +67,7 @@ void SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2St
     const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
   const IceModelVec2S
-    &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    //    &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
     &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
 
@@ -105,8 +108,10 @@ void SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2St
 
 }
 
-void SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
+void SIAFD_FEvoR::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
                                                    IceModelVec2Stag &result, bool fast) {
+  m_log->message(4,
+                    "\n Starting to compute the diffusive flux\n"); 
 
   IceModelVec2S &thk_smooth = m_work_2d[0],
     &theta = m_work_2d[1];
@@ -173,11 +178,10 @@ void SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag
 
 
   // new code
-  const IceModelVec3 *enhancement_factor = m_grid->variables().get_3d_scalar("enhancement_factor");
-  if (enhancement_factor == NULL) {
-    throw RuntimeError("enhancement_factor is not available");
-  }
-
+  enhancement_factor = m_grid->variables().get_3d_scalar("enhancement_factor");
+      if (enhancement_factor == NULL) {
+	throw RuntimeError("enhancement_factor is not available");
+      }  
   const double *EF_ij, *EF_offset;
   list.add(*enhancement_factor);
   // end of new code
@@ -286,6 +290,8 @@ void SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag
   } // o-loop
 
   m_D_max = GlobalMax(m_grid->com, my_D_max);
+  m_log->message(4,
+                    "\n Done computing the diffusive flux\n"); 
 
 }
 
