@@ -23,22 +23,22 @@
 #include "SIAFD.hh"
 
 namespace pism {
+  namespace stressbalance{
+    class Vars;
 
-class Vars;
+    class SIAFD_FEvoR : public stressbalance::SIAFD {
+    public:
+      SIAFD_FEvoR(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+      virtual ~SIAFD_FEvoR();
+      virtual void init();
+    protected:
+      virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+      virtual void compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
+					  IceModelVec2Stag &result, bool fast);
+      //private:
 
-class SIAFD_FEvoR : public SIAFD {
-public:
-  SIAFD_FEvoR(IceGrid &g, EnthalpyConverter &e, const Config &c);
-  virtual ~SIAFD_FEvoR();
-  virtual PetscErrorCode init(Vars &vars);
-protected:
-  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
-                                                IceModelVec2Stag &result, bool fast);
-private:
-  Vars *m_variables;
-};
-
+    };
+  } // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SIAFD_FEVOR_H_ */

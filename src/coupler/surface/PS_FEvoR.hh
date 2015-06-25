@@ -23,20 +23,20 @@
 #include "PSFormulas.hh"
 
 namespace pism {
-
+  namespace surface{
 /** PISM-FEvoR climate inputs.
  *
  */
 class PS_FEvoR : public PSFormulas {
 public:
-  PS_FEvoR(IceGrid &g, const Config &conf);
+  PS_FEvoR(IceGrid::ConstPtr g );
   virtual ~PS_FEvoR();
   // the interface:
-  PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(PetscReal t, PetscReal dt);
+  void init(Vars &vars);
+  void update(PetscReal t, PetscReal dt);
 };
 
-
+  } // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PS_FEvoR_H_ */

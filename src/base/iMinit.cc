@@ -57,6 +57,7 @@
 #include "varcEnthalpyConverter.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/stressbalance/sia/SIAFD_FEvoR.hh"
 #include "fevor/PISMFEvoR.hh"
 
 namespace pism {
@@ -162,7 +163,7 @@ void IceModel::model_state_setup() {
   }
 
   if (m_fevor != NULL) {
-    ierr = m_fevor->init(variables); CHKERRQ(ierr);
+    m_fevor->init();
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
@@ -357,7 +358,8 @@ void IceModel::allocate_stressbalance() {
   } else {
     stress_balance = new StressBalance(m_grid, sliding, modifier);
   }
-
+}
+  
 void IceModel::allocate_iceberg_remover() {
 
   if (iceberg_remover != NULL) {
@@ -483,15 +485,14 @@ void IceModel::allocate_submodels() {
   allocate_couplers();
 }
 
-PetscErrorCode IceModel::allocate_fevor() {
+void IceModel::allocate_fevor() {
   if (m_fevor == NULL &&
-      config.get_string("stress_balance_model") == "sia_fevor") {
-    m_fevor = new PISMFEvoR(grid, config, EC, stress_balance);
+      m_config->get_string("stress_balance_model") == "sia_fevor") {
+    m_fevor = new PISMFEvoR(m_grid);
   } else {
     m_fevor = NULL;
   }
 
-  return 0;
 }
 
 void IceModel::allocate_couplers() {

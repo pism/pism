@@ -17,18 +17,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 #include <fevor_distribution.hh>
 
 namespace pism {
 
 class EnthalpyConverter;
-class StressBalance;
-class PSB_pressure;
+
+  namespace stressbalance{
+  class StressBalance;
+  class PSB_pressure;
 class PSB_tauxz;
 class PSB_tauyz;
-
+  }
 /*! PISM-side wrapper around the FEvoR code. Provides the
  *  spatially-variable enhancement factor field.
  *
@@ -44,23 +47,22 @@ class PSB_tauyz;
  */
 class PISMFEvoR : public Component_TS {
 public:
-  PISMFEvoR(IceGrid &g, const Config &conf,
-            EnthalpyConverter *EC, StressBalance *stress_balance);
+  PISMFEvoR(IceGrid::ConstPtr g);
   virtual ~PISMFEvoR();
 
-  PetscErrorCode init(Vars &vars);
+  void init();
 
-  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
-  virtual PetscErrorCode update(double t, double dt);
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double t, double dt);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
 private:
-  StressBalance *m_stress_balance;
+  stressbalance::StressBalance *m_stress_balance;
   EnthalpyConverter *m_EC;
 
   // containers for the average stress and temperature from one fevor_step 
@@ -84,33 +86,33 @@ private:
   std::vector<unsigned int> m_n_migration_recrystallizations,
     m_n_polygonization_recrystallizations;
 
-  PetscErrorCode allocate();
+  void allocate();
 
-  PetscErrorCode set_initial_distribution_parameters();
+  void  set_initial_distribution_parameters();
 
-  PetscErrorCode load_distributions(const std::string &input_file);
-  PetscErrorCode save_distributions(const PIO &nc);
+  void load_distributions(const std::string &input_file);
+  void save_distributions(const PIO &nc);
 
-  PetscErrorCode save_diagnostics(const PIO &nc);
+  void save_diagnostics(const PIO &nc);
 
-  PetscErrorCode update_particle_position(double &x, double &y, double &z,
+  void  update_particle_position(double &x, double &y, double &z,
                                           double u, double v, double w,
                                           double m_dt);
 
-  PetscErrorCode evaluate_at_point(IceModelVec3 &input,
+  void  evaluate_at_point(const IceModelVec3 &input,
                                    double x, double y, double z,
                                    double &result);
 
-  PetscErrorCode pointcloud_to_grid(const std::vector<double> &x,
+  void  pointcloud_to_grid(const std::vector<double> &x,
                                     const std::vector<double> &z,
                                     const std::vector<double> &values,
                                     IceModelVec3 &result);
 
   IceModelVec3 m_enhancement_factor;
-  IceModelVec3 *m_enthalpy;
-  PSB_pressure *m_pressure;
-  PSB_tauxz *m_tauxz;
-  PSB_tauyz *m_tauyz;
+  const  IceModelVec3 *m_enthalpy;
+  stressbalance::PSB_pressure *m_pressure;
+  stressbalance::PSB_tauxz *m_tauxz;
+  stressbalance::PSB_tauyz *m_tauyz;
 };
 
 } // end of namespace pism

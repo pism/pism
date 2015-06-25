@@ -176,7 +176,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     }
 
     if (m_fevor != NULL) {
-      ierr = m_fevor->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+      m_fevor->define_variables(vars, nc, nctype); 
     }
 
     if (stress_balance != NULL) {
@@ -249,7 +249,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
 
   if (m_fevor != NULL) {
-    ierr = m_fevor->write_variables(vars, nc); CHKERRQ(ierr);
+    m_fevor->write_variables(vars, nc); 
   }
 
   // Write stress balance-related variables:

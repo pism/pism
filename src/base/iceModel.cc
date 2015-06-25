@@ -676,7 +676,7 @@ void IceModel::step(bool do_mass_continuity,
   max_timestep(dt, skipCountDown);
 
   if (m_fevor != NULL) {
-    ierr = m_fevor->update(grid.time->current(), dt); CHKERRQ(ierr);
+    m_fevor->update(current_time, dt); 
   }
 
   //! \li Update surface and ocean models.

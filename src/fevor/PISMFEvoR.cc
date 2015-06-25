@@ -33,27 +33,33 @@
 #include <CGAL/interpolation_functions.h>
 
 #include "PISMFEvoR.hh"
-#include "PISMConfig.hh"
-#include "PISMVars.hh"
-#include "PISMStressBalance_diagnostics.hh"
-#include "enthalpyConverter.hh"
+#include "base/util/PISMConfig.hh"
+#include "base/util/PISMVars.hh"
+#include "base/stressbalance/PISMStressBalance_diagnostics.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/util/error_handling.hh"
 
 #include "FEvoR_IO.hh"
-#include "pism_options.hh"
-#include "PISMTime.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/IceModelVec.hh"
+#include "base/util/MaxTimestep.hh"
+
+#include "base/util/pism_memory.hh"
+using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 
 #include<iostream>
 
 namespace pism {
 
-PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
-                     StressBalance *stress_balance)
-  : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
+  PISMFEvoR::PISMFEvoR(IceGrid::ConstPtr g)
+  : Component_TS(g), 
     m_packing_dimensions(std::vector<unsigned int>(3, 8)),
     m_d_iso(m_packing_dimensions, 0.0)
 {
  
-  unsigned int n_particles = (unsigned int)config.get("fevor_n_particles");
+  unsigned int n_particles = (unsigned int)m_config->get_double("fevor_n_particles");
                 
   m_distributions = std::vector<FEvoR::Distribution>(n_particles, m_d_iso);
   m_p_avg_stress = std::vector<double>(n_particles * 9, 0.0);
@@ -62,7 +68,7 @@ PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
   assert(m_EC != NULL);
   assert(m_stress_balance != NULL);
 
-  PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
+  allocate(); 
 
   // will be allocated in init()
   m_pressure = NULL;
@@ -79,40 +85,40 @@ PISMFEvoR::~PISMFEvoR() {
   delete m_tauyz;
 }
 
-PetscErrorCode PISMFEvoR::max_timestep(double t, double &dt, bool &restrict) {
+MaxTimestep PISMFEvoR::max_timestep_impl(double t) {
   // uses current calander definition of a year
-  double years_per_second = grid.time->convert_time_interval(1., "years");
+  //m_grid->ctx()->time()->current()
+  MaxTimestep dt (0) ;
+  const double years_per_second = m_grid->ctx()->time()->convert_time_interval(1., "years");
   
-  const double m_start_time = grid.time->start();
+  const double m_start_time = m_grid->ctx()->time()->start();
   
-  double fevor_step = (double)config.get("fevor_step");
+  double fevor_step = m_config->get_double("fevor_step");
   fevor_step = fevor_step / years_per_second;
 
   double fevor_dt = std::fmod(t - m_start_time, fevor_step);
 
   const double epsilon = 1.0; // 1 second tolerance
   if (fevor_dt > epsilon) { 
-    restrict = true;
     dt = fevor_dt;
   }
-
-  return 0;
+  return dt;
+  
 }
 
-PetscErrorCode PISMFEvoR::update(double t, double dt) {
+void PISMFEvoR::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
-  PetscErrorCode ierr;
 
   // determine whether or not to run FEvoR
   // -------------------------------------
   bool step_flag = false;
   const double epsilon = 1.0; // 1 second tolerance
   // uses current calander definition of a year
-  double years_per_second = grid.time->convert_time_interval(1., "years");
-  const double m_start_time = grid.time->start();
+  double years_per_second = m_grid->ctx()->time()->convert_time_interval(1., "years");
+  const double m_start_time = m_grid->ctx()->time()->start();
   
-  double fevor_step = (double)config.get("fevor_step");
+  double fevor_step = (double)m_config->get_double("fevor_step");
   fevor_step = fevor_step / years_per_second;
 
   double fevor_dt = std::fmod(m_t + m_dt - m_start_time, fevor_step);
@@ -120,29 +126,29 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     step_flag = true;
   }
   
-  IceModelVec3 *u = NULL, *v = NULL, *w = NULL;
-  ierr = m_stress_balance->get_3d_velocity(u, v, w); CHKERRQ(ierr);
+  const IceModelVec3
+    &u = m_stress_balance->velocity_u(),
+    &v = m_stress_balance->velocity_v(),
+    &w = m_stress_balance->velocity_w();
 
   assert(m_pressure != NULL);
-  IceModelVec* pressure = NULL; // FIXME: use a smart pointer
-  ierr = m_pressure->compute(pressure); CHKERRQ(ierr);
-  IceModelVec3 *pressure3 = static_cast<IceModelVec3*>(pressure);
+  IceModelVec::Ptr pressure  = m_pressure->compute();
+  IceModelVec3::Ptr pressure3 = dynamic_pointer_cast<IceModelVec3,IceModelVec>(pressure);
+
 
   assert(m_tauxz != NULL);
-  IceModelVec* tauxz = NULL;    // FIXME: use a smart pointer
-  ierr = m_tauxz->compute(tauxz); CHKERRQ(ierr);
-  IceModelVec3 *tauxz3 = static_cast<IceModelVec3*>(tauxz);
+  IceModelVec::Ptr   tauxz = m_tauxz->compute(); 
+  IceModelVec3::Ptr tauxz3    = dynamic_pointer_cast<IceModelVec3,IceModelVec>(tauxz);
 
   assert(m_tauyz != NULL);
-  IceModelVec* tauyz = NULL;    // FIXME: use a smart pointer
-  ierr = m_tauyz->compute(tauyz); CHKERRQ(ierr);
-  IceModelVec3 *tauyz3 = static_cast<IceModelVec3*>(tauyz);
+  IceModelVec::Ptr tauyz = m_tauyz->compute();
+  IceModelVec3::Ptr tauyz3 = dynamic_pointer_cast<IceModelVec3,IceModelVec>(tauyz);
 
   {
     IceModelVec::AccessList list;
-    list.add(*u);
-    list.add(*v);
-    list.add(*w);
+    list.add(u);
+    list.add(v);
+    list.add(w);
     list.add(*pressure3);
     list.add(*tauxz3);
     list.add(*tauyz3);
@@ -165,13 +171,13 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         T      = 0.0;
 
       // check if the point (x,y,z) is within the domain:
-      assert(0.0 <= m_p_z[i] && m_p_z[i] <= grid.Lz);
-      assert(grid.x.front() <= m_p_x[i] && m_p_x[i] <= grid.x.back());
-      assert(grid.y.front() <= m_p_y[i] && m_p_y[i] <= grid.y.back());
+      assert(0.0 <= m_p_z[i] && m_p_z[i] <= m_grid->Lz());
+      assert(m_grid->x.front() <= m_p_x[i] && m_p_x[i] <= m_grid->x.back());
+      assert(m_grid->y.front() <= m_p_y[i] && m_p_y[i] <= m_grid->y.back());
 
-      ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    CHKERRQ(ierr);
-      ierr = evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
-      ierr = evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
+      evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    
+      evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  
+      evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  
 
       // Make sure that the pressure is positive. (Zero pressure
       // probably means that the current particle exited the ice blob.
@@ -179,8 +185,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       // to be discarded and replaced by new ones *within* the ice.)
       assert(P >= 0.0);
 
-      ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
-      ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
+      evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); 
+      T = m_EC->temperature(E, P); 
      
       //m_p_avg_temp[i] += T*m_dt;
       m_p_avg_temp[i] += T;
@@ -249,9 +255,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     
     if (step_flag) {
       // set the enhancement factor for every grid point from our particle cloud
-      ierr = pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); CHKERRQ(ierr);
+      pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); 
 
-      ierr = m_enhancement_factor.update_ghosts(); CHKERRQ(ierr);
+      m_enhancement_factor.update_ghosts(); 
     }
 
     // update particle positions -- don't want to update until gridded
@@ -261,19 +267,19 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
              p_v = 0.0,
              p_w = 0.0;
 
-      ierr = evaluate_at_point(*u, m_p_x[i], m_p_y[i], m_p_z[i], p_u);   CHKERRQ(ierr);
-      ierr = evaluate_at_point(*v, m_p_x[i], m_p_y[i], m_p_z[i], p_v);   CHKERRQ(ierr);
-      ierr = evaluate_at_point(*w, m_p_x[i], m_p_y[i], m_p_z[i], p_w);   CHKERRQ(ierr);
+      evaluate_at_point(u, m_p_x[i], m_p_y[i], m_p_z[i], p_u);   
+      evaluate_at_point(v, m_p_x[i], m_p_y[i], m_p_z[i], p_v);   
+      evaluate_at_point(w, m_p_x[i], m_p_y[i], m_p_z[i], p_w);   
 
-      ierr = update_particle_position(m_p_x[i], m_p_y[i], m_p_z[i], p_u, p_v, p_w, m_dt); CHKERRQ(ierr);
+      update_particle_position(m_p_x[i], m_p_y[i], m_p_z[i], p_u, p_v, p_w, m_dt); 
     }
   }
 
-  delete pressure;
-  delete tauxz;
-  delete tauyz;
+  delete & (* pressure);
+  delete & (* tauxz);
+  delete & (* tauyz);
 
-  return 0;
+  
 }
 
 /**
@@ -285,7 +291,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double &z,
+void PISMFEvoR::update_particle_position(double &x, double &y, double &z,
                                                    double u, double v, double w,
                                                    double dt) {
 
@@ -294,36 +300,35 @@ PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double 
   y += v*dt; // probably not needed and v should be zero in 2D flow line model
   z += w*dt; // w should be zero
 
-  if (z > grid.Lz) {
-    z = grid.Lz; 
-  } else if (z < 0.0) {
+  if (z > m_grid->Lz()) {
+    z = m_grid->Lz(); 
+  } else if (z < 0.0) { // WE ARE IN THE BEDROCK! DO SOMETHING !  FLO ! TODO
     z = 0.0;
   }
-  
+   
   // assuming periodic x... 
-  if (x < grid.x.front()) {
-    x += grid.x.back()-grid.x.front();
-  } else if (x > grid.x.back()) {
-    x -= grid.x.back()-grid.x.front();
+  if (x < m_grid->x().front()) {
+    x += m_grid->x().back()-m_grid->x().front();
+  } else if (x > m_grid->x().back()) {
+    x -= m_grid->x().back()-m_grid->x().front();
   }
   
   // assuming periodic y... 
-  if (y < grid.y.front()) {
-    y += grid.y.back()-grid.y.front();
-  } else if (y > grid.y.back()) {
-    y -= grid.y.back()-grid.y.front();
+  if (y < m_grid->y().front()) {
+    y += m_grid->y().back()-m_grid->y().front();
+  } else if (y > m_grid->y().back()) {
+    y -= m_grid->y().back()-m_grid->y().front();
   }
 
   // check if the point (x,y,z) is within the domain:
-  assert(0.0 <= z && z <= grid.Lz);
-  // PISM's horizontal grid is cell-centered, so (-grid.Lx,
-  // -grid.Ly) is actually outside of the convex hull of all grid
+  assert(0.0 <= z && z <= m_grid->Lz());
+  // PISM's horizontal grid is cell-centered, so (-m_grid->Lx(),
+  // -m_grid->Ly) is actually outside of the convex hull of all grid
   // points.
-  assert(grid.x.front() <= x && x <= grid.x.back());
-  assert(grid.y.front() <= y && y <= grid.y.back());
+  assert(m_grid->x().front() <= x && x <= m_grid->x().back());
+  assert(m_grid->y().front() <= y && y <= m_grid->y().back());
 
-  return 0;
-}
+ }
 
 /**
  * Evaluate a 3D field at a given point.
@@ -334,33 +339,32 @@ PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double 
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFEvoR::evaluate_at_point(IceModelVec3 &input,
+void PISMFEvoR::evaluate_at_point(const IceModelVec3 &input,
                                             double x, double y, double z,
                                             double &result) {
-  PetscErrorCode ierr;
 
   // compute indexes for accessing neighboring columns:
   int I_left = 0, I_right = 0, J_bottom = 0, J_top = 0;
-  grid.compute_point_neighbors(x, y, I_left, I_right, J_bottom, J_top);
+  m_grid->compute_point_neighbors(x, y, I_left, I_right, J_bottom, J_top);
 
   // compute index of the vertical level just below z:
   unsigned int K = 0;
-  // K + 1 (used below) should be at most Mz - 1
-  while (K + 1 < grid.Mz - 1 && grid.zlevels[K + 1] < z) {
+  // K + 1 (used below) should be at most Mz() - 1
+  while (K + 1 < m_grid->Mz() - 1 && m_grid->z(K + 1) < z) {
     K++;
   }
 
   // get pointers to neighboring columns:
-  double* column[4] = {NULL, NULL, NULL, NULL};
-  ierr = input.getInternalColumn(I_left,  J_bottom, &column[0]); CHKERRQ(ierr);
-  ierr = input.getInternalColumn(I_right, J_bottom, &column[1]); CHKERRQ(ierr);
-  ierr = input.getInternalColumn(I_right, J_top,    &column[2]); CHKERRQ(ierr);
-  ierr = input.getInternalColumn(I_left,  J_top,    &column[3]); CHKERRQ(ierr);
+  const double* column[4] = {NULL, NULL, NULL, NULL};
+  column[0] = input.get_column(I_left,  J_bottom);
+  column[1] = input.get_column(I_right, J_bottom);
+  column[2] = input.get_column(I_right, J_top);
+  column[3] = input.get_column(I_left,  J_top);
 
   // compute interpolation weights
-  std::vector<double> weights = grid.compute_interp_weights(x, y);
-  assert(K < grid.Mz);
-  const double z_weight = (z - grid.zlevels[K]) / (grid.zlevels[K+1] - grid.zlevels[K]);
+  std::vector<double> weights = m_grid->compute_interp_weights(x, y);
+  assert(K < m_grid->Mz());
+  const double z_weight = (z - m_grid->z(K)) / (m_grid->z(K+1) - m_grid->z(K));
 
   // interpolate
   result = 0.0;
@@ -371,7 +375,6 @@ PetscErrorCode PISMFEvoR::evaluate_at_point(IceModelVec3 &input,
     result += weights[i] * f_i;
   }
 
-  return 0;
 }
 
 // typedefs for pointcloud_to_grid()
@@ -397,7 +400,7 @@ typedef CGAL::Triple< std::back_insert_iterator<Point_coordinate_vector>,Field_t
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
+void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
                                              const std::vector<double> &z,
                                              const std::vector<double> &values,
                                              IceModelVec3 &result) {
@@ -422,9 +425,9 @@ PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
 
   IceModelVec::AccessList list(result);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (unsigned int k=0; k<grid.Mz; ++k) {
-      Point INTERP( grid.x[i],grid.zlevels[k] );
+  for (int i=m_grid->xs(); i<m_grid->xs()+m_grid->xm(); ++i) {
+    for (unsigned int k=0; k<m_grid->Mz(); ++k) {
+      Point INTERP( m_grid->x(i),m_grid->z(k) );
 
       // make a vector of the iterpolation point and type
       Point_coordinate_vector coord;
@@ -434,7 +437,7 @@ PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
       // make sure point is in convex hull!
       if(!norm.third) {
         // FIXME this is dumb logic. Works for only the Enhancement factor now!!
-        if (grid.zlevels[k] > grid.zlevels[grid.Mz-1]/2.0) {
+        if (m_grid->z(k) > m_grid->z(m_grid->Mz()-1)/2.0) {
           // above the middle
           res = Field_type(1.0); // isotropic.
         } else {
@@ -445,93 +448,89 @@ PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
       }
       
       // set result for all y grid points at INTERP(x,z)
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      for (int j=m_grid->ys(); j<m_grid->ys()+m_grid->ym(); ++j) {
         result(i,j,k) = double(res);
       }
     }
   }
   
   // deal with side boundaries. 
-  for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-    for (unsigned int k=0; k<grid.Mz; ++k) {
-      result(grid.xs,j,k) = result(grid.xs+1,j,k);
-      result(grid.xs+grid.xm-1,j,k) = result(grid.xs+grid.xm-2,j,k);
+  for (int j=m_grid->ys(); j<m_grid->ys()+m_grid->ym(); ++j) {
+    for (unsigned int k=0; k<m_grid->Mz(); ++k) {
+      result(m_grid->xs(),j,k) = result(m_grid->xs()+1,j,k);
+      result(m_grid->xs()+m_grid->xm()-1,j,k) = result(m_grid->xs()+m_grid->xm()-2,j,k);
     }
   } 
-  return 0;
+  
 }
 
-void PISMFEvoR::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PISMFEvoR::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword != "none") {
     result.insert(m_enhancement_factor.metadata().get_string("short_name"));
     result.insert("distributions");
   }
 }
 
-PetscErrorCode PISMFEvoR::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PISMFEvoR::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
-  PetscErrorCode ierr;
   if (set_contains(vars, "enhancement_factor")) {
-    ierr = m_enhancement_factor.define(nc, nctype); CHKERRQ(ierr);
+     m_enhancement_factor.define(nc, nctype);
   }
 
   if (set_contains(vars, "distributions") or set_contains(vars, "recrystallizations")) {
-    ierr = fevor_prepare_file(nc, grid.get_unit_system(),
-                              m_distributions.size(), m_packing_dimensions); CHKERRQ(ierr);
+     fevor_prepare_file(nc, m_grid->ctx()->unit_system(),
+                              m_distributions.size(), m_packing_dimensions);
   }
 
-  return 0;
+  
 }
 
-PetscErrorCode PISMFEvoR::write_variables(const std::set<std::string> &vars, const PIO& nc) {
-  PetscErrorCode ierr;
+void PISMFEvoR::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
   if (set_contains(vars, "enhancement_factor")) {
-    ierr = m_enhancement_factor.write(nc); CHKERRQ(ierr);
+     m_enhancement_factor.write(nc);
   }
 
   if (set_contains(vars, "distributions")) {
-    ierr = save_distributions(nc); CHKERRQ(ierr);
+     save_distributions(nc);
   }
 
   if (set_contains(vars, "recrystallizations")) {
-    ierr = save_diagnostics(nc); CHKERRQ(ierr);
+     save_diagnostics(nc);
   }
 
-  return 0;
+  
 }
 
-PetscErrorCode PISMFEvoR::allocate() {
-  PetscErrorCode ierr;
+void PISMFEvoR::allocate() {
 
   // SIAFD diffusive flux computation requires stencil width of 2 (we
   // traverse the grid *with ghosts* and we need staggered grid offset
   // data at each point)
   const unsigned int stencil_width = 2;
 
-  ierr = m_enhancement_factor.create(grid, "enhancement_factor", WITH_GHOSTS,
-                                     stencil_width); CHKERRQ(ierr);
-  ierr = m_enhancement_factor.set_attrs("diagnostic", // i.e. not needed to re-start the model
+   m_enhancement_factor.create(m_grid, "enhancement_factor", WITH_GHOSTS,
+                                     stencil_width);
+   m_enhancement_factor.set_attrs("diagnostic", // i.e. not needed to re-start the model
                                         "flow law enhancement factor",
                                         "1", // dimensionless
-                                        "" /* no standard name */); CHKERRQ(ierr);
+                                        "" /* no standard name */);
 
-  return 0;
+  
 }
 
-PetscErrorCode PISMFEvoR::init(Vars &vars) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
+void PISMFEvoR::init() {
+   m_log->message(2,
                     "* Initializing the Fabric Evolution with Recrystallization"
-                    " (FEvoR) model...\n"); CHKERRQ(ierr);
+                    " (FEvoR) model...\n");
 
   // set enhancement factor to something reasonable
-  ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
+  m_enhancement_factor.set(m_config->get_double("sia_enhancement_factor")); 
   // make enhancement factor available to other PISM components:
-  ierr = vars.add(m_enhancement_factor); CHKERRQ(ierr); //IceModelVec
+  //   m_grid->variables().add(m_enhancement_factor);  //IceModelVec // FLO ! // NEEDS TO HAPPEN // ERROR // TODO
 
-  m_enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+  m_enthalpy =  m_grid->variables().get_3d_scalar("enthalpy");
   if (m_enthalpy == NULL) {
-    SETERRQ(grid.com, 1, "enthalpy field is not available");
+    throw RuntimeError("enthalpy field is not available");
   }
 
   // FIXME: load packing dimensions here
@@ -540,32 +539,33 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
   // PISMFEvoR::allocate() or in the constructor, but pism::Vars is
   // not available there...
   if (m_pressure == NULL) {
-    m_pressure = new PSB_pressure(m_stress_balance, grid, vars);
+    m_pressure = new stressbalance::PSB_pressure(m_stress_balance);
     assert(m_pressure != NULL);
   }
 
   if (m_tauxz == NULL) {
-    m_tauxz = new PSB_tauxz(m_stress_balance, grid, vars);
+    m_tauxz = new stressbalance::PSB_tauxz(m_stress_balance);
     assert(m_tauxz != NULL);
   }
 
   if (m_tauyz == NULL) {
-    m_tauyz = new PSB_tauyz(m_stress_balance, grid, vars);
+    m_tauyz = new stressbalance::PSB_tauyz(m_stress_balance);
     assert(m_tauyz != NULL);
   }
 
-  bool i_set = false;
   std::string input_file;
-  ierr = OptionsString("-i", "input file name", input_file, i_set); CHKERRQ(ierr);
+  int start = 0;
+  bool boot = false;
+  bool use_input_file = find_pism_input(input_file, boot, start);
 
-  if (i_set) {
-    ierr = load_distributions(input_file); CHKERRQ(ierr);
+  if (use_input_file) {
+     load_distributions(input_file);
   } else {
-    ierr = set_initial_distribution_parameters(); CHKERRQ(ierr);
+     set_initial_distribution_parameters();
   }
 
 
-  return 0;
+  
 }
 
 
@@ -575,14 +575,13 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
-  PetscErrorCode ierr;
+void PISMFEvoR::set_initial_distribution_parameters() {
 
-  ierr = verbPrintf(2, grid.com,
-                    "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
+   verbPrintf(2, m_grid->com,
+                    "  Setting initial distribution parameters...\n");
   
-  unsigned int n_particles = (unsigned int)config.get("fevor_n_particles");
-  assert( n_particles == (grid.Mz-1)*(grid.Mx-1) );
+  unsigned int n_particles = (unsigned int)m_config->get_double("fevor_n_particles");
+  assert( n_particles == (m_grid->Mz()-1)*(m_grid->Mx()-1) );
   
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
@@ -597,22 +596,22 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
   m_p_z.resize(n_particles);
   m_p_e.resize(n_particles);
   
-  for (unsigned int zz = 0; zz < grid.Mz-1; ++zz) {
-    for (unsigned int xx = 0; xx < (unsigned int)grid.Mx-1; ++xx) {
-      unsigned int i = xx + zz*(grid.Mx-1);
-      unsigned int invZ = grid.Mz-zz-1;
+  for (unsigned int zz = 0; zz < m_grid->Mz()-1; ++zz) {
+    for (unsigned int xx = 0; xx < (unsigned int)m_grid->Mx()-1; ++xx) {
+      unsigned int i = xx + zz*(m_grid->Mx()-1);
+      unsigned int invZ = m_grid->Mz()-zz-1;
       
       m_distributions[i].generateWatsonAxes(w_i*double(invZ)); 
         // increase fabric strength with depth
       
-      m_p_x[i] = grid.x[xx];
+      m_p_x[i] = m_grid->x(xx);
       m_p_y[i] = 0.0;
-      m_p_z[i] = (grid.zlevels[zz]+grid.zlevels[zz+1])/2.0;
+      m_p_z[i] = (m_grid->z(zz)+m_grid->z(zz+1))/2.0;
       m_p_e[i] = 1.0;
     }
   }
 
-  return 0;
+  
 }
 
 /** Load distributions and particle positions from a file specified using the "-i" option.
@@ -621,29 +620,25 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
+void PISMFEvoR::load_distributions(const std::string &input_file) {
 
-  PetscErrorCode ierr;
 
-  ierr = verbPrintf(2, grid.com,
+   verbPrintf(2, m_grid->com,
                     "  Reading distribution data from %s...\n",
-                    input_file.c_str()); CHKERRQ(ierr);
+                    input_file.c_str());
 
-  PIO nc(grid, "guess_mode");
-  ierr = nc.open(input_file, PISM_READONLY); CHKERRQ(ierr);
+  PIO nc(m_grid->com, "guess_mode");
+   nc.open(input_file, PISM_READONLY);
   {
-    unsigned int n_records = 0;
-    ierr = nc.inq_nrecords(n_records); CHKERRQ(ierr);
+    unsigned int n_records = nc.inq_nrecords();
     unsigned int last_record = n_records - 1;
 
     // Get packing dimensions:
-    std::vector<double> pd;
-    ierr = nc.get_att_double("PISM_GLOBAL", "packing_dimensions", pd); CHKERRQ(ierr);
+    std::vector<double> pd = nc.get_att_double("PISM_GLOBAL", "packing_dimensions");
 
     if (pd.size() != 3) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: cannot load FEvoR distributions from %s.\n",
-                         input_file.c_str()); CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted( "PISM ERROR: cannot load FEvoR distributions from %s.\n",
+                         input_file.c_str());
     }
 
     for (unsigned int k = 0; k < 3; ++k) {
@@ -652,7 +647,7 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
 
     // Get the number of distributions:
     unsigned int n_particles = 0;
-    ierr = nc.inq_dimlen("distribution_index", n_particles); CHKERRQ(ierr);
+    n_particles = nc.inq_dimlen("distribution_index");
 
     // Create the isotropic distribution:
     m_d_iso = FEvoR::Distribution(m_packing_dimensions, 0.0);
@@ -661,14 +656,14 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
     m_distributions = std::vector<FEvoR::Distribution>(n_particles, m_d_iso);
 
     for (unsigned int k = 0; k < n_particles; ++k) {
-      ierr = fevor_load_distribution(nc, k, last_record, m_distributions[k]); CHKERRQ(ierr);
+       fevor_load_distribution(nc, k, last_record, m_distributions[k]);
     }
 
     // Load particle positions:
     m_p_x.resize(n_particles, 0);
     m_p_y.resize(n_particles, 0);
     m_p_z.resize(n_particles, 0);
-    ierr = fevor_load_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z); CHKERRQ(ierr);
+     fevor_load_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z);
 
     // Resize storage for enhancement factors:
     m_p_e.resize(n_particles, 0);
@@ -677,9 +672,9 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
     m_p_avg_temp.resize(n_particles, 0.0);
 
   }
-  ierr = nc.close(); CHKERRQ(ierr);
+   nc.close();
 
-  return 0;
+  
 }
 
 /** Save distributions and particle positions to a file
@@ -690,28 +685,26 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFEvoR::save_distributions(const PIO &nc) {
+void PISMFEvoR::save_distributions(const PIO &nc) {
 
-  PetscErrorCode ierr;
 
   unsigned int n_records = 0;
-  ierr = nc.inq_nrecords(n_records); CHKERRQ(ierr);
+  n_records = nc.inq_nrecords();
   unsigned int last_record = n_records - 1;
 
   unsigned int n_particles = m_distributions.size();
 
   for (unsigned int k = 0; k < n_particles; ++k) {
-    ierr = fevor_save_distribution(nc, k, last_record, m_distributions[k]); CHKERRQ(ierr);
+     fevor_save_distribution(nc, k, last_record, m_distributions[k]);
   }
 
   // Save particle positions:
-  ierr = fevor_save_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z); CHKERRQ(ierr);
+   fevor_save_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z);
 
-  return 0;
+  
 }
 
-PetscErrorCode PISMFEvoR::save_diagnostics(const PIO &nc) {
-  PetscErrorCode ierr;
+void PISMFEvoR::save_diagnostics(const PIO &nc) {
 
   unsigned int n_particles = m_distributions.size();
 
@@ -722,12 +715,12 @@ PetscErrorCode PISMFEvoR::save_diagnostics(const PIO &nc) {
   }
 
   unsigned int n_records = 0;
-  ierr = nc.inq_nrecords(n_records); CHKERRQ(ierr);
+  n_records = nc.inq_nrecords();
   unsigned int last_record = n_records - 1;
 
-  ierr = fevor_save_recrystallization_numbers(nc, last_record, tmp_m, tmp_p); CHKERRQ(ierr);
+   fevor_save_recrystallization_numbers(nc, last_record, tmp_m, tmp_p);
 
-  return 0;
+  
 }
 
 } // end of namespace pism

@@ -18,12 +18,13 @@
  */
 
 #include "PS_FEvoR.hh"
-#include "PISMConfig.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 
-PS_FEvoR::PS_FEvoR(IceGrid &g, const Config &conf)
-  : PSFormulas(g, conf) {
+  namespace surface{
+    PS_FEvoR::PS_FEvoR(IceGrid::ConstPtr g)
+  : PSFormulas(g) {
   // empty
 }
 
@@ -32,30 +33,27 @@ PS_FEvoR::~PS_FEvoR() {
 }
 
 
-PetscErrorCode PS_FEvoR::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PS_FEvoR::init(Vars &vars) {
 
   (void) vars;
 
-  ierr = verbPrintf(2, grid.com, "* Initializing PISM-FEvoR climate inputs...\n"); CHKERRQ(ierr);
+  m_log->message(2, "* Initializing PISM-FEvoR climate inputs...\n"); 
 
-  ierr = m_climatic_mass_balance.set(0.0); CHKERRQ(ierr);
+  m_climatic_mass_balance.set(0.0); 
 
-  ierr = m_ice_surface_temp.set(243.15); CHKERRQ(ierr);
+  m_ice_surface_temp.set(243.15);
 
   // convert from [m/s] to [kg m-2 s-1]
-  ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+  m_climatic_mass_balance.scale(m_config->get_double("ice_density")); 
 
-  return 0;
 }
 
-PetscErrorCode PS_FEvoR::update(PetscReal t, PetscReal dt) {
+void PS_FEvoR::update(PetscReal t, PetscReal dt) {
   (void) t;
   (void) dt;
 
   // do nothing (but an implementation is required)
 
-  return 0;
 }
-
+  } // end of namespace surface
 } // end of namespace pism

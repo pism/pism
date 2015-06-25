@@ -600,8 +600,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     list.add(m_delta[1]);
   }
 
-  const IceModelVec3 &enthalpy = *m_grid->variables().get_3d_scalar("enthalpy");
-  list.add(enthalpy);
+  const IceModelVec3 * enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  list.add(*enthalpy);
 
   assert(theta.get_stencil_width()      >= 2);
   assert(thk_smooth.get_stencil_width() >= 2);
@@ -611,7 +611,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   if (use_age) {
     assert(age->get_stencil_width() >= 2);
   }
-  assert(enthalpy.get_stencil_width() >= 2);
+  assert(enthalpy->get_stencil_width() >= 2);
   assert(m_delta[0].get_stencil_width()  >= 1);
   assert(m_delta[1].get_stencil_width()  >= 1);
 
@@ -645,8 +645,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
         }
 
         const double
-          *E_ij     = enthalpy.get_column(i, j),
-          *E_offset = enthalpy.get_column(i+oi, j+oj);
+          *E_ij     = enthalpy->get_column(i, j),
+          *E_offset = enthalpy->get_column(i+oi, j+oj);
 
         const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
         const int      ks = m_grid->kBelowHeight(thk);

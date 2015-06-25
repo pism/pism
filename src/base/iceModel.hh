@@ -162,6 +162,7 @@ public:
   virtual void allocate_basal_yield_stress();
   virtual void allocate_couplers();
   virtual void allocate_iceberg_remover();
+  virtual void allocate_fevor();
 
   virtual void init_couplers();
   virtual void init_step_couplers();

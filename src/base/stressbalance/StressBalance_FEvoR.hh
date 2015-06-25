@@ -23,16 +23,15 @@
 #include "PISMStressBalance.hh"
 
 namespace pism {
-
+  namespace stressbalance{
 class StressBalance_FEvoR : public StressBalance {
 public:
-  StressBalance_FEvoR(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                      const Config &config);
+  StressBalance_FEvoR(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
   virtual ~StressBalance_FEvoR();
 protected:
-  virtual PetscErrorCode compute_volumetric_strain_heating();
+  virtual void compute_volumetric_strain_heating();
 };
-
+  } // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _STRESSBALANCE_FEVOR_H_ */

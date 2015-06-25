@@ -24,16 +24,20 @@
 #include <vector>
 #include <mpi.h>
 
+#include "base/util/PISMUnits.hh"
+
 namespace FEvoR {
 class Distribution;
 }
 
 namespace pism {
 class PIO;
-class UnitSystem;
+namespace units{
+  class System;
+}
 }
 
-int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
+int fevor_prepare_file(const pism::PIO &nc,  pism::units::System::Ptr sys,
                        unsigned int n_distributions,
                        const std::vector<unsigned int> packing_dimensions);
 

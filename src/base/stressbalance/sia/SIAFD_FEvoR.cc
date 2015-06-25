@@ -17,17 +17,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "SIAFD_FEvoR.hh"
+#include "base/stressbalance/sia/SIAFD_FEvoR.hh"
 
-#include "PISMVars.hh"
-#include "flowlaws.hh"
+#include "SIAFD.hh"
 #include "PISMBedSmoother.hh"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/rheology/flowlaw_factory.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 
-SIAFD_FEvoR::SIAFD_FEvoR(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : SIAFD(g, e, c) {
+namespace stressbalance {
+  SIAFD_FEvoR::SIAFD_FEvoR(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
+  : SIAFD(g, e) {
   // empty
 }
 
@@ -35,32 +42,31 @@ SIAFD_FEvoR::~SIAFD_FEvoR() {
   // empty
 }
 
-PetscErrorCode SIAFD_FEvoR::init(Vars &vars) {
-  PetscErrorCode ierr;
+void SIAFD_FEvoR::init() {
 
-  ierr = SIAFD::init(vars); CHKERRQ(ierr);
+  SIAFD::init(); 
 
-  ierr = verbPrintf(2, grid.com,
-                    "  [using the enhancement factor computed using FEvoR]\n"); CHKERRQ(ierr);
+  m_log->message(2,
+                    "  [using the enhancement factor computed using FEvoR]\n"); 
 
-  m_variables = &vars;
-
-  return 0;
 }
 
-PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  if (config.get_flag("sia_fevor_use_constant_slope")) {
-    double slope = (config.get("sia_fevor_bed_slope_degrees") / 180.0) * M_PI;
+  if (m_config->get_boolean("sia_fevor_use_constant_slope")) {
+    double slope = (m_config->get_double("sia_fevor_bed_slope_degrees") / 180.0) * M_PI;
 
     // We compute the surface slope using the fact that we are
     // modeling grounded ice, so surface = bed + thickness and
     // surface' = bed' + thickness'.
 
-    const double dx = grid.dx, dy = grid.dy;  // convenience
+    const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-    IceModelVec2S &H = *thickness;
+  const IceModelVec2S
+    &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
 
     IceModelVec::AccessList list;
     list.add(h_x);
@@ -73,7 +79,7 @@ PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
     // bed elevation needs more ghosts
     assert(H.get_stencil_width() >= 2);
 
-    for (PointsWithGhosts p(grid); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // I-offset
@@ -94,49 +100,51 @@ PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
       h_y(i, j, 1) += 0.0;
     }
   } else {
-    ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+    SIAFD::compute_surface_gradient(h_x, h_y); 
   }
 
-  return 0;
 }
 
-PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
+void SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                    IceModelVec2Stag &result, bool fast) {
-  PetscErrorCode  ierr;
-  IceModelVec2S &thk_smooth = work_2d[0],
-    &theta = work_2d[1];
+
+  IceModelVec2S &thk_smooth = m_work_2d[0],
+    &theta = m_work_2d[1];
+
+  const IceModelVec2S
+    &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
   bool full_update = (fast == false);
 
-  ierr = result.set(0.0); CHKERRQ(ierr);
+  result.set(0.0); 
 
-  std::vector<double> delta_ij(grid.Mz);
+  std::vector<double> delta_ij(m_grid->Mz());
 
-  double ice_grain_size = config.get("ice_grain_size");
+  double ice_grain_size = m_config->get_double("ice_grain_size");
 
-  bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
+  bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
 
   const bool adjust_diffusivity_near_domain_boundaries = false;
 
   // some flow laws use grain size, and even need age to update grain size
-  if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
-    PetscPrintf(grid.com,
-                "PISM ERROR in SIAFD::compute_diffusive_flux(): do_age not set but\n"
-                "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
-    PISMEnd();
+  if (compute_grain_size_using_age && (!m_config->get_boolean("do_age"))) {
+    throw RuntimeError("SIAFD::compute_diffusive_flux(): do_age not set but\n"
+                       "age is needed for grain-size-based flow law");
   }
 
-  const bool use_age = (IceFlowLawUsesGrainSize(flow_law) &&
+  const bool use_age = (rheology::FlowLawUsesGrainSize(flow_law()) &&
                         compute_grain_size_using_age &&
-                        config.get_flag("do_age"));
+                        m_config->get_boolean("do_age"));
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
   // have stencil width WIDE_GHOSTS for this too work
-  ierr = bed_smoother->get_theta(*surface, &theta); CHKERRQ(ierr);
+  m_bed_smoother->get_theta(h, theta);
 
-  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        &thk_smooth); CHKERRQ(ierr);
+  m_bed_smoother->get_smoothed_thk(h, H, *mask, thk_smooth);
 
   IceModelVec::AccessList list;
   list.add(theta);
@@ -146,32 +154,37 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
   list.add(h_x);
   list.add(h_y);
 
-  double *age_ij, *age_offset;
+  const double *age_ij, *age_offset;
+  const IceModelVec3 *age = NULL;
+
   if (use_age) {
+    age = m_grid->variables().get_3d_scalar("age");
     list.add(*age);
   }
 
   if (full_update) {
-    list.add(delta[0]);
-    list.add(delta[1]);
+    list.add(m_delta[0]);
+    list.add(m_delta[1]);
   }
 
-  double *E_ij, *E_offset;
-  list.add(*enthalpy);
+  const double *E_ij, *E_offset;
+  const IceModelVec3 * enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  list.add(* enthalpy);
+
 
   // new code
-  IceModelVec3 *enhancement_factor = dynamic_cast<IceModelVec3*>(m_variables->get("enhancement_factor"));
+  const IceModelVec3 *enhancement_factor = m_grid->variables().get_3d_scalar("enhancement_factor");
   if (enhancement_factor == NULL) {
-    SETERRQ(grid.com, 1, "enhancement_factor is not available");
+    throw RuntimeError("enhancement_factor is not available");
   }
 
-  double *EF_ij, *EF_offset;
+  const double *EF_ij, *EF_offset;
   list.add(*enhancement_factor);
   // end of new code
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
-    for (PointsWithGhosts p(grid); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
@@ -185,36 +198,36 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
       if (thk == 0.0) {
         result(i,j,o) = 0.0;
         if (full_update) {
-          ierr = delta[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
+           m_delta[o].set_column(i, j, 0.0);
         }
         continue;
       }
 
       if (use_age) {
-        ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
-        ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
+	age_ij = age->get_column(i, j);
+	age_offset = age->get_column(i+oi, j+oj);
       }
 
-      ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
-      ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
+      E_ij = enthalpy->get_column(i, j);
+      E_offset = enthalpy->get_column(i+oi, j+oj);
 
       // new code
-      ierr = enhancement_factor->getInternalColumn(i, j, &EF_ij); CHKERRQ(ierr);
-      ierr = enhancement_factor->getInternalColumn(i+oi, j+oj, &EF_offset); CHKERRQ(ierr);
+      EF_ij = enhancement_factor->get_column(i, j);
+      EF_offset = enhancement_factor->get_column(i+oi, j+oj);
       // end of new code
 
       const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-      const int      ks = grid.kBelowHeight(thk);
+      const int      ks = m_grid->kBelowHeight(thk);
       const double   alpha =
         sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
       const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
 
       double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
       for (int k = 0; k <= ks; ++k) {
-        double depth = thk - grid.zlevels[k]; // FIXME issue #15
+        double depth = thk - m_grid->z(k); // FIXME issue #15
         // pressure added by the ice (i.e. pressure difference between the
         // current level and the top of the column)
-        const double pressure = EC.getPressureFromDepth(depth);
+        const double pressure = m_EC->pressure(depth);
 
         double flow;
         if (use_age) {
@@ -223,7 +236,7 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
         // If the flow law does not use grain size, it will just ignore it,
         // no harm there
         double E = 0.5 * (E_ij[k] + E_offset[k]);
-        flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
+        flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
         // new code
         // compute the enhancement factor on the staggered grid
@@ -233,12 +246,12 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
         // end of new code
 
         if (k > 0) { // trapezoidal rule
-          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+          const double dz = m_grid->z(k) - m_grid->z(k-1);
           Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
       }
       // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-      const double dz = thk - grid.zlevels[ks];
+      const double dz = thk - m_grid->z(ks);
       Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
       // Override diffusivity at the edges of the domain. (At these
@@ -250,7 +263,7 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
       // because of the possible thickness and bed elevation
       // "discontinuities" at the boundary.)
       if (adjust_diffusivity_near_domain_boundaries && 
-          (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)) {
+          (i < 0 || i >= m_grid->Mx()-1 || j < 0 || j >= m_grid->My()-1)) {
         Dfoffset = 0.0;
       }
 
@@ -264,17 +277,17 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
       // if doing the full update, fill the delta column above the ice and
       // store it:
       if (full_update) {
-        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
           delta_ij[k] = 0.0;
         }
-        ierr = delta[o].setInternalColumn(i,j,&delta_ij[0]); CHKERRQ(ierr);
+         m_delta[o].set_column(i,j,&delta_ij[0]);
       }
     }
   } // o-loop
 
-  ierr = GlobalMax(grid.com, &my_D_max, &D_max); CHKERRQ(ierr);
+  m_D_max = GlobalMax(m_grid->com, my_D_max);
 
-  return 0;
 }
 
+} // end of namespace stressbalance
 } // end of namespace pism

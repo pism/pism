@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <cassert>
 #include "FEvoR_IO.hh"
-#include "PIO.hh"
-#include "NCVariable.hh"
+#include "base/util/io/PIO.hh"
+// #include "base/util/io/NCVariable.hh"
 
 #include "fevor_distribution.hh"
 
@@ -29,7 +30,7 @@ int fevor_load_distribution(const PIO &nc,
                             unsigned int index,
                             unsigned int time_index,
                             FEvoR::Distribution &distribution) {
-  PetscErrorCode ierr;
+
 
   size_t data_size = distribution.getNumberCrystals() * FEvoR::Distribution::numberParameters;
   std::vector<double> data(data_size);
@@ -45,7 +46,7 @@ int fevor_load_distribution(const PIO &nc,
   count[2] = distribution.getNumberCrystals();
   count[3] = FEvoR::Distribution::numberParameters;
 
-  ierr = nc.get_vara_double("distributions", start, count, &data[0]); CHKERRQ(ierr);
+  nc.get_vara_double("distributions", start, count, &data[0]);
 
   distribution.loadDistribution(data);
 
@@ -65,7 +66,7 @@ int fevor_save_distribution(const PIO &nc,
                             unsigned int index,
                             unsigned int time_index,
                             const FEvoR::Distribution &distribution) {
-  PetscErrorCode ierr;
+
 
   std::vector<double> data;
   distribution.saveDistribution(data);
@@ -81,7 +82,7 @@ int fevor_save_distribution(const PIO &nc,
   count[2] = distribution.getNumberCrystals();
   count[3] = FEvoR::Distribution::numberParameters;
 
-  ierr = nc.put_vara_double("distributions", start, count, &data[0]); CHKERRQ(ierr);
+  nc.put_vara_double("distributions", start, count, &data[0]);
 
   return 0;
 }
@@ -98,13 +99,13 @@ int fevor_save_distribution(const PIO &nc,
  *
  * @return 0 on success
  */
-int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
+int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
                        unsigned int n_distributions,
                        const std::vector<unsigned int> packing_dimensions) {
-  PetscErrorCode ierr;
+
 
   // FIXME: these should be configurable
-  ierr = nc.def_time("time", "standard", "seconds"); CHKERRQ(ierr);
+  nc.def_dim("time",pism::PISM_UNLIMITED);
 
   // save packing dimensions
   {
@@ -114,8 +115,8 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
       pd[i] = packing_dimensions[i];
     }
     // save packing dimensions
-    ierr = nc.put_att_double("PISM_GLOBAL", "packing_dimensions",
-                             PISM_INT, pd); CHKERRQ(ierr);
+    nc.put_att_double("PISM_GLOBAL", "packing_dimensions",
+                             PISM_INT, pd);
   }
 
   assert(packing_dimensions.size() == 3);
@@ -125,62 +126,60 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
   std::vector<unsigned int> start(1, 0), count(1, 0);
   // distributions
   bool dim_exists = false;
-  ierr = nc.inq_dim("distribution_index", dim_exists); CHKERRQ(ierr);
+  dim_exists = nc.inq_dim("distribution_index");
   if (dim_exists == false) {
-    NCVariable distribution_index("distribution_index", sys, 1);
-    ierr = nc.def_dim(n_distributions, distribution_index); CHKERRQ(ierr);
+ 
+    nc.def_dim("distribution_index", n_distributions);
 
     index.resize(n_distributions);
     for (unsigned int j = 0; j < n_distributions; ++j) {
       index[j] = j;
     }
     count[0] = n_distributions;
-    ierr = nc.put_vara_double(distribution_index.get_name(),
-                              start, count, &index[0]); CHKERRQ(ierr);
+    nc.put_vara_double("distribution_index",
+                              start, count, &index[0]);
   }
 
   // crystals
-  ierr = nc.inq_dim("crystal_index", dim_exists); CHKERRQ(ierr);
+  dim_exists = nc.inq_dim("crystal_index");
   if (dim_exists == false) {
-    NCVariable crystal_index("crystal_index", sys, 1);
-    ierr = nc.def_dim(n_crystals, crystal_index); CHKERRQ(ierr);
+    nc.def_dim("crystal_index", n_crystals);
 
     index.resize(n_crystals);
     for (unsigned int j = 0; j < n_crystals; ++j) {
       index[j] = j;
     }
     count[0] = n_crystals;
-    ierr = nc.put_vara_double(crystal_index.get_name(),
-                              start, count, &index[0]); CHKERRQ(ierr);
+    nc.put_vara_double("crystal_index",
+                              start, count, &index[0]);
   }
 
   // parameters
-  ierr = nc.inq_dim("parameter_index", dim_exists); CHKERRQ(ierr);
+  dim_exists = nc.inq_dim("parameter_index");
   if (dim_exists == false)  {
-    NCVariable parameter_index("parameter_index", sys, 1);
-    ierr = nc.def_dim(FEvoR::Distribution::numberParameters, parameter_index); CHKERRQ(ierr);
+    nc.def_dim("parameter_index", FEvoR::Distribution::numberParameters);
 
     index.resize(FEvoR::Distribution::numberParameters);
     for (unsigned int j = 0; j < FEvoR::Distribution::numberParameters; ++j) {
       index[j] = j;
     }
     count[0] = FEvoR::Distribution::numberParameters;
-    ierr = nc.put_vara_double(parameter_index.get_name(),
-                              start, count, &index[0]); CHKERRQ(ierr);
+    nc.put_vara_double("parameter_index",
+                              start, count, &index[0]);
   }
 
   {
     std::string variable_name = "distributions";
     bool variable_exists = false;
-    ierr = nc.inq_var(variable_name, variable_exists); CHKERRQ(ierr);
+    variable_exists = nc.inq_var(variable_name);
     if (not variable_exists) {
       std::vector<std::string> dimensions;
       dimensions.push_back("time");
       dimensions.push_back("distribution_index");
       dimensions.push_back("crystal_index");
       dimensions.push_back("parameter_index");
-      ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(variable_name, PISM_DOUBLE, dimensions); CHKERRQ(ierr);
+      nc.redef();
+      nc.def_var(variable_name, PISM_DOUBLE, dimensions);
     }
   }
 
@@ -190,32 +189,32 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
   // particle positions
   {
     bool exists = false;
-    ierr = nc.inq_var("p_x", exists); CHKERRQ(ierr);
+    exists = nc.inq_var("p_x");
     if (not exists) {
-      ierr = nc.def_var("p_x", PISM_DOUBLE, dims); CHKERRQ(ierr);
+      nc.def_var("p_x", PISM_DOUBLE, dims);
     }
 
-    ierr = nc.inq_var("p_y", exists); CHKERRQ(ierr);
+    exists = nc.inq_var("p_y");
     if (not exists) {
-      ierr = nc.def_var("p_y", PISM_DOUBLE, dims); CHKERRQ(ierr);
+      nc.def_var("p_y", PISM_DOUBLE, dims);
     }
 
-    ierr = nc.inq_var("p_z", exists); CHKERRQ(ierr);
+    exists = nc.inq_var("p_z");
     if (not exists) {
-      ierr = nc.def_var("p_z", PISM_DOUBLE, dims); CHKERRQ(ierr);
+      nc.def_var("p_z", PISM_DOUBLE, dims);
     }
   }
 
   // diagnostics
   {
     bool exists = false;
-    ierr = nc.inq_var("n_migration_recrystallizations", exists); CHKERRQ(ierr);
+    exists = nc.inq_var("n_migration_recrystallizations");
     if (not exists) {
-      ierr = nc.def_var("n_migration_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+      nc.def_var("n_migration_recrystallizations", PISM_DOUBLE, dims);
     }
-    ierr = nc.inq_var("n_polygonization_recrystallizations", exists); CHKERRQ(ierr);
+    exists = nc.inq_var("n_polygonization_recrystallizations");
     if (not exists) {
-      ierr = nc.def_var("n_polygonization_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+      nc.def_var("n_polygonization_recrystallizations", PISM_DOUBLE, dims);
     }
   }
 
@@ -227,7 +226,7 @@ int fevor_load_particle_positions(const pism::PIO &nc,
                                   std::vector<double> &x,
                                   std::vector<double> &y,
                                   std::vector<double> &z) {
-  PetscErrorCode ierr;
+
   assert(x.size() == y.size());
   assert(x.size() == z.size());
 
@@ -238,9 +237,9 @@ int fevor_load_particle_positions(const pism::PIO &nc,
   count[0] = 1;
   count[1] = x.size();
 
-  ierr = nc.get_vara_double("p_x", start, count, &x[0]); CHKERRQ(ierr);
-  ierr = nc.get_vara_double("p_y", start, count, &y[0]); CHKERRQ(ierr);
-  ierr = nc.get_vara_double("p_z", start, count, &z[0]); CHKERRQ(ierr);
+  nc.get_vara_double("p_x", start, count, &x[0]);
+  nc.get_vara_double("p_y", start, count, &y[0]);
+  nc.get_vara_double("p_z", start, count, &z[0]);
 
   return 0;
 }
@@ -250,7 +249,7 @@ int fevor_save_particle_positions(const PIO &nc,
                                   std::vector<double> &x,
                                   std::vector<double> &y,
                                   std::vector<double> &z) {
-  PetscErrorCode ierr;
+
   assert(x.size() == y.size());
   assert(x.size() == z.size());
 
@@ -261,9 +260,9 @@ int fevor_save_particle_positions(const PIO &nc,
   count[0] = 1;
   count[1] = x.size();
 
-  ierr = nc.put_vara_double("p_x", start, count, &x[0]); CHKERRQ(ierr);
-  ierr = nc.put_vara_double("p_y", start, count, &y[0]); CHKERRQ(ierr);
-  ierr = nc.put_vara_double("p_z", start, count, &z[0]); CHKERRQ(ierr);
+  nc.put_vara_double("p_x", start, count, &x[0]);
+  nc.put_vara_double("p_y", start, count, &y[0]);
+  nc.put_vara_double("p_z", start, count, &z[0]);
 
   return 0;
 }
@@ -273,7 +272,7 @@ int fevor_save_recrystallization_numbers(const PIO &nc,
                                          unsigned int time_index,
                                          std::vector<double> &migration,
                                          std::vector<double> &polygonization) {
-  PetscErrorCode ierr;
+
   assert(migration.size() == polygonization.size());
 
   std::vector<unsigned int> start(2), count(2);
@@ -283,10 +282,10 @@ int fevor_save_recrystallization_numbers(const PIO &nc,
   count[0] = 1;
   count[1] = migration.size();
 
-  ierr = nc.put_vara_double("n_migration_recrystallizations", start, count,
-                            &migration[0]); CHKERRQ(ierr);
+  nc.put_vara_double("n_migration_recrystallizations", start, count,
+                            &migration[0]);
 
-  ierr = nc.put_vara_double("n_polygonization_recrystallizations", start, count,
-                            &polygonization[0]); CHKERRQ(ierr);
+  nc.put_vara_double("n_polygonization_recrystallizations", start, count,
+                            &polygonization[0]);
   return 0;
 }
