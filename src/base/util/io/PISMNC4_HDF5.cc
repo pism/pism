@@ -16,6 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/*
+  This code is *very* experimental and is not actively maintained. It is kept as a starting point
+  for somebody who might be interested in implementing HDF5-only I/O in PISM.
+
+  As far as I know it is used by exactly one person.
+
+  Use at your own risk and please do *not* treat this as a supported PISM feature. For example, one
+  should be very careful when using comparisons of PISM's I/O performance with "-o_format hdf5"
+  option and "-o_format netcdf4_parallel" to reason about HDF5 and NetCDF libraries and their
+  performance.
+*/
+
 // Defining H5_NO_DEPRECATED_SYMBOLS is supposed to be enough
 // to select the v1.8 HDF5 API even if the library was built
 // with v1.6 API set as the default...
@@ -178,39 +190,7 @@ static hid_t H5DS_get_REFLIST_type(void)
   return -1;
 }
 
-/*!
- * All tuning parameters are here and in create_file_access_plist().
- */
-static unsigned int compute_stripe_size(MPI_Comm com, int xm, int ym) {
-  unsigned int stripe_size = 0;
-
-  assert(xm >= 0 && ym >= 0);
-
-  int max_xm = 0, max_ym = 0;
-  MPI_Allreduce(&xm, &max_xm, 1, MPI_INT, MPI_MAX, com);
-  MPI_Allreduce(&ym, &max_ym, 1, MPI_INT, MPI_MAX, com);
-
-  // round the chunk size up to the nearest megabyte
-  stripe_size = (unsigned int)ceil(static_cast<double>(sizeof(double) * max_xm * max_ym) / (1024.0 * 1024.0));
-
-  // don't use stipes of more that 32 Mbytes
-  if (stripe_size > 32) {
-    stripe_size = 32;
-  }
-
-  // Convert to bytes
-  stripe_size *= 1024 * 1024;
-
-  return stripe_size;
-}
-
-/*!
- * All tuning parameters are here and in compute_stripe_size().
- */
-static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info,
-                                      int xm, int ym) {
-
-  unsigned int stripe_size = compute_stripe_size(com, xm, ym);
+static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info) {
 
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   assert(plist_id >= 0);
@@ -223,9 +203,6 @@ static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info,
   {
     // Allocate a 1 Mb block for metadata (I bet this is overkill.)
     H5Pset_meta_block_size(plist_id, 1024*1024);
-
-    // Align anything larger than 16Kb to stripe boundaries
-    H5Pset_alignment(plist_id, 16*1024, stripe_size);
   }
 
   // Disable metadata cache evictions. This may not be necessary.
@@ -241,15 +218,6 @@ static hid_t create_file_access_plist(MPI_Comm com, MPI_Info info,
     mdc_config.flash_incr_mode = H5C_flash_incr__off;
 
     H5Pset_mdc_config(plist_id, &mdc_config);
-  }
-
-  // Set MPI hints
-  {
-    char hint_value[100];
-    snprintf(hint_value, 100, "%d", stripe_size);
-    MPI_Info_set(info, const_cast<char*>("striping_unit"), hint_value);
-
-    MPI_Info_set(info, const_cast<char*>("striping_factor"), const_cast<char*>("-1"));
   }
 
   return plist_id;
@@ -476,7 +444,7 @@ int NC4_HDF5::open_impl(const std::string &filename, IO_Mode mode) {
   int rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  hid_t plist_id = create_file_access_plist(m_com, MPI_INFO_NULL, m_xm, m_ym);
+  hid_t plist_id = create_file_access_plist(m_com, MPI_INFO_NULL);
 
   herr_t stat = H5Fis_hdf5(filename.c_str()); check(stat);
   if (stat == 0) {
@@ -504,7 +472,7 @@ int NC4_HDF5::create_impl(const std::string &filename) {
   MPI_Info info = (MPI_Info)NULL;
   MPI_Info_create(&info);
 
-  hid_t plist_id = create_file_access_plist(m_com, info, m_xm, m_ym); check(plist_id);
+  hid_t plist_id = create_file_access_plist(m_com, info); check(plist_id);
 
   m_hdf5_file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 
@@ -705,10 +673,6 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
     return 0;
   }
 
-  unsigned int max_xm = 0, max_ym = 0;
-  MPI_Allreduce(&m_xm, &max_xm, 1, MPI_UNSIGNED, MPI_MAX, m_com);
-  MPI_Allreduce(&m_ym, &max_ym, 1, MPI_UNSIGNED, MPI_MAX, m_com);
-
   std::vector<hsize_t> extent, max_extent, chunk;
 
   std::vector<std::string>::const_iterator j;
@@ -727,8 +691,14 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
     max_extent.push_back(dim_maxextent);
 
     if (*j == "x") {
+      int max_xm = 0;
+      assert(m_xm > 0);
+      MPI_Allreduce(&m_xm, &max_xm, 1, MPI_INT, MPI_MAX, m_com);
       chunk.push_back(max_xm);
     } else if (*j == "y") {
+      int max_ym = 0;
+      assert(m_ym > 0);
+      MPI_Allreduce(&m_ym, &max_ym, 1, MPI_INT, MPI_MAX, m_com);
       chunk.push_back(max_ym);
     } else {
       chunk.push_back(1);

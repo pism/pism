@@ -602,41 +602,40 @@ void IceModel::misc_setup() {
   options::String input_file("-i", "Specifies a PISM input file");
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (input_file.is_set() and not bootstrap) {
+  if (input_file.is_set()) {
     PIO nc(m_grid->com, "guess_mode");
 
-    // Get the 'source' global attribute to check if we are given a PISM output
-    // file:
     nc.open(input_file, PISM_READONLY);
-    std::string source = nc.get_att_text("PISM_GLOBAL", "source");
 
     std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-    if (proj4_string.empty() == false) {
+    if (not proj4_string.empty()) {
       global_attributes.set_string("proj4", proj4_string);
     }
 
-    bool mapping_exists = nc.inq_var("mapping");
-    if (mapping_exists) {
+    if (nc.inq_var(mapping.get_name())) {
       io::read_attributes(nc, mapping.get_name(), mapping);
       mapping.report_to_stdout(*m_log, 4);
     }
 
+    std::string source = nc.get_att_text("PISM_GLOBAL", "source");
     nc.close();
 
-    // If it's missing, print a warning
-    if (source.empty()) {
-      m_log->message(1,
-                 "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
-                 "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
-                 "     ncatted -a source,global,c,c,PISM %s\n",
-                 input_file->c_str(), input_file->c_str(), input_file->c_str());
-    } else if (source.find("PISM") == std::string::npos) {
-      // If the 'source' attribute does not contain the string "PISM", then print
-      // a message and stop:
-      m_log->message(1,
-                 "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
-                 "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-                 input_file->c_str());
+    if (not bootstrap) {
+      // If it's missing, print a warning
+      if (source.empty()) {
+        m_log->message(1,
+                       "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
+                       "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
+                       "     ncatted -a source,global,c,c,PISM %s\n",
+                       input_file->c_str(), input_file->c_str(), input_file->c_str());
+      } else if (source.find("PISM") == std::string::npos) {
+        // If the 'source' attribute does not contain the string "PISM", then print
+        // a message and stop:
+        m_log->message(1,
+                       "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
+                       "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
+                       input_file->c_str());
+      }
     }
   }
 

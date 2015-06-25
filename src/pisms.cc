@@ -50,6 +50,8 @@ Context::Ptr pisms_context(MPI_Comm com) {
   config->set_string("calendar", "none");
   config->set_double("grid_Lx", 750e3);
   config->set_double("grid_Ly", 750e3);
+  config->set_string("grid_periodicity", "none");
+  config->set_string("sia_flow_law", "pb");
 
   set_config_from_options(*config);
 
@@ -76,11 +78,12 @@ IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
 
     return IceGrid::FromFile(ctx, input_file, names, p);
   } else {
-    // use defaults set by pismv_grid_defaults()
-    GridParameters P(ctx->config(), ctx->size());
-    P.horizontal_size_from_options(ctx->size());
+    // use defaults from the configuration database
+    GridParameters P(ctx->config());
+    P.horizontal_size_from_options();
     P.horizontal_extent_from_options();
     P.vertical_grid_from_options(ctx->config());
+    P.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, P));
   }
