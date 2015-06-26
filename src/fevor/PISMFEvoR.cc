@@ -470,7 +470,8 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
           // above the middle
           res = Field_type(1.0); // isotropic.
         } else {
-          res = Field_type( *std::max_element(values.begin(), values.end()) ); // max.
+          res = Field_type(2.0);// Field_type( *std::max_element(values.begin(), values.end()) ); // max.
+	  std::cerr<<"z-value of missing point " << m_grid->z(k) <<"\n";
         } 
       } else {
         res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm.second, Value_access(function_values));
