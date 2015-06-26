@@ -305,7 +305,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       dt_restrictions["2D CFL"] = CFLmaxdt2D;
 
       double max_dt_diffusivity = max_timestep_diffusivity();
-      dt_restrictions["diffusivity"] = max_dt_diffusivity;
+      dt_restrictions["diffusivity"] = max_dt_diffusivity/8.0;
     }
 
     if (m_fevor != NULL) {
