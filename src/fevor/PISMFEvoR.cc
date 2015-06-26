@@ -56,7 +56,7 @@ namespace pism {
   PISMFEvoR::PISMFEvoR(IceGrid::ConstPtr g, stressbalance::StressBalance *sb)
   : Component_TS(g),
     m_stress_balance(sb),
-      m_packing_dimensions(std::vector<unsigned int>(3, 8)),
+      m_packing_dimensions(std::vector<unsigned int>(3, 16)),
       m_d_iso(m_packing_dimensions, 0.0)
   {
  
