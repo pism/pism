@@ -726,7 +726,7 @@ void PISMFEvoR::save_distributions(const PIO &nc) {
   }
 
   // Save particle positions:
-   fevor_save_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z);
+  fevor_save_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z, m_p_e);
 
   
 }

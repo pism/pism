@@ -217,7 +217,13 @@ int fevor_prepare_file(const pism::PIO &nc, pism::units::System::Ptr sys,
 
     exists = nc.inq_var("p_z");
     if (not exists) {
+      nc.redef();
       nc.def_var("p_z", PISM_DOUBLE, dims);
+    }
+    exists = nc.inq_var("p_e");
+    if (not exists) {
+      nc.redef();
+      nc.def_var("p_e", PISM_DOUBLE, dims);
     }
   }
 
@@ -264,7 +270,9 @@ int fevor_save_particle_positions(const PIO &nc,
                                   unsigned int time_index,
                                   std::vector<double> &x,
                                   std::vector<double> &y,
-                                  std::vector<double> &z) {
+                                  std::vector<double> &z,
+                                  std::vector<double> &e
+				  ) {
 
   assert(x.size() == y.size());
   assert(x.size() == z.size());
@@ -279,6 +287,7 @@ int fevor_save_particle_positions(const PIO &nc,
   nc.put_vara_double("p_x", start, count, &x[0]);
   nc.put_vara_double("p_y", start, count, &y[0]);
   nc.put_vara_double("p_z", start, count, &z[0]);
+  nc.put_vara_double("p_e", start, count, &e[0]);
 
   return 0;
 }

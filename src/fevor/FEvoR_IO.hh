@@ -61,7 +61,8 @@ int fevor_save_particle_positions(const pism::PIO &nc,
                                   unsigned int time_index,
                                   std::vector<double> &x,
                                   std::vector<double> &y,
-                                  std::vector<double> &z);
+                                  std::vector<double> &z,
+                                  std::vector<double> &e);
 
 int fevor_save_recrystallization_numbers(const pism::PIO &nc,
                                          unsigned int time_index,
