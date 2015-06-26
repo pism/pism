@@ -211,7 +211,7 @@ void PISMFEvoR::update_impl(double t, double dt) {
       T = m_EC->temperature(E, P); 
      
       //m_p_avg_temp[i] += T*m_dt;
-      m_p_avg_temp[i] += T;
+      m_p_avg_temp[i] = T;
       /* Indexing: {0, 1, 2,
        *            3, 4, 5,
        *            6, 7, 8}
