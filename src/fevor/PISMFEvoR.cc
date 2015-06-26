@@ -440,9 +440,14 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
   // function to access our data
   typedef CGAL::Data_access< std::map<Point, Field_type, Map_compare > > Value_access;
 
+  //FLO // WEIGHTS FOR INTERPOLATION
+  const double
+    wx=1./m_grid->dx(), 
+    wz=1./m_grid->z(1);
+  
   // get the points for our convex hull
   for (unsigned int pn = 0; pn < n_particles; ++pn) {
-    Point p(x[pn],z[pn]);
+    Point p(x[pn]*wx,z[pn]*wz);
     D_TRI.insert( p );
     function_values.insert( std::make_pair(p, values[pn]) );
   }
