@@ -264,13 +264,13 @@ void PISMFEvoR::update_impl(double t, double dt) {
           m_p_e[i] = 1.0;
         }
         
-        // some bounds for the enhancement factor -- in shear only
-        if (m_p_e[i] < 1.0) {
-          m_p_e[i] = 1.0;
-        } else if (m_p_e[i] > 10.0) {
-          m_p_e[i] = 10.0;
-          // upper bound.
-        }
+        // // some bounds for the enhancement factor -- in shear only
+        // if (m_p_e[i] < 1.0) {
+        //   m_p_e[i] = 1.0;
+        // } else if (m_p_e[i] > 10.0) {
+        //   m_p_e[i] = 10.0;
+        //   // upper bound.
+        // }
       }
       
     } // end of the for-loop over particles
