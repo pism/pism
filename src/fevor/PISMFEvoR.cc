@@ -80,6 +80,7 @@ namespace pism {
                                         "flow law enhancement factor",
                                         "1", // dimensionless
                                         "" /* no standard name */);
+  last_update_time = m_grid->ctx()->time()->start(); // Actually this should be overwritten by init with time of last update when loading from restart file. // FLO // TODO // ERROR // FIXME
 
   // will be allocated in init()
   m_pressure = NULL;
@@ -106,8 +107,8 @@ MaxTimestep PISMFEvoR::max_timestep_impl(double t) {
   double fevor_step = m_config->get_double("fevor_step");
   fevor_step = fevor_step / years_per_second;
 
-  double fevor_dt = std::fmod(t - m_start_time, fevor_step);
-
+  double fevor_dt = (t - last_update_time + fevor_step);
+  assert (fevor_dt > 0 ) ; 
   const double epsilon = 1.0; // 1 second tolerance
   if (fevor_dt > epsilon) { 
     MaxTimestep dt = fevor_dt;
@@ -120,8 +121,6 @@ MaxTimestep PISMFEvoR::max_timestep_impl(double t) {
 }
 
 void PISMFEvoR::update_impl(double t, double dt) {
-  m_log->message(4,
-                    "\n Beginning update_impl in FEvoR()\n"); 
 
 
   m_t = t;
@@ -133,15 +132,21 @@ void PISMFEvoR::update_impl(double t, double dt) {
   const double epsilon = 1.0; // 1 second tolerance
   // uses current calander definition of a year
   double years_per_second = m_grid->ctx()->time()->convert_time_interval(1., "years");
-  const double m_start_time = m_grid->ctx()->time()->start();
+  std::cerr<<"years_per_second = " <<years_per_second << "\n";
+
   
   double fevor_step = (double)m_config->get_double("fevor_step");
   fevor_step = fevor_step / years_per_second;
-
-  double fevor_dt = std::fmod(m_t + m_dt - m_start_time, fevor_step);
-  if (fevor_dt <= epsilon) {
+  std::cerr<< "fevor step  = " << fevor_step << "\n";
+  double fevor_dt = m_t + m_dt - last_update_time;
+  std::cerr<< "fevor_dt  = " << fevor_dt << "\n";
+  
+  if (fevor_dt >= fevor_step*.9.+epsilon) {
     step_flag = true;
+    last_update_time= m_t+m_dt;
   }
+  if (step_flag)  m_log->message(4,
+                    "\n actually doing update_impl in FEvoR()\n"); 
   
   const IceModelVec3
     &u = m_stress_balance->velocity_u(),

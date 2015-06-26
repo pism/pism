@@ -114,6 +114,7 @@ private:
   stressbalance::PSB_pressure *m_pressure;
   stressbalance::PSB_tauxz *m_tauxz;
   stressbalance::PSB_tauyz *m_tauyz;
+  double last_update_time;
 };
 
 } // end of namespace pism
