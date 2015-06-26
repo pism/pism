@@ -471,8 +471,12 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
           res = Field_type(1.0); // isotropic.
         } else {
           res = Field_type(2.0);// Field_type( *std::max_element(values.begin(), values.end()) ); // max.
-	  std::cerr<<"z-value of missing point " << m_grid->z(k) <<"\n";
-        } 
+	  m_log->message(2
+			 "One point outside of convex hull for enthalpy.\n"
+			 "Setting E to 2.0.\n"
+			 "x-value of missing point %f\n"
+			 "z-value of missing point ", m_grid->x(k) ,m_grid->z(k));
+	} 
       } else {
         res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm.second, Value_access(function_values));
       }
@@ -603,10 +607,6 @@ void PISMFEvoR::init() {
   
 }
   IceModelVec3 * PISMFEvoR::get_enhancement_factor(){
-    std::cerr<<"testing for ndims before returning\n";
-    std::cerr<<m_enhancement_factor->get_ndims()<<"\n";
-    std::cerr<<"tested for ndims before returning\n";
-
     return (m_enhancement_factor);
   }
 
