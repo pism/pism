@@ -180,6 +180,7 @@ void StressBalance_FEvoR::compute_volumetric_strain_heating() {
 
       // new code
       Sigma[k] = 2.0 * pow(EF_ij[k], -1.0/n) * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+      Sigma[k] = 2.0 * pow(1., -1.0/n) * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent); // FLO CONSTANT ENHANCEMENT FACTOR OF ONE FOR STRAIN HEATING
       // end of new code
     } // k-loop
 

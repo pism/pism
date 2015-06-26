@@ -245,6 +245,7 @@ void SIAFD_FEvoR::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceM
         // new code
         // compute the enhancement factor on the staggered grid
         double EF = 0.5 * (EF_ij[k] + EF_offset[k]);
+	EF = 1; // FLO - CONSTANT ENHANCEMENT FACTOR OF ONE IN FLOW 
 
         delta_ij[k] = EF * theta_local * 2.0 * pressure * flow;
         // end of new code
