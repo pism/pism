@@ -444,9 +444,9 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
 
   IceModelVec::AccessList list(result);
 
-  for (int i=m_grid->xs(); i<m_grid->xs()+m_grid->xm(); ++i) {
-    for (unsigned int k=0; k<m_grid->Mz(); ++k) {
-      Point INTERP( m_grid->x(i),m_grid->z(k) );
+  for (int i=m_grid->xs()+1; i<m_grid->xs()+m_grid->xm()-1; ++i) {
+    for (unsigned int k=1; k<m_grid->Mz(); ++k) {
+      Point INTERP( m_grid->x(i)*wx,m_grid->z(k)*wz );
 
       // make a vector of the iterpolation point and type
       Point_coordinate_vector coord;
@@ -471,6 +471,9 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
         result(i,j,k) = double(res);
       }
     }
+      for (int j=m_grid->ys(); j<m_grid->ys()+m_grid->ym(); ++j) {
+        result(i,j,0) = result(i,j,1);
+      }
   }
   
   // deal with side boundaries. 
