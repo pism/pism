@@ -65,7 +65,7 @@ The command-line option \intextoption{subgl} turns on a parameterization of the 
 This field has two uses in PISM:
 \begin{itemize}
 \item It is used to scale the basal friction in cells containing the grounding line in order to avoid an abrupt change in the basal friction from the ``last'' grounded cell to the ``first'' floating cell. Please see the source code browser for the detailed description and section \ref{subsect:MISMIP3d} for an application.
-\item It is used to adjust the basal melt rate in cells containing the grounding line: in such cells the basal melt rate is set to $M_{b,\text{ adjusted}} = \lambda M_{b,\text{ grounded}} + (1 - \lambda)M_{b,\text{ shelf base}}.$, where $\lambda$ is the value of the floatation mask.
+\item It is used to adjust the basal melt rate in cells containing the grounding line: in such cells the basal melt rate is set to $M_{b,\text{ adjusted}} = \lambda M_{b,\text{ grounded}} + (1 - \lambda)M_{b,\text{ shelf base}}.$, where $\lambda$ is the value of the floatation mask. Use \intextoption{no_sungl_basal_melt} to disable this.
 \end{itemize}
 
 \subsection{Partially-filled cells at the boundaries of ice shelves}
