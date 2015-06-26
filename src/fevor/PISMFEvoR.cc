@@ -107,7 +107,7 @@ MaxTimestep PISMFEvoR::max_timestep_impl(double t) {
   double fevor_step = m_config->get_double("fevor_step");
   fevor_step = fevor_step / years_per_second;
 
-  double fevor_dt = (t - last_update_time + fevor_step);
+  double fevor_dt = (fevor_step - (t - last_update_time));
   assert (fevor_dt > 0 ) ; 
   const double epsilon = 1.0; // 1 second tolerance
   if (fevor_dt > epsilon) { 
@@ -141,7 +141,7 @@ void PISMFEvoR::update_impl(double t, double dt) {
   double fevor_dt = m_t + m_dt - last_update_time;
   std::cerr<< "fevor_dt  = " << fevor_dt << "\n";
   
-  if (fevor_dt >= fevor_step*.9.+epsilon) {
+  if (fevor_dt >= fevor_step*.9+epsilon) {
     step_flag = true;
     last_update_time= m_t+m_dt;
   }
@@ -246,7 +246,7 @@ void PISMFEvoR::update_impl(double t, double dt) {
         
         assert(temp != 0.);
         // http://en.wikipedia.org/wiki/Step_in_Time
-        bulkM = m_distributions[i].stepInTime(temp, stress, fevor_begin, fevor_step,
+        bulkM = m_distributions[i].stepInTime(temp, stress, last_update_time, fevor_dt,
                                               m_n_migration_recrystallizations[i],
                                               m_n_polygonization_recrystallizations[i],
                                               bulkEdot);
