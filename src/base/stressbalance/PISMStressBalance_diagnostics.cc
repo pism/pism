@@ -1070,6 +1070,11 @@ IceModelVec::Ptr PSB_tauxz::compute() {
   list.add(*surface);
   list.add(*thickness);
 
+  // FLO -- ADDED SLOPE TO COMPUTATION // USE OF THIS FUNCTION FOR PROGNOSTIC PURPOSES IS EVIL AND BAD AS IT IS INCONSISTENT WITH WHAT IS USED IN THE SIA CODE // FYI! // FIXME
+  double slope = 0 ;
+  if (m_grid->ctx()->config()->get_boolean("sia_fevor_use_constant_slope") )
+    slope = (m_grid->ctx()->config()->get_double("sia_fevor_bed_slope_degrees") / 180.0) * M_PI;
+
   const double rg = m_grid->ctx()->config()->get_double("ice_density") * m_grid->ctx()->config()->get_double("standard_gravity");
 
   ParallelSection loop(m_grid->com);
@@ -1081,7 +1086,7 @@ IceModelVec::Ptr PSB_tauxz::compute() {
       double *tauxz_out_ij = result->get_column(i, j);
       const double
         H    = (*thickness)(i,j),
-        dhdx = surface->diff_x_p(i,j);
+        dhdx = surface->diff_x_p(i,j)+slope; // FLO ADDED SLOPE 
 
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
