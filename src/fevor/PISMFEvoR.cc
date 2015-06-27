@@ -471,11 +471,11 @@ void PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
           res = Field_type(1.0); // isotropic.
         } else {
           res = Field_type(2.0);// Field_type( *std::max_element(values.begin(), values.end()) ); // max.
-	  m_log->message(2
+	  m_log->message(2,
 			 "One point outside of convex hull for enthalpy.\n"
 			 "Setting E to 2.0.\n"
 			 "x-value of missing point %f\n"
-			 "z-value of missing point ", m_grid->x(k) ,m_grid->z(k));
+			 "z-value of missing point %f", m_grid->x(k) ,m_grid->z(k));
 	} 
       } else {
         res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm.second, Value_access(function_values));
