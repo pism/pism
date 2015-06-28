@@ -253,9 +253,8 @@ void PISMFEvoR::update_impl(double t, double dt) {
         
         std::vector<double> bulkEdot_iso(9, 0.0);
         std::vector<double> bulkM_iso(81, 0.0);
-        
-        bulkM_iso = m_d_iso.stepInTime(temp, stress, fevor_begin, fevor_step, bulkEdot_iso);
-
+        m_d_iso = FEvoR::Distribution(m_packing_dimensions, 0.0); // make sure this is a clean distribution. 
+        bulkM_iso = m_d_iso.stepInTime(temp, stress, 0., 0., bulkEdot_iso);
         if (bulkEdot_iso[2] != 0.0) {
           m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
         } else {
