@@ -132,14 +132,10 @@ void PISMFEvoR::update_impl(double t, double dt) {
   const double epsilon = 1.0; // 1 second tolerance
   // uses current calander definition of a year
   double years_per_second = m_grid->ctx()->time()->convert_time_interval(1., "years");
-  std::cerr<<"years_per_second = " <<years_per_second << "\n";
-
   
   double fevor_step = (double)m_config->get_double("fevor_step");
   fevor_step = fevor_step / years_per_second;
-  std::cerr<< "fevor step  = " << fevor_step << "\n";
   double fevor_dt = m_t + m_dt - last_update_time;
-  std::cerr<< "fevor_dt  = " << fevor_dt << "\n";
   
   if (fevor_dt >= fevor_step*.9+epsilon) {
     step_flag = true;
