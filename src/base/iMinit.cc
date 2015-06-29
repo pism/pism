@@ -338,7 +338,7 @@ void IceModel::allocate_stressbalance() {
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
     modifier = new ConstantInColumn(m_grid, EC);
-  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
+  } else if (model == "prescribed_sliding+sia" || model == "ssa+sia") {
     modifier = new SIAFD(m_grid, EC);
   } else {
     throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
