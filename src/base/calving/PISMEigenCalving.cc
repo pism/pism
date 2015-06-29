@@ -344,7 +344,7 @@ MaxTimestep EigenCalving::max_timestep() {
 
   double dt = 1.0 / (denom + epsilon);
 
-  m_log->message(2,
+  m_log->message(3,
              "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
              units::convert(m_sys, calving_rate_max, "m/s", "m/year"),
              units::convert(m_sys, dt, "seconds", "years"),
