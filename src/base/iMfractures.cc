@@ -215,7 +215,7 @@ void IceModel::calculateFractureDensity() {
         sigmatau = 0.5*(T1-T2)*sin(2*sigmabetatest);
         //shayam_wu90
         if (sigmamu*sigmanor<0.0) {//compressive case
-          if (abs(sigmatau) <= abs(sigmamu*sigmanor)) {
+          if (fabs(sigmatau) <= fabs(sigmamu*sigmanor)) {
             sigmatau=0.0;
           } else {
             if (sigmatau>0) { //coulomb friction opposing sliding
