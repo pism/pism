@@ -735,10 +735,7 @@ void IceModel::write_snapshot() {
     nc.open(filename, PISM_READWRITE);
   }
 
-  unsigned int time_length = 0;
-
   io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
-  time_length = nc.inq_dimlen(m_config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
 
@@ -746,8 +743,19 @@ void IceModel::write_snapshot() {
     // find out how much time passed since the beginning of the run
     double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
 
-    io::write_timeseries(nc, timestamp, static_cast<size_t>(time_length - 1),
-                         wall_clock_hours);
+    // Get time length now, i.e. after writing variables. This forces PISM to call PIO::enddef(), so
+    // that the length of the time dimension is up to date.
+    unsigned int time_length = nc.inq_dimlen(m_config->get_string("time_dimension_name"));
+
+    // make sure that time_start is valid even if time_length is zero
+    size_t time_start = 0;
+    if (time_length > 0) {
+      time_start = static_cast<size_t>(time_length - 1);
+    } else {
+      time_start = 0;
+    }
+
+    io::write_timeseries(nc, timestamp, time_start, wall_clock_hours);
   }
 
   nc.close();
