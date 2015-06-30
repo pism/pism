@@ -101,8 +101,6 @@ int NC3File::close_impl() {
   MPI_Bcast(&m_file_id, 1, MPI_INT, 0, m_com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  m_filename.clear();
-
   return stat;
 }
 
