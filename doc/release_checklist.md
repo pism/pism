@@ -17,12 +17,10 @@ git push -u origin HEAD
 ```
 git push --tags
 ```
-9.  [ ] Re-build docs
-    -   [ ] the user's manual: "make manual"
-    -   [ ] installation manual: "make installation"
-    -   [ ] forcing manual: "make forcing"
-    -   [ ] source code browser: "make browser.tgz"
-    -   [ ] Python docs: "make pismpython_docs"
+9.  [ ] Re-build docs.
+```
+make manual installation forcing browser.tgz pismpython_docs
+```
 10. [ ] Upload these docs.
 11. [ ] Switch the default branch on [github.com/pism/pism](http:github.com/pism/pism)
 12. [ ] Write a news item for `pism-docs.org`.
