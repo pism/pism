@@ -692,7 +692,7 @@ void IceGrid::report_parameters() const {
  */
 void IceGrid::compute_point_neighbors(double X, double Y,
                                       int &i_left, int &i_right,
-                                      int &j_bottom, int &j_top) {
+                                      int &j_bottom, int &j_top) const {
   i_left = (int)floor((X - m_impl->x[0])/m_impl->dx);
   j_bottom = (int)floor((Y - m_impl->y[0])/m_impl->dy);
 
@@ -719,7 +719,7 @@ void IceGrid::compute_point_neighbors(double X, double Y,
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
-std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
+std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   // these values (zeros) are used when interpolation is impossible
   double alpha = 0.0, beta = 0.0;
