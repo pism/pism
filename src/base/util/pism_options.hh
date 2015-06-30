@@ -57,10 +57,10 @@ public:
          const std::string& default_value,
          ArgumentFlag flag = DONT_ALLOW_EMPTY);
 private:
-  void process(const std::string& option,
-               const std::string& description,
-               const std::string& default_value,
-               ArgumentFlag flag);
+  int process(const std::string& option,
+              const std::string& description,
+              const std::string& default_value,
+              ArgumentFlag flag);
 };
 
 class StringList : public Option<std::vector<std::string> > {

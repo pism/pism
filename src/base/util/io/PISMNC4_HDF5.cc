@@ -493,7 +493,6 @@ int NC4_HDF5::close_impl() {
   int stat = H5Fclose(m_hdf5_file_id);
 
   m_hdf5_file_id = -1;
-  m_filename.clear();
 
   if (stat >= 0) {
     return 0;

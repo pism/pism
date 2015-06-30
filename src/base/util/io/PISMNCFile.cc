@@ -166,6 +166,7 @@ void NCFile::create(const std::string &filename) {
 
 void NCFile::close() {
   int stat = this->close_impl(); check(stat);
+  m_filename.clear();
 }
 
 void NCFile::enddef() const {

@@ -25,6 +25,7 @@ References \cite{Albrechtetal2011,Levermannetal2012,Winkelmannetal2011} by the r
 	the development of unphysically-thinned ice shelves \cite{Albrechtetal2011} \\
     \intextoption{part_redist} & additional scheme which makes \texttt{-part_grid} conserve mass  \cite{Albrechtetal2011} \\
     \intextoption{subgl} & apply interpolation to compute basal shear stress and basal melt near the grounding line \cite{Feldmannetal2014} \\
+    \intextoption{no_subgl_basal_melt} & \textbf{don't} apply interpolation to compute basal melt near the grounding line if \intextoption{subgl} is set \cite{Feldmannetal2014} \\
     \midrule
     \intextoption{pik} & equivalent to option combination ``\texttt{-cfbc -kill_icebergs -part_grid -part_redist -subgl}'' \\
     \bottomrule
@@ -82,7 +83,7 @@ Option \intextoption{kill_icebergs} turns on the mechanism which cleans this up.
 The command-line option \intextoption{subgl} turns on a parameterization of the grounding line position based on the ``LI'' parameterization described in \cite{Gladstoneetal2010} and \cite{Feldmannetal2014}.  With this option PISM computes an extra flotation mask, available as the \texttt{gl_mask} output variable, which corresponds to the fraction of the cell that is grounded.  Cells that are ice-free or fully floating are assigned the value of $0$ while fully-grounded icy cells get the value of $1$.  Partially grounded cells, the ones which contain the grounding line, get a value between $0$ and $1$.  The resulting field has two uses:
 \begin{itemize}
 \item It is used to scale the basal friction in cells containing the grounding line in order to avoid an abrupt change in the basal friction from the ``last'' grounded cell to the ``first'' floating cell.  See the source code browser for the detailed description and section \ref{subsect:MISMIP3d} for an application.
-\item It is used to adjust the basal melt rate in cells containing the grounding line: in such cells the basal melt rate is set to $M_{b,\text{adjusted}} = \lambda M_{b,\text{grounded}} + (1 - \lambda)M_{b,\text{shelf-base}}$, where $\lambda$ is the value of the flotation mask.
+\item It is used to adjust the basal melt rate in cells containing the grounding line: in such cells the basal melt rate is set to $M_{b,\text{adjusted}} = \lambda M_{b,\text{grounded}} + (1 - \lambda)M_{b,\text{shelf-base}}$, where $\lambda$ is the value of the flotation mask. Use \intextoption{no_subgl_basal_melt} to disable this.
 \end{itemize}
 
 

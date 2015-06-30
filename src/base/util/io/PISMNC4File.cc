@@ -52,8 +52,6 @@ int NC4File::close_impl() {
 
   m_file_id = -1;
 
-  m_filename.clear();
-
   return stat;
 }
 

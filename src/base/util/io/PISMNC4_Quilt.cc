@@ -86,8 +86,6 @@ int NC4_Quilt::close_impl() {
 
   m_file_id = -1;
 
-  m_filename.clear();
-
   return global_stat(stat);
 }
 

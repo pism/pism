@@ -266,6 +266,30 @@ PetscLogDouble GetTime() {
   return result;
 }
 
+
+//! Return time since the beginning of the run, in hours.
+double wall_clock_hours(MPI_Comm com, double start_time) {
+  int rank = 0;
+  double result = 0.0;
+
+  MPI_Comm_rank(com, &rank);
+
+  ParallelSection rank0(com);
+  try {
+    if (rank == 0) {
+      result = (GetTime() - start_time) / 3600.0;
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
+  MPI_Bcast(&result, 1, MPI_DOUBLE, 0, com);
+
+  return result;
+}
+
+
 bool set_contains(const std::set<std::string> &S, const std::string &name) {
   return (S.find(name) != S.end());
 }
