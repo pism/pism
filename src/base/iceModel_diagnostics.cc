@@ -1842,11 +1842,11 @@ IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(Ice
 
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                     "discharge_flux_cumulative"));
+                                           "discharge_flux_cumulative"));
 
   set_attrs("cumulative ice discharge (calving) flux",
             "",                 // no standard name
-            "kg m-2", "Gt m-2", 0);
+            "kg", "Gt", 0);
   m_vars[0].set_string("comment", "positive means ice gain");
 }
 
