@@ -424,19 +424,7 @@ void IceModel::write_extras() {
              filename, m_time->date().c_str());
 
   // find out how much time passed since the beginning of the run
-  double wall_clock_hours;
-
-  ParallelSection rank0(m_grid->com);
-  try {
-    if (m_grid->rank() == 0) {
-      wall_clock_hours = (GetTime() - start_time) / 3600.0;
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-
-  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
+  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
 
   PIO nc(m_grid->com, m_config->get_string("output_format"));
 

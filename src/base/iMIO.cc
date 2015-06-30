@@ -744,21 +744,10 @@ void IceModel::write_snapshot() {
 
   {
     // find out how much time passed since the beginning of the run
-    double wall_clock_hours;
-    ParallelSection rank0(m_grid->com);
-    try {
-      if (m_grid->rank() == 0) {
-        wall_clock_hours = (GetTime() - start_time) / 3600.0;
-      }
-    } catch (...) {
-      rank0.failed();
-    }
-    rank0.check();
-
-    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
+    double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
 
     io::write_timeseries(nc, timestamp, static_cast<size_t>(time_length - 1),
-                        wall_clock_hours);
+                         wall_clock_hours);
   }
 
   nc.close();
@@ -787,19 +776,7 @@ void IceModel::init_backups() {
 
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
-  double wall_clock_hours;
-
-  ParallelSection rank0(m_grid->com);
-  try {
-    if (m_grid->rank() == 0) {
-      wall_clock_hours = (GetTime() - start_time) / 3600.0;
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-
-  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
+  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
 
   if (wall_clock_hours - last_backup_time < backup_interval) {
     return;

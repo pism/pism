@@ -119,20 +119,13 @@ void IceModel::update_run_stats() {
   PetscErrorCode ierr;
 
   // timing stats
-  double wall_clock_hours, proc_hours, mypph;
-
-  double current_time = GlobalMax(m_grid->com, GetTime());
-
-  wall_clock_hours = (current_time - start_time) / 3600.0;
-
-  proc_hours = m_grid->size() * wall_clock_hours;
-
   // MYPPH stands for "model years per processor hour"
-  mypph = units::convert(m_sys,
-                         m_time->current() - m_time->start(),
-                         "seconds", "years") / proc_hours;
-
-  MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, m_grid->com);
+  double
+    wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time),
+    proc_hours       = m_grid->size() * wall_clock_hours,
+    mypph            = units::convert(m_sys,
+                                      m_time->current() - m_time->start(),
+                                      "seconds", "years") / proc_hours;
 
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
