@@ -142,11 +142,12 @@ void IceModel::combine_basal_melt_rate() {
   assert(ocean != NULL);
   ocean->shelf_base_mass_flux(shelfbmassflux);
 
-  const bool sub_gl = m_config->get_boolean("sub_groundingline");
+  const bool sub_gl = (m_config->get_boolean("sub_groundingline") and
+                       m_config->get_boolean("sub_groundingline_basal_melt"));
 
   IceModelVec::AccessList list;
 
-  if (sub_gl == true) {
+  if (sub_gl) {
     list.add(gl_mask);
   }
 
@@ -169,7 +170,7 @@ void IceModel::combine_basal_melt_rate() {
 
     // Use the fractional floatation mask to adjust the basal melt
     // rate near the grounding line:
-    if (sub_gl == true) {
+    if (sub_gl) {
       lambda = gl_mask(i,j);
     } else if (mask.ocean(i,j)) {
       lambda = 0.0;

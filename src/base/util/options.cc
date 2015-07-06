@@ -28,20 +28,26 @@ namespace options {
 
 String::String(const std::string& option,
                const std::string& description) {
-  process(option, description, "", DONT_ALLOW_EMPTY);
+  int errcode = process(option, description, "", DONT_ALLOW_EMPTY);
+  if (errcode != 0) {
+    throw RuntimeError::formatted("failed to process option %s", option.c_str());
+  }
 }
 
 String::String(const std::string& option,
                const std::string& description,
                const std::string& default_value,
                ArgumentFlag argument_flag) {
-  process(option, description, default_value, argument_flag);
+  int errcode = process(option, description, default_value, argument_flag);
+  if (errcode != 0) {
+    throw RuntimeError::formatted("failed to process option %s", option.c_str());
+  }
 }
 
-void String::process(const std::string& option,
-                     const std::string& description,
-                     const std::string& default_value,
-                     ArgumentFlag argument_flag) {
+int String::process(const std::string& option,
+                    const std::string& description,
+                    const std::string& default_value,
+                    ArgumentFlag argument_flag) {
 
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag = PETSC_FALSE;
@@ -49,6 +55,9 @@ void String::process(const std::string& option,
   memset(tmp, 0, TEMPORARY_STRING_LENGTH);
 
   PetscErrorCode ierr;
+  ierr = PetscOptionsBegin(MPI_COMM_SELF, "", "", "");
+  PISM_CHK(ierr, "PetscOptionsBegin");
+
   ierr = PetscOptionsString(option.c_str(),
                             description.c_str(),
                             "", // manual page
@@ -57,6 +66,9 @@ void String::process(const std::string& option,
                             TEMPORARY_STRING_LENGTH, // max. length of the output
                             &flag);                  // PETSC_TRUE if found, else PETSC_FALSE
   PISM_CHK(ierr, "PetscOptionsString");
+
+  ierr = PetscOptionsEnd();
+  PISM_CHK(ierr, "PetscOptionsEnd");
 
   std::string result = tmp;
 
@@ -74,6 +86,8 @@ void String::process(const std::string& option,
   } else {
     this->set(default_value, false);
   }
+
+  return 0;
 }
 
 StringList::StringList(const std::string& option,

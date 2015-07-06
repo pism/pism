@@ -796,30 +796,27 @@ void IceModel::write_snapshot() {
     nc.open(filename, PISM_READWRITE);
   }
 
-  unsigned int time_length = 0;
-
   io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
-  time_length = nc.inq_dimlen(m_config->get_string("time_dimension_name"));
 
   write_variables(nc, snapshot_vars, PISM_DOUBLE);
 
   {
     // find out how much time passed since the beginning of the run
-    double wall_clock_hours;
-    ParallelSection rank0(m_grid->com);
-    try {
-      if (m_grid->rank() == 0) {
-        wall_clock_hours = (GetTime() - start_time) / 3600.0;
-      }
-    } catch (...) {
-      rank0.failed();
+    double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
+
+    // Get time length now, i.e. after writing variables. This forces PISM to call PIO::enddef(), so
+    // that the length of the time dimension is up to date.
+    unsigned int time_length = nc.inq_dimlen(m_config->get_string("time_dimension_name"));
+
+    // make sure that time_start is valid even if time_length is zero
+    size_t time_start = 0;
+    if (time_length > 0) {
+      time_start = static_cast<size_t>(time_length - 1);
+    } else {
+      time_start = 0;
     }
-    rank0.check();
 
-    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
-
-    io::write_timeseries(nc, timestamp, static_cast<size_t>(time_length - 1),
-                        wall_clock_hours);
+    io::write_timeseries(nc, timestamp, time_start, wall_clock_hours);
   }
 
   nc.close();
@@ -848,19 +845,7 @@ void IceModel::init_backups() {
 
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
-  double wall_clock_hours;
-
-  ParallelSection rank0(m_grid->com);
-  try {
-    if (m_grid->rank() == 0) {
-      wall_clock_hours = (GetTime() - start_time) / 3600.0;
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-
-  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, m_grid->com);
+  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
 
   if (wall_clock_hours - last_backup_time < backup_interval) {
     return;

@@ -48,6 +48,7 @@ std::string pism_filename_add_suffix(const std::string &filename,
                                      const std::string &separator,
                                      const std::string &suffix);
 
+double wall_clock_hours(MPI_Comm com, double start_time);
 PetscLogDouble GetTime();
 
 bool ends_with(const std::string &str, const std::string &suffix);
