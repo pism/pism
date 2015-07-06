@@ -40,7 +40,7 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
   m_basal_melt_rate = NULL;
 
   // allocate the vertical velocity field:
-  m_w.create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
+  m_w.create(m_grid, "wvel_rel", WITH_GHOSTS, 1);
   m_w.set_attrs("diagnostic",
                 "vertical velocity of ice, relative to base of ice directly below",
                 "m s-1", "");
@@ -106,6 +106,7 @@ void StressBalance::update(bool fast, double sea_level,
 
       profiling.begin("SB vert. vel.");
       this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
+      m_w.update_ghosts();
       profiling.end("SB vert. vel.");
     }
   }
