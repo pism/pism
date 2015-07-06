@@ -1,0 +1,151 @@
+* Structure
+** The tracer manager is a subclass of Component_TS as in FEvoR
+** The tracers will strart as structures with a two-part ID and a 3-d position
+*** 1 field of the id is the rank of the process handing out the Id, the second part is a counter within each rank.
+*** 3 doubles for the position
+** The tracers wil be saved as separate 1d scalar fields for each variable. This probably makes it easier to open them in paraview and friends.
+** IDs will initially be saved as doubles. That seems safe up to 14 or so digits (I still hate this idea, though).
+
+* Passing stuff
+
+** Getting the Geometry 
+*** DMDAGetInfo http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/DMDAGetInfo.html
+    
+    Gets information about a given distributed array.
+    Synopsis
+    
+    #include "petscdmda.h"   
+    PetscErrorCode  DMDAGetInfo(DM da,PetscInt *dim,PetscInt *M,PetscInt *N,PetscInt *P,PetscInt *m,PetscInt *n,PetscInt *p,PetscInt *dof,PetscInt *s,DMBoundaryType *bx,DMBoundaryType *by,DMBoundaryType *bz,DMDAStencilType *st)
+    Output Parameters
+
+    dim- dimension of the distributed array (1, 2, or 3)
+    M, N, P- global dimension in each direction of the array
+    m, n, p- corresponding number of procs in each dimension
+    dof- number of degrees of freedom per node
+    s- stencil width
+    bx,by,bz- type of ghost nodes at boundary, one of DM_BOUNDARY_NONE, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_MIRROR, DM_BOUNDARY_PERIODIC
+    st- stencil type, either DMDA_STENCIL_STAR or DMDA_STENCIL_BOX
+
+      
+*** DMDAGetOwnershipRanges http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/DMDAGetOwnershipRanges.html
+    Gets the ranges of indices in the x, y and z direction that are owned by each process
+    Synopsis
+    
+    #include "petscdmda.h"   
+    PetscErrorCode  DMDAGetOwnershipRanges(DM da,const PetscInt *lx[],const PetscInt *ly[],const PetscInt *lz[])
+    Not Collective
+    Input Parameter
+    
+    da - the DMDA object
+    Output Parameter
+    
+    lx- ownership along x direction (optional)
+    ly- ownership along y direction (optional)
+    lz- ownership along z direction (optional)
+
+
+*** Passing data:
+**** Creating structures:
+     https://computing.llnl.gov/tutorials/mpi/#Derived_Data_Types
+     #+BEGIN_SRC C++
+     #include "mpi.h"
+#include <stdio.h>
+#define NELEM 25
+
+main(int argc, char *argv[])  {
+int numtasks, rank, source=0, dest, tag=1, i;
+
+typedef struct {
+  float x, y, z;
+  float velocity;
+  int  n, type;
+  }          Particle;
+Particle     p[NELEM], particles[NELEM];
+MPI_Datatype particletype, oldtypes[2]; 
+int          blockcounts[2];
+
+/* MPI_Aint type used to be consistent with syntax of */
+/* MPI_Type_extent routine */
+MPI_Aint    offsets[2], extent;
+
+MPI_Status stat;
+
+MPI_Init(&argc,&argv);
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+ 
+/* Setup description of the 4 MPI_FLOAT fields x, y, z, velocity */
+offsets[0] = 0;
+oldtypes[0] = MPI_FLOAT;
+blockcounts[0] = 4;
+
+/* Setup description of the 2 MPI_INT fields n, type */
+/* Need to first figure offset by getting size of MPI_FLOAT */
+MPI_Type_extent(MPI_FLOAT, &extent);
+offsets[1] = 4 * extent;
+oldtypes[1] = MPI_INT;
+blockcounts[1] = 2;
+
+/* Now define structured type and commit it */
+MPI_Type_struct(2, blockcounts, offsets, oldtypes, &particletype);
+MPI_Type_commit(&particletype);
+
+/* Initialize the particle array and then send it to each task */
+if (rank == 0) {
+  for (i=0; i<NELEM; i++) {
+     particles[i].x = i * 1.0;
+     particles[i].y = i * -1.0;
+     particles[i].z = i * 1.0; 
+     particles[i].velocity = 0.25;
+     particles[i].n = i;
+     particles[i].type = i % 2; 
+     }
+  for (i=0; i<numtasks; i++) 
+     MPI_Send(particles, NELEM, particletype, i, tag, MPI_COMM_WORLD);
+  }
+ 
+MPI_Recv(p, NELEM, particletype, source, tag, MPI_COMM_WORLD, &stat);
+
+/* Print a sample of what was received */
+printf("rank= %d   %3.2f %3.2f %3.2f %3.2f %d %d\n", rank,p[3].x,
+     p[3].y,p[3].z,p[3].velocity,p[3].n,p[3].type);
+   
+MPI_Type_free(&particletype);
+MPI_Finalize();
+}
+#+END_SRC
+     
+     See also 
+     http://people.csail.mit.edu/gregory/mpi/mpi.html
+     #+BEGIN_SRC C++
+     It is much easier to compute the displacements using the function
+MPI::Aint MPI::Get_address(void* location) e.g., in the example above it can be done as follows:
+
+struct S {
+  double a;
+  double b;
+  int x;
+  char c[4];
+};
+MPI::Datatype type[3] = {MPI::DOUBLE, MPI::INT, MPI:CHAR};
+int blocklen[3] = {2,1,4};
+MPI::Aint disp[3];
+
+struct S data[10];
+
+disp[0] = MPI::Get_address(&data[0].a);
+disp[1] = MPI::Get_address(&data[0].x);
+disp[2] = MPI::Get_address(&data[0].c);
+
+MPI::Datatype newtype = MPI::Create_struct(3,blocklen,disp,type);
+newtype.Commit();
+...
+Before a derived type can be used in MPI communications, it should be commited: 
+void MPI::Datatype::Commit(void)
+and the handle can be freed, after the program is done using the type, by calling
+void MPI::Datatype::Free(void)
+#+END_SRC
+
+
+
+     
