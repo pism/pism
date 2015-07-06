@@ -8,7 +8,8 @@ echo "Test # 8: regridding: coarse -> fine -> coarse (vertical direction)."
 # The list of files to delete when done.
 files="coarse1-08.nc coarse2-08.nc fine1-08.nc fine2-08.nc"
 
-OPTS="-y 0"
+# -periodicity none is needed to match default settings of pisms
+OPTS="-y 0 -periodicity none"
 
 set -e -x
 
