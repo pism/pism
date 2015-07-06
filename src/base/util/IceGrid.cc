@@ -737,10 +737,10 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
   }
 
   std::vector<double> result(4);
-  result[0] = alpha * beta;
-  result[1] = (1 - alpha) * beta;
-  result[2] = (1 - alpha) * (1 - beta);
-  result[3] = alpha * (1 - beta);
+  result[0] = (1 - alpha) * (1 - beta);
+  result[1] = alpha * (1 - beta);
+  result[2] = alpha * beta;
+  result[3] = (1 - alpha) * beta;
 
   return result;
 }
