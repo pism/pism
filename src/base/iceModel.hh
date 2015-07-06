@@ -86,6 +86,7 @@ class IceGrid;
 class YieldStress;
 class Diagnostic;
 class TSDiagnostic;
+class PISMLagrange;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -245,6 +246,8 @@ protected:
   ocean::OceanModel   *ocean;
   bed::BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
+  PISMLagrange *m_lagrange;
+
 
   // state variables and some diagnostics/internals
   IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
@@ -279,6 +282,8 @@ public:
   IceModelVec2S* get_geothermal_flux();
   void setCTSFromEnthalpy(IceModelVec3 &result);
 protected:
+
+  void   allocate_lagrange(); 
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
   

@@ -56,6 +56,7 @@
 #include "varcEnthalpyConverter.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
+#include "lagrange/PISMLagrange.hh"
 
 namespace pism {
 
@@ -158,6 +159,12 @@ void IceModel::model_state_setup() {
   if (basal_yield_stress_model) {
     basal_yield_stress_model->init();
   }
+
+  if (m_lagrange != NULL) {
+      m_log->message(2,
+                 "* Initializing Lagrange module...\n");
+      m_lagrange->init();
+ }
 
   if (climatic_mass_balance_cumulative.was_created()) {
     if (input_file.is_set()) {
@@ -462,6 +469,8 @@ void IceModel::allocate_submodels() {
   // this has to happen *after* allocate_subglacial_hydrology()
   allocate_basal_yield_stress();
 
+  allocate_lagrange(); 
+
   allocate_bedrock_thermal_unit();
 
   allocate_bed_deformation();
@@ -469,6 +478,9 @@ void IceModel::allocate_submodels() {
   allocate_couplers();
 }
 
+void IceModel::allocate_lagrange() {
+    m_lagrange = new PISMLagrange(m_grid, stress_balance);
+}
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:

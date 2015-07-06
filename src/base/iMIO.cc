@@ -45,6 +45,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Profiling.hh"
+#include "lagrange/PISMLagrange.hh"
 
 namespace pism {
 
@@ -180,6 +181,14 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       throw RuntimeError("PISM ERROR: stress_balance == NULL");
     }
 
+    if (m_lagrange != NULL) {
+    m_log->message(4,
+               "Calling define for lagragnge variables");
+      m_lagrange->define_variables(vars, nc, nctype);
+    } else
+    m_log->message(4,
+               "m_lagrange == NULL -- no lagrange output");
+
     if (subglacial_hydrology != NULL) {
       subglacial_hydrology->define_variables(vars, nc, nctype);
     }
@@ -280,6 +289,11 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
   if (eigen_calving != NULL) {
     eigen_calving->write_variables(vars, nc);
+  }
+  if (m_lagrange != NULL) {
+    m_log->message(4,
+               "Calling write for lagragnge variables");
+    m_lagrange->write_variables(vars, nc);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.

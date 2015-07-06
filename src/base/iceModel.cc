@@ -47,6 +47,7 @@
 #include "pism_signal.h"
 #include "base/util/PISMVars.hh"
 #include "base/util/Profiling.hh"
+#include "lagrange/PISMLagrange.hh"
 
 namespace pism {
 
@@ -695,6 +696,13 @@ void IceModel::step(bool do_mass_continuity,
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
   max_timestep(dt, skipCountDown);
+
+
+  if (m_lagrange != NULL) {
+    profiling.begin("lagrange");
+    m_lagrange->update(current_time, dt); 
+    profiling.end("lagrange");
+  }
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
