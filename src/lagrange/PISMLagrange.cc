@@ -91,12 +91,10 @@ MaxTimestep PISMLagrange::max_timestep_impl(double t) {
 void PISMLagrange::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
-  ship_tracers();
   const IceModelVec3
     &u = m_stress_balance->velocity_u(),
     &v = m_stress_balance->velocity_v(),
     &w = m_stress_balance->velocity_w();
-
   {
     IceModelVec::AccessList list;
     list.add(u);
@@ -113,11 +111,10 @@ void PISMLagrange::update_impl(double t, double dt) {
       update_particle_position(it->x, it->y, it->z, p_u, p_v, p_w, m_dt); 
     }
   }
+  ship_tracers(); // Needs to be done before positions get messed up by periodic boundary alignment
 
-  //  std::cerr<< "shipping tracers\n";
-  ship_tracers();
-  //  std::cerr<< "shipped tracers\n";
 
+  /// @todo: Check if boundaries are periodic before pushing particles around // TODO // 
   for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
   // assuming periodic x... 
   
@@ -224,7 +221,6 @@ void PISMLagrange::evaluate_at_point(const IceModelVec3 &input,
     // horizontal interpolation:
     result += weights[i] * f_i;
   }
-
 }
 
 // typedefs for pointcloud_to_grid()
@@ -338,7 +334,7 @@ void  PISMLagrange::allocate() {
 }
 
 void PISMLagrange::init() {
-    //Define the particle type -- probably only needs to be done once.  
+  //Define the particle type -- probably only needs to be done once.  
   MPI_Datatype oldtypes[2]; 
   int          blockcounts[2];
   MPI_Aint    offsets[2], extent, tester;
@@ -350,13 +346,29 @@ void PISMLagrange::init() {
   MPI_Type_get_extent(MPI_DOUBLE, &tester, &extent);
   offsets[1] = 3 * extent;
   oldtypes[1] = MPI_INT;
-  blockcounts[1] = 2;
+  blockcounts[1] = 1;
   /* Now define structured type and commit it */
-
   MPI_Type_create_struct(2, blockcounts, offsets, oldtypes, &particletype);
   MPI_Type_commit(&particletype);
 
-  set_initial_distribution_parameters();
+  compute_neighbors();   // Needed for shipping
+
+
+  // load_particle_positions(nc, last_record);  // IF WE ARE RESTARTING
+
+  std::string input_file;
+  int start = 0;
+  bool boot = false;
+  bool use_input_file = find_pism_input(input_file, boot, start);
+
+  if (use_input_file && ! boot) {
+    PIO nc(m_grid->com, "guess_mode");
+    nc.open(input_file, PISM_READONLY);
+    load_particle_positions(input_file);
+  } else {
+    set_initial_distribution_parameters();
+  }
+
 }
   
 
@@ -375,17 +387,17 @@ void PISMLagrange::set_initial_distribution_parameters() {
 
   // Initialize particle positions and corresponding enhancement factors
   particles.resize(n_particles);
+  int i = get_offset(n_particles); // Globally coordinated numbering scheme
+
   for (unsigned int xx = m_grid->xs(); xx < (unsigned int)m_grid->xs()+m_grid->xm(); ++xx) {
     for (unsigned int yy = m_grid->ys(); yy < (unsigned int)m_grid->ys()+m_grid->ym(); ++yy) {
       for (unsigned int zz = 0; zz < m_grid->Mz()-1; ++zz) {
 	static std::list<Particle>::iterator it = particles.begin();
-	static int i = 0; 
 	  if (it==particles.end())
 	  break;
 	it->x = m_grid->x(xx);
 	it->y = m_grid->y(yy);
 	it->z = (m_grid->z(zz)+m_grid->z(zz+1))/2.0;
-	it->rank = m_grid->rank();
 	it->id = i;
 	it++;
 	i++;
@@ -393,7 +405,6 @@ void PISMLagrange::set_initial_distribution_parameters() {
     }
   }
 
-  compute_neighbors();  
 }
   /** Compute ranks of neighboring processes. 
       Necessary for passing tracers from one process to the other.
@@ -438,7 +449,6 @@ void PISMLagrange::compute_neighbors(){
 
    */
   void PISMLagrange::ship_tracers(){
-    const int myrank = m_grid->rank();
     std::vector<std::vector<Particle> > ship(9);
       
     for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ; it++){
@@ -506,75 +516,11 @@ void PISMLagrange::compute_neighbors(){
     else if (y > m_grid->y(ys)+dy*(ym-0.5))
       row=2;
 
-    int retval = row*3+column;
-
     return row*3+column;
 
 
   }
   
-/** Load distributions and particle positions from a file specified using the "-i" option.
- *
- * Uses the last time record.
- *
- */
-  void PISMLagrange::load_distributions(const std::string &input_file) {
-
-
-
-  
-  verbPrintf(2, m_grid->com,
-                    "  Reading distribution data from %s...\n",
-                    input_file.c_str()); 
-
-  PIO nc(m_grid->com, "guess_mode");
-  nc.open(input_file, PISM_READONLY); 
-  {
-    unsigned int n_records = nc.inq_nrecords(); 
-    unsigned int last_record = n_records - 1;
-
-    unsigned int n_particles = 0;
-    n_particles = nc.inq_dimlen("tracer_index"); 
-
-    // Load particle positions:
-    std::vector <double> m_p_x, m_p_y, m_p_z;
-    m_p_x.resize(n_particles, 0);
-    m_p_y.resize(n_particles, 0);
-    m_p_z.resize(n_particles, 0);
-    load_particle_positions(nc, last_record); 
-    particles.resize(n_particles);
-      for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
-    {
-      static std::vector<double>::iterator ix=m_p_x.begin(), iy=m_p_y.begin(),iz=m_p_z.begin() ;
-      unsigned static int id =0; 
-      it->x = *ix++;
-      it->y = *iy++;
-      it->z = *iz++;
-      it->rank = m_grid->rank();
-      it->id = id++;
-    }
-
-    
-
-  }
-  nc.close(); 
-
-}
-
-/** Save distributions and particle positions to a file
- *
- * Uses the last time record.
- *
- * @param nc file to save to
- *
- */
-void PISMLagrange::save_distributions(const PIO &nc) {
-
-
-  // Save particle positions:
-  //  lagrange_save_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z); 
-
-}
 
 void PISMLagrange::save_diagnostics(const PIO &nc) {
 
@@ -590,69 +536,125 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
   count[0] = 1;
   count[1] = particles.size();
 
-  if (m_grid->rank()==0){
-    int mpi_comm_size = 0 ;
-    MPI_Comm_size(m_grid->com, &mpi_comm_size);
-    int counts[mpi_comm_size], offsets[mpi_comm_size];
-    offsets[0] = 0;
-    counts[0] = particles.size();   
-    MPI_Status status;
-    for (int i = 1 ; i < mpi_comm_size; i++){
-      MPI_Recv ( &counts[i], 1, MPI_INT, i, 0, m_grid->com,&status);
-      offsets[i] = offsets[i-1] + counts[i-1];
-      MPI_Send ( &offsets[i], 1, MPI_INT, i, 0, m_grid->com);
-    }
-  } else {
-    const int mypart=particles.size();
-    MPI_Status status;
-    MPI_Send ( &mypart, 1, MPI_INT, 0, 0, m_grid->com);
-    MPI_Recv ( &start[1], 1, MPI_INT, 0, 0, m_grid->com, &status);
-  }
+  start[1] = get_offset(count[1]);
   std::vector <double>
     m_p_x(particles.size()),
     m_p_y(particles.size()),
     m_p_z(particles.size()),
-    m_p_rank(particles.size()),
     m_p_id(particles.size());
-  std::vector<double>::iterator ix=m_p_x.begin(),
+  std::vector<double>::iterator
+    ix=m_p_x.begin(),
     iy=m_p_y.begin(),
     iz=m_p_z.begin(),
-    ir=m_p_rank.begin(),
     id=m_p_id.begin();
   for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
     {
       * ix++ = it->x ;
       * iy++ = it->y ;
       * iz++ = it->z ;
-      * ir++ = (double) it->rank;
       * id++ = (double) it->id ;
     }
   nc.put_vara_double("p_x", start, count, &m_p_x[0]); 
   nc.put_vara_double("p_y", start, count, &m_p_y[0]); 
   nc.put_vara_double("p_z", start, count, &m_p_z[0]);
-  nc.put_vara_double("p_rank", start, count, &m_p_rank[0]); 
   nc.put_vara_double("p_id", start, count, &m_p_id[0]); 
 
 }
 
-  void PISMLagrange::load_particle_positions(const pism::PIO &nc,
-                                  unsigned int time_index) {
-
-  std::vector<unsigned int> start(2), count(2);
-  start[0] = time_index;
-  start[1] = 0;
-
-  count[0] = 1;
-  std::vector<double> x,y,z,id,rank;
-  count[1] = x.size(); // needs to be fixed
-  nc.get_vara_double("p_x", start, count, &x[0]);
-  nc.get_vara_double("p_y", start, count, &y[0]);
-  nc.get_vara_double("p_z", start, count, &z[0]); 
-  nc.get_vara_double("p_rank", start, count, &z[0]); 
-  nc.get_vara_double("p_id", start, count, &z[0]); 
-
-}
+  void PISMLagrange::load_particle_positions(const std::string input_file) {
+    PIO nc(m_grid->com, "guess_mode");
+    nc.open(input_file, PISM_READONLY);
 
 
+    unsigned int n_records = nc.inq_nrecords();
+    unsigned int last_record = n_records - 1;
+    
+    std::vector<unsigned int> start(2), count(2);
+    start[0] = last_record;
+    start[1] = 0;
+    
+    count[0] = 1;
+    
+    
+    count[1] = nc.inq_dimlen("tracer_index");
 
+    // OPTION FOR MANY TRACERS: READ up to  10/100/... Million at a time and sort them
+    // before reading the next batch. -- ::TODO::
+    
+    const unsigned int n = count[1];
+    std::vector<double> x(n), y(n),z(n), id(n);
+
+    
+    nc.get_vara_double("p_x", start, count, &x[0]);
+    nc.get_vara_double("p_y", start, count, &y[0]);
+    nc.get_vara_double("p_z", start, count, &z[0]); 
+    nc.get_vara_double("p_id", start, count, &id[0]); 
+    
+    std::vector<double>::iterator
+      ix = x.begin(),
+      iy = y.begin(),
+      iz = z.begin(),
+      iid = id.begin();
+    while (ix != x.end()){
+      if (whereto(*ix, *iy, *iz) == 4 ){
+	Particle p = {*ix, *iy, *iz, (int) *iid};
+	particles.push_back(p);
+      }
+      ix++; iy++ ; iz++ ; iid++;
+    }
+    
+  }
+  
+  void PISMLagrange::write_new_tracers(std::list<Particle>::iterator start,
+				       std::list<Particle>::iterator end,
+				       const unsigned int count,
+				       const pism::PIO & nc){
+    std::vector<double>
+      x(count),
+      y(count),
+      z(count),
+      id (count);
+    std::vector<double>::iterator
+      ix = x.begin(),
+      iy = y.begin(),
+      iz = z.begin(),
+      iid = id.begin();
+    
+    for (std::list<Particle>::iterator it = start ; it != end ; it++){
+      *ix++ = it->x;
+      *iy++ = it->y;
+      *iz++ = it->z;
+      *iid++ = (double) it->id;
+    }
+    //    put_vara_double (const std::string &variable_name, const std::vector< unsigned int > &start, const std::vector< unsigned int > &count, const double *op) const
+    unsigned int offset = nc.inq_dimlen("tracer_index"); 
+    
+    nc.put_1d_var("p_x", offset, count, x);
+    nc.put_1d_var("p_x", offset, count, y);
+    nc.put_1d_var("p_x", offset, count, z);
+    nc.put_1d_var("p_id", offset, count, id);
+  }
+				       
+  int PISMLagrange::get_offset(const int contribution) const{
+    int retval = 0;
+    if (m_grid->rank()==0){
+      int mpi_comm_size = 0 ;
+      MPI_Comm_size(m_grid->com, &mpi_comm_size);
+      int counts[mpi_comm_size], offsets[mpi_comm_size];
+      offsets[0] = 0;
+      counts[0] = contribution;
+      MPI_Status status;
+      for (int i = 1 ; i < mpi_comm_size; i++){
+	MPI_Recv ( &counts[i], 1, MPI_INT, i, 0, m_grid->com,&status);
+	offsets[i] = offsets[i-1] + counts[i-1];
+	MPI_Send ( &offsets[i], 1, MPI_INT, i, 0, m_grid->com);
+      }
+    } else {
+      MPI_Status status;
+      MPI_Send ( &contribution, 1, MPI_INT, 0, 0, m_grid->com);
+      MPI_Recv ( &retval, 1, MPI_INT, 0, 0, m_grid->com, &status);
+    }
+  
+  return retval;
+  }
 } // end of namespace pism

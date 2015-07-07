@@ -55,11 +55,14 @@ public:
                                           IO_Type nctype);
 
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+
+
   typedef struct {
   double x, y, z;
-  int  rank, id;
+  int id;
   }          Particle;
-  
+  /// @todo typedef Particle should probably go outside this class into a new namespace. // TODO //
+
 private:
   MPI_Datatype particletype;
   stressbalance::StressBalance *m_stress_balance;
@@ -70,8 +73,7 @@ private:
 
   void set_initial_distribution_parameters();
 
-  void load_distributions(const std::string &input_file);
-  void save_distributions(const PIO &nc);
+  int get_offset(const int contribution) const;
 
   void save_diagnostics(const PIO &nc);
   void save_particle_positions(const PIO &nc);
@@ -93,8 +95,11 @@ private:
   void compute_neighbors();
   void ship_tracers();
   int whereto(double x , double y, double z);
-  void load_particle_positions(const pism::PIO &nc,
-			       unsigned int time_index);
+  void load_particle_positions(const std::string input_file);
+  void write_new_tracers(std::list<Particle>::iterator start,
+				       std::list<Particle>::iterator end,
+				       const unsigned int count,
+				       const pism::PIO & nc);
 
 }; // End of PISMLagrange class
 

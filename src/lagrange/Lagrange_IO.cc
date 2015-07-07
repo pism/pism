@@ -40,7 +40,7 @@ using namespace pism;
  * @return 0 on success
  */
 void lagrange_prepare_file(const pism::PIO &nc, 
-                       unsigned int n_tracers) {
+			   unsigned int n_tracers) {
 
   // FIXME: these should be configurable
   bool dim_exists = false;
@@ -65,7 +65,6 @@ void lagrange_prepare_file(const pism::PIO &nc,
     for (unsigned int j = 0; j < n_tracers; ++j) {
       index[j] = j;
     }
-
     nc.put_1d_var("tracer_index", 0 , n_tracers, index);
   }
 
@@ -74,25 +73,47 @@ void lagrange_prepare_file(const pism::PIO &nc,
   dims[0] = "time";
   dims[1] = "tracer_index";
   // particle positions
-  {
-
-    if (not nc.inq_var("p_x")) {
+  std::vector<std::string> fields ;
+  fields.push_back("p_x");
+  fields.push_back("p_y");
+  fields.push_back("p_z");
+  fields.push_back("p_id");
+  
+  for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
+    if (not nc.inq_var(*it)) {
       nc.redef();
-      nc.def_var("p_x", PISM_DOUBLE, dims);
+      nc.def_var(*it, PISM_DOUBLE, dims);
     }
-
-    if (not nc.inq_var("p_y")) {
-      nc.def_var("p_y", PISM_DOUBLE, dims); 
-    }
-    if (not nc.inq_var("p_z")) {
-      nc.def_var("p_z", PISM_DOUBLE, dims); 
-    }
-    if (not nc.inq_var("p_rank")) {
-      nc.def_var("p_rank", PISM_DOUBLE, dims); 
-    }
-    if (not nc.inq_var("p_id")) {
-      nc.def_var("p_id", PISM_DOUBLE, dims); 
-    }
-
   }
+  
 }
+
+void lagrange_prepare_particle_log_file(const pism::PIO &nc){
+ 
+  std::vector<std::string> dims(1);
+  dims[0] = "tracer_index";
+
+  bool dim_exists = false;
+  dim_exists = nc.inq_dim("tracer_index");
+  if (not dim_exists){ 
+    nc.def_dim(dims[0], pism::PISM_UNLIMITED); 
+    nc.def_var(dims[0], PISM_DOUBLE, dims);
+  }
+  // particle positions and time -- this is for creation and similar logs
+
+  std::vector<std::string> fields ;
+  fields.push_back("p_x");
+  fields.push_back("p_y");
+  fields.push_back("p_z");
+  fields.push_back("p_id");
+
+  
+  for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
+    if (not nc.inq_var(*it)) {
+      nc.redef();
+      nc.def_var(*it, PISM_DOUBLE, dims);
+    }
+  }
+  
+}
+

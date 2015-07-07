@@ -31,9 +31,9 @@ class UnitSystem;
 }
 
 void lagrange_prepare_file(const pism::PIO &nc, 
-			  unsigned int n_distributions);
+			   unsigned int n_distributions);
 
-
+void lagrange_prepare_particle_log_file(const pism::PIO &nc);
 
 
 #endif /* _LAGRANGE_IO_H_ */
