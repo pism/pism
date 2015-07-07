@@ -371,17 +371,13 @@ void PISMLagrange::set_initial_distribution_parameters() {
                     "  Setting initial distribution parameters...\n"); 
   
   unsigned int n_particles = (unsigned int)  (m_grid->Mz()-1) * (m_grid->xm()) * (m_grid->ym());
-  //  m_config->get_double("lagrange_n_particles");
-  //  assert( n_particles == (m_grid->Mz()-1)*(m_grid->Mx()-1)*(m_grid->My()-1) );
   
-  // Initialize distributions
-  //  assert(m_packing_dimensions.size() == 3);
 
   // Initialize particle positions and corresponding enhancement factors
   particles.resize(n_particles);
-  for (unsigned int zz = 0; zz < m_grid->Mz()-1; ++zz) {
-    for (unsigned int xx = m_grid->xs(); xx < (unsigned int)m_grid->xs()+m_grid->xm(); ++xx) {
-      for (unsigned int yy = m_grid->ys(); yy < (unsigned int)m_grid->ys()+m_grid->ym(); ++yy) {
+  for (unsigned int xx = m_grid->xs(); xx < (unsigned int)m_grid->xs()+m_grid->xm(); ++xx) {
+    for (unsigned int yy = m_grid->ys(); yy < (unsigned int)m_grid->ys()+m_grid->ym(); ++yy) {
+      for (unsigned int zz = 0; zz < m_grid->Mz()-1; ++zz) {
 	static std::list<Particle>::iterator it = particles.begin();
 	static int i = 0; 
 	  if (it==particles.end())
