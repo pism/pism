@@ -43,8 +43,8 @@
     ly- ownership along y direction (optional)
     lz- ownership along z direction (optional)
 
-
-*** Passing data:
+    
+** Passing data:
 **** Creating structures:
      https://computing.llnl.gov/tutorials/mpi/#Derived_Data_Types
      #+BEGIN_SRC C++
@@ -149,3 +149,14 @@ void MPI::Datatype::Free(void)
 
 
      
+
+* I/O
+** Need a way to visualize output
+   One unique number would help with tools like ncview, probably also paraview. -> Pass them out one after the other?
+** Would like to be able to see them in paraview
+** Python scripts for fast plot generation - what's wrong with my laptop?!
+*** One state
+*** Time evolving
+** Need clean restarts
+** Need some kind of *DB* for created particles.
+*** 
