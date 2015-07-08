@@ -266,3 +266,5 @@
 
 
 %include pism_inverse.i
+
+%include pism_ocean.i
