@@ -67,11 +67,19 @@ private:
   MPI_Datatype particletype;
   stressbalance::StressBalance *m_stress_balance;
 
+  std::vector<double> seed_times;
+  double last_seed;
+  std::vector<double>::iterator next_seed; 
+
   std::list<Particle> particles;
 
   void allocate();
 
   void set_initial_distribution_parameters();
+  void init_seed_times();
+  void seed();
+  bool check_seed();
+
 
   int get_offset(const int contribution) const;
 

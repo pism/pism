@@ -42,8 +42,10 @@
 #include "base/enthalpyConverter.hh"
 
 #include "lagrange_IO.hh"
+#include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMTime.hh"
+#include "base/util/Profiling.hh"
 #include "base/util/io/PIO.hh"
 
 #include<iostream>
@@ -91,6 +93,8 @@ MaxTimestep PISMLagrange::max_timestep_impl(double t) {
 void PISMLagrange::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
+  if (check_seed())
+    seed();
   const IceModelVec3
     &u = m_stress_balance->velocity_u(),
     &v = m_stress_balance->velocity_v(),
@@ -352,6 +356,7 @@ void PISMLagrange::init() {
   MPI_Type_commit(&particletype);
 
   compute_neighbors();   // Needed for shipping
+  init_seed_times();
 
 
   // load_particle_positions(nc, last_record);  // IF WE ARE RESTARTING
@@ -656,5 +661,102 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     }
   
   return retval;
+  }
+
+
+  void PISMLagrange::init_seed_times(){
+    last_seed = -9e20;               // will be set in write_extras()
+    options::String times("-seed_times", "Specifies times to save at");
+    
+
+    if (times.is_set()){
+      try {
+	m_grid->ctx()->time()->parse_times(times, seed_times);
+      } catch (RuntimeError &e) {
+	e.add_context("parsing the -seed_times argument %s", times->c_str());
+	throw;
+      }
+      
+      if (seed_times.size() == 0) {
+	throw RuntimeError("no argument for -seed_times option.");
+      }
+      
+      
+    }
+    next_seed = seed_times.begin();
+    while (next_seed != seed_times.end() && *next_seed < m_grid->ctx()->time()->start()-1)
+      {
+	next_seed++;}
+    
+  }
+
+
+  bool PISMLagrange::check_seed(){
+    double seed_after = -1.0e30;
+    std::vector<double>::iterator current_seed;
+    if (next_seed != seed_times.end() &&
+	(*next_seed <= m_grid->ctx()->time()->current() ||
+	 fabs(m_grid->ctx()->time()->current() - *next_seed) < 1.0)) {
+    // the condition above is "true" if we passed a requested time or got to
+    // within 1 second from it
+      
+      current_seed = next_seed;
+      
+      // update next_extra
+      while (next_seed != seed_times.end() &&
+	     (*next_seed <= m_grid->ctx()->time()->current() ||
+            fabs(m_grid->ctx()->time()->current() - *next_seed) < 1.0)) {
+	next_seed++;
+      }
+      
+      seed_after = *current_seed;
+    } else {
+      return false;
+    }
+    
+    if (seed_after < m_grid->ctx()->time()->start()) {
+      // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
+      // also that PISM writes a backup file at year 2500 and gets stopped.
+      //
+      // When restarted, PISM will decide that it's time to write data for time
+      // 2000, but
+      // * that record was written already and
+      // * PISM will end up writing at year 2500, producing a file containing one
+      //   more record than necessary.
+      //
+      // This check makes sure that this never happens.
+      return false;
+    }
+    return true; 
+  }
+
+  void PISMLagrange::seed(){
+
+    const Profiling &profiling = m_grid->ctx()->profiling();
+    profiling.begin("tracer seeding");
+
+    const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+    IceModelVec::AccessList list;
+    list.add(*thickness);
+    
+    std::list<Particle> new_tracers;
+    int id = 0 ;
+    for (Points p(*m_grid); p; p.next()){
+      const int i = p.i(), j = p.j();
+      const double thk = (*thickness)(i,j);
+      if (thk > 0 ){
+	Particle part = {m_grid->x(i), m_grid->y(j), thk, id };
+	new_tracers.push_back(part);
+	id++;
+	}
+    }
+    
+    int offset = get_offset(id);
+    for (std::list<Particle>::iterator it = new_tracers.begin() ; it != new_tracers.end() ;it++)
+      it->id+=offset;
+    particles.insert(particles.end(), new_tracers.begin(), new_tracers.end());
+    
+  profiling.end("tracer seeding");
+  
   }
 } // end of namespace pism
