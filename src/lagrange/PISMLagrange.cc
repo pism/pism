@@ -319,7 +319,7 @@ void PISMLagrange::add_vars_to_output_impl(const std::string &keyword, std::set<
 void PISMLagrange::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
     int ps = particles.size(), as=0;
-    
+
     MPI_Reduce(&ps, &as, 1, MPI_INT, MPI_SUM, 0, m_grid->com);
     lagrange_prepare_file(nc, as);
 
@@ -327,7 +327,6 @@ void PISMLagrange::define_variables_impl(const std::set<std::string> &vars, cons
 
   void PISMLagrange::write_variables_impl(const std::set<std::string> &vars,const  PIO& nc) {
 
-    
   save_particle_positions(nc);
 
 }
@@ -386,13 +385,17 @@ void PISMLagrange::set_initial_distribution_parameters() {
 
   verbPrintf(2, m_grid->com,
                     "  Setting initial distribution parameters...\n"); 
-  
+  tracer_counter = 0; 
   unsigned int n_particles = (unsigned int)  (m_grid->Mz()-1) * (m_grid->xm()) * (m_grid->ym());
   
 
   // Initialize particle positions and corresponding enhancement factors
   particles.resize(n_particles);
   int i = get_offset(n_particles); // Globally coordinated numbering scheme
+  if (m_grid->rank() == 0){
+    tracer_counter = i; 
+      i=0 ; // NO OFFSET FOR FIRST PROCESS
+  }
 
   for (unsigned int xx = m_grid->xs(); xx < (unsigned int)m_grid->xs()+m_grid->xm(); ++xx) {
     for (unsigned int yy = m_grid->ys(); yy < (unsigned int)m_grid->ys()+m_grid->ym(); ++yy) {
@@ -411,8 +414,9 @@ void PISMLagrange::set_initial_distribution_parameters() {
   }
 
 }
+
   /** Compute ranks of neighboring processes. 
-      Necessary for passing tracers from one process to the other.
+   *    Necessary for passing tracers from one process to the other.
    */  
 void PISMLagrange::compute_neighbors(){
 
@@ -540,8 +544,21 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
 
   count[0] = 1;
   count[1] = particles.size();
-
+  {
+  std::vector<double> num_trac(1,tracer_counter);
+  std::vector<unsigned int> start_trac(1,0), count_trac(1,1);
+  if (m_grid->rank() == 0){
+    nc.put_vara_double("tracer_counter",start_trac , count_trac, &num_trac[0]);
+  }
+  else{
+    count_trac[0] = 0;
+    nc.put_vara_double("tracer_counter",start_trac , count_trac, &num_trac[0]);
+  }
+  }
   start[1] = get_offset(count[1]);
+  if (m_grid->rank() == 0)
+    start[1] = 0 ;
+  
   std::vector <double>
     m_p_x(particles.size()),
     m_p_y(particles.size()),
@@ -573,7 +590,10 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
 
     unsigned int n_records = nc.inq_nrecords();
     unsigned int last_record = n_records - 1;
-    
+
+    std::vector<double> num_trac(1, 0.0);
+    nc.get_1d_var("tracer_counter", last_record, 1, num_trac);
+    tracer_counter = (unsigned int) num_trac[0];
     std::vector<unsigned int> start(2), count(2);
     start[0] = last_record;
     start[1] = 0;
@@ -639,25 +659,55 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     nc.put_1d_var("p_x", offset, count, z);
     nc.put_1d_var("p_id", offset, count, id);
   }
-				       
-  int PISMLagrange::get_offset(const int contribution) const{
+
+  /** coordinate offsets in tracer numbering - FUNKY! READ DESCRIPTION
+   *
+   * @return RANK=0 receives the total, all others get the sum of the prev.
+   *
+   *
+   */
+  
+  int PISMLagrange::get_offset(const int contribution) {
+
     int retval = 0;
-    if (m_grid->rank()==0){
+
+    if (m_grid->rank()==0){ // Main thread has to handle the mess.
+
+      //Init MPI stuff
       int mpi_comm_size = 0 ;
       MPI_Comm_size(m_grid->com, &mpi_comm_size);
+      MPI_Request req[mpi_comm_size];
+      MPI_Status status[mpi_comm_size];
+
+      // Fields for counting and such
       int counts[mpi_comm_size], offsets[mpi_comm_size];
       offsets[0] = 0;
-      counts[0] = contribution;
-      MPI_Status status;
+       counts[0] = contribution;
+
       for (int i = 1 ; i < mpi_comm_size; i++){
-	MPI_Recv ( &counts[i], 1, MPI_INT, i, 0, m_grid->com,&status);
+	MPI_Irecv ( &counts[i], 1, MPI_INT, i, 0, m_grid->com, &req[i]);
+      } // Just collecting numbers. Can happen in parallel.
+
+      for (int i = 1 ; i < mpi_comm_size; i++){
+	MPI_Wait(&req[i], &status[i]);
 	offsets[i] = offsets[i-1] + counts[i-1];
-	MPI_Send ( &offsets[i], 1, MPI_INT, i, 0, m_grid->com);
-      }
+	MPI_Isend ( &offsets[i], 1, MPI_INT, i, 0, m_grid->com, &req[i]);
+      } // We only need this and all previos receives completed.
+      
+
+      for (int i = 1 ; i < mpi_comm_size; i++){
+	MPI_Wait ( &req[i], &status[i]);
+      } // Wait till everything is shipped
+      retval = offsets[mpi_comm_size-1]+counts[mpi_comm_size-1];
+      return retval;  // ON RANK ZERO WE RETURN THE TOTAL!
+      
     } else {
       MPI_Status status;
-      MPI_Send ( &contribution, 1, MPI_INT, 0, 0, m_grid->com);
-      MPI_Recv ( &retval, 1, MPI_INT, 0, 0, m_grid->com, &status);
+      MPI_Request req;
+      MPI_Isend ( &contribution, 1, MPI_INT, 0, 0, m_grid->com, &req);
+      MPI_Wait ( &req, &status);
+      MPI_Irecv ( &retval, 1, MPI_INT, 0, 0, m_grid->com, &req);
+      MPI_Wait ( &req, &status);
     }
   
   return retval;
@@ -750,8 +800,13 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
 	id++;
 	}
     }
-    
-    int offset = get_offset(id);
+    int offset;
+    if (m_grid->rank() == 0){
+      offset = tracer_counter ;
+      tracer_counter = get_offset( offset + id);
+    } else{
+      offset = get_offset(id);
+    }
     for (std::list<Particle>::iterator it = new_tracers.begin() ; it != new_tracers.end() ;it++)
       it->id+=offset;
     particles.insert(particles.end(), new_tracers.begin(), new_tracers.end());

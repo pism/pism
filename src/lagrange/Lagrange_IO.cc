@@ -41,13 +41,17 @@ using namespace pism;
  */
 void lagrange_prepare_file(const pism::PIO &nc, 
 			   unsigned int n_tracers) {
-
   // FIXME: these should be configurable
   bool dim_exists = false;
   dim_exists = nc.inq_dim("time");
   if (not dim_exists) 
-    nc.def_dim("time", pism::PISM_UNLIMITED); 
+    nc.def_dim("time", pism::PISM_UNLIMITED);
 
+  if (not nc.inq_var("tracer_counter")){
+    std::vector<std::string> dims(1);
+    dims[0] = "time";
+    nc.def_var("tracer_counter", PISM_DOUBLE, dims);
+  }
 
   std::vector<double> index;
   unsigned int count;
@@ -85,7 +89,6 @@ void lagrange_prepare_file(const pism::PIO &nc,
       nc.def_var(*it, PISM_DOUBLE, dims);
     }
   }
-  
 }
 
 void lagrange_prepare_particle_log_file(const pism::PIO &nc){

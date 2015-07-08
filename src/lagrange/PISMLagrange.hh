@@ -67,6 +67,9 @@ private:
   MPI_Datatype particletype;
   stressbalance::StressBalance *m_stress_balance;
 
+  unsigned int tracer_counter;
+
+  
   std::vector<double> seed_times;
   double last_seed;
   std::vector<double>::iterator next_seed; 
@@ -81,7 +84,7 @@ private:
   bool check_seed();
 
 
-  int get_offset(const int contribution) const;
+  int get_offset(const int contribution);
 
   void save_diagnostics(const PIO &nc);
   void save_particle_positions(const PIO &nc);
