@@ -73,9 +73,8 @@ void lagrange_prepare_file(const pism::PIO &nc,
   }
 
 
-  std::vector<std::string> dims(2);
-  dims[0] = "time";
-  dims[1] = "tracer_index";
+  std::vector<std::string> dims(1);
+  dims[0] = "tracer_index";
   // particle positions
   std::vector<std::string> fields ;
   fields.push_back("p_x");

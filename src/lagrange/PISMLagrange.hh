@@ -111,7 +111,7 @@ private:
 				       std::list<Particle>::iterator end,
 				       const unsigned int count,
 				       const pism::PIO & nc);
-
+  void remove_flying_tracers();
 }; // End of PISMLagrange class
 
 } // End of namespace pism

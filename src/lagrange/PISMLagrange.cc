@@ -93,6 +93,9 @@ MaxTimestep PISMLagrange::max_timestep_impl(double t) {
 void PISMLagrange::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
+
+  remove_flying_tracers();
+  
   if (check_seed())
     seed();
   const IceModelVec3
@@ -319,16 +322,31 @@ void PISMLagrange::add_vars_to_output_impl(const std::string &keyword, std::set<
 void PISMLagrange::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
     int ps = particles.size(), as=0;
-
-    MPI_Reduce(&ps, &as, 1, MPI_INT, MPI_SUM, 0, m_grid->com);
+    bool fake = false;
+    if (ps == 0 ){
+      Particle p = {0.0, 0.0, -1.,-1};
+      particles.push_back(p);
+      fake = true;
+      ps = 1;
+      }
+    MPI_Allreduce(&ps, &as, 1, MPI_INT, MPI_SUM, m_grid->com);
     lagrange_prepare_file(nc, as);
-
+    if (fake)
+      particles.resize(0);
 }
 
   void PISMLagrange::write_variables_impl(const std::set<std::string> &vars,const  PIO& nc) {
 
-  save_particle_positions(nc);
-
+    bool fake = false;
+    if (particles.empty() ){
+      Particle p = {0.0, 0.0, -1.,-1};
+      particles.push_back(p);
+      fake = true;
+      }
+    save_particle_positions(nc);
+    if (fake)
+      particles.resize(0);
+ 
 }
 
 void  PISMLagrange::allocate() {
@@ -464,7 +482,8 @@ void PISMLagrange::compute_neighbors(){
       const unsigned int dest =  whereto(it->x, it->y,it->z);
       if (dest != 4){
 	ship[dest].push_back(*it);
-	particles.erase(it);
+	it = particles.erase(it);
+	it--;
       }
     }
     int num_ship[9];
@@ -538,12 +557,15 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
   void PISMLagrange::save_particle_positions(const PIO &nc) {
   unsigned int n_records   = nc.inq_nrecords(); 
   unsigned int last_record = n_records - 1;
-  std::vector<unsigned int> start(2), count(2);
-  start[0] = last_record;
-  start[1] = 0;
+  if (not nc.inq_dimlen("tracer_index")){
+    m_log->message(2,
+		   "Empty tracer dimension - nothing to write");
+    return;
+  }
+  std::vector<unsigned int> start(1), count(1);
+  start[0] = 0;
+  count[0] = particles.size();
 
-  count[0] = 1;
-  count[1] = particles.size();
   {
   std::vector<double> num_trac(1,tracer_counter);
   std::vector<unsigned int> start_trac(1,0), count_trac(1,1);
@@ -555,9 +577,9 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     nc.put_vara_double("tracer_counter",start_trac , count_trac, &num_trac[0]);
   }
   }
-  start[1] = get_offset(count[1]);
+  start[0] = get_offset(count[0]);
   if (m_grid->rank() == 0)
-    start[1] = 0 ;
+    start[0] = 0 ;
   
   std::vector <double>
     m_p_x(particles.size()),
@@ -576,11 +598,21 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
       * iz++ = it->z ;
       * id++ = (double) it->id ;
     }
+
+    if (m_p_x.empty()){
+    m_p_x.push_back(0.);
+    m_p_y.push_back(0.);
+    m_p_z.push_back(0.);
+    m_p_id.push_back(0.);
+    // Avoid empty pointers. Rank 0 actually needs to write some BS. That's handled higher up in the call hirarchy.
+  }
+
+
+  
   nc.put_vara_double("p_x", start, count, &m_p_x[0]); 
   nc.put_vara_double("p_y", start, count, &m_p_y[0]); 
   nc.put_vara_double("p_z", start, count, &m_p_z[0]);
   nc.put_vara_double("p_id", start, count, &m_p_id[0]); 
-
 }
 
   void PISMLagrange::load_particle_positions(const std::string input_file) {
@@ -622,6 +654,7 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
       iid = id.begin();
     while (ix != x.end()){
       if (whereto(*ix, *iy, *iz) == 4 ){
+	if (*iz < 0 ) continue;
 	Particle p = {*ix, *iy, *iz, (int) *iid};
 	particles.push_back(p);
       }
@@ -810,8 +843,30 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     for (std::list<Particle>::iterator it = new_tracers.begin() ; it != new_tracers.end() ;it++)
       it->id+=offset;
     particles.insert(particles.end(), new_tracers.begin(), new_tracers.end());
-    
-  profiling.end("tracer seeding");
+
+    profiling.end("tracer seeding");
   
   }
+  void PISMLagrange::remove_flying_tracers(){
+
+    const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+    IceModelVec::AccessList list;
+    list.add(*thickness);
+
+    const double
+      x0 = m_grid->x(0),
+      y0 = m_grid->y(0),
+      dx = m_grid->dx(),
+      dy = m_grid->dy();
+    for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
+      {      
+	const int i = (int)round((it->x - x0)/dx), 
+	  j = (int)round((it->y - y0)/dy);
+	if (it->z > (*thickness)(i,j)+1e-3){ // 1 mm grace, let's call it surfce roughness ;)
+	  it = particles.erase(it);
+	  it-- ;
+	}
+      }
+  }
+
 } // end of namespace pism
