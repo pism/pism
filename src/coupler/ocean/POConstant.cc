@@ -35,8 +35,35 @@ Constant::Constant(IceGrid::ConstPtr g)
     m_shelfbmassflux(m_sys, "shelfbmassflux"),
     m_shelfbtemp(m_sys, "shelfbtemp") {
 
-  m_mymeltrate = 0.0;
-  m_meltrate_set = false;
+  {
+    const double
+      Q           = m_config->get_double("ocean_sub_shelf_heat_flux_into_ice"),
+      L           = m_config->get_double("water_latent_heat_fusion"),
+      ice_density = m_config->get_double("ice_density");
+
+    // Set default melt rate using configuration parameters
+    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
+    m_meltrate = Q / (L * ice_density);
+
+    // check the command-line option
+    options::Real meltrate("-shelf_base_melt_rate",
+                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
+                           units::convert(m_sys, m_meltrate, "m / second", "m / year"));
+
+    // tell the user that we're using it
+    if (meltrate.is_set()) {
+      m_log->message(2,
+                     "    - option '-shelf_base_melt_rate' seen, "
+                     "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
+                     (double)meltrate);
+    }
+
+    // here meltrate was set using the command-line option OR the default provided above
+    m_meltrate = units::convert(m_sys, meltrate, "m / year", "m / second");
+
+    // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
+    m_meltrate = m_meltrate * ice_density;
+  }
 
   m_shelfbmassflux.set_string("pism_intent", "climate_state");
   m_shelfbmassflux.set_string("long_name",
@@ -66,18 +93,6 @@ void Constant::init_impl() {
 
   if (!m_config->get_boolean("is_dry_simulation")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
-  }
-
-  options::Real meltrate("-shelf_base_melt_rate",
-                         "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-                         m_mymeltrate);
-
-  if (meltrate.is_set()) {
-    m_mymeltrate = meltrate;
-    m_log->message(2,
-               "    - option '-shelf_base_melt_rate' seen, "
-               "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
-               m_mymeltrate);
   }
 }
 
@@ -112,26 +127,7 @@ void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
 void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
-  double
-    L           = m_config->get_double("water_latent_heat_fusion"),
-    ice_density = m_config->get_double("ice_density"),
-    meltrate    = 0.0;
-
-  if (m_meltrate_set) {
-
-    meltrate = units::convert(m_sys, m_mymeltrate, "m year-1", "m s-1");
-
-  } else {
-
-    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-    meltrate = m_config->get_double("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
-
-  }
-
-  // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
-  meltrate = meltrate * ice_density;
-
-  result.set(meltrate);
+  result.set(m_meltrate);
 }
 
 void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {

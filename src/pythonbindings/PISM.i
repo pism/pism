@@ -261,3 +261,5 @@
 %include "regional/regional.hh"
 
 %include pism_inverse.i
+
+%include pism_ocean.i

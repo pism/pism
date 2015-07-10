@@ -44,8 +44,7 @@ protected:
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
   SpatialVariableMetadata m_shelfbmassflux, m_shelfbtemp;
-  bool m_meltrate_set;
-  double m_mymeltrate;
+  double m_meltrate;
 };
 
 } // end of namespace ocean
