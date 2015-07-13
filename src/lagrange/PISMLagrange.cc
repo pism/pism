@@ -354,6 +354,7 @@ void  PISMLagrange::allocate() {
 
 }
 
+
 void PISMLagrange::init() {
   //Define the particle type -- probably only needs to be done once.  
   MPI_Datatype oldtypes[2]; 
@@ -678,35 +679,6 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     
   }
   
-  void PISMLagrange::write_new_tracers(std::list<Particle>::iterator start,
-				       std::list<Particle>::iterator end,
-				       const unsigned int count,
-				       const pism::PIO & nc){
-    std::vector<double>
-      x(count),
-      y(count),
-      z(count),
-      id (count);
-    std::vector<double>::iterator
-      ix = x.begin(),
-      iy = y.begin(),
-      iz = z.begin(),
-      iid = id.begin();
-    
-    for (std::list<Particle>::iterator it = start ; it != end ; it++){
-      *ix++ = it->x;
-      *iy++ = it->y;
-      *iz++ = it->z;
-      *iid++ = (double) it->id;
-    }
-    //    put_vara_double (const std::string &variable_name, const std::vector< unsigned int > &start, const std::vector< unsigned int > &count, const double *op) const
-    unsigned int offset = nc.inq_dimlen("tracer_index"); 
-    
-    nc.put_1d_var("p_x", offset, count, x);
-    nc.put_1d_var("p_x", offset, count, y);
-    nc.put_1d_var("p_x", offset, count, z);
-    nc.put_1d_var("p_id", offset, count, id);
-  }
 
   /** coordinate offsets in tracer numbering - FUNKY! READ DESCRIPTION
    *
@@ -925,7 +897,7 @@ void PISMLagrange::log_tracers(const std::list<Particle>::iterator first , const
 
     unsigned int my_offset = get_offset(count); // Will be incremented by File offset later.
     if (m_grid->rank() == 0 )
-      my_offset = 0; 
+      my_offset = 0;
 
     std::vector<double>
       x(count),
@@ -933,7 +905,7 @@ void PISMLagrange::log_tracers(const std::list<Particle>::iterator first , const
       z(count),
       id(count),
       time(count, a_time);
-    std::list<Particle>::iterator  it = first; 
+    std::list<Particle>::iterator  it = first;
     for (size_t i = 0 ; i < count ; i++)
       {
 	x[i]=it->x; 
