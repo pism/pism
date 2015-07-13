@@ -383,6 +383,20 @@ void PISMLagrange::init() {
   bool boot = false;
   bool use_input_file = find_pism_input(input_file, boot, start);
 
+  options::String poo("-o", "Output file name", "unnamed.nc");
+  tracer_log_created = poo;
+  tracer_log_deleted = poo;
+  tracer_log_created.replace(tracer_log_created.end()-3,tracer_log_created.end(), "_tracers_created.nc");
+  tracer_log_deleted.replace(tracer_log_deleted.end()-3,tracer_log_deleted.end(), "_tracers_deleted.nc");
+  PIO tracer_log_nc (m_grid->com, m_config->get_string("output_format"));
+  tracer_log_nc.open(tracer_log_created, PISM_READWRITE_MOVE);
+  prepare_tracer_log_file(tracer_log_nc);
+  tracer_log_nc.close();
+  tracer_log_nc.open(tracer_log_deleted, PISM_READWRITE_MOVE);
+  prepare_tracer_log_file(tracer_log_nc);
+  tracer_log_nc.close();
+
+
   if (use_input_file && ! boot) {
     PIO nc(m_grid->com, "guess_mode");
     nc.open(input_file, PISM_READONLY);
@@ -430,6 +444,7 @@ void PISMLagrange::set_initial_distribution_parameters() {
       }
     }
   }
+  log_tracers(particles.begin(), particles.size(), m_grid->ctx()->time()->current(), tracer_log_created);
 
 }
 
@@ -844,6 +859,8 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
       it->id+=offset;
     particles.insert(particles.end(), new_tracers.begin(), new_tracers.end());
 
+    log_tracers(new_tracers.begin(), new_tracers.size(), m_grid->ctx()->time()->current(), tracer_log_created);
+    
     profiling.end("tracer seeding");
   
   }
@@ -853,6 +870,8 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     IceModelVec::AccessList list;
     list.add(*thickness);
 
+    std::list<Particle> deleted;
+    
     const double
       x0 = m_grid->x(0),
       y0 = m_grid->y(0),
@@ -863,10 +882,76 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
 	const int i = (int)round((it->x - x0)/dx), 
 	  j = (int)round((it->y - y0)/dy);
 	if (it->z > (*thickness)(i,j)+1e-3){ // 1 mm grace, let's call it surfce roughness ;)
+	  deleted.push_back(*it);
 	  it = particles.erase(it);
 	  it-- ;
 	}
       }
+    log_tracers(deleted.begin(), deleted.size(), m_grid->ctx()->time()->current(), tracer_log_deleted);
+  }
+
+  void PISMLagrange::prepare_tracer_log_file(const PIO & nc){
+
+    std::vector<double> index;
+    bool dim_exists = false;
+    dim_exists = nc.inq_dim("id");
+    if (dim_exists == false) {
+      nc.redef();
+      nc.def_dim("id", PISM_UNLIMITED );
+    }
+
+
+    std::vector<std::string> dims(1);
+    dims[0] = "id";
+    // particle positions
+    std::vector<std::string> fields ;
+    fields.push_back("x");
+    fields.push_back("y");
+    fields.push_back("z");
+    fields.push_back("id");
+    fields.push_back("time");
+
+    for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
+      if (not nc.inq_var(*it)) {
+	nc.redef();
+	nc.def_var(*it, PISM_DOUBLE, dims);
+      }
+    }
+
+
+  }
+
+void PISMLagrange::log_tracers(const std::list<Particle>::iterator first , const size_t count, const double a_time, const std::string filename ){
+
+    unsigned int my_offset = get_offset(count); // Will be incremented by File offset later.
+    if (m_grid->rank() == 0 )
+      my_offset = 0; 
+
+    std::vector<double>
+      x(count),
+      y(count),
+      z(count),
+      id(count),
+      time(count, a_time);
+    std::list<Particle>::iterator  it = first; 
+    for (size_t i = 0 ; i < count ; i++)
+      {
+	x[i]=it->x; 
+	y[i]=it->y; 
+	z[i]=it->z; 
+	id[i]=(double) it->id;
+	it++;
+      }
+    
+    
+    PIO nc (m_grid->com, "guess_mode");
+    nc.open(filename, PISM_READWRITE);
+    my_offset += nc.inq_dimlen("id");
+    nc.put_1d_var("id", my_offset, count, id);
+    nc.put_1d_var("x", my_offset, count, x);
+    nc.put_1d_var("y", my_offset, count, y);
+    nc.put_1d_var("z", my_offset, count, z);
+    nc.put_1d_var("time", my_offset, count, time);
   }
 
 } // end of namespace pism

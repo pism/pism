@@ -101,17 +101,20 @@ private:
                                     const std::vector<double> &z,
                                     const std::vector<double> &values,
                                     IceModelVec3 &result);
-
+  
+  std::string tracer_log_created, tracer_log_deleted;
   int neighbors [9]; // neighbors in i and j direction. 
   void compute_neighbors();
   void ship_tracers();
   int whereto(double x , double y, double z);
   void load_particle_positions(const std::string input_file);
-  void write_new_tracers(std::list<Particle>::iterator start,
-				       std::list<Particle>::iterator end,
-				       const unsigned int count,
-				       const pism::PIO & nc);
   void remove_flying_tracers();
+
+  void prepare_tracer_log_file(const PIO & nc);
+
+  void log_tracers(const std::list<Particle>::iterator first , const size_t count, const double a_time, const std::string filename );
+
+
 }; // End of PISMLagrange class
 
 } // End of namespace pism
