@@ -403,7 +403,8 @@ void PISMLagrange::init() {
     nc.open(input_file, PISM_READONLY);
     load_particle_positions(input_file);
   } else {
-    set_initial_distribution_parameters();
+  tracer_counter = 0; 
+  //set_initial_distribution_parameters();
   }
 
 }
@@ -418,7 +419,6 @@ void PISMLagrange::set_initial_distribution_parameters() {
 
   verbPrintf(2, m_grid->com,
                     "  Setting initial distribution parameters...\n"); 
-  tracer_counter = 0; 
   unsigned int n_particles = (unsigned int)  (m_grid->Mz()-1) * (m_grid->xm()) * (m_grid->ym());
   
 
