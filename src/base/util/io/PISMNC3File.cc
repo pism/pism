@@ -527,11 +527,15 @@ int NC3File::put_var_double(const std::string &variable_name,
       }
 
       if (mapped) {
-        stat = nc_put_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  &processor_0_buffer[0]); check(stat);
+	if (local_chunk_size){ // Not trying to write nothing
+	  stat = nc_put_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                    &processor_0_buffer[0]); check(stat);
+	}
       } else {
-        stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  &processor_0_buffer[0]); check(stat);
+	if (local_chunk_size){ // Not trying to write nothing
+	  stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
+                                    &processor_0_buffer[0]); check(stat);
+	}
       }
 
       if (stat != NC_NOERR) {
