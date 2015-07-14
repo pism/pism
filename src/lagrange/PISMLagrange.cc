@@ -322,30 +322,13 @@ void PISMLagrange::add_vars_to_output_impl(const std::string &keyword, std::set<
 void PISMLagrange::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
     int ps = particles.size(), as=0;
-    bool fake = false;
-    if (ps == 0 ){
-      Particle p = {0.0, 0.0, -1.,-1};
-      particles.push_back(p);
-      fake = true;
-      ps = 1;
-      }
     MPI_Allreduce(&ps, &as, 1, MPI_INT, MPI_SUM, m_grid->com);
     lagrange_prepare_file(nc, as);
-    if (fake)
-      particles.resize(0);
 }
 
   void PISMLagrange::write_variables_impl(const std::set<std::string> &vars,const  PIO& nc) {
 
-    bool fake = false;
-    if (particles.empty() ){
-      Particle p = {0.0, 0.0, -1.,-1};
-      particles.push_back(p);
-      fake = true;
-      }
     save_particle_positions(nc);
-    if (fake)
-      particles.resize(0);
  
 }
 
@@ -566,47 +549,41 @@ void PISMLagrange::compute_neighbors(){
   }
   
 
-void PISMLagrange::save_diagnostics(const PIO &nc) {
+  void PISMLagrange::save_diagnostics(const PIO &nc) {
 
-}
+  }
+
 
   void PISMLagrange::save_particle_positions(const PIO &nc) {
   unsigned int n_records   = nc.inq_nrecords(); 
   unsigned int last_record = n_records - 1;
-  if (not nc.inq_dimlen("tracer_index")){
+  if (not nc.inq_dimlen("tracer_id")){
     m_log->message(2,
 		   "Empty tracer dimension - nothing to write");
     return;
   }
-  std::vector<unsigned int> start(1), count(1);
-  start[0] = 0;
-  count[0] = particles.size();
+  unsigned int start, count;
+  start = 0;
+  count = particles.size();
 
-  {
-  std::vector<double> num_trac(1,tracer_counter);
-  std::vector<unsigned int> start_trac(1,0), count_trac(1,1);
-  if (m_grid->rank() == 0){
-    nc.put_vara_double("tracer_counter",start_trac , count_trac, &num_trac[0]);
-  }
-  else{
-    count_trac[0] = 0;
-    nc.put_vara_double("tracer_counter",start_trac , count_trac, &num_trac[0]);
-  }
-  }
-  start[0] = get_offset(count[0]);
+  nc.put_att_double("PISM_GLOBAL","tracer_counter", PISM_INT, tracer_counter);
+  // Will let rank 0 do the put, so the correct number is stored.
+
+  
+  start = get_offset(count);
   if (m_grid->rank() == 0)
-    start[0] = 0 ;
+    start = 0 ;
   
   std::vector <double>
-    m_p_x(particles.size()),
-    m_p_y(particles.size()),
-    m_p_z(particles.size()),
-    m_p_id(particles.size());
+    m_tracer_x(particles.size()),
+    m_tracer_y(particles.size()),
+    m_tracer_z(particles.size()),
+    m_tracer_id(particles.size());
   std::vector<double>::iterator
-    ix=m_p_x.begin(),
-    iy=m_p_y.begin(),
-    iz=m_p_z.begin(),
-    id=m_p_id.begin();
+    ix=m_tracer_x.begin(),
+    iy=m_tracer_y.begin(),
+    iz=m_tracer_z.begin(),
+    id=m_tracer_id.begin();
   for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
     {
       * ix++ = it->x ;
@@ -615,22 +592,12 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
       * id++ = (double) it->id ;
     }
 
-    if (m_p_x.empty()){
-    m_p_x.push_back(0.);
-    m_p_y.push_back(0.);
-    m_p_z.push_back(0.);
-    m_p_id.push_back(0.);
-    // Avoid empty pointers. Rank 0 actually needs to write some BS. That's handled higher up in the call hirarchy.
+    nc.put_1d_var("tracer_x", start, count, m_tracer_x); 
+    nc.put_1d_var("tracer_y", start, count, m_tracer_y); 
+    nc.put_1d_var("tracer_z", start, count, m_tracer_z);
+    nc.put_1d_var("tracer_id", start, count, m_tracer_id); 
   }
-
-
   
-  nc.put_vara_double("p_x", start, count, &m_p_x[0]); 
-  nc.put_vara_double("p_y", start, count, &m_p_y[0]); 
-  nc.put_vara_double("p_z", start, count, &m_p_z[0]);
-  nc.put_vara_double("p_id", start, count, &m_p_id[0]); 
-}
-
   void PISMLagrange::load_particle_positions(const std::string input_file) {
     PIO nc(m_grid->com, "guess_mode");
     nc.open(input_file, PISM_READONLY);
@@ -640,28 +607,23 @@ void PISMLagrange::save_diagnostics(const PIO &nc) {
     unsigned int last_record = n_records - 1;
 
     std::vector<double> num_trac(1, 0.0);
-    nc.get_1d_var("tracer_counter", last_record, 1, num_trac);
-    tracer_counter = (unsigned int) num_trac[0];
-    std::vector<unsigned int> start(2), count(2);
-    start[0] = last_record;
-    start[1] = 0;
     
-    count[0] = 1;
-    
-    
-    count[1] = nc.inq_dimlen("tracer_index");
+    tracer_counter = (unsigned int) nc.get_att_double("PISM_GLOBAL","tracer_counter")[0];
+    unsigned int start, count;
+    start = 0;
+    count = nc.inq_dimlen("tracer_id");
 
     // OPTION FOR MANY TRACERS: READ up to  10/100/... Million at a time and sort them
     // before reading the next batch. -- ::TODO::
     
-    const unsigned int n = count[1];
+    const unsigned int n = count;
     std::vector<double> x(n), y(n),z(n), id(n);
 
     
-    nc.get_vara_double("p_x", start, count, &x[0]);
-    nc.get_vara_double("p_y", start, count, &y[0]);
-    nc.get_vara_double("p_z", start, count, &z[0]); 
-    nc.get_vara_double("p_id", start, count, &id[0]); 
+    nc.get_1d_var("tracer_x", start, count, x);
+    nc.get_1d_var("tracer_y", start, count, y);
+    nc.get_1d_var("tracer_z", start, count, z); 
+    nc.get_1d_var("tracer_id", start, count, id); 
     
     std::vector<double>::iterator
       ix = x.begin(),

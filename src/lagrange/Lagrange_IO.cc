@@ -57,30 +57,23 @@ void lagrange_prepare_file(const pism::PIO &nc,
   unsigned int count;
   // distributions
   dim_exists = false;
-  dim_exists = nc.inq_dim("tracer_index");
+  dim_exists = nc.inq_dim("tracer_id");
   if (dim_exists == false) {
     nc.redef();
-    nc.def_dim("tracer_index", n_tracers );
+    nc.def_dim("tracer_id", n_tracers );
     std::vector<std::string> dims(1);
-    dims[0] = "tracer_index";
-    nc.def_var("tracer_index", PISM_DOUBLE, dims);
-    
-    index.resize(n_tracers);
-    for (unsigned int j = 0; j < n_tracers; ++j) {
-      index[j] = j;
-    }
-    nc.put_1d_var("tracer_index", 0 , n_tracers, index);
+    dims[0] = "tracer_id";
+    nc.def_var("tracer_id", PISM_DOUBLE, dims);
   }
 
 
   std::vector<std::string> dims(1);
-  dims[0] = "tracer_index";
+  dims[0] = "tracer_id";
   // particle positions
   std::vector<std::string> fields ;
-  fields.push_back("p_x");
-  fields.push_back("p_y");
-  fields.push_back("p_z");
-  fields.push_back("p_id");
+  fields.push_back("tracer_x");
+  fields.push_back("tracer_y");
+  fields.push_back("tracer_z");
   
   for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
     if (not nc.inq_var(*it)) {
@@ -93,10 +86,10 @@ void lagrange_prepare_file(const pism::PIO &nc,
 void lagrange_prepare_particle_log_file(const pism::PIO &nc){
  
   std::vector<std::string> dims(1);
-  dims[0] = "tracer_index";
+  dims[0] = "tracer_id";
 
   bool dim_exists = false;
-  dim_exists = nc.inq_dim("tracer_index");
+  dim_exists = nc.inq_dim("tracer_id");
   if (not dim_exists){ 
     nc.def_dim(dims[0], pism::PISM_UNLIMITED); 
     nc.def_var(dims[0], PISM_DOUBLE, dims);
@@ -104,10 +97,9 @@ void lagrange_prepare_particle_log_file(const pism::PIO &nc){
   // particle positions and time -- this is for creation and similar logs
 
   std::vector<std::string> fields ;
-  fields.push_back("p_x");
-  fields.push_back("p_y");
-  fields.push_back("p_z");
-  fields.push_back("p_id");
+  fields.push_back("tracer_x");
+  fields.push_back("tracer_y");
+  fields.push_back("tracer_z");
 
   
   for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
