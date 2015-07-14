@@ -109,6 +109,7 @@ private:
   int whereto(double x , double y, double z);
   void load_particle_positions(const std::string input_file);
   void remove_flying_tracers();
+  void remove_bedrock_tracers();
 
   void prepare_tracer_log_file(const PIO & nc);
 

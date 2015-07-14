@@ -118,6 +118,7 @@ void PISMLagrange::update_impl(double t, double dt) {
       update_particle_position(it->x, it->y, it->z, p_u, p_v, p_w, m_dt); 
     }
   }
+  remove_bedrock_tracers();
   ship_tracers(); // Needs to be done before positions get messed up by periodic boundary alignment
 
 
@@ -156,23 +157,6 @@ void PISMLagrange::update_particle_position(double &x, double &y, double &z,
   x += u*dt;
   y += v*dt; // probably not needed and v should be zero in 2D flow line model
   z += w*dt; // w should be zero
-
-  if (z > m_grid->Lz()) {
-    z = m_grid->Lz(); 
-  } else if (z < 0.0) {
-    z = 0.0;
-  }
-  
-
-  
-  
-  // check if the point (x,y,z) is within the domain:
-  assert(0.0 <= z && z <= m_grid->Lz());
-  // PISM's horizontal grid is cell-centered, so (-m_grid->Lx,
-  // -m_grid->Ly) is actually outside of the convex hull of all grid
-  // points.
-  //  assert(m_grid->x().front() -m_grid->dx()/2. <= x && x <= m_grid->x().back()+m_grid->dx()/2.);
-  //  assert(m_grid->y().front() -m_grid->dx()/2.<= y && y <= m_grid->y().back()+m_grid->dx()/2.);
 
 }
 
@@ -816,6 +800,21 @@ void PISMLagrange::compute_neighbors(){
 	const int i = (int)round((it->x - x0)/dx), 
 	  j = (int)round((it->y - y0)/dy);
 	if (it->z > (*thickness)(i,j)+1e-3){ // 1 mm grace, let's call it surfce roughness ;)
+	  deleted.push_back(*it);
+	  it = particles.erase(it);
+	  it-- ;
+	}
+      }
+    log_tracers(deleted.begin(), deleted.size(), m_grid->ctx()->time()->current(), tracer_log_deleted);
+  }
+  void PISMLagrange::remove_bedrock_tracers(){
+
+
+    std::list<Particle> deleted;
+    
+    for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
+      {      
+	if (it->z < 1e-6){ // 1 micrometer above ground is in ground
 	  deleted.push_back(*it);
 	  it = particles.erase(it);
 	  it-- ;
