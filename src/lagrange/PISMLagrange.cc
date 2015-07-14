@@ -305,8 +305,9 @@ void PISMLagrange::add_vars_to_output_impl(const std::string &keyword, std::set<
 
 void PISMLagrange::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
-    int ps = particles.size(), as=0;
+    int ps = particles.size(), as = 0;
     MPI_Allreduce(&ps, &as, 1, MPI_INT, MPI_SUM, m_grid->com);
+    if (as == 0 ) as = 1 ; // Otherwise defining the variables will fail.
     lagrange_prepare_file(nc, as);
 }
 

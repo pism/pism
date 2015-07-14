@@ -47,11 +47,6 @@ void lagrange_prepare_file(const pism::PIO &nc,
   if (not dim_exists) 
     nc.def_dim("time", pism::PISM_UNLIMITED);
 
-  if (not nc.inq_var("tracer_counter")){
-    std::vector<std::string> dims(1);
-    dims[0] = "time";
-    nc.def_var("tracer_counter", PISM_DOUBLE, dims);
-  }
 
   std::vector<double> index;
   unsigned int count;
