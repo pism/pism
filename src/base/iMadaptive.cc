@@ -33,6 +33,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "base/util/MaxTimestep.hh"
+#include "lagrange/PISMLagrange.hh"
 
 namespace pism {
 
@@ -288,6 +289,14 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       MaxTimestep eigencalving_dt = eigen_calving->max_timestep();
       if (eigencalving_dt.is_finite()) {
         dt_restrictions["eigencalving"] = eigencalving_dt.value();
+      }
+    }
+      //! Always apply the time-step restriction from the
+    //! -extra_{times,file,vars} mechanism (the user asked for it).
+    if (m_lagrange != NULL) {
+      MaxTimestep lagrange_dt = m_lagrange->max_timestep(current_time);
+      if (lagrange_dt.is_finite()) {
+	dt_restrictions["lagrange tracer seeding"] = lagrange_dt.value();
       }
     }
 

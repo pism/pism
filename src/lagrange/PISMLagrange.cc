@@ -72,24 +72,28 @@ PISMLagrange::~PISMLagrange() {
 }
 
 MaxTimestep PISMLagrange::max_timestep_impl(double t) {
-  // // uses current calander definition of a year
-  // double years_per_second = m_grid->time->convert_time_interval(1., "years");
-  
-  // const double m_start_time = m_grid->time->start();
-  
-  // double fevor_step = (double)config.get("fevor_step");
-  // fevor_step = fevor_step / years_per_second;
+  double dt;
 
-  // double fevor_dt = std::fmod(t - m_start_time, fevor_step);
+  if (t >= seed_times.back()) {
+    return MaxTimestep();
+  }
 
-  // const double epsilon = 1.0; // 1 second tolerance
-  // if (fevor_dt > epsilon) { 
-  //   restrict = true;
-  //   dt = fevor_dt;
-  // }
-  return MaxTimestep (1e9);
+  if (t < *next_seed) 
+  dt = *next_seed - t;
+
+  // now make sure that we don't end up taking a time-step of less than 1
+  // second long
+  if (dt < 1.0) {
+    if (next_seed != seed_times.end()-1 ) {
+      return MaxTimestep(*(next_seed+1) - t);
+    } else {
+      return MaxTimestep();
+    }
+  } else {
+    return MaxTimestep(dt);
+  }
 }
-
+  
 void PISMLagrange::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
