@@ -466,13 +466,13 @@ void PISMLagrange::compute_neighbors(){
   void PISMLagrange::ship_tracers(){
     std::vector<std::vector<Particle> > ship(9);
       
-    for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ; it++){
+    for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;){
       const unsigned int dest =  whereto(it->x, it->y,it->z);
       if (dest != 4){
 	ship[dest].push_back(*it);
 	it = particles.erase(it);
-	it--;
-      }
+      } else
+	it++;
     }
     int num_ship[9];
     int num_rec[9];
@@ -504,6 +504,7 @@ void PISMLagrange::compute_neighbors(){
       MPI_Wait(&rreq[i], &status[i]);
       for (std::vector<Particle>::iterator it = received_tracers[i].begin(); it != received_tracers[i].end(); it++)
 	particles.push_back(*it);
+
       received_tracers[i].resize(0);
       ship[i].resize(0);
     }
@@ -815,15 +816,15 @@ void PISMLagrange::compute_neighbors(){
       y0 = m_grid->y(0),
       dx = m_grid->dx(),
       dy = m_grid->dy();
-    for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
+    for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;)
       {      
 	const int i = (int)round((it->x - x0)/dx), 
 	  j = (int)round((it->y - y0)/dy);
 	if (it->z > (*thickness)(i,j)+1e-3){ // 1 mm grace, let's call it surfce roughness ;)
 	  deleted.push_back(*it);
 	  it = particles.erase(it);
-	  it-- ;
-	}
+	} else
+	  it++;
       }
     log_tracers(deleted.begin(), deleted.size(), m_grid->ctx()->time()->current(), tracer_log_deleted);
   }
