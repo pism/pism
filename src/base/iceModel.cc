@@ -698,11 +698,6 @@ void IceModel::step(bool do_mass_continuity,
   max_timestep(dt, skipCountDown);
 
 
-  if (m_lagrange != NULL) {
-    profiling.begin("lagrange");
-    m_lagrange->update(current_time, dt); 
-    profiling.end("lagrange");
-  }
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
@@ -766,6 +761,12 @@ void IceModel::step(bool do_mass_continuity,
     profiling.begin("fracture density");
     calculateFractureDensity();
     profiling.end("fracture density");
+  }
+
+  if (m_lagrange != NULL) {
+    profiling.begin("lagrange");
+    m_lagrange->update(current_time, dt); 
+    profiling.end("lagrange");
   }
 
   //! \li update the thickness of the ice according to the mass conservation
