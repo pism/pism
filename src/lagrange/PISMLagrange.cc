@@ -908,4 +908,7 @@ void PISMLagrange::log_tracers(const std::list<Particle>::iterator first , const
     nc.put_1d_var("time", my_offset, count, time);
   }
 
+  void PISMLagrange::print_tracer(const Particle & p){
+    std::cout <<" Particle " << p.id << "\t x="<< p.x << "\t y="<< p.y << "\t z="<< p.z<<"\n";
+  }
 } // end of namespace pism

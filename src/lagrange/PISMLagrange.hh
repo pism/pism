@@ -115,6 +115,7 @@ private:
 
   void log_tracers(const std::list<Particle>::iterator first , const size_t count, const double a_time, const std::string filename );
 
+  void print_tracer(const Particle & p);
 
 }; // End of PISMLagrange class
 
