@@ -95,13 +95,22 @@ MaxTimestep PISMLagrange::max_timestep_impl(double t) {
 }
   
 void PISMLagrange::update_impl(double t, double dt) {
+  m_log->message(4,
+		   "Starting tracer update\n");
   m_t = t;
   m_dt = dt;
 
+  m_log->message(5,
+		   "Removing flying tracers\n");
   remove_flying_tracers();
+  m_log->message(5,
+		   "(possibly) seeding\n");
   
   if (check_seed())
     seed();
+  m_log->message(5,
+		   "getting 3d fields\n");
+
   const IceModelVec3
     &u = m_stress_balance->velocity_u(),
     &v = m_stress_balance->velocity_v(),
@@ -112,6 +121,8 @@ void PISMLagrange::update_impl(double t, double dt) {
     list.add(v);
     list.add(w);
     unsigned int count = 0;
+  m_log->message(5,
+		   "going through the list\n");
     for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
       double p_u = 0.0,
              p_v = 0.0,
@@ -122,9 +133,15 @@ void PISMLagrange::update_impl(double t, double dt) {
       update_particle_position(it->x, it->y, it->z, p_u, p_v, p_w, m_dt); 
     }
   }
+  m_log->message(5,
+		   "removing bedrock tracers\n");
   remove_bedrock_tracers();
+  m_log->message(5,
+		   "shipping tracers\n");
   ship_tracers(); // Needs to be done before positions get messed up by periodic boundary alignment
 
+  m_log->message(5,
+		   "making things periodic\n");
 
   /// @todo: Check if boundaries are periodic before pushing particles around // TODO // 
   for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
@@ -143,6 +160,8 @@ void PISMLagrange::update_impl(double t, double dt) {
       it->y -= m_grid->Ly()*2.;
     }
   }
+  m_log->message(4,
+		   "done updating tracers\n");
 }
 
 /**
