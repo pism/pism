@@ -743,7 +743,7 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
 
   if (j_bottom != j_top) {
     assert(m_impl->y[j_top] - m_impl->y[j_bottom] != 0.0);
-    beta  = (Y - m_impl->x[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
+    beta  = (Y - m_impl->y[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
   }
 
   std::vector<double> result(4);
