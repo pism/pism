@@ -72,7 +72,7 @@ PISMLagrange::~PISMLagrange() {
 }
 
 MaxTimestep PISMLagrange::max_timestep_impl(double t) {
-  double dt;
+  double dt = 0 ;
 
   if (t >= seed_times.back()) {
     return MaxTimestep();
@@ -688,6 +688,7 @@ void PISMLagrange::compute_neighbors(){
   void PISMLagrange::init_seed_times(){
     last_seed = -9e20;               // will be set in write_extras()
     options::String times("-seed_times", "Specifies times to save at");
+    bool seed_seasons =  options::Bool("-seed_seasons", "Seed 4 seasons (.0, .25, .5, .75 for each seeding time");
     
 
     if (times.is_set()){
@@ -704,11 +705,25 @@ void PISMLagrange::compute_neighbors(){
       
       
     }
+    if (seed_seasons){
+      std::vector<double> new_seed_times(5* seed_times.size());
+      std::vector<double>::iterator nst = new_seed_times.begin();
+      for (std::vector<double>::iterator it = seed_times.begin() ; it != seed_times.end() ; it++)
+	{
+	  const double y = m_grid->ctx()->time()->increment_date(*it, 1)- *it;
+	  *(nst++) = *it;
+	  *(nst++) = *it + .25 * y;
+	  *(nst++) = *it + .5  * y;
+	  *(nst++) = *it + .75 * y;
+	  *(nst++) = *it + y;
+	}
+      seed_times=new_seed_times;
+    }
     next_seed = seed_times.begin();
     while (next_seed != seed_times.end() && *next_seed < m_grid->ctx()->time()->start()-1)
       {
 	next_seed++;}
-    
+
   }
 
 
