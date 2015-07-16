@@ -73,8 +73,7 @@ PISMLagrange::~PISMLagrange() {
 
 MaxTimestep PISMLagrange::max_timestep_impl(double t) {
   double dt = 0 ;
-
-  if (t >= seed_times.back()) {
+  if (seed_times.size() == 0 || t >= seed_times.back()) {
     return MaxTimestep();
   }
 
@@ -720,7 +719,7 @@ void PISMLagrange::compute_neighbors(){
       }
       
       if (seed_times.size() == 0) {
-	throw RuntimeError("no argument for -seed_times option.");
+	throw RuntimeError("-seed_times set, but no seeding during the run specified.");
       }
       
       
