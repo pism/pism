@@ -294,6 +294,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       //! Always apply the time-step restriction from the
     //! -extra_{times,file,vars} mechanism (the user asked for it).
     if (m_lagrange != NULL) {
+    m_log->message(4,
+		   "Getting Lagrange timestep limit\n");
       MaxTimestep lagrange_dt = m_lagrange->max_timestep(current_time);
       if (lagrange_dt.is_finite()) {
 	dt_restrictions["lagrange tracer seeding"] = lagrange_dt.value();

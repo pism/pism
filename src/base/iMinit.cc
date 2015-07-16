@@ -469,7 +469,14 @@ void IceModel::allocate_submodels() {
   // this has to happen *after* allocate_subglacial_hydrology()
   allocate_basal_yield_stress();
 
-  allocate_lagrange(); 
+  {
+    options::String seed_times("-seed_times", "Specifies times to save at");
+    if ( seed_times.is_set() ){
+      m_log->message(4,
+		     "Allocating lagrange tracer module\n");
+      allocate_lagrange();
+    }
+  }
 
   allocate_bedrock_thermal_unit();
 

@@ -86,6 +86,8 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   ocean   = NULL;
   beddef  = NULL;
 
+  m_lagrange                  = NULL;
+
   btu = NULL;
 
   iceberg_remover             = NULL;
@@ -764,6 +766,8 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   if (m_lagrange != NULL) {
+    m_log->message(4,
+		   "Updating Lagrange tracers\n");
     profiling.begin("lagrange");
     m_lagrange->update(current_time, dt); 
     profiling.end("lagrange");
