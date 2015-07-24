@@ -38,10 +38,13 @@ SIA_Sliding::SIA_Sliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    m_work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
-    snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
-    m_work_2d_stag[i].set_name(namestr);
+    grad_h[i].create(m_grid, "surface_gradient", WITH_GHOSTS);
+    snprintf(namestr, sizeof(namestr), "surface_gradient_%d", i);
+    grad_h[i].set_name(namestr);
   }
+  
+  diffusivity.create(m_grid, "diffusivity", WITH_GHOSTS);
+  diffusivity.set_name("diffusivity");
 
   m_work_2d.create(m_grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL);
 
@@ -104,7 +107,7 @@ void SIA_Sliding::write_variables_impl(const std::set<std::string> &vars, const 
   The strain heating contribution is ignored by this code.
  */
 void SIA_Sliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
-  IceModelVec2Stag &h_x = m_work_2d_stag[0], &h_y = m_work_2d_stag[1];
+  IceModelVec2Stag &h_x = grad_h[0], &h_y = grad_h[1];
 
   (void) fast;
   (void) melange_back_pressure;

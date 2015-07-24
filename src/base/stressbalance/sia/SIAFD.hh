@@ -99,7 +99,10 @@ protected:
   //! temporary storage for eta, theta and the smoothed thickness
   IceModelVec2S m_work_2d[2];
   //! temporary storage for the surface gradient
+  IceModelVec2Stag grad_h[2];
   IceModelVec2Stag m_work_2d_stag[2];
+  //! temporary storage for the diffusivity
+  IceModelVec2Stag diffusivity;
   //! temporary storage for delta on the staggered grid
   IceModelVec3 m_delta[2];
   //! temporary storage used to store I and strain_heating on the staggered grid

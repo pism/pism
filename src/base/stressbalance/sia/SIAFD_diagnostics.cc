@@ -177,10 +177,7 @@ IceModelVec::Ptr SIAFD_h_x::compute() {
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->m_work_2d_stag[0],
-                                  model->m_work_2d_stag[1]);
-
-  result->copy_from(model->m_work_2d_stag[0]);
+  result->copy_from(model->grad_h[0]);
 
   return result;
 }
@@ -208,10 +205,8 @@ IceModelVec::Ptr SIAFD_h_y::compute() {
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->m_work_2d_stag[0],
-                                  model->m_work_2d_stag[1]);
 
-  result->copy_from(model->m_work_2d_stag[1]);
+  result->copy_from(model->grad_h[1]);
 
   return result;
 }

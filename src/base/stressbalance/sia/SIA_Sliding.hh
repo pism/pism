@@ -58,7 +58,10 @@ protected:
                                   double /*alpha*/, double mu,
                                   double min_T) const;
   IceModelVec2S m_work_2d;
-  IceModelVec2Stag m_work_2d_stag[2]; // for the surface gradient
+  //! temporary storage for the surface gradient
+  IceModelVec2Stag grad_h[2];
+  //! temporary storage for the diffusivity
+  IceModelVec2Stag diffusivity;
   double m_standard_gravity;
 
   bool m_verification_mode;

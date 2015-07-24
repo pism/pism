@@ -28,6 +28,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_options.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -43,17 +44,30 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
     m_work_2d[i].create(m_grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL);
     m_work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
+    grad_h[i].create(m_grid, "suface_gradient", WITH_GHOSTS);
 
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
     m_work_2d[i].set_name(namestr);
-
     snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
     m_work_2d_stag[i].set_name(namestr);
 
+    snprintf(namestr, sizeof(namestr), "surface_gradient_%d", i);
+    grad_h[i].set_name(namestr);
+
     for (int j = 0; j < 2; ++j) {
+      char *xy = "xy";
+      char *ij = "ij";
+      snprintf(namestr, sizeof(namestr), "h_%c_%c", xy[i], ij[j]);
+      grad_h[i].metadata(j).set_name(namestr);
       snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d_%d", i, j);
       m_work_2d_stag[i].metadata(j).set_name(namestr);
     }
+  }
+  diffusivity.create(m_grid, "diffusivity", WITH_GHOSTS);
+  for (int j = 0; j < 2; ++j) {
+    char namestr[30];
+    snprintf(namestr, sizeof(namestr), "diffusivity_%d", j);
+    diffusivity.metadata(j).set_name(namestr);
   }
 
   m_delta[0].create(m_grid, "delta_0", WITH_GHOSTS);
@@ -95,6 +109,22 @@ void SIAFD::init() {
   // set bed_state_counter to -1 so that the smoothed bed is computed the first
   // time update() is called.
   m_bed_state_counter = -1;
+
+  std::string method = m_config->get_string("surface_gradient_method");
+  if (method == "prescribed") {
+    options::String gradient_file("-gradient_file", "Specifies the surface gradient file");
+    if (gradient_file.is_set()) {
+      m_log->message(2,
+                 "* Trying to read surface gradients from '%s'...\n",
+                 gradient_file->c_str());
+      grad_h[0].regrid(gradient_file, CRITICAL);
+      grad_h[1].regrid(gradient_file, CRITICAL);
+      grad_h[0].update_ghosts();
+      grad_h[1].update_ghosts();
+    } else {
+      throw RuntimeError::formatted("Got option '-surface_gradient_method prescribed' but no gradient file (-gradient_file)");
+    }
+  }
 }
 
 void SIAFD::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
@@ -199,6 +229,12 @@ void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
   } else if (method == "mahaffy") {
 
     surface_gradient_mahaffy(h_x, h_y);
+
+  } else if (method == "prescribed") {
+    surface_gradient_haseloff(h_x, h_y);
+    h_x.add(1.0, grad_h[0]);
+    h_y.add(1.0, grad_h[1]);
+    // all done already
 
   } else {
     throw RuntimeError::formatted("value of surface_gradient_method, option '-gradient %s', is not valid",
@@ -315,6 +351,7 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
                     - h(i - 1, j + 1) - h(i - 1, j)) / (4.0*dx);
   }
 }
+
 
 //! \brief Compute the ice surface gradient using a modification of Marianne Haseloff's approach.
 /*!
@@ -734,13 +771,13 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
  * \param[out] result The diffusivity of the SIA flow.
  */
 void SIAFD::compute_diffusivity(IceModelVec2S &result) {
-  IceModelVec2Stag &D_stag = m_work_2d_stag[0];
 
-  this->compute_diffusivity_staggered(D_stag);
 
-  D_stag.update_ghosts();
+  this->compute_diffusivity_staggered(diffusivity);
 
-  D_stag.staggered_to_regular(result);
+  diffusivity.update_ghosts();
+
+  diffusivity.staggered_to_regular(result);
 }
 
 /*!
