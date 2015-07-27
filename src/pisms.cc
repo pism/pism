@@ -47,7 +47,7 @@ Context::Ptr pisms_context(MPI_Comm com) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("calendar", "none");
+  config->set_string("calendar", "365_day");
   config->set_double("grid_Lx", 750e3);
   config->set_double("grid_Ly", 750e3);
   config->set_string("grid_periodicity", "none");
