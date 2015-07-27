@@ -159,13 +159,17 @@ void IceModel::combine_basal_melt_rate() {
   list.add(basal_melt_rate);
   list.add(shelfbmassflux);
 
+  bool   use_const   = m_config->get_boolean("hydrology_use_const_bmelt");
+  const double const_bmelt = m_config->get_double("hydrology_const_bmelt");
+  const double overwrite = use_const ? 1.:0;
+  
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double lambda = 1.0;      // 1.0 corresponds to the grounded case
     // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
     const double
-      M_grounded   = basal_melt_rate(i,j),
+      M_grounded   = basal_melt_rate(i,j) * (1-overwrite) + overwrite * const_bmelt,
       M_shelf_base = shelfbmassflux(i,j) / ice_density;
 
     // Use the fractional floatation mask to adjust the basal melt
