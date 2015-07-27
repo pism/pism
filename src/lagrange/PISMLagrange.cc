@@ -58,20 +58,22 @@ namespace pism {
   : Component_TS(g), m_stress_balance(stress_balance)
 {
  
-  //     unsigned int n_particles = (unsigned int)conf.get_double("lagrange_n_particles");
-                
   assert(m_stress_balance != NULL);
 
   allocate();
-
-
-    
 }
 
 PISMLagrange::~PISMLagrange() {
 }
 
-MaxTimestep PISMLagrange::max_timestep_impl(double t) {
+  /** Make timesteps hit seed times
+   * 
+   * Basically there's no real limitation on timestep size. 
+   * 2D CFL should ensure reasonable timesteps, so we don't 
+   * have to care about that.
+   *
+   */
+  MaxTimestep PISMLagrange::max_timestep_impl(double t) {
   double dt = 0 ;
   if (seed_times.size() == 0 || t >= seed_times.back()) {
     return MaxTimestep();
@@ -92,6 +94,7 @@ MaxTimestep PISMLagrange::max_timestep_impl(double t) {
     return MaxTimestep(dt);
   }
 }
+
   
 void PISMLagrange::update_impl(double t, double dt) {
   m_log->message(4,
@@ -102,14 +105,14 @@ void PISMLagrange::update_impl(double t, double dt) {
   m_log->message(5,
 		   "Removing flying tracers\n");
   remove_flying_tracers();
+
   m_log->message(5,
 		   "(possibly) seeding\n");
-  
   if (check_seed())
     seed();
+
   m_log->message(5,
 		   "getting 3d fields\n");
-
   const IceModelVec3
     &u = m_stress_balance->velocity_u(),
     &v = m_stress_balance->velocity_v(),
@@ -119,8 +122,8 @@ void PISMLagrange::update_impl(double t, double dt) {
     list.add(u);
     list.add(v);
     list.add(w);
-    unsigned int count = 0;
-  m_log->message(5,
+
+    m_log->message(5,
 		   "going through the list\n");
     for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
       double p_u = 0.0,
@@ -132,20 +135,21 @@ void PISMLagrange::update_impl(double t, double dt) {
       update_particle_position(it->x, it->y, it->z, p_u, p_v, p_w, m_dt); 
     }
   }
+
   m_log->message(5,
 		   "removing bedrock tracers\n");
   remove_bedrock_tracers();
+
   m_log->message(5,
 		   "shipping tracers\n");
   ship_tracers(); // Needs to be done before positions get messed up by periodic boundary alignment
 
   m_log->message(5,
 		   "making things periodic\n");
-
-  /// @todo: Check if boundaries are periodic before pushing particles around // TODO // 
+  /// @todo: Check if boundaries are supposed to be periodic before pushing particles around // TODO // 
   for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
-  // assuming periodic x... 
-  
+
+    // assuming periodic x... 
     if (it->x < m_grid->x().front() - m_grid->dx()/2.) {
       it->x += m_grid->Lx()*2.;
     } else if (it->x > m_grid->x().back() + m_grid->dx()/2.) {
@@ -403,7 +407,8 @@ void PISMLagrange::init() {
 /** Create an initial state (cloud of "particles").
  *
  * Use this for testing or bootstrapping only.
- *
+ * Deactivated in defauld code.
+ * 
  */
 void PISMLagrange::set_initial_distribution_parameters() {
 
@@ -479,7 +484,7 @@ void PISMLagrange::compute_neighbors(){
 }
 
   /** Ship tracers from one process to the other 
-
+   *
    */
   void PISMLagrange::ship_tracers(){
     std::vector<std::vector<Particle> > ship(9);
@@ -552,8 +557,6 @@ void PISMLagrange::compute_neighbors(){
       row=2;
 
     return row*3+column;
-
-
   }
   
 
@@ -703,7 +706,10 @@ void PISMLagrange::compute_neighbors(){
   return retval;
   }
 
-
+  /** processes -seed_times argument analogue to -extra_times. Extra: -seed_seasons
+   * 
+   * -seed_seasons will generate 4 extra seeds for 3, 6, 9, 12 months after original seeding.
+   */ 
   void PISMLagrange::init_seed_times(){
     last_seed = -9e20;               // will be set in write_extras()
     options::String times("-seed_times", "Specifies times to save at");
@@ -785,6 +791,11 @@ void PISMLagrange::compute_neighbors(){
     return true; 
   }
 
+  /** Seed tracers on ice surface
+   *
+   * Puts tracers on ice surface at current time t (not t+dt). 
+   * One tracer per grid point centered in the cell.
+   */
   void PISMLagrange::seed(){
 
     const Profiling &profiling = m_grid->ctx()->profiling();
@@ -821,6 +832,12 @@ void PISMLagrange::compute_neighbors(){
     profiling.end("tracer seeding");
   
   }
+
+  /** Any tracer that's more than 1 mm above its cell's ice surface is discarded.
+   * no interpolation. Pure cell center.
+   * 
+   */
+  
   void PISMLagrange::remove_flying_tracers(){
 
     const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -846,6 +863,8 @@ void PISMLagrange::compute_neighbors(){
       }
     log_tracers(deleted.begin(), deleted.size(), m_grid->ctx()->time()->current(), tracer_log_deleted);
   }
+
+  
   void PISMLagrange::remove_bedrock_tracers(){
 
 
