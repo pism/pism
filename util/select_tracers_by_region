@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import netCDF4 as nc
+from argparse import ArgumentParser
+
+def find_tracers(options):
+    xlim = options.x
+    ylim = options.y
+    for f in options.FILES:
+        f = nc.Dataset(f, "r")
+        tx = f.variables["tracer_x"][:]
+        ty = f.variables["tracer_y"][:]
+        tid = f.variables["tracer_id"][:]
+        selector = (tx > xlim[0]) * (tx < xlim[1]) * (ty > ylim[0]) * (ty < ylim[1])
+        tid = tid [ selector ]
+        tx = tx[selector]
+        ty = ty[selector]
+        for (id, x, y) in zip(tid, tx, ty):
+            print(id)
+
+
+    
+def parse_args():
+  parser = ArgumentParser()
+  parser.description = "find tracers within a certain x-y region"
+  parser.add_argument("FILES", nargs='*')
+  parser.add_argument("-v", "--verbose", 
+                    help='''Be verbose''', action="store_true")
+  parser.add_argument("-x",
+                      help='''x limits''', type=float, nargs=2,
+                      required=True) 
+  parser.add_argument("-y",
+                      help='''y limits''', type=float, nargs=2,
+                      required=True) 
+  options = parser.parse_args()
+  return options
+
+
+def main():
+  options = parse_args()
+  if options.verbose:
+    print (dir(options))
+    print options.FILES
+  find_tracers (options)
+
+if __name__ == "__main__":
+    main()
+    

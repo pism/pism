@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+import netCDF4
+import glob
+import matplotlib.pylab as mpl
+
+filenames = glob.glob("pism-eisIIa-ex.nc-00*.nc")
+for f in filenames:
+   ds=netCDF4.Dataset(f,'r')
+   if not "tracer_x" in ds.variables.keys():
+      print ("Couldn't find tracer_x in %s\n"%f)
+      continue
+   x=ds.variables["tracer_x"][:]
+   y=ds.variables["tracer_y"][:]
+   cx = ds.variables["x"][:]
+   x=ds.variables["tracer_x"][:]
+   y=ds.variables["tracer_y"][:]
+   z=ds.variables["tracer_z"][:]
+   tr_id=ds.variables["tracer_id"][:]
+   mpl.scatter(x[abs(y)<5000],z[abs(y)<5000], c=(tr_id[abs(y)<5000])/223075) # tr_id.max())
+   mpl.xlim([cx[0], cx[-1]])
+   mpl.ylim(0, 6000)
+
+   mpl.savefig(f[:-3]+"_z.png")
+   mpl.close("all")
