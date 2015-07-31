@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import netCDF4
+import sys
+import matplotlib.pylab as mpl
+import numpy as np
+
+def main (filenames):
+    for f in filenames[::5]:
+        ds=netCDF4.Dataset(f,'r')
+        if not "x" in ds.variables.keys():
+            print ("Couldn't find p_x in %s\n"%f)
+            continue
+        x=ds.variables["x"][:]
+        y=ds.variables["y"][:]
+        cx = ds.variables["x"][:]
+        cy = ds.variables["y"][:]
+        mpl.figure()
+        print f 
+        print x.shape
+        print y.shape
+        data = np.sqrt(x**2+y**2)
+        labels = data[-1]/data[0]
+        print labels.shape
+        mpl.plot(data, label=[ x for x in labels])
+        mpl.ylim([0,mpl.ylim()[1]])
+        mpl.legend()
+        mpl.savefig(f[:-3]+"_r.png")
+        mpl.close("all")
+       
+
+if __name__ == "__main__":
+    
+    main(sys.argv[1:])
+    

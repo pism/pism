@@ -1,0 +1,35 @@
+netcdf circle_config {
+    variables:
+    byte pism_overrides;
+
+    pism_overrides:ice_softness_units = "Pascal-3 second-1";
+    pism_overrides:ice_softness_type = "scalar";
+    pism_overrides:ice_softness = 3.1689e-24;
+    pism_overrides:ice_softness_doc = "ice softness used by IsothermalGlenIce [@ref EISMINT96]";
+
+    pism_overrides:hydrology_use_const_bmelt_type = "boolean";
+    pism_overrides:hydrology_use_const_bmelt_option = "hydrology_use_const_bmelt";
+    pism_overrides:hydrology_use_const_bmelt = "yes";
+    pism_overrides:hydrology_use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt";
+
+    pism_overrides:hydrology_const_bmelt_option = "hydrology_const_bmelt";
+    pism_overrides:hydrology_const_bmelt_units = "meter / second";
+    pism_overrides:hydrology_const_bmelt_type = "scalar";
+    pism_overrides:hydrology_const_bmelt = 3.4823027923455042e-09;
+    pism_overrides:hydrology_const_bmelt_doc = "default value is equivalent to 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
+
+    pism_overrides:bed_smoother_range_option = "bed_smoother_range";
+    pism_overrides:bed_smoother_range_units = "meters";
+    pism_overrides:bed_smoother_range_type = "scalar";
+    pism_overrides:bed_smoother_range = 0.;
+    pism_overrides:bed_smoother_range_doc = "half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+
+    pism_overrides:sia_flow_law_type = "keyword";
+    pism_overrides:sia_flow_law_option = "sia_flow_law";
+    pism_overrides:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
+    pism_overrides:sia_flow_law = "isothermal_glen";
+    pism_overrides:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+
+    pism_overrides:long_name = "PISM configuration flags and parameters for circular test case";
+    pism_overrides:long_name_doc = "The 'long_name' attribute is required by CF conventions. It is not used by PISM itself.";
+}

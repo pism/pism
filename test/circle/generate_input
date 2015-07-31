@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import netCDF4 as nc
+import numpy as np
+
+import matplotlib.pylab as pl
+infile = nc.Dataset("stress_file.nc", "r+")
+hxi = infile.variables["h_x_i"]
+hxj = infile.variables["h_x_j"]
+hyj = infile.variables["h_y_j"]
+hyi = infile.variables["h_y_i"]
+x= infile.variables["x"]
+y= infile.variables["y"]
+xi = x[:]+(x[1]-x[0])/2.
+yj = y[:]+(y[1]-y[0])/2.
+
+slope = 0.02 / 3e5
+# mxy = x[:].max()+y[:].max()
+for i in xrange (len (x)):
+    hyi[0,i] = xi[i]* slope
+    hyj[0,i] = x[i]* slope
+for j in xrange (len (y)):
+    hxi[0,:,j] = -y[j]* slope 
+    hxj[0,:,j] = -yj[j]* slope
+
+threshold = .75 * max((x[:].max(), y[:].max()))
+
+r = np.sqrt(hxi[:]*hxi[:] + hyi[:]*hyi[:]) / slope
+for v in [hxi, hyi]:
+    temp = v[:]
+    temp [ r > threshold ] = 0
+    temp [r > 0.8 * threshold] = ((5 - 5 * (r / threshold)) * temp ) [r > 0.8 * threshold] 
+    v[:] = temp
+
+r = np.sqrt(hxj[:]*hxj[:] + hyj[:]*hyj[:]) / slope
+for v in [hxj, hyj]:
+    temp = v[:]
+    temp [ r > threshold ] = 0
+    temp [r > 0.8 *  threshold] = ((5 - 5 * (r / threshold)) * temp) [r > 0.8 * threshold] 
+    v[:] = temp
+
+
+
+infile.close()
+
+# radius ist auf den (hxi, hyi) oder (hxj, hyj)
+# radius ist sqrt((hxi ^ 2 +hyi ^ 2)) * 10 * mxy
+# ich will grob bei 3/4 des Radius aufhoeren zu drehen,
+# so dass er noch ein bisschen Spiel fuer Unfug hat.
+# d.h., wenn r > .75 x_max -- DONE
+#
+# So, jetzt noch ein Abfall des Stresses in der Naehe des Randes, so dass das nicht so krass in die Wand 
+# faehrt. Dazu bei 90% des thresholds Anfangen, das ganze zu drosseln, am Threshold muss es Null sein.
+# r/Threshold hat werte von 0.9 innen bis 1 aussen. Wenn ich jetzt 1-(r/Threshold) rechne, bin ich bei 0.1 bis 0, bei 10-10*(r/threshold) passt's.
+# r/t ist 0.8 bis 1 (1-r/t) ist zwischen 0.2 und 0, 5* (1-r/t) ist 1 bis 0 
+
+
+
+
