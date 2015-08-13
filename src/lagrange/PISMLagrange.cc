@@ -407,7 +407,8 @@ void PISMLagrange::init() {
       m_seed_mask.set(1);
   }
 
-  if (use_input_file && ! boot) {
+  bool bootstrap_tracers = options::Bool("-bootstrap_tracers", "Load tracers from file while bootstraping");
+  if (use_input_file && ((!boot) || bootstrap_tracers) ) {
     PIO nc(m_grid->com, "guess_mode");
     nc.open(input_file, PISM_READONLY);
     load_particle_positions(input_file);
