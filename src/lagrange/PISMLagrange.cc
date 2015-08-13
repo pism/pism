@@ -920,13 +920,13 @@ void PISMLagrange::compute_neighbors(){
 
 
     std::vector<std::string> dims(1);
-    dims[0] = "id";
+    dims[0] = "tracer_id";
     // particle positions
     std::vector<std::string> fields ;
-    fields.push_back("x");
-    fields.push_back("y");
-    fields.push_back("z");
-    fields.push_back("id");
+    fields.push_back("tracer_x");
+    fields.push_back("tracer_y");
+    fields.push_back("tracer_z");
+    fields.push_back("tracer_id");
     fields.push_back("time");
 
     for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
@@ -964,11 +964,11 @@ void PISMLagrange::log_tracers(const std::list<Particle>::iterator first , const
     
     PIO nc (m_grid->com, "guess_mode");
     nc.open(filename, PISM_READWRITE);
-    my_offset += nc.inq_dimlen("id");
-    nc.put_1d_var("id", my_offset, count, id);
-    nc.put_1d_var("x", my_offset, count, x);
-    nc.put_1d_var("y", my_offset, count, y);
-    nc.put_1d_var("z", my_offset, count, z);
+    my_offset += nc.inq_dimlen("tracer_id");
+    nc.put_1d_var("tracer_id", my_offset, count, id);
+    nc.put_1d_var("tracer_x", my_offset, count, x);
+    nc.put_1d_var("tracer_y", my_offset, count, y);
+    nc.put_1d_var("tracer_z", my_offset, count, z);
     nc.put_1d_var("time", my_offset, count, time);
   }
 
