@@ -916,7 +916,7 @@ void PISMLagrange::compute_neighbors(){
     dim_exists = nc.inq_dim("id");
     if (dim_exists == false) {
       nc.redef();
-      nc.def_dim("id", PISM_UNLIMITED );
+      nc.def_dim("tracer_id", PISM_UNLIMITED );
     }
 
 
