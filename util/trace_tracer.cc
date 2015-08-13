@@ -10,6 +10,7 @@
 using namespace std;
 using namespace netCDF;
 
+const bool debug = false;
 
 typedef struct {
   double id, x, y, z, topg;
@@ -43,18 +44,18 @@ int main(int argc, char *argv[])
 
   NcFile tracer_file ("tracers_traced.nc", NcFile::replace);
   tracer_file.addDim("time");
-  tracer_file.addDim("id", ids.size());
-  NcVar idv = tracer_file.addVar("id", "double", "id");
+  tracer_file.addDim("tracer_id", ids.size());
+  NcVar idv = tracer_file.addVar("tracer_id", "double", "tracer_id");
   idv.putVar(&ids[0]);
   tracer_file.addVar("time", "double", "time");
   std::vector<std::string> dimensions;
   dimensions.push_back("time");
-  dimensions.push_back("id");
+  dimensions.push_back("tracer_id");
   vector<string> variables;
-  variables.push_back("x");
-  variables.push_back("y");
-  variables.push_back("z");
-  variables.push_back("topg");
+  variables.push_back("tracer_x");
+  variables.push_back("tracer_y");
+  variables.push_back("tracer_z");
+  variables.push_back("tracer_topg");
   vector<vector<double> > creations;
   for (vector<string>::iterator v = variables.begin() ; v != variables.end() ; v++){
     NcVar cv = tracer_file.addVar(*v, "float", dimensions);
@@ -112,16 +113,28 @@ void write_xml_footer(){
 }
 
 vector<double> read_var(string variable, NcFile & file){
+  if (debug)    std::cerr<< "reading " << variable << " ... ";
     NcVar var = file.getVar(variable);
-    
+    if (var.isNull())
+      {
+	vector<double> data ;
+	return data;
+      }
     size_t npoints =  var.getDim(0).getSize();
     vector <double> data (npoints);
     var.getVar(&data[0] );
+    if (debug) std::cerr<< "done. \n" ;
     return data;
 }
 
   
   vector<double> interp_field(vector<double> & tx , vector<double> & ty , const string name , NcFile & nc){
+    if (debug)    std::cerr<< "interpolating " << name << "\n";
+    if (tx.size() == 0 )
+    {
+      vector<double> data ;
+      return data;
+    }
   NcVar var = nc.getVar(name);
   vector<double> interpolated(tx.size());
   int dc = var.getDimCount();
@@ -171,6 +184,7 @@ void print_tracer(const Dataset & p){
  
  std::vector<Dataset> read_file( string filename) {
    NcFile extra_file (filename, NcFile::read);
+   if (debug) std::cerr<< "reading tracer information from " << filename << "\n";
    vector<double>
      tx = read_var("tracer_x", extra_file),
      ty = read_var("tracer_y", extra_file),
@@ -232,6 +246,8 @@ std::vector<Dataset> find_tracers(std::vector<Dataset> tracers, std::vector<doub
 }
  
 void write_data(const std::vector<Dataset> & data, double time, NcFile & file) {
+     if (debug) std::cerr<< "Writing tracer information\n";
+
    vector<float>
      tx    (data.size()),
      ty    (data.size()),
@@ -256,14 +272,16 @@ void write_data(const std::vector<Dataset> & data, double time, NcFile & file) {
    std::vector<double*> pointers ;
    std::vector<std::string> names ;
    vector<size_t> offsets, counts;
+   if (debug) std::cerr<< "Writing time\n";
    offsets.push_back(file.getDim("time").getSize());
    file.getVar("time").putVar(offsets, time);
    offsets.push_back(0);
    counts.push_back(1);
    counts.push_back(tx.size());
-   file.getVar("x").putVar(offsets, counts,  &tx[0]);
-   file.getVar("y").putVar(offsets, counts, &ty[0]);
-   file.getVar("z").putVar(offsets, counts, &tz[0]);
-   file.getVar("topg").putVar(offsets, counts, &topgz[0]);
+   if (debug) std::cerr<< "tracer data\n";
+   file.getVar("tracer_x").putVar(offsets, counts,  &tx[0]);
+   file.getVar("tracer_y").putVar(offsets, counts, &ty[0]);
+   file.getVar("tracer_z").putVar(offsets, counts, &tz[0]);
+   file.getVar("tracer_topg").putVar(offsets, counts, &topgz[0]);
    
 }

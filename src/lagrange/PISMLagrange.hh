@@ -72,7 +72,8 @@ private:
   
   std::vector<double> seed_times;
   double last_seed;
-  std::vector<double>::iterator next_seed; 
+  std::vector<double>::iterator next_seed;
+  IceModelVec2S m_seed_mask;
 
   std::list<Particle> particles;
 

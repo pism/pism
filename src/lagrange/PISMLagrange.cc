@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <math.h>
+#include <random>
 
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -391,6 +392,20 @@ void PISMLagrange::init() {
   prepare_tracer_log_file(tracer_log_nc);
   tracer_log_nc.close();
 
+  options::String sm("-seed_mask_file", "File for seed mask, variable name is seed_mask\n 0 = don't seed, n > 0 = seed n tracers per round.");
+  m_seed_mask.create(m_grid, "seed_mask", WITHOUT_GHOSTS);
+  m_seed_mask.set_attrs("internal",
+                 "particles to seed in grid cell",
+                 "", "");
+  if (sm.is_set()){
+    m_log->message(2,
+		   "LAGRANGE: Reading seed_mask from file %s", sm.value().c_str());
+    m_seed_mask.regrid(sm.value(), CRITICAL);
+  } else {
+    m_log->message(2,
+		   "LAGRANGE: Setting seed_mask to one\n");
+      m_seed_mask.set(1);
+  }
 
   if (use_input_file && ! boot) {
     PIO nc(m_grid->com, "guess_mode");
@@ -800,20 +815,32 @@ void PISMLagrange::compute_neighbors(){
 
     const Profiling &profiling = m_grid->ctx()->profiling();
     profiling.begin("tracer seeding");
+    std::mt19937 rng;
 
     const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
     IceModelVec::AccessList list;
     list.add(*thickness);
+    list.add(m_seed_mask);
     
     std::list<Particle> new_tracers;
     int id = 0 ;
     for (Points p(*m_grid); p; p.next()){
+      int count = 0 ;
       const int i = p.i(), j = p.j();
       const double thk = (*thickness)(i,j);
-      if (thk > 0 ){
-	Particle part = {m_grid->x(i), m_grid->y(j), thk, id };
+      while (thk > 0 && m_seed_mask(i,j) > count ){
+	double ox = 0, oy = 0 ;
+	if (count > 0 ){
+	  if (count == 1){
+	    rng.seed(i*m_grid->My() + j);
+	  }
+	  ox = ((rng() / (double) (rng.max())) -.5) * m_grid->dx();
+	  oy = ((rng() / (double) (rng.max())) -.5) * m_grid->dy();
+	}
+	Particle part = {m_grid->x(i) + ox, m_grid->y(j) + oy, thk, id };
 	new_tracers.push_back(part);
 	id++;
+	count++;
 	}
     }
     int offset;
