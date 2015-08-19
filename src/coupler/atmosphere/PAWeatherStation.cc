@@ -165,7 +165,7 @@ void WeatherStation::temp_snapshot(IceModelVec2S &result) {
 
 void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
                                                std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp");
     result.insert("precipitation");
   }

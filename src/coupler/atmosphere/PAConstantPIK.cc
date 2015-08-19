@@ -98,7 +98,7 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
   result.insert("precipitation");
   result.insert("air_temp");
 
-  if (keyword == "big") {
+  if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_snapshot");
   }
 }

@@ -22,7 +22,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \intextoption{bootstrap} & Boostrap from the file set using \texttt{-i} using heuristics to ``fill in'' missing fields.  See section \ref{sec:initboot}. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa} and \texttt{vbar_ssa} velocities saved by a previous run using the \texttt{ssa} or \texttt{ssa+sia} stress balance (see section \ref{subsect:stressbalance}). \\ \midrule
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc}.\\
-    \txtopt{o_size}{$\left<\text{size}\right>$} & Chooses the ``size'' of the output file to produce.  Possible sizes are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart PISM), \texttt{medium} (the default, includes a few diagnostic quantities) and \texttt{big} (writes all the variables mentioned in Tables~\allextras).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
+    \txtopt{o_size}{$\left<\text{size}\right>$} & Chooses the ``size'' of the output file to produce.  Possible sizes are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart PISM), \texttt{medium} (the default, includes a few diagnostic quantities), \texttt{big} (writes all the variables mentioned in Tables~\allextras), and \texttt{2dbig} writes all 2D variables but only 3D variables that are model state.  Configuration variables \texttt{output_medium}, \texttt{output_big}, and \texttt{output_2dbig} list the written variables for those sizes. \\
     \bottomrule
  \end{tabular}
 \caption{Basic NetCDF input and output options}
@@ -553,7 +553,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     \intextoption{save_split} & Separate the snapshot output into files
     named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more
     than a dozen or so snapshots. \\
-    \txtopt{save_size}{[none,small,medium,big]} & similar to \texttt{o_size},
+    \txtopt{save_size}{[none,small,medium,big,2dbig]} & similar to \texttt{o_size},
     changes the ``size'' of the file (or files) written; the default is ``small''\\
     \bottomrule
   \end{tabular}

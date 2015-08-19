@@ -337,7 +337,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
     input_model->add_vars_to_output(keyword, result);
   }
 
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
     result.insert("climatic_mass_balance_original");

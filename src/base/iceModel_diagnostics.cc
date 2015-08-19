@@ -168,30 +168,37 @@ void IceModel::list_diagnostics() {
 
     if (beddef != NULL) {
       beddef->add_vars_to_output("big", list);
+      beddef->add_vars_to_output("2dbig", list);
     }
 
     if (btu != NULL) {
       btu->add_vars_to_output("big", list);
+      btu->add_vars_to_output("2dbig", list);
     }
 
     if (basal_yield_stress_model != NULL) {
       basal_yield_stress_model->add_vars_to_output("big", list);
+      basal_yield_stress_model->add_vars_to_output("2dbig", list);
     }
 
     if (subglacial_hydrology != NULL) {
       subglacial_hydrology->add_vars_to_output("big", list);
+      subglacial_hydrology->add_vars_to_output("2dbig", list);
     }
 
     if (stress_balance != NULL) {
       stress_balance->add_vars_to_output("big", list);
+      stress_balance->add_vars_to_output("2dbig", list);
     }
 
     if (ocean != NULL) {
       ocean->add_vars_to_output("big", list);
+      ocean->add_vars_to_output("2dbig", list);
     }
 
     if (surface != NULL) {
       surface->add_vars_to_output("big", list);
+      surface->add_vars_to_output("2dbig", list);
     }
 
     for (unsigned int d = 3; d > 1; --d) {

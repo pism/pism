@@ -93,7 +93,7 @@ std::set<std::string> IceModel::output_size_from_option(const std::string &optio
                                                         const std::string &description,
                                                         const std::string &default_value) {
 
-  options::Keyword o_size(option, description, "none,small,medium,big",
+  options::Keyword o_size(option, description, "none,small,medium,big,2dbig",
                           default_value);
 
   return set_output_size(o_size);
@@ -148,6 +148,17 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
       if (not tmp.empty()) {                // this ignores multiple spaces separating variable names
+       result.insert(tmp);
+      }
+    }
+  } else if (keyword == "2dbig") {
+    // add all the variables listed in the config file ("2dbig" size):
+    std::string tmp = m_config->get_string("output_2dbig");
+    std::istringstream keywords(tmp);
+
+    // split the list; note that this also removes any duplicate entries
+    while (getline(keywords, tmp, ' ')) {
+      if (not tmp.empty()) { // this ignores multiple spaces separating variable names
        result.insert(tmp);
       }
     }
@@ -211,7 +222,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
 std::string IceModel::get_output_size(const std::string &option) {
-  return options::Keyword(option, "no description", "none,small,medium,big", "no default");
+  return options::Keyword(option, "no description", "none,small,medium,big,2dbig", "no default");
 }
 
 

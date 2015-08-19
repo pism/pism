@@ -84,7 +84,7 @@ void Delta_T::ice_surface_temperature_impl(IceModelVec2S &result) {
 void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }

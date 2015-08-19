@@ -446,12 +446,12 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
 
   result.insert("snow_depth");
 
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("climatic_mass_balance");
     result.insert("ice_surface_temp");
   }
 
-  if (keyword == "big") {
+  if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_sd");
     result.insert("saccum");
     result.insert("smelt");

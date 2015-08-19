@@ -100,7 +100,7 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
 void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
 
-  if (keyword == "big") {
+  if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_mean_annual");
     result.insert("air_temp_mean_july");
     result.insert("air_temp_snapshot");

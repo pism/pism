@@ -1365,6 +1365,10 @@ netcdf pism_config {
     pism_config:output_big = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag cts dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat liqfrac litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag temp temp_pa tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf uvel velbar velbase velsurf vvel wallmelt wvel wvel_rel wvelbase wvelsurf";
     pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
+    pism_config:output_2dbig_type = "string";
+    pism_config:output_2dbig = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag  dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf velbar velbase velsurf wallmelt wvelbase wvelsurf";
+    pism_config:output_2dbig_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if '2dbig' output size is selected. Does not include fields written by boundary models.";
+
     pism_config:backup_interval_units = "hours";
     pism_config:backup_interval_type = "scalar";
     pism_config:backup_interval = 1.0;

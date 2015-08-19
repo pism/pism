@@ -330,12 +330,12 @@ void TemperatureIndex_Old::ice_surface_temperature_impl(IceModelVec2S &result) {
 }
 
 void TemperatureIndex_Old::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert(mass_balance_name);
     result.insert(temperature_name);
   }
 
-  if (keyword == "big") {
+  if (keyword == "big" || keyword == "2dbig") {
     result.insert("saccum");
     result.insert("smelt");
     result.insert("srunoff");

@@ -151,7 +151,7 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 }
 
 void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("shelfbtemp");
     result.insert("shelfbmassflux");
   }
