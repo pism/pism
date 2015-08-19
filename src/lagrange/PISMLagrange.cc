@@ -127,13 +127,11 @@ void PISMLagrange::update_impl(double t, double dt) {
     m_log->message(5,
 		   "going through the list\n");
     for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
-      double p_u = 0.0,
-             p_v = 0.0,
-	p_w = 0.0;
-      evaluate_at_point(u, it->x, it->y, it->z, p_u);
-      evaluate_at_point(v, it->x, it->y, it->z, p_v);
-      evaluate_at_point(w, it->x, it->y, it->z, p_w);   
-      update_particle_position(it->x, it->y, it->z, p_u, p_v, p_w, m_dt); 
+      const double
+	p_u = evaluate_at_point(u, it->x, it->y, it->z),
+	p_v = evaluate_at_point(v, it->x, it->y, it->z),
+	p_w = evaluate_at_point(w, it->x, it->y, it->z);
+      update_particle_position(it->x, it->y, it->z, p_u, p_v, p_w, m_dt);
     }
   }
 
@@ -192,12 +190,10 @@ void PISMLagrange::update_particle_position(double &x, double &y, double &z,
  *
  * @param input a 3D field
  * @param x, y, z coordinates of a point within the domain
- * @param result interpolated value
  *
  */
-void PISMLagrange::evaluate_at_point(const IceModelVec3 &input,
-                                            double x, double y, double z,
-                                            double &result) {
+double PISMLagrange::evaluate_at_point(const IceModelVec3 &input,
+                                            const double x, const double y, const double z) {
   //PetscErrorCode ierr;
 
   // compute indexes for accessing neighboring columns:
@@ -213,24 +209,18 @@ void PISMLagrange::evaluate_at_point(const IceModelVec3 &input,
     K++;
    }
 
-  // get pointers to neighboring columns:
-  // const double* column[4] = {NULL, NULL, NULL, NULL};
-  // column[0] = input.get_column(I_left,  J_bottom); 
-  // column[1] = input.get_column(I_right, J_bottom); 
-  // column[2] = input.get_column(I_right, J_top); 
-  // column[3] = input.get_column(I_left,  J_top); 
 
   unsigned int index_i[4] = {I_left, I_right, I_right, I_left};
   unsigned int index_j[4] = {J_bottom, J_bottom, J_top, J_top};
 
-  
+
   // compute interpolation weights
   std::vector<double> weights = m_grid->compute_interp_weights(x, y);
   assert(K+1 < m_grid->Mz());
   const double z_weight = (z - m_grid->z(K)) / (m_grid->z(K+1) - m_grid->z(K));
 
-  // interpolate 
-  result = 0.0;
+  // interpolate
+  double result = 0.0;
   for (unsigned int i = 0; i < 4; ++i) {
     // vertical interpolation:
     const double below = input(index_i[i], index_j[i], K),
@@ -239,6 +229,40 @@ void PISMLagrange::evaluate_at_point(const IceModelVec3 &input,
     // horizontal interpolation:
     result += weights[i] * f_i;
   }
+  return result;
+}
+
+
+
+
+/**
+ * Evaluate a 2D field at a given point.
+ *
+ * @param input a 2D field
+ * @param x, y coordinates of a point within the domain
+ *
+ */
+double PISMLagrange::evaluate_at_point(const IceModelVec2S &input,
+                                            double x, double y) {
+  // compute indexes for accessing neighboring columns:
+  int I_left = 0, I_right = 0, J_bottom = 0, J_top = 0;
+  m_grid->compute_point_neighbors(x, y, I_left, I_right, J_bottom, J_top);
+
+
+  unsigned int index_i[4] = {I_left, I_right, I_right, I_left};
+  unsigned int index_j[4] = {J_bottom, J_bottom, J_top, J_top};
+
+
+  // compute interpolation weights
+  std::vector<double> weights = m_grid->compute_interp_weights(x, y);
+  // interpolate
+  double result = 0.0;
+  for (unsigned int i = 0; i < 4; ++i) {
+    // vertical interpolation:
+    const double contribution = input(index_i[i], index_j[i]);
+    result += weights[i] * contribution;
+  }
+  return result;
 }
 
 // typedefs for pointcloud_to_grid()

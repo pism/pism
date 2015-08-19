@@ -93,9 +93,10 @@ private:
                                           double u, double v, double w,
                                           double m_dt);
 
-  void evaluate_at_point(const IceModelVec3 &input,
-                                   double x, double y, double z,
-                                   double &result);
+  double evaluate_at_point(const IceModelVec3 &input,
+			    const double x, const double y, const double z);
+  double evaluate_at_point(const IceModelVec2S &input,
+			    double x, double y);
 
   void pointcloud_to_grid(const std::vector<double> &x,
                                     const std::vector<double> &y,
