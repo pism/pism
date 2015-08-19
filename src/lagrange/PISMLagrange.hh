@@ -33,12 +33,12 @@ class StressBalance;
 
 
 
-  
-/*! PISM Lagrange tracer tracking. 
- *  
+
+/*! PISM Lagrange tracer tracking.
+ *
  * This all is based on Joe Kennedy's FEvoR
  *  */
-  
+
 class PISMLagrange : public Component_TS {
 public:
   PISMLagrange(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
@@ -69,7 +69,7 @@ private:
 
   unsigned int tracer_counter;
 
-  
+
   std::vector<double> seed_times;
   double last_seed;
   std::vector<double>::iterator next_seed;
@@ -103,9 +103,9 @@ private:
                                     const std::vector<double> &z,
                                     const std::vector<double> &values,
                                     IceModelVec3 &result);
-  
+
   std::string tracer_log_created, tracer_log_deleted;
-  int neighbors [9]; // neighbors in i and j direction. 
+  int neighbors [9]; // neighbors in i and j direction.
   void compute_neighbors();
   void ship_tracers();
   int whereto(double x , double y, double z);

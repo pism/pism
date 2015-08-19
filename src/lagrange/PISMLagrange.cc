@@ -33,7 +33,7 @@
 #include <CGAL/interpolation_functions.h>
 
 #include <petscdmda.h>
-#include "petscdmda.h"   
+#include "petscdmda.h"
 
 
 #include "PISMLagrange.hh"
@@ -58,7 +58,7 @@ namespace pism {
   PISMLagrange::PISMLagrange(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance)
   : Component_TS(g), m_stress_balance(stress_balance)
 {
- 
+
   assert(m_stress_balance != NULL);
 
   allocate();
@@ -68,9 +68,9 @@ PISMLagrange::~PISMLagrange() {
 }
 
   /** Make timesteps hit seed times
-   * 
-   * Basically there's no real limitation on timestep size. 
-   * 2D CFL should ensure reasonable timesteps, so we don't 
+   *
+   * Basically there's no real limitation on timestep size.
+   * 2D CFL should ensure reasonable timesteps, so we don't
    * have to care about that.
    *
    */
@@ -80,7 +80,7 @@ PISMLagrange::~PISMLagrange() {
     return MaxTimestep();
   }
 
-  if (t < *next_seed) 
+  if (t < *next_seed)
   dt = *next_seed - t;
 
   // now make sure that we don't end up taking a time-step of less than 1
@@ -96,7 +96,7 @@ PISMLagrange::~PISMLagrange() {
   }
 }
 
-  
+
 void PISMLagrange::update_impl(double t, double dt) {
   m_log->message(4,
 		   "Starting tracer update\n");
@@ -145,17 +145,17 @@ void PISMLagrange::update_impl(double t, double dt) {
 
   m_log->message(5,
 		   "making things periodic\n");
-  /// @todo: Check if boundaries are supposed to be periodic before pushing particles around // TODO // 
+  /// @todo: Check if boundaries are supposed to be periodic before pushing particles around // TODO //
   for (std::list<Particle>::iterator it = particles.begin(); it != particles.end(); ++it) {
 
-    // assuming periodic x... 
+    // assuming periodic x...
     if (it->x < m_grid->x().front() - m_grid->dx()/2.) {
       it->x += m_grid->Lx()*2.;
     } else if (it->x > m_grid->x().back() + m_grid->dx()/2.) {
       it->x -= m_grid->Lx()*2.;
     }
-    
-    // assuming periodic y... 
+
+    // assuming periodic y...
     if (it->y < m_grid->y().front() - m_grid->dy()/2.) {
       it->y += m_grid->Ly()*2.;
     } else if (it->y > m_grid->y().back() + m_grid->dy()/2.) {
@@ -201,7 +201,7 @@ double PISMLagrange::evaluate_at_point(const IceModelVec3 &input,
   m_grid->compute_point_neighbors(x, y, I_left, I_right, J_bottom, J_top);
 
 
-  
+
   // compute index of the vertical level just below z:
   unsigned int K = 0;
   // K + 1 (used below) should be at most Mz - 1
@@ -320,7 +320,7 @@ void PISMLagrange::pointcloud_to_grid(const std::vector<double> &x,
       // make a vector of the iterpolation point and type
       Point_coordinate_vector coord;
       The_neighbors norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) );
-      
+
       Field_type res;
       // make sure point is in convex hull!
       if(!norm.third) {
@@ -330,25 +330,25 @@ void PISMLagrange::pointcloud_to_grid(const std::vector<double> &x,
           res = Field_type(1.0); // isotropic.
         } else {
           res = Field_type( *std::max_element(values.begin(), values.end()) ); // max.
-        } 
+        }
       } else {
         res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm.second, Value_access(function_values));
       }
-      
+
       // set result for all y grid points at INTERP(x,z)
       for (int j=m_grid->ys(); j<m_grid->ys()+m_grid->ym(); ++j) {
         result(i,j,k) = double(res);
       }
     }
   }
-  
-  // deal with side boundaries. 
+
+  // deal with side boundaries.
   for (int j=m_grid->ys(); j<m_grid->ys()+m_grid->ym(); ++j) {
     for (unsigned int k=0; k<m_grid->Mz(); ++k) {
       result(m_grid->xs(),j,k) = result(m_grid->xs()+1,j,k);
       result(m_grid->xs()+m_grid->xm()-1,j,k) = result(m_grid->xs()+m_grid->xm()-2,j,k);
     }
-  } 
+  }
 }
 
 void PISMLagrange::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
@@ -365,7 +365,7 @@ void PISMLagrange::define_variables_impl(const std::set<std::string> &vars, cons
   void PISMLagrange::write_variables_impl(const std::set<std::string> &vars,const  PIO& nc) {
 
     save_particle_positions(nc);
- 
+
 }
 
 void  PISMLagrange::allocate() {
@@ -375,8 +375,8 @@ void  PISMLagrange::allocate() {
 
 
 void PISMLagrange::init() {
-  //Define the particle type -- probably only needs to be done once.  
-  MPI_Datatype oldtypes[2]; 
+  //Define the particle type -- probably only needs to be done once.
+  MPI_Datatype oldtypes[2];
   int          blockcounts[2];
   MPI_Aint    offsets[2], extent, tester;
   offsets[0] = 0;
@@ -437,31 +437,31 @@ void PISMLagrange::init() {
     nc.open(input_file, PISM_READONLY);
     load_particle_positions(input_file);
   } else {
-  tracer_counter = 0; 
+  tracer_counter = 0;
   //set_initial_distribution_parameters();
   }
 
 }
-  
+
 
 /** Create an initial state (cloud of "particles").
  *
  * Use this for testing or bootstrapping only.
  * Deactivated in defauld code.
- * 
+ *
  */
 void PISMLagrange::set_initial_distribution_parameters() {
 
   verbPrintf(2, m_grid->com,
-                    "  Setting initial distribution parameters...\n"); 
+                    "  Setting initial distribution parameters...\n");
   unsigned int n_particles = (unsigned int)  (m_grid->Mz()-1) * (m_grid->xm()) * (m_grid->ym());
-  
+
 
   // Initialize particle positions and corresponding enhancement factors
   particles.resize(n_particles);
   int i = get_offset(n_particles); // Globally coordinated numbering scheme
   if (m_grid->rank() == 0){
-    tracer_counter = i; 
+    tracer_counter = i;
       i=0 ; // NO OFFSET FOR FIRST PROCESS
   }
 
@@ -484,9 +484,9 @@ void PISMLagrange::set_initial_distribution_parameters() {
 
 }
 
-  /** Compute ranks of neighboring processes. 
+  /** Compute ranks of neighboring processes.
    *    Necessary for passing tracers from one process to the other.
-   */  
+   */
 void PISMLagrange::compute_neighbors(){
 
   PetscInt dim, M, N, P, m, n, p, dof, s;
@@ -495,9 +495,9 @@ void PISMLagrange::compute_neighbors(){
   petsc::DM::Ptr dm = m_grid->get_dm(1,0);
   DMDAGetInfo(* dm , &dim, &M, &N, &P, &m, &n, &p, &dof, &s, &bx, &by, &bz, &st);
   int r = m_grid->rank();
-  int rp =m ,  rm = m  ; 
-  int cp = 1 , cm = 1  ; 
-  
+  int rp =m ,  rm = m  ;
+  int cp = 1 , cm = 1  ;
+
   if (r / m +1 >=n)
     rp -= m*n;
   if (r / m ==0 )
@@ -511,11 +511,11 @@ void PISMLagrange::compute_neighbors(){
   neighbors [0] = r-rm-cm;
   neighbors [1] = r-cm;
   neighbors [2] = r+rp-cm;
-  
+
   neighbors [3] = r-rm;
   neighbors [4] = r;
   neighbors [5] = r+rp;
-  
+
   neighbors [6] = r-rm+cp;
   neighbors [7] = r+cp;
   neighbors [8] = r+rp+cp;
@@ -523,12 +523,12 @@ void PISMLagrange::compute_neighbors(){
   //  for (int i=0 ; i< 9 ; i++)   std::cout <<" for "<< m_grid->rank() << "neigbor "<< i << " has rank "<< neighbors[i]<< "\n";
 }
 
-  /** Ship tracers from one process to the other 
+  /** Ship tracers from one process to the other
    *
    */
   void PISMLagrange::ship_tracers(){
     std::vector<std::vector<Particle> > ship(9);
-      
+
     for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;){
       const unsigned int dest =  whereto(it->x, it->y,it->z);
       if (dest != 4){
@@ -571,16 +571,16 @@ void PISMLagrange::compute_neighbors(){
       received_tracers[i].resize(0);
       ship[i].resize(0);
     }
-    
+
   }
-  
-  /** To which neighbor should a particle go? 
-   *   6 7 8 
-   *   3 4 5 
-   *   0 1 2 
+
+  /** To which neighbor should a particle go?
+   *   6 7 8
+   *   3 4 5
+   *   0 1 2
    *   4 is stay local vert = y, hor = x
   */
-  
+
   int PISMLagrange::whereto(double x, double y, double z){
     int row = 1, column = 1;
     int xs=m_grid->xs(), xm=m_grid->xm(),
@@ -590,7 +590,7 @@ void PISMLagrange::compute_neighbors(){
       column=0;
     else if (x > m_grid->x(xs)+dx*(xm-0.5))
       column=2;
-    
+
     if (y < m_grid->y(ys)-dy/2.)
       row=0;
     else if (y > m_grid->y(ys)+dy*(ym-0.5))
@@ -598,7 +598,7 @@ void PISMLagrange::compute_neighbors(){
 
     return row*3+column;
   }
-  
+
 
   void PISMLagrange::save_diagnostics(const PIO &nc) {
 
@@ -606,7 +606,7 @@ void PISMLagrange::compute_neighbors(){
 
 
   void PISMLagrange::save_particle_positions(const PIO &nc) {
-  unsigned int n_records   = nc.inq_nrecords(); 
+  unsigned int n_records   = nc.inq_nrecords();
   unsigned int last_record = n_records - 1;
   if (not nc.inq_dimlen("tracer_id")){
     m_log->message(2,
@@ -620,11 +620,11 @@ void PISMLagrange::compute_neighbors(){
   nc.put_att_double("PISM_GLOBAL","tracer_counter", PISM_INT, tracer_counter);
   // Will let rank 0 do the put, so the correct number is stored.
 
-  
+
   start = get_offset(count);
   if (m_grid->rank() == 0)
     start = 0 ;
-  
+
   std::vector <double>
     m_tracer_x(particles.size()),
     m_tracer_y(particles.size()),
@@ -643,12 +643,12 @@ void PISMLagrange::compute_neighbors(){
       * id++ = (double) it->id ;
     }
 
-    nc.put_1d_var("tracer_x", start, count, m_tracer_x); 
-    nc.put_1d_var("tracer_y", start, count, m_tracer_y); 
+    nc.put_1d_var("tracer_x", start, count, m_tracer_x);
+    nc.put_1d_var("tracer_y", start, count, m_tracer_y);
     nc.put_1d_var("tracer_z", start, count, m_tracer_z);
-    nc.put_1d_var("tracer_id", start, count, m_tracer_id); 
+    nc.put_1d_var("tracer_id", start, count, m_tracer_id);
   }
-  
+
   void PISMLagrange::load_particle_positions(const std::string input_file) {
     PIO nc(m_grid->com, "guess_mode");
     nc.open(input_file, PISM_READONLY);
@@ -658,7 +658,7 @@ void PISMLagrange::compute_neighbors(){
     unsigned int last_record = n_records - 1;
 
     std::vector<double> num_trac(1, 0.0);
-    
+
     tracer_counter = (unsigned int) nc.get_att_double("PISM_GLOBAL","tracer_counter")[0];
     unsigned int start, count;
     start = 0;
@@ -666,16 +666,16 @@ void PISMLagrange::compute_neighbors(){
 
     // OPTION FOR MANY TRACERS: READ up to  10/100/... Million at a time and sort them
     // before reading the next batch. -- ::TODO::
-    
+
     const unsigned int n = count;
     std::vector<double> x(n), y(n),z(n), id(n);
 
-    
+
     nc.get_1d_var("tracer_x", start, count, x);
     nc.get_1d_var("tracer_y", start, count, y);
-    nc.get_1d_var("tracer_z", start, count, z); 
-    nc.get_1d_var("tracer_id", start, count, id); 
-    
+    nc.get_1d_var("tracer_z", start, count, z);
+    nc.get_1d_var("tracer_id", start, count, id);
+
     std::vector<double>::iterator
       ix = x.begin(),
       iy = y.begin(),
@@ -689,9 +689,9 @@ void PISMLagrange::compute_neighbors(){
       }
       ix++; iy++ ; iz++ ; iid++;
     }
-    
+
   }
-  
+
 
   /** coordinate offsets in tracer numbering - FUNKY! READ DESCRIPTION
    *
@@ -699,7 +699,7 @@ void PISMLagrange::compute_neighbors(){
    *
    *
    */
-  
+
   int PISMLagrange::get_offset(const int contribution) {
 
     int retval = 0;
@@ -726,14 +726,14 @@ void PISMLagrange::compute_neighbors(){
 	offsets[i] = offsets[i-1] + counts[i-1];
 	MPI_Isend ( &offsets[i], 1, MPI_INT, i, 0, m_grid->com, &req[i]);
       } // We only need this and all previos receives completed.
-      
+
 
       for (int i = 1 ; i < mpi_comm_size; i++){
 	MPI_Wait ( &req[i], &status[i]);
       } // Wait till everything is shipped
       retval = offsets[mpi_comm_size-1]+counts[mpi_comm_size-1];
       return retval;  // ON RANK ZERO WE RETURN THE TOTAL!
-      
+
     } else {
       MPI_Status status;
       MPI_Request req;
@@ -742,19 +742,19 @@ void PISMLagrange::compute_neighbors(){
       MPI_Irecv ( &retval, 1, MPI_INT, 0, 0, m_grid->com, &req);
       MPI_Wait ( &req, &status);
     }
-  
+
   return retval;
   }
 
   /** processes -seed_times argument analogue to -extra_times. Extra: -seed_seasons
-   * 
+   *
    * -seed_seasons will generate 4 extra seeds for 3, 6, 9, 12 months after original seeding.
-   */ 
+   */
   void PISMLagrange::init_seed_times(){
     last_seed = -9e20;               // will be set in write_extras()
     options::String times("-seed_times", "Specifies times to save at");
     bool seed_seasons =  options::Bool("-seed_seasons", "Seed 4 seasons (.0, .25, .5, .75 for each seeding time");
-    
+
 
     if (times.is_set()){
       try {
@@ -763,12 +763,12 @@ void PISMLagrange::compute_neighbors(){
 	e.add_context("parsing the -seed_times argument %s", times->c_str());
 	throw;
       }
-      
+
       if (seed_times.size() == 0) {
 	throw RuntimeError("-seed_times set, but no seeding during the run specified.");
       }
-      
-      
+
+
     }
     if (seed_seasons){
       std::vector<double> new_seed_times(5* seed_times.size());
@@ -800,21 +800,21 @@ void PISMLagrange::compute_neighbors(){
 	 fabs(m_grid->ctx()->time()->current() - *next_seed) < 1.0)) {
     // the condition above is "true" if we passed a requested time or got to
     // within 1 second from it
-      
+
       current_seed = next_seed;
-      
+
       // update next_extra
       while (next_seed != seed_times.end() &&
 	     (*next_seed <= m_grid->ctx()->time()->current() ||
             fabs(m_grid->ctx()->time()->current() - *next_seed) < 1.0)) {
 	next_seed++;
       }
-      
+
       seed_after = *current_seed;
     } else {
       return false;
     }
-    
+
     if (seed_after < m_grid->ctx()->time()->start()) {
       // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
       // also that PISM writes a backup file at year 2500 and gets stopped.
@@ -828,12 +828,12 @@ void PISMLagrange::compute_neighbors(){
       // This check makes sure that this never happens.
       return false;
     }
-    return true; 
+    return true;
   }
 
   /** Seed tracers on ice surface
    *
-   * Puts tracers on ice surface at current time t (not t+dt). 
+   * Puts tracers on ice surface at current time t (not t+dt).
    * One tracer per grid point centered in the cell.
    */
   void PISMLagrange::seed(){
@@ -846,7 +846,7 @@ void PISMLagrange::compute_neighbors(){
     IceModelVec::AccessList list;
     list.add(*thickness);
     list.add(m_seed_mask);
-    
+
     std::list<Particle> new_tracers;
     int id = 0 ;
     for (Points p(*m_grid); p; p.next()){
@@ -882,16 +882,16 @@ void PISMLagrange::compute_neighbors(){
     particles.insert(particles.end(), new_tracers.begin(), new_tracers.end());
 
     log_tracers(new_tracers.begin(), new_tracers.size(), m_grid->ctx()->time()->current(), tracer_log_created);
-    
+
     profiling.end("tracer seeding");
-  
+
   }
 
   /** Any tracer that's more than 1 mm above its cell's ice surface is discarded.
    * no interpolation. Pure cell center.
-   * 
+   *
    */
-  
+
   void PISMLagrange::remove_flying_tracers(){
 
     const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -916,14 +916,14 @@ void PISMLagrange::compute_neighbors(){
     log_tracers(deleted.begin(), deleted.size(), m_grid->ctx()->time()->current(), tracer_log_deleted);
   }
 
-  
+
   void PISMLagrange::remove_bedrock_tracers(){
 
 
     std::list<Particle> deleted;
-    
+
     for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;it++)
-      {      
+      {
 	if (it->z < 1e-6){ // 1 micrometer above ground is in ground
 	  deleted.push_back(*it);
 	  it = particles.erase(it);
@@ -979,14 +979,14 @@ void PISMLagrange::log_tracers(const std::list<Particle>::iterator first , const
     std::list<Particle>::iterator  it = first;
     for (size_t i = 0 ; i < count ; i++)
       {
-	x[i]=it->x; 
-	y[i]=it->y; 
-	z[i]=it->z; 
+	x[i]=it->x;
+	y[i]=it->y;
+	z[i]=it->z;
 	id[i]=(double) it->id;
 	it++;
       }
-    
-    
+
+
     PIO nc (m_grid->com, "guess_mode");
     nc.open(filename, PISM_READWRITE);
     my_offset += nc.inq_dimlen("tracer_id");
