@@ -862,7 +862,9 @@ void PISMLagrange::compute_neighbors(){
 	  ox = ((rng() / (double) (rng.max())) -.5) * m_grid->dx();
 	  oy = ((rng() / (double) (rng.max())) -.5) * m_grid->dy();
 	}
-	Particle part = {m_grid->x(i) + ox, m_grid->y(j) + oy, thk, id };
+	const double xx = m_grid->x(i) + ox,
+                     yy = m_grid->y(j) + oy;
+	Particle part = {xx , yy , evaluate_at_point(*thickness, xx, yy), id };
 	new_tracers.push_back(part);
 	id++;
 	count++;
@@ -897,17 +899,15 @@ void PISMLagrange::compute_neighbors(){
     list.add(*thickness);
 
     std::list<Particle> deleted;
-    
+
     const double
       x0 = m_grid->x(0),
       y0 = m_grid->y(0),
       dx = m_grid->dx(),
       dy = m_grid->dy();
     for (std::list<Particle>::iterator it = particles.begin() ; it != particles.end() ;)
-      {      
-	const int i = (int)round((it->x - x0)/dx), 
-	  j = (int)round((it->y - y0)/dy);
-	if (it->z > (*thickness)(i,j)+1e-3){ // 1 mm grace, let's call it surfce roughness ;)
+      {
+	if (it->z > evaluate_at_point(*thickness, it->x,it->y) +1e-3){ // 1 mm grace, let's call it surfce roughness ;)
 	  deleted.push_back(*it);
 	  it = particles.erase(it);
 	} else
