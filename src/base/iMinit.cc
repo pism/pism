@@ -471,7 +471,8 @@ void IceModel::allocate_submodels() {
 
   {
     options::String seed_times("-seed_times", "Specifies times to save at");
-    if ( seed_times.is_set() ){
+    bool lagrange_tracers = options::Bool ("-lagrange_tracers", "Run lagrange tracer module");
+    if ( seed_times.is_set()  || lagrange_tracers ){
       m_log->message(4,
 		     "Allocating lagrange tracer module\n");
       allocate_lagrange();
