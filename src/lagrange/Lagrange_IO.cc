@@ -39,12 +39,12 @@ using namespace pism;
  *
  * @return 0 on success
  */
-void lagrange_prepare_file(const pism::PIO &nc, 
+void lagrange_prepare_file(const pism::PIO &nc,
 			   unsigned int n_tracers) {
   // FIXME: these should be configurable
   bool dim_exists = false;
   dim_exists = nc.inq_dim("time");
-  if (not dim_exists) 
+  if (not dim_exists)
     nc.def_dim("time", pism::PISM_UNLIMITED);
 
 
@@ -79,14 +79,14 @@ void lagrange_prepare_file(const pism::PIO &nc,
 }
 
 void lagrange_prepare_particle_log_file(const pism::PIO &nc){
- 
+
   std::vector<std::string> dims(1);
   dims[0] = "tracer_id";
 
   bool dim_exists = false;
   dim_exists = nc.inq_dim("tracer_id");
-  if (not dim_exists){ 
-    nc.def_dim(dims[0], pism::PISM_UNLIMITED); 
+  if (not dim_exists){
+    nc.def_dim(dims[0], pism::PISM_UNLIMITED);
     nc.def_var(dims[0], PISM_DOUBLE, dims);
   }
   // particle positions and time -- this is for creation and similar logs
@@ -96,13 +96,12 @@ void lagrange_prepare_particle_log_file(const pism::PIO &nc){
   fields.push_back("tracer_y");
   fields.push_back("tracer_z");
 
-  
+
   for (std::vector<std::string>::iterator it = fields.begin(); it != fields.end(); ++it) {
     if (not nc.inq_var(*it)) {
       nc.redef();
       nc.def_var(*it, PISM_DOUBLE, dims);
     }
   }
-  
-}
 
+}
