@@ -45,10 +45,10 @@ int parse_options(int ac, char * argv[], string & tracer_file, string & coordina
 
 int main(int argc, char *argv[])
 {
-	string tracer_file_name, coordinates_file_name;
-	vector <string> input_files;
-	int retval = parse_options (argc, argv, tracer_file_name, coordinates_file_name, input_files);
-	if (retval != 0 ) return retval;
+  string tracer_file_name, coordinates_file_name;
+  vector <string> input_files;
+  int retval = parse_options (argc, argv, tracer_file_name, coordinates_file_name, input_files);
+  if (retval != 0 ) return retval;
   NcFile tracer_file (tracer_file_name, NcFile::read);
   NcFile coords_file (coordinates_file_name, NcFile::read);
   vector<string> variables;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   variables.push_back("tracer_y");
   variables.push_back("tracer_z");
   variables.push_back("time");
-	std::cerr<<"Reading tracers from " << tracer_file_name << std::endl;
+  std::cerr<<"Reading tracers from " << tracer_file_name << std::endl;
   vector<vector<double> > creations;
   for (vector<string>::iterator v = variables.begin() ; v != variables.end() ; v++){
 
@@ -77,6 +77,26 @@ int main(int argc, char *argv[])
 				tz = read_var("tracer_z", extra_file),
 				t_id = read_var("tracer_id", extra_file);
 
+      vector<double>::iterator
+	iid = t_id.begin(),
+	ix  = tx.begin(),
+	iy = ty.begin(),
+	iz = tz.begin();
+
+      for ( ; ix != tx.end() ; ){
+	if ( *iz < 0 ) {
+	  iid = t_id.erase(iid);
+	  ix = tx.erase(ix);
+	  iy = ty.erase(iy);
+	  iz = tz.erase(iz);
+	} else{
+	  iid++;
+	  ix++;
+	  iy++;
+	  iz++;
+	}
+      }
+
 	std::cerr<<"Reading coordinates from " << "coordinates.nc" << std::endl;
 	vector<double>
 		lon = interp_field(tx, ty, "lon", coords_file),
@@ -86,15 +106,18 @@ int main(int argc, char *argv[])
 
       if(not extra_file.getVar("topg").isNull())
 				topgz = interp_field(tx, ty, "topg", extra_file);
+      else if(not extra_file.getVar("tracer_topg").isNull())
+				topgz = read_var("tracer_topg", extra_file);
 
 
 
       vtkSmartPointer<vtkPoints> points =
 				vtkSmartPointer<vtkPoints>::New();
 
-      vector<double>::iterator ix  = tx.begin(),
-				iy = ty.begin(),
-				iz = tz.begin(),
+      ix  = tx.begin();
+      iy = ty.begin();
+      iz = tz.begin();
+      vector<double>::iterator
 				itg = topgz.begin(),
 				ilon = lon.begin(),
 				ilat = lat.begin();
@@ -183,7 +206,8 @@ void write_xml_footer(){
 vector<double> read_var(string variable, NcFile & file){
     NcVar var = file.getVar(variable);
 
-    size_t npoints =  var.getDim(0).getSize();
+    int dc = var.getDimCount();
+    size_t npoints =  var.getDim(dc-1).getSize();
     vector <double> data (npoints);
     var.getVar(&data[0] );
     return data;
@@ -218,13 +242,13 @@ vector<double> read_var(string variable, NcFile & file){
       ,ci = ceil(i),
       fj = floor(j),
       cj = ceil(j);
-    *d =
-      (1-ir)*(1-jr) * data[fi][fj] +
-      (  ir)*(1-jr) * data[ci][fj] +
-      (  ir)*(  jr) * data[ci][cj] +
-      (1-ir)*(  jr) * data[fi][cj];
+      *d =
+	(1-ir)*(1-jr) * data[fi][fj] +
+	(  ir)*(1-jr) * data[ci][fj] +
+	(  ir)*(  jr) * data[ci][cj] +
+	(1-ir)*(  jr) * data[fi][cj];
     x++; y++; d++;
-      }
+  }
 
   return interpolated;
 }

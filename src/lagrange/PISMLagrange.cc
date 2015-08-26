@@ -180,8 +180,8 @@ void PISMLagrange::update_particle_position(double &x, double &y, double &z,
 
   // basic Euler method. Assuming u, v, w are 'good'
   x += u*dt;
-  y += v*dt; // probably not needed and v should be zero in 2D flow line model
-  z += w*dt; // w should be zero
+  y += v*dt;
+  z += w*dt;
 
 }
 
@@ -453,7 +453,7 @@ void PISMLagrange::init() {
 void PISMLagrange::set_initial_distribution_parameters() {
 
   verbPrintf(2, m_grid->com,
-                    "  Setting initial distribution parameters...\n");
+                    "Setting initial distribution parameters...\n");
   unsigned int n_particles = (unsigned int)  (m_grid->Mz()-1) * (m_grid->xm()) * (m_grid->ym());
 
 
