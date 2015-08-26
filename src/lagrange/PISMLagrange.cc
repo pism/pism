@@ -758,40 +758,38 @@ void PISMLagrange::compute_neighbors(){
 
     if (times.is_set()){
       try {
-	m_grid->ctx()->time()->parse_times(times, seed_times);
+				m_grid->ctx()->time()->parse_times(times, seed_times);
       } catch (RuntimeError &e) {
-	e.add_context("parsing the -seed_times argument %s", times->c_str());
-	throw;
+				e.add_context("parsing the -seed_times argument %s", times->c_str());
+				throw;
       }
-
+			
       if (seed_times.size() == 0) {
-	throw RuntimeError("-seed_times set, but no seeding during the run specified.");
+				throw RuntimeError("-seed_times set, but no seeding during the run specified.");
       }
-
-
-    }
-    if (seed_seasons){
-      std::vector<double> new_seed_times(5* seed_times.size());
-      std::vector<double>::iterator nst = new_seed_times.begin();
-      for (std::vector<double>::iterator it = seed_times.begin() ; it != seed_times.end() ; it++)
-	{
-	  const double y = m_grid->ctx()->time()->increment_date(*it, 1)- *it;
-	  *(nst++) = *it;
-	  *(nst++) = *it + .25 * y;
-	  *(nst++) = *it + .5  * y;
-	  *(nst++) = *it + .75 * y;
-	  *(nst++) = *it + y;
-	}
-      seed_times=new_seed_times;
-    }
-    next_seed = seed_times.begin();
-    while (next_seed != seed_times.end() && *next_seed < m_grid->ctx()->time()->start()-1)
-      {
-	next_seed++;}
-
+			
+			if (seed_seasons){
+				std::vector<double> new_seed_times(5* seed_times.size());
+				std::vector<double>::iterator nst = new_seed_times.begin();
+				for (std::vector<double>::iterator it = seed_times.begin() ; it != seed_times.end() ; it++){
+					const double y = m_grid->ctx()->time()->increment_date(*it, 1)- *it;
+					*(nst++) = *it;
+					*(nst++) = *it + .25 * y;
+					*(nst++) = *it + .5  * y;
+					*(nst++) = *it + .75 * y;
+					*(nst++) = *it + y;
+				}
+				seed_times=new_seed_times;
+			} // seed seasons
+			
+		}
+		next_seed = seed_times.begin();
+    while (next_seed != seed_times.end() && *next_seed < m_grid->ctx()->time()->start()-1){
+			next_seed++;
+		}
   }
-
-
+	
+	
   bool PISMLagrange::check_seed(){
     double seed_after = -1.0e30;
     std::vector<double>::iterator current_seed;

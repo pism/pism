@@ -769,7 +769,7 @@ void IceModel::step(bool do_mass_continuity,
     m_log->message(4,
 		   "Updating Lagrange tracers\n");
     profiling.begin("lagrange");
-    m_lagrange->update(current_time, dt); 
+    m_lagrange->update(current_time, dt);
     profiling.end("lagrange");
   }
 
