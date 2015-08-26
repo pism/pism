@@ -249,22 +249,22 @@ void IceModel::createVecs() {
     m_grid->variables().add(age3);
   }
   if (m_config->get_boolean("do_tracer")) {
-    tracer_x.create(m_grid, "tracer_x", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_x.create(m_grid, "origin_x", WITH_GHOSTS, WIDE_STENCIL);
     tracer_x.set_attrs("model_state", "x-origin of ice",
                    "m", "");
     m_grid->variables().add(tracer_x);
 
-    tracer_y.create(m_grid, "tracer_y", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_y.create(m_grid, "origin_y", WITH_GHOSTS, WIDE_STENCIL);
     tracer_y.set_attrs("model_state", "y-origin of ice",
                    "m", "");
     m_grid->variables().add(tracer_y);
 
-    tracer_z.create(m_grid, "tracer_z", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_z.create(m_grid, "origin_z", WITH_GHOSTS, WIDE_STENCIL);
     tracer_z.set_attrs("model_state", "z-origin of ice",
                    "m", "");
     m_grid->variables().add(tracer_z);
 
-    tracer_t.create(m_grid, "tracer_t", WITH_GHOSTS, WIDE_STENCIL);
+    tracer_t.create(m_grid, "origin_t", WITH_GHOSTS, WIDE_STENCIL);
     tracer_t.set_attrs("model_state", "time of creation of ice",
                    "s", "");
     tracer_t.metadata().set_string("glaciological_units", "years");
