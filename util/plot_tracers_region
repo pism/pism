@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+
+import netCDF4
+import sys
+import matplotlib.pylab as mpl
+from argparse import ArgumentParser
+
+def find_tracers (filename, xlim, ylim):
+    ds=netCDF4.Dataset(filename,'r')
+    if not "tracer_x" in ds.variables.keys():
+        print ("Couldn't find tracer_x in %s\n"%f)
+        sys.exit(666)
+    tx=ds.variables["tracer_x"][:]
+    ty=ds.variables["tracer_y"][:]
+    tz=ds.variables["tracer_z"][:]
+    tid=ds.variables["tracer_id"][:]
+    xi = ds.variables["x"][:]
+    yi = ds.variables["y"][:]
+    selector = (tx > xlim[0]) * (tx < xlim[1]) * (ty > ylim[0]) * (ty < ylim[1])
+    tx = tx[selector]
+    ty = ty[selector]
+    tz = tz[selector]
+    tid = tid[selector]
+    return (tid, tx, ty, tz)
+
+def plot_tracers(tid, x, y, z):
+    mpl.figure()
+    print x.shape
+    print y.shape
+    mpl.scatter(x,z, c=tid)
+    mpl.show()
+
+def parse_args():
+  parser = ArgumentParser()
+  parser.description = "find tracers within a certain x-y region"
+  parser.add_argument("FILES", nargs='*')
+  parser.add_argument("-v", "--verbose", 
+                    help='''Be verbose''', action="store_true")
+  parser.add_argument("-x",
+                      help='''x limits''', type=float, nargs=2,
+                      required=True) 
+  parser.add_argument("-y",
+                      help='''y limits''', type=float, nargs=2,
+                      required=True) 
+  options = parser.parse_args()
+  return options
+
+
+def main():
+    options = parse_args()
+    if options.verbose:
+        print (dir(options))
+        print options.FILES
+    xlim = options.x
+    ylim = options.y
+    for f in options.FILES:
+        (tid, x, y, z) = find_tracers (f, xlim, ylim)
+        plot_tracers(tid, x, y, z)
+
+if __name__ == "__main__":
+    main()
+    

@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+from matplotlib.mlab import griddata
+from argparse import ArgumentParser
+from netCDF4 import Dataset
+import numpy as np
+import matplotlib.pylab as pl
+
+def split (data, tracer_ids, timeslices):
+    subsets = [ np.array([i in ids_t for i in tracer_ids], dtype=bool) for ids_t in timeslices]
+    data = [data[i] for i in subsets]
+    return data
+
+def extract_sets(filename, created_file):
+    cf = Dataset(created_file, "r")
+
+    # split up tracer creations by creation time
+    tracer_times = cf.variables["time"][:]
+    tracer_ids   = cf.variables["tracer_id"][:]
+    timeslices = np.array(sorted(set(tracer_times)))
+    print timeslices
+    # ids = [tracer_ids [tracer_times == t ] for t in timeslices]
+    # get all tracers from file that were created at a specified time
+    df = Dataset(filename, "r")
+    t_id = df.variables["tracer_id"][:]
+    t_x = df.variables["tracer_x"][:]
+    t_y = df.variables["tracer_y"][:]
+    t_z = df.variables["tracer_z"][:]
+    # xs = split(t_x, t_id, ids)
+    # ys = split(t_y, t_id, ids)
+    # zs = split(t_z, t_id, ids)
+    xi = df.variables["x"][:]
+    yi = df.variables["y"][:]
+    layers=np.zeros([len(timeslices), len(xi), len(yi)])
+    counts=np.zeros([len(timeslices), len(xi), len(yi)])
+    
+    i = np.rint((t_x -xi[0])/(xi[1]-xi[0])).astype(int)
+    j = np.rint((t_y -yi[0])/(yi[1]-yi[0])).astype(int)
+    
+    ts_lookup = {t: n for (n, t) in enumerate (timeslices)}
+    time_lookup = {tid: time for (tid, time) in zip (tracer_ids, tracer_times)}
+
+    thk = np.squeeze(df.variables["thk"][:])
+    for (tid,i,j,z,x,y ) in zip (t_id, i, j, t_z,t_x, t_y):
+        k = ts_lookup[time_lookup[tid]]
+        layers[k, i, j ] += z
+        counts[k, i, j ] += 1
+        if thk[i,j] < z :
+            print "TROUBLE ", tid, i, j, z, thk[i,j], (x -xi[0])/(xi[1]-xi[0]), (y -yi[0])/(yi[1]-yi[0])
+        
+    layers = layers / counts
+    layers [counts == 0 ] = -9e9
+    used_mask = np.array([(x > 0).any() for x in layers])
+
+    timeslices_used = timeslices[used_mask]
+    
+    of = Dataset(filename[:-3] + "_layers2.nc" , 'w')
+    for v in ['x', 'y', 'time']:
+        print v
+        varin = df.variables[v]
+        of.createDimension(v, len(varin[:]) if not df.dimensions[v].isunlimited() else None )
+    for v in ['x', 'y', 'time', 'topg', 'thk']:
+        varin = df.variables[v]
+        outvar = of.createVariable(v, varin[:].dtype, varin.dimensions)
+        outvar[:] = varin[:]
+        outvar.setncatts({k: varin.getncattr(k) for k in varin.ncattrs()})
+    of.variables['time'][0]=df.variables['time'][0]
+    for v in ['topg', 'thk']:
+        print of.variables[v].shape,  df.variables[v].shape
+        of.variables[v][:] = df.variables[v][:]
+
+    of.createDimension("creation_time", len(timeslices_used) )
+    ct = of.createVariable("creation_time", timeslices.dtype, ("creation_time",))
+    ct[:] = timeslices_used
+    ct.setncatts({k: df.variables["time"].getncattr(k) for k in df.variables["time"].ncattrs()})
+
+    oz = of.createVariable("z", layers[0].dtype, ("creation_time", "x", "y"))
+    oz.setncatts({'_FillValue':-9e9})
+    of.variables["z"][:] = layers[used_mask]
+    of.close()
+
+
+
+
+def parse_args():
+  parser = ArgumentParser()
+  parser.description = "compare slopes of two variables from two files"
+  parser.add_argument("FILES", nargs='*')
+  parser.add_argument("-v", "--verbose",
+                    help='''Be verbose''', action="store_true")
+  parser.add_argument("-c", "--created_file",
+                      help='''File with particle creation date and time''',
+                      default = None)
+  # parser.add_argument("-s", "--state",
+  #                      help='''file with reference values''', required = True)
+  # parser.add_argument("-b", "--var_b",
+  #                    help='''variable b''', default="data")
+  options = parser.parse_args()
+  return options
+
+
+def main():
+  options = parse_args()
+  if options.verbose:
+    print (dir(options))
+    print options.FILES
+  extract_sets(options.FILES[0], options.created_file)
+
+if __name__ == "__main__":
+    main()
