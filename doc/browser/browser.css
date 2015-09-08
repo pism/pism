@@ -1,0 +1,60 @@
+body, table, div, p, dl {
+    font: 400 16px/22px Roboto,sans-serif;
+}
+
+#projectname {
+    font-size: 150%;
+    font-weight: bold;
+    font-family: Roboto,sans-serif;
+    padding-left: 10px;
+}
+
+#projectbrief
+{
+    font-family: Roboto,sans-serif;
+}
+
+#projectnumber {
+    font: inherit;
+}
+
+div.qindex, div.navtab{
+    text-align: left;
+}
+
+div.toc li {
+    font-family: Roboto,sans-serif;
+}
+
+div.toc h3 {
+    font-family: Roboto,sans-serif;
+}
+
+.params .paramdir {
+    font-family: monospace,fixed;
+}
+
+ul.navpath {
+    font-size: inherit;
+}
+
+.memproto, dl.reflist dt {
+    padding: 0px 0px 0px 0px;
+    background-image: none;
+}
+
+.memdoc, dl.reflist dd {
+    background-image: none;
+}
+
+.tabsearch {
+    background-image: none;
+}
+
+.fieldtable th {
+    background-image: none;
+}
+
+div.header {
+    background-image: none;
+}

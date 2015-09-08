@@ -71,27 +71,27 @@ if args.q:
         sys.exit(6)
 
 if args.d >= 0:
-   if shape(velx)[0] <= args.d:
-       print "ERROR: frame %d not available in variable velx" % args.d
-       sys.exit(3)
-   if shape(vely)[0] <= args.d:
-       print "ERROR: frame %d not available in variable vely" % args.d
-       sys.exit(4)
-   print "  reading frame %d of %d frames" % (args.d, shape(velx)[0])
+    if shape(velx)[0] <= args.d:
+        print "ERROR: frame %d not available in variable velx" % args.d
+        sys.exit(3)
+    if shape(vely)[0] <= args.d:
+        print "ERROR: frame %d not available in variable vely" % args.d
+        sys.exit(4)
+    print "  reading frame %d of %d frames" % (args.d, shape(velx)[0])
 else:
-   args.d = -1
-   print "  reading last frame of %d frames" % (shape(velx)[0])
+    args.d = -1
+    print "  reading last frame of %d frames" % (shape(velx)[0])
 
-units = "m hr-1"  #FIXME: make this merely the default scale?
+units = "m hr-1"  # FIXME: make this merely the default scale?
 scale = 3.1556926e7 / 3600.0
-velx = asarray(squeeze(velx[args.d,:,:])).transpose() / scale
-vely = asarray(squeeze(vely[args.d,:,:])).transpose() / scale
+velx = asarray(squeeze(velx[args.d, :, :])).transpose() / scale
+vely = asarray(squeeze(vely[args.d, :, :])).transpose() / scale
 
 if args.q:
-    bwat = asarray(squeeze(bwat[args.d,:,:])).transpose()
+    bwat = asarray(squeeze(bwat[args.d, :, :])).transpose()
     velx = velx * bwat
     vely = vely * bwat
-    units = "m2 hr-1"  #FIXME: adjust units?
+    units = "m2 hr-1"  # FIXME: adjust units?
 
 nc.close()
 
@@ -109,7 +109,7 @@ if args.y:
 if args.s:
     figure(2)
     print "  generating pcolor() image of velocity (or flux) components in figure(2) ..."
-    for j in [1,2]:
+    for j in [1, 2]:
         if j == 1:
             data = velx
             name = "velx"
@@ -117,16 +117,16 @@ if args.s:
             data = vely
             name = "vely"
         print "  %s stats:\n    min = %9.3f %s,  max = %9.3f %s,  av = %8.3f %s" % \
-              (name,data.min(),units,data.max(),units,data.sum()/(x.size*y.size),units)
-        subplot(1,2,j)
-        pcolor(x/1000.0,y/1000.0,data,vmin=data.min(),vmax=data.max())
+              (name, data.min(), units, data.max(), units, data.sum() / (x.size * y.size), units)
+        subplot(1, 2, j)
+        pcolor(x / 1000.0, y / 1000.0, data, vmin=data.min(), vmax=data.max())
         colorbar()
         gca().set_aspect('equal')
         gca().autoscale(tight=True)
         xlabel('x  (km)')
         ylabel('y  (km)')
 
-speed = sqrt(velx*velx + vely*vely)
+speed = sqrt(velx * velx + vely * vely)
 
 plotvelx = velx.copy()
 plotvely = vely.copy()
@@ -139,7 +139,7 @@ if args.b > 0.0:
     speed[speed > args.b] = args.b
 
 figure(1)
-quiver(x/1000.0,y/1000.0,plotvelx,plotvely,speed)
+quiver(x / 1000.0, y / 1000.0, plotvelx, plotvely, speed)
 colorbar()
 gca().set_aspect('equal')
 gca().autoscale(tight=True)
@@ -147,12 +147,12 @@ xlabel('x  (km)')
 ylabel('y  (km)')
 
 if args.q:
-     print "  maximum water flux magnitude = %8.3f %s" % (speed.max(),units)
-     titlestr = "water flux in %s" % units
+    print "  maximum water flux magnitude = %8.3f %s" % (speed.max(), units)
+    titlestr = "water flux in %s" % units
 else:
-     print "  maximum water speed = %8.3f %s = %6.3f %s" % \
-        (speed.max(),units,speed.max()/3600.0,'m s-1')  # assumes units is m hr-1
-     titlestr = "water velocity in %s" % units
+    print "  maximum water speed = %8.3f %s = %6.3f %s" % \
+        (speed.max(), units, speed.max() / 3600.0, 'm s-1')  # assumes units is m hr-1
+    titlestr = "water velocity in %s" % units
 title(titlestr)
 
 show()

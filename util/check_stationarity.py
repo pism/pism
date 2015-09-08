@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package check_stationarity
+# @package check_stationarity
 # \author Andy Aschwanden, University of Alaska Fairbanks, USA
 # \brief Script to evaluate stationarity of a variable.
 # \details Given a time series of a variabale \f$ X \f$, it computes the
@@ -23,14 +23,14 @@ from optparse import OptionParser
 
 __author__ = "Andy Aschwanden"
 
-## If no threshold is given, set it to 1e1
+# If no threshold is given, set it to 1e1
 THRESHOLD = 1e1
-## This is the default variable to calculate norm from
+# This is the default variable to calculate norm from
 X = 'enthalpybase'
-## Default norm is the euclidian norm, 2-norm
+# Default norm is the euclidian norm, 2-norm
 PNORM = float(2)
 
-## Set up the option parser
+# Set up the option parser
 parser = OptionParser()
 parser.usage = "usage: %prog [options] FILE"
 parser.description = '''Check stationarity of a variable in FILE by calculating
@@ -49,29 +49,29 @@ parser.add_option("-t", "--threshold", dest="threshold",
 parser.add_option("-v", "--variable", dest="varname", type='string',
                   help="calculate from from variable X (default=enthalpybase)",
                   metavar="VAR", default=X)
-## Run the option parser
+# Run the option parser
 (options, args) = parser.parse_args()
 
-## Assign threshold
+# Assign threshold
 threshold = options.threshold
-## Assign variable name
+# Assign variable name
 varname = options.varname
-## Assign norm
+# Assign norm
 p = options.pnorm
-## Assign stride value
+# Assign stride value
 stride = options.stride
 
 if len(args) == 1:
-    ## Retrieve command line argument (name of input file)
+    # Retrieve command line argument (name of input file)
     infile = args[0]
 else:
     print('wrong number arguments, must be 1')
-    ## If number of arguments is wrong, print help to give user some clues.
+    # If number of arguments is wrong, print help to give user some clues.
     parser.print_help()
     exit(0)
 
 
-## Opens a netCDF file.
+# Opens a netCDF file.
 #
 # Open netCDF file and check that time dimension exists.
 # On success, a pointer to the file is returned, otherwise an error is issued.
@@ -89,7 +89,7 @@ def open_ncfile(infile):
     return nc
 
 
-## Calculate rate of change.
+# Calculate rate of change.
 #
 # Calculate rate of change of p-norm of variable \f$ X \f$.
 def getRateOfChange(t, X, p, varname):
@@ -128,7 +128,7 @@ def getRateOfChange(t, X, p, varname):
     return dXpdt
 
 
-## Unit converter
+# Unit converter
 def unit_converter(data, inunit, outunit):
     '''
     Unit converter. Takes an (numpy) array, valid udunits inunits and outunits
@@ -174,10 +174,10 @@ def unit_converter(data, inunit, outunit):
 
 if __name__ == "__main__":
 
-    ## Open netCDF file
+    # Open netCDF file
     nc = open_ncfile(infile)
 
-    ## time variable t
+    # time variable t
     t_units = nc.variables['time'].units
     try:
         date_prefix = 'since'
@@ -194,11 +194,11 @@ if __name__ == "__main__":
         print("error: variable '%s' not found in %s" % (varname, infile))
         exit(0)
 
-    ## Calculate rate of change from time t, variable var,
-    ## norm p and variable name varname
+    # Calculate rate of change from time t, variable var,
+    # norm p and variable name varname
     dVpdt = getRateOfChange(t, var, p, varname)
 
-    ## Make plot with log-scale y-axis
+    # Make plot with log-scale y-axis
     plt.figure()
     plt.hold(True)
     plt.semilogy(t[1::stride], dVpdt, 'b', lw=2)

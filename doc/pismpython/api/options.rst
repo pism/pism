@@ -12,7 +12,5 @@ Helper functions to make working with the PISM/PETSc option system more pythonic
 
 .. automodule:: PISM.options
    :members:
-   :undoc-members:
    :private-members:
-   :special-members:
    :show-inheritance:

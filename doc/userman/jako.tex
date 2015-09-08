@@ -152,7 +152,7 @@ It produces three files which can be viewed (e.g.~with \texttt{ncview}): \texttt
 $ PISM_DO=echo ./spinup.sh 4 125 86 | less
 \end{verbatim}
 \normalsize\end{quote}
-\item  We use \texttt{-boot_file} on \texttt{jako.nc}, so we get to choose our grid, and (as usual in PISM with \texttt{-boot_file}) the fields are interpolated to our grid.
+\item  We use \texttt{-i jako.nc -bootstrap}, so we get to choose our grid, and (as usual in PISM with \texttt{-bootstrap}) the fields are interpolated to our grid.
 \item A modestly-fine vertical grid with 20 m spacing is chosen, but even finer is recommended, especially to resolve the temperate ice layer in these outlet glaciers.
 \item There is an option \intextoption{no_model_strip} \texttt{10} asking \texttt{pismo} to put a 10\,km strip around edge of the computational domain.  This strip is entirely outside of the drainage basin defined by \texttt{ftt_mask}.  In this strip the thermodynamical spun-up variables \texttt{bmelt,tillwat,enthalpy,litho_temp} from \texttt{g5km_bc.nc} are held fixed and used as boundary conditions for the conservation of energy model.  A key part of putting these boundary conditions into the model strip are the options
 \begin{quote}\small

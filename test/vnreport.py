@@ -10,7 +10,9 @@ except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
+
 class Plotter:
+
     def __init__(self, save_figures, nc, file_format):
         self.save_figures = save_figures
         self.nc = nc
@@ -31,10 +33,12 @@ class Plotter:
         dx = self.nc.variables[x][mask]
         dim = log10(dx)
 
-        figure(figsize=(10,6)); clf(); hold(True)
+        figure(figsize=(10, 6))
+        clf()
+        hold(True)
 
         colors = ['red', 'blue', 'green', 'black', 'brown', 'cyan']
-        for (v,c) in zip(vars,colors):
+        for (v, c) in zip(vars, colors):
             # Get a particular variable, transform and fit a line through it:
             data = log10(self.nc.variables[v][mask])
             p = polyfit(dim, data, 1)
@@ -58,14 +62,16 @@ class Plotter:
             # Variable label:
             var_label = "%s, $O(%s^{%1.2f})$" % (name, dim_name, p[0])
 
+            print "Test {} {}: convergence rate: O(dx^{:1.4f})".format(testname, name, p[0])
+
             # Plot errors and the linear fit:
             plot(dim, data, label=var_label, marker='o', color=c)
             plot(dim, polyval(p, dim), ls="--", color=c)
 
         # Shrink axes, then expand vertically to have integer powers of 10:
         axis('tight')
-        _,_,ymin,ymax = axis()
-        axis(ymin = floor(ymin), ymax = ceil(ymax))
+        _, _, ymin, ymax = axis()
+        axis(ymin=floor(ymin), ymax=ceil(ymax))
 
         # Switch to km if dx (dy, dz) are big:
         units = self.nc.variables[x].units
@@ -77,8 +83,8 @@ class Plotter:
         xlabel("$%s$ (%s)" % (dim_name, units))
 
         # Use default (figured out by matplotlib) locations, but change labels for y-ticks:
-        loc,_ = yticks()
-        yticks(loc, map(lambda(x) : "$10^{%1.1f}$" % x, loc))
+        loc, _ = yticks()
+        yticks(loc, map(lambda(x): "$10^{%1.1f}$" % x, loc))
 
         # Make sure that all variables given have the same units:
         try:
@@ -91,7 +97,7 @@ class Plotter:
             pass
 
         # Legend, grid and the title:
-        legend(loc='best', borderpad=1, labelspacing = 0.5, handletextpad = 0.75, handlelength = 0.02)
+        legend(loc='best', borderpad=1, labelspacing=0.5, handletextpad=0.75, handlelength=0.02)
         #  prop = FontProperties(size='smaller'),
         grid(True)
         title("Test %s %s (%s)" % (testname, plot_title, self.nc.source))
@@ -113,8 +119,8 @@ class Plotter:
 
             # errors that are reported for test E only:
             if (test_name == 'E'):
-                self.plot('dx', ["maximum_basal_velocity", "average_basal_velocity"], 'E' , r"basal velocity errors")
-                self.plot('dx', ["maximum_basal_u", "maximum_basal_v"], 'E' , "basal velocity (ub and vb) errors")
+                self.plot('dx', ["maximum_basal_velocity", "average_basal_velocity"], 'E', r"basal velocity errors")
+                self.plot('dx', ["maximum_basal_u", "maximum_basal_v"], 'E', "basal velocity (ub and vb) errors")
                 self.plot('dx', ["relative_basal_velocity"], 'E', "relative basal velocity errors")
 
             # F and G temperature, sigma and velocity errors:
@@ -122,14 +128,13 @@ class Plotter:
                 self.plot('dx', ["maximum_sigma", "average_sigma"],
                           test_name, "strain heating errors")
                 self.plot('dx', ["maximum_temperature", "average_temperature",
-                                                   "maximum_basal_temperature", "average_basal_temperature"],
+                                 "maximum_basal_temperature", "average_basal_temperature"],
                           test_name, "ice temperature errors")
 
                 self.plot('dx', ["maximum_surface_velocity", "maximum_surface_w"],
                           test_name, "maximum ice surface velocity errors")
                 self.plot('dx', ["average_surface_velocity", "average_surface_w"],
                           test_name, "average ice surface velocity errors")
-
 
             # test I: plot only the u component
             if test_name == 'I':
@@ -142,19 +147,19 @@ class Plotter:
             if test_name in ['J', 'M']:
                 self.plot('dx', ["relative_velocity"],
                           test_name, "relative velocity errors")
-                self.plot('dx', ["maximum_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
+                self.plot('dx', ["max_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
                           test_name, "velocity errors")
 
             # test K temperature errors:
             if (test_name == 'K'):
                 self.plot('dz', ["maximum_temperature", "average_temperature",
-                                                   "maximum_bedrock_temperature", "average_bedrock_temperature"],
+                                 "maximum_bedrock_temperature", "average_bedrock_temperature"],
                           'K', "temperature errors")
 
             # test O temperature and basal melt rate errors:
             if (test_name == 'O'):
                 self.plot('dz', ["maximum_temperature", "average_temperature",
-                                                   "maximum_bedrock_temperature", "average_bedrock_temperature"],
+                                 "maximum_bedrock_temperature", "average_bedrock_temperature"],
                           'K', "temperature errors")
                 self.plot('dz', ["maximum_basal_melt_rate"],
                           'O', "basal melt rate errors")
@@ -204,6 +209,7 @@ p = Plotter(options.save_figures, input_file, options.file_format)
 p.plot_tests(tests_to_plot)
 try:
     # show() will break if we didn't plot anything
-    show()
+    if not options.save_figures:
+        show()
 except:
     pass

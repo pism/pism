@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,12 +20,16 @@
 #define __BedSmoother_hh
 
 #include <petsc.h>
-#include "iceModelVec.hh"
+
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
 
 class IceGrid;
 class Config;
+
+namespace stressbalance {
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!
@@ -61,38 +65,41 @@ class Config;
   internal fields, and update them in the return fields `thksmooth`, `theta`,
   if asked.  In IceModel::velocitySIAStaggered()
   \code
-  BedSmoother smoother(grid, config, 2);
+  BedSmoother smoother(grid, 2);
   const double n = 3.0,
   lambda = 50.0e3;
   ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
   ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
   ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
   \endcode
-  See IceGrid and Config documentation for initializing `grid` and
-  `config`.  Note we assume `topg`, `usurf`, `thk`, `thksmooth`, and `theta`
-  are all created IceModelVec2S instances.
+  See IceGrid documentation for initializing `grid`. Note we assume
+  `topg`, `usurf`, `thk`, `thksmooth`, and `theta` are all created
+  IceModelVec2S instances.
 */
 class BedSmoother {
 public:
-  BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS);
+  BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS);
   virtual ~BedSmoother();
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg);
+  virtual void preprocess_bed(const IceModelVec2S &topg);
 
   // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
-  virtual PetscErrorCode get_smoothing_domain(int &Nx_out, int &Ny_out);
+  virtual void get_smoothing_domain(int &Nx_out, int &Ny_out);
 
-  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
-                                          IceModelVec2Int &mask, IceModelVec2S *thksmooth);
-  virtual PetscErrorCode get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
+  virtual void get_smoothed_thk(const IceModelVec2S &usurf,
+                                const IceModelVec2S &thk,
+                                const IceModelVec2Int &mask,
+                                IceModelVec2S &thksmooth);
+  virtual void get_theta(const IceModelVec2S &usurf,
+                         IceModelVec2S &result);
 
   const IceModelVec2S& get_smoothed_bed();
 protected:
   //! smoothed bed elevation; set by calling preprocess_bed()
   IceModelVec2S topgsmooth;
 
-  IceGrid &grid;
-  const Config &config;
+  IceGrid::ConstPtr grid;
+  const Config::ConstPtr config;
   IceModelVec2S maxtl, C2, C3, C4;
 
   int Nx, Ny;  //!< number of grid points to smooth over; e.g.
@@ -101,21 +108,22 @@ protected:
 
   double m_Glen_exponent, m_smoothing_range;
 
-  PetscErrorCode allocate(int MAX_GHOSTS);
-  PetscErrorCode deallocate();
+  void allocate(int MAX_GHOSTS);
+  void deallocate();
 
-  Vec topgp0,         //!< original bed elevation on processor 0
+  petsc::Vec::Ptr topgp0,         //!< original bed elevation on processor 0
     topgsmoothp0,   //!< smoothed bed elevation on processor 0
     maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
     C2p0, C3p0, C4p0;
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg,
-                                        int Nx_in, int Ny_in);
+  virtual void preprocess_bed(const IceModelVec2S &topg,
+                              unsigned int Nx_in, unsigned int Ny_in);
 
-  PetscErrorCode smooth_the_bed_on_proc0();
-  PetscErrorCode compute_coefficients_on_proc0();
+  void smooth_the_bed_on_proc0();
+  void compute_coefficients_on_proc0();
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif  // __BedSmoother_hh

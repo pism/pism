@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2015 Jed Brown and Ed Bueler and Constantine Khroulev
   
    This file is part of Pism.
   
@@ -67,48 +67,109 @@ int main() {
   const double SperA=31556926.0;  /* seconds per year; 365.2422 days */
   const double Cp=200.0;     /* m;  magnitude of the perturbation in test G */
   double year, r, HF, MF, HG, MG;
-  double *z, *TF, *UF, *wF, *SigF, *SigcF, *TG, *UG, *wG, *SigG, *SigcG;
+  double *z = NULL, *TF = NULL, *UF = NULL, *wF = NULL,
+    *SigF = NULL, *SigcF = NULL, *TG = NULL, *UG = NULL,
+    *wG = NULL, *SigG = NULL, *SigcG = NULL;
   int j, Mz, scanret;
 
   printf("Enter  t  and  r  separated by space (or newline)\n");
   printf("       (in yrs and km, resp.; e.g. 500 500):\n");
   scanret = scanf("%lf",&year);
-  if (scanret != 1) {  printf("... input error; exiting\n");  return 1;  }
+  if (scanret != 1) {
+    printf("... input error; exiting\n");
+    return 1;
+  }
   scanret = scanf("%lf",&r);
-  if (scanret != 1) {  printf("... input error; exiting\n");  return 1;  }
+  if (scanret != 1) {
+    printf("... input error; exiting\n");
+    return 1;
+  }
   printf("Enter  z  values sep by space (in m);");
   printf(" '-1' to end; e.g. 0 100 500 1500 -1:\n");
 
   z = (double *) malloc(501 * sizeof(double));
   if (z == NULL) { 
     fprintf(stderr, "\nERROR simpleFG: couldn't allocate memory for z!\n\n");
-    return -9999;
+    goto cleanup;
   }
 
   j=0;
   do {
     scanret = scanf("%lf",&z[j]);
-    if (scanret != 1) {  printf("... input error; exiting\n");  return 1;  }
+    if (scanret != 1) {
+      printf("... input error; exiting\n");
+      goto cleanup;
+    }
     j++;
-    if (j>490) printf("\n\n\nWARNING simpleFG: enter -1 to stop soon!!!\n");
+    if (j>490) {
+      printf("\n\n\nWARNING simpleFG: enter -1 to stop soon!!!\n");
+    }
   } while (z[j-1]>=0.0);
   Mz=j-1;
 
+  if (Mz < 1) {
+    fprintf(stderr, "\nERROR simpleFG: need to have at least one z level!\n\n");
+    goto cleanup;
+  }
+
   TF = (double *) malloc((size_t)Mz * sizeof(double));
+  if (TF == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   UF = (double *) malloc((size_t)Mz * sizeof(double));
+  if (UF == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
   wF = (double *) malloc((size_t)Mz * sizeof(double));
+
+  if (wF == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   SigF = (double *) malloc((size_t)Mz * sizeof(double));
+  if (SigF == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   SigcF = (double *) malloc((size_t)Mz * sizeof(double));
+  if (SigcF == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   TG = (double *) malloc((size_t)Mz * sizeof(double));
+  if (TG == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   UG = (double *) malloc((size_t)Mz * sizeof(double));
+  if (UG == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   wG = (double *) malloc((size_t)Mz * sizeof(double));
+  if (wG == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   SigG = (double *) malloc((size_t)Mz * sizeof(double));
+  if (SigG == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
+  }
+
   SigcG = (double *) malloc((size_t)Mz * sizeof(double));
-  if ((TF == NULL) || (UF == NULL) || (wF == NULL) || (SigF == NULL)
-      || (SigcF == NULL) || (TG == NULL) || (UG == NULL) || (wG == NULL)
-      || (SigG == NULL) || (SigcG == NULL)) { 
-    fprintf(stderr, "\nERROR simpleFG: couldn't allocate memory!\n\n");
-    return -9999; 
+  if (SigcG == NULL) {
+    fprintf(stderr, "\n memory allocation failed\n");
+    goto cleanup;
   }
 
   /* evaluate tests F and G */
@@ -134,6 +195,8 @@ int main() {
   }
   printf("(units: (*) = 10^-3 K/a)\n");
 
+ cleanup:
+  /* Note that free(NULL) is a no-op. */
   free(z);
   free(TF); free(UF); free(wF); free(SigF); free(SigcF); 
   free(TG); free(UG); free(wG); free(SigG); free(SigcG); 

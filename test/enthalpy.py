@@ -6,11 +6,17 @@ import PISM
 import numpy as np
 import pylab as plt
 
+
 class EnthalpyTest(object):
+
     def __init__(self, Mz=101, dt=0.1):
         ctx = PISM.Context()
         self.EC = PISM.EnthalpyConverter(ctx.config)
         self.grid = ctx.newgrid()
+
+        grid = self.grid
+
+        sys = grid.ctx().unit_system()
 
         self.Lx = 1e5
         self.Ly = 1e5
@@ -18,25 +24,27 @@ class EnthalpyTest(object):
         self.Mx = 3
         self.My = 3
         self.Mz = Mz
-        self.dt = self.grid.convert(dt, "years", "seconds")
+        self.dt = PISM.convert(sys, dt, "years", "seconds")
 
-        PISM.model.initGrid(self.grid, self.Lx, self.Ly, self.Lz,
+        PISM.model.initGrid(grid, self.Lx, self.Ly, self.Lz,
                             self.Mx, self.My, self.Mz,
                             PISM.NOT_PERIODIC)
 
-        self.z = np.array(self.grid.zlevels_fine)
+        self.z = np.array(grid.zlevels_fine)
 
-        self.enthalpy = PISM.model.createEnthalpyVec(self.grid)
+        self.enthalpy = PISM.model.createEnthalpyVec(grid)
 
+        self.strain_heating = PISM.model.createStrainHeatingVec(grid)
 
-        self.strain_heating = PISM.model.createStrainHeatingVec(self.grid)
+        self.u, self.v, self.w = PISM.model.create3DVelocityVecs(grid)
 
-        self.u, self.v, self.w = PISM.model.create3DVelocityVecs(self.grid)
-
-        self.esys = PISM.enthSystemCtx(ctx.config, self.enthalpy,
-                                       self.grid.dx, self.grid.dy, self.dt,
-                                       self.grid.dz_fine, self.grid.Mz_fine,
-                                       "enth", self.EC)
+        self.esys = PISM.enthSystemCtx(grid.Mz_fine, "enth",
+                                       grid.dx(), grid.dy(), grid.dz_fine, self.dt,
+                                       ctx.config,
+                                       self.enthalpy,
+                                       self.u, self.v, self.w,
+                                       self.strain_heating,
+                                       self.EC)
         # zero ice velocity:
         self.reset_flow()
         # no strain heating:
@@ -51,8 +59,8 @@ class EnthalpyTest(object):
         self.strain_heating.set(0.0)
 
     def init_column(self):
-        self.esys.initThisColumn(1, 1, False, # NOT marginal (but it does not matter)
-                                 self.Lz, self.u, self.v, self.w, self.strain_heating)
+        self.esys.initThisColumn(1, 1, False, self.Lz)  # NOT marginal (but it does not matter)
+
 
 def dirichlet_test(dt):
     """Test the enthalpy solver with Dirichlet B.C. at the base and
@@ -60,15 +68,15 @@ def dirichlet_test(dt):
     """
     T = EnthalpyTest(dt=dt)
 
-    E_surface = T.EC.getEnth(270.0, 0.0, 0.0)
-    E_base = T.EC.getEnth(230.0, 0.0, T.EC.getPressureFromDepth(T.Lz))
+    E_surface = T.EC.enthalpy(270.0, 0.0, 0.0)
+    E_base = T.EC.enthalpy(230.0, 0.0, T.EC.getPressureFromDepth(T.Lz))
 
     T.enthalpy.set(E_base)
 
     def E_exact(z):
         """Exact solution is a straight line connecting basal and surface
         conditions."""
-        return E_base + (z/T.Lz) * (E_surface - E_base)
+        return E_base + (z / T.Lz) * (E_surface - E_base)
 
     with PISM.vec.Access(nocomm=[T.enthalpy, T.u, T.v, T.w, T.strain_heating]):
         T.init_column()
@@ -81,6 +89,7 @@ def dirichlet_test(dt):
         plt.plot(T.z, x, label="dt={}".format(dt))
         plt.plot(T.z, E_exact(T.z))
 
+
 def neumann_bc_base_test(dt):
     """Test the enthalpy solver with Neumann B.C. at the base and
     Dirichlet B.C. at the surface.
@@ -88,7 +97,7 @@ def neumann_bc_base_test(dt):
 
     T = EnthalpyTest(dt=dt)
 
-    E_surface = T.EC.getEnth(270.0, 0.0, 0.0)
+    E_surface = T.EC.enthalpy(270.0, 0.0, 0.0)
 
     T.enthalpy.set(0.0)
 
@@ -111,14 +120,14 @@ def neumann_bc_base_test(dt):
 if __name__ == "__main__":
     plt.figure(1)
     plt.hold(True)
-    for dt in [10**x for x in range(1,6)]:
+    for dt in [10 ** x for x in range(1, 6)]:
         dirichlet_test(dt)
     plt.grid(True)
     plt.legend()
 
     plt.figure(2)
     plt.hold(True)
-    for dt in [10**x for x in range(1,6)]:
+    for dt in [10 ** x for x in range(1, 6)]:
         neumann_bc_base_test(dt)
     plt.grid(True)
     plt.legend()

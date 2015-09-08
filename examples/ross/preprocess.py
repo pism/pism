@@ -14,6 +14,7 @@ import os
 smb_name = "climatic_mass_balance"
 temp_name = "ice_surface_temp"
 
+
 def run(commands):
     """Run a list of commands (or one command given as a string)."""
     if isinstance(commands, (list, tuple)):
@@ -22,6 +23,7 @@ def run(commands):
             subprocess.call(cmd.split(' '))
     else:
         run([commands])
+
 
 def preprocess_ice_velocity():
     """
@@ -32,7 +34,7 @@ def preprocess_ice_velocity():
     input_filename = "antarctica_ice_velocity.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    commands = ["wget -nc %s%s.gz" % (url, input_filename), # NSIDC supports compression on demand!
+    commands = ["wget -nc %s%s.gz" % (url, input_filename),  # NSIDC supports compression on demand!
                 "gunzip %s.gz" % input_filename,
                 "ncrename -d nx,x -d ny,y -O %s %s" % (input_filename, input_filename)
                 ]
@@ -97,7 +99,7 @@ def preprocess_ice_velocity():
 
             v_magnitude = np.zeros_like(vx)
 
-            v_magnitude = np.sqrt(vx**2 + vy**2)
+            v_magnitude = np.sqrt(vx ** 2 + vy ** 2)
 
             magnitude = nc.createVariable('v_magnitude', 'f8', ('y', 'x'))
             magnitude.units = "m / year"
@@ -108,6 +110,7 @@ def preprocess_ice_velocity():
 
     return output_filename
 
+
 def preprocess_albmap():
     """
     Download and preprocess the ~16Mb ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
@@ -117,11 +120,11 @@ def preprocess_albmap():
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
     commands = ["wget -nc %s" % url,                # download
-                "unzip -n %s.zip" % input_filename, # unpack
+                "unzip -n %s.zip" % input_filename,  # unpack
                 # modify this command to cut out a different region
-                "ncks -O -d x1,439,649 -d y1,250,460 %s %s" % (input_filename, output_filename), # cut out
-                "ncks -O -v usrf,lsrf,topg,temp,acca,mask %s %s" % (output_filename, output_filename), # trim
-                "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename, # fix metadata
+                "ncks -O -d x1,439,649 -d y1,250,460 %s %s" % (input_filename, output_filename),  # cut out
+                "ncks -O -v usrf,lsrf,topg,temp,acca,mask %s %s" % (output_filename, output_filename),  # trim
+                "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename,  # fix metadata
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
     run(commands)
@@ -153,7 +156,6 @@ def preprocess_albmap():
 
         thk[:] = usrf - lsrf
 
-
     nc.projection = "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=0 +lat_0=-90 +lat_ts=-71 +units=m"
     nc.close()
 
@@ -162,6 +164,7 @@ def preprocess_albmap():
     run(command)
 
     return output_filename
+
 
 def final_corrections(filename):
     """
@@ -185,42 +188,42 @@ def final_corrections(filename):
     def is_grounded(thickness, bed):
         rho_ice = 910.0
         rho_seawater = 1028.0
-        return bed + thickness > 0 + (1 - rho_ice/rho_seawater) * thickness
+        return bed + thickness > 0 + (1 - rho_ice / rho_seawater) * thickness
 
-    grounded_icy      = 0
+    grounded_icy = 0
     grounded_ice_free = 1
-    ocean_icy         = 2
-    ocean_ice_free    = 3
+    ocean_icy = 2
+    ocean_ice_free = 3
 
     My, Mx = thk.shape
     for j in xrange(My):
         for i in xrange(Mx):
-            if is_grounded(thk[j,i], topg[j,i]):
-                if thk[j,i] > 1.0:
-                    mask[j,i] = grounded_icy
+            if is_grounded(thk[j, i], topg[j, i]):
+                if thk[j, i] > 1.0:
+                    mask[j, i] = grounded_icy
                 else:
-                    mask[j,i] = grounded_ice_free
+                    mask[j, i] = grounded_ice_free
             else:
-                if thk[j,i] > 1.0:
-                    mask[j,i] = ocean_icy
+                if thk[j, i] > 1.0:
+                    mask[j, i] = ocean_icy
                 else:
-                    mask[j,i] = ocean_ice_free
+                    mask[j, i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bcflag = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
+    bc_mask = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
     # mark ocean_icy cells next to grounded_icy ones too:
-    row = np.array([ 0, -1, 1,  0])
+    row = np.array([0, -1, 1,  0])
     col = np.array([-1,  0, 0,  1])
-    for j in xrange(1, My-1):
-        for i in xrange(1, Mx-1):
+    for j in xrange(1, My - 1):
+        for i in xrange(1, Mx - 1):
             nearest = mask[j + row, i + col]
 
-            if mask[j,i] == ocean_icy and np.any(nearest == grounded_icy):
-                bcflag[j,i] = 1
+            if mask[j, i] == ocean_icy and np.any(nearest == grounded_icy):
+                bc_mask[j, i] = 1
 
     # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
-    bcflag[thk < 1.0] = 0
+    bc_mask[thk < 1.0] = 0
 
     # modifications for the prognostic run
     # this is to avoid grounding in the ice-shelf interior to make the results comparable to the diagnostic flow field
@@ -232,12 +235,12 @@ def final_corrections(filename):
 
     nc.variables[temp_name][:] = temperature
     nc.variables['topg'][:] = topg
-    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-    bcflag_var[:] = bcflag
+    bc_mask_var = nc.createVariable('bc_mask', 'i', ('y', 'x'))
+    bc_mask_var[:] = bc_mask
 
-    bad_bcflag_mask = np.logical_and(thk < 1.0, bcflag == 1)
-    bad_bcflag_var = nc.createVariable('bad_bcflag', 'i', ('y', 'x'))
-    bad_bcflag_var[:] = bad_bcflag_mask
+    bad_bc_mask_mask = np.logical_and(thk < 1.0, bc_mask == 1)
+    bad_bc_mask_var = nc.createVariable('bad_bc_mask', 'i', ('y', 'x'))
+    bad_bc_mask_var[:] = bad_bc_mask_mask
 
     mask_var = nc.createVariable('mask', 'i', ('y', 'x'))
     mask_var[:] = mask
@@ -248,7 +251,7 @@ if __name__ == "__main__":
 
     velocity = preprocess_ice_velocity()
     albmap = preprocess_albmap()
-    albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid
+    albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc"  # ice velocity on the ALBMAP grid
     output = "Ross_combined.nc"
 
     commands = ["nc2cdo.py %s" % velocity,

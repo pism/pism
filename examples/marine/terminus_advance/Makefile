@@ -9,13 +9,13 @@ input.nc: generate_input.py
 	python ./generate_input.py -M 201 -o $@
 
 default: input.nc
-	pismr -boot_file input.nc ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc
+	pismr -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc
 
 part_grid: input.nc
-	pismr -boot_file input.nc ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc -part_grid
+	pismr -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc -part_grid
 
 part_redist: input.nc
-	pismr -boot_file input.nc ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc -part_grid -part_redist
+	pismr -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc -part_grid -part_redist
 
 clean:
 	@rm -f *.nc*

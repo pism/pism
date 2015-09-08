@@ -15,6 +15,7 @@ except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
+
 def parse_filename(filename, opts):
     "Get MISMIP info from a file name."
     tokens = filename.split('_')
@@ -61,6 +62,7 @@ def parse_filename(filename, opts):
 
     return model, experiment, mode, step
 
+
 def process_options():
     "Process command-line options and arguments."
     parser = OptionParser()
@@ -95,6 +97,7 @@ def process_options():
 
     return args, opts.output, opts
 
+
 def read(filename, name):
     "Read a variable and extract the middle row."
     nc = NC(filename)
@@ -111,15 +114,16 @@ def read(filename, name):
     elif N == 2:
         return var[1]               # get the middle row
     elif N == 3:
-        return var[-1,1]            # get the middle row of the last record
+        return var[-1, 1]            # get the middle row of the last record
     else:
         raise Exception("Can't read %s. (It's %d-dimensional.)" % (name, N))
+
 
 def find_grounding_line(x, topg, thk, mask):
     "Find the modeled grounding line position."
     # "positive" parts of x, topg, thk, mask
     topg = topg[x > 0]
-    thk  = thk[x > 0]
+    thk = thk[x > 0]
     mask = mask[x > 0]
     x = x[x > 0]                        # this should go last
 
@@ -129,13 +133,14 @@ def find_grounding_line(x, topg, thk, mask):
         return (z_sl - topg[j]) * MISMIP.rho_w() / (MISMIP.rho_i() * thk[j])
 
     for j in xrange(x.size):
-        if mask[j] == 2 and mask[j + 1] == 3: # j is grounded, j+1 floating
-            nabla_f = (f(j+1) - f(j)) / (x[j+1] - x[j])
+        if mask[j] == 2 and mask[j + 1] == 3:  # j is grounded, j+1 floating
+            nabla_f = (f(j + 1) - f(j)) / (x[j + 1] - x[j])
 
             # See equation (8) in Pattyn et al
             return (1.0 - f(j) + nabla_f * x[j]) / nabla_f
 
     raise Exception("Can't find the grounding line")
+
 
 def plot_profile(in_file, out_file):
     print "Reading %s to plot geometry profile for model %s, experiment %s, grid mode %s, step %s" % (
@@ -144,11 +149,11 @@ def plot_profile(in_file, out_file):
     if out_file is None:
         out_file = os.path.splitext(in_file)[0] + "-profile.pdf"
 
-    mask  = read(in_file, 'mask')
+    mask = read(in_file, 'mask')
     usurf = read(in_file, 'usurf')
-    topg  = read(in_file, 'topg')
-    thk   = read(in_file, 'thk')
-    x     = read(in_file, 'x')
+    topg = read(in_file, 'topg')
+    thk = read(in_file, 'thk')
+    x = read(in_file, 'x')
 
     # theoretical grounding line position
     xg = MISMIP.x_g(experiment, step)
@@ -176,17 +181,18 @@ def plot_profile(in_file, out_file):
     xlabel('distance from the divide, km')
     ylabel('elevation, m')
     title("MISMIP experiment %s, step %d" % (experiment, step))
-    text(0.6,0.9,"$x_g$ (model) = %4.0f km" % (xg_PISM/1e3), color='r',
+    text(0.6, 0.9, "$x_g$ (model) = %4.0f km" % (xg_PISM / 1e3), color='r',
          transform=ax.transAxes)
-    text(0.6,0.85,"$x_g$ (theory) = %4.0f km" % (xg/1e3), color='black',
+    text(0.6, 0.85, "$x_g$ (theory) = %4.0f km" % (xg / 1e3), color='black',
          transform=ax.transAxes)
 
     _, _, ymin, ymax = axis(xmin=0, xmax=x.max())
-    vlines(xg/1e3, ymin, ymax, linestyles='dashed', color='black')
-    vlines(xg_PISM/1e3, ymin, ymax, linestyles='dashed', color='red')
+    vlines(xg / 1e3, ymin, ymax, linestyles='dashed', color='black')
+    vlines(xg_PISM / 1e3, ymin, ymax, linestyles='dashed', color='red')
 
     print "Saving '%s'...\n" % out_file
     savefig(out_file)
+
 
 def plot_flux(in_file, out_file):
     print "Reading %s to plot ice flux for model %s, experiment %s, grid mode %s, step %s" % (
@@ -195,22 +201,22 @@ def plot_flux(in_file, out_file):
     if out_file is None:
         out_file = os.path.splitext(in_file)[0] + "-flux.pdf"
 
-    x    = read(in_file, 'x')
+    x = read(in_file, 'x')
     flux_mag = read(in_file, 'flux_mag')
 
     # plot positive xs only
     flux_mag = flux_mag[x >= 0]
-    x    = x[x >= 0]
+    x = x[x >= 0]
 
     figure(2)
     hold(True)
 
-    plot(x/1e3, flux_mag, 'k.-', markersize=10, linewidth=2)
-    plot(x/1e3, x * MISMIP.a() * MISMIP.secpera(), 'r:', linewidth=1.5)
+    plot(x / 1e3, flux_mag, 'k.-', markersize=10, linewidth=2)
+    plot(x / 1e3, x * MISMIP.a() * MISMIP.secpera(), 'r:', linewidth=1.5)
 
     title("MISMIP experiment %s, step %d" % (experiment, step))
-    xlabel("x ($\mathrm{km}$)",size=14)
-    ylabel(r"flux ($\mathrm{m}^2\,\mathrm{a}^{-1}$)",size=14)
+    xlabel("x ($\mathrm{km}$)", size=14)
+    ylabel(r"flux ($\mathrm{m}^2\,\mathrm{a}^{-1}$)", size=14)
 
     print "Saving '%s'...\n" % out_file
     savefig(out_file, dpi=300, facecolor='w', edgecolor='w')

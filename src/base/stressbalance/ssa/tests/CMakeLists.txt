@@ -1,8 +1,3 @@
-include_directories (
-  ${PROJECT_SOURCE_DIR}/src/verif/tests/
-  ${PROJECT_SOURCE_DIR}/src/base/util
-  ${PROJECT_SOURCE_DIR}/src)
-
 if (Pism_BUILD_EXTRA_EXECS)
   add_executable (ssa_testi ssa_testi.cc
     ${PROJECT_SOURCE_DIR}/src/verif/tests/exactTestsIJ.c

@@ -1,24 +1,10 @@
 
-Ed's cookbook for maintaining PISM:
+FIXME: this cookbook for maintaining PISM should maybe be totally removed
 
-
-0)  How do I put a completely new subdirectory in tags, with a copy of the trunk?
-
-  svn copy svn+ssh://svn.gna.org/svn/pism/trunk/ svn+ssh://svn.gna.org/svn/pism/tags/stable0.999 \
-    -m "Pithy message."
-    
-    
-1)  How do I make a .tar.gz from the current svn?
-
-  Assume that pism-stable0.1/ contains the source.  Then:
-   
-   $ svn export pism-stable0.1/ pism-stable0.1.0           # TELL SVN TO MAKE A CLEAN COPY
-   $ tar -cvzf pism-stable0.1.0.tar.gz pism-stable0.1.0/   # TAR IT UP
-   $ tar -tvf pism-stable0.1.0.tar.gz                      # CHECK ITS CONTENTS
 
 2)  Which files do I need to keep up-to-date at www.pism-docs.org for stable docs?
 
-  These files: manual.pdf, installation.pdf.
+  These files: manual.pdf, installation.pdf, forcing.pdf.
   And a recent version of the source code browser, next.
 
 3)  How do I upload a recent version of the (development) source code browser?
@@ -26,6 +12,9 @@ Ed's cookbook for maintaining PISM:
   Build it, tar it, send to dogbert, then get on dogbert and unzip it in the right place:
   
    $ cd 'pism build directory'
+
+FIXME:  at the current time, "browser", "browser_base", "browser_util" are all missing targets
+
    $ make browser_base                         # tools needed: doxygen, latex
    $ make browser_util
    $ cd doc/browser/                           # in the build dir
@@ -42,33 +31,4 @@ Ed's cookbook for maintaining PISM:
   a remote machine.  If success, log off of dogbert.
   
   To post a stable version, substitute "doxy/" for "doxy-trunk/" above.
-
- 
-4)  How big is the PISM source code?
-
-   $ cd src
-   $ wc -l *.cc base/*.hh base/*.cc coupler/*.hh coupler/*.cc \
-           eismint/*.hh eismint/*.cc earth/*.hh earth/*.cc trypetsc/l*.c \
-           verif/*.hh verif/*.cc verif/tests/*.h verif/tests/*.c \
-           ../examples/*/*.py ../examples/*/*.sh ../test/*/*/*.sh
-  
-  FIXME:  BUT THIS MISSES LOTS ... OF COURSE WHO CARES EXCEPT FOR HISTORICAL ...
-
-  In r1254 this gives 44,586 lines.  Another way to count is to use  wc -c  on
-  the same files.  In r1254 this gives 1575926 characters or about 19,700 lines
-  if a line is 80 characters.
-  
-  The biggest files in r1254 are base/iMreport.cc and base/NCVariable.cc.
-
-  Update (circa r1447):
-
-  Another way to count is
-
-  $ find -E src -regex ".*\.(cc|hh|c|h|py|sh)" | xargs wc -lc
-  
-  [note: "find" doesn't have a "-E" for me in ubuntu.  Ed]
-
-  This gives 63270 lines and 2204839 characters, amounting to 27560 80-character lines.
-
-  A big part of that is license messages and doxygen comments.
 

@@ -1,6 +1,14 @@
 % This is the place to define all the non-standard LaTeX commands needed in PISM Class browser.
 
+% use the math font that works better with sans-serif text fonts
+\usepackage{cmbright}
+
+% partial derivative
 \newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
+% total derivative
+\newcommand{\Diff}[2]{\frac{d #1}{d #2}}
+
+% for discretization schemes
 \newcommand{\dx}{\ensuremath{\Delta x}}
 \newcommand{\dy}{\ensuremath{\Delta y}}
 \newcommand{\dz}{\ensuremath{\Delta z}}

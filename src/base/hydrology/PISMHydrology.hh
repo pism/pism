@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,20 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include <assert.h>
-
-#include "iceModelVec.hh"
-#include "iceModelVec2T.hh"
-#include "PISMComponent.hh"
-#include "PISMStressBalance.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
+
+class IceModelVec2T;
+
+namespace stressbalance {
+class StressBalance;
+}
+
+//! @brief Sub-glacial hydrology models and related diagnostics.
+namespace hydrology {
+
 //! \brief The PISM subglacial hydrology model interface.
 /*!
   This is a virtual base class.
@@ -50,16 +56,18 @@ namespace pism {
   This interface is appropriate to subglacial hydrology models which track a
   two-dimensional water layer with a well-defined thickness and pressure at each
   map-plane location.  The methods subglacial_water_thickness() and
-  subglacial_water_pressure() return amount and pressure.  This subglacial water
-  is *transportable*, that is, it moves along a modeled hydraulic head gradient.
-  Background references for such models include [\ref FlowersClarke2002_theory,
-  \ref Hewittetal2012, \ref Schoofetal2012, \ref Hewitt2013].
+  subglacial_water_pressure() return amount and pressure of the *transportable*
+  water, that is, the subglacial water which moves along a modeled hydraulic
+  head gradient, in contrast to the water stored in the till.
 
-  These models always have a separate, but potentially-coupled, amount of water
-  which is held in local till storage.  It is important to note that the
+  The transportable water moves through a subglacial morphology which is not
+  determined in this base class.
+
+  The Hydrology models have separate, but potentially-coupled, water
+  which is held in local till storage.  Thus the
   transportable water (bwat) and till water (tillwat) thicknesses are different.
   Published models with till storage include [\ref BBssasliding, \ref SchoofTill,
-  \ref TrufferEchelmeyerHarrison2001, \ref Tulaczyketal2000b].
+  \ref TrufferEchelmeyerHarrison2001, \ref Tulaczyketal2000b, \ref vanderWeletal2013].
 
   The till water thickness is can be used, via the theory of
   [\ref Tulaczyketal2000], to compute an effective pressure for the water in the
@@ -92,107 +100,99 @@ namespace pism {
 */
 class Hydrology : public Component_TS {
 public:
-  Hydrology(IceGrid &g, const Config &conf);
+  Hydrology(IceGrid::ConstPtr g);
   virtual ~Hydrology();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class Hydrology_hydrobmelt;
   friend class Hydrology_hydroinput;
 
-  // in the base class these only add/define/write tillwat
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-
   // all Hydrology models have a Wtil state variable, which this returns
-  virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
+  virtual void till_water_thickness(IceModelVec2S &result);
 
   // this diagnostic method returns the standard shallow approximation
-  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
+  virtual void overburden_pressure(IceModelVec2S &result);
 
   // this diagnostic method returns zero in the base class
-  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
+  virtual void wall_melt(IceModelVec2S &result);
 
   // these methods MUST be implemented in the derived class
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode update(double icet, double icedt) = 0;
+  virtual void subglacial_water_thickness(IceModelVec2S &result) = 0;
+  virtual void subglacial_water_pressure(IceModelVec2S &result) = 0;
 
 protected:
+  virtual void update_impl(double icet, double icedt) = 0;
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  // in the base class these only add/define/write tillwat
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
+  virtual void check_Wtil_bounds();
+protected:
   // this model's state
-  IceModelVec2S Wtil;      // effective thickness of till
+  IceModelVec2S m_Wtil;      // effective thickness of till
   // this model's workspace
-  IceModelVec2S total_input, bmelt_local;
+  IceModelVec2S m_total_input, m_bmelt_local;
 
-  // pointers into IceModel; these describe the ice sheet and the source
-  IceModelVec2S *thk,   // ice thickness
-    *bed,   // bed elevation (not all models need this)
-    *cellarea, // projection-dependent area of each cell, used in mass reporting
-    *bmelt; // ice sheet basal melt rate
-  IceModelVec2Int *mask;// floating, grounded, etc. mask
+  bool m_hold_bmelt;
 
-  bool hold_bmelt;
+  IceModelVec2T *m_inputtobed;// time dependent input of water to bed, in addition to bmelt
+  unsigned int m_inputtobed_period;      // in years
+  double m_inputtobed_reference_time; // in seconds
 
-  IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
-  unsigned int inputtobed_period;      // in years
-  double inputtobed_reference_time; // in seconds
-
-  Vars *variables;
-
-  virtual PetscErrorCode get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
-
-  virtual PetscErrorCode check_Wtil_bounds();
 };
 
 
-//! The PISM minimal model has till in a "can". Water that overflows
-//! the can is not conserved. There is no model for lateral transport.
+//! The PISM minimal model has till, but water that exceeds the capacity of the till is not conserved. There is no model for lateral transport.
 /*!
   This is the minimum functional derived class.  It updates till water thickness.
+  It implements a version of the "undrained plastic bed" model of [\ref Tulaczyketal2000b],
+  but with non-conserved drainage.
 
   It has no transportable water and subglacial_water_thickness() returns zero.
 
-  This model can give no meaningful report on conservation errors.
+  This model can give no meaningful report on conservation errors, and thus it
+  does not use the TSDiag objects used by mass-conserving derived classes.
 
-  Here is a talk which illustrates the "till-can" metaphor:
+  This talk illustrates a "till-can" metaphor applicable to this model:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 */
-class NullTransportHydrology : public Hydrology {
+class NullTransport : public Hydrology {
 public:
-  NullTransportHydrology(IceGrid &g, const Config &conf);
-  virtual ~NullTransportHydrology();
+  NullTransport(IceGrid::ConstPtr g);
+  virtual ~NullTransport();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
   //! Sets result to 0.
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+  virtual void subglacial_water_thickness(IceModelVec2S &result);
 
   //! Returns the overburden pressure in hope it is harmless.
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result);
 
+protected:
+  virtual MaxTimestep max_timestep_impl(double t);
   //! Solves an implicit step of a highly-simplified ODE.
-  virtual PetscErrorCode update(double icet, double icedt);
+  virtual void update_impl(double icet, double icedt);
 };
 
 
 //! \brief A subglacial hydrology model which assumes water pressure
 //! equals overburden pressure.
 /*!
-  This is the minimal PISM hydrology model that has lateral motion of
-  subglacial water and which conserves the water mass.  It was promised
-  as a PISM addition in in Bueler's talk at IGS 2012 Fairbanks:
-  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+  This PISM hydrology model has lateral motion of subglacial water and which
+  conserves the water mass.  Further documentation is in [\ref BuelervanPeltDRAFT].
 
   The water velocity is along the steepest descent route for the hydraulic
   potential.  This potential is (mostly) a function of ice sheet geometry,
   because the water pressure is set to the overburden pressure, a simplified but
   well-established model [\ref Shreve1972].  However, the water layer thickness
   is also a part of the hydraulic potential because it is actually the potential
-  of the top of the water layer.
+  of the *top* of the water layer.
 
   This (essential) model has been used for finding locations of subglacial lakes
   [\ref Siegertetal2009, \ref Livingstoneetal2013TCD].  Subglacial lakes occur
@@ -205,15 +205,12 @@ public:
   This model should generally be tested using static ice geometry first, i.e.
   using option -no_mass.
 
-  Use option `-report_mass_accounting` to see stdout reports which balance the
-  books on this model.
-
   The state space includes both the till water effective thickness \f$W_{til}\f$,
   which is in Hydrology, and the transportable water layer thickness \f$W\f$.
 
   For more complete modeling where the water pressure is determined by a
   physical model for the opening and closing of cavities, and where the state
-  space includes a nontrivial pressure variable, see DistributedHydrology.
+  space includes a nontrivial pressure variable, see hydrology::Distributed.
 
   There is an option `-hydrology_null_strip` `X` which produces a strip of
   `X` km around the edge of the computational domain.  In that strip the water flow
@@ -237,139 +234,147 @@ public:
   ice.)  See wall_melt().  At this time the wall melt is diagnostic only and does
   not add to the water amount W; such an addition is generally unstable.
 */
-class RoutingHydrology : public Hydrology {
+class Routing : public Hydrology {
 public:
-  RoutingHydrology(IceGrid &g, const Config &conf);
-  virtual ~RoutingHydrology();
+  Routing(IceGrid::ConstPtr g);
+  virtual ~Routing();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  friend class MCHydrology_ice_free_land_loss_cumulative;
+  friend class MCHydrology_ice_free_land_loss;
+  friend class MCHydrology_ocean_loss_cumulative;
+  friend class MCHydrology_ocean_loss;
+  friend class MCHydrology_negative_thickness_gain_cumulative;
+  friend class MCHydrology_negative_thickness_gain;
+  friend class MCHydrology_null_strip_loss_cumulative;
+  friend class MCHydrology_null_strip_loss;
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void wall_melt(IceModelVec2S &result);
 
-  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
+  virtual void subglacial_water_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
-
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-
-  virtual PetscErrorCode update(double icet, double icedt);
+  virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void update_impl(double icet, double icedt);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+protected:
   // this model's state
-  IceModelVec2S W;      // water layer thickness
+  IceModelVec2S m_W;      // water layer thickness
   // this model's auxiliary variables
-  IceModelVec2Stag V,   // components are
+  IceModelVec2Stag m_V,   // components are
   //   V(i,j,0) = u(i,j) = east-edge  centered x-component of water velocity
   //   V(i,j,1) = v(i,j) = north-edge centered y-component of water velocity
-    Wstag,// edge-centered (staggered) W values (averaged from regular)
-    Kstag,// edge-centered (staggered) values of nonlinear conductivity
-    Qstag;// edge-centered (staggered) advection fluxes
+    m_Wstag,// edge-centered (staggered) W values (averaged from regular)
+    m_Kstag,// edge-centered (staggered) values of nonlinear conductivity
+    m_Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew, Wtilnew, Pover, R;
+  IceModelVec2S m_Wnew, m_Wtilnew, m_Pover, m_R;
 
-  double stripwidth; // width in m of strip around margin where V and W are set to zero;
+  double m_stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
 
-  PetscErrorCode allocate();
-  virtual PetscErrorCode init_bwat(Vars &vars);
+  virtual void init_bwat();
 
-  // when we update the water amounts, careful mass accounting at the
-  // boundary is needed; we update the new thickness variable, typically a
-  // temporary during the update
-  bool report_mass_accounting;
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
-                                               double &icefreelost, double &oceanlost,
-                                               double &negativegain, double &nullstriplost);
+  // when we update the water amounts, careful mass accounting at the boundary
+  // is needed; we update the new thickness variable, a temporary during update
+  virtual void boundary_mass_changes(IceModelVec2S &newthk,
+                                     double &icefreelost, double &oceanlost,
+                                     double &negativegain, double &nullstriplost);
 
-  virtual PetscErrorCode check_water_thickness_nonnegative(IceModelVec2S &thk);
+  double m_ice_free_land_loss_cumulative,
+         m_ocean_loss_cumulative,
+         m_negative_thickness_gain_cumulative,
+         m_null_strip_loss_cumulative;
 
-  virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
-  virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
+  virtual void check_water_thickness_nonnegative(IceModelVec2S &thk);
 
-  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
-  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
-  friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
-  virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
+  virtual void water_thickness_staggered(IceModelVec2Stag &result);
+  virtual void subglacial_hydraulic_potential(IceModelVec2S &result);
 
-  virtual PetscErrorCode adaptive_for_W_evolution(
-                                                  double t_current, double t_end, double maxKW,
-                                                  double &dt_result,
-                                                  double &maxV_result, double &maxD_result,
-                                                  double &dtCFL_result, double &dtDIFFW_result);
+  virtual void conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
+  virtual void velocity_staggered(IceModelVec2Stag &result);
+  friend class Routing_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
+  virtual void advective_fluxes(IceModelVec2Stag &result);
 
-  PetscErrorCode raw_update_W(double hdt);
-  PetscErrorCode raw_update_Wtil(double hdt);
+  virtual void adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
+                                        double &dt_result,
+                                        double &maxV_result, double &maxD_result,
+                                        double &dtCFL_result, double &dtDIFFW_result);
+
+  void raw_update_W(double hdt);
+  void raw_update_Wtil(double hdt);
+protected:
+  double m_dx, m_dy;
 };
-
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
-  This implements the new Bueler & van Pelt model documented at the repo (currently
-  private):
-  https://github.com/bueler/hydrolakes
-  Unlike RoutingHydrology, the water pressure P is a state variable, and there
+  This class implements the model documented in [\ref BuelervanPeltDRAFT].
+
+  Unlike hydrology::Routing, the water pressure \f$P\f$ is a state variable, and there
   are modeled mechanisms for cavity geometry evolution, including creep closure
   and opening through sliding ("cavitation").  Because of cavitation, this model
-  needs access to a StressBalance object.
+  needs access to a StressBalance object.   Background references for this kind of
+  model includes especially [\ref Kamb1987, \ref Schoofetal2012], but see also
+  [\ref Hewit2011, \ref Hewittetal2012, \ref Hewitt2013].
 
-  In addition to the actions within the null strip taken by RoutingHydrology,
+  In addition to the actions within the null strip taken by hydrology::Routing,
   this model also sets the staggered grid values of the gradient of the hydraulic
   potential to zero if either regular grid neighbor is in the null strip.
 */
-class DistributedHydrology : public RoutingHydrology {
+class Distributed : public Routing {
 public:
-  DistributedHydrology(IceGrid &g, const Config &conf, StressBalance *sb);
-  virtual ~DistributedHydrology();
+  Distributed(IceGrid::ConstPtr g, stressbalance::StressBalance *sb);
+  virtual ~Distributed();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  friend class Distributed_hydrovelbase_mag;
 
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
-  friend class DistributedHydrology_hydrovelbase_mag;
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-
-  virtual PetscErrorCode update(double icet, double icedt);
-
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
-  // this model's state, in addition to what is in RoutingHydrology
-  IceModelVec2S P;      //!< water pressure
+  virtual void update_impl(double icet, double icedt);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual void init_bwp();
+
+  virtual void check_P_bounds(bool enforce_upper);
+
+  virtual void update_velbase_mag(IceModelVec2S &result);
+  virtual void P_from_W_steady(IceModelVec2S &result);
+
+  virtual void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+                                            double &dt_result,
+                                            double &maxV_result, double &maxD_result,
+                                            double &PtoCFLratio);
+protected:
+  // this model's state, in addition to what is in hydrology::Routing
+  IceModelVec2S m_P;      //!< water pressure
   // this model's auxiliary variables, in addition ...
-  IceModelVec2S psi,    //!< hydraulic potential
-    velbase_mag,  //!< sliding speed of overlying ice
-    Pnew;   //!< pressure during update
-  bool hold_velbase_mag;
+  IceModelVec2S m_psi,    //!< hydraulic potential
+    m_velbase_mag,  //!< sliding speed of overlying ice
+    m_Pnew;   //!< pressure during update
+  bool m_hold_velbase_mag;
 
   // need to get basal sliding velocity (thus speed):
-  StressBalance* stressbalance;
-
-  PetscErrorCode allocate_pressure();
-  virtual PetscErrorCode init_bwp(Vars &vars);
-
-  virtual PetscErrorCode check_P_bounds(bool enforce_upper);
-
-  virtual PetscErrorCode update_velbase_mag(IceModelVec2S &result);
-  virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
-
-  virtual PetscErrorCode adaptive_for_WandP_evolution(
-                                                      double t_current, double t_end, double maxKW,
-                                                      double &dt_result,
-                                                      double &maxV_result, double &maxD_result,
-                                                      double &PtoCFLratio);
+  stressbalance::StressBalance* m_stressbalance;
 };
 
+} // end of namespace hydrology
 } // end of namespace pism
 
 #endif /* _PISMHYDROLOGY_H_ */

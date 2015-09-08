@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPDesignVariableParameterization.hh"
-#include "pism_options.hh"
 #include <cmath>
-#include "PISMConfig.hh"
+
+#include "base/util/iceModelVec.hh"
+#include "IPDesignVariableParameterization.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Initializes the scale parameters of the parameterization.
 /*! Every IPDesignVariableParameterization has an associated scale for the design variable
@@ -32,167 +37,181 @@ parameters that are follow the naming convention \a design_param_foo_*.
 \param config          The config file to read the scale parameters from.
 \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
 */
-PetscErrorCode IPDesignVariableParameterization::set_scales(const Config & config, const std::string &design_var_name) {
+void IPDesignVariableParameterization::set_scales(const Config & config,
+                                                  const std::string &design_var_name) {
   std::string key("design_param_");
   key += design_var_name;
   key += "_scale";
-  m_d_scale = config.get(key);
-  return 0;
+  m_d_scale = config.get_double(key);
 }
 
 //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
-PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &zeta,
-                                                                         IceModelVec2S &d,
-                                                                         bool communicate) {
+void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &zeta,
+                                                               IceModelVec2S &d,
+                                                               bool communicate) {
   PetscErrorCode ierr;
 
   IceModelVec::AccessList list;
   list.add(zeta);
   list.add(d);
 
-  for (Points p(*zeta.get_grid()); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  const IceGrid &grid = *zeta.get_grid();
 
-    ierr = this->toDesignVariable(zeta(i, j), &d(i, j), NULL); CHKERRQ(ierr);
-    if (std::isnan(d(i, j))) {
-      PetscPrintf(PETSC_COMM_WORLD, "made a d nan zeta = %g d = %g\n", zeta(i, j), d(i, j));
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      this->toDesignVariable(zeta(i, j), &d(i, j), NULL);
+      if (std::isnan(d(i, j))) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+                           "made a d nan zeta = %g d = %g\n",
+                           zeta(i, j), d(i, j));
+        PISM_CHK(ierr, "PetscPrintf");
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
   if (communicate) {
-    ierr = d.update_ghosts(); CHKERRQ(ierr);
+    d.update_ghosts();
   }
-  return 0;
 }
 
   //! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
-PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &d,
-                                                                            IceModelVec2S &zeta,
-                                                                            bool communicate) {
+void IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &d,
+                                                                 IceModelVec2S &zeta,
+                                                                 bool communicate) {
   PetscErrorCode ierr;
   IceModelVec::AccessList list;
   list.add(zeta);
   list.add(d);
 
-  for (Points p(*zeta.get_grid()); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  const IceGrid &grid = *zeta.get_grid();
 
-    ierr = this->fromDesignVariable(d(i, j), &zeta(i, j)); CHKERRQ(ierr);
-    if (std::isnan(zeta(i, j))) {
-      PetscPrintf(PETSC_COMM_WORLD, "made a zeta nan d = %g zeta = %g\n", d(i, j), zeta(i, j));
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      this->fromDesignVariable(d(i, j), &zeta(i, j));
+      if (std::isnan(zeta(i, j))) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+                           "made a zeta nan d = %g zeta = %g\n",
+                           d(i, j), zeta(i, j));
+        PISM_CHK(ierr, "PetscPrintf");
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
+
   if (communicate) {
-    ierr = zeta.update_ghosts(); CHKERRQ(ierr);
+    zeta.update_ghosts();
   }
-  return 0;
 }
 
-PetscErrorCode IPDesignVariableParamIdent::toDesignVariable(double p, double *value,
-                                          double *derivative)
-{
-  if (value != NULL) *value = m_d_scale*p;
-  if (derivative != NULL) *derivative = m_d_scale;
-  return 0;
+void IPDesignVariableParamIdent::toDesignVariable(double p, double *value,
+                                                  double *derivative) {
+  if (value != NULL) {
+    *value = m_d_scale*p;
+  }
+  if (derivative != NULL) {
+    *derivative = m_d_scale;
+  }
 }
 
-PetscErrorCode IPDesignVariableParamIdent::fromDesignVariable(double d, double *OUTPUT)
-{
+void IPDesignVariableParamIdent::fromDesignVariable(double d, double *OUTPUT) {
   *OUTPUT = d / m_d_scale;
-  return 0;
 }
 
 
-PetscErrorCode IPDesignVariableParamSquare::toDesignVariable(double p, double *value,
-                                           double *derivative)
-{
-  if (value != NULL) *value = m_d_scale*p*p;
-  if (derivative != NULL) *derivative = m_d_scale*2*p;
-  return 0;
+void IPDesignVariableParamSquare::toDesignVariable(double p, double *value,
+                                                   double *derivative) {
+  if (value != NULL) {
+    *value = m_d_scale*p*p;
+  }
+  if (derivative != NULL) {
+    *derivative = m_d_scale*2*p;
+  }
 }
 
-PetscErrorCode IPDesignVariableParamSquare::fromDesignVariable(double d, double *OUTPUT)
-{
+void IPDesignVariableParamSquare::fromDesignVariable(double d, double *OUTPUT) {
   if (d < 0) {
     d = 0;
   }
   *OUTPUT = sqrt(d / m_d_scale);
-  return 0;
 }
 
-PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const std::string &design_var_name) {
-  PetscErrorCode ierr;
-  ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
+void IPDesignVariableParamExp::set_scales(const Config &config, const std::string &design_var_name) {
+  IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("design_param_");
   key += design_var_name;
   key += "_eps";
-  m_d_eps = config.get(key);
-  return 0;
+  m_d_eps = config.get_double(key);
 }
 
-PetscErrorCode IPDesignVariableParamExp::toDesignVariable(double p, double *value,
-                                           double *derivative)
-{
+void IPDesignVariableParamExp::toDesignVariable(double p, double *value,
+                                           double *derivative) {
   if (value != NULL) {
     *value = m_d_scale*exp(p);
   }
 
-  if (derivative != NULL) *derivative = m_d_scale*exp(p);
-  return 0;
+  if (derivative != NULL) {
+    *derivative = m_d_scale*exp(p);
+  }
 }
 
-PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OUTPUT)
-{
-  if (d < m_d_eps)
-  {
+void IPDesignVariableParamExp::fromDesignVariable(double d, double *OUTPUT) {
+  if (d < m_d_eps) {
     d = m_d_eps;
   }
   *OUTPUT = log(d / m_d_scale);
-
-  return 0;
 }
 
 
-PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
-                                                               const std::string &design_var_name) {
-  PetscErrorCode ierr;
-  ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
+void IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
+                                                     const std::string &design_var_name) {
+  IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("design_param_trunc_");
   key += design_var_name;
   key += "0";
 
-  double d0 = config.get(key);
+  double d0 = config.get_double(key);
   m_d0_sq = d0*d0 / (m_d_scale*m_d_scale);
 
 
   key = "design_param_";
   key += design_var_name;
   key += "_eps";
-  m_d_eps = config.get(key);
-
-  return 0;
+  m_d_eps = config.get_double(key);
 }
 
-PetscErrorCode IPDesignVariableParamTruncatedIdent::toDesignVariable(double p,
-                                                                     double *value,
-                                                                     double *derivative)
-{
+void IPDesignVariableParamTruncatedIdent::toDesignVariable(double p,
+                                                           double *value,
+                                                           double *derivative) {
   double alpha = sqrt(p*p + 4*m_d0_sq);
-  if (value != NULL) *value = m_d_scale*(p + alpha)*0.5;
-  if (derivative != NULL) *derivative = m_d_scale*(1 + p / alpha)*0.5;
-  return 0;
+  if (value != NULL) {
+    *value = m_d_scale*(p + alpha)*0.5;
+  }
+  if (derivative != NULL) {
+    *derivative = m_d_scale*(1 + p / alpha)*0.5;
+  }
 }
 
-PetscErrorCode IPDesignVariableParamTruncatedIdent::fromDesignVariable(double d, double *OUTPUT)
-{
-  if (d < m_d_eps)
-  {
+void IPDesignVariableParamTruncatedIdent::fromDesignVariable(double d, double *OUTPUT) {
+  if (d < m_d_eps) {
     d = m_d_eps;
   }
+
   double d_dimensionless = d / m_d_scale;
   *OUTPUT = d_dimensionless - m_d0_sq / d_dimensionless;
-  return 0;
 }
 
+} // end of namespace inverse
 } // end of namespace pism

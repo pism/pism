@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,247 +16,211 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PSTemperatureIndex.hh"
-#include "localMassBalance.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "PISMVars.hh"
-#include "PISMTime.hh"
-#include "PISMAtmosphere.hh"
-#include "Mask.hh"
-
 #include <algorithm>            // std::min
 #include <cassert>
+#include <gsl/gsl_math.h>
+
+#include "PSTemperatureIndex.hh"
+#include "localMassBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/PISMTime.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "base/util/Mask.hh"
+#include "base/util/io/PIO.hh"
+
+#include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
+namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
-  : SurfaceModel(g, conf),
-    ice_surface_temp(g.get_unit_system())
-{
-  PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
+  : SurfaceModel(g),
+    ice_surface_temp(m_sys, "ice_surface_temp") {
 
-}
+  m_mbscheme              = NULL;
+  m_faustogreve           = NULL;
+  m_sd_period             = 0;
+  m_sd_ref_time           = 0.0;
+  m_base_ddf.snow         = m_config->get_double("pdd_factor_snow");
+  m_base_ddf.ice          = m_config->get_double("pdd_factor_ice");
+  m_base_ddf.refreezeFrac = m_config->get_double("pdd_refreeze");
+  m_base_pddThresholdTemp = m_config->get_double("pdd_positive_threshold_temp");
+  m_base_pddStdDev        = m_config->get_double("pdd_std_dev");
+  m_sd_use_param          = m_config->get_boolean("pdd_std_dev_use_param");
+  m_sd_param_a            = m_config->get_double("pdd_std_dev_param_a");
+  m_sd_param_b            = m_config->get_double("pdd_std_dev_param_b");
 
-PSTemperatureIndex::~PSTemperatureIndex() {
-  delete mbscheme;
-  delete faustogreve;
-}
 
-PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
-  PetscErrorCode ierr;
+  m_randomized = options::Bool("-pdd_rand",
+                               "Use a PDD implementation based on simulating a random process");
+  m_randomized_repeatable = options::Bool("-pdd_rand_repeatable",
+                                          "Use a PDD implementation based on simulating a"
+                                          " repeatable random process");
+  m_use_fausto_params = options::Bool("-pdd_fausto",
+                                      "Set PDD parameters using formulas (6) and (7)"
+                                      " in [Faustoetal2009]");
 
-  mbscheme              = NULL;
-  faustogreve           = NULL;
-  sd_period             = 0;
-  sd_ref_year           = 0;
-  sd_ref_time           = 0.0;
-  base_ddf.snow         = config.get("pdd_factor_snow");
-  base_ddf.ice          = config.get("pdd_factor_ice");
-  base_ddf.refreezeFrac = config.get("pdd_refreeze");
-  base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
-  base_pddStdDev        = config.get("pdd_std_dev");
-  sd_use_param          = config.get_flag("pdd_std_dev_use_param");
-  sd_param_a            = config.get("pdd_std_dev_param_a");
-  sd_param_b            = config.get("pdd_std_dev_param_b");
+  options::String file("-pdd_sd_file", "Read standard deviation from file");
+  m_sd_file_set = file.is_set();
 
-  ierr = PetscOptionsBegin(grid.com, "",
-                           "Temperature-index (PDD) scheme for surface (snow) processes", "");
-                           CHKERRQ(ierr);
-  {
-    ierr = OptionsIsSet("-pdd_rand",
-                            "Use a PDD implementation based on simulating a random process",
-                            randomized); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-pdd_rand_repeatable",
-                            "Use a PDD implementation based on simulating a repeatable random process",
-                            randomized_repeatable); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-pdd_fausto",
-                            "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
-                            fausto_params); CHKERRQ(ierr);
-    ierr = OptionsString("-pdd_sd_file",
-                             "Read standard deviation from file",
-                             filename, sd_file_set); CHKERRQ(ierr);
-    ierr = OptionsInt("-pdd_sd_period",
-                          "Length of the standard deviation data period in years",
-                          sd_period, sd_period_set); CHKERRQ(ierr);
-    ierr = OptionsInt("-pdd_sd_reference_year",
-                          "Standard deviation data reference year",
-                          sd_ref_year, sd_ref_year_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  options::Integer period("-pdd_sd_period",
+                          "Length of the standard deviation data period in years", 0);
+  m_sd_period = period;
 
-  if (randomized_repeatable) {
-    mbscheme = new PDDrandMassBalance(config, true);
-  } else if (randomized) {
-    mbscheme = new PDDrandMassBalance(config, false);
+  options::Integer sd_ref_year("-pdd_sd_reference_year",
+                               "Standard deviation data reference year", 0);
+
+  if (m_randomized_repeatable) {
+    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, true);
+  } else if (m_randomized) {
+    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, false);
   } else {
-    mbscheme = new PDDMassBalance(config);
+    m_mbscheme = new PDDMassBalance(m_config, m_sys);
   }
 
-  if (fausto_params) {
-    faustogreve = new FaustoGrevePDDObject(grid, config);
+  if (m_use_fausto_params) {
+    m_faustogreve = new FaustoGrevePDDObject(m_grid);
   }
 
-  if (sd_ref_year_set) {
-    sd_ref_time = grid.convert(sd_ref_year, "years", "seconds");
+  if (sd_ref_year.is_set()) {
+    m_sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
   }
 
-  if (sd_file_set == true) {
+  if (m_sd_file_set) {
     // find out how many records there are in the file and set the
     // air_temp_sd buffer size
 
     unsigned int n_records = 0;
     std::string short_name = "air_temp_sd";
-    unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
 
-    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_nrecords(short_name, "", n_records); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
+    PIO nc(m_grid->com, "netcdf3");
+    nc.open(file, PISM_READONLY);
+    n_records = nc.inq_nrecords(short_name, "", m_grid->ctx()->unit_system());
+    nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the
     // buffer size and the number of available records. Otherwise try
     // to keep all available records in memory.
-    if (sd_period == 0)
+    if (m_sd_period == 0) {
       n_records = std::min(n_records, buffer_size);
-
-    if (n_records < 1) {
-      PetscPrintf(grid.com, "PISM ERROR: Can't find '%s' in %s.\n",
-                  short_name.c_str(), filename.c_str());
-      PISMEnd();
     }
 
-    air_temp_sd.set_n_records(n_records);
+    if (n_records < 1) {
+      throw RuntimeError::formatted("Can't find '%s' in %s.",
+                                    short_name.c_str(), file->c_str());
+    }
+
+    m_air_temp_sd.set_n_records(n_records);
 
   } else {
     // using constant standard deviation, so set buffer size to 1
-    air_temp_sd.set_n_records(1);
+    m_air_temp_sd.set_n_records(1);
   }
 
-  ierr = air_temp_sd.create(grid, "air_temp_sd", false); CHKERRQ(ierr);
-  ierr = air_temp_sd.set_attrs("climate_forcing",
-                                "standard deviation of near-surface air temperature",
-                                "Kelvin", ""); CHKERRQ(ierr);
+  m_air_temp_sd.create(m_grid, "air_temp_sd");
+  m_air_temp_sd.set_attrs("climate_forcing",
+                          "standard deviation of near-surface air temperature",
+                          "Kelvin", "");
 
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_attrs("diagnostic",
-                                         "instantaneous surface mass balance (accumulation/ablation) rate",
-                                         "kg m-2 s-1",
-                                         "land_ice_surface_specific_mass_balance_flux");  // CF standard_name
-  CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  climatic_mass_balance.write_in_glaciological_units = true;
-  climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
+  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_climatic_mass_balance.set_attrs("diagnostic",
+                                    "instantaneous surface mass balance (accumulation/ablation) rate",
+                                    "kg m-2 s-1",
+                                    "land_ice_surface_specific_mass_balance_flux");
+  m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_climatic_mass_balance.write_in_glaciological_units = true;
+  m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:
 
-  ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous surface accumulation rate"
-                                     " (precipitation minus rain)",
-                                     "kg m-2 s-1",
-                                     ""); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  accumulation_rate.write_in_glaciological_units = true;
+  m_accumulation_rate.create(m_grid, "saccum", WITHOUT_GHOSTS);
+  m_accumulation_rate.set_attrs("diagnostic",
+                                "instantaneous surface accumulation rate"
+                                " (precipitation minus rain)",
+                                "kg m-2 s-1",
+                                "");
+  m_accumulation_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_accumulation_rate.write_in_glaciological_units = true;
 
-  ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = melt_rate.set_attrs("diagnostic",
-                             "instantaneous surface melt rate",
-                             "kg m-2 s-1",
-                             ""); CHKERRQ(ierr);
-  ierr = melt_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  melt_rate.write_in_glaciological_units = true;
+  m_melt_rate.create(m_grid, "smelt", WITHOUT_GHOSTS);
+  m_melt_rate.set_attrs("diagnostic",
+                        "instantaneous surface melt rate",
+                        "kg m-2 s-1",
+                        "");
+  m_melt_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_melt_rate.write_in_glaciological_units = true;
 
-  ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = runoff_rate.set_attrs("diagnostic",
-                               "instantaneous surface meltwater runoff rate",
-                               "kg m-2 s-1",
-                               ""); CHKERRQ(ierr);
-  ierr = runoff_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  runoff_rate.write_in_glaciological_units = true;
+  m_runoff_rate.create(m_grid, "srunoff", WITHOUT_GHOSTS);
+  m_runoff_rate.set_attrs("diagnostic",
+                          "instantaneous surface meltwater runoff rate",
+                          "kg m-2 s-1",
+                          "");
+  m_runoff_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_runoff_rate.write_in_glaciological_units = true;
 
-  ierr = snow_depth.create(grid, "snow_depth", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = snow_depth.set_attrs("diagnostic",
-                              "snow cover depth (set to zero once a year)",
-                              "m", ""); CHKERRQ(ierr);
-  ierr = snow_depth.set(0.0); CHKERRQ(ierr);
+  m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
+  m_snow_depth.set_attrs("diagnostic",
+                         "snow cover depth (set to zero once a year)",
+                         "m", "");
+  m_snow_depth.set(0.0);
 
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
-                  "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
-
-  return 0;
+                              "ice temperature at the ice surface");
+  ice_surface_temp.set_string("units", "K");
 }
 
-PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
-  PetscErrorCode ierr;
+TemperatureIndex::~TemperatureIndex() {
+  delete m_mbscheme;
+  delete m_faustogreve;
+}
 
+void TemperatureIndex::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = SurfaceModel::init(vars); CHKERRQ(ierr);
+  // call the default implementation (not the interface method init())
+  SurfaceModel::init_impl();
 
-  ierr = verbPrintf(2, grid.com,
-    "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
-    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
-    "  Surface mass balance and ice upper surface temperature are outputs.\n"
-    "  See PISM User's Manual for control of degree-day factors.\n");
-    CHKERRQ(ierr);
+  m_log->message(2,
+             "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+             "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
+             "  Surface mass balance and ice upper surface temperature are outputs.\n"
+             "  See PISM User's Manual for control of degree-day factors.\n");
 
-  ierr = verbPrintf(2, grid.com,
-    "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
-  if (randomized) {
-    ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
-  } else if (randomized_repeatable) {
-    ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n"); CHKERRQ(ierr);
+  m_log->message(2,
+             "  Computing number of positive degree-days by: ");
+  if (m_randomized) {
+    m_log->message(2, "simulation of a random process.\n");
+  } else if (m_randomized_repeatable) {
+    m_log->message(2, "repeatable simulation of a random process.\n");
   } else {
-    ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
+    m_log->message(2, "an expectation integral.\n");
   }
 
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  assert(mask != NULL);
+  if (m_use_fausto_params) {
+    m_log->message(2,
+               "  Setting PDD parameters from [Faustoetal2009] ...\n");
 
-  if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
-    lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-    assert(lat != NULL);
-  } else {
-    lat = NULL;
+    m_base_pddStdDev = 2.53;
+
   }
 
-  if (fausto_params) {
-    ierr = verbPrintf(2, grid.com,
-       "  Setting PDD parameters from [Faustoetal2009] ...\n");
-       CHKERRQ(ierr);
-
-    base_pddStdDev = 2.53;
-
-    lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-    assert(lon != NULL);
-
-    usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-    assert(usurf != NULL);
+  options::String file("-pdd_sd_file", "Read standard deviation from file");
+  if (file.is_set()) {
+    m_log->message(2,
+               "  Reading standard deviation of near-surface temperature from '%s'...\n",
+               file->c_str());
+    m_air_temp_sd.init(file, m_sd_period, m_sd_ref_time);
   } else {
-    // generally, this is the case in which degree day factors do not depend
-    //   on location; we use base_ddf
-    lon = NULL;
-    usurf = NULL;
-  }
-
-  if (sd_file_set == true) {
-    ierr = verbPrintf(2, grid.com,
-                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
-                      filename.c_str()); CHKERRQ(ierr);
-    ierr = air_temp_sd.init(filename, sd_period, sd_ref_time); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com,
-                      "  Option -pdd_sd_file is not set. Using a constant value.\n");
-    CHKERRQ(ierr);
-    ierr = air_temp_sd.init_constant(base_pddStdDev); CHKERRQ(ierr);
+    m_log->message(2,
+               "  Option -pdd_sd_file is not set. Using a constant value.\n");
+    m_air_temp_sd.init_constant(m_base_pddStdDev);
   }
 
   std::string input_file;
@@ -264,232 +228,230 @@ PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
   int start = -1;
 
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
+  find_pism_input(input_file, do_regrid, start);
 
   // read snow precipitation rate from file
-  ierr = verbPrintf(2, grid.com,
-                    "    reading snow depth (ice equivalent meters) from %s ... \n",
-                    input_file.c_str()); CHKERRQ(ierr);
-  ierr = snow_depth.regrid(input_file, OPTIONAL, 0.0); CHKERRQ(ierr);
+  m_log->message(2,
+             "    reading snow depth (ice equivalent meters) from %s ... \n",
+             input_file.c_str());
+  m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
 
-  m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
-
-  return 0;
+  m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-PetscErrorCode PSTemperatureIndex::max_timestep(double my_t, double &my_dt, bool &restrict) {
-  PetscErrorCode ierr;
-
-  ierr = atmosphere->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
-
-  return 0;
+MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
+  return m_atmosphere->max_timestep(my_t);
 }
 
-double PSTemperatureIndex::compute_next_balance_year_start(double time) {
-    // compute the time corresponding to the beginning of the next balance year
-    double
-      balance_year_start_day = config.get("pdd_balance_year_start_day"),
-      one_day                = grid.convert(1.0, "days", "seconds"),
-      year_start             = grid.time->calendar_year_start(time),
-      balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
+double TemperatureIndex::compute_next_balance_year_start(double time) {
+  // compute the time corresponding to the beginning of the next balance year
+  double
+    balance_year_start_day = m_config->get_double("pdd_balance_year_start_day"),
+    one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
+    year_start             = m_grid->ctx()->time()->calendar_year_start(time),
+    balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
-    if (balance_year_start > time) {
-      return balance_year_start;
-    }
-    return grid.time->increment_date(balance_year_start, 1);
+  if (balance_year_start > time) {
+    return balance_year_start;
+  }
+  return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
 }
 
 
-PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
-    return 0;
+      (fabs(my_dt - m_dt) < 1e-12)) {
+    return;
+  }
 
   m_t  = my_t;
   m_dt = my_dt;
 
   // update to ensure that temperature and precipitation time series
   // are correct:
-  ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
+  m_atmosphere->update(my_t, my_dt);
 
   // set up air temperature and precipitation time series
-  int Nseries = mbscheme->get_timeseries_length(my_dt);
+  int Nseries = m_mbscheme->get_timeseries_length(my_dt);
 
   const double dtseries = my_dt / Nseries;
   std::vector<double> ts(Nseries), T(Nseries), S(Nseries), P(Nseries), PDDs(Nseries);
-  for (int k = 0; k < Nseries; ++k)
+  for (int k = 0; k < Nseries; ++k) {
     ts[k] = my_t + k * dtseries;
-
-  // update standard deviation time series
-  if (sd_file_set == true) {
-    ierr = air_temp_sd.update(my_t, my_dt); CHKERRQ(ierr);
-    ierr = air_temp_sd.init_interpolation(ts); CHKERRQ(ierr);
   }
 
+  // update standard deviation time series
+  if (m_sd_file_set == true) {
+    m_air_temp_sd.update(my_t, my_dt);
+    m_air_temp_sd.init_interpolation(ts);
+  }
+
+  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S *surface_altitude = NULL, *latitude = NULL, *longitude = NULL;
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list(*mask);
 
-  if (lat != NULL) {
-    list.add(*lat);
+  if (m_faustogreve != NULL) {
+    surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
+    latitude         = m_grid->variables().get_2d_scalar("latitude");
+    longitude        = m_grid->variables().get_2d_scalar("longitude");
+
+    list.add(*latitude);
+    list.add(*longitude);
+    list.add(*surface_altitude);
+    m_faustogreve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }
 
-  if (faustogreve != NULL) {
-    assert(lat != NULL && lon != NULL && usurf != NULL);
-    list.add(*lon);
-    list.add(*usurf);
-    ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
-  }
+  const double
+    sigmalapserate = m_config->get_double("pdd_std_dev_lapse_lat_rate"),
+    sigmabaselat   = m_config->get_double("pdd_std_dev_lapse_lat_base");
 
-  const double sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
-    sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
-    assert(lat != NULL);
+    latitude = m_grid->variables().get_2d_scalar("latitude");
+    list.add(*latitude);
   }
 
-  DegreeDayFactors  ddf = base_ddf;
+  LocalMassBalance::DegreeDayFactors  ddf = m_base_ddf;
 
-  ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
-  list.add(air_temp_sd);
-  list.add(climatic_mass_balance);
+  m_atmosphere->init_timeseries(ts);
 
-  list.add(accumulation_rate);
-  list.add(melt_rate);
-  list.add(runoff_rate);
-  list.add(snow_depth);
+  m_atmosphere->begin_pointwise_access();
+  list.add(m_air_temp_sd);
+  list.add(m_climatic_mass_balance);
 
-  ierr = atmosphere->init_timeseries(ts); CHKERRQ(ierr);
+  list.add(m_accumulation_rate);
+  list.add(m_melt_rate);
+  list.add(m_runoff_rate);
+  list.add(m_snow_depth);
 
-  const double ice_density = config.get("ice_density");
+  const double ice_density = m_config->get_double("ice_density");
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    // the temperature time series from the AtmosphereModel and its modifiers
-    ierr = atmosphere->temp_time_series(i, j, T); CHKERRQ(ierr);
+      // the temperature time series from the AtmosphereModel and its modifiers
+      m_atmosphere->temp_time_series(i, j, T);
 
-    // the precipitation time series from AtmosphereModel and its modifiers
-    ierr = atmosphere->precip_time_series(i, j, P); CHKERRQ(ierr);
+      // the precipitation time series from AtmosphereModel and its modifiers
+      m_atmosphere->precip_time_series(i, j, P);
 
-    // interpolate temperature standard deviation time series
-    if (sd_file_set == true) {
-      ierr = air_temp_sd.interp(i, j, S); CHKERRQ(ierr);
-    } else {
-      for (int k = 0; k < Nseries; ++k) {
-        S[k] = air_temp_sd(i, j);
-      }
-    }
-
-    if (faustogreve != NULL) {
-      // we have been asked to set mass balance parameters according to
-      //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-      ierr = faustogreve->setDegreeDayFactors(i, j, (*usurf)(i, j),
-                                              (*lat)(i, j), (*lon)(i, j), ddf);
-      CHKERRQ(ierr);
-    }
-
-    // apply standard deviation lapse rate on top of prescribed values
-    if (sigmalapserate != 0.0) {
-      for (int k = 0; k < Nseries; ++k) {
-        S[k] += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
-      }
-      air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
-    }
-
-    // apply standard deviation param over ice if in use
-    if (sd_use_param && m.icy(i,j)) {
-      for (int k = 0; k < Nseries; ++k) {
-        S[k] = sd_param_a * (T[k] - 273.15) + sd_param_b;
-        if (S[k] < 0.0) {
-          S[k] = 0.0 ;
+      // interpolate temperature standard deviation time series
+      if (m_sd_file_set == true) {
+        m_air_temp_sd.interp(i, j, S);
+      } else {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] = m_air_temp_sd(i, j);
         }
       }
-      air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
-    }
 
-    // Use temperature time series, the "positive" threshhold, and
-    // the standard deviation of the daily variability to get the
-    // number of positive degree days (PDDs)
-    mbscheme->get_PDDs(&S[0], dtseries, &T[0], Nseries, &PDDs[0]);
-
-    // Use temperature time series to remove rainfall from precipitation
-    mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
-                                    &T[0], // air temperature (input)
-                                    Nseries);
-
-    // Use degree-day factors, and number of PDDs, and the snow
-    // precipitation, to get surface mass balance (and diagnostics:
-    // accumulation, melt, runoff)
-    {
-      double next_snow_depth_reset = m_next_balance_year_start;
-      accumulation_rate(i,j)     = 0.0;
-      melt_rate(i,j)             = 0.0;
-      runoff_rate(i,j)           = 0.0;
-      climatic_mass_balance(i,j) = 0.0;
-      for (int k = 0; k < Nseries; ++k) {
-        if (ts[k] >= next_snow_depth_reset) {
-          snow_depth(i,j)       = 0.0;
-          while (next_snow_depth_reset <= ts[k])
-            next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1);
-        }
-
-        double accumulation     = P[k] * dtseries;
-        accumulation_rate(i,j) += accumulation;
-
-        mbscheme->step(ddf, PDDs[k], accumulation,
-                       snow_depth(i,j), melt_rate(i,j), runoff_rate(i,j),
-                       climatic_mass_balance(i,j));
+      if (m_faustogreve != NULL) {
+        // we have been asked to set mass balance parameters according to
+        //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
+        m_faustogreve->setDegreeDayFactors(i, j, (*surface_altitude)(i, j),
+                                           (*latitude)(i, j), (*longitude)(i, j), ddf);
       }
-      // convert from [m during the current time-step] to kg m-2 s-1
-      accumulation_rate(i,j)     *= (ice_density/m_dt);
-      melt_rate(i,j)             *= (ice_density/m_dt);
-      runoff_rate(i,j)           *= (ice_density/m_dt);
-      climatic_mass_balance(i,j) *= (ice_density/m_dt);
-    }
 
-    if (m.ocean(i,j)) {
-      snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      // apply standard deviation lapse rate on top of prescribed values
+      if (sigmalapserate != 0.0) {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] += sigmalapserate * ((*latitude)(i,j) - sigmabaselat);
+        }
+        m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
+      }
+
+      // apply standard deviation param over ice if in use
+      if (m_sd_use_param && m.icy(i,j)) {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
+          if (S[k] < 0.0) {
+            S[k] = 0.0 ;
+          }
+        }
+        m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
+      }
+
+      // Use temperature time series, the "positive" threshhold, and
+      // the standard deviation of the daily variability to get the
+      // number of positive degree days (PDDs)
+      m_mbscheme->get_PDDs(&S[0], dtseries, &T[0], Nseries, &PDDs[0]);
+
+      // Use temperature time series to remove rainfall from precipitation
+      m_mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
+                                        &T[0], // air temperature (input)
+                                        Nseries);
+
+      // Use degree-day factors, and number of PDDs, and the snow
+      // precipitation, to get surface mass balance (and diagnostics:
+      // accumulation, melt, runoff)
+      {
+        double next_snow_depth_reset = m_next_balance_year_start;
+        m_accumulation_rate(i,j)     = 0.0;
+        m_melt_rate(i,j)             = 0.0;
+        m_runoff_rate(i,j)           = 0.0;
+        m_climatic_mass_balance(i,j) = 0.0;
+        for (int k = 0; k < Nseries; ++k) {
+          if (ts[k] >= next_snow_depth_reset) {
+            m_snow_depth(i,j)       = 0.0;
+            while (next_snow_depth_reset <= ts[k]) {
+              next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
+            }
+          }
+
+          double accumulation     = P[k] * dtseries;
+          m_accumulation_rate(i,j) += accumulation;
+
+          m_mbscheme->step(ddf, PDDs[k], accumulation,
+                           m_snow_depth(i,j), m_melt_rate(i,j), m_runoff_rate(i,j),
+                           m_climatic_mass_balance(i,j));
+        }
+        // convert from [m during the current time-step] to kg m-2 s-1
+        m_accumulation_rate(i,j)     *= (ice_density/m_dt);
+        m_melt_rate(i,j)             *= (ice_density/m_dt);
+        m_runoff_rate(i,j)           *= (ice_density/m_dt);
+        m_climatic_mass_balance(i,j) *= (ice_density/m_dt);
+      }
+
+      if (m.ocean(i,j)) {
+        m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
-  ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
+  m_atmosphere->end_pointwise_access();
 
-  m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
-
-  return 0;
+  m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
 
-PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
-
-  return 0;
+void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+  result.copy_from(m_climatic_mass_balance);
 }
 
 
-PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
+void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
 
-  PetscErrorCode ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
-
-  return 0;
+  m_atmosphere->mean_annual_temp(result);
 }
 
-void PSTemperatureIndex::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
-  SurfaceModel::add_vars_to_output(keyword, result);
+  SurfaceModel::add_vars_to_output_impl(keyword, result);
 
   result.insert("snow_depth");
 
-  if (keyword == "medium" || keyword == "big") {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("climatic_mass_balance");
     result.insert("ice_surface_temp");
   }
 
-  if (keyword == "big") {
+  if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_sd");
     result.insert("saccum");
     result.insert("smelt");
@@ -497,92 +459,87 @@ void PSTemperatureIndex::add_vars_to_output(const std::string &keyword, std::set
   }
 }
 
-PetscErrorCode PSTemperatureIndex::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
+void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
+    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
+    m_climatic_mass_balance.define(nc, nctype);
   }
 
   if (set_contains(vars, "air_temp_sd")) {
-    ierr = air_temp_sd.define(nc, nctype); CHKERRQ(ierr);
+    m_air_temp_sd.define(nc, nctype);
   }
 
   if (set_contains(vars, "saccum")) {
-    ierr = accumulation_rate.define(nc, nctype); CHKERRQ(ierr);
+    m_accumulation_rate.define(nc, nctype);
   }
 
   if (set_contains(vars, "smelt")) {
-    ierr = melt_rate.define(nc, nctype); CHKERRQ(ierr);
+    m_melt_rate.define(nc, nctype);
   }
 
   if (set_contains(vars, "srunoff")) {
-    ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr);
+    m_runoff_rate.define(nc, nctype);
   }
 
   if (set_contains(vars, "snow_depth")) {
-    ierr = snow_depth.define(nc, nctype); CHKERRQ(ierr);
+    m_snow_depth.define(nc, nctype);
   }
 
-  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
-
+  SurfaceModel::define_variables_impl(vars, nc, nctype);
 }
 
-PetscErrorCode PSTemperatureIndex::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
-    ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
+    ice_surface_temperature(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
     vars.erase("ice_surface_temp");
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.write(nc); CHKERRQ(ierr);
+    m_climatic_mass_balance.write(nc);
     vars.erase("climatic_mass_balance");
   }
 
   if (set_contains(vars, "air_temp_sd")) {
-    ierr = air_temp_sd.average(m_t, m_dt); CHKERRQ(ierr);
-    ierr = air_temp_sd.write(nc); CHKERRQ(ierr);
+    m_air_temp_sd.average(m_t, m_dt);
+    m_air_temp_sd.write(nc);
     vars.erase("air_temp_sd");
   }
 
   if (set_contains(vars, "saccum")) {
-    ierr = accumulation_rate.write(nc); CHKERRQ(ierr);
+    m_accumulation_rate.write(nc);
     vars.erase("saccum");
   }
 
   if (set_contains(vars, "smelt")) {
-    ierr = melt_rate.write(nc); CHKERRQ(ierr);
+    m_melt_rate.write(nc);
     vars.erase("smelt");
   }
 
   if (set_contains(vars, "srunoff")) {
-    ierr = runoff_rate.write(nc); CHKERRQ(ierr);
+    m_runoff_rate.write(nc);
     vars.erase("srunoff");
   }
 
   if (set_contains(vars, "snow_depth")) {
-    ierr = snow_depth.write(nc); CHKERRQ(ierr);
+    m_snow_depth.write(nc);
     vars.erase("snow_depth");
   }
 
-  ierr = SurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  SurfaceModel::write_variables_impl(vars, nc);
 }
 
+} // end of namespace surface
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,39 +19,37 @@
 #ifndef _PS_DELTA_T_H_
 #define _PS_DELTA_T_H_
 
-#include "PScalarForcing.hh"
-#include "PISMSurface.hh"
+#include "coupler/util/PScalarForcing.hh"
+#include "coupler/PISMSurface.hh"
 #include "PSModifier.hh"
 
 namespace pism {
+namespace surface {
 
 /** @brief Implements the scalar temperature offsets for the ice
  * surface temperature.
  *
  * Other fields are passed through without change.
  */
-class PS_delta_T : public PScalarForcing<SurfaceModel,PSModifier>
+class Delta_T : public PScalarForcing<SurfaceModel,SurfaceModifier>
 {
 public:
-  PS_delta_T(IceGrid &g, const Config &conf, SurfaceModel* in);
-  virtual ~PS_delta_T();
-
-  virtual PetscErrorCode init(Vars &vars);
-
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  Delta_T(IceGrid::ConstPtr g, SurfaceModel* in);
+  virtual ~Delta_T();
 protected:
-  NCSpatialVariable climatic_mass_balance, //!< climatic mass balance attributes
+  virtual void init_impl();
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+protected:
+  SpatialVariableMetadata climatic_mass_balance, //!< climatic mass balance attributes
     ice_surface_temp;                      //!< ice surface temperature attributes
-private:
-  //! Allocate internal objects. Called from the constructor.
-  PetscErrorCode allocate_PS_delta_T();
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PS_DELTA_T_H_ */

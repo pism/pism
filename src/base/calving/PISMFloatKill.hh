@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,30 +20,34 @@
 #ifndef _PISMFLOATKILL_H_
 #define _PISMFLOATKILL_H_
 
-#include "PISMComponent.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 
 class IceModelVec2Int;
 class IceModelVec2S;
 
+namespace calving {
+
 /*! \brief Calving mechanism removing floating ice. */
 class FloatKill : public Component
 {
 public:
-  FloatKill(IceGrid &g, const Config &conf);
+  FloatKill(IceGrid::ConstPtr g);
   virtual ~FloatKill();
 
-  virtual PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  virtual void init();
+  void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+protected:
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
 };
 
 
+} // end of namespace calving
 } // end of namespace pism
 
 #endif /* _PISMFLOATKILL_H_ */

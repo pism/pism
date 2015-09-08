@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "PISMNC4File.hh"
 
 namespace pism {
+namespace io {
 
 class NC4_Par : public NC4File
 {
@@ -29,18 +30,18 @@ public:
   NC4_Par(MPI_Comm c)
     : NC4File(c, 0) {}
   virtual ~NC4_Par() {}
-
-  // open/create/close
-  virtual int open(const std::string &filename, IO_Mode mode);
-
-  virtual int create(const std::string &filename);
-
 protected:
+  // open/create/close
+  virtual int open_impl(const std::string &filename, IO_Mode mode);
+
+  virtual int create_impl(const std::string &filename);
+
   virtual int integer_open_mode(IO_Mode input) const;
   virtual int set_access_mode(int varid, bool mapped) const;
 };
 
 
+} // end of namespace io
 } // end of namespace pism
 
 #endif /* _PISMNC4_PAR_H_ */

@@ -21,7 +21,7 @@ subgraph cluster_out {
         D_max [label="get_max_diffusivity()"];
     }
     {rank=max
-        vel_3d_full [label="get_3d_velocity()"];
+        vel_3d_full [label="velocity_{u,v,w}()"];
         max_uvw [label="get_max_3d_velocity()"];
         vel_2d [label="get_advective_2d_velocity()"];   
         max_uv [label="get_max_2d_velocity()"];

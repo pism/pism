@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,206 +16,183 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "PAConstantPIK.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/io/io_helpers.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
+namespace atmosphere {
 
-PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
-  : AtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
-  PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+PIK::PIK(IceGrid::ConstPtr g)
+  : AtmosphereModel(g),
+    m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
 
-}
-
-PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
-  PetscErrorCode ierr;
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in SurfaceModel)
-  ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = precipitation.set_attrs("climate_state",
-                                 "mean annual ice-equivalent precipitation rate",
-                                 "m s-1",
-                                 ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  precipitation.write_in_glaciological_units = true;
-  precipitation.set_time_independent(true);
+  m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+  m_precipitation.set_attrs("climate_state",
+                          "mean annual ice-equivalent precipitation rate",
+                          "m s-1",
+                          ""); // no CF standard_name ??
+  m_precipitation.metadata().set_string("glaciological_units", "m year-1");
+  m_precipitation.write_in_glaciological_units = true;
+  m_precipitation.set_time_independent(true);
 
-  ierr = air_temp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = air_temp.set_attrs("climate_state",
-                                   "mean annual near-surface (2 m) air temperature",
-                                   "K",
-                                   ""); CHKERRQ(ierr);
-  air_temp.set_time_independent(true);
+  m_air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
+  m_air_temp.set_attrs("climate_state",
+                     "mean annual near-surface (2 m) air temperature",
+                     "K",
+                     "");
+  m_air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
-  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
-  air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  air_temp_snapshot.set_string("long_name",
+  m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
+  m_air_temp_snapshot.set_string("long_name",
                                "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
-
-  return 0;
+  m_air_temp_snapshot.set_string("units", "K");
 }
 
-PetscErrorCode PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = precipitation.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PIK::mean_precipitation(IceModelVec2S &result) {
+  result.copy_from(m_precipitation);
 }
 
-PetscErrorCode PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = air_temp.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PIK::mean_annual_temp(IceModelVec2S &result) {
+  result.copy_from(m_air_temp);
 }
 
-PetscErrorCode PAConstantPIK::begin_pointwise_access() {
-  PetscErrorCode ierr;
-  ierr = precipitation.begin_access(); CHKERRQ(ierr);
-  ierr = air_temp.begin_access(); CHKERRQ(ierr);
-  return 0;
+void PIK::begin_pointwise_access() {
+  m_precipitation.begin_access();
+  m_air_temp.begin_access();
 }
 
-PetscErrorCode PAConstantPIK::end_pointwise_access() {
-  PetscErrorCode ierr;
-  ierr = precipitation.end_access(); CHKERRQ(ierr);
-  ierr = air_temp.end_access(); CHKERRQ(ierr);
-  return 0;
+void PIK::end_pointwise_access() {
+  m_precipitation.end_access();
+  m_air_temp.end_access();
 }
 
-PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
-  for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    result[k] = air_temp(i,j);
-  return 0;
+void PIK::temp_time_series(int i, int j, std::vector<double> &result) {
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
+    result[k] = m_air_temp(i,j);
+  }
 }
 
-PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
-  for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    result[k] = precipitation(i,j);
-  return 0;
+void PIK::precip_time_series(int i, int j, std::vector<double> &result) {
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
+    result[k] = m_precipitation(i,j);
+  }
 }
 
-PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = mean_annual_temp(result); CHKERRQ(ierr);
-
-  return 0;
+void PIK::temp_snapshot(IceModelVec2S &result) {
+  mean_annual_temp(result);
 }
 
-void PAConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
   result.insert("air_temp");
 
-  if (keyword == "big") {
+  if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_snapshot");
   }
 }
 
-PetscErrorCode PAConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
-  PetscErrorCode ierr;
-
   if (set_contains(vars, "air_temp_snapshot")) {
-    ierr = air_temp_snapshot.define(nc, nctype, false); CHKERRQ(ierr);
+    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.define(nc, nctype); CHKERRQ(ierr);
+    m_precipitation.define(nc, nctype);
   }
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.define(nc, nctype); CHKERRQ(ierr);
+    m_air_temp.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
+void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    tmp.metadata() = air_temp_snapshot;
+    tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
+    tmp.metadata() = m_air_temp_snapshot;
 
-    ierr = temp_snapshot(tmp); CHKERRQ(ierr);
+    temp_snapshot(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.write(nc); CHKERRQ(ierr);
+    m_precipitation.write(nc);
   }
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.write(nc); CHKERRQ(ierr);
+    m_air_temp.write(nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PIK::init() {
   bool do_regrid = false;
   int start = -1;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-     "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"
-     "  It reads a precipitation field directly from the file and holds it constant.\n"
-     "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"); CHKERRQ(ierr);
+  m_log->message(2,
+             "* Initializing the constant-in-time atmosphere model PIK.\n"
+             "  It reads a precipitation field directly from the file and holds it constant.\n"
+             "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
+  find_pism_input(m_input_file, do_regrid, start);
 
   // read snow precipitation rate and air_temps from file
-  ierr = verbPrintf(2, grid.com,
-                    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-                    "    from %s ... \n",
-                    input_file.c_str()); CHKERRQ(ierr); 
+  m_log->message(2,
+             "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+             "    from %s ... \n",
+             m_input_file.c_str());
   if (do_regrid) {
-    ierr = precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
+    m_precipitation.regrid(m_input_file, CRITICAL);
   } else {
-    ierr = precipitation.read(input_file, start); CHKERRQ(ierr); // fails if not found!
+    m_precipitation.read(m_input_file, start); // fails if not found!
   }
-
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (usurf == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
-
-  lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (lat == NULL) SETERRQ(grid.com, 1, "latitude is not available");
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::update(double, double) {
+MaxTimestep PIK::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
+}
+
+void PIK::update_impl(double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
+  const IceModelVec2S
+    *usurf = m_grid->variables().get_2d_scalar("surface_altitude"),
+    *lat   = m_grid->variables().get_2d_scalar("latitude");
+
   IceModelVec::AccessList list;
-  list.add(air_temp);
+  list.add(m_air_temp);
   list.add(*usurf);
   list.add(*lat);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
+    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
   }
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::init_timeseries(const std::vector<double> &ts) {
+void PIK::init_timeseries(const std::vector<double> &ts) {
   m_ts_times = ts;
-  return 0;
 }
 
 
+} // end of namespace atmosphere
 } // end of namespace pism

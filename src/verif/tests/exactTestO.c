@@ -53,7 +53,7 @@ pressure is hydrostatic: \f$p = \rho_i g (h-z)\f$.
 
 The basic equation relates the fluxes in the basal ice, and in the top of the
 bedrock layer, with the basal melt rate `bmelt` \f$= - M_b / \rho_i \f$.  The
-eqution is from [\ref AschwandenBuelerKhroulevBlatter],
+equation is from [\ref AschwandenBuelerKhroulevBlatter],
   \f[ M_b H + (\mathbf{q} - \mathbf{q_{lith}}) \cdot \mathbf{n} = F_b + Q_b. \f]
 Here \f$-M_b\f$ is the basal melt rate in units of mass per area per time.
 In the above equation the basal friction heating

@@ -25,6 +25,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     vertchange.md
     howto.md
     petsc.md
+    coding_style.md
     pism.sty
     )
 
@@ -45,6 +46,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # Generate the config file
   add_custom_command (OUTPUT pism_config.nc
+    DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl
     COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl)
 
   # Generate the config documentation
@@ -78,5 +80,11 @@ else ()
   if (NOT DOXYGEN_DOT_EXECUTABLE)
     message (STATUS "'dot' was not found. Please install graphviz if you want to re-build source code browsers.")
   endif()
+
+  add_custom_target(browser
+    COMMAND ${CMAKE_COMMAND} -E echo "Please install LaTeX, Doxygen, and Graphviz to build the source code browser.")
+
+  add_custom_target(browser.tgz
+    COMMAND ${CMAKE_COMMAND} -E echo "Please install LaTeX, Doxygen, and Graphviz to build the source code browser.")
 endif ()
 

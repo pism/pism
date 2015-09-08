@@ -20,7 +20,7 @@ A third and fourth ISMIP parts are the two parts of the Marine Ice Sheet Model I
 \optsection{EISMINT II}
 
 There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}.\index{EISMINT}  They are named A, B, C, D, F, G, and H.  They have these common features:\begin{itemize}
-\item runs are for 200,000 years, with no prescribed time step;
+\item runs are for $2\times 10^5$ years, with no prescribed time step;
 \item a $61\times 61$ horizontal grid on a square domain ($1500$ km side length) is prescribed;
 \item surface inputs (temperature and mass balance) have angular symmetry around the grid center;
 \item the bed is flat and does not move (no isostasy);
@@ -33,11 +33,7 @@ The experiments differ from each other in their various combinations of surface 
 In addition to the seven experiments published in \cite{EISMINT00}, there were an additional five experiments described in the EISMINT II intercomparison description 
 \cite{EISIIdescribe}, labeled E, I, J, K, and L.\index{EISMINT!unpublished additional EISMINT II experiments}  These experiments share most features listed above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat ``trough'' bed topography.  Experiments K and L are similar to experiment C but with non-flat ``mound'' bed topography.
 
-See table \ref{tab:eisII} for how to run all EISMINT II experiments in PISM.  Note that the vertical grid is not specified in EISMINT II, but it seems that good simulation of the thermomechanically-coupled conditions near the base of the ice requires relatively-fine resolution there.  (It is difficult to be quantitative because of a lack of theory.)  We suggest using the default unequally-spaced grid with 61 levels, which gives a grid spacing of 18 m in the ice layer closest to the bed.  Alternatively these experiments can be done with an equally-spaced grid; in this case we suggest using 201 vertical levels to give 20 m spacing, for example.
-
-These SIA-only simulations parallelize well.  Very roughly, for the standard $61\times 61$ horizontal grid, wall-clock-time speedups will occur up to about 30 processors.  Runs on finer (horizontal) grids will benefit from even more processors.
-
-Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Experiments below the horizontal line in Table \ref{tab:eisII} are only documented in \cite{EISIIdescribe}.
+See Table \ref{tab:eisII} for how to run all EISMINT II experiments in PISM.  Experiments below the horizontal line are only documented in \cite{EISIIdescribe}.
 
 \begin{table}[ht]
 \centering
@@ -45,17 +41,17 @@ Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Ex
 \begin{tabular}{@{}llll}\toprule
 \textbf{Command: ``\texttt{pisms }'' $+$} & \textbf{Relation to experiment A} \\
 \midrule
-\texttt{-eisII A -Mx 61 -My 61 -Mz 61 -y 200000 -o eisIIA.nc} & \\
+\texttt{-eisII A -Mx 61 -My 61 -Mz 61 -Lz 5000 -y 2e5 -o eisIIA.nc} & \\
 \texttt{-eisII B -i eisIIA.nc -y 2e5 -o eisIIB.nc} & warmer \\
 \texttt{-eisII C -i eisIIA.nc -y 2e5 -o eisIIC.nc} & less snow (lower accumulation)\\
 \texttt{-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc} & smaller area of accumulation \\
-\texttt{-eisII F -Mx 61 -My 61 -Mz 61 -y 2e5 -o eisIIF.nc} & colder; famous spokes \cite{BBL} \\
-\texttt{-eisII G -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIG.nc} & sliding (regardless of temperature) \\
-\texttt{-eisII H -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIH.nc} & melt-temperature activated sliding \\ \midrule
+\texttt{-eisII F -Mx 61 -My 61 -Mz 81 -Lz 6000 -y 2e5 -o eisIIF.nc} & colder; famous spokes \cite{BBL} \\
+\texttt{-eisII G -Mx 61 -My 61 -Mz 201 -Lz 5000 -y 2e5 -o eisIIG.nc} & sliding (regardless of temperature) \\
+\texttt{-eisII H -Mx 61 -My 61 -Mz 201 -Lz 5000 -y 2e5 -o eisIIH.nc} & melt-temperature activated sliding \\ \midrule
 \texttt{-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc} & shifted climate maps \\
-\texttt{-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIII.nc} & trough topography \\
+\texttt{-eisII I -Mx 61 -My 61 -Mz 61 -Lz 5000 -y 2e5 -o eisIII.nc} & trough topography \\
 \texttt{-eisII J -i eisIII.nc -y 2e5 -o eisIIJ.nc} & trough topography and less snow \\
-\texttt{-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK.nc} & mound topography \\
+\texttt{-eisII K -Mx 61 -My 61 -Mz 61 -Lz 5000 -y 2e5 -o eisIIK.nc} & mound topography \\
 \texttt{-eisII L -i eisIIK.nc -y 2e5 -o eisIIL.nc} & mound topography and less snow \\
 \bottomrule
 \normalsize
@@ -64,7 +60,11 @@ Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Ex
 \label{tab:eisII}
 \end{table}
 
-The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\texttt{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.
+The vertical grid is not specified in EISMINT II, but a good simulation of the thermomechanically-coupled conditions near the base of the ice requires relatively-fine resolution there.  We suggest using the default unequally-spaced grid.  With 61 levels it gives a grid spacing of $\sim$20 m in the ice layer closest to the bed, but more vertical levels are generally better.  Alternatively these experiments can be done with an equally-spaced grid; in this case we suggest using enough vertical levels to give 20 m spacing, for example.  When there is sliding, even more vertical resolution is recommended (see Table \ref{tab:eisII}).  Also, the vertical extent must be sufficient so that when the ice thickness grows large, especially before thermo-softening brings it back down, the vertical grid is tall enough to include all the ice.  Table \ref{tab:eisII} therefore includes suggested settings of \texttt{-Lz}; experiment F is different because ice thickness increases with colder temperatures.
+
+These SIA-only simulations parallelize well.  Very roughly, for the standard $61\times 61$ horizontal grid, wall-clock-time speedups will occur up to about 30 processors.  Runs on finer (horizontal) grids will benefit from even more processors.  Also, the ``skip'' mechanism which avoids updating the temperature at each time step is effective, so options like \texttt{-skip -skip_max 5} are recommended.
+
+The EISMINT II experiments can be run with various modifications of the default settings.  For instance, a twice-finer grid in the horizontal is ``\texttt{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.
 
 \begin{table}[ht]
 \centering
@@ -84,8 +84,6 @@ The EISMINT II experiments can be run with various modifications of the default 
 \caption{Changing the default settings for EISMINT II}
 \label{tab:eisIIoptions}
 \end{table}
-
-In PISM the height of the computational box, the quantity set by \texttt{-Lz}, is set at the beginning of the run.  It is chosen for the EISMINT II experiments according to the observed maximum values occuring in standard runs.  If the ice thickens beyond the chosen level for the top of the computational box then additional layers are automatically added to the computational grid.  In fact, if the ice grows above the height of the computational box then a message appears, \texttt{PISM WARNING: max ice thickness ... is greater than the height of the computational box ...}, and then at least two additional levels are added to the vertical grid.  However, in general this mechanism can run away to use up all memory in extreme cases so, if the height of the computational box grows so large that the grid has more than twice the original number of vertical levels, then PISM produces an error message and stops.   Therefore it is possible that the number of vertical levels at the end of the run exceeds the initial \texttt{-Mz} value.  Setting EISMINT II options \texttt{-Mmax} or \texttt{-Sb} to produce higher accumulation rates than the default values (see table \ref{tab:eisIIoptions}) may cause the ice sheet to thicken above the standard thickness and therefore trigger this automatic extension mechanism.  Similarly, colder ice caused by nonstandard \texttt{-Tmin} or \texttt{-ST} values can produce unusually thick ice.  The user may always choose to use a larger, more conservative value for option \texttt{-Lz}, however.
 
 See subdirectory \verb|examples/eismintII/| for a simple helper script \verb|runexp.sh|.
 

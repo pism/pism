@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2014 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -44,7 +44,7 @@ ELB 9/12/05;  05/12/06;  10/14/06;  5/30/08
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int bothexact(double t, double r, double *z, int Mz, double Cp,
+int bothexact(double t, double r, const double *z, int Mz, double Cp,
               double *H, double *M, double *TT, double *U, double *w,
               double *Sig, double *Sigc);
 

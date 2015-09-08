@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,199 +23,193 @@ static char help[] =
   "  class thereof. Uses verification test J. Also may be used in a PISM\n"
   "  software (regression) test.\n\n";
 
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
-#include "flowlaws.hh" // IceFlowLaw
-#include "basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "PIO.hh"
-#include "NCVariable.hh"
-#include "SSAFEM.hh"
-#include "SSAFD.hh"
-#include "exactTestsIJ.h"
-#include "SSATestCase.hh"
-#include "Mask.hh"
+#include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
+#include "base/rheology/flowlaws.hh" // FlowLaw
+#include "base/stressbalance/ssa/SSAFD.hh"
+#include "base/stressbalance/ssa/SSAFEM.hh"
+#include "base/stressbalance/ssa/SSATestCase.hh"
+#include "base/util/Mask.hh"
+#include "base/util/Context.hh"
+#include "base/util/VariableMetadata.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "verif/tests/exactTestsIJ.h"
 
-using namespace pism;
+namespace pism {
+namespace stressbalance {
 
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(MPI_Comm com, Config &c):
-    SSATestCase(com, c)
-  { };
+  SSATestCaseJ(Context::Ptr ctx)
+    : SSATestCase(ctx) {
+    // empty
+  }
 
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j,
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
-
 };
 
-PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
-{
+void SSATestCaseJ::initializeGrid(int Mx,int My) {
 
   double halfWidth = 300.0e3;  // 300.0 km half-width
   double Lx = halfWidth, Ly = halfWidth;
-  init_shallow_grid(grid,Lx,Ly,Mx,My,XY_PERIODIC);
-  return 0;
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, XY_PERIODIC);
 }
 
-PetscErrorCode SSATestCaseJ::initializeSSAModel()
-{
-  config.set_flag("do_pseudo_plastic_till", false);
+void SSATestCaseJ::initializeSSAModel() {
+  m_config->set_boolean("do_pseudo_plastic_till", false);
 
-  enthalpyconverter = new EnthalpyConverter(config);
-  config.set_string("ssa_flow_law", "isothermal_glen");
-
-  return 0;
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
+  m_config->set_string("ssa_flow_law", "isothermal_glen");
 }
 
-PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
-{
-  PetscErrorCode ierr;
-  ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant for test J
-  ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
-  ierr = ice_mask.set(MASK_FLOATING); CHKERRQ(ierr);
-  ierr = enthalpy.set(528668.35);
-  CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
+void SSATestCaseJ::initializeSSACoefficients() {
+  m_tauc.set(0.0);    // irrelevant for test J
+  m_bed.set(0.0); // assures shelf is floating
+  m_ice_mask.set(MASK_FLOATING);
+
+  double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
+  m_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
-  double ocean_rho = config.get("sea_water_density"),
-    ice_rho = config.get("ice_density");
-  const double nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  double ocean_rho = m_config->get_double("sea_water_density"),
+    ice_rho = m_config->get_double("ice_density");
+  const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a
   // constant viscosity by settting the strength_extension
   // thickness larger than the given ice thickness. (max = 770m).
-  ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(800);
+  m_ssa->strength_extension->set_notional_strength(nu0 * H0);
+  m_ssa->strength_extension->set_min_thickness(800);
 
   IceModelVec::AccessList list;
-  list.add(thickness);
-  list.add(surface);
-  list.add(bc_mask);
-  list.add(vel_bc);
+  list.add(m_thickness);
+  list.add(m_surface);
+  list.add(m_bc_mask);
+  list.add(m_bc_values);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double junk1, myu, myv, H;
-    const double myx = grid.x[i], myy = grid.y[j];
+    const double myx = m_grid->x(i), myy = m_grid->y(j);
 
     // set H,h on regular grid
-    ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
+    struct TestJParameters J_parameters = exactJ(myx, myy);
 
-    thickness(i,j) = H;
-    surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+    m_thickness(i,j) = J_parameters.H;
+    m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * J_parameters.H; // FIXME issue #15
 
-    // special case at center point: here we set vel_bc at (i,j) by marking
-    // this grid point as SHEET and setting vel_bc approriately
-    if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
-      bc_mask(i,j) = 1;
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+    // special case at center point: here we set bc_values at (i,j) by
+    // setting bc_mask and bc_values appropriately
+    if ((i == ((int)m_grid->Mx()) / 2) and
+        (j == ((int)m_grid->My()) / 2)) {
+      m_bc_mask(i,j) = 1;
+      m_bc_values(i,j).u = J_parameters.u;
+      m_bc_values(i,j).v = J_parameters.v;
     }
   }
 
   // communicate what we have set
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
-  ierr = thickness.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
+  m_surface.update_ghosts();
+  m_thickness.update_ghosts();
+  m_bc_mask.update_ghosts();
+  m_bc_values.update_ghosts();
 
-  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr);
-
-  return 0;
+  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
-PetscErrorCode SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
-                                           double x, double y,
-                                           double *u, double *v)
-{
-  double junk1, junk2;
-  exactJ(x, y, &junk1, &junk2, u, v);
-  return 0;
+void SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
+                                 double x, double y,
+                                 double *u, double *v) {
+  struct TestJParameters J_parameters = exactJ(x, y);
+  *u = J_parameters.u;
+  *v = J_parameters.v;
 }
 
+} // end of namespace stressbalance
+} // end of namespace pism
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
-  MPI_Comm    com;
+  using namespace pism;
+  using namespace pism::stressbalance;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;
+  petsc::Initializer petsc(argc, argv, help);
+  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+  try {
+    Context::Ptr ctx = context_from_options(com, "ssa_testj");
+    Config::Ptr config = ctx->config();
 
-    ierr = setVerbosityLevel(5); CHKERRQ(ierr);
+    setVerbosityLevel(5);
 
-    PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
-    if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
-      PetscPrintf(com,
-                  "\n"
-                  "usage of SSA_TESTJ:\n"
-                  "  run ssafe_test -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                  "\n");
+    bool
+      usage_set = options::Bool("-usage", "print usage info"),
+      help_set  = options::Bool("-help", "print help info");
+    if (usage_set or help_set) {
+      ierr = PetscPrintf(com,
+                         "\n"
+                         "usage of SSA_TESTJ:\n"
+                         "  run ssafe_test -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                         "\n");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=61;
-    int My=61;
-    std::string output_file = "ssa_test_j.nc";
 
-    std::set<std::string> ssa_choices;
-    ssa_choices.insert("fem");
-    ssa_choices.insert("fd");
-    std::string driver = "fem";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TESTJ options", ""); CHKERRQ(ierr);
-    {
-      bool flag;
-      int my_verbosity_level;
-      ierr = OptionsInt("-Mx", "Number of grid points in the X direction",
-                                                      Mx, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-My", "Number of grid points in the Y direction",
-                                                      My, flag); CHKERRQ(ierr);
-      ierr = OptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
-                             ssa_choices, driver, driver, flag); CHKERRQ(ierr);
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fem");
 
-      ierr = OptionsString("-o", "Set the output file name",
-                                              output_file, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-verbose", "Verbosity level",
-                            my_verbosity_level, flag); CHKERRQ(ierr);
-      if (flag) setVerbosityLevel(my_verbosity_level);
+    options::String output("-o", "Set the output file name",
+                           "ssa_test_j.nc", options::DONT_ALLOW_EMPTY);
+
+    options::Integer verbose("-verbose", "Verbosity level", 2);
+    if (verbose.is_set()) {
+      setVerbosityLevel(verbose);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") ssafactory = SSAFEMFactory;
-    else if (driver == "fd") ssafactory = SSAFDFactory;
-    else { /* can't happen */ }
+    if (method == "fem") {
+      ssafactory = SSAFEMFactory;
+    } else if (method == "fd") {
+      ssafactory = SSAFDFactory;
+    } else {
+      /* can't happen */
+    }
 
-    SSATestCaseJ testcase(com,config);
-    ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
-    ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report("J"); CHKERRQ(ierr);
-    ierr = testcase.write(output_file);
+    SSATestCaseJ testcase(ctx);
+    testcase.init(Mx,My,ssafactory);
+    testcase.run();
+    testcase.report("J");
+    testcase.write(output);
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

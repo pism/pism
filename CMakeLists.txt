@@ -32,16 +32,17 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
-option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." ON)
-option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
-option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
-option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
-option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
+option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
+option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
+option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
+option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." OFF)
+option (Pism_USE_TAO "Use TAO in inverse solvers." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
+option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
 option (Pism_USE_TR1 "Use the std::tr1 namespace to access shared pointer definitions. Disable to get shared pointers from the std namespace (might be needed with some compilers)." ON)
@@ -80,6 +81,25 @@ if (Pism_ADD_FPIC)
     message (STATUS "Adding -fPIC to C++ compiler flags.")
     set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
   endif()
+endif ()
+
+if (Pism_CODE_COVERAGE)
+  if (NOT CMAKE_CXX_FLAGS MATCHES "-fprofile-arcs")
+    message (STATUS "Adding -fprofile-arcs -ftest-coverage to C++ compiler flags.")
+    set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+  endif()
+  add_custom_target (coverage_report
+    COMMAND lcov -d . -c -o pism-coverage.info
+    COMMAND lcov -q -r pism-coverage.info PISMPYTHON
+    COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
+    WORKING_DIRECTORY ${Pism_BINARY_DIR}
+    VERBATIM
+    )
+  add_custom_target (coverage_reset
+    COMMAND lcov -d . -z
+    WORKING_DIRECTORY ${Pism_BINARY_DIR}
+    VERBATIM
+    )
 endif ()
 
 if (Pism_PEDANTIC_WARNINGS)
@@ -135,6 +155,20 @@ endif ()
 add_custom_target (etags
   COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+  VERBATIM
+)
+
+# re-run tests that failed
+add_custom_target (retest
+  COMMAND ${CMAKE_CTEST_COMMAND} --rerun-failed --output-on-failure
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  VERBATIM
+)
+
+# run Python tests
+add_custom_target (test-python
+  COMMAND ${CMAKE_CTEST_COMMAND} -R "Python:"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   VERBATIM
 )
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,19 +19,20 @@
 #ifndef __DrainageCalculator_hh
 #define __DrainageCalculator_hh
 
-#include "NCVariable.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
+namespace energy {
 
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {
 
 public:
   DrainageCalculator(const Config &config) {
-    OM1 = config.get("drainage_target_water_frac"); // 0.01
+    OM1 = config.get_double("drainage_target_water_frac"); // 0.01
     OM2 = 2.0 * OM1;
     OM3 = 3.0 * OM1;
-    DR3 = config.get("drainage_max_rate"); // 0.05 year-1 
+    DR3 = config.get_double("drainage_max_rate"); // 0.05 year-1 
     DR2 = 0.1 * DR3;
   }
   virtual ~DrainageCalculator() {}
@@ -42,10 +43,12 @@ public:
       if (omega > OM2) {
         if (omega > OM3) {
           return DR3;
-        } else
+        } else {
           return DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
-      } else
+        }
+      } else {
         return DR2 * (omega - OM1) / OM1;
+      }
     } else {
       return 0.0;
     }
@@ -56,6 +59,7 @@ private:
 };
 
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif // __DrainageCalculator_hh

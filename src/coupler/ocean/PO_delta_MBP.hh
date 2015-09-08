@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,34 +20,35 @@
 #ifndef _PO_DELTA_MBP_H_
 #define _PO_DELTA_MBP_H_
 
-#include "PScalarForcing.hh"
+#include "coupler/util/PScalarForcing.hh"
 #include "POModifier.hh"
 
 namespace pism {
+namespace ocean {
 
 /**
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class PO_delta_MBP : public PScalarForcing<OceanModel,POModifier>
+class Delta_MBP : public PScalarForcing<OceanModel,OceanModifier>
 {
 public:
-  PO_delta_MBP(IceGrid &g, const Config &conf, OceanModel* in);
-  virtual ~PO_delta_MBP();
+  Delta_MBP(IceGrid::ConstPtr g, OceanModel* in);
+  virtual ~Delta_MBP();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
-
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
-  NCSpatialVariable shelfbmassflux, shelfbtemp;
-private:
-  PetscErrorCode allocate_PO_delta_MBP();
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+  virtual void init_impl();
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+protected:
+  SpatialVariableMetadata shelfbmassflux, shelfbtemp;
 };
 
+} // end of namespace ocean
 } // end of namespace pism
 
 #endif /* _PO_DELTA_MBP_H_ */

@@ -21,7 +21,6 @@ constructs a solver based on command line arguments.
 
 .. automodule:: PISM.invert.ssa
    :members:
-   :undoc-members:
    :private-members:
    :special-members:
    :show-inheritance:

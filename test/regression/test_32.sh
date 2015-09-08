@@ -7,7 +7,7 @@ echo "Test #32: testing special enthalpy regridding code."
 # The list of files to delete when done:
 files="foo-32.nc bar-32.nc baz-32.nc"
 
-OPTS="-ys 0 -y 0 -boot_file foo-32.nc -regrid_file foo-32.nc -Lz 4000 -Mx 31 -My 31 -Mz 51"
+OPTS="-ys 0 -y 0 -i foo-32.nc -bootstrap -regrid_file foo-32.nc -Lz 4000 -Mx 31 -My 31 -Mz 51"
 
 set -e -x
 

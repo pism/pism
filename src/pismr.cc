@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,74 +20,89 @@ static char help[] =
   "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
   "The basic PISM executable for evolution runs.\n";
 
-#include <petsc.h>
-#include "IceGrid.hh"
-#include "iceModel.hh"
+#include <petscsys.h>
 
-#include "pism_options.hh"
-#include "PAFactory.hh"
-#include "POFactory.hh"
-#include "PSFactory.hh"
+#include "base/util/IceGrid.hh"
+#include "base/iceModel.hh"
+#include "base/util/PISMConfig.hh"
+
+#include "base/util/pism_options.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/Context.hh"
 
 using namespace pism;
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
+  PetscErrorCode ierr;
 
-  MPI_Comm    com;
-
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
 
-  /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+  try {
+    verbosityLevelFromOptions();
 
-    ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
+               PISM_Revision);
 
-    bool iset, bfset;
-    ierr = OptionsIsSet("-i", iset); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
-    std::string usage =
-      "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
-      "where:\n"
-      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
-      "              heuristics will build initial model state\n"
-      "notes:\n"
-      "  * one of -i or -boot_file is required\n"
-      "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
-      ierr = PetscPrintf(com,
-         "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismr", usage); CHKERRQ(ierr);
-    } else {
-      std::vector<std::string> required;  required.clear();
-      ierr = show_usage_check_req_opts(com, "pismr", required, usage); CHKERRQ(ierr);
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
     }
 
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    bool input_file_set = options::Bool("-i", "input file name");
+    std::string usage =
+      "  pismr -i IN.nc [-bootstrap] [OTHER PISM & PETSc OPTIONS]\n"
+      "where:\n"
+      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+      "  -bootstrap  enable heuristics to produce an initial state from an incomplete input\n"
+      "notes:\n"
+      "  * option -i is required\n"
+      "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
+    if (not input_file_set) {
+      ierr = PetscPrintf(com, "\nPISM ERROR: option -i is required\n\n");
+      PISM_CHK(ierr, "PetscPrintf");
+      show_usage(com, "pismr", usage);
+      return 0;
+    } else {
+      std::vector<std::string> required;
+      required.clear();
 
-    IceGrid g(com, config);
-    IceModel m(g, config, overrides);
+      bool done = show_usage_check_req_opts(com, "pismr", required, usage);
+      if (done) {
+        return 0;
+      }
+    }
 
-    ierr = m.setExecName("pismr"); CHKERRQ(ierr);
+    Context::Ptr ctx = context_from_options(com, "pismr");
+    Config::Ptr config = ctx->config();
 
-    ierr = m.init(); CHKERRQ(ierr);
+    ctx->log()->message(3, "* Setting the computational grid...\n");
+    IceGrid::Ptr g = IceGrid::FromOptions(ctx);
 
-    ierr = m.run(); CHKERRQ(ierr);
+    IceModel m(g, ctx);
 
-    ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
-    // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    m.init();
+
+    bool print_list_and_stop = options::Bool("-list_diagnostics",
+                                             "List available diagnostic quantities and stop");
+
+    if (print_list_and_stop) {
+      m.list_diagnostics();
+    } else {
+      m.run();
+
+      verbPrintf(2,com, "... done with run\n");
+      // provide a default output file name if no -o option is given.
+      m.writeFiles("unnamed.nc");
+    }
+    print_unused_parameters(*ctx->log(), 3, *config);
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

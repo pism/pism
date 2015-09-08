@@ -65,7 +65,7 @@ SKIP=5
 LENGTH=2000   # model years
 EXDT=20    # 20 year between saves, thus 100 frames
 
-cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT -no_model_strip 10 \
+cmd="$PISM_MPIDO $NN $PISM -i $BOOT -bootstrap -no_model_strip 10 \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
   -no_model_strip 10 $PHYS \
   -extra_file ex_spunjako_0.nc -extra_times -$LENGTH:$EXDT:0 \

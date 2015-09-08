@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,70 +16,100 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
+
 #include "IP_SSATaucForwardProblem.hh"
-#include <assert.h>
-#include "PISMVars.hh"
-#include "Mask.hh"
-#include "basal_resistance.hh"
+#include "base/basalstrength/basal_resistance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
 
 namespace pism {
+namespace inverse {
 
-IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
-                                                   IPDesignVariableParameterization &tp,
-                                                   const Config &c)
-  : SSAFEM(g, e, c),
-    m_grid(grid),
+IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e,
+                                                   IPDesignVariableParameterization &tp)
+  : SSAFEM(g, e),
     m_zeta(NULL),
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
-    m_element_index(m_grid),
-    m_quadrature(g, 1.0),
-    m_quadrature_vector(g, 1.0),
-    m_rebuild_J_state(true)
-{
-  PetscErrorCode ierr = this->construct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+    m_element_index(*m_grid),
+    m_quadrature(*g, 1.0),
+    m_quadrature_vector(*g, 1.0),
+    m_rebuild_J_state(true) {
+  this->construct();
 }
 
 IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
-  PetscErrorCode ierr = this->destruct();
-  CHKERRCONTINUE(ierr);
-  assert(ierr == 0);
+  // empty
 }
 
-PetscErrorCode IP_SSATaucForwardProblem::construct() {
+void IP_SSATaucForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencil_width = 1;
 
-  ierr = m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
+  m_velocity_shared.reset(new IceModelVec2V);
+  m_velocity_shared->create(m_grid, "dummy", WITHOUT_GHOSTS);
+  m_velocity_shared->metadata(0) = m_velocity.metadata(0);
+  m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
-  ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width); CHKERRQ(ierr);
-  ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
+  m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencil_width);
+
+  m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
+  m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
+
+  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+  m_tauc_copy.set_attrs("diagnostic",
+                        "yield stress for basal till (plastic or pseudo-plastic model)",
+                        "Pa", "");
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(*m_da, "baij", &m_J_state); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
+  PISM_CHK(ierr, "DMCreateMatrix");
 #else
-  ierr = DMSetMatType(*m_da, MATBAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(*m_da, &m_J_state); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_da, MATBAIJ);
+  PISM_CHK(ierr, "DMSetMatType");
+  ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
+  PISM_CHK(ierr, "DMCreateMatrix");
 #endif
 
-  ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
-  double ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT); CHKERRQ(ierr);
-  PC pc;
-  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);
+  ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
+  PISM_CHK(ierr, "KSPCreate");
 
-  return 0;
+  double ksp_rtol = 1e-12;
+  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  PISM_CHK(ierr, "KSPSetTolerances");
+
+  PC pc;
+  ierr = KSPGetPC(m_ksp, &pc);
+  PISM_CHK(ierr, "KSPGetPC");
+
+  ierr = PCSetType(pc, PCBJACOBI);
+  PISM_CHK(ierr, "PCSetType");
+
+  ierr = KSPSetFromOptions(m_ksp);
+  PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
-PetscErrorCode IP_SSATaucForwardProblem::destruct() {
-  PetscErrorCode ierr;
-  ierr = MatDestroy(&m_J_state); CHKERRQ(ierr);
-  ierr = KSPDestroy(&m_ksp); CHKERRQ(ierr);
-  return 0;
+void IP_SSATaucForwardProblem::init() {
+
+  // This calls SSA::init(), which calls pism::Vars::get_2d_scalar()
+  // to set m_tauc.
+  SSAFEM::init();
+
+  // The purpose of this change is to make the forward model (SSAFEM)
+  // see changes to tauc made in set_design() below.
+  //
+  // As far as I can tell in this context tauc does not come from a
+  // yield stress model, so this should do no harm.
+  //
+  // I don't know if this is necessary, though. Before this change
+  // set_design used to mess with values in the field pointed to by
+  // SSA::m_tauc *which we do not own*. (This is bad.)
+  // -- CK, January 7, 2015
+  m_tauc = &m_tauc_copy;
 }
 
 //! Sets the current value of of the design paramter \f$\zeta\f$.
@@ -91,27 +121,32 @@ directly.  Use this method in conjuction with
 The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
 kept.
 */
-PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
-{
-  IceModelVec2S *m_tauc = tauc;
+void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
+
+  using fem::Quadrature;
+
+  IceModelVec2S &tauc = m_tauc_copy;
 
   m_zeta = &new_zeta;
 
   // Convert zeta to tauc.
-  m_tauc_param.convertToDesignVariable(*m_zeta, *m_tauc);
+  m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points in m_coefficients.
-  double tauc_q[FEQuadrature::Nq];
-  IceModelVec::AccessList list(*m_tauc);
+  double tauc_q[Quadrature::Nq];
+  IceModelVec::AccessList list(tauc);
 
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-    ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
-    for (int j = ys; j < ys + ym; j++) {
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, tauc_q);
+  int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
-      SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+      Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
+      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
         coefficients[q].tauc = tauc_q[q];
       }
     }
@@ -119,61 +154,43 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
 
   // Flag the state jacobian as needing rebuilding.
   m_rebuild_J_state = true;
-
-  return 0;
 }
 
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-PetscErrorCode IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
-
-  PetscErrorCode ierr;
-  ierr = this->set_design(zeta); CHKERRQ(ierr);
-
-  ierr = this->solve_nocache(reason); CHKERRQ(ierr);
-
-  return 0;
+TerminationReason::Ptr IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta) {
+  this->set_design(zeta);
+  return this->solve_nocache();
 }
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ as defined in the class-level documentation.
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
-PetscErrorCode IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
-  PetscErrorCode ierr;
+void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
 
-  Vector2 **u_a, **rhs_a;
-
-  ierr = u.get_array(u_a); CHKERRQ(ierr);
-  ierr = RHS.get_array(rhs_a); CHKERRQ(ierr);
+  Vector2
+    **u_a   = u.get_array(),
+    **rhs_a = RHS.get_array();
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
+  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
 
-  ierr = u.end_access(); CHKERRQ(ierr);
-  ierr = RHS.end_access(); CHKERRQ(ierr);
-
-  return 0;
+  u.end_access();
+  RHS.end_access();
 }
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ defined in the class-level documentation.
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
-PetscErrorCode IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
-  PetscErrorCode ierr;
+void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
 
-  Vector2 **u_a, **rhs_a;
-
-  ierr = u.get_array(u_a); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(*m_da, RHS, &rhs_a); CHKERRQ(ierr);
-
+  Vector2 **u_a = u.get_array();
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
-
-  ierr = DMDAVecRestoreArray(*m_da, RHS, &rhs_a); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);
-
-  return 0;
+  petsc::DMDAVecArray rhs_a(m_da, RHS);
+  this->compute_local_function(info, const_cast<const Vector2 **>(u_a),
+                               (Vector2**)rhs_a.get());
+  u.end_access();
 }
 
 //! Assembles the state Jacobian matrix.
@@ -184,47 +201,37 @@ to this method.
   @param[in] u Current state variable value.
   @param[out] J computed state Jacobian.
 */
-PetscErrorCode IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
-  PetscErrorCode ierr;
+void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
-  Vector2 **u_a;
-  ierr = u.get_array(u_a); CHKERRQ(ierr);
+  Vector2 **u_a = u.get_array();
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_jacobian(info,
-                                      const_cast<const Vector2 **>(u_a), Jac); CHKERRQ(ierr);
+  this->compute_local_jacobian(info,
+                               const_cast<const Vector2 **>(u_a),
+                               Jac);
 
-  ierr = u.end_access(); CHKERRQ(ierr);
-
-  return 0;
+  u.end_access();
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
 /*! The return value uses a DesignVector (IceModelVec2V), which can be ghostless. Ghosts (if present) are updated.
 \overload
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
-                                                               IceModelVec2V &du) {
-  PetscErrorCode ierr;
-  Vector2 **du_a;
-  ierr = du.get_array(du_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design(u, dzeta, du_a);
-  ierr = du.end_access(); CHKERRQ(ierr);
-  return 0;
+void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
+                                                     IceModelVec2V &du) {
+  Vector2 **du_a = du.get_array();
+  this->apply_jacobian_design(u, dzeta, du_a);
+  du.end_access();
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
-/*! The return value is a Vec for the benefit of TAO. It is assumed to be ghostless; no communication is done.
-\overload
+/*! The return value is a Vec for the benefit of TAO. It is assumed to
+be ghostless; no communication is done. \overload
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
-                                                               Vec du) {
-  PetscErrorCode ierr;
-  Vector2 **du_a;
-  ierr = DMDAVecGetArray(*m_da, du, &du_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design(u, dzeta, du_a);
-  ierr = DMDAVecRestoreArray(*m_da, du, &du_a); CHKERRQ(ierr);
-  return 0;
+void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
+                                                     Vec du) {
+  petsc::DMDAVecArray du_a(m_da, du);
+  this->apply_jacobian_design(u, dzeta, (Vector2**)du_a.get());
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
@@ -239,57 +246,57 @@ to this method.
 
   Typically this method is called via one of its overloads.
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
-                                                               IceModelVec2S &dzeta,
-                                                               Vector2 **du_a) {
-  PetscErrorCode ierr;
+void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+                                                     IceModelVec2S &dzeta,
+                                                     Vector2 **du_a) {
+  using fem::Quadrature;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
   list.add(u);
 
   IceModelVec2S *dzeta_local;
-  if (dzeta.has_ghosts()) {
+  if (dzeta.get_stencil_width() > 0) {
     dzeta_local = &dzeta;
   } else {
-    ierr = m_dzeta_local.copy_from(dzeta); CHKERRQ(ierr);
+    m_dzeta_local.copy_from(dzeta);
     dzeta_local = &m_dzeta_local;
   }
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    du_a[i][j].u = 0.0;
-    du_a[i][j].v = 0.0;
+    du_a[j][i].u = 0.0;
+    du_a[j][i].v = 0.0;
   }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
   double           m_dirichletWeight    = m_dirichletScale;
 
-  Vector2 u_e[FEQuadrature::Nk];
-  Vector2 u_q[FEQuadrature::Nq];
+  Vector2 u_e[Quadrature::Nk];
+  Vector2 u_q[Quadrature::Nq];
 
-  Vector2 du_e[FEQuadrature::Nk];
+  Vector2 du_e[Quadrature::Nk];
 
-  double dzeta_e[FEQuadrature::Nk];
+  double dzeta_e[Quadrature::Nk];
 
-  double zeta_e[FEQuadrature::Nk];
+  double zeta_e[Quadrature::Nk];
 
-  double dtauc_e[FEQuadrature::Nk];
-  double dtauc_q[FEQuadrature::Nq];
+  double dtauc_e[Quadrature::Nk];
+  double dtauc_q[Quadrature::Nq];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
 
-  DirichletData_Vector dirichletBC;
-  ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                          m_dirichletWeight); CHKERRQ(ierr);
-  DirichletData_Scalar fixedZeta;
-  ierr = fixedZeta.init(m_fixed_tauc_locations, NULL);
+  fem::DirichletData_Vector dirichletBC;
+  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
+                   m_dirichletWeight);
+  fem::DirichletData_Scalar fixedZeta;
+  fixedZeta.init(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -297,98 +304,99 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i = xs; i < xs + xm; i++) {
+  ParallelSection loop(m_grid->com);
+  try {
     for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
 
-      // Zero out the element - local residual in prep for updating it.
-      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
-        du_e[k].u = 0;
-        du_e[k].v = 0;
-      }
-
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
-
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
-
-      // Obtain the value of the solution at the nodes adjacent to the element,
-      // fix dirichlet values, and compute values at quad pts.
-      m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) {
-        dirichletBC.constrain(m_dofmap);
-        dirichletBC.update(m_dofmap, u_e);
-      }
-      m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
-
-      // Compute dzeta at the nodes
-      m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
-      if (fixedZeta) fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
-
-      // Compute the change in tau_c with respect to zeta at the quad points.
-      m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
-        m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
-        dtauc_e[k] *= dzeta_e[k];
-      }
-      m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
-
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
-        Vector2 u_qq = u_q[q];
-
-        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq + q];
-
-        // Determine "dbeta / dzeta" at the quadrature point
-        double dbeta = 0;
-        if (mask::grounded_ice(coefficients->mask)) {
-          dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
+        // Zero out the element - local residual in prep for updating it.
+        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+          du_e[k].u = 0;
+          du_e[k].v = 0;
         }
 
-        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
-          du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
-          du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
+
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, *m_grid);
+
+        // Obtain the value of the solution at the nodes adjacent to the element,
+        // fix dirichlet values, and compute values at quad pts.
+        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        if (dirichletBC) {
+          dirichletBC.constrain(m_dofmap);
+          dirichletBC.update(m_dofmap, u_e);
         }
-      } // q
-      m_dofmap.addLocalResidualBlock(du_e, du_a);
-    } // j
-  } // i
+        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+
+        // Compute dzeta at the nodes
+        m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
+        if (fixedZeta) {
+          fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+        }
+
+        // Compute the change in tau_c with respect to zeta at the quad points.
+        m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
+        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+          m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
+          dtauc_e[k] *= dzeta_e[k];
+        }
+        m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
+
+        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+          Vector2 u_qq = u_q[q];
+
+          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+
+          // Determine "dbeta / dzeta" at the quadrature point
+          double dbeta = 0;
+          if (mask::grounded_ice(coefficients->mask)) {
+            dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
+          }
+
+          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+            du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
+            du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
+          }
+        } // q
+        m_dofmap.addLocalResidualBlock(du_e, du_a);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = fixedZeta.finish(); CHKERRQ(ierr);
-
-  return 0;
+  dirichletBC.finish();
+  fixedZeta.finish();
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
 /*! The return value uses a StateVector (IceModelVec2S) which can be ghostless; ghosts (if present) are updated.
 \overload
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta) {
-  PetscErrorCode ierr;
-  double **dzeta_a;
-  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);
-  ierr = dzeta.end_access(); CHKERRQ(ierr);
-  return 0;
+void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
+                                                               IceModelVec2V &du,
+                                                               IceModelVec2S &dzeta) {
+  double **dzeta_a = dzeta.get_array();
+  this->apply_jacobian_design_transpose(u, du, dzeta_a);
+  dzeta.end_access();
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
 /*! The return value uses a Vec for the benefit of TAO.  It is assumed to be ghostless; no communication is done.
 \overload */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta) {
-  PetscErrorCode ierr;
-  double **dzeta_a;
-  PISMDM::Ptr da2;
-  ierr = m_grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
-
-  ierr = DMDAVecGetArray(*da2, dzeta, &dzeta_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(*da2, dzeta, &dzeta_a); CHKERRQ(ierr);
-  return 0;
+void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
+                                                               IceModelVec2V &du,
+                                                               Vec dzeta) {
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid_max_stencil_width"));
+  petsc::DMDAVecArray dzeta_a(da2, dzeta);
+  this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
@@ -403,117 +411,126 @@ to this method.
 
   Typically this method is called via one of its overloads.
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                         IceModelVec2V &du,
-                                                                         double **dzeta_a) {
-  PetscErrorCode ierr;
+void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
+                                                               IceModelVec2V &du,
+                                                               double **dzeta_a) {
+  using fem::Quadrature;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
   list.add(u);
 
   IceModelVec2V *du_local;
-  if (du.has_ghosts()) {
+  if (du.get_stencil_width() > 0) {
     du_local = &du;
   } else {
-    ierr = m_du_local.copy_from(du); CHKERRQ(ierr);
+    m_du_local.copy_from(du);
     du_local = &m_du_local;
   }
   list.add(*du_local);
 
-  Vector2 u_e[FEQuadrature::Nk];
-  Vector2 u_q[FEQuadrature::Nq];
+  Vector2 u_e[Quadrature::Nk];
+  Vector2 u_q[Quadrature::Nq];
 
-  Vector2 du_e[FEQuadrature::Nk];
-  Vector2 du_q[FEQuadrature::Nq];
+  Vector2 du_e[Quadrature::Nk];
+  Vector2 du_q[Quadrature::Nq];
 
-  double dzeta_e[FEQuadrature::Nk];
+  double dzeta_e[Quadrature::Nk];
 
   // An Nq by Nk array of test function values.
-  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
 
-  DirichletData_Vector  dirichletBC;
+  fem::DirichletData_Vector  dirichletBC;
   // Aliases to help with notation consistency.
-  IceModelVec2Int      *m_dirichletLocations = bc_locations;
-  IceModelVec2V        *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int      *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V        *m_dirichletValues    = m_bc_values;
   double                m_dirichletWeight    = m_dirichletScale;
 
-  ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                          m_dirichletWeight); CHKERRQ(ierr);
+  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
+                   m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    dzeta_a[i][j] = 0;
+    dzeta_a[j][i] = 0;
   }
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (int i=xs; i<xs+xm; i++) {
+  ParallelSection loop(m_grid->com);
+  try {
     for (int j=ys; j<ys+ym; j++) {
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
+      for (int i=xs; i<xs+xm; i++) {
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
 
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, m_grid);
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, *m_grid);
 
-      // Obtain the value of the solution at the nodes adjacent to the element.
-      // Compute the solution values and symmetric gradient at the quadrature points.
-      m_dofmap.extractLocalDOFs(i, j, *du_local, du_e);
-      if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, du_e);
-      m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
+        // Obtain the value of the solution at the nodes adjacent to the element.
+        // Compute the solution values and symmetric gradient at the quadrature points.
+        m_dofmap.extractLocalDOFs(i, j, *du_local, du_e);
+        if (dirichletBC) {
+          dirichletBC.update_homogeneous(m_dofmap, du_e);
+        }
+        m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
 
-      m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) dirichletBC.update(m_dofmap, u_e);
-      m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        if (dirichletBC) {
+          dirichletBC.update(m_dofmap, u_e);
+        }
+        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
 
-      // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
-        dzeta_e[k] = 0;
-      }
-
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
-        Vector2 du_qq = du_q[q];
-        Vector2 u_qq = u_q[q];
-
-        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
-
-        // Determine "dbeta/dtauc" at the quadrature point
-        double dbeta_dtauc = 0;
-        if (mask::grounded_ice(coefficients->mask)) {
-          dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
+        // Zero out the element-local residual in prep for updating it.
+        for (unsigned int k=0; k<Quadrature::Nk; k++) {
+          dzeta_e[k] = 0;
         }
 
-        for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
-          dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
-        }
-      } // q
+        for (unsigned int q=0; q<Quadrature::Nq; q++) {
+          Vector2 du_qq = du_q[q];
+          Vector2 u_qq = u_q[q];
 
-      m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
-    } // j
-  } // i
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq+q];
 
-  for (Points p(grid); p; p.next()) {
+          // Determine "dbeta/dtauc" at the quadrature point
+          double dbeta_dtauc = 0;
+          if (mask::grounded_ice(coefficients->mask)) {
+            dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
+          }
+
+          for (unsigned int k=0; k<Quadrature::Nk; k++) {
+            dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
+          }
+        } // q
+
+        m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
+      } // j
+    } // i
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  dirichletBC.finish();
+
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dtauc_dzeta;
     m_tauc_param.toDesignVariable((*m_zeta)(i, j), NULL, &dtauc_dzeta);
-    dzeta_a[i][j] *= dtauc_dzeta;
+    dzeta_a[j][i] *= dtauc_dzeta;
   }
 
   if (m_fixed_tauc_locations) {
-    DirichletData_Scalar fixedTauc;
-    ierr = fixedTauc.init(m_fixed_tauc_locations, NULL); CHKERRQ(ierr);
+    fem::DirichletData_Scalar fixedTauc;
+    fixedTauc.init(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
-    ierr = fixedTauc.finish(); CHKERRQ(ierr);
+    fixedTauc.finish();
   }
-
-  return 0;
 }
 
 /*!\brief Applies the linearization of the forward map (i.e. the reduced gradient \f$DF\f$ described in
@@ -529,40 +546,45 @@ These are established by first calling linearize_at.
   @param[in]   dzeta     Perturbation of the design variable
   @param[out]  du        Computed corresponding perturbation of the state variable; ghosts (if present) are updated.
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
+void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
 
   PetscErrorCode ierr;
 
   if (m_rebuild_J_state) {
-    ierr = this->assemble_jacobian_state(m_velocity, m_J_state); CHKERRQ(ierr);
+    this->assemble_jacobian_state(m_velocity, m_J_state);
     m_rebuild_J_state = false;
   }
 
-  ierr = this->apply_jacobian_design(m_velocity, dzeta, m_du_global); CHKERRQ(ierr);
-  ierr = m_du_global.scale(-1); CHKERRQ(ierr);
+  this->apply_jacobian_design(m_velocity, dzeta, m_du_global);
+  m_du_global.scale(-1);
 
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
 
-  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
+  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
+  PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
-  ierr = KSPGetConvergedReason(m_ksp, &reason); CHKERRQ(ierr);
+  ierr = KSPGetConvergedReason(m_ksp, &reason);
+  PISM_CHK(ierr, "KSPGetConvergedReason");
   if (reason < 0) {
-    SETERRQ1(grid.com, 1,
-      "IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
-  }
-  else
-  {
-    verbPrintf(4, grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason]);
+    throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve"
+                                  " failed to converge (KSP reason %s)",
+                                  KSPConvergedReasons[reason]);
+  } else {
+    verbPrintf(4, m_grid->com,
+               "IP_SSATaucForwardProblem::apply_linearization converged"
+               " (KSP reason %s)\n",
+               KSPConvergedReasons[reason]);
   }
 
-  ierr = du.copy_from(m_du_global); CHKERRQ(ierr);
-  return 0;
+  du.copy_from(m_du_global);
 }
 
 /*! \brief Applies the transpose of the linearization of the forward map
@@ -582,59 +604,66 @@ These are established by first calling linearize_at.
   @param[in]   du     Perturbation of the state variable
   @param[out]  dzeta  Computed corresponding perturbation of the design variable; ghosts (if present) are updated.
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
-                                                                       IceModelVec2S &dzeta) {
+void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
+                                                             IceModelVec2S &dzeta) {
 
   PetscErrorCode ierr;
 
   if (m_rebuild_J_state) {
-    ierr = this->assemble_jacobian_state(m_velocity, m_J_state); CHKERRQ(ierr);
+    this->assemble_jacobian_state(m_velocity, m_J_state);
     m_rebuild_J_state = false;
   }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2Int *m_dirichletLocations = bc_locations;
-  IceModelVec2V   *m_dirichletValues    = m_vel_bc;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
   double           m_dirichletWeight    = m_dirichletScale;
 
-  ierr = m_du_global.copy_from(du); CHKERRQ(ierr);
-  Vector2 **du_a;
-  ierr = m_du_global.get_array(du_a); CHKERRQ(ierr);
-  DirichletData_Vector dirichletBC;
-  ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight); CHKERRQ(ierr);
+  m_du_global.copy_from(du);
+  Vector2 **du_a = m_du_global.get_array();
+  fem::DirichletData_Vector dirichletBC;
+  dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
 
-  if (dirichletBC) dirichletBC.fix_residual_homogeneous(du_a);
+  if (dirichletBC) {
+    dirichletBC.fix_residual_homogeneous(du_a);
+  }
 
-  ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = m_du_global.end_access(); CHKERRQ(ierr);
+  dirichletBC.finish();
+  m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
+  PISM_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
+  PISM_CHK(ierr, "KSPSetOperators");
 #endif
-  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
+  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
+  PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
-  ierr = KSPGetConvergedReason(m_ksp, &reason); CHKERRQ(ierr);
+  ierr = KSPGetConvergedReason(m_ksp, &reason);
+  PISM_CHK(ierr, "KSPGetConvergedReason");
+
   if (reason < 0) {
-    SETERRQ1(grid.com, 1,
-      "IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
-  }
-  else
-  {
-    verbPrintf(4, grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason]);
-  }
-
-  ierr = this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta); CHKERRQ(ierr);
-  ierr = dzeta.scale(-1); CHKERRQ(ierr);
-
-  if (dzeta.has_ghosts()) {
-    ierr = dzeta.update_ghosts();
+    throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve"
+                                  " failed to converge (KSP reason %s)",
+                                  KSPConvergedReasons[reason]);
+  } else {
+    verbPrintf(4, m_grid->com,
+               "IP_SSATaucForwardProblem::apply_linearization converged"
+               " (KSP reason %s)\n",
+               KSPConvergedReasons[reason]);
   }
 
-  return 0;
+  this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);
+  dzeta.scale(-1);
+
+  if (dzeta.get_stencil_width() > 0) {
+    dzeta.update_ghosts();
+  }
 }
 
+} // end of namespace inverse
 } // end of namespace pism

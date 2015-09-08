@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,69 +20,72 @@
 #ifndef _PISMCONFIG_H_
 #define _PISMCONFIG_H_
 
-#include "NCVariable.hh"
-#include "PISMUnits.hh"
 #include <string>
 #include <set>
 
+#include "PISMConfigInterface.hh"
+#include "VariableMetadata.hh"
+
 namespace pism {
 
+class Logger;
+
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
-class Config {
+class NetCDFConfig : public Config {
 public:
-  Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system);
-  ~Config();
+  NetCDFConfig(MPI_Comm com, const std::string &name, units::System::Ptr unit_system);
+  ~NetCDFConfig();
 
-  void set_double(const std::string &name, double value);
-  void set_string(const std::string &name, const std::string &value);
+protected:
+  void read_impl(const PIO &nc);
+  void write_impl(const PIO &nc) const;
 
-  bool is_set(const std::string &name) const;
+  bool is_set_impl(const std::string &name) const;
 
-  PetscErrorCode print_to_stdout(int verbosity_threshhold = 4) const;
-  PetscErrorCode warn_about_unused_parameters() const;
-  PetscErrorCode read(const PIO &nc);
-  PetscErrorCode write(const PIO &nc) const;
+  // doubles
+  Doubles all_doubles_impl() const;
+  double get_double_impl(const std::string &name) const;
+  double get_double_impl(const std::string &name,
+                         const std::string &u1, const std::string &u2) const;
+  void set_double_impl(const std::string &name, double value);
 
-  PetscErrorCode read(const std::string &filename);
-  PetscErrorCode write(const std::string &filename, bool append = true) const;
+  // strings
+  Strings all_strings_impl() const;
+  std::string get_string_impl(const std::string &name) const;
+  void set_string_impl(const std::string &name, const std::string &value);
 
-  std::string get_config_filename() const;
-  UnitSystem get_unit_system() const;
-  double get(const std::string &) const;
-  double get(const std::string &name, const std::string &u1, const std::string &u2) const;
-  bool   get_flag(const std::string&) const;
-  std::string get_string(const std::string &name) const;
-  // Set a flag (overriding the default in pism_config.cdl). Should not be used
-  // in pismr code.
-  void   set_flag(const std::string&, bool);
-  // Set parameters and remember that they were set using a command-line option
-  PetscErrorCode set_flag_from_option(const std::string &name, bool value);
-  PetscErrorCode set_scalar_from_option(const std::string &name, double value);
-  PetscErrorCode set_string_from_option(const std::string &name, const std::string &value);
-  PetscErrorCode set_keyword_from_option(const std::string &name, const std::string &value);
-  // Set parameters by ptocessing a command-line option
-  PetscErrorCode flag_from_option(const std::string &, const std::string &);
-  PetscErrorCode scalar_from_option(const std::string &, const std::string &);
-  PetscErrorCode string_from_option(const std::string &, const std::string &);
-  PetscErrorCode keyword_from_option(const std::string &, const std::string &, const std::string &);
-  // Import settings from an override file
-  void import_from(const Config &other);
-  void update_from(const Config &other);
-
-private:
+  // booleans
+  Booleans all_booleans_impl() const;
+  bool get_boolean_impl(const std::string& name) const;
+  void set_boolean_impl(const std::string& name, bool value);
+protected:
   MPI_Comm m_com;
-  UnitSystem m_unit_system;
-  NCVariable m_data;
+  VariableMetadata m_data;
+private:
+  //! @brief the name of the file this config database was initialized from
   std::string m_config_filename;
-  //!< \brief the name of the file this config database was initialized from 
-  double get_quiet(const std::string &name) const;
-  std::string get_string_quiet(const std::string &name) const;
-  bool   get_flag_quiet(const std::string &name) const;
-  const NCVariable& get_data() const;
+};
 
-  std::set<std::string> m_parameters_set;
-  mutable std::set<std::string> m_parameters_used;
-  bool m_options_left_set;
+//! @brief Default PISM configuration database: uses NetCDF files; can be initialized from a file
+//! specified using a command-line option.
+class DefaultConfig : public NetCDFConfig {
+public:
+  DefaultConfig(MPI_Comm com,
+                const std::string &variable_name,
+                const std::string &option,
+                units::System::Ptr unit_system);
+  ~DefaultConfig();
+
+  typedef PISM_SHARED_PTR(DefaultConfig) Ptr;
+  typedef PISM_SHARED_PTR(const DefaultConfig) ConstPtr;
+
+  //! Initialize (use default path if no option was set).
+  void init_with_default(const Logger &log);
+  //! Initialize (leave empty if no option was set).
+  void init(const Logger &log);
+private:
+  void init(const Logger &log, bool use_default_path);
+  std::string m_option;
 };
 
 } // end of namespace pism

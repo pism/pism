@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,174 +16,109 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "flowlaw_factory.hh"
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "PISMUnits.hh"
 #include <cassert>
+#include <stdexcept>
+
+#include "flowlaw_factory.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMUnits.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
+namespace rheology {
 
-IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
-                                     const std::string &pre,
-                                     const Config &conf,
-                                     EnthalpyConverter *my_EC)
-  : com(c), config(conf), EC(my_EC) {
+FlowLaw* create_isothermal_glen(const std::string &pre,
+                                const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (IsothermalGlen)(pre, config, EC);
+}
 
-  prefix = pre;
+FlowLaw* create_pb(const std::string &pre,
+                   const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (PatersonBudd)(pre, config, EC);
+}
 
-  assert(prefix.empty() == false);
+FlowLaw* create_gpbld(const std::string &pre,
+                      const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (GPBLD)(pre, config, EC);
+}
 
-  if (registerAll()) {
-    PetscPrintf(com, "IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
-    PISMEnd();
+FlowLaw* create_hooke(const std::string &pre,
+                      const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (Hooke)(pre, config, EC);
+}
+
+FlowLaw* create_arr(const std::string &pre,
+                    const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (PatersonBuddCold)(pre, config, EC);
+}
+
+FlowLaw* create_arrwarm(const std::string &pre,
+                        const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (PatersonBuddWarm)(pre, config, EC);
+}
+
+FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
+                                  const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (GoldsbyKohlstedt)(pre, config, EC);
+}
+
+FlowLawFactory::FlowLawFactory(const std::string &prefix,
+                               Config::ConstPtr conf,
+                               EnthalpyConverter::Ptr my_EC)
+  : m_config(conf), m_EC(my_EC) {
+
+  m_prefix = prefix;
+
+  assert(not prefix.empty());
+
+  m_flow_laws.clear();
+  add_type(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
+  add_type(ICE_PB, &create_pb);
+  add_type(ICE_GPBLD, &create_gpbld);
+  add_type(ICE_HOOKE, &create_hooke);
+  add_type(ICE_ARR, &create_arr);
+  add_type(ICE_ARRWARM, &create_arrwarm);
+  add_type(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
+
+  set_default_type(m_config->get_string(prefix + "flow_law"));
+}
+
+FlowLawFactory::~FlowLawFactory() {
+  // empty
+}
+
+void FlowLawFactory::add_type(const std::string &name, FlowLawCreator icreate) {
+  m_flow_laws[name] = icreate;
+}
+
+void FlowLawFactory::remove_type(const std::string &name) {
+  m_flow_laws.erase(name);
+}
+
+void FlowLawFactory::set_default_type(const std::string &type) {
+  if (m_flow_laws[type] == NULL) {
+    throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available"
+                                  " (prefix=\"%s\").",
+                                  type.c_str(), m_prefix.c_str());
   }
 
-  if (setType(ICE_PB)) {        // Set's a default type
-    PetscPrintf(com, "IceFlowLawFactory::setType(\"%s\") returned an error, but we're in a constructor\n", ICE_PB);
-    PISMEnd();
-  }
+  m_type_name = type;
 }
 
-IceFlowLawFactory::~IceFlowLawFactory()
-{
-}
-
-PetscErrorCode IceFlowLawFactory::registerType(const std::string &name, IceFlowLawCreator icreate)
-{
-  flow_laws[name] = icreate;
-  return 0;
-}
-
-PetscErrorCode IceFlowLawFactory::removeType(const std::string &name) {
-  flow_laws.erase(name);
-  return 0;
-}
-
-
-static PetscErrorCode create_isothermal_glen(MPI_Comm com,const std::string &pre,
-                                             const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (IsothermalGlenIce)(com, pre, config, EC);  return 0;
-}
-
-static PetscErrorCode create_pb(MPI_Comm com,const std::string &pre,
-                                const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenIce)(com, pre, config, EC);  return 0;
-}
-
-static PetscErrorCode create_gpbld(MPI_Comm com,const std::string &pre,
-                                   const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GPBLDIce)(com, pre, config, EC);  return 0;
-}
-
-static PetscErrorCode create_hooke(MPI_Comm com,const std::string &pre,
-                                   const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (HookeIce)(com, pre, config, EC);  return 0;
-}
-
-static PetscErrorCode create_arr(MPI_Comm com,const std::string &pre,
-                                 const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIce)(com, pre, config, EC);  return 0;
-}
-
-static PetscErrorCode create_arrwarm(MPI_Comm com,const std::string &pre,
-                                     const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);  return 0;
-}
-
-static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const std::string &pre,
-                                               const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);  return 0;
-}
-
-PetscErrorCode IceFlowLawFactory::registerAll()
-{
-  PetscErrorCode ierr;
-
-  flow_laws.clear();
-  ierr = registerType(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen); CHKERRQ(ierr);
-  ierr = registerType(ICE_PB, &create_pb);     CHKERRQ(ierr);
-  ierr = registerType(ICE_GPBLD, &create_gpbld);  CHKERRQ(ierr);
-  ierr = registerType(ICE_HOOKE, &create_hooke);  CHKERRQ(ierr);
-  ierr = registerType(ICE_ARR, &create_arr);    CHKERRQ(ierr);
-  ierr = registerType(ICE_ARRWARM, &create_arrwarm); CHKERRQ(ierr);
-  ierr = registerType(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceFlowLawFactory::setType(const std::string &type)
-{
-  IceFlowLawCreator r;
-  PetscErrorCode ierr;
-
-  r = flow_laws[type];
-  if (!r) {
-    ierr = PetscPrintf(com, "PISM ERROR: Selected ice type \"%s\" is not available.\n",
-                       type.c_str()); CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  type_name = type;
-
-  return 0;
-}
-
-PetscErrorCode IceFlowLawFactory::setFromOptions()
-{
-  PetscErrorCode ierr;
-  bool flag;
-  std::string my_type_name;
-
-  ierr = PetscOptionsBegin(com, prefix.c_str(), "IceFlowLawFactory options", "IceFlowLaw"); CHKERRQ(ierr);
-  {
-
-    // build the list of choices
-    std::map<std::string,IceFlowLawCreator>::iterator j = flow_laws.begin();
-    std::set<std::string> choices;
-    while (j != flow_laws.end()) {
-      choices.insert(j->first);
-      ++j;
-    }
-
-    ierr = OptionsList(com, "-flow_law", "flow law type", choices,
-                           type_name, my_type_name, flag); CHKERRQ(ierr);
-
-    if (flag) {
-      ierr = setType(my_type_name); CHKERRQ(ierr);
-    }
-
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
-{
-  PetscErrorCode ierr;
-  IceFlowLawCreator r;
-  IceFlowLaw *ice;
-
-  PetscFunctionBegin;
-#if PETSC_VERSION_LT(3,4,0)
-  PetscValidPointer(inice,3);
-#endif
-  *inice = 0;
-
-  // find the function that can create selected ice type:
-  r = flow_laws[type_name];
+FlowLaw* FlowLawFactory::create() {
+  // find the function that can create selected flow law:
+  FlowLawCreator r = m_flow_laws[m_type_name];
   if (r == NULL) {
-    SETERRQ1(com, 1,
-             "Selected Ice type %s not available, but we shouldn't be able to get here anyway",
-             type_name.c_str());
+    throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available,\n"
+                                  "but we shouldn't be able to get here anyway",
+                                  m_type_name.c_str());
   }
 
-  // create an IceFlowLaw instance:
-  ierr = (*r)(com, prefix, config, EC, &ice); CHKERRQ(ierr);
-  *inice = ice;
-
-  PetscFunctionReturn(0);
+  // create an FlowLaw instance:
+  return (*r)(m_prefix, *m_config, m_EC);
 }
 
+} // end of namespace rheology
 } // end of namespace pism

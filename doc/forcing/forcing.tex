@@ -73,7 +73,7 @@ urlcolor=blue     % only if colorlinks=true
 
 \vspace{0.3in}
 \begin{quote}
-  \textsl{Copyright (C) 2004--2014 The PISM Authors}
+  \textsl{Copyright (C) 2004--2015 The PISM Authors}
   \medskip
 
   \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
@@ -343,7 +343,7 @@ Simulations of the Greenland ice sheet typically use \texttt{-surface~pdd} inste
 
 The SeaRISE-Greenland setup uses a parameterized near-surface air temperature
 \cite{Faustoetal2009} and a constant-in-time precipitation field read from an
-input (\texttt{-i} or \texttt{-boot_file}) file. A temperature-index (PDD)
+input (\texttt{-i}) file. A temperature-index (PDD)
 scheme is used to compute the climatic mass balance.
 
 \begin{center}
@@ -475,7 +475,7 @@ Sometimes a run like the one above is still too costly. In this case it might be
 
 The command
 \begin{verbatim}
-$ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
+$ pismr -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
         -atmosphere searise_greenland \
         -surface pdd -ys 0 -ye 2.5 \
         -extra_file foo.nc -extra_times 0:0.1:2.5 \
@@ -921,8 +921,7 @@ data period in years.)
 \end{center}
 
 This surface model~component implements the setup used in~\cite{Martinetal2011}. The
-\variable{climatic_mass_balance} is read from an input (\texttt{-i} or
-\texttt{-boot_file}) file; the ice surface temperature is computed as a function of
+\variable{climatic_mass_balance} is read from an input (\texttt{-i}) file; the ice surface temperature is computed as a function of
 latitude (variable \variable{lat}) and surface elevation (dynamically updated
 by PISM). See equation~(1) in~\cite{Martinetal2011}.
 
@@ -1008,14 +1007,14 @@ options.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~...,forcing} \index[options]{SB@\surfacemods!\texttt{forcing}} \\
-    NetCDF variables: & \variable{thk} (ice thickness), \\
+    NetCDF variables: & \variable{thk} (ice thickness), \variable{ftt_mask} (mask of zeros and ones; 1 where surface mass flux is adjusted and 0 elsewhere) \\
     C++ class: & \class{PSForceThickness}\\
     \bottomrule
   \end{tabular}
 \end{center}
 
 The \texttt{forcing} modifier implements a surface mass balance adjustment
-mechanism which forces ice thickness to a target thickness distribution at the
+mechanism which forces the thickness of grounded ice to a target thickness distribution at the
 end of the run. The idea behind this mechanism is that spinup of ice sheet
 models frequently requires the surface elevation to come close to measured
 values at the end of a run. A simpler alternative to accomplish this, namely
@@ -1023,26 +1022,29 @@ option \texttt{-no_mass}, represents an unmodeled, frequently large,
 violation of the mass continuity equation.
 
 In more detail, let $H_{\text{tar}}$ be the target thickness. Let $H$ be the
-time-dependent model thickness. Note that a surface model~component described
-in this section produces the $M$ term in the mass continuity equation
-$$\frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q}.$$
-(Other details of this equation do not concern us here.) Option
-\fileopt{force_to_thickness_file} causes $M$ to be modified by a multiple of the
-difference between the target thickness and the current thickness,
-$$\Delta M = \alpha (H_{\text{tar}} - H)$$
+time-dependent model thickness. The surface model~component described
+here produces the term $M$ in the mass continuity equation:
+\begin{displaymath}
+\frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q}.
+\end{displaymath}
+(Other details of this equation do not concern us here.) The
+\texttt{forcing} modifier causes $M$ to be adjusted by a multiple of
+the difference between the target thickness and the current thickness,
+\begin{displaymath}
+\Delta M = \alpha (H_{\text{tar}} - H)
+\end{displaymath}
 where $\alpha>0$. We are adding mass ($\Delta M>0$) where $H_{\text{tar}} > H$
 and ablating where $H_{\text{tar}} < H$.
 
 Option \fileopt{force_to_thickness_file} identifies the file containing the target ice
-thickness field. A basic run modifying surface model \texttt{given} would
-look like
+thickness field \texttt{thk} and the mask \texttt{ftt_mask}. A basic run modifying surface model \texttt{given} would look like
 \begin{verbatim}
 $ pismr -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
 
-In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp}, as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
-\variable{thk} which will serve as the target thickness. Option
+In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp}, as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains fields
+\variable{thk} which will serve as the target thickness and \variable{ftt_mask} which defines the map plane area where this adjustment is applied. Option
 \intextoption{force_to_thickness_alpha} adjusts the value of $\alpha$, which has a
 default value specified in the \emph{Source Code Browser}
 \url{\PISMBROWSERURL}.
@@ -1202,7 +1204,7 @@ Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify
   \end{tabular}
 \end{center}
 
-This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i} or \texttt{-boot_file}) file. To read time-independent precipitation from a different file, use the option \intextoption{atmosphere_searise_greenland_file}.
+This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i}) file. To read time-independent precipitation from a different file, use the option \intextoption{atmosphere_searise_greenland_file}.
 
 The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
 
@@ -1227,7 +1229,7 @@ Celsius of temperature change~\cite{Huybrechts02}.
 \end{center}
 
 This model~component reads a time-independent precipitation field from an input
-(\texttt{-i} or \texttt{-boot_file}) file and computes near-surface air
+(\texttt{-i}) file and computes near-surface air
 temperature using a latitude and surface elevation-dependent formula.
 
 The parameterization is the same as in the \texttt{-surface pik} model,
@@ -1486,7 +1488,7 @@ Alternatively, the sub-shelf melt rate in meters per year can be set using the \
     \toprule
     Command-line option: & \texttt{-ocean~given}
     \index[options]{OA@\ocean!\texttt{given}} \\
-    NetCDF variables: & \variable{shelfbtemp}, \variable{shelfbmassflux}\\
+    NetCDF variables: & \variable{shelfbtemp}  \mbox{[degrees Kelvin]}, \variable{shelfbmassflux}  \mbox{[kg m-2 s-1]}\\
     C++ class: & \class{POGivenClimate}\\
     \bottomrule
   \end{tabular}

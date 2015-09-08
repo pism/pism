@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,49 +19,90 @@
 #ifndef __BedDef_hh
 #define __BedDef_hh
 
-#include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
 
+//! @brief Bed-related models: bed deformation (provide bed elevation
+//! and uplift) and (soon) bed erosion.
+namespace bed {
+
 //! PISM bed deformation model (base class).
-/*! Unlike other Component_TS derived classes, the update() method of
-  BedDef has side-effects (modifies IceModel data members).
-*/
 class BedDef : public Component_TS {
 public:
-  BedDef(IceGrid &g, const Config &conf);
-  virtual ~BedDef() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt) = 0;
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-protected:
-  PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
-  PetscErrorCode compute_uplift(double dt_beddef);
-  double t_beddef_last;         //!< last bed deformation update year
+  BedDef(IceGrid::ConstPtr g);
+  virtual ~BedDef();
 
-  IceModelVec2S topg_initial;
-  IceModelVec2S topg_last;      //!< last bed elevation
-  IceModelVec2S *thk,           //!< pointer to the current ice thickness
-    *topg,                      //!< pointer to the current bed elevation
-    *uplift;                    //!< pointer to the bed uplift rate field
+  void init();
+  void init(const IceModelVec2S &bed_elevation,
+            const IceModelVec2S &bed_uplift,
+            const IceModelVec2S &ice_thickness);
+
+  using Component_TS::update;
+  void update(const IceModelVec2S &ice_thickness,
+              double my_t, double my_dt);
+
+  const IceModelVec2S& bed_elevation() const;
+  const IceModelVec2S& uplift() const;
+
+  void set_elevation(const IceModelVec2S &input);
+  void set_uplift(const IceModelVec2S &input);
+  
+protected:
+  void update_impl(double my_t, double my_dt);
+  virtual void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                          double my_t, double my_dt) = 0;
+  virtual void init_impl();
+  virtual void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
+                                     const IceModelVec2S &bed_uplift,
+                                     const IceModelVec2S &ice_thickness);
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+  void compute_uplift(double dt_beddef);
+protected:
+  //! time of the last bed deformation update
+  double m_t_beddef_last;
+
+  //! current bed elevation
+  IceModelVec2S m_topg;
+
+  //! bed elevation at the beginning of a run
+  IceModelVec2S m_topg_initial;
+
+  //! bed elevation at the time of the last update
+  IceModelVec2S m_topg_last;
+
+  //! bed uplift rate
+  IceModelVec2S m_uplift;
+};
+
+class PBNull : public BedDef {
+public:
+  PBNull(IceGrid::ConstPtr g);
+protected:
+  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                  double my_t, double my_dt);
+  MaxTimestep max_timestep_impl(double t);
+  void init_impl();
 };
 
 //! Pointwide isostasy bed deformation model.
 class PBPointwiseIsostasy : public BedDef {
 public:
-  PBPointwiseIsostasy(IceGrid &g, const Config &conf); 
-  virtual ~PBPointwiseIsostasy() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  PBPointwiseIsostasy(IceGrid::ConstPtr g); 
+  virtual ~PBPointwiseIsostasy();
 protected:
-  PetscErrorCode allocate();
-  IceModelVec2S thk_last;       //!< last ice thickness
+  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void init_impl();
+  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                  double my_t, double my_dt);
+  IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 
+} // end of namespace bed
 } // end of namespace pism
 
 #endif  // __BedDef_hh

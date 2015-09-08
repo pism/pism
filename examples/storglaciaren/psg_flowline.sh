@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2010-2014 Andy Aschwanden
+# Copyright (C) 2010-2015 Andy Aschwanden
 
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -127,7 +127,7 @@ PREFIX=psg_flowline_
 OUTNAME=$PREFIX${GS}m_pre$SMOOTHRUNLENGTH.nc
 echo
 echo "$SCRIPTNAME  bootstrapping plus short smoothing run for ${SMOOTHRUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -boot_file $INNAME $GRID \
+cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME -bootstrap $GRID \
   $COUPLER -y ${SMOOTHRUNLENGTH} -o $OUTNAME"
 $PISM_DO $cmd
 

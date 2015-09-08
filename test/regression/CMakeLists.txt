@@ -36,7 +36,7 @@ macro(pism_python_test name script)
 endmacro()
 
 # Tests themselves:
-pism_test (pism_testing_tools test_00.sh)
+pism_test (pism_testing_tools test_regression_tools.py)
 
 pism_test (pismr_exact_restartability_SIA_only test_01.sh)
 
@@ -50,15 +50,15 @@ pism_test (pismr_bootstrap_variable_order test_05.sh)
 
 pism_test (pismr_bootstrap_variable_ranges test_06.sh)
 
-pism_test (regridding_via_boot_file_and_regrid_file test_07.sh)
+pism_test (regridding:bootstrap_vs_regrid_file test_07.sh)
 
-pism_test (regridding_in_vertical_direction test_08.sh)
+pism_test (regridding:vertical_direction test_08.sh)
 
-pism_test (pismr_regridding_variable_order test_09.sh)
+pism_test (regridding:variable_order test_09.sh)
 
-pism_test (pismr_regridding_processor_independence test_10.sh)
+pism_test (regridding:processor_independence test_10.sh)
 
-pism_test (automatic_vertical_grid_extension test_11.sh)
+pism_test (regridding:no_enthalpy test_32.sh)
 
 pism_test (SIA_mass_conservation test_12.sh)
 
@@ -66,75 +66,75 @@ pism_test (temperature_continuity_base_polythermal temp_continuity.py)
 
 pism_test (enthalpy_symmetry_near_base test_13.sh)
 
-pism_test (verif_test_E_regress_SIA_sliding test_14.sh)
+pism_test (Verification:test_E test_14.sh)
 
-pism_test (verif_test_C_regress_SIA_time_SMB test_15.sh)
+pism_test (Verification:test_C test_15.sh)
 
-pism_test (verif_test_L_regress_SIA_nonflat_bed test_16.sh)
+pism_test (Verification:test_L test_16.sh)
 
-pism_test (verif_test_G_regress_thermo_SIA_time_SMB test_17.sh)
+pism_test (Verification:test_G test_17.sh)
 
-pism_test (verif_test_K_regress_cold_ice_bedrock_thermal test_18.sh)
-
-pism_test (GPBLD_flow_law_regress test_20.sh)
-
-pism_test (Paterson-Budd_flow_law_regress test_21.sh)
+pism_test (Verification:test_K test_18.sh)
 
 pism_test (Schoof_2003_bed_roughness_SIA_regress test_22.sh)
 
-pism_test (comparing_restart_i_vs_boot_file_and_regrid_file test_23.sh)
+pism_test (restart:i_vs_bootstrap_and_regrid_file test_23.sh)
 
-pism_test (Hooke_flow_law_regress test_24.sh)
+pism_test (flow_law:GPBLD test_20.sh)
 
-pism_test (GK_flow_law_regress test_25.sh)
+pism_test (flow_law:Paterson-Budd test_21.sh)
 
-pism_test (cold_part_of_Paterson-Budd_flow_law_regress test_26.sh)
+pism_test (flow_law:Hooke test_24.sh)
+
+pism_test (flow_law:GK test_25.sh)
+
+pism_test (flow_law:Paterson-Budd_cold test_26.sh)
 
 pism_test (runtime_viewers test_27.sh)
 
 pism_test (bootstrapping_incomplete_input test_28.sh)
 
-pism_test (distributed_hydrology_regression test_29.py)
+pism_test (distributed_hydrology test_29.py)
 
 pism_test (initialization_without_enthalpy test_31.sh)
 
-pism_test (regridding_without_enthalpy test_32.sh)
+pism_test (epsg_code_processing test_epsg_processing.py)
 
 if(Pism_BUILD_EXTRA_EXECS)
   # These tests require special executables. They are disabled unless
   # these executables are built. This way we don't need to explain why
   # "make && make test" shows some test failures when PISM is built
   # with default settings.
-  pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
+  pism_test (Verification:PISMBedThermalUnit_test_K btu_regression.sh)
 
-  pism_test (verif_test_V_SSAFD_regress_CFBC ssa/ssa_test_cfbc.sh)
+  pism_test (Verification:test_V_SSAFD_CFBC ssa/ssa_test_cfbc.sh)
 
-  pism_test (verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
+  pism_test (Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
 
-  pism_test (verif_test_I_SSAFEM_regress_SSA_plastic ssa/ssa_testi_fem.sh)
+  pism_test (Verification:test_I_SSAFEM ssa/ssa_testi_fem.sh)
 
-  pism_test (verif_test_J_SSAFD_regress_linear_SSA_floating ssa/ssa_testj_fd.sh)
+  pism_test (Verification:test_J_SSAFD ssa/ssa_testj_fd.sh)
 
-  pism_test (verif_test_J_SSAFEM_regress_linear_SSA_floating ssa/ssa_testj_fem.sh)
+  pism_test (Verification:test_J_SSAFEM ssa/ssa_testj_fem.sh)
 
-  pism_test (verif_SSAFEM_regress_linear_flow ssa/ssafem_test_linear.sh)
+  pism_test (Verification:SSAFEM_linear_flow ssa/ssafem_test_linear.sh)
 
-  pism_test (verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
+  pism_test (Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 endif()
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 
-	pism_python_test (verif_test_I_SSAFD_regress_SSA_plastic_py ssa/ssa_testi_fd.sh)
+	pism_python_test (Python:Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
 
-	pism_python_test (verif_test_I_SSAFEM_regress_SSA_plastic_py ssa/ssa_testi_fem.sh)
+	pism_python_test (Python:Verification:test_I_SSAFEM ssa/ssa_testi_fem.sh)
 
-	pism_python_test (verif_test_J_SSAFD_regress_linear_SSA_floating_py ssa/ssa_testj_fd.sh)
+	pism_python_test (Python:Verification:test_J_SSAFD ssa/ssa_testj_fd.sh)
 
-	pism_python_test (verif_test_J_SSAFEM_regress_linear_SSA_floating_py ssa/ssa_testj_fem.sh)
+	pism_python_test (Python:Verification:test_J_SSAFEM ssa/ssa_testj_fem.sh)
 
-	pism_python_test (verif_SSAFEM_regress_linear_flow_py ssa/ssafem_test_linear.sh)
+	pism_python_test (Python:Verification:SSAFEM_linear_flow ssa/ssafem_test_linear.sh)
 
-        pism_python_test (verif_SSAFEM_regress_plug_flow_py ssa/ssafem_test_plug.sh)
+        pism_python_test (Python:Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 
 
 # Inversion regression tests.  We run the appropriate ones if we can find
@@ -163,7 +163,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
           message (STATUS "Enabling regression tests that use siple")
 
-          pism_python_test (simple_inversion_test_nlcg inverse/tiny_nlcg.sh)
+          pism_python_test (Python:inversion:nlcg inverse/tiny_nlcg.sh)
 
         endif()
 
@@ -171,7 +171,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
           message (STATUS "Enabling regression tests that use TAO")
 
-          pism_python_test (simple_inversion_test_tikhonov  inverse/tiny_tikhonov_lmvm.sh)
+          pism_python_test (Python:inversion:tikhonov  inverse/tiny_tikhonov_lmvm.sh)
 
         endif()
 

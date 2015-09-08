@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,91 +17,103 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPFunctional.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
+namespace inverse {
 
-PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
-  PetscErrorCode ierr;
-  IceGrid &grid = *x.get_grid();
+void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
+  const IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
   
-  ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
+  f.valueAt(x,&F0);
   
   IceModelVec::AccessList list(gradient);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j) += h;
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j) += h;
+      }
+      x.update_ghosts();
+
+      f.valueAt(x,&Fh);
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j) -= h;
+      }
+      x.update_ghosts();
+
+      gradient(i,j) = (Fh-F0)/h;
     }
-    x.update_ghosts();
-
-    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j) -= h;
-    }
-    x.update_ghosts();
-
-    gradient(i,j) = (Fh-F0)/h;
+  } catch (...) {
+    loop.failed();
   }
-  return 0;
+  loop.check();
 }
 
-PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
-  PetscErrorCode ierr;
-  IceGrid &grid = *x.get_grid();
+void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
+  const IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
   
-  ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
+  f.valueAt(x,&F0);
   
   IceModelVec::AccessList access_gradient(gradient);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).u += h;
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).u += h;
+      }
+      x.update_ghosts();
+
+      f.valueAt(x,&Fh);
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).u -= h;
+      }
+      x.update_ghosts();
+
+      gradient(i,j).u = (Fh-F0)/h;
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).v += h;
+      }
+      x.update_ghosts();
+
+      f.valueAt(x,&Fh);
+
+      {
+        IceModelVec::AccessList access_x(x);
+        x(i,j).v -= h;
+      }
+      x.update_ghosts();
+
+      gradient(i,j).v = (Fh-F0)/h;
     }
-    x.update_ghosts();
-
-    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).u -= h;
-    }
-    x.update_ghosts();
-
-    gradient(i,j).u = (Fh-F0)/h;
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).v += h;
-    }
-    x.update_ghosts();
-
-    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
-
-    {
-      IceModelVec::AccessList access_x(x);
-      x(i,j).v -= h;
-    }
-    x.update_ghosts();
-
-    gradient(i,j).v = (Fh-F0)/h;
+  } catch (...) {
+    loop.failed();
   }
-  return 0;
+  loop.check();
 }
 
 // PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
 
+} // end of namespace inverse
 } // end of namespace pism

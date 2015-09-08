@@ -28,8 +28,8 @@ if prefix == "":
     sys.exit(1)
 
 
-libraries=['gsl', 'gslcblas']
-extra_compile_args=["-O3", "-ffast-math", "-Wall"]
+libraries = ['gsl', 'gslcblas']
+extra_compile_args = ["-O3", "-ffast-math", "-Wall"]
 
 # Define the extension
 extension = Extension("exactP",
@@ -43,11 +43,11 @@ extension = Extension("exactP",
                       language="c")
 
 setup(
-    name = "exactP",
-    version = "0.0.1",
-    description = "Verification test P helper",
-    author = "PISM authors",
-    author_email = "help@pism-docs.org",
-    cmdclass = {'build_ext': build_ext},
-    ext_modules = [extension]
-    )
+    name="exactP",
+    version="0.0.1",
+    description="Verification test P helper",
+    author="PISM authors",
+    author_email="help@pism-docs.org",
+    cmdclass={'build_ext': build_ext},
+    ext_modules=[extension]
+)

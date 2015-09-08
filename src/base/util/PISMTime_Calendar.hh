@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,64 +27,71 @@ namespace pism {
 class Time_Calendar : public Time
 {
 public:
-  Time_Calendar(MPI_Comm c, const Config &conf,
+  Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
                 const std::string &calendar,
-                const UnitSystem &units_system);
+                units::System::Ptr units_system);
   virtual ~Time_Calendar();
 
-  virtual PetscErrorCode init();
+  virtual void init(const Logger &log);
 
-  virtual PetscErrorCode init_from_file(const std::string &filename);
+  virtual void init_from_file(const std::string &filename, const Logger &log,
+                              bool set_start_time);
 
-  virtual double mod(double time, unsigned int);
+  virtual void init_from_input_file(const PIO &nc,
+                                    const std::string &time_name,
+                                    const Logger &log);
 
-  virtual double year_fraction(double T);
+  virtual double mod(double time, unsigned int) const;
 
-  virtual std::string date(double T);
+  virtual double year_fraction(double T) const;
 
-  virtual std::string date();
+  virtual std::string date(double T) const;
 
-  virtual std::string start_date();
+  virtual std::string date() const;
 
-  virtual std::string end_date();
+  virtual std::string start_date() const;
 
-  virtual std::string units_string() {
+  virtual std::string end_date() const;
+
+  virtual std::string units_string() const {
     return CF_units_string();
   }
 
-  virtual std::string CF_units_string() {
+  virtual std::string CF_units_string() const {
     return m_time_units.format();
   }
 
-  virtual std::string CF_units_to_PISM_units(const std::string &input) {
+  virtual std::string CF_units_to_PISM_units(const std::string &input) const {
     return input;               // return unchanged CF units
   }
 
-  virtual bool use_reference_date()
-  { return true; }
+  virtual bool use_reference_date() {
+    return true;
+  }
 
-  virtual double calendar_year_start(double T);
+  virtual double calendar_year_start(double T) const;
 
-  virtual double increment_date(double T, int years);
+  virtual double increment_date(double T, int years) const;
 
 protected:
-  virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       const std::string &keyword,
-                                       std::vector<double> &result);
+  virtual void compute_times(double time_start, double delta, double time_end,
+                             const std::string &keyword,
+                             std::vector<double> &result) const;
 
-  virtual PetscErrorCode process_ys(double &result, bool &flag);
-  virtual PetscErrorCode process_y(double &result, bool &flag);
-  virtual PetscErrorCode process_ye(double &result, bool &flag);
+  virtual bool process_ys(double &result);
+  virtual bool process_y(double &result);
+  virtual bool process_ye(double &result);
 
-  virtual PetscErrorCode parse_date(const std::string &spec, double *result);
+  virtual void parse_date(const std::string &spec, double *result) const;
 
-  virtual PetscErrorCode parse_interval_length(const std::string &spec,
-                                               std::string &keyword, double *result);
+  virtual void parse_interval_length(const std::string &spec,
+                                     std::string &keyword, double *result) const;
 
-  PetscErrorCode compute_times_monthly(std::vector<double> &result);
+  void compute_times_monthly(std::vector<double> &result) const;
 
-  PetscErrorCode compute_times_yearly(std::vector<double> &result);
+  void compute_times_yearly(std::vector<double> &result) const;
 private:
+  MPI_Comm m_com;
   // Hide copy constructor / assignment operator.
   Time_Calendar(Time_Calendar const &);
   Time_Calendar & operator=(Time_Calendar const &);

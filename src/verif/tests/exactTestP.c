@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012-2014 Ed Bueler
+   Copyright (C) 2012-2015 Ed Bueler and Constantine Khroulev
 
    This file is part of PISM.
 
@@ -19,12 +19,20 @@
 */
 
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
+
+#include <gsl/gsl_version.h>
+#if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
+  (GSL_MAJOR_VERSION >= 1) && (GSL_MINOR_VERSION >= 15)
+#define PISM_USE_ODEIV2 1
 #include <gsl/gsl_odeiv2.h>
+#endif
+
 #include "exactTestP.h"
 
 #define SperA    31556926.0    /* seconds per year; 365.2422 days */
@@ -125,6 +133,7 @@ double psteady(double W, double magvb, double Po) {
   return P;
 }
 
+#ifdef PISM_USE_ODEIV2
 
 /* Solves ODE for W(r), the exact solution.  Input r[] and output W[] must be
 allocated vectors of length N.  Input r[] must be decreasing.  The combination
@@ -180,6 +189,18 @@ int getW(double *r, int N, double *W,
    return status;
 }
 
+#else
+int getW(double *r, int N, double *W,
+         const double EPS_ABS, const double EPS_REL, const int ode_method) {
+  (void) r;
+  (void) N;
+  (void) W;
+  (void) EPS_ABS;
+  (void) EPS_REL;
+  (void) ode_method;
+  assert(0 && "Test P requires GSL version 1.15 or later.");
+}
+#endif
 
 int exactP(double r, double *h, double *magvb, double *Wcrit, double *W, double *P,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {

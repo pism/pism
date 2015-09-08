@@ -9,15 +9,15 @@ length=-y 1500
 options=${grid} ${ssa} ${mass} ${misc} ${length}
 
 default: tongues.nc
-	mpiexec -n 4 pismr -boot_file tongues.nc ${options} ${extra}
+	mpiexec -n 4 pismr -i tongues.nc -bootstrap ${options} ${extra}
 
 extra_calving=-extra_times 5 -extra_file ex.nc -extra_vars taud,velbar_mag,thk,mask,discharge_flux_cumulative,velbar
 eigen_calving: tongues.nc
-	mpiexec -n 4 pismr -boot_file tongues.nc -calving eigen_calving -eigen_calving_K 2e18 \
+	mpiexec -n 4 pismr -i tongues.nc -bootstrap -calving eigen_calving -eigen_calving_K 2e18 \
                            ${options} ${extra_calving}
 
 eigen_plus_thickness_calving: tongues.nc
-	mpiexec -n 4 pismr -boot_file tongues.nc -calving eigen_calving,thickness_calving \
+	mpiexec -n 4 pismr -i tongues.nc -bootstrap -calving eigen_calving,thickness_calving \
 	                   -eigen_calving_K 2e18 -thickness_calving_threshold 50 \
                            ${options} ${extra_calving}
 

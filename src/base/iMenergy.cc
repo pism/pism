@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "iceModel.hh"
-#include "Mask.hh"
-#include "bedrockThermalUnit.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include <cassert>
+
+#include "base/energy/bedrockThermalUnit.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_const.hh"
+#include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
+#include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
-#include <assert.h>
+#include "iceModel.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 
@@ -43,64 +50,63 @@ namespace pism {
   Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
   do_cold_ice_methods == true.
 */
-PetscErrorCode IceModel::energyStep() {
-  PetscErrorCode  ierr;
+void IceModel::energyStep() {
 
-  double  myCFLviolcount = 0.0,   // these are counts but they are type "double"
-    myVertSacrCount = 0.0,  //   because that type works with GlobalSum()
-    myBulgeCount = 0.0;
-  double gVertSacrCount, gBulgeCount;
+  const Profiling &profiling = m_ctx->profiling();
 
-  // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
-  ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
+  unsigned int
+    myVertSacrCount = 0,
+    myBulgeCount    = 0,
+    gVertSacrCount  = 0,
+    gBulgeCount     = 0;
 
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
-  ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+  get_bed_top_temp(bedtoptemp);
 
-  grid.profiling.begin("BTU");
-  ierr = btu->update(t_TempAge, dt_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
-  grid.profiling.end("BTU");
+  profiling.begin("BTU");
+  btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
+  profiling.end("BTU");
 
-  if (config.get_flag("do_cold_ice_methods")) {
+  if (m_config->get_boolean("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-    grid.profiling.begin("temp step");
-    ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);
-    grid.profiling.end("temp step");
+    profiling.begin("temp step");
+    temperatureStep(&myVertSacrCount,&myBulgeCount);
+    profiling.end("temp step");
 
-    ierr = vWork3d.update_ghosts(T3); CHKERRQ(ierr);
+    vWork3d.update_ghosts(T3);
 
     // compute_enthalpy_cold() updates ghosts of Enth3 using
     // update_ghosts(). Is not optimized because this
     // (do_cold_ice_methods) is a rare case.
-    ierr = compute_enthalpy_cold(T3, Enth3);  CHKERRQ(ierr);
+    compute_enthalpy_cold(T3, Enth3);
 
   } else {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
-    grid.profiling.begin("enth step");
-    ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
-    CHKERRQ(ierr);
-    grid.profiling.end("enth step");
+    profiling.begin("enth step");
+    enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
+    profiling.end("enth step");
 
-    ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
+    vWork3d.update_ghosts(Enth3);
 
-    ierr = GlobalSum(grid.com, &myLiquifiedVol,  &gLiquifiedVol); CHKERRQ(ierr);
+    gLiquifiedVol = GlobalSum(m_grid->com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
-      ierr = verbPrintf(1,grid.com,
-                        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
-                        gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
+      m_log->message(1,
+                 "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
+                 gLiquifiedVol / 1.0e9);
     }
   }
 
-  ierr = GlobalSum(grid.com, &myCFLviolcount,  &CFLviolcount); CHKERRQ(ierr);
+  // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
+  CFLviolcount = countCFLViolations();
 
-  ierr = GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount); CHKERRQ(ierr);
+  gVertSacrCount = GlobalSum(m_grid->com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
+    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (m_grid->Mx() * m_grid->My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
         getVerbosityLevel() > 2) {
@@ -110,15 +116,13 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = GlobalSum(grid.com, &myBulgeCount,  &gBulgeCount); CHKERRQ(ierr);
+  gBulgeCount = GlobalSum(m_grid->com, myBulgeCount);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
     snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
     stdout_flags = tempstr + stdout_flags;
   }
-
-  return 0;
 }
 
 //! @brief Combine basal melt rate in grounded and floating areas.
@@ -133,29 +137,29 @@ PetscErrorCode IceModel::energyStep() {
  * The sub shelf mass flux provided by an ocean model is in [kg m-2
  * s-1], so we divide by the ice density to convert to [m/s].
  */
-PetscErrorCode IceModel::combine_basal_melt_rate() {
-  PetscErrorCode ierr;
+void IceModel::combine_basal_melt_rate() {
 
   assert(ocean != NULL);
-  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+  ocean->shelf_base_mass_flux(shelfbmassflux);
 
-  const bool sub_gl = config.get_flag("sub_groundingline");
+  const bool sub_gl = (m_config->get_boolean("sub_groundingline") and
+                       m_config->get_boolean("sub_groundingline_basal_melt"));
 
   IceModelVec::AccessList list;
 
-  if (sub_gl == true) {
+  if (sub_gl) {
     list.add(gl_mask);
   }
 
   MaskQuery mask(vMask);
 
-  double ice_density = config.get("ice_density");
+  double ice_density = m_config->get_double("ice_density");
 
   list.add(vMask);
   list.add(basal_melt_rate);
   list.add(shelfbmassflux);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double lambda = 1.0;      // 1.0 corresponds to the grounded case
@@ -166,37 +170,38 @@ PetscErrorCode IceModel::combine_basal_melt_rate() {
 
     // Use the fractional floatation mask to adjust the basal melt
     // rate near the grounding line:
-    if (sub_gl == true) {
+    if (sub_gl) {
       lambda = gl_mask(i,j);
     } else if (mask.ocean(i,j)) {
       lambda = 0.0;
     }
     basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
   }
-
-  return 0;
 }
 
 //! \brief Extract from enthalpy field (Enth3) the temperature which the top of
 //! the bedrock thermal layer will see.
-PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
-  PetscErrorCode  ierr;
+void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double sea_level = 0,
-    T0 = config.get("water_melting_point_temperature"),
-    beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
-                              config.get("standard_gravity")); // K m-1
+    T0 = m_config->get_double("water_melting_point_temperature"),
+    beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water_density") *
+                              m_config->get_double("standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and
   assert(surface != NULL);
-  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+  surface->ice_surface_temperature(ice_surface_temp);
 
   assert(ocean != NULL);
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  sea_level = ocean->sea_level_elevation();
 
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
-  ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  Enth3.getHorSlice(result, 0.0);
 
   MaskQuery mask(vMask);
+
+  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+
+  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   IceModelVec::AccessList list;
   list.add(bed_topography);
@@ -204,33 +209,33 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   list.add(ice_thickness);
   list.add(vMask);
   list.add(ice_surface_temp);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (mask.grounded(i,j)) {
-      if (mask.ice_free(i,j)) { // no ice: sees air temp
-        result(i,j) = ice_surface_temp(i,j);
-      } else { // ice: sees temp of base of ice
-        const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-        double temp;
-        // ignore return code when getting temperature: we are committed to
-        //   this enthalpy field; getAbsTemp() only returns temperatures at or
-        //   below pressure melting
-        EC->getAbsTemp(result(i,j), pressure, temp);
-        result(i,j) = temp;
+      if (mask.grounded(i,j)) {
+        if (mask.ice_free(i,j)) { // no ice: sees air temp
+          result(i,j) = ice_surface_temp(i,j);
+        } else { // ice: sees temp of base of ice
+          const double pressure = EC->pressure(ice_thickness(i,j));
+          result(i,j) = EC->temperature(result(i,j), pressure);
+        }
+      } else { // floating: apply pressure melting temp as top of bedrock temp
+        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
       }
-    } else { // floating: apply pressure melting temp as top of bedrock temp
-      result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
     }
+  } catch (...) {
+    loop.failed();
   }
-
-  return 0;
+  loop.check();
 }
 
 
 //! \brief Is one of my neighbors below a critical thickness to apply advection
 //! in enthalpy or temperature equation?
-bool IceModel::checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold) {
+bool IceModel::checkThinNeigh(const IceModelVec2S &thickness,
+                              int i, int j, double threshold) {
   const double
     N  = thickness(i, j + 1),
     E  = thickness(i + 1, j),

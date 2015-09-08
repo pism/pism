@@ -31,7 +31,7 @@ The extent of the computational box, along with its bedrock extension downward, 
     \\\midrule
     \txtopt{Lx}{(km)} & Half-width of the computational domain (in the $x$-direction) \\
     \txtopt{Ly}{(km)} & Half-width of the computational domain (in the $y$-direction) \\
-    \txtopt{Lz}{(meters)} & Height of the computational domain in the ice \\
+    \txtopt{Lz}{(meters)} & Height of the computational domain; must exceed maximum ice thickness \\
     \txtopt{Lbz}{(meters)} & Depth of the computational domain in the bedrock thermal layer
     \\\bottomrule
   \end{tabular}
@@ -52,7 +52,7 @@ The lowest grid point in a column of ice, at $z=0$, coincides with the highest g
 
 In the quadratically-spaced case the spacing near the ice/bedrock interface is about four times finer than it would be with equal spacing for the same value of \texttt{Mz}, while the spacing near the top of the computational box is correspondingly coarser.  For a detailed description of the spacing of the grid, see the documentation on \texttt{IceGrid::compute_vertical_levels()} in the PISM class browser.
 
-The user should specify the grid when using \texttt{-boot_file} or when initializing a verification test (section \ref{sec:verif}) or a simplified-geometry experiment (section \ref{sec:simp}).  If one initializes PISM from a saved model state using \texttt{-i} then the input file determines all grid parameters.  For instance, the command
+The user should specify the grid when using \texttt{-bootstrap} or when initializing a verification test (section \ref{sec:verif}) or a simplified-geometry experiment (section \ref{sec:simp}).  If one initializes PISM from a saved model state using \texttt{-i} then the input file determines all grid parameters.  For instance, the command
 
 \begin{verbatim}
 $  pismr -i foo.nc -y 100
@@ -184,27 +184,43 @@ $ pismr -calendar gregorian -time_file forcing.nc
 %$ - match dollar signs to make emacs happy
 will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
 
-It is also possible to save spatial and/or scalar time-series daily, monthly or yearly using these calendric computations. See sections~\ref{sec:saving-time-series} and~\ref{sec:saving-spat-vari}.
+When a non-trivial calendar is selected, spatial and scalar time-series can be saved daily, monthly or yearly using these calendric computations. See sections~\ref{sec:saving-time-series} and~\ref{sec:saving-spat-vari}.
 
+\subsubsection{Re-starting an interrupted run using \texttt{-time_file}}
+\label{sec:time-file-restart}
+
+If a run using \texttt{-time_file} gets interrupted but manages to save a backup, re-starting with \texttt{-time_file} will attempt to re-do the entire run because options \texttt{-y}, \texttt{-ys}, and \texttt{-ye} are ignored:
+\begin{verbatim}
+# This run gets killed but leaves backup.nc:
+$ pismr -i input.nc -time_file time.nc -o output.nc
+# This WILL NOT start from the time saved in backup.nc
+# and continue until the end time in time.nc
+$ pismr -i backup.nc -time_file time.nc -o output.nc
+\end{verbatim}
+In this case we want to set the start time of the run from \texttt{backup.nc}, but use the end time from \texttt{time.nc}. To achieve this, use the option \intextoption{time_file_continue_run}.
+\begin{verbatim}
+# This run gets killed but leaves backup.nc:
+$ pismr -i input.nc -time_file time.nc -o output.nc
+# This WILL continue until the end time in time.nc, starting from backup.nc
+$ pismr -i backup.nc -time_file time.nc -o output.nc -time_file_continue_run
+\end{verbatim}
 
 \subsection{Diagnostic computations}
 \label{sec:diagnostic-computations}
 
-A ``diagnostic'' computation can be defined as one where the internal state does not evolve.  The internal state of PISM is the set of variables read by ``\texttt{-i}''.  You can ask PISM to do a diagnostic computation by setting the run duration to zero years.  Zero-length runs are also used to look at additional fields corresponding to the current model state.
+A ``diagnostic'' computation can be defined as one where the internal state does not evolve.  The internal state of PISM is the set of variables read by ``\texttt{-i}''.  You can ask PISM to do a diagnostic computation by setting the run duration to a small number such as $0.001$ years (about $9$ hours). The duration to use depends on the modeling setup, but should be smaller than the maximum time-step allowed by PISM's stability criteria. Such short runs can also be used to look at additional fields corresponding to the current model state.
 
 As an example, consider these two runs:
 \begin{verbatim}
 pisms -y 6000 -o foo.nc
-pismr -i foo.nc -y 0 -o bar.nc -o_size big
+pismr -i foo.nc -y 0.001 -o bar.nc -o_size big
 \end{verbatim}
 
-\noindent The result of the second zero-length run is a NetCDF file \texttt{bar.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.  The file \texttt{foo.nc} does not contain many of these fields because it was written with the default output size of \texttt{medium}.  The ``\texttt{-y 0}'' run has diagnostically ``filled-in'' all the fields which PISM can model at a time step, but the model state has not evolved.
+\noindent The result of the second (short) run is a NetCDF file \texttt{bar.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.  The file \texttt{foo.nc} does not contain many of these fields because it was written with the default output size of \texttt{medium}.  The ``\texttt{-y 0.001}'' run has diagnostically ``filled-in'' all the fields which PISM can model at a time step, but the run duration was chosen so as to avoid significant model state evolution during the run.
 
-In fact, during such a run PISM performs one short time-step to compute ``rates of change'' of ice thickness, surface elevation and other fields, but the model state \emph{is reset} after this step, so re-starting from \texttt{foo.nc} above would give the same result as re-starting from \texttt{bar.nc}.
+This diagnostic mode is often associated to the modeling of ice shelves and ice streams.  Subsection \ref{sec:ross} describes using a short ``diagnostic'' run to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sec:verif}, are diagnostic calculations using the SSA.
 
-This diagnostic mode is often associated to the modeling of ice shelves and ice streams.  Subsection \ref{sec:ross} describes using a ``\texttt{-y 0}'' diagnostic run to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sec:verif}, are diagnostic calculations using the SSA.
-
-The NetCDF model state saved by PISM at the end of an \emph{evolution} run (i.e.~with ``\texttt{-y }$Y$'' for $Y>0$) does not, under the default \texttt{-o_size medium} output size, contain the three-dimensional velocity field.  Instead, it contains just a few more variables than those which are needed to restart the run with \texttt{-i}.  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y 0}'' diagnostic run using \texttt{-o_size big}.
+The NetCDF model state saved by PISM at the end of an \emph{evolution} run (i.e.~with ``\texttt{-y }$Y$'' for $Y>0$) does not, under the default \texttt{-o_size medium} output size, contain the three-dimensional velocity field.  Instead, it contains just a few more variables than those which are needed to restart the run with \texttt{-i}.  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y small_number}'' diagnostic run using \texttt{-o_size big}.
 
 
 \subsection{Disabling PISM components}

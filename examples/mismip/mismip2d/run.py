@@ -63,7 +63,9 @@ else
 fi
 '''
 
+
 class Experiment:
+
     "A MISMIP experiment."
     experiment = ""
     mode = 1
@@ -98,20 +100,19 @@ class Experiment:
         else:
             self.Lz = 6000
 
-
     def physics_options(self, input_file, step):
         "Options corresponding to modeling choices."
         config_filename = self.config(step)
 
-        options = ["-energy none", # isothermal setup; allows selecting cold-mode flow laws
-                   "-ssa_flow_law isothermal_glen", # isothermal setup
+        options = ["-energy none",  # isothermal setup; allows selecting cold-mode flow laws
+                   "-ssa_flow_law isothermal_glen",  # isothermal setup
                    "-yield_stress constant",
                    "-tauc %e" % MISMIP.C(self.experiment),
                    "-pseudo_plastic",
                    "-gradient eta",
                    "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
                    "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
-                   "-calving ocean_kill", # calving at the present front
+                   "-calving ocean_kill",  # calving at the present front
                    "-ocean_kill_file %s" % input_file,
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",
@@ -127,8 +128,8 @@ class Experiment:
             options.extend(["-stress_balance ssa"])
         else:
             options.extend(["-stress_balance ssa+sia",
-                            "-sia_flow_law isothermal_glen", # isothermal setup
-                        ])
+                            "-sia_flow_law isothermal_glen",  # isothermal setup
+                            ])
 
         return options
 
@@ -146,16 +147,16 @@ class Experiment:
 
         var = nc.createVariable("pism_overrides", 'i')
 
-        attrs = {"is_dry_simulation" : "no",
-                 "include_bmr_in_continuity" : "no",
-                 "compute_surf_grad_inward_ssa" : "no",
-                 "ice_softness" : MISMIP.A(self.experiment, step),
-                 "ice_density" : MISMIP.rho_i(),
-                 "sea_water_density" : MISMIP.rho_w(),
-                 "bootstrapping_geothermal_flux_value_no_var" : 0.0,
-                 "Glen_exponent" : MISMIP.n(),
+        attrs = {"is_dry_simulation": "no",
+                 "include_bmr_in_continuity": "no",
+                 "compute_surf_grad_inward_ssa": "no",
+                 "ice_softness": MISMIP.A(self.experiment, step),
+                 "ice_density": MISMIP.rho_i(),
+                 "sea_water_density": MISMIP.rho_w(),
+                 "bootstrapping_geothermal_flux_value_no_var": 0.0,
+                 "Glen_exponent": MISMIP.n(),
                  "standard_gravity": MISMIP.g(),
-                 "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
+                 "ocean_sub_shelf_heat_flux_into_ice": 0.0,
                  }
 
         if self.model != 1:
@@ -175,7 +176,7 @@ class Experiment:
         prepare.pism_bootstrap_file(boot_filename, self.experiment, step, self.mode, N=self.Mx,
                                     semianalytical_profile=self.semianalytic)
 
-        options = ["-boot_file %s" % boot_filename,
+        options = ["-i %s -bootstrap" % boot_filename,
                    "-Mx %d" % self.Mx,
                    "-My %d" % self.My,
                    "-Mz %d" % self.Mz,
@@ -185,8 +186,8 @@ class Experiment:
 
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
-        extra_file  = "ex_" + output_file
-        ts_file     = "ts_" + output_file
+        extra_file = "ex_" + output_file
+        ts_file = "ts_" + output_file
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
@@ -212,7 +213,7 @@ class Experiment:
 
         physics = self.physics_options(input_file, step)
 
-        output_file, output_options  = self.output_options(step)
+        output_file, output_options = self.output_options(step)
 
         return output_file, (input_options + physics + output_options)
 
@@ -258,10 +259,11 @@ class Experiment:
         for step in steps:
             input_file = self.run_step(step, input_file)
 
+
 def run_mismip(initials, executable, semianalytic):
     Mx = 601
     models = (1, 2)
-    modes  = (1, 2, 3)
+    modes = (1, 2, 3)
     experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
 
     print preamble
