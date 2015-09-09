@@ -24,6 +24,7 @@
 #include "base/util/IceModelVec3Custom.hh"
 
 #include "base/util/petscwrappers/DM.hh"
+#include "base/util/petscwrappers/SNES.hh"
 
 #include "Blatter_implementation.h"
 
@@ -99,12 +100,8 @@ class BlatterStressBalance : public ShallowStressBalance {
   friend void drag(void *ctx, double tauc, double u, double v,
 		   double *taud, double *dtaub);
 public:
-  BlatterStressBalance(IceGrid::ConstPtr g,
-                       EnthalpyConverter::Ptr e);
-
+  BlatterStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~BlatterStressBalance();
-
-  virtual void init();
 
   virtual std::string stdout_report();
 
@@ -114,14 +111,17 @@ public:
   const IceModelVec3& velocity_u() const;
   const IceModelVec3& velocity_v() const;
 
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result);
-
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/);
-
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/);
+  const IceModelVec3Custom& velocity_u_sigma() const;
+  const IceModelVec3Custom& velocity_v_sigma() const;
 
 protected: 
+  void init_impl();
+
+  // I/O implementation methods
+  void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  void define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+
   void transfer_velocity();
   void initialize_ice_hardness();
   void setup();
@@ -131,12 +131,12 @@ protected:
 
   IceModelVec3 m_u, m_v, m_strain_heating;
 
-  const IceModelVec2S *bed_elevation, *ice_thickness, *tauc;
-  const IceModelVec3 *enthalpy;
+  const IceModelVec2S *m_bed_elevation, *m_ice_thickness, *m_tauc;
+  const IceModelVec3 *m_enthalpy;
   IceModelVec3Custom m_u_sigma, m_v_sigma; // u and v components on the "sigma" vertical grid
 
   BlatterQ1Ctx m_ctx;
-  SNES m_snes;
+  petsc::SNES m_snes;
 
   petsc::DM::Ptr m_da2;
 

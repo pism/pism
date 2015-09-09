@@ -1017,6 +1017,8 @@ netcdf pism_config {
     pism_config:ssa_Glen_exponent = 3.0;
     pism_config:ssa_Glen_exponent_doc = "Glen exponent in ice flow law for SSA";
 
+    pism_config:blatter_Glen_exponent_units = "pure number";
+    pism_config:blatter_Glen_exponent_type = "scalar";
     pism_config:blatter_Glen_exponent = 3.0;
     pism_config:blatter_Glen_exponent_doc = "; Glen exponent in ice flow law for the Blatter stress balance solver";
 
@@ -1105,9 +1107,14 @@ netcdf pism_config {
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
+    pism_config:blatter_flow_law_type = "keyword";
+    pism_config:blatter_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:blatter_flow_law = "gpbld";
-    pism_config:blatter_flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+    pism_config:blatter_flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model.";
 
+    pism_config:blatter_enhancement_factor_option = "blatter_e";
+    pism_config:blatter_enhancement_factor_units = "1";
+    pism_config:blatter_enhancement_factor_type = "scalar";
     pism_config:blatter_enhancement_factor = 1.0;
     pism_config:blatter_enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
 
@@ -1247,6 +1254,8 @@ netcdf pism_config {
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
 
+    pism_config:blatter_Mz_units = "count";
+    pism_config:blatter_Mz_type = "integer";
     pism_config:blatter_Mz = 5;
     pism_config:blatter_Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
 // Strings:
