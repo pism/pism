@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,12 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "BlatterStressBalance.hh"
-#include "PISMOcean.hh"
-#include "IceGrid.hh"
-#include "PISMVars.hh"
-#include "basal_resistance.hh"
+#include "coupler/PISMOcean.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMVars.hh"
+#include "base/basalstrength/basal_resistance.hh"
 #include "FE3DTools.h"
-#include "enthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/rheology/flowlaws.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 
@@ -41,7 +43,7 @@ void viscosity(void *ctx, double hardness, double gamma,
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->flow_law->effective_viscosity(hardness, gamma, eta, deta);
+  blatter_stress_balance->flow_law()->effective_viscosity(hardness, gamma, eta, deta);
 }
 
 //! C-wrapper for PISM's IceBasalResistancePlasticLaw::dragWithDerivative().
@@ -53,35 +55,20 @@ void drag(void *ctx, double tauc, double u, double v,
   blatter_stress_balance->basal_sliding_law->drag_with_derivative(tauc, u, v, taud, dtaub);
 }
 
-BlatterStressBalance::BlatterStressBalance(IceGrid &g,
-					   EnthalpyConverter &e,
-					   const Config &conf)
-  : ShallowStressBalance(g, e, conf), min_thickness(10.0)
+BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
+					   EnthalpyConverter::Ptr &e)
+  : ShallowStressBalance(g, e), min_thickness(10.0)
 {
-  if (allocate_blatter() != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: BlatterStressBalance allocation failed.\n");
-    PISMEnd();
-  }
-}
 
-BlatterStressBalance::~BlatterStressBalance()
-{
-  if (deallocate_blatter() != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: BlatterStressBalance deallocation failed.\n");
-    PISMEnd();
-  }
-}
+  Config::ConstPtr config = g->ctx()->config();
 
-PetscErrorCode BlatterStressBalance::allocate_blatter() {
-  PetscErrorCode ierr;
+  int blatter_Mz = (int)config->get_double("blatter_Mz");
+  m_da2 = g->get_dm(1, (int)config->get_double("grid_max_stencil_width"));
 
-  int blatter_Mz = (int)config.get("blatter_Mz");
-  ierr = grid.get_dm(1, (int)config.get("grid_max_stencil_width"), m_da2); CHKERRQ(ierr);
-
-  ctx.Lx = 2.0 * grid.Lx;
-  ctx.Ly = 2.0 * grid.Ly;
+  ctx.Lx = 2.0 * g->Lx();
+  ctx.Ly = 2.0 * g->Ly();
   ctx.dirichlet_scale = 1.0;
-  ctx.rhog = config.get("ice_density") * config.get("standard_gravity");
+  ctx.rhog = config->get_double("ice_density") * config->get_double("standard_gravity");
   ctx.no_slip = PETSC_TRUE;	// FIXME (at least make configurable)
   ctx.nonlinear.viscosity = viscosity;
   ctx.nonlinear.drag = drag;
@@ -89,28 +76,29 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   initialize_Q12D(ctx.Q12D.chi, ctx.Q12D.dchi);
   initialize_Q13D(ctx.Q13D.chi, ctx.Q13D.dchi);
 
-  ierr = BlatterQ1_create(grid.com, m_da2->get(), blatter_Mz,
-                          &this->ctx, &this->snes); CHKERRQ(ierr);
+  PetscErrorCode ierr = BlatterQ1_create(g->com, m_da2->get(), blatter_Mz,
+                                         &this->ctx, &this->snes);
+  PISM_CHK(ierr, "BlatterQ1_create");
 
   // now allocate u, v, and strain_heating (strain heating)
-  ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
-  ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  u.create(grid(), "uvel", WITH_GHOSTS);
+  u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+              "m s-1", "land_ice_x_velocity");
+  u.metadata().set_string("glaciological_units", "m year-1");
   u.write_in_glaciological_units = true;
 
-  ierr =     v.create(grid, "vvel", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
-  ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  v.create(grid(), "vvel", WITH_GHOSTS);
+  v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+              "m s-1", "land_ice_y_velocity");
+  v.metadata().set_string("glaciological_units", "m year-1");
   v.write_in_glaciological_units = true;
 
   // strain_heating
-  ierr = strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr); // never diff'ed in hor dirs
-  ierr = strain_heating.set_attrs("internal",
-                          "rate of strain heating in ice (dissipation heating)",
-	        	  "W m-3", ""); CHKERRQ(ierr);
-  ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
+  strain_heating.create(grid(), "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
+  strain_heating.set_attrs("internal",
+                           "rate of strain heating in ice (dissipation heating)",
+                           "W m-3", "");
+  strain_heating.metadata().set_string("glaciological_units", "mW m-3");
 
   std::vector<double> sigma(blatter_Mz);
   double dz = 1.0 / (blatter_Mz - 1);
@@ -125,30 +113,41 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   z_attrs["positive"]      = "up";
 
   // storage for u and v on the sigma vertical grid (for restarting)
-  ierr =     u_sigma.create(grid, "uvel_sigma", "z_sigma", sigma, z_attrs); CHKERRQ(ierr);
-  ierr =     u_sigma.set_attrs("diagnostic",
-			       "horizontal velocity of ice in the X direction on the sigma vertical grid",
-			       "m s-1", ""); CHKERRQ(ierr);
-  ierr =     u_sigma.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  u_sigma.create(grid(), "uvel_sigma", "z_sigma", sigma, z_attrs);
+  u_sigma.set_attrs("diagnostic",
+                    "horizontal velocity of ice in the X direction on the sigma vertical grid",
+                    "m s-1", "");
+  u_sigma.metadata().set_string("glaciological_units", "m year-1");
   u_sigma.write_in_glaciological_units = false;
 
-  ierr =     v_sigma.create(grid, "vvel_sigma", "z_sigma", sigma, z_attrs); CHKERRQ(ierr);
-  ierr =     v_sigma.set_attrs("diagnostic",
-			       "horizontal velocity of ice in the Y direction on the sigma vertical grid",
-			       "m s-1", ""); CHKERRQ(ierr);
-  ierr =     v_sigma.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  v_sigma.create(grid(), "vvel_sigma", "z_sigma", sigma, z_attrs);
+  v_sigma.set_attrs("diagnostic",
+                    "horizontal velocity of ice in the Y direction on the sigma vertical grid",
+                    "m s-1", "");
+  v_sigma.set_string("glaciological_units", "m year-1");
   v_sigma.write_in_glaciological_units = false;
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "blatter_",
+    IceFlowLawFactory ice_factory(g->com(), "blatter_",
                                   config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
-    ierr = ice_factory.setType(config.get_string("blatter_flow_law")); CHKERRQ(ierr);
+    ice_factory.setType(config.get_string("blatter_flow_law"));
 
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+    ice_factory.setFromOptions();
+    ice_factory.create(&flow_law);
   }
+}
+
+BlatterStressBalance::~BlatterStressBalance()
+{
+  if (deallocate_blatter() != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: BlatterStressBalance deallocation failed.\n");
+    PISMEnd();
+  }
+}
+
+void BlatterStressBalance::allocate_blatter() {
 
   return 0;
 }
@@ -183,7 +182,7 @@ PetscErrorCode BlatterStressBalance::init(Vars &vars) {
   return 0;
 }
 
-PetscErrorCode BlatterStressBalance::update(bool fast, IceModelVec2S &melange_back_pressure) {
+void BlatterStressBalance::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
 
   (void) melange_back_pressure;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,82 +19,52 @@
 static char help[] =
   "The executable for testing the Blatter stress balance solver.\n";
 
-#include "BlatterStressBalance.hh"
-#include "IceGrid.hh"
-#include "PIO.hh"
-#include "PISMVars.hh"
-#include "flowlaws.hh"
-#include "enthalpyConverter.hh"
-#include "basal_resistance.hh"
-#include "pism_options.hh"
-#include "PISMTime.hh"
-#include "POConstant.hh"
+#include "base/stressbalance/blatter/BlatterStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/PISMVars.hh"
+#include "base/rheology/flowlaws.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/basalstrength/basal_resistance.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/PISMTime.hh"
+#include "coupler/ocean/POConstant.hh"
 
 using namespace pism;
 
-static PetscErrorCode get_grid_from_file(std::string filename, IceGrid &grid) {
-  PetscErrorCode ierr;
-  int grid_Mz = grid.Mz;
-  double grid_Lz = grid.Lz;
-
-  PIO nc(grid, "guess_mode");
-
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-  ierr = nc.inq_grid("bedrock_altitude", &grid, NOT_PERIODIC); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  if (grid.Mz == 2) {
-    grid.Mz = grid_Mz;
-    grid.Lz = grid_Lz;
-  }
-
-  grid.compute_vertical_levels();
-  grid.compute_nprocs();
-  grid.compute_ownership_ranges();
-
-  ierr = grid.allocate(); CHKERRQ(ierr);
-
-  ierr = grid.printInfo(1); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! \brief Read data from an input file.
-static PetscErrorCode read_input_data(std::string filename, Vars &variables,
-				      EnthalpyConverter &EC) {
-  PetscErrorCode ierr;
+static void read_input_data(const std::string &filename,
+                            Vars &variables,
+                            EnthalpyConverter::Ptr EC) {
   // Get the names of all the variables allocated earlier:
   std::set<std::string> vars = variables.keys();
 
   for (std::set<std::string>::iterator i = vars.begin(); i != vars.end(); ++i) {
     if (*i != "enthalpy") {
-      ierr = variables.get(*i)->regrid(filename, CRITICAL); CHKERRQ(ierr);
+      variables.get(*i)->regrid(filename, CRITICAL);
     } else {
-      PetscReal T = 263.15, omega = 0.0, pressure = 0.0, E;
-      EC.getEnth(T, omega, pressure, E);
-      ierr = variables.get(*i)->set(E); CHKERRQ(ierr);
+      const double
+        T = 263.15,
+        omega = 0.0,
+        pressure = 0.0;
+      variables.get(*i)->set(EC->enthalpy(T, omega, pressure));
     }
   }
-
-  return 0;
 }
 
 //! \brief Write data to an output file.
-static PetscErrorCode write_data(std::string filename, Vars &variables) {
-  PetscErrorCode ierr;
+static void write_data(std::string filename, Vars &variables) {
   // Get the names of all the variables allocated earlier:
   std::set<std::string> vars = variables.keys();
 
   for (std::set<std::string>::iterator i = vars.begin(); i != vars.end(); ++i) {
-    ierr = variables.get(*i)->write(filename); CHKERRQ(ierr);
+    variables.get(*i)->write(filename);
   }
-
-  return 0;
 }
 
 //! \brief Allocate IceModelVec2S variables.
-static PetscErrorCode allocate_variables(IceGrid &grid, Vars &variables) {
-  PetscErrorCode ierr;
+static void allocate_variables(IceGrid &grid, Vars &variables) {
+
   IceModelVec2S *thk, *topg, *tauc;
   IceModelVec3 *enthalpy;
 
@@ -103,29 +73,27 @@ static PetscErrorCode allocate_variables(IceGrid &grid, Vars &variables) {
   tauc = new IceModelVec2S;
   enthalpy = new IceModelVec3;
 
-  ierr = thk->create(grid, "thk", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = thk->set_attrs("", "ice thickness",
-			"m", "land_ice_thickness"); CHKERRQ(ierr);
-  ierr = variables.add(*thk); CHKERRQ(ierr);
+  thk->create(grid, "thk", WITH_GHOSTS);
+  thk->set_attrs("", "ice thickness",
+                 "m", "land_ice_thickness");
+  variables.add(*thk);
 
-  ierr = topg->create(grid, "topg", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = topg->set_attrs("", "bedrock surface elevation",
-			"m", "bedrock_altitude"); CHKERRQ(ierr);
-  ierr = variables.add(*topg); CHKERRQ(ierr);
+  topg->create(grid, "topg", WITH_GHOSTS);
+  topg->set_attrs("", "bedrock surface elevation",
+                  "m", "bedrock_altitude");
+  variables.add(*topg);
 
-  ierr = tauc->create(grid, "tauc", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = tauc->set_attrs("diagnostic",
-                         "yield stress for basal till (plastic or pseudo-plastic model)",
-                         "Pa", ""); CHKERRQ(ierr);
-  ierr = variables.add(*tauc); CHKERRQ(ierr);
+  tauc->create(grid, "tauc", WITH_GHOSTS);
+  tauc->set_attrs("diagnostic",
+                  "yield stress for basal till (plastic or pseudo-plastic model)",
+                  "Pa", "");
+  variables.add(*tauc);
 
-  ierr = enthalpy->create(grid, "enthalpy", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = enthalpy->set_attrs("model_state",
-			     "ice enthalpy (includes sensible heat, latent heat, pressure)",
-			     "J kg-1", ""); CHKERRQ(ierr);
-  ierr = variables.add(*enthalpy); CHKERRQ(ierr);
-
-  return 0;
+  enthalpy->create(grid, "enthalpy", WITH_GHOSTS, 1);
+  enthalpy->set_attrs("model_state",
+                      "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                      "J kg-1", "");
+  variables.add(*enthalpy);
 }
 
 //! \brief De-allocate IceModelVec2S variables.
@@ -180,55 +148,35 @@ int main(int argc, char *argv[]) {
                   "\n");
     }
 
-    IceGrid grid(com, config);
+    Context::Ptr ctx = context_from_options(com, "blatter_test");
+    Config::Ptr config = ctx->config();
 
-    std::string input_file, output_file = "blatter_test.nc";
-    ierr = PetscOptionsBegin(grid.com, "", "BLATTER_TEST options", ""); CHKERRQ(ierr);
-    {
-      bool flag;
-      int Mz;
-      double Lz;
-      ierr = OptionsString("-i", "Set the input file name",
-                               input_file, flag); CHKERRQ(ierr);
-      if (! flag) {
-        PetscPrintf(grid.com, "BLATTER_TEST ERROR: -i is required.\n");
-        PISMEnd();
-      }
-      ierr = OptionsString("-o", "Set the output file name",
-                               output_file, flag); CHKERRQ(ierr);
-      ierr = OptionsIsSet("-compare", "Compare \"cold\" and \"hot\" runs.",
-			      compare_cold_and_hot); CHKERRQ(ierr);
-      ierr = OptionsInt("-Mz", "Number of vertical levels in the PISM grid",
-			    Mz, flag); CHKERRQ(ierr);
-      if (flag == true) {
-	grid.Mz = Mz;
-      }
-
-      ierr = OptionsReal("-Lz", "Vertical extent of the PISM grid",
-			     Lz, flag); CHKERRQ(ierr);
-      if (flag == true) {
-	grid.Lz = Lz;;
-      }
+    options::String input_file("-i", "Set the input file name");
+    if (not i.is_set()) {
+      throw RuntimeError("BLATTER_TEST ERROR: -i is required.");
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    options::String output_file("-o", "Set the output file name", "blatter_test.nc");
+
+    options::Bool compare("-compare", "Compare \"cold\" and \"hot\" runs.");
 
     ierr = get_grid_from_file(input_file, grid); CHKERRQ(ierr);
 
     Vars variables;
-    ierr = allocate_variables(grid, variables); CHKERRQ(ierr);
+    allocate_variables(grid, variables);
 
     EnthalpyConverter EC(config);
 
     POConstant ocean(grid, config);
 
-    ierr =  read_input_data(input_file, variables, EC); CHKERRQ(ierr);
+    read_input_data(input_file, variables, EC);
 
     IceModelVec2S melange_back_pressure;
-    ierr = melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    ierr = melange_back_pressure.set_attrs("boundary_condition",
-                                           "melange back pressure fraction",
-                                           "1", ""); CHKERRQ(ierr);
-    ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
+    melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
+    melange_back_pressure.set_attrs("boundary_condition",
+                                    "melange back pressure fraction",
+                                    "1", "");
+    melange_back_pressure.set(0.0);
 
     PetscLogStagePush(cold);
     BlatterStressBalance blatter(grid, EC, config);

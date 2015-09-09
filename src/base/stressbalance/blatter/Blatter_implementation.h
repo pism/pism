@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2015 Jed Brown and the PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,8 @@
 
 #ifndef _BLATTER_IMPLEMENTATION_H_
 #define _BLATTER_IMPLEMENTATION_H_
+
+#include <petscsnes.h>
 
 /*! This file contains declarations that need to be visible to the BlatterStressBalance C++ class.
  *

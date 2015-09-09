@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,13 @@
 #ifndef _BLATTERSTRESSBALANCE_H_
 #define _BLATTERSTRESSBALANCE_H_
 
-#include "ShallowStressBalance.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/IceModelVec3Custom.hh"
+
+#include "base/util/petscwrappers/DM.hh"
+
 #include "Blatter_implementation.h"
-#include "IceGrid.hh"
-#include "IceModelVec3Custom.hh"
 
 namespace pism {
 
@@ -90,14 +93,15 @@ compatible with the small bed slope assumption:
 See the source code `$PETSC_DIR/src/snes/examples/tutorials/ex48.c` for
 the original implementation.
  */
-class BlatterStressBalance : public ShallowStressBalance
+class BlatterStressBalance : public stressbalance::ShallowStressBalance
 {
   friend void viscosity(void *ctx, double hardness, double gamma,
 			double *eta, double *deta);
   friend void drag(void *ctx, double tauc, double u, double v,
 		   double *taud, double *dtaub);
 public:
-  BlatterStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf);
+  BlatterStressBalance(IceGrid::ConstPtr g,
+                       EnthalpyConverter::Ptr &e);
 
   virtual ~BlatterStressBalance();
 
@@ -107,11 +111,11 @@ public:
   virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(std::string &/*result*/)
-  { return 0; }
+  virtual std::string stdout_report()
+  { return ""; }
 
-  virtual PetscErrorCode update(bool fast,
-                                IceModelVec2S &melange_back_pressure); // almost done (compute vertically-averaged u,v and sigma)
+  virtual void update(bool fast,
+                      const IceModelVec2S &melange_back_pressure);
 
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
@@ -142,7 +146,7 @@ protected:
   BlatterQ1Ctx ctx;
   SNES snes;
 
-  PISMDM::Ptr m_da2;
+  petsc::DM::Ptr m_da2;
 
   double min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
   std::string stdout_blatter;
