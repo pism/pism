@@ -33,8 +33,8 @@ namespace io {
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
 NC3File::NC3File(MPI_Comm c)
-  : NCFile(c) {
-  MPI_Comm_rank(c, &m_rank);
+  : NCFile(c), m_rank(0) {
+  MPI_Comm_rank(m_com, &m_rank);
 }
 
 NC3File::~NC3File() {
@@ -59,7 +59,7 @@ int NC3File::integer_open_mode(IO_Mode input) const {
 
 // open/create/close
 int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     int nc_mode = integer_open_mode(mode);
@@ -75,7 +75,7 @@ int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
 
 //! \brief Create a NetCDF file.
 int NC3File::create_impl(const std::string &fname) {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     stat = nc_create(fname.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &m_file_id);
@@ -90,7 +90,7 @@ int NC3File::create_impl(const std::string &fname) {
 
 //! \brief Close a NetCDF file.
 int NC3File::close_impl() {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     stat = nc_close(m_file_id);
@@ -107,7 +107,7 @@ int NC3File::close_impl() {
 
 //! \brief Exit define mode.
 int NC3File::enddef_impl() const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
@@ -123,7 +123,7 @@ int NC3File::enddef_impl() const {
 
 //! \brief Enter define mode.
 int NC3File::redef_impl() const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     stat = nc_redef(m_file_id);
@@ -138,7 +138,7 @@ int NC3File::redef_impl() const {
 
 //! \brief Define a dimension.
 int NC3File::def_dim_impl(const std::string &name, size_t length) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     int dimid;
@@ -175,7 +175,7 @@ int NC3File::inq_dimid_impl(const std::string &dimension_name, bool &exists) con
 
 //! \brief Get a dimension length.
 int NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     int dimid;
@@ -197,7 +197,7 @@ int NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &re
 
 //! \brief Get an unlimited dimension.
 int NC3File::inq_unlimdim_impl(std::string &result) const {
-  int stat;
+  int stat = 0;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
@@ -221,7 +221,7 @@ int NC3File::inq_unlimdim_impl(std::string &result) const {
 }
 
 int NC3File::inq_dimname_impl(int j, std::string &result) const {
-  int stat;
+  int stat = 0;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
@@ -241,7 +241,7 @@ int NC3File::inq_dimname_impl(int j, std::string &result) const {
 
 
 int NC3File::inq_ndims_impl(int &result) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     stat = nc_inq_ndims(m_file_id, &result); check(stat);
@@ -257,7 +257,7 @@ int NC3File::inq_ndims_impl(int &result) const {
 
 //! \brief Define a variable.
 int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     std::vector<int> dimids;
@@ -568,7 +568,7 @@ int NC3File::put_var_double(const std::string &variable_name,
 
 //! \brief Get the number of variables.
 int NC3File::inq_nvars_impl(int &result) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     stat = nc_inq_nvars(m_file_id, &result); check(stat);
@@ -627,7 +627,7 @@ int NC3File::inq_vardimid_impl(const std::string &variable_name, std::vector<std
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     int varid = -1;
@@ -669,7 +669,7 @@ int NC3File::inq_varid_impl(const std::string &variable_name, bool &exists) cons
 }
 
 int NC3File::inq_varname_impl(unsigned int j, std::string &result) const {
-  int stat;
+  int stat = 0;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
 
@@ -885,7 +885,7 @@ int NC3File::put_att_text_impl(const std::string &variable_name, const std::stri
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
-  int stat;
+  int stat = 0;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
 
@@ -946,7 +946,7 @@ int NC3File::inq_atttype_impl(const std::string &variable_name, const std::strin
 
 //! \brief Sets the fill mode.
 int NC3File::set_fill_impl(int fillmode, int &old_modep) const {
-  int stat;
+  int stat = 0;
 
   if (m_rank == 0) {
     stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(stat);
