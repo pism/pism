@@ -28,7 +28,7 @@
 #include "Blatter_implementation.h"
 
 namespace pism {
-
+namespace stressbalance {
 // Tell the linker that these are called from the C code:
 extern "C" {
   void viscosity(void *ctx, double hardness, double gamma,
@@ -93,32 +93,26 @@ compatible with the small bed slope assumption:
 See the source code `$PETSC_DIR/src/snes/examples/tutorials/ex48.c` for
 the original implementation.
  */
-class BlatterStressBalance : public stressbalance::ShallowStressBalance
-{
+class BlatterStressBalance : public ShallowStressBalance {
   friend void viscosity(void *ctx, double hardness, double gamma,
 			double *eta, double *deta);
   friend void drag(void *ctx, double tauc, double u, double v,
 		   double *taud, double *dtaub);
 public:
   BlatterStressBalance(IceGrid::ConstPtr g,
-                       EnthalpyConverter::Ptr &e);
+                       EnthalpyConverter::Ptr e);
 
   virtual ~BlatterStressBalance();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init();
 
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int old_Mz);
-
-  //! \brief Produce a report string for the standard output.
-  virtual std::string stdout_report()
-  { return ""; }
+  virtual std::string stdout_report();
 
   virtual void update(bool fast,
                       const IceModelVec2S &melange_back_pressure);
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
-  { u_result = &u; v_result = &v; return 0; }
+  const IceModelVec3& velocity_u() const;
+  const IceModelVec3& velocity_v() const;
 
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result);
 
@@ -128,30 +122,29 @@ public:
   virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/);
 
 protected: 
-  PetscErrorCode allocate_blatter();
-  PetscErrorCode deallocate_blatter();
-  PetscErrorCode transfer_velocity();
-  PetscErrorCode initialize_ice_hardness();
-  PetscErrorCode setup();
+  void transfer_velocity();
+  void initialize_ice_hardness();
+  void setup();
 
-  PetscErrorCode compute_volumetric_strain_heating();
-  PetscErrorCode save_velocity();
+  void compute_volumetric_strain_heating();
+  void save_velocity();
 
-  IceModelVec3 u, v, strain_heating;
+  IceModelVec3 m_u, m_v, m_strain_heating;
 
-  IceModelVec2S *bed_elevation, *ice_thickness, *tauc;
-  IceModelVec3 *enthalpy;
-  IceModelVec3Custom u_sigma, v_sigma; // u and v components on the "sigma" vertical grid
+  const IceModelVec2S *bed_elevation, *ice_thickness, *tauc;
+  const IceModelVec3 *enthalpy;
+  IceModelVec3Custom m_u_sigma, m_v_sigma; // u and v components on the "sigma" vertical grid
 
-  BlatterQ1Ctx ctx;
-  SNES snes;
+  BlatterQ1Ctx m_ctx;
+  SNES m_snes;
 
   petsc::DM::Ptr m_da2;
 
-  double min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
-  std::string stdout_blatter;
+  double m_min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
+  std::string m_stdout_blatter;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _BLATTERSTRESSBALANCE_H_ */

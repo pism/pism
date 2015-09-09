@@ -24,10 +24,12 @@
 #include "FE3DTools.h"
 #include "base/enthalpyConverter.hh"
 #include "base/rheology/flowlaws.hh"
+#include "base/rheology/flowlaw_factory.hh"
+#include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 
 namespace pism {
-
+namespace stressbalance {
 /*!
  * FIXMEs:
  *
@@ -43,7 +45,7 @@ void viscosity(void *ctx, double hardness, double gamma,
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->flow_law()->effective_viscosity(hardness, gamma, eta, deta);
+  blatter_stress_balance->m_flow_law->effective_viscosity(hardness, gamma, eta, deta);
 }
 
 //! C-wrapper for PISM's IceBasalResistancePlasticLaw::dragWithDerivative().
@@ -56,7 +58,7 @@ void drag(void *ctx, double tauc, double u, double v,
 }
 
 BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
-					   EnthalpyConverter::Ptr &e)
+					   EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e), min_thickness(10.0)
 {
 
@@ -124,89 +126,58 @@ BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
   v_sigma.set_attrs("diagnostic",
                     "horizontal velocity of ice in the Y direction on the sigma vertical grid",
                     "m s-1", "");
-  v_sigma.set_string("glaciological_units", "m year-1");
+  v_sigma.metadata().set_string("glaciological_units", "m year-1");
   v_sigma.write_in_glaciological_units = false;
 
   {
-    IceFlowLawFactory ice_factory(g->com(), "blatter_",
-                                  config, &EC);
-    ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
+    rheology::FlowLawFactory ice_factory("blatter_", config, e);
+    ice_factory.remove_type(ICE_GOLDSBY_KOHLSTEDT);
 
-    ice_factory.setType(config.get_string("blatter_flow_law"));
+    ice_factory.set_default_type(config->get_string("blatter_flow_law"));
 
-    ice_factory.setFromOptions();
-    ice_factory.create(&flow_law);
+    m_flow_law = ice_factory.create();
   }
 }
 
-BlatterStressBalance::~BlatterStressBalance()
-{
-  if (deallocate_blatter() != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: BlatterStressBalance deallocation failed.\n");
-    PISMEnd();
-  }
+BlatterStressBalance::~BlatterStressBalance() {
+  PetscErrorCode ierr = SNESDestroy(&this->snes); PISM_CHK(ierr, "SNESDestroy");
 }
 
-void BlatterStressBalance::allocate_blatter() {
+PetscErrorCode BlatterStressBalance::init() {
+
+  const Vars &vars = m_grid->variables();
+
+  bed_elevation = vars.get_2d_scalar("bedrock_altitude");
+
+  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
+
+  tauc = vars.get_2d_scalar("tauc");
+
+  enthalpy = vars.get_3d_scalar("enthalpy");
 
   return 0;
 }
 
-PetscErrorCode BlatterStressBalance::deallocate_blatter() {
-  PetscErrorCode ierr;
-
-  ierr = SNESDestroy(&this->snes);CHKERRQ(ierr);
-
-  delete flow_law;
-
-  return 0;
-}
-
-
-PetscErrorCode BlatterStressBalance::init(Vars &vars) {
-
-  variables = &vars;
-
-  bed_elevation = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed_elevation == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
-
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-  if (tauc == NULL) SETERRQ(grid.com, 1, "tauc is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
-
-  return 0;
-}
-
-void BlatterStressBalance::update(bool fast, IceModelVec2S &melange_back_pressure) {
-  PetscErrorCode ierr;
+void BlatterStressBalance::update(bool fast, const IceModelVec2S &melange_back_pressure) {
 
   (void) melange_back_pressure;
 
   if (fast) {
-    ierr = verbPrintf(1,grid.com,
-       "PISM ERROR:  'fast' mode not meaningful for BlatterStressBalance\n"
-       "  ENDING ...\n\n"); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("'fast' mode not meaningful for BlatterStressBalance");
   }
 
   // setup
-  ierr =  setup(); CHKERRQ(ierr);
+  setup();
 
   // solve
-  ierr = SNESSolve(this->snes, PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);
+  PetscErrorCode ierr = SNESSolve(this->snes, PETSC_NULL, PETSC_NULL);
+  PISM_CHK(ierr, "SNESSolve");
 
   // Transfer solution from the FEM mesh to the regular grid used in the rest
   // of PISM and compute the vertically-averaged velocity.
-  ierr = transfer_velocity(); CHKERRQ(ierr);
+  transfer_velocity();
 
-  ierr =  compute_volumetric_strain_heating(); CHKERRQ(ierr);
-
-  return 0;
+  compute_volumetric_strain_heating();
 }
 
 /*! \brief Set up model parameters on the fine grid. */
@@ -215,49 +186,45 @@ void BlatterStressBalance::update(bool fast, IceModelVec2S &melange_back_pressur
  *
  * We should also compute ice hardness on the "sigma" grid here.
  */
-PetscErrorCode BlatterStressBalance::setup() {
+void BlatterStressBalance::setup() {
   PetscErrorCode ierr;
   PrmNode **parameters;
   DM da;
   double
-    ice_density = config.get("ice_density"),
-    sea_water_density = config.get("sea_water_density"),
+    ice_density = m_config.get_double("ice_density"),
+    sea_water_density = m_config.get("sea_water_density"),
     alpha = ice_density / sea_water_density;
 
   ierr = SNESGetDM(this->snes, &da); CHKERRQ(ierr);
 
   ierr = BlatterQ1_begin_2D_parameter_access(da, &parameters); CHKERRQ(ierr);
 
-  ierr = bed_elevation->begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*bed_elevation);
+  list.add(*ice_thickness);
+  list.add(*tauc);
 
   int GHOSTS = 1;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // compute the elevation of the bottom surface of the ice
-      if ((*bed_elevation)(i,j) > -alpha * (*ice_thickness)(i,j)) {
-	// grounded
-	parameters[i][j].ice_bottom = (*bed_elevation)(i,j);
-      } else {
-	// floating
-	parameters[i][j].ice_bottom = -alpha * (*ice_thickness)(i,j);
-      }
-
-      parameters[i][j].thickness = (*ice_thickness)(i,j);
-
-      // fudge ice thickness (FIXME!!!)
-      if ((*ice_thickness)(i,j) < min_thickness)
-	parameters[i][j].thickness += min_thickness;
-
-      parameters[i][j].tauc = (*tauc)(i,j);
+    // compute the elevation of the bottom surface of the ice
+    if ((*bed_elevation)(i,j) > -alpha * (*ice_thickness)(i,j)) {
+      // grounded
+      parameters[i][j].ice_bottom = (*bed_elevation)(i,j);
+    } else {
+      // floating
+      parameters[i][j].ice_bottom = -alpha * (*ice_thickness)(i,j);
     }
-  }
 
-  ierr = bed_elevation->end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
+    parameters[i][j].thickness = (*ice_thickness)(i,j);
+
+    // fudge ice thickness (FIXME!!!)
+    if ((*ice_thickness)(i,j) < min_thickness)
+      parameters[i][j].thickness += min_thickness;
+
+    parameters[i][j].tauc = (*tauc)(i,j);
+  }
 
   ierr = BlatterQ1_end_2D_parameter_access(da, &parameters); CHKERRQ(ierr);
 
@@ -323,92 +290,86 @@ PetscErrorCode BlatterStressBalance::initialize_ice_hardness() {
 /*!
  * We also compute vertically-averaged ice velocity here.
  */
-PetscErrorCode BlatterStressBalance::transfer_velocity() {
+void BlatterStressBalance::transfer_velocity() {
   PetscErrorCode ierr;
 
   Vector2 ***U;
-  PetscScalar *u_ij, *v_ij;
+  double *u_ij, *v_ij;
   DM da;
   Vec X;
   unsigned int Mz_fem = static_cast<unsigned int>(config.get("blatter_Mz"));
 
-  ierr = SNESGetDM(this->snes, &da); CHKERRQ(ierr);
-  ierr = SNESGetSolution(this->snes, &X); CHKERRQ(ierr);
+  ierr = SNESGetDM(this->snes, &da); PISM_CHK(ierr, "SNESGetDM");
+  ierr = SNESGetSolution(this->snes, &X); PISM_CHK(ierr, "SNESGetSolution");
 
-  ierr = DMDAVecGetArray(da, X, &U); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da, X, &U); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  ierr = u.begin_access(); CHKERRQ(ierr);
-  ierr = v.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(u);
+  list.add(v);
+  list.add(*ice_thickness);
+  list.add(m_velocity);
  
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      ierr = u.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
-      ierr = v.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      double thk = (*ice_thickness)(i,j);
+    u_ij = u.get_column(i, j, &u_ij);
+    v_ij = v.get_column(i, j);
 
-      // fudge ice thickness (FIXME!!!)
-      if (thk < min_thickness)
-	thk += min_thickness;
+    double thk = (*ice_thickness)(i,j);
 
-      double dz_fem = thk / (Mz_fem - 1);
+    // fudge ice thickness (FIXME!!!)
+    if (thk < min_thickness)
+      thk += min_thickness;
 
-      // compute vertically-averaged velocity using trapezoid rule
-      double ubar = 0, vbar = 0;
-      for (unsigned int k = 0; k < Mz_fem - 1; ++k) {
-	ubar += U[i][j][k].u + U[i][j][k+1].u;
-	vbar += U[i][j][k].v + U[i][j][k+1].v;
-      }
-      // finish the traperoidal rule (1/2 * dz) and compute the average:
-      m_velocity(i,j).u = ubar * (0.5*dz_fem) / thk;
-      m_velocity(i,j).v = vbar * (0.5*dz_fem) / thk;
+    double dz_fem = thk / (Mz_fem - 1);
+
+    // compute vertically-averaged velocity using trapezoid rule
+    double ubar = 0, vbar = 0;
+    for (unsigned int k = 0; k < Mz_fem - 1; ++k) {
+      ubar += U[i][j][k].u + U[i][j][k+1].u;
+      vbar += U[i][j][k].v + U[i][j][k+1].v;
+    }
+    // finish the traperoidal rule (1/2 * dz) and compute the average:
+    m_velocity(i,j).u = ubar * (0.5*dz_fem) / thk;
+    m_velocity(i,j).v = vbar * (0.5*dz_fem) / thk;
       
-      // compute 3D horizontal velocity
-      unsigned int current_level = 0;
-      for (unsigned int k = 0; k < grid.Mz; ++k) {
+    // compute 3D horizontal velocity
+    unsigned int current_level = 0;
+    for (unsigned int k = 0; k < grid.Mz; ++k) {
 
-	// find the FEM grid level just below the current PISM grid level
-	while ((current_level + 1) * dz_fem < grid.zlevels[k])
-	  current_level++;
+      // find the FEM grid level just below the current PISM grid level
+      while ((current_level + 1) * dz_fem < grid.zlevels[k])
+        current_level++;
 
-	if (current_level + 1 < Mz_fem) {
-	  // use linear interpolation
-	  double z0 = current_level * dz_fem,
-	    lambda = (grid.zlevels[k] - z0) / dz_fem;
+      if (current_level + 1 < Mz_fem) {
+        // use linear interpolation
+        double z0 = current_level * dz_fem,
+          lambda = (grid.zlevels[k] - z0) / dz_fem;
 
-	  u_ij[k] = (U[i][j][current_level].u * (1 - lambda) +
-		     U[i][j][current_level+1].u * lambda);
+        u_ij[k] = (U[i][j][current_level].u * (1 - lambda) +
+                   U[i][j][current_level+1].u * lambda);
 
-	  v_ij[k] = (U[i][j][current_level].v * (1 - lambda) +
-		     U[i][j][current_level+1].v * lambda);
+        v_ij[k] = (U[i][j][current_level].v * (1 - lambda) +
+                   U[i][j][current_level+1].v * lambda);
 
-	} else {
-	  // extrapolate above the surface
-	  u_ij[k] = U[i][j][Mz_fem-1].u;
-	  v_ij[k] = U[i][j][Mz_fem-1].v;
-	}
+      } else {
+        // extrapolate above the surface
+        u_ij[k] = U[i][j][Mz_fem-1].u;
+        v_ij[k] = U[i][j][Mz_fem-1].v;
+      }
 
-      }	// k-loop
-    } // j-loop
-  } // i-loop
+    }	// k-loop
+  } // loop over map-plane grid points
 
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
-  ierr = v.end_access(); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da, X, &U); PISM_CHK(ierr, "DMDAVecRestoreArray");
 
-  ierr = DMDAVecRestoreArray(da, X, &U); CHKERRQ(ierr);
-
-  ierr = u.update_ghosts(); CHKERRQ(ierr);
-  ierr = v.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  u.update_ghosts();
+  v.update_ghosts();
 }
 
 //! Copy velocity from a dof=2 vector to special storage (to save it for re-starting).
-PetscErrorCode BlatterStressBalance::save_velocity() {
+void BlatterStressBalance::save_velocity() {
   PetscErrorCode ierr;
 
   Vector2 ***U;
@@ -444,15 +405,6 @@ PetscErrorCode BlatterStressBalance::save_velocity() {
 
   return 0;
 }
-
-PetscErrorCode BlatterStressBalance::extend_the_grid(int old_Mz) {
-  PetscErrorCode ierr;
-  ierr = u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = v.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  return 0;
-}
-
 
 PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
@@ -502,4 +454,11 @@ PetscErrorCode BlatterStressBalance::write_variables(const std::set<std::string>
   return 0;
 }
 
+//! \brief Produce a report string for the standard output.
+std::string BlatterStressBalance::stdout_report() {
+  return "";
+}
+
+
+} // end of namespace stressbalance
 } // end of namespace pism
