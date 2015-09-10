@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2014, 2015 Jed Brown and the PISM Authors
 
    This file is part of PISM.
 
@@ -600,7 +600,10 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
         get_pointers_to_nodal_values_3d(residual, i, j, k, element_residual);
 
         if (ctx->no_slip && k == 0) {
-          for (l = 0; l < 4; l++) element_velocity[l].u = element_velocity[l].v = 0;
+          for (l = 0; l < 4; l++) {
+            element_velocity[l].u = 0;
+            element_velocity[l].v = 0;
+          }
           /* The first 4 basis functions lie on the bottom layer, so their contribution is exactly 0, hence we can skip them */
           ls = 4;
         }
@@ -656,7 +659,11 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
           } else {              /* Integrate over bottom face to apply boundary condition */
 
             for (q = 0; q < 4; q++) { /* for each quadrature point on the basal face... */
-              const PetscReal jw = 0.25*dx*dy / ctx->rhog, /* FIXME: this Jacobian is incorrect */
+              /* Note: jw below can be thought of as an approximation
+                 of the Jacobian*weight using the small bed slope
+                 assumption. (It *is* correct in the flat bed case.)
+               */
+              const PetscReal jw = 0.25*dx*dy / ctx->rhog,
                 *phi = ctx->Q12D.chi[q];
 
               PetscScalar u = 0, v = 0, tauc = 0;
@@ -854,7 +861,11 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
           } else {
 
             for (q = 0; q < 4; q++) {
-              const PetscReal jw = 0.25*dx*dy / ctx->rhog, /* FIXME: det(J)*w is wrong here */
+              /* Note: jw below can be thought of as an approximation
+                 of the Jacobian*weight using the small bed slope
+                 assumption. (It *is* correct in the flat bed case.)
+               */
+              const PetscReal jw = 0.25*dx*dy / ctx->rhog,
                 *phi = ctx->Q12D.chi[q];
               PetscScalar u = 0, v = 0, tauc = 0;
               PetscReal beta,   /* basal drag coefficient; tau_{b,x} = beta*u; tau_{b,y} = beta*v */
