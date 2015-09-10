@@ -132,11 +132,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
   level = refinelevel - coarsenlevel;
 
   ierr = DMDACreate2d(comm,
-#if PETSC_VERSION_LT(3,5,0)
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-#else
                       DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-#endif
                       stencil_type,
                       My, Mx, my, mx, /* grid size */
                       sizeof(PrmNode)/sizeof(PetscScalar), /* number of parameters per map-plane location */
@@ -161,11 +157,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
 
 
   ierr = DMDACreate3d(comm,
-#if PETSC_VERSION_LT(3,5,0)
-                      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-#else
                       DM_BOUNDARY_NONE, DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-#endif
                       DMDA_STENCIL_BOX,
                       Mz, My, Mx,
                       1, my, mx, /* number of processors in z, y, x directions. (Always *one* in the z-direction.) */
@@ -700,9 +692,6 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
  * FIXME: I need to document this.
  */
 static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velocity, Mat A, Mat B,
-#if PETSC_VERSION_LT(3,5,0)
-                                               MatStructure *mstr,
-#endif
                                                BlatterQ1Ctx *ctx)
 {
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l, ll;
@@ -924,10 +913,6 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   ierr = MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatSetOption(B, MAT_SYMMETRIC, PETSC_TRUE); CHKERRQ(ierr);
 
-#if PETSC_VERSION_LT(3,5,0)
-  *mstr = SAME_NONZERO_PATTERN;
-#endif
-
   PetscFunctionReturn(0);
 }
 
@@ -964,11 +949,7 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
   ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL);
 
   ierr = DMDACreate3d(com,
-#if PETSC_VERSION_LT(3,5,0)
-                      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-#else
                       DM_BOUNDARY_NONE, DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-#endif
                       DMDA_STENCIL_BOX,
                       Mz, My, Mx,
                       1, Ny, Nx, /* number of processors in z, y, x directions. (Always *one* in the z-direction.) */
@@ -983,21 +964,12 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
   ierr = BlatterQ1_setup_level(ctx, da); CHKERRQ(ierr);
 
   /* ADD_VALUES, because BlatterQ1_residual_local contributes to ghosted values. */
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDASNESSetFunctionLocal(da, ADD_VALUES,
-                                  (DMDASNESFunctionLocal)BlatterQ1_residual_local,
-                                  ctx); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(da,
-                                  (DMDASNESJacobianLocal)BlatterQ1_Jacobian_local,
-                                  ctx); CHKERRQ(ierr);
-#else
   ierr = DMDASNESSetFunctionLocal(da, ADD_VALUES,
                                   (DMDASNESFunction)BlatterQ1_residual_local,
                                   ctx); CHKERRQ(ierr);
   ierr = DMDASNESSetJacobianLocal(da,
                                   (DMDASNESJacobian)BlatterQ1_Jacobian_local,
                                   ctx); CHKERRQ(ierr);
-#endif
 
   ierr = DMCoarsenHookAdd(da, BlatterQ1_coarsening_hook,
                           BlatterQ1_restriction_hook, ctx); CHKERRQ(ierr);
