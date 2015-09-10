@@ -149,7 +149,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
                        level, ctx->Lx, ctx->Ly, Mx, My, Mz, Mx*My*Mz, ctx->Lx / Mx, ctx->Ly / My); CHKERRQ(ierr);
   }
 
-  ierr = DMCreateLocalVector(da2prm, &parameters); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2prm, &parameters); CHKERRQ(ierr);
 
   ierr = PetscObjectCompose((PetscObject)dm, "DMDA_2D", (PetscObject)da2prm); CHKERRQ(ierr);
   ierr = PetscObjectCompose((PetscObject)dm, "DMDA_2D_Vec", (PetscObject)parameters); CHKERRQ(ierr);
@@ -168,7 +168,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
                       NULL, ly, lx, /* number of nodes per processor */
                       &da3); CHKERRQ(ierr);
 
-  ierr = DMCreateLocalVector(da3, &hardness); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da3, &hardness); CHKERRQ(ierr);
 
   ierr = PetscObjectCompose((PetscObject)dm, "DMDA_3D", (PetscObject)da3); CHKERRQ(ierr);
   ierr = PetscObjectCompose((PetscObject)dm, "DMDA_3D_Vec", (PetscObject)hardness); CHKERRQ(ierr);
@@ -272,7 +272,7 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
                                          const char vec_name[])
 {
   PetscErrorCode ierr;
-  Vec X_fine, X_fine_global, X_coarse, X_coarse_global;
+  Vec X_fine, X_coarse;
   DM da2_fine, da2_coarse;
   Mat mat;
 
@@ -308,19 +308,7 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
   if (!X_coarse) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
                          "No DMDA_Vec composed with given DMDA");
 
-  ierr = DMGetGlobalVector(da2_fine, &X_fine_global); CHKERRQ(ierr);
-  ierr = DMGetGlobalVector(da2_coarse, &X_coarse_global); CHKERRQ(ierr);
-
-  ierr = DMLocalToGlobalBegin(da2_fine, X_fine, INSERT_VALUES, X_fine_global); CHKERRQ(ierr);
-  ierr = DMLocalToGlobalEnd(da2_fine, X_fine, INSERT_VALUES, X_fine_global); CHKERRQ(ierr);
-
-  ierr = MatRestrict(mat, X_fine_global, X_coarse_global); CHKERRQ(ierr);
-
-  ierr = DMGlobalToLocalBegin(da2_coarse, X_coarse_global, INSERT_VALUES, X_coarse); CHKERRQ(ierr);
-  ierr = DMGlobalToLocalEnd(da2_coarse, X_coarse_global, INSERT_VALUES, X_coarse); CHKERRQ(ierr);
-
-  ierr = DMRestoreGlobalVector(da2_fine, &X_fine_global); CHKERRQ(ierr);
-  ierr = DMRestoreGlobalVector(da2_coarse, &X_coarse_global); CHKERRQ(ierr);
+  ierr = MatRestrict(mat, X_fine, X_coarse); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -363,9 +351,19 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
   first.
 
   \param[in] da the DM managed by the SNES object
+
+  \param[in] local if PETSC_TRUE, get a pointer to a local Vec (for
+                   use in residual and Jacobian evaluation code); if
+                   PETSC_FALSE, get a pointer to a global Vec (to set
+                   parameter values)
+
+  \param[out] X_out pointer to the Vec we're accessing (for passing to
+                    BlatterQ1_end_2D_parameter_access)
+
   \param[out] prm pointer to the array
 */
-PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PrmNode ***prm)
+PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PetscBool local, Vec *X_out,
+                                                   PrmNode ***prm)
 {
   PetscErrorCode ierr;
   DM             da2prm;
@@ -382,7 +380,15 @@ PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PrmNode ***prm)
   if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
                   "No DMDA_2D_Vec composed with given DMDA");
 
-  ierr = DMDAVecGetArray(da2prm, X, prm); CHKERRQ(ierr);
+  if (local == PETSC_TRUE) {
+    ierr = DMGetLocalVector(da2prm, X_out); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(da2prm, X, INSERT_VALUES, *X_out); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(da2prm, X, INSERT_VALUES, *X_out); CHKERRQ(ierr);
+  } else {
+    *X_out = X;
+  }
+
+  ierr = DMDAVecGetArray(da2prm, *X_out, prm); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -391,11 +397,10 @@ PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PrmNode ***prm)
 
   See BlatterQ1_begin_2D_parameter_access() for details.
 */
-PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PrmNode ***prm)
+PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PetscBool local, Vec *X_out, PrmNode ***prm)
 {
   PetscErrorCode ierr;
   DM             da2prm;
-  Vec            X;
   PetscFunctionBegin;
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA_2D",
@@ -403,12 +408,11 @@ PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PrmNode ***prm)
   if (!da2prm) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
                        "No DMDA_2D composed with given DMDA");
 
-  ierr = PetscObjectQuery((PetscObject)da, "DMDA_2D_Vec",
-                          (PetscObject*)&X); CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                  "No DMDA_2D_Vec composed with given DMDA");
+  ierr = DMDAVecRestoreArray(da2prm, *X_out, prm); CHKERRQ(ierr);
 
-  ierr = DMDAVecRestoreArray(da2prm, X, prm); CHKERRQ(ierr);
+  if (local == PETSC_TRUE) {
+    ierr = DMRestoreLocalVector(da2prm, X_out); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -418,24 +422,32 @@ PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PrmNode ***prm)
  * This is similar to BlatterQ1_begin_2D_parameter_access(), but for ice
  * hardness.
  */
-PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
+PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscBool local, Vec *X_out, PetscScalar ****hardness)
 {
   PetscErrorCode ierr;
   DM             da3;
   Vec            X;
   PetscFunctionBegin;
 
-  ierr = PetscObjectQuery((PetscObject)da, "DMDA3",
+  ierr = PetscObjectQuery((PetscObject)da, "DMDA_3D",
                           (PetscObject*)&da3); CHKERRQ(ierr);
   if (!da3) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                       "No DMDA3 composed with given DMDA");
+                       "No DMDA_3D composed with given DMDA");
 
-  ierr = PetscObjectQuery((PetscObject)da, "DMDA3_Vec",
+  ierr = PetscObjectQuery((PetscObject)da, "DMDA_3D_Vec",
                           (PetscObject*)&X); CHKERRQ(ierr);
   if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                  "No DMDA3_Vec composed with given DMDA");
+                  "No DMDA_3D_Vec composed with given DMDA");
 
-  ierr = DMDAVecGetArray(da3, X, hardness); CHKERRQ(ierr);
+  if (local == PETSC_TRUE) {
+    ierr = DMGetLocalVector(da3, X_out); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(da3, X, INSERT_VALUES, *X_out); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(da3, X, INSERT_VALUES, *X_out); CHKERRQ(ierr);
+  } else {
+    *X_out = X;
+  }
+
+  ierr = DMDAVecGetArray(da3, *X_out, hardness); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -444,24 +456,22 @@ PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
 
   See BlatterQ1_begin_hardness_access() for details.
 */
-PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
+PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscBool local, Vec *X_out, PetscScalar ****hardness)
 {
   PetscErrorCode ierr;
   DM             da3;
-  Vec            X;
   PetscFunctionBegin;
 
-  ierr = PetscObjectQuery((PetscObject)da, "DMDA3",
+  ierr = PetscObjectQuery((PetscObject)da, "DMDA_3D",
                           (PetscObject*)&da3); CHKERRQ(ierr);
   if (!da3) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                       "No DMDA3 composed with given DMDA");
+                       "No DMDA_3D composed with given DMDA");
 
-  ierr = PetscObjectQuery((PetscObject)da, "DMDA3_Vec",
-                          (PetscObject*)&X); CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                  "No DMDA3_Vec composed with given DMDA");
+  ierr = DMDAVecRestoreArray(da3, *X_out, hardness); CHKERRQ(ierr);
 
-  ierr = DMDAVecRestoreArray(da3, X, hardness); CHKERRQ(ierr);
+  if (local == PETSC_TRUE) {
+    ierr = DMRestoreLocalVector(da3, X_out); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -559,6 +569,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l;
   PetscReal      dx, dy;
   PrmNode        **prm;
+  Vec prm_local;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -569,7 +580,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   zm = info->xm;
   dx = ctx->Lx / info->mz;      /* grid spacing in the x direction */
   dy = ctx->Ly / info->my;      /* grid spacing in the y direction */
-  ierr = BlatterQ1_begin_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_begin_2D_parameter_access(info->da, PETSC_TRUE,
+                                             &prm_local, &prm); CHKERRQ(ierr);
 
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
@@ -684,7 +696,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
     } /* j-loop */
   } /* i-loop */
 
-  ierr = BlatterQ1_end_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_end_2D_parameter_access(info->da, PETSC_TRUE, &prm_local, &prm); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -699,6 +711,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l, ll;
   PetscReal      dx, dy;
   PrmNode        **prm;
+  Vec prm_local;
   PetscErrorCode ierr;
 
   (void)A;
@@ -714,7 +727,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
   ierr = MatZeroEntries(B); CHKERRQ(ierr);
 
-  ierr = BlatterQ1_begin_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_begin_2D_parameter_access(info->da, PETSC_TRUE,
+                                             &prm_local, &prm); CHKERRQ(ierr);
 
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
@@ -909,7 +923,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
       } /* k-loop */
     } /* j-loop */
   } /* i-loop */
-  ierr = BlatterQ1_end_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_end_2D_parameter_access(info->da, PETSC_TRUE, &prm_local, &prm); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

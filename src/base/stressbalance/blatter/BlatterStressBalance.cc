@@ -188,6 +188,7 @@ void BlatterStressBalance::update(bool fast, const IceModelVec2S &melange_back_p
  */
 void BlatterStressBalance::setup() {
   PetscErrorCode ierr;
+  Vec param_vec;
   PrmNode **parameters;
   DM da;
   double
@@ -197,7 +198,7 @@ void BlatterStressBalance::setup() {
 
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
 
-  ierr = BlatterQ1_begin_2D_parameter_access(da, &parameters);
+  ierr = BlatterQ1_begin_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
   PISM_CHK(ierr, "BlatterQ1_begin_2D_parameter_access");
 
   IceModelVec::AccessList list;
@@ -205,8 +206,7 @@ void BlatterStressBalance::setup() {
   list.add(*m_ice_thickness);
   list.add(*m_tauc);
 
-  int GHOSTS = 1;
-  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // compute the elevation of the bottom surface of the ice
@@ -227,7 +227,7 @@ void BlatterStressBalance::setup() {
     parameters[i][j].tauc = (*m_tauc)(i,j);
   }
 
-  ierr = BlatterQ1_end_2D_parameter_access(da, &parameters);
+  ierr = BlatterQ1_end_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
   PISM_CHK(ierr, "BlatterQ1_end_2D_parameter_access");
 }
 
@@ -237,18 +237,18 @@ void BlatterStressBalance::initialize_ice_hardness() {
   PetscScalar ***hardness = NULL;
   unsigned int Mz_fem = static_cast<unsigned int>(m_config->get_double("blatter_Mz"));
   DM da;
+  Vec hardness_vec;
 
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
 
-  ierr = BlatterQ1_begin_hardness_access(da, &hardness);
+  ierr = BlatterQ1_begin_hardness_access(da, PETSC_FALSE, &hardness_vec, &hardness);
   PISM_CHK(ierr, "BlatterQ1_begin_hardness_access");
 
   IceModelVec::AccessList list;
   list.add(*m_enthalpy);
   list.add(*m_ice_thickness);
 
-  int GHOSTS = 1;
-  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double thk = (*m_ice_thickness)(i,j);
@@ -283,6 +283,9 @@ void BlatterStressBalance::initialize_ice_hardness() {
       hardness[i][j][k] = m_flow_law->hardness_parameter(E_local, pressure);
     }
   }
+
+  ierr = BlatterQ1_end_hardness_access(da, PETSC_FALSE, &hardness_vec, &hardness);
+  PISM_CHK(ierr, "BlatterQ1_end_hardness_access");
 }
 
 //! Transfer the velocity field from the FEM "sigma" grid onto PISM's grid.
