@@ -117,10 +117,10 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
   ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
 
   PetscFunctionBegin;
-  ierr = DMDAGetInfo(dm, NULL,	/* dimensions */
-                     &Mz, &My, &Mx, /* grid size */
-                     0, &my, &mx,   /* number of processors in each direction */
-                     NULL,          /* number of degrees of freedom */
+  ierr = DMDAGetInfo(dm, NULL,	       /* dimensions */
+                     &Mz,  &My, &Mx,   /* grid size */
+                     NULL, &my, &mx,   /* number of processors in each direction */
+                     NULL,             /* number of degrees of freedom */
                      &stencil_width,
                      NULL, NULL, NULL, /* types of ghost nodes at the boundary */
                      &stencil_type); CHKERRQ(ierr);
@@ -131,12 +131,14 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
   ierr = DMGetCoarsenLevel(dm, &coarsenlevel); CHKERRQ(ierr);
   level = refinelevel - coarsenlevel;
 
+  /* number of parameters per map-plane location */
+  int dof = sizeof(PrmNode)/sizeof(PetscScalar);
+
   ierr = DMDACreate2d(comm,
                       DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
                       stencil_type,
                       My, Mx, my, mx, /* grid size */
-                      sizeof(PrmNode)/sizeof(PetscScalar), /* number of parameters per map-plane location */
-                      stencil_width,
+                      dof, stencil_width,
                       ly, /* number of nodes per processor*/
                       lx, /* ditto */
                       &da2prm); CHKERRQ(ierr);
