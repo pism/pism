@@ -199,6 +199,11 @@ std::set<std::string> Vars::keys() const {
     result.insert(i->first);
   }
 
+  std::map<std::string,VecPtr>::const_iterator j;
+  for (j = m_variables_shared.begin(); j != m_variables_shared.end(); ++j) {
+    result.insert(j->first);
+  }
+
   return result;
 }
 
