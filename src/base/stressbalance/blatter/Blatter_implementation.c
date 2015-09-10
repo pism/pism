@@ -949,11 +949,11 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
 
   ierr = DMDAGetInfo(pism_da,
                      &dim,
-                     &My,
                      &Mx,
+                     &My,
                      NULL, /* Mz */
-                     &Ny,  /* number of processors in y-direction */
-                     &Nx,  /* number of processors in x-direction */
+                     &Nx,  /* number of processors in y-direction */
+                     &Ny,  /* number of processors in x-direction */
                      NULL, /* ditto, z-direction */
                      NULL, /* number of degrees of freedom per node */
                      NULL, /* stencil width */
@@ -961,7 +961,7 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
                      NULL); CHKERRQ(ierr); /* stencil type */
   assert(dim == 2);
 
-  ierr = DMDAGetOwnershipRanges(pism_da, &ly, &lx, NULL);
+  ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL);
 
   ierr = DMDACreate3d(com,
 #if PETSC_VERSION_LT(3,5,0)
