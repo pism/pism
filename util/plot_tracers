@@ -10,19 +10,23 @@ def main (filenames):
         if not "x" in ds.variables.keys():
             print ("Couldn't find p_x in %s\n"%f)
             continue
-        x=ds.variables["x"][:]
-        y=ds.variables["y"][:]
+        x=ds.variables["tracer_x"][:]
+        y=ds.variables["tracer_y"][:]
         cx = ds.variables["x"][:]
         cy = ds.variables["y"][:]
         mpl.figure()
         print f 
         print x.shape
         print y.shape
-        for (n, (ix, iy)) in enumerate(zip (x,y)):
-            mpl.plot(ix,iy,'.')
-            mpl.xlim((1.1*x.min(), 1.1*x.max()))
-            mpl.ylim((1.1*y.min(), 1.1*y.max()))
-            mpl.savefig(f[:-3]+"%06d.png"%n)
+        mpl.plot(x,y,'.')
+        mpl.xlim((min(0.9*x.min(), 1.1*x.min()), max(0.9*x.max(), 1.1*x.max())))
+        mpl.ylim((min(0.9*y.min(), 1.1*y.min()), max(0.9*y.max(), 1.1*y.max())))
+        mpl.savefig(f[:-3]+".png")
+        # for (n, (ix, iy)) in enumerate(zip (x,y)):
+        #     mpl.plot(ix,iy,'.')
+        #     mpl.xlim((1.1*x.min(), 1.1*x.max()))
+        #     mpl.ylim((1.1*y.min(), 1.1*y.max()))
+        #     mpl.savefig(f[:-3]+"%06d.png"%n)
         mpl.close("all")
        
 
