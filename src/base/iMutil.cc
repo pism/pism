@@ -198,7 +198,8 @@ Range thk_range = ice_thickness.range();
   if (m_grid->Lz() >= thk_range.max) {
     return;
   }
-
+  std::string crash_filename="PISM_CRASH_EMERGENCY_DUMP.nc";
+  dumpToFile(crash_filename);
   throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height"
                                 " of the computational box (%7.4f m).",
                                 thk_range.max, m_grid->Lz());
