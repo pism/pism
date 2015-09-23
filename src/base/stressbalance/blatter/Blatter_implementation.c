@@ -23,13 +23,6 @@
 #include <petscdmda.h>
 #include <petscsys.h>
 
-#if defined __SSE2__
-#  include <emmintrin.h>
-#endif
-
-/* The SSE2 kernels are only for PetscScalar=double on architectures that support it */
-#define USE_SSE2_KERNELS (!defined NO_SSE2 && !defined PETSC_USE_COMPLEX && !defined PETSC_USE_REAL_SINGLE && defined __SSE2__)
-
 #include "FE3DTools.h"
 
 #include "Blatter_implementation.h"
@@ -73,15 +66,6 @@ static PetscScalar Sqr(PetscScalar a) {return a*a;}
   \gamma(u,v) = u_{x}^2 + v_{y}^2 + v_{y} \cdot u_{x} + \frac14{(u_{y}+v_{x})^2} + \frac14{u_{z}^2} + \frac14{v_{z}^2}
   \f]
   See compute_nonlinearity() for the computation of \f$\gamma\f$ and \f$\eta\f$.
-*/
-
-/*!
-  There is one compile-time option:
-  `NO_SSE2`: If the host supports SSE2, we use integration code that
-  has been vectorized with SSE2 intrinsics, unless this macro is
-  defined. The intrinsics speed up integration by about 30% on my
-  architecture (P8700, gcc-4.5 snapshot) (JB).
-
 */
 
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
@@ -785,27 +769,10 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           for (l = ls; l < 8; l++) { /* test functions */
             const PetscReal *restrict dp = dphi[l];
-#if (USE_SSE2_KERNELS!=0)
-            /* gcc (up to my 4.5 snapshot) is really bad at hoisting intrinsics so we do it manually */
-            __m128d
-              p4 = _mm_set1_pd(4), p2 = _mm_set1_pd(2), p05 = _mm_set1_pd(0.5),
-              p42 = _mm_setr_pd(4, 2), p24 = _mm_shuffle_pd(p42, p42, _MM_SHUFFLE2(0, 1)),
-              du0 = _mm_set1_pd(du[0]), du1 = _mm_set1_pd(du[1]), du2 = _mm_set1_pd(du[2]),
-              dv0 = _mm_set1_pd(dv[0]), dv1 = _mm_set1_pd(dv[1]), dv2 = _mm_set1_pd(dv[2]),
-              jweta = _mm_set1_pd(jw*eta), jwdeta = _mm_set1_pd(jw*deta),
-              dp0 = _mm_set1_pd(dp[0]), dp1 = _mm_set1_pd(dp[1]), dp2 = _mm_set1_pd(dp[2]),
-              dp0jweta = _mm_mul_pd(dp0, jweta), dp1jweta = _mm_mul_pd(dp1, jweta), dp2jweta = _mm_mul_pd(dp2, jweta),
-              p4du0p2dv1 = _mm_add_pd(_mm_mul_pd(p4, du0), _mm_mul_pd(p2, dv1)), /* 4 du0 + 2 dv1 */
-              p4dv1p2du0 = _mm_add_pd(_mm_mul_pd(p4, dv1), _mm_mul_pd(p2, du0)), /* 4 dv1 + 2 du0 */
-              pdu2dv2 = _mm_unpacklo_pd(du2, dv2), /* [du2, dv2] */
-              du1pdv0 = _mm_add_pd(du1, dv0), /* du1 + dv0 */
-              t1 = _mm_mul_pd(dp0, p4du0p2dv1), /* dp0 (4 du0 + 2 dv1) */
-              t2 = _mm_mul_pd(dp1, p4dv1p2du0);                                /* dp1 (4 dv1 + 2 du0) */
 
-#endif
             for (ll = l; ll < 8; ll++) {
               const PetscReal *restrict dpl = dphi[ll];
-#if (USE_SSE2_KERNELS==0)
+
               /* The analytic Jacobian in nice, easy-to-read form */
               {
                 PetscScalar dgdu, dgdv;
@@ -823,36 +790,6 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
                 Ke[l*2 + 1][ll*2 + 0] += dp[1]*jw*deta*dgdu*(4.0*dv[1] + 2.0*du[0]) + dp[0]*jw*deta*dgdu*(du[1] + dv[0]) + dp[2]*jw*deta*dgdu*dv[2];
                 Ke[l*2 + 1][ll*2 + 1] += dp[1]*jw*deta*dgdv*(4.0*dv[1] + 2.0*du[0]) + dp[0]*jw*deta*dgdv*(du[1] + dv[0]) + dp[2]*jw*deta*dgdv*dv[2];
               }
-#else
-              /* This SSE2 code is an exact replica of above, but uses explicit packed instructions for some speed
-               * benefit.  On my hardware, these intrinsics are almost twice as fast as above, reducing total assembly cost
-               * by 25 to 30 percent. */
-              {
-                __m128d
-                  keu = _mm_loadu_pd(&Ke[l*2+0][ll*2+0]),
-                  kev = _mm_loadu_pd(&Ke[l*2+1][ll*2+0]),
-                  dpl01 = _mm_loadu_pd(&dpl[0]), dpl10 = _mm_shuffle_pd(dpl01, dpl01, _MM_SHUFFLE2(0, 1)), dpl2 = _mm_set_sd(dpl[2]),
-                  t0, t3, pdgduv;
-                keu = _mm_add_pd(keu, _mm_add_pd(_mm_mul_pd(_mm_mul_pd(dp0jweta, p42), dpl01),
-                                                 _mm_add_pd(_mm_mul_pd(dp1jweta, dpl10),
-                                                            _mm_mul_pd(dp2jweta, dpl2))));
-                kev = _mm_add_pd(kev, _mm_add_pd(_mm_mul_pd(_mm_mul_pd(dp1jweta, p24), dpl01),
-                                                 _mm_add_pd(_mm_mul_pd(dp0jweta, dpl10),
-                                                            _mm_mul_pd(dp2jweta, _mm_shuffle_pd(dpl2, dpl2, _MM_SHUFFLE2(0, 1))))));
-                pdgduv = _mm_mul_pd(p05, _mm_add_pd(_mm_add_pd(_mm_mul_pd(p42, _mm_mul_pd(du0, dpl01)),
-                                                               _mm_mul_pd(p24, _mm_mul_pd(dv1, dpl01))),
-                                                    _mm_add_pd(_mm_mul_pd(du1pdv0, dpl10),
-                                                               _mm_mul_pd(pdu2dv2, _mm_set1_pd(dpl[2]))))); /* [dgdu, dgdv] */
-                t0 = _mm_mul_pd(jwdeta, pdgduv);  /* jw deta [dgdu, dgdv] */
-                t3 = _mm_mul_pd(t0, du1pdv0);     /* t0 (du1 + dv0) */
-                _mm_storeu_pd(&Ke[l*2+0][ll*2+0], _mm_add_pd(keu, _mm_add_pd(_mm_mul_pd(t1, t0),
-                                                                             _mm_add_pd(_mm_mul_pd(dp1, t3),
-                                                                                        _mm_mul_pd(t0, _mm_mul_pd(dp2, du2))))));
-                _mm_storeu_pd(&Ke[l*2+1][ll*2+0], _mm_add_pd(kev, _mm_add_pd(_mm_mul_pd(t2, t0),
-                                                                             _mm_add_pd(_mm_mul_pd(dp0, t3),
-                                                                                        _mm_mul_pd(t0, _mm_mul_pd(dp2, dv2))))));
-              }
-#endif
             } /* ll-loop (trial functions) */
           }   /* l-loop (test functions) */
         }     /* q-loop */
