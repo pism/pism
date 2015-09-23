@@ -632,7 +632,9 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
 
           jw /= ctx->rhog;      /* scales residuals to be O(1) */
 
-          if (q == 0) etabase = eta;
+          if (q == 0) {
+            etabase = eta;
+          }
 
           for (l = ls; l < 8; l++) { /* test functions */
             const PetscReal *dp = dphi[l];
