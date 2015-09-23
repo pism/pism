@@ -242,15 +242,13 @@ void SSAFEM::cacheQuadPtValues() {
   using fem::Quadrature;
   using fem::FunctionGerm;
 
-  const double
-    *Enth_e[4];
-  double
-    *Enth_q[4];
+  std::vector<double> Enth_q[Quadrature::Nq];
+  const double *Enth_e[4];
 
   double ice_density = m_config->get_double("ice_density");
 
   for (unsigned int q=0; q<Quadrature::Nq; q++) {
-    Enth_q[q] = new double[m_grid->Mz()];
+    Enth_q[q].resize(m_grid->Mz());
   }
 
   GeometryCalculator gc(sea_level, *m_config);
@@ -343,7 +341,8 @@ void SSAFEM::cacheQuadPtValues() {
           // Evaluate column integrals in flow law at every quadrature point's column
           coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
                                                             m_grid->kBelowHeight(coefficients[q].H),
-                                                            &(m_grid->z()[0]), Enth_q[q]);
+                                                            &(m_grid->z()[0]),
+                                                            &(Enth_q[q])[0]);
         }
 
       } // j-loop
@@ -352,10 +351,6 @@ void SSAFEM::cacheQuadPtValues() {
     loop.failed();
   }
   loop.check();
-
-  for (unsigned int q = 0; q < Quadrature::Nq; q++) {
-    delete [] Enth_q[q];
-  }
 }
 
 /** @brief Compute the "(effective viscosity) x (ice thickness)"

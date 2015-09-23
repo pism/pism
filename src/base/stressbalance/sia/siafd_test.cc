@@ -205,22 +205,18 @@ static void setInitStateF(IceGrid &grid,
                           IceModelVec2S *surface,
                           IceModelVec2S *thickness,
                           IceModelVec3 *enthalpy) {
-  int        Mz=grid.Mz();
-  double     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
+  int Mz = grid.Mz();
 
   double ST = 1.67e-5,
     Tmin = 223.15,  // K
     LforFG = 750000; // m
 
-  dummy1=new double[Mz];  dummy2=new double[Mz];
-  dummy3=new double[Mz];  dummy4=new double[Mz];
-  dummy5=new double[Mz];
+  std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
 
   bed->set(0);
   mask->set(MASK_GROUNDED);
 
-  double *T;
-  T = new double[grid.Mz()];
+  std::vector<double> T(Mz);
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -231,6 +227,7 @@ static void setInitStateF(IceGrid &grid,
 
     double r = radius(grid, i, j),
       Ts = Tmin + ST * r;
+
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       (*thickness)(i, j) = 0.0;
       for (int k = 0; k < Mz; k++) {
@@ -239,18 +236,15 @@ static void setInitStateF(IceGrid &grid,
     } else {
       r = std::max(r, 1.0); // avoid singularity at origin
       bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
-                &(*thickness)(i, j), dummy5, T, dummy1, dummy2, dummy3, dummy4);
+                &(*thickness)(i, j), &dummy5[0], &T[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
     }
-    enthalpy->set_column(i, j, T);
+    enthalpy->set_column(i, j, &T[0]);
   }
 
 
   thickness->update_ghosts();
 
   surface->copy_from(*thickness);
-
-  delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  delete [] T; delete [] dummy5;
 
   enthalpy_from_temperature_cold(EC, grid, *thickness,
                                  *enthalpy,
@@ -343,6 +337,7 @@ int main(int argc, char *argv[]) {
 
     // create grid and set defaults
     IceGrid::Ptr grid(new IceGrid(ctx, P));
+    grid->report_parameters();
 
     setVerbosityLevel(5);
 
