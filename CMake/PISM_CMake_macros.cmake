@@ -274,3 +274,24 @@ macro(pism_set_dependencies)
     MAKE_EXECUTABLE HDF5_DIR NETCDF_PAR_H)
 
 endmacro()
+
+include(CheckCXXSourceCompiles)
+
+# Check if shared_ptr is in <memory> as std::shared_ptr. If it is not,
+# assume that we have to use <tr1/memory> and std::tr1::shared_ptr.
+macro(pism_check_shared_ptr)
+  set(SHARED_PTR_TEST_SRC "
+#include <memory>
+
+int main(int argc, char **argv) {
+  std::shared_ptr<double> shared_double(new double);
+  return 0;
+}
+")
+  check_cxx_source_compiles("${SHARED_PTR_TEST_SRC}" PISM_SHARED_PTR)
+  if (PISM_SHARED_PTR)
+    set(Pism_USE_TR1 OFF CACHE BOOL "If 'ON', #include <tr1/memory>, otherwise #include <memory>.")
+  else()
+    set(Pism_USE_TR1 ON CACHE BOOL "If 'ON', #include <tr1/memory>, otherwise #include <memory>." FORCE)
+  endif()
+endmacro()

@@ -45,7 +45,7 @@ option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try tu
 option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
-option (Pism_USE_TR1 "Use the std::tr1 namespace to access shared pointer definitions. Disable to get shared pointers from the std namespace (might be needed with some compilers)." ON)
+option (Pism_USE_TR1 "If 'ON', #include <tr1/memory>, otherwise #include <memory>." OFF)
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
@@ -111,6 +111,16 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
+# Check if the C++ compiler has shared_ptr in std.
+pism_check_shared_ptr()
+if (Pism_USE_TR1)
+  message(STATUS "Using '#include <tr1/memory> and std::tr1::shared_ptr<...>.")
+  message(STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
+  add_definitions (-DPISM_USE_TR1=1)
+else()
+  message(STATUS "Using '#include <memory> and std::shared_ptr<...>.")
+endif()
+
 # Look for libraries using find_package(...), etc. Run CMake with -DPism_LOOK_FOR_LIBRARIES=OFF
 # to build on systems that rely on the module system to set all compiler and linker flags.
 if (Pism_LOOK_FOR_LIBRARIES)
@@ -146,11 +156,6 @@ endif()
 if (Pism_USE_TAO)
   add_definitions (-DPISM_USE_TAO=1)
 endif()
-
-if (Pism_USE_TR1)
-  message (STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
-  add_definitions (-DPISM_USE_TR1=1)
-endif ()
 
 add_custom_target (etags
   COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags
