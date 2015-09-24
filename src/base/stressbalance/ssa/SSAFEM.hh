@@ -57,19 +57,19 @@ protected:
     int mask;
   };
 
-  virtual void PointwiseNuHAndBeta(const Coefficients &,
-                                   const Vector2 &, const double[],
-                                   double *, double *, double *, double *);
+  void PointwiseNuHAndBeta(const Coefficients &,
+                           const Vector2 &, const double[],
+                           double *, double *, double *, double *);
 
-  virtual void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
+  void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
 
-  virtual void compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
+  void compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
 
   virtual void solve();
 
-  virtual TerminationReason::Ptr solve_with_reason();
+  TerminationReason::Ptr solve_with_reason();
 
-  virtual TerminationReason::Ptr solve_nocache();
+  TerminationReason::Ptr solve_nocache();
 
   //! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
   /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
