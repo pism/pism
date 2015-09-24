@@ -30,13 +30,6 @@
 
 namespace pism {
 namespace stressbalance {
-// Tell the linker that these are called from the C code:
-extern "C" {
-  void viscosity(void *ctx, double hardness, double gamma,
-		 double *eta, double *deta);
-  void drag(void *ctx, double tauc, double u, double v,
-	    double *taud, double *dtaub);
-}
 
 //! \brief Blatter-Pattyn stress balance based on Jed Brown's PETSc
 //! tutorial ex48.c (Brown et al. 2011).
@@ -95,10 +88,6 @@ See the source code `$PETSC_DIR/src/snes/examples/tutorials/ex48.c` for
 the original implementation.
  */
 class BlatterStressBalance : public ShallowStressBalance {
-  friend void viscosity(void *ctx, double hardness, double gamma,
-			double *eta, double *deta);
-  friend void drag(void *ctx, double tauc, double u, double v,
-		   double *taud, double *dtaub);
 public:
   BlatterStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~BlatterStressBalance();

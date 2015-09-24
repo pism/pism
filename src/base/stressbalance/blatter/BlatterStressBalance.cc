@@ -32,6 +32,7 @@
 
 namespace pism {
 namespace stressbalance {
+
 /*!
  * FIXMEs:
  *
@@ -42,21 +43,23 @@ namespace stressbalance {
  */
 
 //! C-wrapper for PISM's IceFlowLaw::viscosity().
+extern "C"
 void viscosity(void *ctx, double hardness, double gamma,
                double *eta, double *deta) {
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->m_flow_law->effective_viscosity(hardness, gamma, eta, deta);
+  blatter_stress_balance->flow_law()->effective_viscosity(hardness, gamma, eta, deta);
 }
 
 //! C-wrapper for PISM's IceBasalResistancePlasticLaw::dragWithDerivative().
+extern "C"
 void drag(void *ctx, double tauc, double u, double v,
           double *taud, double *dtaub) {
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->basal_sliding_law->drag_with_derivative(tauc, u, v, taud, dtaub);
+  blatter_stress_balance->sliding_law()->drag_with_derivative(tauc, u, v, taud, dtaub);
 }
 
 BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
@@ -105,8 +108,9 @@ BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
 
   std::vector<double> sigma(blatter_Mz);
   double dz = 1.0 / (blatter_Mz - 1);
-  for (int i = 0; i < blatter_Mz; ++i)
+  for (int i = 0; i < blatter_Mz; ++i) {
     sigma[i] = i * dz;
+  }
   sigma.back() = 1.0;
 
   std::map<std::string,std::string> z_attrs;
@@ -175,6 +179,7 @@ void BlatterStressBalance::update(bool fast, const IceModelVec2S &melange_back_p
   // of PISM and compute the vertically-averaged velocity.
   transfer_velocity();
 
+  // Copy solution from the SNES to m_u_sigma and m_v_sigma.
   save_velocity();
 
   compute_volumetric_strain_heating();
@@ -201,30 +206,35 @@ void BlatterStressBalance::setup() {
   ierr = BlatterQ1_begin_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
   PISM_CHK(ierr, "BlatterQ1_begin_2D_parameter_access");
 
+  const IceModelVec2S
+    &bed       = *m_bed_elevation,
+    &thickness = *m_ice_thickness,
+    &tauc      = *m_tauc;
+
   IceModelVec::AccessList list;
-  list.add(*m_bed_elevation);
-  list.add(*m_ice_thickness);
-  list.add(*m_tauc);
+  list.add(bed);
+  list.add(thickness);
+  list.add(tauc);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // compute the elevation of the bottom surface of the ice
-    if ((*m_bed_elevation)(i,j) > -alpha * (*m_ice_thickness)(i,j)) {
+    if (bed(i,j) > -alpha * thickness(i,j)) {
       // grounded
-      parameters[i][j].ice_bottom = (*m_bed_elevation)(i,j);
+      parameters[i][j].ice_bottom = bed(i,j);
     } else {
       // floating
-      parameters[i][j].ice_bottom = -alpha * (*m_ice_thickness)(i,j);
+      parameters[i][j].ice_bottom = -alpha * thickness(i,j);
     }
 
-    parameters[i][j].thickness = (*m_ice_thickness)(i,j);
+    parameters[i][j].thickness = thickness(i,j);
 
     // fudge ice thickness (FIXME!!!)
-    if ((*m_ice_thickness)(i,j) < m_min_thickness)
+    if (thickness(i,j) < m_min_thickness)
       parameters[i][j].thickness += m_min_thickness;
 
-    parameters[i][j].tauc = (*m_tauc)(i,j);
+    parameters[i][j].tauc = tauc(i,j);
   }
 
   ierr = BlatterQ1_end_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
