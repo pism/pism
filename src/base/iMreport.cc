@@ -545,7 +545,7 @@ double IceModel::compute_ice_area_cold() {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
-          EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j))) == false) { // FIXME issue #15
+          not EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
       }
     }

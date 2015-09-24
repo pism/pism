@@ -42,7 +42,7 @@ System::System(const std::string &path) {
 
   ut_set_error_message_handler(ut_ignore);
 
-  if (path.empty() == false) {
+  if (not path.empty()) {
     tmp = ut_read_xml(path.c_str());
   } else {
     tmp = ut_read_xml(NULL);

@@ -333,7 +333,7 @@ public:
   }
 
   void next() {
-    assert(m_done == false);
+    assert(not m_done);
     m_i += 1;
     if (m_i > m_i_last) {
       m_i = m_i_first;        // wrap around
@@ -346,7 +346,7 @@ public:
   }
 
   operator bool() const {
-    return m_done == false;
+    return not m_done;
   }
 private:
   int m_i, m_j;

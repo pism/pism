@@ -95,7 +95,7 @@ void StressBalance::update(bool fast, double sea_level,
     m_modifier->update(velocity_2d, fast);
     profiling.end("SB modifier");
 
-    if (fast == false) {
+    if (not fast) {
 
       const IceModelVec3 &u = m_modifier->velocity_u();
       const IceModelVec3 &v = m_modifier->velocity_v();

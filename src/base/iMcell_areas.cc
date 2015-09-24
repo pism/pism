@@ -47,8 +47,8 @@ static double triangle_area(double *A, double *B, double *C) {
 void IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
-  if (m_config->get_boolean("correct_cell_areas") == false ||
-      global_attributes.has_attribute("proj4") == false) {
+  if (not m_config->get_boolean("correct_cell_areas") ||
+      not global_attributes.has_attribute("proj4")) {
 
     cell_area.set(m_grid->dx() * m_grid->dy());
 

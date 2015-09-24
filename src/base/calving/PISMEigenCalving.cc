@@ -145,7 +145,7 @@ void EigenCalving::update(double dt,
       for (int p = -1; p < 2; p += 2) {
         int i_offset = p * offset;
         if (mask.floating_ice(i + i_offset, j) &&
-            mask.ice_margin(i + i_offset, j) == false) {
+            not mask.ice_margin(i + i_offset, j)) {
           eigen1 += m_strain_rates(i + i_offset, j, 0);
           eigen2 += m_strain_rates(i + i_offset, j, 1);
           M += 1;
@@ -155,7 +155,7 @@ void EigenCalving::update(double dt,
       for (int q = -1; q < 2; q += 2) {
         int j_offset = q * offset;
         if (mask.floating_ice(i, j + j_offset) &&
-            mask.ice_margin(i , j + j_offset) == false) {
+            not mask.ice_margin(i , j + j_offset)) {
           eigen1 += m_strain_rates(i, j + j_offset, 0);
           eigen2 += m_strain_rates(i, j + j_offset, 1);
           M += 1;
@@ -286,7 +286,7 @@ MaxTimestep EigenCalving::max_timestep() {
     // find partially filled or empty grid boxes on the ice-free
     // ocean which have floating ice neighbors
     if ((m.ice_free_ocean(i, j) &&
-         m.next_to_floating_ice(i, j)) == false) {
+         not m.next_to_floating_ice(i, j))) {
       continue;
     }
 
@@ -297,7 +297,7 @@ MaxTimestep EigenCalving::max_timestep() {
     for (int p = -1; p < 2; p += 2) {
       int i_offset = p * offset;
       if (m.floating_ice(i + i_offset, j) &&
-          m.ice_margin(i + i_offset, j) == false) {
+          not m.ice_margin(i + i_offset, j)) {
         eigen1 += m_strain_rates(i + i_offset, j, 0);
         eigen2 += m_strain_rates(i + i_offset, j, 1);
         M += 1;
@@ -307,7 +307,7 @@ MaxTimestep EigenCalving::max_timestep() {
     for (int q = -1; q < 2; q += 2) {
       int j_offset = q * offset;
       if (m.floating_ice(i, j + j_offset) &&
-          m.ice_margin(i,   j + j_offset) == false) {
+          not m.ice_margin(i,   j + j_offset)) {
         eigen1 += m_strain_rates(i, j + j_offset, 0);
         eigen2 += m_strain_rates(i, j + j_offset, 1);
         M += 1;
@@ -462,25 +462,25 @@ void EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
       ice_free_SW = mask.ice_free(i - 1, j - 1);
     }
 
-    if ((ice_free_W == false &&
+    if ((not ice_free_W &&
          ice_free_NW         &&
          ice_free_SW         &&
          ice_free_N          &&
          ice_free_S          &&
          ice_free_E)         ||
-        (ice_free_N == false &&
+        (not ice_free_N &&
          ice_free_NW         &&
          ice_free_NE         &&
          ice_free_W          &&
          ice_free_E          &&
          ice_free_S)         ||
-        (ice_free_E == false &&
+        (not ice_free_E &&
          ice_free_NE         &&
          ice_free_SE         &&
          ice_free_W          &&
          ice_free_S          &&
          ice_free_N)         ||
-        (ice_free_S == false &&
+        (not ice_free_S &&
          ice_free_SW         &&
          ice_free_SE         &&
          ice_free_W          &&

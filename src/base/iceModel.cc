@@ -160,11 +160,11 @@ IceModel::~IceModel() {
 
   delete stress_balance;
 
-  if (external_ocean_model == false) {
+  if (not external_ocean_model) {
     delete ocean;
   }
 
-  if (external_surface_model == false) {
+  if (not external_surface_model) {
     delete surface;
   }
 
@@ -648,7 +648,7 @@ void IceModel::step(bool do_mass_continuity,
 
   try {
     profiling.begin("stress balance");
-    stress_balance->update(updateAtDepth == false,
+    stress_balance->update(not updateAtDepth,
                            sea_level,
                            melange_back_pressure);
     profiling.end("stress balance");

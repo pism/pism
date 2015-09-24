@@ -33,7 +33,7 @@ void define_dimension(const NC4_Serial &input, const NC4_Serial &output,
   bool exists;
 
   input.inq_dimid(dim_name, exists);
-  if (exists == false) {
+  if (not exists) {
     return;
   }
 
@@ -64,7 +64,7 @@ void define_variable(const NC4_Serial &input, const NC4_Serial &output,
   std::vector<std::string> dimensions;
 
   input.inq_varid(variable_name, exists);
-  if (exists == false) {
+  if (not exists) {
     return;
   }
 

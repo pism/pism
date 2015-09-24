@@ -1279,7 +1279,7 @@ void SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 void SSAFD::fracture_induced_softening() {
-  if (m_config->get_boolean("do_fracture_density") == false) {
+  if (not m_config->get_boolean("do_fracture_density")) {
     return;
   }
 

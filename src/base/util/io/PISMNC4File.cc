@@ -525,7 +525,7 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false) {
+  if (not mapped) {
     imap.resize(ndims);
   }
 

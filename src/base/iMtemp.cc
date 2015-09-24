@@ -48,7 +48,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
 
-  assert(m_config->get_boolean("temperature_allow_above_melting") == false);
+  assert(not m_config->get_boolean("temperature_allow_above_melting"));
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to

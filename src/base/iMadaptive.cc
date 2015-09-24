@@ -183,7 +183,7 @@ double IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (m_config->get_boolean("do_skip") == false) {
+  if (not m_config->get_boolean("do_skip")) {
     return 0;
   }
 

@@ -83,7 +83,7 @@ void IceModel::do_calving() {
  * floating ice neighbor.
  */
 void IceModel::Href_cleanup() {
-  if (vHref.was_created() == false) {
+  if (not vHref.was_created()) {
     return;
   }
 
@@ -102,7 +102,7 @@ void IceModel::Href_cleanup() {
       vHref(i, j) = 0.0;
     }
 
-    if (vHref(i, j) > 0.0 && mask.next_to_ice(i, j) == false) {
+    if (vHref(i, j) > 0.0 && not mask.next_to_ice(i, j)) {
       vHref(i, j) = 0.0;
     }
   }

@@ -428,7 +428,7 @@ void IceModel::write_extras() {
 
   PIO nc(m_grid->com, m_config->get_string("output_format"));
 
-  if (extra_file_is_ready == false) {
+  if (not extra_file_is_ready) {
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append = options::Bool("-extra_append", "append -extra_file output");
 

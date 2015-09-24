@@ -42,10 +42,9 @@ public:
 
   virtual ~SSAFEM();
 
-  void cacheQuadPtValues();
-
 protected:
   virtual void init_impl();
+  void cacheQuadPtValues();
 
   //! Storage for SSA coefficients at a quadrature point.
   struct Coefficients {
@@ -57,9 +56,10 @@ protected:
     int mask;
   };
 
-  void PointwiseNuHAndBeta(const Coefficients &,
-                           const Vector2 &, const double[],
-                           double *, double *, double *, double *);
+  void PointwiseNuHAndBeta(const Coefficients &coefficients,
+                           const Vector2 &u, const double Du[],
+                           double *nuH, double *dnuH,
+                           double *beta, double *dbeta);
 
   void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
 

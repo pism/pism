@@ -613,7 +613,7 @@ void  IceModelVec::end_access() const {
 //! Updates ghost points.
 void  IceModelVec::update_ghosts() {
   PetscErrorCode ierr;
-  if (m_has_ghosts == false) {
+  if (not m_has_ghosts) {
     return;
   }
 
@@ -670,7 +670,7 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
     return;
   }
 
-  if (m_has_ghosts == false && destination.m_has_ghosts == true) {
+  if (not m_has_ghosts && destination.m_has_ghosts == true) {
     global_to_local(destination.m_da, m_v, destination.m_v);
     return;
   }

@@ -372,9 +372,9 @@ void SSAFEM::cacheQuadPtValues() {
  * @return 0 on success
  */
 void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
-                                           const Vector2 &u, const double Du[],
-                                           double *nuH, double *dnuH,
-                                           double *beta, double *dbeta) {
+                                 const Vector2 &u, const double Du[],
+                                 double *nuH, double *dnuH,
+                                 double *beta, double *dbeta) {
 
   if (coefficients.H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
@@ -420,7 +420,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
                                     Vector2 **residual_global) {
   using namespace fem;
 
-  (void) info; // Avoid compiler warning.
+  (void) info; // Avoid a compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -437,7 +437,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  // Storage for the current solution at quadrature points.
+  // Storage for the current solution and its derivatives at quadrature points.
   Vector2 u[Quadrature::Nq];
   double Du[Quadrature::Nq][3];
 
@@ -452,8 +452,9 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      // Storage for element-local solution and residuals.
-      Vector2 velocity_local[Quadrature::Nk], residual[Quadrature::Nk];
+      // Storage for the solution and residuals at element nodes.
+      Vector2 velocity_nodal[Quadrature::Nk];
+      Vector2 residual[Quadrature::Nk];
 
       // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
@@ -465,12 +466,12 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       m_dofmap.reset(i, j, *m_grid);
 
       // Obtain the value of the solution at the nodes adjacent to the element.
-      m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
+      m_dofmap.extractLocalDOFs(velocity_global, velocity_nodal);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (dirichlet_data) {
-        dirichlet_data.update(m_dofmap, velocity_local);
+        dirichlet_data.update(m_dofmap, velocity_nodal);
         dirichlet_data.constrain(m_dofmap);
       }
 
@@ -481,7 +482,8 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
       }
 
       // Compute the solution values and symmetric gradient at the quadrature points.
-      m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
+      m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
+                                                     u, Du);         // outputs
 
       // loop over quadrature points on this element:
       for (unsigned int q = 0; q < Quadrature::Nq; q++) {
@@ -490,8 +492,8 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
         const double *Duq = Du[q];
 
         double eta = 0.0, beta = 0.0;
-        PointwiseNuHAndBeta(coefficients[q], u[q], Duq,
-                            &eta, NULL, &beta, NULL);
+        PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
+                            &eta, NULL, &beta, NULL);              // outputs
 
         // The next few lines compute the actual residual for the element.
         const Vector2
@@ -506,6 +508,7 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
         // Loop over test functions.
         for (unsigned int k = 0; k < Quadrature::Nk; k++) {
           const FunctionGerm &psi = test[q][k];
+
           residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
                                      - psi.val * (tau_b.u + tau_d.u));
           residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
@@ -532,7 +535,7 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
                               Vector2 **residual_global) {
   PetscErrorCode ierr;
   bool monitorFunction = options::Bool("-ssa_monitor_function", "monitor the SSA residual");
-  if (monitorFunction == false) {
+  if (not monitorFunction) {
     return;
   }
 
@@ -667,15 +670,12 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
           for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
 
             // Current trial function and its derivatives:
-            const double
-              phi   = test[q][l].val,
-              phi_x = test[q][l].dx,
-              phi_y = test[q][l].dy;
+            const fem::FunctionGerm &phi = test[q][l];
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
-              gamma_u = (2.0 * U_x + V_y) * phi_x + Du[q][2] * phi_y,
-              gamma_v = Du[q][2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
+              gamma_u = (2.0 * U_x + V_y) * phi.dx + Du[q][2] * phi.dy,
+              gamma_v = Du[q][2] * phi.dx + (U_x + 2.0 * V_y) * phi.dy;
 
             // Derivatives if \eta (\nu*H) with respect to u_l and v_l:
             const double
@@ -684,18 +684,16 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
             // Derivatives of the basal shear stress term (\tau_b):
             const double
-              taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_l
-              taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_l
-              taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
-              taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
+              taub_xu = -dbeta * U * U * phi.val - beta * phi.val, // x-component, derivative with respect to u_l
+              taub_xv = -dbeta * U * V * phi.val,              // x-component, derivative with respect to u_l
+              taub_yu = -dbeta * V * U * phi.val,              // y-component, derivative with respect to v_l
+              taub_yv = -dbeta * V * V * phi.val - beta * phi.val; // y-component, derivative with respect to v_l
 
             for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
 
               // Current test function and its derivatives:
-              const double
-                psi   = test[q][k].val,
-                psi_x = test[q][k].dx,
-                psi_y = test[q][k].dy;
+
+              const fem::FunctionGerm &psi = test[q][k];
 
               if (eta == 0) {
                 ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
@@ -703,17 +701,17 @@ void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
               }
 
               // u-u coupling
-              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
-                                           + eta * (4 * psi_x * phi_x + psi_y * phi_y) - psi * taub_xu);
+              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
+                                           + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
               // u-v coupling
-              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
-                                           + eta * (2 * psi_x * phi_y + psi_y * phi_x) - psi * taub_xv);
+              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
+                                           + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
               // v-u coupling
-              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
-                                           + eta * (psi_x * phi_y + 2 * psi_y * phi_x) - psi * taub_yu);
+              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
+                                           + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
               // v-v coupling
-              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
-                                           + eta * (psi_x * phi_x + 4 * psi_y * phi_y) - psi * taub_yv);
+              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
+                                           + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
 
             } // l
           } // k
@@ -757,7 +755,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   PetscErrorCode ierr;
   bool mon_jac = options::Bool("-ssa_monitor_jacobian", "monitor the SSA Jacobian");
 
-  if (mon_jac == false) {
+  if (not mon_jac) {
     return;
   }
 

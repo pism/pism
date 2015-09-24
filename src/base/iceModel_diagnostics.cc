@@ -255,7 +255,7 @@ void IceModel::list_diagnostics() {
         units               = diag->get_metadata().get_string("units"),
         glaciological_units = diag->get_metadata().get_string("glaciological_units");
 
-      if (glaciological_units.empty() == false) {
+      if (not glaciological_units.empty()) {
         units = glaciological_units;
       }
 
@@ -294,7 +294,7 @@ void IceModel::list_diagnostics() {
       units = diag->get_string("units"),
       glaciological_units = diag->get_string("glaciological_units");
 
-    if (glaciological_units.empty() == false) {
+    if (not glaciological_units.empty()) {
       units = glaciological_units;
     }
 

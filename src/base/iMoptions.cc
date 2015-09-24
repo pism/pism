@@ -61,7 +61,7 @@ void IceModel::setFromOptions() {
     throw RuntimeError("maximum_time_step_years has to be greater than 0.");
   }
 
-  if (m_config->get_boolean("do_mass_conserve") == false &&
+  if (not m_config->get_boolean("do_mass_conserve") &&
       m_config->get_boolean("do_skip")) {
     m_log->message(2,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
@@ -69,7 +69,7 @@ void IceModel::setFromOptions() {
   }
 
   if (m_config->get_string("calving_methods").find("thickness_calving") != std::string::npos &&
-      m_config->get_boolean("part_grid") == false) {
+      not m_config->get_boolean("part_grid")) {
     m_log->message(2,
                "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
                "              without application of partially filled grid cell scheme (-part_grid)\n"

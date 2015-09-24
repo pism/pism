@@ -276,7 +276,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   bool append = options::Bool("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
-  if (append == false) {
+  if (not append) {
     mode = PISM_READWRITE_MOVE;
   }
 

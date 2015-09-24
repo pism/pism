@@ -628,7 +628,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
     std::set<int> axes;
     axes.insert(X_AXIS);
     axes.insert(Y_AXIS);
-    if (var.get_z().get_name().empty() == false) {
+    if (not var.get_z().get_name().empty()) {
       axes.insert(Z_AXIS);
     }
 
@@ -960,7 +960,7 @@ void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
       input_has_units = true;
     }
 
-    if (metadata.has_attribute("units") == true && input_has_units == false) {
+    if (metadata.has_attribute("units") && not input_has_units) {
       std::string units_string = internal_units.format();
       log.message(2,
                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
@@ -1120,7 +1120,7 @@ void read_time_bounds(const PIO &nc,
       input_has_units = true;
     }
 
-    if (metadata.has_attribute("units") && input_has_units == false) {
+    if (metadata.has_attribute("units") && not input_has_units) {
       std::string units_string = internal_units.format();
       log.message(2,
                  "PISM WARNING: Variable '%s' does not have the units attribute.\n"
@@ -1146,7 +1146,7 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
   std::string name = metadata.get_name();
   try {
     bool variable_exists = nc.inq_var(name);
-    if (variable_exists == false) {
+    if (not variable_exists) {
       define_time_bounds(metadata, nc, nctype, true);
     }
 

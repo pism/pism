@@ -549,7 +549,7 @@ int PNCFile::get_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false) {
+  if (not mapped) {
     imap.resize(ndims);
   }
 
@@ -601,7 +601,7 @@ int PNCFile::put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false) {
+  if (not mapped) {
     imap.resize(ndims);
   }
 
