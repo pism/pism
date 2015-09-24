@@ -139,7 +139,7 @@ calving front. Then $\n = (1,0)$ and from \eqref{eq:3} we have
 \begin{equation}
 2N_{xx} + N_{yy} = \int_{b}^{h}(\pice - \psw) dz.  \label{eq:vertintbdry}
 \end{equation}
-We call the right-hand side of \eqref{eq:vertintbdry} the ``pressure imbalance term.''
+We call the right-hand side of \eqref{eq:vertintbdry} the ``pressure difference term.''
 
 In forming the matrix approximation of the SSA \cite{BBssasliding,Winkelmannetal2011}, instead of assembling a matrix row corresponding to the generic equation \eqref{eq:4} we use
 \begin{equation*}
@@ -157,7 +157,7 @@ right-hand side, we get
 The second equation and other cases ($\n = (-1,0)$, etc) are treated
 similarly.
 
-\section{Evaluating the ``pressure imbalance term''}
+\section{Evaluating the ``pressure difference term''}
 \label{sec-5}
 
 For $z \in [b, h]$ the modeled pressures are
@@ -218,7 +218,7 @@ melange pressure'') ranging from $0$ to $1$, so that
 \pmelange = \lambda \cdot (\pice - \psw).
 \end{equation}
 
-Then the modified pressure imbalance term is
+Then the modified pressure difference term is
 \begin{align}
 \int_{b}^{h}(\pice - (\psw + \pmelange)) dz &= \int_{b}^{h}(\pice - (\psw + \lambda(\pice - \psw)))\, dz \notag
  \\
