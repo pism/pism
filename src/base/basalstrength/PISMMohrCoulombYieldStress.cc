@@ -136,7 +136,7 @@ void MohrCoulombYieldStress::init_impl() {
     std::string hydrology_tillwat_max = "hydrology_tillwat_max";
     bool till_is_present = m_config->get_double(hydrology_tillwat_max) > 0.0;
 
-    if (till_is_present == false) {
+    if (not till_is_present) {
       throw RuntimeError::formatted("The Mohr-Coulomb yield stress model cannot be used without till.\n"
                                     "Reset %s or choose a different yield stress model.",
                                     hydrology_tillwat_max.c_str());

@@ -332,7 +332,7 @@ int NC3File::get_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false) {
+  if (not mapped) {
     imap.resize(ndims);
   }
 
@@ -469,7 +469,7 @@ int NC3File::put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false) {
+  if (not mapped) {
     imap.resize(ndims);
   }
 

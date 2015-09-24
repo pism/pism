@@ -79,7 +79,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
   if (write_mapping) {
     bool mapping_exists = nc.inq_var(mapping.get_name());
-    if (mapping_exists == false) {
+    if (not mapping_exists) {
       nc.redef();
       nc.def_var(mapping.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
@@ -90,7 +90,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
   if (write_run_stats) {
     update_run_stats();
     bool run_stats_exists = nc.inq_var(run_stats.get_name());
-    if (run_stats_exists == false) {
+    if (not run_stats_exists) {
       nc.redef();
       nc.def_var(run_stats.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
@@ -719,7 +719,7 @@ void IceModel::write_snapshot() {
 
   PIO nc(m_grid->com, m_config->get_string("output_format"));
 
-  if (snapshots_file_is_ready == false) {
+  if (not snapshots_file_is_ready) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
     io::define_time(nc, m_config->get_string("time_dimension_name"),

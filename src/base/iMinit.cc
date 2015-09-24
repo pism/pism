@@ -444,7 +444,7 @@ void IceModel::allocate_submodels() {
 
   // FIXME: someday we will have an "energy balance" sub-model...
   if (m_config->get_boolean("do_energy") == true) {
-    if (m_config->get_boolean("do_cold_ice_methods") == false) {
+    if (not m_config->get_boolean("do_cold_ice_methods")) {
       m_log->message(2,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {
@@ -794,7 +794,7 @@ void IceModel::init_calving() {
     ++j;
   }
 
-  if (unused.empty() == false) {
+  if (not unused.empty()) {
     m_log->message(2,
                "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
                unused.c_str());

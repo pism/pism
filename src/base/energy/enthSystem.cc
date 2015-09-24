@@ -298,7 +298,7 @@ Thus
   \f[ R = \frac{k \Delta t}{\rho c \Delta z^2}. \f]
  */
 void enthSystemCtx::assemble_R() {
-  if (m_k_depends_on_T == false && m_c_depends_on_T == false) {
+  if (not m_k_depends_on_T && not m_c_depends_on_T) {
 
     for (unsigned int k = 0; k <= m_ks; k++) {
       m_R[k] = (m_Enth[k] < m_Enth_s[k]) ? m_R_cold : m_R_temp;

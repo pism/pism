@@ -121,7 +121,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   nc.open(filename, PISM_READONLY);
   nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
              exists, name_found, found_by_standard_name);
-  if (exists == false) {
+  if (not exists) {
     throw RuntimeError::formatted("can't find %s (%s) in %s.",
                                   m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
                                   filename.c_str());
@@ -155,7 +155,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
     if (time.size() > 1) {
-      if (bounds_name.empty() == false) {
+      if (not bounds_name.empty()) {
         // read time bounds data from a file
         TimeBoundsMetadata tb(bounds_name, dimname, m_grid->ctx()->unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
@@ -194,7 +194,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     time_bounds[1] =  1;
   }
 
-  if (is_increasing(time) == false) {
+  if (not is_increasing(time)) {
     throw RuntimeError::formatted("times have to be strictly increasing (read from '%s').",
                                   filename.c_str());
   }

@@ -215,7 +215,7 @@ void IceCompModel::allocate_stressbalance() {
 
     rheology::FlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
 
-    if (FlowLawIsPatersonBuddCold(ice, *m_config, EC) == false) {
+    if (not FlowLawIsPatersonBuddCold(ice, *m_config, EC)) {
       m_log->message(1,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
     }
@@ -810,7 +810,7 @@ void IceCompModel::additionalAtEndTimestep() {
 
   // do nothing at the end of the time step unless the user has asked for the
   // exact solution to overwrite the numerical solution
-  if (exactOnly == false) {
+  if (not exactOnly) {
     return;
   }
 
@@ -924,7 +924,7 @@ void IceCompModel::reportErrors() {
   bool append = options::Bool("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
-  if (append == false) {
+  if (not append) {
     mode = PISM_READWRITE_MOVE;
   }
 

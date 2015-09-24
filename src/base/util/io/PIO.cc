@@ -317,7 +317,7 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name,
     string name_found;
     inq_var(name, std_name, exists, name_found, found_by_standard_name);
 
-    if (exists == false) {
+    if (not exists) {
       return 0;
     }
 
@@ -351,7 +351,7 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
   try {
     exists = false;
 
-    if (std_name.empty() == false) {
+    if (not std_name.empty()) {
 
       int nvars;
       m_impl->nc->inq_nvars(nvars);
@@ -367,7 +367,7 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
         }
 
         if (attribute == std_name) {
-          if (exists == false) {
+          if (not exists) {
             exists = true;
             found_by_standard_name = true;
             result = name;
@@ -380,9 +380,9 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
         }
 
       } // end of the for loop
-    } // end of if (std_name.empty() == false)
+    } // end of if (not std_name.empty())
 
-    if (exists == false) {
+    if (not exists) {
       m_impl->nc->inq_varid(short_name, exists);
       if (exists == true) {
         result = short_name;
@@ -469,7 +469,7 @@ AxisType PIO::inq_dimtype(const string &name,
 
     m_impl->nc->inq_varid(name, exists);
     
-    if (exists == false) {
+    if (not exists) {
       throw RuntimeError("coordinate variable " + name + " is missing");
     }
 

@@ -267,7 +267,7 @@ FIXME:  now a trapezoid rule could be used
 */
 void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
-  if (m_temp.was_created() == false) {
+  if (not m_temp.was_created()) {
     return;  // in this case we are up to date
   }
 
@@ -296,7 +296,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
       }
     }
 
-    if (contiguous == false) {
+    if (not contiguous) {
       throw RuntimeError::formatted("BedThermalUnit::update() requires next update to be contiguous with last;\n"
                                     "  stored:     t = %f s,    dt = %f s\n"
                                     "  desired: my_t = %f s, my_dt = %f s",

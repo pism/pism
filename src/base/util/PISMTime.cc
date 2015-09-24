@@ -240,7 +240,7 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
   }
 
   // strip trailing spaces
-  while (ends_with(units, " ") && units.empty() == false) {
+  while (ends_with(units, " ") && not units.empty()) {
     units.resize(units.size() - 1);  // this would fail on empty strings
   }
 

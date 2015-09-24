@@ -503,7 +503,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
 }
 
 
-//! \brief Compute the SIA flux. If fast == false, also store delta on the staggered grid.
+//! \brief Compute the SIA flux. If (not fast), also store delta on the staggered grid.
 /*!
  * Recall that \f$ Q = -D \nabla h \f$ is the diffusive flux in the mass-continuity equation
  *
@@ -534,7 +534,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
  * \f$F(z)\f$ (which is computationally expensive) in the horizontal ice
  * velocity (see compute_3d_horizontal_velocity()) computation.
  *
- * This method computes \f$Q\f$ and stores \f$\delta\f$ in delta[0,1] is fast == false.
+ * This method computes \f$Q\f$ and stores \f$\delta\f$ in delta[0,1] if (not fast).
  *
  * The trapezoidal rule is used to approximate the integral.
  *
@@ -555,7 +555,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
 
-  bool full_update = (fast == false);
+  bool full_update = (not fast);
 
   result.set(0.0);
 

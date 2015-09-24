@@ -207,7 +207,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  assert(m_config->get_boolean("do_cold_ice_methods") == false);
+  assert(not m_config->get_boolean("do_cold_ice_methods"));
 
   // essentially physical constants:
   const double

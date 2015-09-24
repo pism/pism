@@ -574,7 +574,7 @@ void set_config_from_options(Config &config) {
   }
 
   // all calving mechanisms require iceberg removal
-  if (config.get_string("calving_methods").empty() == false) {
+  if (not config.get_string("calving_methods").empty()) {
     config.set_boolean("kill_icebergs", true, Config::USER);
   }
 

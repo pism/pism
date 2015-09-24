@@ -94,7 +94,7 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
 
 void tempSystemCtx::setSurfaceBoundaryValuesThisColumn(double my_Ts) {
   // allow setting surface BCs only once:
-  assert(m_surfBCsValid == false);
+  assert(not m_surfBCsValid);
 
   m_Ts           = my_Ts;
   m_surfBCsValid = true;
@@ -104,7 +104,7 @@ void tempSystemCtx::setSurfaceBoundaryValuesThisColumn(double my_Ts) {
 void tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
                                                      double my_Tshelfbase, double my_Rb) {
   // allow setting basal BCs only once:
-  assert(m_basalBCsValid == false);
+  assert(not m_basalBCsValid);
 
   m_G0            = my_G0;
   m_Tshelfbase    = my_Tshelfbase;
