@@ -60,8 +60,8 @@ typedef struct {
 	\param[out] derivative of the effective viscosity with respect
 	  to the second invariant, \f$ \frac{\partial \eta}{\partial \gamma} \f$
     */
-    void (*viscosity)(void* ctx, PetscReal hardness, PetscReal gamma,
-		      PetscReal *eta, PetscReal *deta);
+    PetscErrorCode (*viscosity)(void* ctx, PetscReal hardness, PetscReal gamma,
+                                PetscReal *eta, PetscReal *deta);
 
     /*! Function evaluating the basal drag coefficient \f$ \tau_b \f$ as a
         function of the basal yield stress \f$ \tau_c \f$ and
@@ -73,8 +73,8 @@ typedef struct {
 	\param[out] taub \f$ \tau_b \f$
 	\param[out] dtaub derivative of \f$ \tau_b \f$ with respect to \f$ \gamma_b \f$
      */
-    void (*drag)(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
-		 PetscReal *taub, PetscReal *dtaub);
+    PetscErrorCode (*drag)(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
+                           PetscReal *taub, PetscReal *dtaub);
   } nonlinear;
 
   /*! 3D Q1 elements with the 2x2x2 (8-point) Gaussian quadrature */

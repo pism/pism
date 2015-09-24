@@ -506,17 +506,17 @@ static PetscErrorCode BlatterQ1_initial_guess(SNES snes, Vec X, void* ctx)
  * \param[out] eta  effective viscosity \f$\eta\f$ (at the current quadrature point)
  * \param[out] deta derivative of eta with respect to gamma \f$\frac{\partial \eta}{\partial \gamma}\f$
  */
-static void compute_nonlinearity(BlatterQ1Ctx *ctx,
-                                 const Node velocity[restrict],
-                                 const PetscReal phi[restrict],
-                                 PetscReal dphi[restrict][3],
-                                 PetscScalar *restrict u,
-                                 PetscScalar *restrict v,
-                                 PetscScalar du[restrict],
-                                 PetscScalar dv[restrict],
-                                 PetscReal *eta,
-                                 PetscReal *deta)
-{
+static PetscErrorCode compute_nonlinearity(BlatterQ1Ctx *ctx,
+                                           const Node velocity[restrict],
+                                           const PetscReal phi[restrict],
+                                           PetscReal dphi[restrict][3],
+                                           PetscScalar *restrict u,
+                                           PetscScalar *restrict v,
+                                           PetscScalar du[restrict],
+                                           PetscScalar dv[restrict],
+                                           PetscReal *eta,
+                                           PetscReal *deta) {
+  PetscErrorCode ierr;
   PetscInt l, ll;
   PetscScalar second_invariant;
 
@@ -524,21 +524,22 @@ static void compute_nonlinearity(BlatterQ1Ctx *ctx,
   dv[0] = dv[1] = dv[2] = 0;
   *u = 0;
   *v = 0;
-  for (l=0; l<8; l++) {
+  for (l = 0; l < 8; l++) {
     *u += phi[l] * velocity[l].u;
     *v += phi[l] * velocity[l].v;
-    for (ll=0; ll<3; ll++) {
+    for (ll = 0; ll < 3; ll++) {
       du[ll] += dphi[l][ll] * velocity[l].u;
       dv[ll] += dphi[l][ll] * velocity[l].v;
     }
   }
-  second_invariant = Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] + 0.25*Sqr(du[1]+dv[0]) + 0.25*Sqr(du[2]) + 0.25*Sqr(dv[2]);
+  second_invariant = Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] + 0.25*Sqr(du[1] + dv[0]) + 0.25*Sqr(du[2]) + 0.25*Sqr(dv[2]);
   {				/* FIXME: this needs to be an argument */
     PetscReal softness = 4e-25,
       n = 3.0,
-      hardness = pow(softness,-1.0/n);
-    ctx->nonlinear.viscosity(ctx, hardness, second_invariant, eta, deta);
+      hardness = pow(softness, -1.0 / n);
+    ierr = ctx->nonlinear.viscosity(ctx, hardness, second_invariant, eta, deta); CHKERRQ(ierr);
   }
+  return 0;
 }
 
 
@@ -610,9 +611,10 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
           compute_element_info(ctx->Q13D.chi, ctx->Q13D.dchi, q, dx, dy, grad_z, /* inputs */
                                phi, dphi, &jw); /* outputs (values of shape functions, their derivatives, det(J)*weight */
 
-          compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
-                               &u, &v, du, dv, &eta, &deta); /* outputs u,v, partial derivatives of u,v,
-                                                                effective viscosity (eta), derivative of eta with respect to gamma */
+          ierr = compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
+                                      &u, &v, du, dv, &eta, &deta); /* outputs u,v, partial derivatives of u,v,
+                                                                     effective viscosity (eta), derivative of eta with respect to gamma */
+          CHKERRQ(ierr);
 
           jw /= ctx->rhog;      /* scales residuals to be O(1) */
 
@@ -666,8 +668,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                 tauc += phi[l]*parameters[l].tauc;
               }
 
-              ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
-                                  &beta, NULL);
+              ierr = ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
+                                         &beta, NULL); CHKERRQ(ierr);
 
               for (l = 0; l < 4; l++) {
                 element_residual[ls + l]->u += phi[l]*jw*(beta*u);
@@ -758,8 +760,9 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           /* Compute u,v, their derivatives, plus effective viscosity and its
              derivative with respect to gamma. */
-          compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
-                               &u, &v, du, dv, &eta, &deta); /* outputs */
+          ierr = compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
+                                      &u, &v, du, dv, &eta, &deta); /* outputs */
+          CHKERRQ(ierr);
 
           jw /= ctx->rhog;      /* residuals are scaled by this factor */
 
@@ -823,8 +826,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
               }
 
               /* Compute the friction coefficient at this quadrature point: */
-              ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
-                                  &beta, &dbeta);
+              ierr = ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
+                                         &beta, &dbeta); CHKERRQ(ierr);
 
               for (l = 0; l < 4; l++) {
                 const PetscReal pp = phi[l];

@@ -44,22 +44,36 @@ namespace stressbalance {
 
 //! C-wrapper for PISM's IceFlowLaw::viscosity().
 extern "C"
-void viscosity(void *ctx, double hardness, double gamma,
-               double *eta, double *deta) {
+PetscErrorCode viscosity(void *ctx, double hardness, double gamma,
+                         double *eta, double *deta) {
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->flow_law()->effective_viscosity(hardness, gamma, eta, deta);
+  try {
+    blatter_stress_balance->flow_law()->effective_viscosity(hardness, gamma, eta, deta);
+  } catch (...) {
+    MPI_Comm com = blatter_stress_balance->grid()->ctx()->com();
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
+  return 0;
 }
 
 //! C-wrapper for PISM's IceBasalResistancePlasticLaw::dragWithDerivative().
 extern "C"
-void drag(void *ctx, double tauc, double u, double v,
-          double *taud, double *dtaub) {
+PetscErrorCode drag(void *ctx, double tauc, double u, double v,
+                    double *taud, double *dtaub) {
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->sliding_law()->drag_with_derivative(tauc, u, v, taud, dtaub);
+  try {
+    blatter_stress_balance->sliding_law()->drag_with_derivative(tauc, u, v, taud, dtaub);
+  } catch (...) {
+    MPI_Comm com = blatter_stress_balance->grid()->ctx()->com();
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
+  return 0;
 }
 
 BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
