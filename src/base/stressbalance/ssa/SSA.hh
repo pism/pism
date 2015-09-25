@@ -134,6 +134,9 @@ protected:
 
   virtual void solve() = 0;
 
+  double ocean_pressure_difference(bool shelf, double H, double bed, double sea_level,
+                                   double rho_ice, double rho_ocean, double g);
+
   const IceModelVec2Int *m_mask;
   const IceModelVec2S *m_thickness;
   const IceModelVec2S *m_tauc;
@@ -159,4 +162,3 @@ protected:
 } // end of namespace pism
 
 #endif /* _SSA_H_ */
-
