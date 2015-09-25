@@ -27,7 +27,7 @@ namespace inverse {
 void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
@@ -82,7 +82,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
@@ -148,7 +148,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // Clear the gradient before doing anything with it!
@@ -220,7 +220,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   PetscErrorCode ierr;

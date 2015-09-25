@@ -209,11 +209,10 @@ private:
   element-local degrees of freedom for the purposes of local computation, 
   (and the results added back again to the global residual and Jacobian arrays).
 
-  An DOFMap mediates the transfer between element-local and global degrees of freedom.
-  In this very concrete implementation, the global degrees of freedom are either
-  scalars (double's) or vectors (Vector2's), one per node in the IceGrid, 
-  and the local degrees of freedom on the element are DOFMap::Nk (%i.e. four) scalars or vectors, one 
-  for each vertex of the element.
+  An DOFMap mediates the transfer between element-local and global degrees of freedom. In this very
+  concrete implementation, the global degrees of freedom are either scalars (double's) or vectors
+  (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
+  ShapeQ1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
 
   The DOFMap is also (perhaps awkwardly) overloaded to also mediate transfering locally
   computed contributions to residual and Jacobian matricies to their global
@@ -256,8 +255,6 @@ public:
 
   void addLocalJacobianBlock(const double *K, Mat J);
 
-  static const unsigned int Nk = 4; //<! The number of test functions defined on an element.
-  
 private:
   void reset(int i, int j);
 
@@ -270,14 +267,14 @@ private:
   //! *don't* use PETSC_MIN_INT, because PETSC_MIN_INT depends on
   //! PETSc's configuration flags.
   static const int kDofInvalid = -1073741824;
-  static const int kIOffset[Nk];
-  static const int kJOffset[Nk];
+  static const int kIOffset[ShapeQ1::Nk];
+  static const int kJOffset[ShapeQ1::Nk];
 
   //! Indices of the current element (for updating residual/Jacobian).
   int m_i, m_j;
 
   //! Stencils for updating entries of the Jacobian matrix.
-  MatStencil m_row[Nk], m_col[Nk]; 
+  MatStencil m_row[ShapeQ1::Nk], m_col[ShapeQ1::Nk]; 
 };
 
 //! Manages iterating over element indices.
@@ -378,7 +375,6 @@ public:
   Quadrature2x2(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
   static const unsigned int Nq = 4;  //!< Number of quadrature points.
-  static const unsigned int Nk = ShapeQ1::Nk;  //!< Number of test functions on the element.
   
   // define FunctionGermArray, which is an array of Quadrature2x2::Nq
   // FunctionGerms
@@ -403,7 +399,7 @@ protected:
   // multiplied by corresponding quadrature weights.
   double m_JxW[Nq];
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
-  FunctionGerm m_germs[Nq][Nk];
+  FunctionGerm m_germs[Nq][ShapeQ1::Nk];
 };
 
 //! This version supports 2D scalar fields.
@@ -423,7 +419,7 @@ public:
   void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global, 
                                   double *vals, double *dx, double *dy);
 private:
-  double m_tmp[Nk];
+  double m_tmp[ShapeQ1::Nk];
 };
 
 //! This version supports 2D vector fields.
@@ -444,7 +440,7 @@ public:
   void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,  
                                   Vector2 *vals, double (*Dv)[3]);
 private:
-  Vector2 m_tmp[Nk];
+  Vector2 m_tmp[ShapeQ1::Nk];
 };
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
@@ -461,7 +457,7 @@ public:
 protected:
   void init_impl(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
   void finish_impl(const IceModelVec *values);
-  double           m_indices_e[Quadrature2x2::Nk];
+  double           m_indices_e[ShapeQ1::Nk];
   const IceModelVec2Int *m_indices;
   double           m_weight;
 };

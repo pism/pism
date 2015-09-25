@@ -26,7 +26,7 @@ namespace inverse {
 void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
@@ -100,7 +100,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // Clear the gradient before doing anything with it!
@@ -149,7 +149,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
@@ -223,7 +223,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
 void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // Clear the gradient before doing anything with it!

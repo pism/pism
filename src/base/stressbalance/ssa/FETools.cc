@@ -167,7 +167,7 @@ void DOFMap::localToGlobal(int k, int *i, int *j) const {
 void DOFMap::reset(int i, int j) {
   m_i = i; m_j = j;
 
-  for (unsigned int k = 0; k < Nk; ++k) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; ++k) {
     m_col[k].i = i + kIOffset[k];
     m_col[k].j = j + kJOffset[k];
     m_col[k].k = 0;
@@ -184,7 +184,7 @@ void DOFMap::reset(int i, int j) {
 void DOFMap::reset(int i, int j, const IceGrid &grid) {
   reset(i, j);
   // We do not ever sum into rows that are not owned by the local rank.
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
     if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
         pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
@@ -215,7 +215,7 @@ void DOFMap::markColInvalid(int k) {
   vector `yg`. */
 /*! The element-local residual should be an array of Nk values.*/
 void DOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       continue;
     }
@@ -225,7 +225,7 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
 }
 
 void DOFMap::addLocalResidualBlock(const double *y, double **yg) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       continue;
     }
@@ -234,7 +234,7 @@ void DOFMap::addLocalResidualBlock(const double *y, double **yg) {
 }
 
 void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       continue;
     }
@@ -244,7 +244,7 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
 }
 
 void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       continue;
     }
@@ -263,8 +263,8 @@ void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
  *  should be.)
  */
 void DOFMap::addLocalJacobianBlock(const double *K, Mat J) {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row,
-                                                   Nk, m_col, K, ADD_VALUES);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, fem::ShapeQ1::Nk, m_row,
+                                                   fem::ShapeQ1::Nk, m_col, K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
@@ -273,7 +273,7 @@ const int DOFMap::kJOffset[4] = {0, 0, 1, 1};
 
 Quadrature_Scalar::Quadrature_Scalar(const IceGrid &grid, double L)
   : Quadrature2x2(grid, L) {
-  PetscErrorCode ierr = PetscMemzero(m_tmp, Nk*sizeof(double));
+  PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(double));
   PISM_CHK(ierr, "PetscMemzero");
 }
 
@@ -295,7 +295,7 @@ Quadrature2x2::Quadrature2x2(const IceGrid &grid, double L) {
 
   ShapeQ1 shape;
   for (unsigned int q = 0; q < Nq; q++) {
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       m_germs[q][k] = shape.eval(k, quadPoints[q][0], quadPoints[q][1]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
@@ -309,7 +309,7 @@ Quadrature2x2::Quadrature2x2(const IceGrid &grid, double L) {
 
 Quadrature_Vector::Quadrature_Vector(const IceGrid &grid, double L)
   : Quadrature2x2(grid, L) {
-  PetscErrorCode ierr = PetscMemzero(m_tmp, Nk*sizeof(Vector2));
+  PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(Vector2));
   PISM_CHK(ierr, "PetscMemzero");
 }
 
@@ -339,7 +339,7 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
   for (unsigned int q = 0; q < Nq; q++) {
     const FunctionGerm *test = m_germs[q];
     vals[q] = 0;
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_local[k];
     }
   }
@@ -354,7 +354,7 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
   for (unsigned int q = 0; q < Nq; q++) {
     const FunctionGerm *test = m_germs[q];
     vals[q] = 0; dx[q] = 0; dy[q] = 0;
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_local[k];
       dx[q]   += test[k].dx * x_local[k];
       dy[q]   += test[k].dy * x_local[k];
@@ -406,7 +406,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     result[q].u = 0;
     result[q].v = 0;
     const FunctionGerm *test = m_germs[q];
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       result[q].u += test[k].val * x_local[k].u;
       result[q].v += test[k].val * x_local[k].v;
     }
@@ -430,7 +430,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     double *Dvq = Dv[q];
     Dvq[0] = 0; Dvq[1] = 0; Dvq[2] = 0;
     const FunctionGerm *test = m_germs[q];
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
       Dvq[0] += test[k].dx * x_local[k].u;
@@ -452,7 +452,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     dx[q].u = 0; dx[q].v = 0;
     dy[q].u = 0; dy[q].v = 0;
     const FunctionGerm *test = m_germs[q];
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
       dx[q].u += test[k].dx * x_local[k].u;
@@ -512,7 +512,7 @@ const double Quadrature2x2::quadWeights[Quadrature2x2::Nq]  = {1.0, 1.0, 1.0, 1.
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {
-  for (unsigned int k = 0; k < Quadrature2x2::Nk; ++k) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
     m_indices_e[k] = 0;
   }
 }
@@ -561,7 +561,7 @@ void DirichletData::finish_impl(const IceModelVec *values) {
 
 void DirichletData::constrain(DOFMap &dofmap) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature2x2::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       dofmap.markRowInvalid(k);
@@ -587,7 +587,7 @@ void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature2x2::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
@@ -598,7 +598,7 @@ void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_local) {
 
 void DirichletData_Scalar::update_homogeneous(const DOFMap &dofmap, double* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature2x2::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_local[k] = 0.;
     }
@@ -686,7 +686,7 @@ void DirichletData_Vector::update(const DOFMap &dofmap, Vector2* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature2x2::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
@@ -698,7 +698,7 @@ void DirichletData_Vector::update(const DOFMap &dofmap, Vector2* x_local) {
 
 void DirichletData_Vector::update_homogeneous(const DOFMap &dofmap, Vector2* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature2x2::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_local[k].u = 0.0;
       x_local[k].v = 0.0;

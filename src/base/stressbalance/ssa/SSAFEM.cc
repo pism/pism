@@ -242,7 +242,7 @@ void SSAFEM::cacheQuadPtValues() {
   using fem::Quadrature2x2;
   using fem::FunctionGerm;
 
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   std::vector<double> Enth_q[Nq];
@@ -419,7 +419,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                     Vector2 **residual_global) {
   using namespace fem;
 
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // Zero out the portion of the function we are responsible for computing.
@@ -583,7 +583,7 @@ approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   PetscErrorCode ierr;

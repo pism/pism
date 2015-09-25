@@ -233,7 +233,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                        IceModelVec2S &dzeta,
                                                        Vector2 **du_a) {
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec::AccessList list;
@@ -416,7 +416,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
                                                                  IceModelVec2V &du,
                                                                  double **dzeta_a) {
   using fem::Quadrature2x2;
-  const unsigned int Nk = Quadrature2x2::Nk;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec::AccessList list;
