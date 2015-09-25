@@ -372,7 +372,7 @@ public:
 class Quadrature2x2
 {
 public:
-  Quadrature2x2(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
+  Quadrature2x2(double dx, double dy, double L=1.0); // FIXME Allow a length scale to be specified.
 
   static const unsigned int Nq = 4;  //!< Number of quadrature points.
   
@@ -405,7 +405,7 @@ protected:
 //! This version supports 2D scalar fields.
 class Quadrature_Scalar : public Quadrature2x2 {
 public:
-  Quadrature_Scalar(const IceGrid &grid, double L);
+  Quadrature_Scalar(double dx, double dy, double L);
   void computeTrialFunctionValues(const double *x, double *vals);
   void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
 
@@ -425,7 +425,7 @@ private:
 //! This version supports 2D vector fields.
 class Quadrature_Vector : public Quadrature2x2 {
 public:
-  Quadrature_Vector(const IceGrid &grid, double L);
+  Quadrature_Vector(double dx, double dy, double L);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);  
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);  

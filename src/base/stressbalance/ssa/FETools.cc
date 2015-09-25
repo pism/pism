@@ -271,8 +271,8 @@ void DOFMap::addLocalJacobianBlock(const double *K, Mat J) {
 const int DOFMap::kIOffset[4] = {0, 1, 1, 0};
 const int DOFMap::kJOffset[4] = {0, 0, 1, 1};
 
-Quadrature_Scalar::Quadrature_Scalar(const IceGrid &grid, double L)
-  : Quadrature2x2(grid, L) {
+Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
+  : Quadrature2x2(dx, dy, L) {
   PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(double));
   PISM_CHK(ierr, "PetscMemzero");
 }
@@ -283,14 +283,14 @@ const double* Quadrature2x2::getWeightedJacobian() {
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-Quadrature2x2::Quadrature2x2(const IceGrid &grid, double L) {
+Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
   // Since we use uniform cartesian coordinates, the Jacobian is
   // constant and diagonal on every element.
   //
   // Note that the reference element is @f$ [-1,1]^2 @f$ hence the
   // extra factor of 1/2.
-  double jacobian_x = 0.5*grid.dx() / L;
-  double jacobian_y = 0.5*grid.dy() / L;
+  double jacobian_x = 0.5*dx / L;
+  double jacobian_y = 0.5*dy / L;
   m_jacobianDet = jacobian_x*jacobian_y;
 
   ShapeQ1 shape;
@@ -307,8 +307,8 @@ Quadrature2x2::Quadrature2x2(const IceGrid &grid, double L) {
   }
 }
 
-Quadrature_Vector::Quadrature_Vector(const IceGrid &grid, double L)
-  : Quadrature2x2(grid, L) {
+Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
+  : Quadrature2x2(dx, dy, L) {
   PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(Vector2));
   PISM_CHK(ierr, "PetscMemzero");
 }

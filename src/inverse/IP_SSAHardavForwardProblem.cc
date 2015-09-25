@@ -38,7 +38,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g, Enth
     m_fixed_design_locations(NULL),
     m_design_param(tp),
     m_element_index(*m_grid),
-    m_quadrature(*m_grid, 1.0),
+    m_quadrature(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }

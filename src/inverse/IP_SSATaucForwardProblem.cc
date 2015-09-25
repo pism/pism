@@ -36,8 +36,8 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, Enthalpy
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
     m_element_index(*m_grid),
-    m_quadrature(*g, 1.0),
-    m_quadrature_vector(*g, 1.0),
+    m_quadrature(g->dx(), g->dy(), 1.0),
+    m_quadrature_vector(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }

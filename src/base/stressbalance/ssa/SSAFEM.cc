@@ -34,8 +34,8 @@ namespace stressbalance {
  *
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSA(g, e), m_element_index(*g), m_quadrature(*m_grid, 1.0),
-    m_quadrature_vector(*m_grid, 1.0) {
+  : SSA(g, e), m_element_index(*g), m_quadrature(g->dx(), g->dy(), 1.0),
+    m_quadrature_vector(g->dx(), g->dy(), 1.0) {
 
   PetscErrorCode ierr;
 
