@@ -174,55 +174,31 @@ struct Vector2Germ
 
 //! Computation of Q1 shape function values.
 /*! The Q1 shape functions are bilinear functions.  On a rectangular
-  element, there are four (ShapeQ1::Nk) basis functions, each equal
+  element, there are four (Nk) basis functions, each equal
   to 1 at one vertex and equal to zero at the remainder.
 
-  The ShapeQ1 class consolodates the computation of the values and
+  This class consolidates the computation of the values and
   derivatives of these basis functions. */
 class ShapeQ1 {
 public:
-  virtual ~ShapeQ1() {}
+  //! Compute values and derivatives of the shape function supported at node k.
+  static FunctionGerm eval(unsigned int k, double xi, double eta) {
+    FunctionGerm result;
 
-  //! Compute values and derivatives of the shape function supported at node 0
-  static void shape0(double x, double y, FunctionGerm *value)
-  {
-    value->val = (1-x)*(1-y)/4.;
-    value->dx = -(1-y)/4.;
-    value->dy = -(1-x)/4;
-  }
-  //! Compute values and derivatives of the shape function supported at node 1
-  static void shape1(double x, double y, FunctionGerm *value)
-  {
-    value->val = (1+x)*(1-y)/4.;
-    value->dx =  (1-y)/4.;
-    value->dy = -(1+x)/4;
-  }
-  //! Compute values and derivatives of the shape function supported at node 2
-  static void shape2(double x, double y, FunctionGerm *value)
-  {
-    value->val = (1+x)*(1+y)/4.;
-    value->dx =  (1+y)/4.;
-    value->dy =  (1+x)/4;
-  }
-  //! Compute values and derivatives of the shape function supported at node 3
-  static void shape3(double x, double y, FunctionGerm *value)
-  {
-    value->val = (1-x)*(1+y)/4.;
-    value->dx =  -(1+y)/4.;
-    value->dy =   (1-x)/4;
+    result.val = 0.25 * (1.0 + xis[k] * xi) * (1.0 + etas[k] * eta);
+    result.dx =  0.25 *  xis[k] * (1.0 + etas[k] * eta);
+    result.dy =  0.25 * etas[k] * (1.0 +  xis[k] * xi);
+
+    return result;
   }
 
   //! The number of basis shape functions.
   static const int Nk = 4;
-
-  //! A table of function pointers, one for each shape function.
-  typedef void (*ShapeFunctionSpec)(double,double,FunctionGerm*);
-  static const ShapeFunctionSpec shapeFunction[Nk];
-  
-  //! Evaluate shape function `k` at (`x`,`y`) with values returned in `germ`.
-  virtual void eval(int k, double x, double y,FunctionGerm*germ) {
-    shapeFunction[k](x,y,germ);
-  }
+private:
+  //! Coordinates of the reference element.
+  static const double xis[Nk];
+  //! Coordinates of the reference element.
+  static const double etas[Nk];
 };
 
 
