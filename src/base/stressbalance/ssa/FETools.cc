@@ -773,5 +773,31 @@ void DirichletData_Vector::finish() {
   m_values = NULL;
 }
 
+BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
+
+  const double jacobian_x = 0.5*dx;
+  const double jacobian_y = 0.5*dy;
+
+  const double C = 1.0 / sqrt(3);
+  double pts[n_sides][Nq][2] = {
+    {{  -C,  1.0}, {   C,  1.0}}, // North
+    {{ 1.0,   -C}, { 1.0,    C}}, // East
+    {{  -C, -1.0}, {   C, -1.0}}, // South
+    {{-1.0,   -C}, {-1.0,    C}}  // West
+  };
+
+  for (unsigned int j = 0; j < n_sides; ++j) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+      for (unsigned int q = 0; q < Nq; ++q) {
+        const double xi = pts[j][q][0];
+        const double eta = pts[j][q][1];
+        m_germs[j][k][q] = ShapeQ1::eval(k, xi, eta);
+        m_germs[j][k][q].dx /= jacobian_x;
+        m_germs[j][k][q].dy /= jacobian_y;
+      }
+    }
+  }
+}
+
 } // end of namespace fem
 } // end of namespace pism

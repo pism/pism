@@ -490,6 +490,31 @@ protected:
   const IceModelVec2V *m_values;
 };
 
+//! 2-point quadrature for sides of Q1 quadrilateral elements.
+class BoundaryQuadrature2 {
+public:
+  BoundaryQuadrature2(double dx, double dy);
+  //! Number of sides per element.
+  static const unsigned int n_sides = ShapeQ1::Nk;
+  //! Number of quadrature points per side.
+  static const unsigned int Nq = 2;
+  inline const FunctionGerm& germ(unsigned int side,
+                                  unsigned int func,
+                                  unsigned int pt) const;
+private:
+  FunctionGerm m_germs[n_sides][ShapeQ1::Nk][Nq];
+};
+
+inline const FunctionGerm& BoundaryQuadrature2::germ(unsigned int side,
+                                                     unsigned int func,
+                                                     unsigned int pt) const {
+  assert(side < n_sides);
+  assert(func < ShapeQ1::Nk);
+  assert(pt < 2);
+
+  return m_germs[side][func][pt];
+}
+
 } // end of namespace fem
 } // end of namespace pism
 
