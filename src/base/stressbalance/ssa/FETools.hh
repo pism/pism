@@ -98,7 +98,7 @@ namespace fem {
   \f[
   \int_E f dx \approx \sum_{q} f(x_q) w_q
   \f]
-  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature).
+  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature2x2).
 
   The unknown \f$w_h\f$ is represented by an IceVec, \f$w_h=\sum_{ij} c_{ij} \psi_{ij}\f$ where
   \f$c_{ij}\f$ are the coefficients of the vector.  The solution of the finite element problem
@@ -122,10 +122,10 @@ namespace fem {
   - Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$
   the local degrees of freedom \f$d\f$ defining \f$\hat w_h\f$. (DOFMap)
   - Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed)
-  at the quadrature points \f$x_q\f$ (Quadrature)
+  at the quadrature points \f$x_q\f$ (Quadrature2x2)
   - Evaluate the local test functions (again values and derivatives)
-  at the quadrature points. (Quadrature)
-  - Obtain the quadrature weights $j_q$ for the element (Quadrature)
+  at the quadrature points. (Quadrature2x2)
+  - Obtain the quadrature weights $j_q$ for the element (Quadrature2x2)
   - Compute the values of the integrand \f$g(\hat w_h,\psi_k)\f$
   at each quadrature point (call these \f$g_{qk}\f$) and
   form the weighted sums \f$y_k=\sum_{q} j_q g_{qk}\f$.
@@ -144,7 +144,7 @@ namespace fem {
 
   - Ghost elements (as well as periodic boundary conditions): ElementMap
   - Dirichlet data: DOFMap
-  - Vector valued functions: (DOFMap, Quadrature)
+  - Vector valued functions: (DOFMap, Quadrature2x2)
 
   The classes in this module are not intended
   to be a fancy finite element package.
@@ -346,7 +346,7 @@ public:
   \f[
   \int_E f(x)\; dx \approx \sum_q f(x_q) w_q
   \f]
-  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature is used
+  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature2x2 is used
   to evaluate finite element functions at quadrature points, and to compute weights \f$w_q\f$
   for a given element.
 
@@ -367,22 +367,22 @@ public:
   of Gaussian integration on an interval that is exact for cubic functions on the interval.
 
   Integration on a physical element can be thought of as being done by change of variables.  The quadrature weights need
-  to be modified, and the Quadrature takes care of this for you.  Because all elements in an IceGrid are congruent, the
+  to be modified, and the Quadrature2x2 takes care of this for you.  Because all elements in an IceGrid are congruent, the
   quadrature weights are the same for each element, and are computed upon initialization with an IceGrid.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Quadrature
+class Quadrature2x2
 {
 public:
-  Quadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
+  Quadrature2x2(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
   static const unsigned int Nq = 4;  //!< Number of quadrature points.
-  static const unsigned int Nk = 4;  //!< Number of test functions on the element.
+  static const unsigned int Nk = ShapeQ1::Nk;  //!< Number of test functions on the element.
   
-  // define FunctionGermArray, which is an array of Quadrature::Nq
+  // define FunctionGermArray, which is an array of Quadrature2x2::Nq
   // FunctionGerms
-  typedef FunctionGerm FunctionGermArray[Quadrature::Nq];
+  typedef FunctionGerm FunctionGermArray[Quadrature2x2::Nq];
 
   const FunctionGermArray* testFunctionValues();
   const FunctionGerm* testFunctionValues(int q);
@@ -407,7 +407,7 @@ protected:
 };
 
 //! This version supports 2D scalar fields.
-class Quadrature_Scalar : public Quadrature {
+class Quadrature_Scalar : public Quadrature2x2 {
 public:
   Quadrature_Scalar(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const double *x, double *vals);
@@ -427,7 +427,7 @@ private:
 };
 
 //! This version supports 2D vector fields.
-class Quadrature_Vector : public Quadrature {
+class Quadrature_Vector : public Quadrature2x2 {
 public:
   Quadrature_Vector(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
@@ -461,7 +461,7 @@ public:
 protected:
   void init_impl(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
   void finish_impl(const IceModelVec *values);
-  double           m_indices_e[Quadrature::Nk];
+  double           m_indices_e[Quadrature2x2::Nk];
   const IceModelVec2Int *m_indices;
   double           m_weight;
 };
