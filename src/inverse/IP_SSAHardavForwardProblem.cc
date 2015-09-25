@@ -149,8 +149,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec
     **u_a   = u.get_array(),
     **rhs_a = RHS.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
+  this->compute_local_function(u_a, rhs_a);
 
   u.end_access();
   RHS.end_access();
@@ -164,9 +163,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
   Vector2 **u_a = u.get_array();
 
   petsc::DMDAVecArray rhs_a(m_da, RHS);
-  DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a),
-                               (Vector2**)rhs_a.get());
+  this->compute_local_function(u_a, (Vector2**)rhs_a.get());
   u.end_access();
 }
 
@@ -180,10 +177,9 @@ to this method.
 */
 void IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
-  Vector2 **u_a = u.get_array();
+  Vector2 const *const *const u_a = u.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_jacobian(info, const_cast<const Vector2 **>(u_a), Jac);
+  this->compute_local_jacobian(u_a, Jac);
 
   u.end_access();
 }

@@ -353,9 +353,8 @@ void SSAFEM::cacheQuadPtValues() {
   loop.check();
 }
 
-/** @brief Compute the "(effective viscosity) x (ice thickness)"
- *  and effective viscous bed strength from the current solution, at a
- *  single quadrature point.
+/** @brief Compute the "(regularized effective viscosity) x (ice thickness)" and effective viscous
+ *  bed strength from the current solution, at a single quadrature point.
  *
  * @param[in] coefficients SSA coefficients at the current quadrature point
  * @param[in] u the value of the solution
@@ -368,8 +367,6 @@ void SSAFEM::cacheQuadPtValues() {
  * @param[out] dbeta derivative of @f$ \beta @f$ with respect to the
  *                   second invariant @f$ \gamma @f$. Set to NULL if
  *                   not desired.
- *
- * @return 0 on success
  */
 void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
                                  const Vector2 &u, const double Du[],
@@ -415,12 +412,9 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
  *
  * The weak form of the SSA system is
  */
-void SSAFEM::compute_local_function(DMDALocalInfo *info,
-                                    const Vector2 **velocity_global,
+void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                     Vector2 **residual_global) {
   using namespace fem;
-
-  (void) info; // Avoid a compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -531,8 +525,8 @@ void SSAFEM::compute_local_function(DMDALocalInfo *info,
   monitor_function(velocity_global, residual_global);
 }
 
-void SSAFEM::monitor_function(const Vector2 **velocity_global,
-                              Vector2 **residual_global) {
+void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
+                              Vector2 const *const *const residual_global) {
   PetscErrorCode ierr;
   bool monitorFunction = options::Bool("-ssa_monitor_function", "monitor the SSA residual");
   if (not monitorFunction) {
@@ -580,15 +574,11 @@ void SSAFEM::monitor_function(const Vector2 **velocity_global,
 approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 
 */
-void SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
-                                    const Vector2 **velocity_global, Mat Jac) {
+void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
 
   using fem::Quadrature;
 
   PetscErrorCode ierr;
-
-  // Avoid compiler warning.
-  (void) info;
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(Jac);
@@ -792,10 +782,12 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 
 //!
 PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
-                                         const Vector2 **velocity, Vector2 **residual,
+                                         Vector2 const *const *const velocity,
+                                         Vector2 **residual,
                                          CallbackData *fe) {
   try {
-    fe->ssa->compute_local_function(info, velocity, residual);
+    (void) info;
+    fe->ssa->compute_local_function(velocity, residual);
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
@@ -810,7 +802,8 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **ve
                                          Mat A, Mat J, MatStructure *str, CallbackData *fe) {
   try {
     (void) A;
-    fe->ssa->compute_local_jacobian(info, velocity, J);
+    (void) info;
+    fe->ssa->compute_local_jacobian(velocity, J);
     *str = SAME_NONZERO_PATTERN;
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
@@ -821,11 +814,13 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **ve
   return 0;
 }
 #else
-PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **velocity,
+PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info,
+                                         Vector2 const *const *const velocity,
                                          Mat A, Mat J, CallbackData *fe) {
   try {
     (void) A;
-    fe->ssa->compute_local_jacobian(info, velocity, J);
+    (void) info;
+    fe->ssa->compute_local_jacobian(velocity, J);
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);

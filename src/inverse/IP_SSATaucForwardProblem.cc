@@ -173,8 +173,7 @@ void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V
     **u_a   = u.get_array(),
     **rhs_a = RHS.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
+  this->compute_local_function(u_a, rhs_a);
 
   u.end_access();
   RHS.end_access();
@@ -186,10 +185,8 @@ the method is identical to the assemble_residual returning values as a StateVec 
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
 
   Vector2 **u_a = u.get_array();
-  DMDALocalInfo *info = NULL;
   petsc::DMDAVecArray rhs_a(m_da, RHS);
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a),
-                               (Vector2**)rhs_a.get());
+  this->compute_local_function(u_a, (Vector2**)rhs_a.get());
   u.end_access();
 }
 
@@ -205,10 +202,7 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac
 
   Vector2 **u_a = u.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_jacobian(info,
-                               const_cast<const Vector2 **>(u_a),
-                               Jac);
+  this->compute_local_jacobian(u_a, Jac);
 
   u.end_access();
 }

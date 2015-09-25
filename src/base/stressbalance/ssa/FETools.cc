@@ -605,7 +605,7 @@ void DirichletData_Scalar::update_homogeneous(const DOFMap &dofmap, double* x_lo
   }
 }
 
-void DirichletData_Scalar::fix_residual(const double **x_global, double **r_global) {
+void DirichletData_Scalar::fix_residual(double const *const *const x_global, double **r_global) {
   assert(m_values != NULL);
 
   const IceGrid &grid = *m_indices->get_grid();
@@ -706,7 +706,7 @@ void DirichletData_Vector::update_homogeneous(const DOFMap &dofmap, Vector2* x_l
   }
 }
 
-void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_global) {
+void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Vector2 **r_global) {
   assert(m_values != NULL);
 
   const IceGrid &grid = *m_indices->get_grid();

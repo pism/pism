@@ -61,9 +61,10 @@ protected:
                            double *nuH, double *dnuH,
                            double *beta, double *dbeta);
 
-  void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
+  void compute_local_function(Vector2 const *const *const velocity,
+                              Vector2 **residual);
 
-  void compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
+  void compute_local_jacobian(Vector2 const *const *const velocity, Mat J);
 
   virtual void solve();
 
@@ -100,21 +101,23 @@ protected:
 
 private:
   void monitor_jacobian(Mat Jac);
-  void monitor_function(const Vector2 **velocity_global,
-                        Vector2 **residual_global);
+  void monitor_function(Vector2 const *const *const velocity_global,
+                        Vector2 const *const *const residual_global);
 
   //! SNES callbacks.
   /*! These simply forward the call on to the SSAFEM member of the CallbackData */
+static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                        Vector2 const *const *const velocity,
+                                        Vector2 **residual,
+                                        CallbackData *fe);
 #if PETSC_VERSION_LT(3,5,0)
-  static PetscErrorCode function_callback(DMDALocalInfo *, const Vector2 **,
-                                          Vector2 **, CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2 **xg,
-                                          Mat A, Mat J,
-                                          MatStructure *str, CallbackData *fe);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          Vector2 const *const *const xg,
+                                          Mat A, Mat J, MatStructure *str,
+                                          CallbackData *fe);
 #else
-  static PetscErrorCode function_callback(DMDALocalInfo *, const Vector2 **,
-                                          Vector2 **, CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2 **xg,
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          Vector2 const *const *const xg,
                                           Mat A, Mat J, CallbackData *fe);
 #endif
 

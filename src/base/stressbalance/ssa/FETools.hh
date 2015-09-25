@@ -496,7 +496,7 @@ public:
   void init(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
   void update(const DOFMap &dofmap, double* x_e);
   void update_homogeneous(const DOFMap &dofmap, double* x_e);
-  void fix_residual(const double **x, double **r);
+  void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
   void finish();
@@ -510,7 +510,7 @@ public:
   void init(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
   void update(const DOFMap &dofmap, Vector2* x_e);
   void update_homogeneous(const DOFMap &dofmap, Vector2* x_e);
-  void fix_residual(const Vector2 **x, Vector2 **r);
+  void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);
   void finish();
