@@ -367,26 +367,8 @@ void SSAFD::assemble_rhs() {
             bMM = 0;
         }
 
-        const double H_ij2 = H_ij*H_ij,
-          b     = (*m_bed)(i,j),
-          rho_g = rho_ice * standard_gravity;
-
-        double ocean_pressure;
-        // this is not really the ocean_pressure, but the difference
-        // between ocean_pressure and isotrop.normal stresses
-        // (=pressure) from within the ice
-
-        if (ocean(M_ij)) {
-          // floating shelf
-          ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
-        } else {
-          // grounded terminus
-          if (b >= sea_level) {
-            ocean_pressure = 0.5 * rho_g * H_ij2;
-          } else {
-            ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
-          }
-        }
+        double ocean_pressure = ocean_pressure_difference(ocean(M_ij), H_ij, (*m_bed)(i,j), sea_level,
+                                                          rho_ice, rho_ocean, standard_gravity);
 
         if (m_melange_back_pressure != NULL) {
           double lambda = (*m_melange_back_pressure)(i, j);
