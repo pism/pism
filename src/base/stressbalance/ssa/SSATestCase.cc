@@ -163,7 +163,7 @@ void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 //! Solve the SSA
 void SSATestCase::run() {
   // Solve (fast==true means "no update"):
-  verbPrintf(2,m_grid->com,"* Solving the SSA stress balance ...\n");
+  m_ctx->log()->message(2,"* Solving the SSA stress balance ...\n");
 
   bool fast = false;
   m_ssa->update(fast, m_melange_back_pressure);
@@ -173,7 +173,7 @@ void SSATestCase::run() {
 void SSATestCase::report(const std::string &testname) {
 
   std::string ssa_stdout = m_ssa->stdout_report();
-  verbPrintf(3,m_grid->com,ssa_stdout.c_str());
+  m_ctx->log()->message(3, "%s\n", ssa_stdout.c_str());
 
   double maxvecerr = 0.0, avvecerr = 0.0,
     avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
@@ -182,11 +182,9 @@ void SSATestCase::report(const std::string &testname) {
 
   if (m_config->get_boolean("do_pseudo_plastic_till") &&
       m_config->get_double("pseudo_plastic_q") != 1.0) {
-    verbPrintf(1,m_grid->com,
-               "WARNING: numerical errors not valid for pseudo-plastic till\n");
+    m_ctx->log()->message(1, "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
-  verbPrintf(1,m_grid->com,
-             "NUMERICAL ERRORS in velocity relative to exact solution:\n");
+  m_ctx->log()->message(1, "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
@@ -230,10 +228,10 @@ void SSATestCase::report(const std::string &testname) {
   gavvecerr = GlobalSum(m_grid->com, avvecerr);
   gavvecerr = gavvecerr / N;
 
-  verbPrintf(1,m_grid->com,
-             "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
-  verbPrintf(1,m_grid->com,
-             "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
+  m_ctx->log()->message(1,
+                        "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
+  m_ctx->log()->message(1,
+                        "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
              units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
              (gavvecerr/gexactvelmax)*100.0,
              units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
@@ -241,7 +239,7 @@ void SSATestCase::report(const std::string &testname) {
              units::convert(m_sys, gavuerr, "m/second", "m/year"),
              units::convert(m_sys, gavverr, "m/second", "m/year"));
 
-  verbPrintf(1,m_grid->com, "NUM ERRORS DONE\n");
+  m_ctx->log()->message(1, "NUM ERRORS DONE\n");
 
   report_netcdf(testname,
                 units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
@@ -271,7 +269,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   err.set_string("units", "1");
 
-  verbPrintf(2, m_grid->com, "Also writing errors to '%s'...\n", filename->c_str());
+  m_ctx->log()->message(2, "Also writing errors to '%s'...\n", filename->c_str());
 
   bool append = options::Bool("-append", "Append the NetCDF error report");
 

@@ -98,10 +98,11 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
+    Context::Ptr ctx = pisms_context(com);
     verbosityLevelFromOptions();
 
-    verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-               PISM_Revision);
+    ctx->log()->message(2, "PISMS %s (simplified geometry mode)\n",
+                        PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -123,7 +124,6 @@ int main(int argc, char *argv[]) {
     std::string experiment = options::Keyword("-eisII", "EISMINT II experiment name",
                                               "A,B,C,D,E,F,G,H,I,J,K,L", "A");
 
-    Context::Ptr ctx = pisms_context(com);
     Config::Ptr config = ctx->config();
 
     IceGrid::Ptr g = pisms_grid(ctx);

@@ -44,8 +44,10 @@ int main(int argc, char *argv[]) {
   try {
     verbosityLevelFromOptions();
 
-    verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
-               PISM_Revision);
+    Context::Ptr ctx = context_from_options(com, "pismr");
+
+    ctx->log()->message(2, "PISMR %s (basic evolution run mode)\n",
+                        PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -75,7 +77,6 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    Context::Ptr ctx = context_from_options(com, "pismr");
     Config::Ptr config = ctx->config();
 
     ctx->log()->message(3, "* Setting the computational grid...\n");
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
     } else {
       m.run();
 
-      verbPrintf(2,com, "... done with run\n");
+      ctx->log()->message(2, "... done with run\n");
       // provide a default output file name if no -o option is given.
       m.writeFiles("unnamed.nc");
     }

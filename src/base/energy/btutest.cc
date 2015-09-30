@@ -114,10 +114,11 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
+    Context::Ptr ctx = btutest_context(com, "btutest");
 
     verbosityLevelFromOptions();
-    verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
-               PISM_Revision);
+    ctx->log()->message(2, "BTUTEST %s (test program for BedThermalUnit)\n",
+                        PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -145,9 +146,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    verbPrintf(2,com,
-               "btutest tests BedThermalUnit and IceModelVec3BTU\n");
-    Context::Ptr ctx = btutest_context(com, "btutest");
+    ctx->log()->message(2, "btutest tests BedThermalUnit and IceModelVec3BTU\n");
     Config::Ptr config = ctx->config();
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
@@ -158,8 +157,7 @@ int main(int argc, char *argv[]) {
     config->set_double("grid_Mz", 41);
     config->set_double("grid_Lz", 4000);
 
-    verbPrintf(2,com,
-               "  initializing IceGrid from options ...\n");
+    ctx->log()->message(2, "  initializing IceGrid from options ...\n");
 
     options::String outname("-o", "Output file name", "unnamed_btutest.nc");
 
@@ -211,17 +209,16 @@ int main(int argc, char *argv[]) {
     // worry about time step
     int  N = (int)ceil((ctx->time()->end() - ctx->time()->start()) / dt_seconds);
     dt_seconds = (ctx->time()->end() - ctx->time()->start()) / (double)N;
-    verbPrintf(2,com,
-               "  user set timestep of %.4f years ...\n"
-               "  reset to %.4f years to get integer number of steps ... \n",
-               dt_years.value(), units::convert(ctx->unit_system(), dt_seconds, "seconds", "years"));
+    ctx->log()->message(2,
+                        "  user set timestep of %.4f years ...\n"
+                        "  reset to %.4f years to get integer number of steps ... \n",
+                        dt_years.value(), units::convert(ctx->unit_system(), dt_seconds, "seconds", "years"));
     MaxTimestep max_dt = btu.max_timestep(0.0);
-    verbPrintf(2,com,
-               "  BedThermalUnit reports max timestep of %.4f years ...\n",
-               units::convert(ctx->unit_system(), max_dt.value(), "seconds", "years"));
+    ctx->log()->message(2, "  BedThermalUnit reports max timestep of %.4f years ...\n",
+                        units::convert(ctx->unit_system(), max_dt.value(), "seconds", "years"));
 
     // actually do the time-stepping
-    verbPrintf(2,com,"  running ...\n");
+    ctx->log()->message(2, "  running ...\n");
     for (int n = 0; n < N; n++) {
       // time at start of time-step
       const double time = ctx->time()->start() + dt_seconds * (double)n;
@@ -239,10 +236,10 @@ int main(int argc, char *argv[]) {
 
       // update the temperature inside the thermal layer using bedtoptemp
       btu.update(time, dt_seconds);
-      verbPrintf(2,com,".");
+      ctx->log()->message(2, ".");
     }
 
-    verbPrintf(2, com, "\n  done ...\n");
+    ctx->log()->message(2, "\n  done ...\n");
 
     // compute final output heat flux G_0 at z=0; reuse ghf for this purpose
     ghf.copy_from(btu.upward_geothermal_flux());
@@ -250,7 +247,7 @@ int main(int argc, char *argv[]) {
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT
     exactK(ctx->time()->end(), 0.0, &TT, &FF, 0);
-    verbPrintf(2,com,
+    ctx->log()->message(2,
                "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
                ctx->time()->end_date().c_str(), FF);
 
@@ -261,16 +258,16 @@ int main(int argc, char *argv[]) {
     avghferr  = ghf.norm(NORM_1);
     ghf.shift(+FF); // shift it back for writing
     avghferr /= (grid->Mx() * grid->My());
-    verbPrintf(2, grid->com, 
+    ctx->log()->message(2,
                "case dt = %.5f:\n", dt_years.value());
-    verbPrintf(1, grid->com, 
+    ctx->log()->message(1,
                "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
-    verbPrintf(1, grid->com, 
+    ctx->log()->message(1,
                "bheatflx0  :       max    prcntmax          av\n");
-    verbPrintf(1, grid->com, 
-               "           %11.7f  %11.7f  %11.7f\n", 
+    ctx->log()->message(1,
+               "           %11.7f  %11.7f  %11.7f\n",
                maxghferr, 100.0*maxghferr/FF, avghferr);
-    verbPrintf(1, grid->com, "NUM ERRORS DONE\n");
+    ctx->log()->message(1, "NUM ERRORS DONE\n");
 
     std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
@@ -291,7 +288,7 @@ int main(int argc, char *argv[]) {
 
     pio.close();
 
-    verbPrintf(2,com, "done.\n");
+    ctx->log()->message(2, "done.\n");
   }
   catch (...) {
     handle_fatal_errors(com);
@@ -300,4 +297,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

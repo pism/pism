@@ -587,7 +587,7 @@ void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMo
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid->com,
+    m_log->message(4,
                "IP_SSAHardavForwardProblem::apply_linearization converged"
                " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
@@ -657,7 +657,7 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid->com,
+    m_log->message(4,
                "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }

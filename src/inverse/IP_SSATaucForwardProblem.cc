@@ -577,7 +577,7 @@ void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMode
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid->com,
+    m_log->message(4,
                "IP_SSATaucForwardProblem::apply_linearization converged"
                " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
@@ -650,7 +650,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid->com,
+    m_log->message(4,
                "IP_SSATaucForwardProblem::apply_linearization converged"
                " (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
