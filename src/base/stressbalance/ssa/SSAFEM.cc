@@ -85,7 +85,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   ierr = SNESSetDM(m_snes, *m_da);
   PISM_CHK(ierr, "SNESSetDM");
 
-  // Default of maximum 200 iterations; possibly overridded by commandline
+  // Default of maximum 200 iterations; possibly overridden by command line options
   int snes_max_it = 200;
   ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
                            snes_max_it, PETSC_DEFAULT);
