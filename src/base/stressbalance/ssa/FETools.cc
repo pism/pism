@@ -792,6 +792,8 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
         const double xi = pts[j][q][0];
         const double eta = pts[j][q][1];
         m_germs[j][k][q] = ShapeQ1::eval(k, xi, eta);
+        // convert from derivatives with respect to xi and eta to derivatives with respect to x and
+        // y
         m_germs[j][k][q].dx /= jacobian_x;
         m_germs[j][k][q].dy /= jacobian_y;
       }

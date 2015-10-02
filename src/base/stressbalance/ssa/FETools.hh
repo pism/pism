@@ -374,7 +374,8 @@ class Quadrature2x2
 public:
   Quadrature2x2(double dx, double dy, double L=1.0); // FIXME Allow a length scale to be specified.
 
-  static const unsigned int Nq = 4;  //!< Number of quadrature points.
+  //! Number of quadrature points.
+  static const unsigned int Nq = 4;
   
   // define FunctionGermArray, which is an array of Quadrature2x2::Nq
   // FunctionGerms
@@ -388,16 +389,18 @@ public:
 
   //! The coordinates of the quadrature points on the reference element.
   static const double quadPoints[Nq][2];
+
   //! The weights for quadrature on the reference element.
   static const double quadWeights[Nq];
 
 protected:
   //! The determinant of the Jacobian of the map from the reference element to the physical element.
   double m_jacobianDet;
-  // Determinant of the Jacobian of the map from the reference element
-  // to the physical element, evaluated at quadrature points and
-  // multiplied by corresponding quadrature weights.
+
+  //! Determinant of the Jacobian of the map from the reference element to the physical element,
+  //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
   double m_JxW[Nq];
+
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
   FunctionGerm m_germs[Nq][ShapeQ1::Nk];
 };
@@ -457,9 +460,10 @@ public:
 protected:
   void init_impl(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
   void finish_impl(const IceModelVec *values);
-  double           m_indices_e[ShapeQ1::Nk];
+
   const IceModelVec2Int *m_indices;
-  double           m_weight;
+  double m_indices_e[ShapeQ1::Nk];
+  double m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
@@ -498,6 +502,7 @@ public:
   static const unsigned int n_sides = ShapeQ1::Nk;
   //! Number of quadrature points per side.
   static const unsigned int Nq = 2;
+
   inline const FunctionGerm& germ(unsigned int side,
                                   unsigned int func,
                                   unsigned int pt) const;
@@ -505,14 +510,16 @@ private:
   FunctionGerm m_germs[n_sides][ShapeQ1::Nk][Nq];
 };
 
+//! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
+//! evaluated at the point `pt` on the side `side` of an element.
 inline const FunctionGerm& BoundaryQuadrature2::germ(unsigned int side,
-                                                     unsigned int func,
+                                                     unsigned int k,
                                                      unsigned int pt) const {
   assert(side < n_sides);
-  assert(func < ShapeQ1::Nk);
+  assert(k < ShapeQ1::Nk);
   assert(pt < 2);
 
-  return m_germs[side][func][pt];
+  return m_germs[side][k][pt];
 }
 
 } // end of namespace fem
