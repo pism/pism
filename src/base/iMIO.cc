@@ -790,6 +790,9 @@ void IceModel::write_backup() {
     return;
   }
 
+  const Profiling &profiling = m_ctx->profiling();
+  profiling.begin("backup");
+
   last_backup_time = wall_clock_hours;
 
   // create a history string:
@@ -824,6 +827,8 @@ void IceModel::write_backup() {
 
   // Also flush time-series:
   flush_timeseries();
+
+  profiling.end("backup");
 }
 
 
