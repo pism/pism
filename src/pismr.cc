@@ -30,6 +30,7 @@ static char help[] =
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/Context.hh"
+#include "base/util/Profiling.hh"
 
 using namespace pism;
 
@@ -75,8 +76,15 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    options::String profiling_log = options::String("-profile",
+                                                    "Save detailed profiling data to a file.");
+
     Context::Ptr ctx = context_from_options(com, "pismr");
     Config::Ptr config = ctx->config();
+
+    if (profiling_log.is_set()) {
+      ctx->profiling().start();
+    }
 
     ctx->log()->message(3, "* Setting the computational grid...\n");
     IceGrid::Ptr g = IceGrid::FromOptions(ctx);
@@ -98,6 +106,10 @@ int main(int argc, char *argv[]) {
       m.writeFiles("unnamed.nc");
     }
     print_unused_parameters(*ctx->log(), 3, *config);
+
+    if (profiling_log.is_set()) {
+      ctx->profiling().report(profiling_log);
+    }
   }
   catch (...) {
     handle_fatal_errors(com);
