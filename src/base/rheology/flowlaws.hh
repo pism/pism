@@ -21,7 +21,6 @@
 
 #include <petscsys.h>
 
-#include "base/util/PISMUnits.hh"
 #include "base/enthalpyConverter.hh"
 
 namespace pism {
