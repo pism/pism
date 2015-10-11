@@ -87,12 +87,13 @@ public:
   inline double enhancement_factor() const;
 
   double hardness_parameter(double E, double p) const;
-  virtual double softness_parameter(double E, double p) const = 0;
+  double softness_parameter(double E, double p) const;
   virtual double flow(double stress, double E,
                       double pressure, double grainsize) const;
 
 protected:
   virtual double hardness_parameter_impl(double E, double p) const;
+  virtual double softness_parameter_impl(double E, double p) const = 0;
 
 protected:
   std::string m_name;
@@ -130,11 +131,9 @@ public:
   GPBLD(const std::string &prefix,
         const Config &config,
         EnthalpyConverter::Ptr EC);
-  virtual ~GPBLD() {}
-
-  virtual double softness_parameter(double enthalpy,
-                                    double pressure) const;
 protected:
+  double softness_parameter_impl(double enthalpy,
+                                 double pressure) const;
   double T_0, water_frac_coeff, water_frac_observed_limit;
 };
 
@@ -147,12 +146,12 @@ public:
   virtual ~PatersonBudd();
 
   // This also takes care of hardness_parameter
-  virtual double softness_parameter(double enthalpy, double pressure) const;
-
   virtual double flow(double stress, double E,
                       double pressure, double gs) const;
 
 protected:
+  virtual double softness_parameter_impl(double enthalpy, double pressure) const;
+
   virtual double softness_parameter_from_temp(double T_pa) const {
     return softness_parameter_paterson_budd(T_pa);
   }
@@ -172,22 +171,21 @@ public:
   IsothermalGlen(const std::string &prefix,
                  const Config &config,
                  EnthalpyConverter::Ptr EC);
-  virtual ~IsothermalGlen() {}
 
-  virtual double averaged_hardness(double, int,
+  double averaged_hardness(double, int,
                                    const double*, const double*) const {
     return m_hardness_B;
   }
 
-  virtual double flow(double stress, double, double, double) const {
+  double flow(double stress, double, double, double) const {
     return m_softness_A * pow(stress, m_n-1);
   }
 
-  virtual double softness_parameter(double, double) const {
+protected:
+  double softness_parameter_impl(double, double) const {
     return m_softness_A;
   }
 
-protected:
   double hardness_parameter_impl(double, double) const {
     return m_hardness_B;
   }
@@ -294,10 +292,8 @@ public:
                                    const double *zlevels,
                                    const double *enthalpy) const __attribute__((noreturn));
 
-
-  virtual double softness_parameter(double E, double p) const __attribute__((noreturn));
-
 protected:
+  double softness_parameter_impl(double E, double p) const __attribute__((noreturn));
   double hardness_parameter_impl(double E, double p) const;
   virtual double flow_from_temp(double stress, double temp,
                                 double pressure, double gs) const;

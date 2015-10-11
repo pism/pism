@@ -105,6 +105,10 @@ double FlowLaw::flow(double stress, double enthalpy,
   return softness_parameter(enthalpy, pressure) * pow(stress, m_n-1);
 }
 
+double FlowLaw::softness_parameter(double E, double p) const {
+  return this->softness_parameter_impl(E, p);
+}
+
 double FlowLaw::hardness_parameter(double E, double p) const {
   return this->hardness_parameter_impl(E, p);
 }
@@ -217,7 +221,7 @@ GPBLD::GPBLD(const std::string &prefix,
   \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
   The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by pressure_adjusted_temperature().
 */
-double GPBLD::softness_parameter(double enthalpy, double pressure) const {
+double GPBLD::softness_parameter_impl(double enthalpy, double pressure) const {
   const double E_s = m_EC->enthalpy_cts(pressure);
   if (enthalpy < E_s) {       // cold ice
     double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
@@ -245,7 +249,7 @@ PatersonBudd::~PatersonBudd() {
 }
 
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
-double PatersonBudd::softness_parameter(double E, double pressure) const {
+double PatersonBudd::softness_parameter_impl(double E, double pressure) const {
   double T_pa = m_EC->pressure_adjusted_temperature(E, pressure);
   return softness_parameter_from_temp(T_pa);
 }
@@ -406,7 +410,7 @@ double GoldsbyKohlstedt::hardness_parameter_impl(double enthalpy, double pressur
   return pow(softness, m_hardness_power);
 }
 
-double GoldsbyKohlstedt::softness_parameter(double , double) const {
+double GoldsbyKohlstedt::softness_parameter_impl(double , double) const {
   throw std::runtime_error("double GoldsbyKohlstedt::softness_parameter is not implemented");
 
 #ifndef __GNUC__
