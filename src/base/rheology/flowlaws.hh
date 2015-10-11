@@ -86,10 +86,13 @@ public:
   inline double exponent() const;
   inline double enhancement_factor() const;
 
-  virtual double hardness_parameter(double E, double p) const;
+  double hardness_parameter(double E, double p) const;
   virtual double softness_parameter(double E, double p) const = 0;
   virtual double flow(double stress, double E,
                       double pressure, double grainsize) const;
+
+protected:
+  virtual double hardness_parameter_impl(double E, double p) const;
 
 protected:
   std::string m_name;
@@ -184,12 +187,12 @@ public:
     return m_softness_A;
   }
 
-  virtual double hardness_parameter(double, double) const {
+protected:
+  double hardness_parameter_impl(double, double) const {
     return m_hardness_B;
   }
 
-protected:
-  virtual double flow_from_temp(double stress, double, double, double) const {
+  double flow_from_temp(double stress, double, double, double) const {
     return m_softness_A * pow(stress,m_n-1);
   }
 
@@ -291,11 +294,11 @@ public:
                                    const double *zlevels,
                                    const double *enthalpy) const __attribute__((noreturn));
 
-  virtual double hardness_parameter(double E, double p) const;
 
   virtual double softness_parameter(double E, double p) const __attribute__((noreturn));
 
 protected:
+  double hardness_parameter_impl(double E, double p) const;
   virtual double flow_from_temp(double stress, double temp,
                                 double pressure, double gs) const;
   GKparts flowParts(double stress, double temp, double pressure) const;

@@ -106,6 +106,10 @@ double FlowLaw::flow(double stress, double enthalpy,
 }
 
 double FlowLaw::hardness_parameter(double E, double p) const {
+  return this->hardness_parameter_impl(E, p);
+}
+
+double FlowLaw::hardness_parameter_impl(double E, double p) const {
   return pow(softness_parameter(E, p), m_hardness_power);
 }
 
@@ -385,7 +389,7 @@ double GoldsbyKohlstedt::averaged_hardness(double, int,
 #endif
 }
 
-double GoldsbyKohlstedt::hardness_parameter(double enthalpy, double pressure) const {
+double GoldsbyKohlstedt::hardness_parameter_impl(double enthalpy, double pressure) const {
   double softness, T_pa;
 
   // FIXME: The following is a re-implementation of the Paterson-Budd relation
