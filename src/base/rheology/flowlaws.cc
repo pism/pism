@@ -58,7 +58,8 @@ bool FlowLawIsPatersonBuddCold(FlowLaw *flow_law, const Config &config,
 }
 
 FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
-                 EnthalpyConverter::Ptr EC) : m_EC(EC), m_e(1) {
+                 EnthalpyConverter::Ptr EC)
+  : m_EC(EC), m_e(1) {
 
   if (not m_EC) {
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
@@ -83,6 +84,10 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_schoofLen = config.get_double("Schoof_regularizing_length", "m"); // convert to meters
   m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/s"); // convert to m/s
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
+}
+
+std::string FlowLaw::name() const {
+  return m_name;
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
@@ -189,9 +194,11 @@ double FlowLaw::averaged_hardness(double thickness, int kbelowH,
   This constructor just sets flow law factor for nonzero water content, from
   \ref AschwandenBlatter and \ref LliboutryDuval1985.
 */
-GPBLD::GPBLD(const std::string &pre,
+GPBLD::GPBLD(const std::string &prefix,
              const Config &config, EnthalpyConverter::Ptr EC)
-  : FlowLaw(pre, config, EC) {
+  : FlowLaw(prefix, config, EC) {
+  m_name = "Glen-Paterson-Budd-Lliboutry-Duval";
+
   T_0              = config.get_double("water_melting_point_temperature");    // K
   water_frac_coeff = config.get_double("gpbld_water_frac_coeff");
   water_frac_observed_limit
@@ -222,6 +229,17 @@ double GPBLD::softness_parameter(double enthalpy, double pressure) const {
 
 // PatersonBudd
 
+PatersonBudd::PatersonBudd(const std::string &prefix,
+                           const Config &config,
+                           EnthalpyConverter::Ptr EC)
+  : FlowLaw(prefix, config, EC) {
+  m_name = "Paterson-Budd";
+}
+
+PatersonBudd::~PatersonBudd() {
+  // empty
+}
+
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
 double PatersonBudd::softness_parameter(double E, double pressure) const {
   double T_pa = m_EC->pressure_adjusted_temperature(E, pressure);
@@ -243,25 +261,58 @@ double PatersonBudd::flow_from_temp(double stress, double temp,
   return softness_parameter_from_temp(T_pa) * pow(stress, m_n-1);
 }
 
+PatersonBuddCold::PatersonBuddCold(const std::string &prefix,
+                   const Config &config,
+                   EnthalpyConverter::Ptr EC)
+  : PatersonBudd(prefix, config, EC) {
+  m_name = "Paterson-Budd (cold case)";
+}
+
+double PatersonBuddCold::tempFromSoftness(double myA) const {
+  return - Q() / (m_ideal_gas_constant * (log(myA) - log(A())));
+}
+
+PatersonBuddCold::~PatersonBuddCold() {
+  // empty
+}
+
+PatersonBuddWarm::PatersonBuddWarm(const std::string &prefix,
+                   const Config &config, EnthalpyConverter::Ptr EC)
+  : PatersonBuddCold(prefix, config, EC) {
+  m_name = "Paterson-Budd (warm case)";
+}
+
+PatersonBuddWarm::~PatersonBuddWarm() {
+}
+
+
 // IsothermalGlen
 
-IsothermalGlen::IsothermalGlen(const std::string &pre,
+IsothermalGlen::IsothermalGlen(const std::string &prefix,
                                const Config &config, EnthalpyConverter::Ptr EC)
-  : PatersonBudd(pre, config, EC) {
+  : PatersonBudd(prefix, config, EC) {
+  m_name = "isothermal Glen";
+  
   m_softness_A = config.get_double("ice_softness");
   m_hardness_B = pow(m_softness_A, m_hardness_power);
 }
 
 // Hooke
 
-Hooke::Hooke(const std::string &pre,
+Hooke::Hooke(const std::string &prefix,
              const Config &config, EnthalpyConverter::Ptr EC)
-  : PatersonBudd(pre, config, EC) {
+  : PatersonBudd(prefix, config, EC) {
+  m_name = "Hooke";
+
   m_Q_Hooke  = config.get_double("Hooke_Q");
   m_A_Hooke  = config.get_double("Hooke_A");
   m_C_Hooke  = config.get_double("Hooke_C");
   m_K_Hooke  = config.get_double("Hooke_k");
   m_Tr_Hooke = config.get_double("Hooke_Tr");
+}
+
+Hooke::~Hooke() {
+  // empty
 }
 
 double Hooke::softness_parameter_from_temp(double T_pa) const {
@@ -271,9 +322,10 @@ double Hooke::softness_parameter_from_temp(double T_pa) const {
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &pre,
+GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
                                    const Config &config, EnthalpyConverter::Ptr EC)
-  : FlowLaw(pre, config, EC) {
+  : FlowLaw(prefix, config, EC) {
+  m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
 
   m_V_act_vol    = -13.e-6;  // m^3/mol
   m_d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
@@ -452,10 +504,12 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
 }
 /*****************/
 
-GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(const std::string &pre,
+GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(const std::string &prefix,
                                                    const Config &config,
                                                    EnthalpyConverter::Ptr EC)
-  : GoldsbyKohlstedt(pre, config, EC) {
+  : GoldsbyKohlstedt(prefix, config, EC) {
+  m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
+
   m_d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
 }
 

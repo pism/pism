@@ -53,62 +53,25 @@ namespace rheology {
   The current implementation of stress-balance computations in PISM restrict
   possible choices of rheologies to ones that
 
-  \li are power laws
+  - are power laws
 
-  \li allow factoring out a temperature- (or enthalpy-) dependent ice hardness
-  factor
+  - allow factoring out a temperature- (or enthalpy-) dependent ice hardness
+    factor
 
-  \li can be represented in the viscosity form
+  - can be represented in the viscosity form
 
-  \note FlowLaw derived classes should implement hardness_parameter... in
+  @note FlowLaw derived classes should implement hardness_parameter... in
   terms of softness_parameter... That way in many cases we only need to
   re-implement softness_parameter... to turn one flow law into another.
 */
 class FlowLaw {
 public:
-  FlowLaw(const std::string &prefix,
-          const Config &config,
+  FlowLaw(const std::string &prefix, const Config &config,
           EnthalpyConverter::Ptr EC);
   virtual ~FlowLaw() {}
 
-  //! \brief Computes the regularized effective viscosity and its derivative with respect to the
-  //! second invariant \f$ \gamma \f$.
-  /*!
-   *
-   * @f{align*}{
-   * \nu &= \frac{1}{2} B \left( \epsilon + \gamma \right)^{(1-n)/(2n)},\\
-   * \diff{\nu}{\gamma} &= \frac{1}{2} B \cdot \frac{1-n}{2n} \cdot \left(\epsilon + \gamma \right)^{(1-n)/(2n) - 1}, \\
-   * &= \frac{1-n}{2n} \cdot \frac{1}{2} B \left( \epsilon + \gamma \right)^{(1-n)/(2n)} \cdot \frac{1}{\epsilon + \gamma}, \\
-   * &= \frac{1-n}{2n} \cdot \frac{\nu}{\epsilon + \gamma}.
-   * @f}
-   * Here @f$ \gamma @f$ is the second invariant
-   * @f{align*}{
-   * \gamma &= \frac{1}{2} D_{ij} D_{ij}\\
-   * &= \frac{1}{2}\, ((u_x)^2 + (v_y)^2 + (u_x + v_y)^2 + \frac{1}{2}\, (u_y + v_x)^2) \\
-   * @f}
-   * and
-   * @f[ D_{ij}(\mathbf{u}) = \frac{1}{2}\left(\diff{u_{i}}{x_{j}} + \diff{u_{j}}{x_{i}}\right). @f]
-   *
-   * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
-   *
-   * \param[in] hardness ice hardness
-   * \param[in] gamma the second invariant
-   * \param[out] nu effective viscosity
-   * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
-   */
   inline void effective_viscosity(double hardness, double gamma,
-                                  double *nu, double *dnu) const {
-    const double
-      my_nu = 0.5 * hardness * pow(m_schoofReg + gamma, m_viscosity_power);
-
-    if (PetscLikely(nu != NULL)) {
-      *nu = my_nu;
-    }
-
-    if (PetscLikely(dnu != NULL)) {
-      *dnu = m_viscosity_power * my_nu / (m_schoofReg + gamma);
-    }
-  }
+                                  double *nu, double *dnu) const;
 
   virtual double averaged_hardness(double thickness,
                                    int kbelowH,
@@ -119,13 +82,9 @@ public:
                                      const IceModelVec3& enthalpy,
                                      IceModelVec2S &hardav) const;
 
-  virtual std::string name() const = 0;
-  double exponent() const {
-    return m_n;
-  }
-  double enhancement_factor() const {
-    return m_e;
-  }
+  std::string name() const;
+  inline double exponent() const;
+  inline double enhancement_factor() const;
 
   virtual double hardness_parameter(double E, double p) const;
   virtual double softness_parameter(double E, double p) const = 0;
@@ -133,6 +92,8 @@ public:
                       double pressure, double grainsize) const;
 
 protected:
+  std::string m_name;
+
   double m_rho,          //!< ice density
     m_beta_CC_grad, //!< Clausius-Clapeyron gradient
     m_melting_point_temp;  //!< for water, 273.15 K
@@ -170,9 +131,6 @@ public:
 
   virtual double softness_parameter(double enthalpy,
                                     double pressure) const;
-  virtual std::string name() const {
-    return "Glen-Paterson-Budd-Lliboutry-Duval";
-  }
 protected:
   double T_0, water_frac_coeff, water_frac_observed_limit;
 };
@@ -182,19 +140,14 @@ class PatersonBudd : public FlowLaw {
 public:
   PatersonBudd(const std::string &prefix,
                const Config &config,
-               EnthalpyConverter::Ptr EC)
-    : FlowLaw(prefix, config, EC) {
-  }
-  virtual ~PatersonBudd() {}
+               EnthalpyConverter::Ptr EC);
+  virtual ~PatersonBudd();
 
   // This also takes care of hardness_parameter
   virtual double softness_parameter(double enthalpy, double pressure) const;
 
   virtual double flow(double stress, double E,
                       double pressure, double gs) const;
-  virtual std::string name() const {
-    return "Paterson-Budd";
-  }
 
 protected:
   virtual double softness_parameter_from_temp(double T_pa) const {
@@ -235,10 +188,6 @@ public:
     return m_hardness_B;
   }
 
-  virtual std::string name() const {
-    return "isothermal Glen";
-  }
-
 protected:
   virtual double flow_from_temp(double stress, double, double, double) const {
     return m_softness_A * pow(stress,m_n-1);
@@ -254,10 +203,7 @@ public:
   Hooke(const std::string &prefix,
         const Config &config,
         EnthalpyConverter::Ptr EC);
-  virtual ~Hooke() {}
-  virtual std::string name() const {
-    return "Hooke";
-  }
+  virtual ~Hooke();
 protected:
   virtual double softness_parameter_from_temp(double T_pa) const;
 
@@ -270,18 +216,11 @@ class PatersonBuddCold : public PatersonBudd {
 public:
   PatersonBuddCold(const std::string &prefix,
                    const Config &config,
-                   EnthalpyConverter::Ptr EC)
-    : PatersonBudd(prefix, config, EC) {}
-  virtual ~PatersonBuddCold() {}
+                   EnthalpyConverter::Ptr EC);
+  virtual ~PatersonBuddCold();
 
   //! Return the temperature T corresponding to a given value A=A(T).
-  double tempFromSoftness(double myA) const {
-    return - Q() / (m_ideal_gas_constant * (log(myA) - log(A())));
-  }
-
-  virtual std::string name() const {
-    return "Paterson-Budd (cold case)";
-  }
+  double tempFromSoftness(double myA) const;
 
 protected:
   virtual double A() const {
@@ -308,13 +247,8 @@ protected:
 class PatersonBuddWarm : public PatersonBuddCold {
 public:
   PatersonBuddWarm(const std::string &prefix,
-                   const Config &config, EnthalpyConverter::Ptr EC)
-    : PatersonBuddCold(prefix, config, EC) {}
-  virtual ~PatersonBuddWarm() {}
-
-  virtual std::string name() const {
-    return "Paterson-Budd (warm case)";
-  }
+                   const Config &config, EnthalpyConverter::Ptr EC);
+  virtual ~PatersonBuddWarm();
 
 protected:
   virtual double A() const {
@@ -361,10 +295,6 @@ public:
 
   virtual double softness_parameter(double E, double p) const __attribute__((noreturn));
 
-  virtual std::string name() const {
-    return "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
-  }
-
 protected:
   virtual double flow_from_temp(double stress, double temp,
                                 double pressure, double gs) const;
@@ -391,9 +321,6 @@ class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
   GoldsbyKohlstedtStripped(const std::string &prefix,
                            const Config &config, EnthalpyConverter::Ptr EC);
-  virtual std::string name() const {
-    return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
-  }
 
 protected:
   virtual double flow_from_temp(double stress, double temp,
@@ -404,5 +331,8 @@ protected:
 
 } // end of namespace rheology
 } // end of namespace pism
+
+// include inline methods; contents are wrapped in namespace pism { namespace rheology {...}}
+#include "flowlaws_inline.hh"
 
 #endif // __flowlaws_hh
