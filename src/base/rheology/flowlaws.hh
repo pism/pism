@@ -88,10 +88,12 @@ public:
 
   double hardness_parameter(double E, double p) const;
   double softness_parameter(double E, double p) const;
-  virtual double flow(double stress, double E,
-                      double pressure, double grainsize) const;
+  double flow(double stress, double E,
+              double pressure, double grainsize) const;
 
 protected:
+  virtual double flow_impl(double stress, double E,
+                           double pressure, double grainsize) const;
   virtual double hardness_parameter_impl(double E, double p) const;
   virtual double softness_parameter_impl(double E, double p) const = 0;
 
@@ -145,11 +147,10 @@ public:
                EnthalpyConverter::Ptr EC);
   virtual ~PatersonBudd();
 
-  // This also takes care of hardness_parameter
-  virtual double flow(double stress, double E,
-                      double pressure, double gs) const;
-
 protected:
+  virtual double flow_impl(double stress, double E,
+                           double pressure, double gs) const;
+  // This also takes care of hardness_parameter
   virtual double softness_parameter_impl(double enthalpy, double pressure) const;
 
   virtual double softness_parameter_from_temp(double T_pa) const {
@@ -177,11 +178,11 @@ public:
     return m_hardness_B;
   }
 
-  double flow(double stress, double, double, double) const {
+protected:
+  double flow_impl(double stress, double, double, double) const {
     return m_softness_A * pow(stress, m_n-1);
   }
 
-protected:
   double softness_parameter_impl(double, double) const {
     return m_softness_A;
   }
@@ -281,9 +282,6 @@ public:
                    const Config &config,
                    EnthalpyConverter::Ptr EC);
 
-  virtual double flow(double stress, double E,
-                      double pressure, double grainsize) const;
-
   virtual void effective_viscosity(double hardness, double gamma,
                                    double *nu, double *dnu) const __attribute__((noreturn));
 
@@ -293,6 +291,9 @@ public:
                                    const double *enthalpy) const __attribute__((noreturn));
 
 protected:
+  virtual double flow_impl(double stress, double E,
+                           double pressure, double grainsize) const;
+
   double softness_parameter_impl(double E, double p) const __attribute__((noreturn));
   double hardness_parameter_impl(double E, double p) const;
   virtual double flow_from_temp(double stress, double temp,

@@ -101,7 +101,12 @@ double FlowLaw::softness_parameter_paterson_budd(double T_pa) const {
 
 //! The flow law itself.
 double FlowLaw::flow(double stress, double enthalpy,
-                     double pressure, double /* gs */) const {
+                     double pressure, double gs) const {
+  return this->flow_impl(stress, enthalpy, pressure, gs);
+}
+
+double FlowLaw::flow_impl(double stress, double enthalpy,
+                          double pressure, double /* gs */) const {
   return softness_parameter(enthalpy, pressure) * pow(stress, m_n-1);
 }
 
@@ -255,8 +260,8 @@ double PatersonBudd::softness_parameter_impl(double E, double pressure) const {
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
-double PatersonBudd::flow(double stress, double E,
-                          double pressure, double gs) const {
+double PatersonBudd::flow_impl(double stress, double E,
+                               double pressure, double gs) const {
   double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, gs);
 }
@@ -335,44 +340,44 @@ GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
   : FlowLaw(prefix, config, EC) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
 
-  m_V_act_vol    = -13.e-6;  // m^3/mol
-  m_d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
+  m_V_act_vol      = -13.e-6;   // m^3/mol
+  m_d_grain_size   = 1.0e-3;    // m  (see p. ?? of G&K paper)
   //--- dislocation creep ---
-  m_disl_crit_temp=258.0,    // Kelvin
-    //disl_A_cold=4.0e5,                  // MPa^{-4.0} s^{-1}
-    //disl_A_warm=6.0e28,                 // MPa^{-4.0} s^{-1}
-    m_disl_A_cold=4.0e-19,     // Pa^{-4.0} s^{-1}
-    m_disl_A_warm=6.0e4,       // Pa^{-4.0} s^{-1} (GK)
-    m_disl_n=4.0,              // stress exponent
-    m_disl_Q_cold=60.e3,       // J/mol Activation energy
-    m_disl_Q_warm=180.e3;      // J/mol Activation energy (GK)
+  m_disl_crit_temp = 258.0;     // Kelvin
+  //disl_A_cold    = 4.0e5;                  // MPa^{-4.0} s^{-1}
+  //disl_A_warm    = 6.0e28;                 // MPa^{-4.0} s^{-1}
+  m_disl_A_cold    = 4.0e-19;   // Pa^{-4.0} s^{-1}
+  m_disl_A_warm    = 6.0e4;     // Pa^{-4.0} s^{-1} (GK)
+  m_disl_n         = 4.0;       // stress exponent
+  m_disl_Q_cold    = 60.e3;     // J/mol Activation energy
+  m_disl_Q_warm    = 180.e3;    // J/mol Activation energy (GK)
   //--- grain boundary sliding ---
-  m_gbs_crit_temp=255.0,     // Kelvin
-    //gbs_A_cold=3.9e-3,                  // MPa^{-1.8} m^{1.4} s^{-1}
-    //gbs_A_warm=3.e26,                   // MPa^{-1.8} m^{1.4} s^{-1}
-    m_gbs_A_cold=6.1811e-14,   // Pa^{-1.8} m^{1.4} s^{-1}
-    m_gbs_A_warm=4.7547e15,    // Pa^{-1.8} m^{1.4} s^{-1}
-    m_gbs_n=1.8,               // stress exponent
-    m_gbs_Q_cold=49.e3,        // J/mol Activation energy
-    m_gbs_Q_warm=192.e3,       // J/mol Activation energy
-    m_p_grain_sz_exp=1.4;      // from Peltier
+  m_gbs_crit_temp  = 255.0;     // Kelvin
+  //gbs_A_cold     = 3.9e-3;                  // MPa^{-1.8} m^{1.4} s^{-1}
+  //gbs_A_warm     = 3.e26;                   // MPa^{-1.8} m^{1.4} s^{-1}
+  m_gbs_A_cold     = 6.1811e-14; // Pa^{-1.8} m^{1.4} s^{-1}
+  m_gbs_A_warm     = 4.7547e15; // Pa^{-1.8} m^{1.4} s^{-1}
+  m_gbs_n          = 1.8;       // stress exponent
+  m_gbs_Q_cold     = 49.e3;     // J/mol Activation energy
+  m_gbs_Q_warm     = 192.e3;    // J/mol Activation energy
+  m_p_grain_sz_exp = 1.4;       // from Peltier
   //--- easy slip (basal) ---
-  //basal_A=5.5e7,                      // MPa^{-2.4} s^{-1}
-  m_basal_A=2.1896e-7,       // Pa^{-2.4} s^{-1}
-    m_basal_n=2.4,             // stress exponent
-    m_basal_Q=60.e3;           // J/mol Activation energy
+  //basal_A        = 5.5e7;                      // MPa^{-2.4} s^{-1}
+  m_basal_A        = 2.1896e-7; // Pa^{-2.4} s^{-1}
+  m_basal_n        = 2.4;       // stress exponent
+  m_basal_Q        = 60.e3;     // J/mol Activation energy
   //--- diffusional flow ---
-  m_diff_crit_temp=258.0,    // when to use enhancement factor
-    m_diff_V_m=1.97e-5,        // Molar volume (m^3/mol)
-    m_diff_D_0v=9.10e-4,       // Preexponential volume diffusion (m^2/s)
-    m_diff_Q_v=59.4e3,         // activation energy, vol. diff. (J/mol)
-    m_diff_D_0b=5.8e-4,        // preexponential grain boundary coeff.
-    m_diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
-    m_diff_delta=9.04e-10;     // grain boundary width (m)
+  m_diff_crit_temp = 258.0;     // when to use enhancement factor
+  m_diff_V_m       = 1.97e-5;   // Molar volume (m^3/mol)
+  m_diff_D_0v      = 9.10e-4;   // Preexponential volume diffusion (m^2/s)
+  m_diff_Q_v       = 59.4e3;    // activation energy, vol. diff. (J/mol)
+  m_diff_D_0b      = 5.8e-4;    // preexponential grain boundary coeff.
+  m_diff_Q_b       = 49.e3;     // activation energy, g.b. (J/mol)
+  m_diff_delta     = 9.04e-10;  // grain boundary width (m)
 }
 
-double GoldsbyKohlstedt::flow(double stress, double E,
-                              double pressure, double grainsize) const {
+double GoldsbyKohlstedt::flow_impl(double stress, double E,
+                                   double pressure, double grainsize) const {
   double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
