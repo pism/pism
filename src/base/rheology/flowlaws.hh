@@ -120,10 +120,10 @@ public:
                                      IceModelVec2S &hardav) const;
 
   virtual std::string name() const = 0;
-  virtual double exponent() const {
+  double exponent() const {
     return m_n;
   }
-  virtual double enhancement_factor() const {
+  double enhancement_factor() const {
     return m_e;
   }
 
