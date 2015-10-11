@@ -68,19 +68,19 @@ class FlowLaw {
 public:
   FlowLaw(const std::string &prefix, const Config &config,
           EnthalpyConverter::Ptr EC);
-  virtual ~FlowLaw() {}
+  virtual ~FlowLaw();
 
   inline void effective_viscosity(double hardness, double gamma,
                                   double *nu, double *dnu) const;
 
-  virtual double averaged_hardness(double thickness,
-                                   int kbelowH,
-                                   const double *zlevels,
-                                   const double *enthalpy) const;
+  double averaged_hardness(double thickness,
+                           int kbelowH,
+                           const double *zlevels,
+                           const double *enthalpy) const;
 
-  virtual void averaged_hardness_vec(const IceModelVec2S &thickness,
-                                     const IceModelVec3& enthalpy,
-                                     IceModelVec2S &hardav) const;
+  void averaged_hardness_vec(const IceModelVec2S &thickness,
+                             const IceModelVec3& enthalpy,
+                             IceModelVec2S &hardav) const;
 
   std::string name() const;
   inline double exponent() const;
@@ -92,6 +92,10 @@ public:
               double pressure, double grainsize) const;
 
 protected:
+  virtual double averaged_hardness_impl(double thickness,
+                                        int kbelowH,
+                                        const double *zlevels,
+                                        const double *enthalpy) const;
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
   virtual double hardness_parameter_impl(double E, double p) const;
@@ -172,13 +176,12 @@ public:
   IsothermalGlen(const std::string &prefix,
                  const Config &config,
                  EnthalpyConverter::Ptr EC);
-
-  double averaged_hardness(double, int,
-                                   const double*, const double*) const {
+protected:
+  double averaged_hardness_impl(double, int,
+                                const double*, const double*) const {
     return m_hardness_B;
   }
 
-protected:
   double flow_impl(double stress, double, double, double) const {
     return m_softness_A * pow(stress, m_n-1);
   }
@@ -233,14 +236,13 @@ protected:
   }
 
   // takes care of hardness_parameter...
-  virtual double softness_parameter_from_temp(double T_pa) const {
+  double softness_parameter_from_temp(double T_pa) const {
     return A() * exp(-Q()/(m_ideal_gas_constant * T_pa));
   }
 
-
   // ignores pressure and uses non-pressure-adjusted temperature
-  virtual double flow_from_temp(double stress, double temp,
-                                double , double) const {
+  double flow_from_temp(double stress, double temp,
+                        double , double) const {
     return softness_parameter_from_temp(temp) * pow(stress,m_n-1);
   }
 };
@@ -253,10 +255,10 @@ public:
   virtual ~PatersonBuddWarm();
 
 protected:
-  virtual double A() const {
+  double A() const {
     return m_A_warm;
   }
-  virtual double Q() const {
+  double Q() const {
     return m_Q_warm;
   }
 };
@@ -281,16 +283,12 @@ public:
   GoldsbyKohlstedt(const std::string &prefix,
                    const Config &config,
                    EnthalpyConverter::Ptr EC);
-
-  virtual void effective_viscosity(double hardness, double gamma,
-                                   double *nu, double *dnu) const __attribute__((noreturn));
-
-  virtual double averaged_hardness(double thickness,
+protected:
+  double averaged_hardness_impl(double thickness,
                                    int kbelowH,
                                    const double *zlevels,
                                    const double *enthalpy) const __attribute__((noreturn));
 
-protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
 

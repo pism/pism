@@ -86,6 +86,10 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
 }
 
+FlowLaw::~FlowLaw() {
+  // empty
+}
+
 std::string FlowLaw::name() const {
   return m_name;
 }
@@ -159,6 +163,12 @@ void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
 double FlowLaw::averaged_hardness(double thickness, int kbelowH,
                                   const double *zlevels,
                                   const double *enthalpy) const {
+  return this->averaged_hardness_impl(thickness, kbelowH, zlevels, enthalpy);
+}
+
+double FlowLaw::averaged_hardness_impl(double thickness, int kbelowH,
+                                       const double *zlevels,
+                                       const double *enthalpy) const {
   double B = 0;
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
@@ -382,14 +392,9 @@ double GoldsbyKohlstedt::flow_impl(double stress, double E,
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
 
-void GoldsbyKohlstedt::effective_viscosity(double, double,
-                                           double *, double *) const {
-  throw std::runtime_error("GoldsbyKohlstedt::effective_viscosity is not implemented");
-}
-
-double GoldsbyKohlstedt::averaged_hardness(double, int,
-                                           const double *,
-                                           const double *) const {
+double GoldsbyKohlstedt::averaged_hardness_impl(double, int,
+                                                const double *,
+                                                const double *) const {
 
   throw std::runtime_error("double GoldsbyKohlstedt::averaged_hardness is not implemented");
 
@@ -399,18 +404,13 @@ double GoldsbyKohlstedt::averaged_hardness(double, int,
 }
 
 double GoldsbyKohlstedt::hardness_parameter_impl(double enthalpy, double pressure) const {
-  double softness, T_pa;
 
-  // FIXME: The following is a re-implementation of the Paterson-Budd relation
-  // for the hardness parameter. This should not be here, but we currently need
-  // ice hardness to compute the strain heating. See SIAFD::compute_volumetric_strain_heating().
-  T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
-
-  if (T_pa < m_crit_temp) {
-    softness = m_A_cold * exp(-m_Q_cold/(m_ideal_gas_constant * T_pa));
-  } else {
-    softness = m_A_warm * exp(-m_Q_warm/(m_ideal_gas_constant * T_pa));
-  }
+  // We use the Paterson-Budd relation for the hardness parameter. It would be nice if we didn't
+  // have to, but we currently need ice hardness to compute the strain heating. See
+  // SIAFD::compute_volumetric_strain_heating().
+  double
+    T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure),
+    softness = softness_parameter_paterson_budd(T_pa);
 
   return pow(softness, m_hardness_power);
 }
