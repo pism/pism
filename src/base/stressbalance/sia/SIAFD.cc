@@ -617,6 +617,12 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   assert(m_delta[0].get_stencil_width()  >= 1);
   assert(m_delta[1].get_stencil_width()  >= 1);
 
+  const std::vector<double> &z = m_grid->z();
+  const unsigned int
+    Mx = m_grid->Mx(),
+    My = m_grid->My(),
+    Mz = m_grid->Mz();
+
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
     ParallelSection loop(m_grid->com);
@@ -658,7 +664,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
         double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
-          double depth = thk - m_grid->z(k); // FIXME issue #15
+          double depth = thk - z[k]; // FIXME issue #15
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
           const double pressure = m_EC->pressure(depth);
@@ -675,12 +681,12 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
           if (k > 0) { // trapezoidal rule
-            const double dz = m_grid->z(k) - m_grid->z(k-1);
+            const double dz = z[k] - z[k-1];
             Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
           }
         }
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - m_grid->z(ks);
+        const double dz = thk - z[ks];
         Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
         // Override diffusivity at the edges of the domain. (At these
@@ -691,8 +697,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
         // this adjustment lets us avoid taking very small time-steps
         // because of the possible thickness and bed elevation
         // "discontinuities" at the boundary.)
-        if (i < 0 || i >= (int)m_grid->Mx() - 1 ||
-            j < 0 || j >= (int)m_grid->My() - 1) {
+        if (i < 0 || i >= (int)Mx - 1 ||
+            j < 0 || j >= (int)My - 1) {
           Dfoffset = 0.0;
         }
 
@@ -706,7 +712,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
         // if doing the full update, fill the delta column above the ice and
         // store it:
         if (full_update) {
-          for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+          for (unsigned int k = ks + 1; k < Mz; ++k) {
             delta_ij[k] = 0.0;
           }
           m_delta[o].set_column(i,j,&delta_ij[0]);
