@@ -213,7 +213,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   const double
     ice_density = m_config->get_double("ice_density"),              // kg m-3
     // constants controlling the numerical method:
-    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"), // J kg-1
+    thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
 
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to a file");
@@ -285,7 +286,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       const int i = pt.i(), j = pt.j();
 
       // ignore advection and strain heating in ice if isMarginal
-      const double thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
       system.initThisColumn(i, j, isMarginal, ice_thickness(i, j));
