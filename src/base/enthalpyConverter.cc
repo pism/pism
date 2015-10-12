@@ -236,12 +236,7 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
    We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
 double EnthalpyConverter::water_fraction(double E, double P) const {
-#if (PISM_DEBUG==1)
-  if (E >= enthalpy_liquid(P)) {
-    throw RuntimeError::formatted("E=%f and pressure=%f correspond to liquid water",
-                                  E, P);
-  }
-#endif
+  validate_E_P(E, P);
 
   return this->water_fraction_impl(E, P);
 }
