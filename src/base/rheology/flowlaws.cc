@@ -222,9 +222,9 @@ GPBLD::GPBLD(const std::string &prefix,
   : FlowLaw(prefix, config, EC) {
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval";
 
-  T_0              = config.get_double("water_melting_point_temperature");    // K
-  water_frac_coeff = config.get_double("gpbld_water_frac_coeff");
-  water_frac_observed_limit
+  m_T_0              = config.get_double("water_melting_point_temperature");    // K
+  m_water_frac_coeff = config.get_double("gpbld_water_frac_coeff");
+  m_water_frac_observed_limit
     = config.get_double("gpbld_water_frac_observed_limit");
 }
 
@@ -244,9 +244,9 @@ double GPBLD::softness_parameter_impl(double enthalpy, double pressure) const {
   } else { // temperate ice
     double omega = m_EC->water_fraction(enthalpy, pressure);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
-    omega = std::min(omega, water_frac_observed_limit);
+    omega = std::min(omega, m_water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softness_parameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
+    return softness_parameter_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
   }
 }
 

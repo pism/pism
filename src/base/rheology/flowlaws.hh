@@ -140,7 +140,7 @@ public:
 protected:
   double softness_parameter_impl(double enthalpy,
                                  double pressure) const;
-  double T_0, water_frac_coeff, water_frac_observed_limit;
+  double m_T_0, m_water_frac_coeff, m_water_frac_observed_limit;
 };
 
 //! Derived class of FlowLaw for Paterson-Budd (1982)-Glen ice.
