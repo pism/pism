@@ -111,7 +111,7 @@ add_dependencies (pismrevision touch_pism_revision)
 add_library (pismflowlaws
   base/rheology/flowlaw_factory.cc
   base/rheology/flowlaws.cc
-  base/rheology/GPBLD_Optimized.cc
+  base/rheology/GPBLD3.cc
 )
 target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
 

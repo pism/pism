@@ -32,38 +32,25 @@ class IceModelVec3;
 
 namespace rheology {
 
-class GPBLD_Optimized {
+class GPBLD3 {
 public:
-  GPBLD_Optimized(const std::string &prefix,
-                  const Config &config,
-                  EnthalpyConverter::Ptr EC);
+  GPBLD3(const std::string &prefix, const Config &config,
+         EnthalpyConverter::Ptr EC);
 
-  inline void effective_viscosity(double hardness, double gamma,
-                                  double *nu, double *dnu) const;
-
-  double averaged_hardness(double thickness,
-                           int kbelowH,
-                           const double *zlevels,
-                           const double *enthalpy) const;
-
-  void averaged_hardness_vec(const IceModelVec2S &thickness,
-                             const IceModelVec3& enthalpy,
-                             IceModelVec2S &hardav) const;
-
-  std::string name() const;
-  inline double exponent() const;
-  inline double enhancement_factor() const;
+  double flow(double stress, double E,
+              double pressure, double grainsize) const;
 
   double hardness_parameter(double E, double p) const;
   double softness_parameter(double E, double p) const;
-  double flow(double stress, double E,
-              double pressure, double grainsize) const;
-private:
-  std::string m_name;
 
-  double m_rho,
-    m_beta_CC_grad,
-    m_melting_point_temp;
+  void effective_viscosity(double hardness, double gamma,
+                           double *nu, double *dnu) const;
+
+  std::string name() const;
+  double exponent() const;
+  double enhancement_factor() const;
+  EnthalpyConverter::Ptr EC() const;
+private:
   EnthalpyConverter::Ptr m_EC;
 
   double softness_parameter_paterson_budd(double T_pa) const;
@@ -73,8 +60,7 @@ private:
     m_A_cold, m_A_warm, m_Q_cold, m_Q_warm,
     m_crit_temp;
 
-  double m_standard_gravity,
-    m_ideal_gas_constant,
+  double m_ideal_gas_constant,
     m_e,                          // flow enhancement factor
     m_n;                          // power law exponent
 

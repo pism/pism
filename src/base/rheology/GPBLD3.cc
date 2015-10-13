@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>
 #include <petscsys.h>
 
-#include "GPBLD_Optimized.hh"
+#include "GPBLD3.hh"
 
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
@@ -27,32 +28,27 @@
 namespace pism {
 namespace rheology {
 
-GPBLD_Optimized::GPBLD_Optimized(const std::string &prefix,
+GPBLD3::GPBLD3(const std::string &prefix,
                                  const Config &config,
                                  EnthalpyConverter::Ptr EC)
   : m_EC(EC), m_e(1) {
-
-  m_name = "Glen-Paterson-Budd-Lliboutry-Duval (optimized for n == 3)";
 
   if (not m_EC) {
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  m_standard_gravity   = config.get_double("standard_gravity");
+  const double standard_gravity   = config.get_double("standard_gravity");
   m_ideal_gas_constant = config.get_double("ideal_gas_constant");
 
-  m_rho                = config.get_double("ice_density");
-  m_beta_CC_grad       = config.get_double("beta_CC") * m_rho * m_standard_gravity;
-  m_melting_point_temp = config.get_double("water_melting_point_temperature");
+  const double rho                = config.get_double("ice_density");
   m_e                  = config.get_double(prefix + "enhancement_factor");
   m_n                  = config.get_double(prefix + "Glen_exponent");
 
   if (m_n != 3.0) {
-    throw RuntimeError::formatted("GPBLD_Optimized does not support n=%3.3f", m_n);
+    throw RuntimeError::formatted("GPBLD3 does not support n=%3.3f", m_n);
   }
 
   m_viscosity_power    = -1.0 / 3.0;
-  m_hardness_power     = -1.0 / 3.0;
 
   m_A_cold = config.get_double("Paterson_Budd_A_cold");
   m_A_warm = config.get_double("Paterson_Budd_A_warm");
@@ -61,7 +57,7 @@ GPBLD_Optimized::GPBLD_Optimized(const std::string &prefix,
   m_crit_temp = config.get_double("Paterson_Budd_critical_temperature");
   m_schoofLen = config.get_double("Schoof_regularizing_length", "m"); // convert to meters
   m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/s"); // convert to m/s
-  m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
+  m_schoofReg = pow(m_schoofVel/m_schoofLen, 2.0);
 
   m_T_0              = config.get_double("water_melting_point_temperature");    // K
   m_water_frac_coeff = config.get_double("gpbld_water_frac_coeff");
@@ -69,39 +65,66 @@ GPBLD_Optimized::GPBLD_Optimized(const std::string &prefix,
     = config.get_double("gpbld_water_frac_observed_limit");
 }
 
-double GPBLD_Optimized::averaged_hardness(double thickness,
-                                          int kbelowH,
-                                          const double *zlevels,
-                                          const double *enthalpy) const {
-
+std::string GPBLD3::name() const {
+  return "Glen-Paterson-Budd-Lliboutry-Duval (optimized for n == 3)";
 }
 
-void GPBLD_Optimized::averaged_hardness_vec(const IceModelVec2S &thickness,
-                                            const IceModelVec3& enthalpy,
-                                            IceModelVec2S &hardav) const {
-
+EnthalpyConverter::Ptr GPBLD3::EC() const {
+  return m_EC; 
 }
 
-std::string name() const;
-double exponent() const;
-inline double enhancement_factor() const;
-
-
-double GPBLD_Optimized::hardness_parameter(double E, double p) const {
-
+double GPBLD3::exponent() const {
+  return m_n;
 }
 
-double GPBLD_Optimized::softness_parameter(double E, double p) const {
-
+double GPBLD3::enhancement_factor() const {
+  return m_e;
 }
 
-double GPBLD_Optimized::flow(double stress, double E,
+void GPBLD3::effective_viscosity(double hardness, double gamma,
+                                          double *nu, double *dnu) const {
+  const double
+    my_nu = 0.5 * hardness / cbrt(m_schoofReg + gamma);
+
+  if (PetscLikely(nu != NULL)) {
+    *nu = my_nu;
+  }
+
+  if (PetscLikely(dnu != NULL)) {
+    *dnu = (-1.0/3.0) * my_nu / (m_schoofReg + gamma);
+  }
+}
+
+double GPBLD3::hardness_parameter(double E, double p) const {
+  return 1.0 / cbrt(softness_parameter(E, p));
+}
+
+double GPBLD3::softness_parameter(double enthalpy, double pressure) const {
+  const double E_s = m_EC->enthalpy_cts(pressure);
+  if (enthalpy < E_s) {       // cold ice
+    double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
+    return softness_parameter_paterson_budd(T_pa);
+  } else { // temperate ice
+    double omega = m_EC->water_fraction(enthalpy, pressure);
+    // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
+    omega = std::min(omega, m_water_frac_observed_limit);
+    // next line implements eqn (23) in \ref AschwandenBlatter2009
+    return softness_parameter_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
+  }
+}
+
+double GPBLD3::flow(double stress, double enthalpy,
                              double pressure, double grainsize) const {
+  (void) grainsize;
 
+  return softness_parameter(enthalpy, pressure) * stress * stress;
 }
 
-double GPBLD_Optimized::softness_parameter_paterson_budd(double T_pa) const {
-
+double GPBLD3::softness_parameter_paterson_budd(double T_pa) const {
+  if (T_pa < m_crit_temp) {
+    return m_A_cold * exp(-m_Q_cold/(m_ideal_gas_constant * T_pa));
+  }
+  return m_A_warm * exp(-m_Q_warm/(m_ideal_gas_constant * T_pa));
 }
 
 } // end of namespace rheology
