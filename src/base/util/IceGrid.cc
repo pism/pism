@@ -1215,7 +1215,8 @@ void GridParameters::horizontal_extent_from_options() {
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  options::Real Lz("-Lz", "height of the computational domain", z.back());
+  options::Real Lz("-Lz", "height of the computational domain",
+                   z.size() > 0 ? z.back() : 0.0);
   options::Integer Mz("-Mz", "grid size in Y direction", z.size());
 
   double lambda = config->get_double("grid_lambda");
