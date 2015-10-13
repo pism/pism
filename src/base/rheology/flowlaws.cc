@@ -94,6 +94,10 @@ std::string FlowLaw::name() const {
   return m_name;
 }
 
+EnthalpyConverter::Ptr FlowLaw::EC() const {
+  return m_EC;
+}
+
 //! Return the softness parameter A(T) for a given temperature T.
 /*! This is not a natural part of all FlowLaw instances.   */
 double FlowLaw::softness_parameter_paterson_budd(double T_pa) const {
@@ -126,9 +130,10 @@ double FlowLaw::hardness_parameter_impl(double E, double p) const {
   return pow(softness_parameter(E, p), m_hardness_power);
 }
 
-void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
-                                    const IceModelVec3  &enthalpy,
-                                    IceModelVec2S &result) const {
+void averaged_hardness_vec(const FlowLaw &ice,
+                           const IceModelVec2S &thickness,
+                           const IceModelVec3  &enthalpy,
+                           IceModelVec2S &result) {
 
   const IceGrid &grid = *thickness.get_grid();
 
@@ -145,8 +150,8 @@ void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
       // Evaluate column integrals in flow law at every quadrature point's column
       double H = thickness(i,j);
       const double *enthColumn = enthalpy.get_column(i, j);
-      result(i,j) = this->averaged_hardness(H, grid.kBelowHeight(H),
-                                            &(grid.z()[0]), enthColumn);
+      result(i,j) = averaged_hardness(ice, H, grid.kBelowHeight(H),
+                                      &(grid.z()[0]), enthColumn);
     }
   } catch (...) {
     loop.failed();
@@ -160,29 +165,26 @@ void FlowLaw::averaged_hardness_vec(const IceModelVec2S &thickness,
 //! Computes vertical average of B(E, pressure) ice hardness, namely \f$\bar
 //! B(E, p)\f$. See comment for hardness_parameter().
 /*! Note E[0], ..., E[kbelowH] must be valid.  */
-double FlowLaw::averaged_hardness(double thickness, int kbelowH,
-                                  const double *zlevels,
-                                  const double *enthalpy) const {
-  return this->averaged_hardness_impl(thickness, kbelowH, zlevels, enthalpy);
-}
-
-double FlowLaw::averaged_hardness_impl(double thickness, int kbelowH,
-                                       const double *zlevels,
-                                       const double *enthalpy) const {
+double averaged_hardness(const FlowLaw &ice,
+                         double thickness, int kbelowH,
+                         const double *zlevels,
+                         const double *enthalpy) {
   double B = 0;
+
+  EnthalpyConverter &EC = *ice.EC();
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
   if (kbelowH > 0) {
     double
-      p0 = m_EC->pressure(thickness),
+      p0 = EC.pressure(thickness),
       E0 = enthalpy[0],
-      h0 = hardness_parameter(E0, p0); // ice hardness at the left endpoint
+      h0 = ice.hardness_parameter(E0, p0); // ice hardness at the left endpoint
 
     for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
       const double
-        p1 = m_EC->pressure(thickness - zlevels[i]), // pressure at the right endpoint
+        p1 = EC.pressure(thickness - zlevels[i]), // pressure at the right endpoint
         E1 = enthalpy[i], // enthalpy at the right endpoint
-        h1 = hardness_parameter(E1, p1); // ice hardness at the right endpoint
+        h1 = ice.hardness_parameter(E1, p1); // ice hardness at the right endpoint
 
       // The trapezoid rule sans the "1/2":
       B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
@@ -198,9 +200,9 @@ double FlowLaw::averaged_hardness_impl(double thickness, int kbelowH,
   // zlevels[kbelowH] to thickness:
   double
     depth = thickness - zlevels[kbelowH],
-    p = m_EC->pressure(depth);
+    p = EC.pressure(depth);
 
-  B += depth * hardness_parameter(enthalpy[kbelowH], p);
+  B += depth * ice.hardness_parameter(enthalpy[kbelowH], p);
 
   // Now B is an integral of ice hardness; next, compute the average:
   if (thickness > 0) {
@@ -211,7 +213,6 @@ double FlowLaw::averaged_hardness_impl(double thickness, int kbelowH,
 
   return B;
 }
-
 
 /*!
   This constructor just sets flow law factor for nonzero water content, from
@@ -559,6 +560,53 @@ double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, doub
   }
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
+}
+
+//! \brief Computes the regularized effective viscosity and its derivative with respect to the
+//! second invariant \f$ \gamma \f$.
+/*!
+ *
+ * @f{align*}{
+ * \nu &= \frac{1}{2} B \left( \epsilon + \gamma \right)^{(1-n)/(2n)},\\
+ * \diff{\nu}{\gamma} &= \frac{1}{2} B \cdot \frac{1-n}{2n} \cdot \left(\epsilon + \gamma \right)^{(1-n)/(2n) - 1}, \\
+ * &= \frac{1-n}{2n} \cdot \frac{1}{2} B \left( \epsilon + \gamma \right)^{(1-n)/(2n)} \cdot \frac{1}{\epsilon + \gamma}, \\
+ * &= \frac{1-n}{2n} \cdot \frac{\nu}{\epsilon + \gamma}.
+ * @f}
+ * Here @f$ \gamma @f$ is the second invariant
+ * @f{align*}{
+ * \gamma &= \frac{1}{2} D_{ij} D_{ij}\\
+ * &= \frac{1}{2}\, ((u_x)^2 + (v_y)^2 + (u_x + v_y)^2 + \frac{1}{2}\, (u_y + v_x)^2) \\
+ * @f}
+ * and
+ * @f[ D_{ij}(\mathbf{u}) = \frac{1}{2}\left(\diff{u_{i}}{x_{j}} + \diff{u_{j}}{x_{i}}\right). @f]
+ *
+ * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
+ *
+ * \param[in] hardness ice hardness
+ * \param[in] gamma the second invariant
+ * \param[out] nu effective viscosity
+ * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
+ */
+void FlowLaw::effective_viscosity(double hardness, double gamma,
+                                         double *nu, double *dnu) const {
+  const double
+    my_nu = 0.5 * hardness * pow(m_schoofReg + gamma, m_viscosity_power);
+
+  if (PetscLikely(nu != NULL)) {
+    *nu = my_nu;
+  }
+
+  if (PetscLikely(dnu != NULL)) {
+    *dnu = m_viscosity_power * my_nu / (m_schoofReg + gamma);
+  }
+}
+
+double FlowLaw::exponent() const {
+  return m_n;
+}
+
+double FlowLaw::enhancement_factor() const {
+  return m_e;
 }
 
 } // end of namespace rheology

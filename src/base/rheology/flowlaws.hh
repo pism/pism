@@ -70,21 +70,13 @@ public:
           EnthalpyConverter::Ptr EC);
   virtual ~FlowLaw();
 
-  inline void effective_viscosity(double hardness, double gamma,
-                                  double *nu, double *dnu) const;
-
-  double averaged_hardness(double thickness,
-                           int kbelowH,
-                           const double *zlevels,
-                           const double *enthalpy) const;
-
-  void averaged_hardness_vec(const IceModelVec2S &thickness,
-                             const IceModelVec3& enthalpy,
-                             IceModelVec2S &hardav) const;
+  void effective_viscosity(double hardness, double gamma,
+                           double *nu, double *dnu) const;
 
   std::string name() const;
-  inline double exponent() const;
-  inline double enhancement_factor() const;
+  double exponent() const;
+  double enhancement_factor() const;
+  EnthalpyConverter::Ptr EC() const;
 
   double hardness_parameter(double E, double p) const;
   double softness_parameter(double E, double p) const;
@@ -92,10 +84,6 @@ public:
               double pressure, double grainsize) const;
 
 protected:
-  virtual double averaged_hardness_impl(double thickness,
-                                        int kbelowH,
-                                        const double *zlevels,
-                                        const double *enthalpy) const;
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
   virtual double hardness_parameter_impl(double E, double p) const;
@@ -121,6 +109,17 @@ protected:
     m_e,                          // flow enhancement factor
     m_n;                          // power law exponent
 };
+
+double averaged_hardness(const FlowLaw &ice,
+                         double thickness,
+                         int kbelowH,
+                         const double *zlevels,
+                         const double *enthalpy);
+
+void averaged_hardness_vec(const FlowLaw &ice,
+                           const IceModelVec2S &thickness,
+                           const IceModelVec3& enthalpy,
+                           IceModelVec2S &hardav);
 
 // Helper functions:
 bool FlowLawIsPatersonBuddCold(FlowLaw *, const Config &,
@@ -177,10 +176,6 @@ public:
                  const Config &config,
                  EnthalpyConverter::Ptr EC);
 protected:
-  double averaged_hardness_impl(double, int,
-                                const double*, const double*) const {
-    return m_hardness_B;
-  }
 
   double flow_impl(double stress, double, double, double) const {
     return m_softness_A * pow(stress, m_n-1);
@@ -329,8 +324,5 @@ protected:
 
 } // end of namespace rheology
 } // end of namespace pism
-
-// include inline methods; contents are wrapped in namespace pism { namespace rheology {...}}
-#include "flowlaws_inline.hh"
 
 #endif // __flowlaws_hh

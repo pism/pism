@@ -359,7 +359,8 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
       Eij = model->Enth3.get_column(i,j);
       const double H = model->ice_thickness(i,j);
       if (mask.icy(i, j)) {
-        (*result)(i,j) = flow_law->averaged_hardness(H, m_grid->kBelowHeight(H),
+        (*result)(i,j) = rheology::averaged_hardness(*flow_law,
+                                                     H, m_grid->kBelowHeight(H),
                                                      &(m_grid->z()[0]), Eij);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
