@@ -42,6 +42,7 @@
 #include "base/varcEnthalpyConverter.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/rheology/flowlaws.hh"
+#include "base/rheology/GPBLD3.hh"
 #include "base/rheology/flowlaw_factory.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/PISMDiagnostic.hh"
@@ -233,6 +234,7 @@
 %include "base/util/PISMComponent.hh"
 %include "base/basalstrength/basal_resistance.hh"
 %include "base/rheology/flowlaws.hh"
+%include "base/rheology/GPBLD3.hh"
 
 %include "base/rheology/flowlaw_factory.hh"
 

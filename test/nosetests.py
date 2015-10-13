@@ -697,6 +697,31 @@ def flowlaw_test():
             flowcoeff = law.flow(sigma[i], E, p, gs)
             print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega[j], flowcoeff)
 
+def gpbld3_test():
+    "Test the optimized version of GPBLD."
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
+    EC = ctx.enthalpy_converter()
+    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+
+    TpaC = [-30, -5, 0, 0]
+    depth = 2000
+    gs = 1e-3
+    omega = [0.0, 0.0, 0.0, 0.005]
+    sigma = [1e4, 5e4, 1e5, 1.5e5]
+
+    p = EC.pressure(depth)
+    Tm = EC.melting_temperature(p)
+
+    import numpy as np
+    for i in range(4):
+        for j in range(4):
+            T = Tm + TpaC[j]
+            E = EC.enthalpy(T, omega[j], p)
+            regular = gpbld.flow(sigma[i], E, p, gs)
+            optimized = gpbld3.flow(sigma[i], E, p, gs)
+            assert np.fabs(regular - optimized < 1e-16)
+
 def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
 
