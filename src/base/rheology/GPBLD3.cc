@@ -48,8 +48,6 @@ GPBLD3::GPBLD3(const std::string &prefix,
     throw RuntimeError::formatted("GPBLD3 does not support n=%3.3f", m_n);
   }
 
-  m_viscosity_power    = -1.0 / 3.0;
-
   m_A_cold = config.get_double("Paterson_Budd_A_cold");
   m_A_warm = config.get_double("Paterson_Budd_A_warm");
   m_Q_cold = config.get_double("Paterson_Budd_Q_cold");

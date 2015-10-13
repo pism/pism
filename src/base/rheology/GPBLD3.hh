@@ -55,8 +55,7 @@ private:
 
   double softness_parameter_paterson_budd(double T_pa) const;
 
-  double m_schoofLen, m_schoofVel, m_schoofReg, m_viscosity_power,
-    m_hardness_power,
+  double m_schoofLen, m_schoofVel, m_schoofReg,
     m_A_cold, m_A_warm, m_Q_cold, m_Q_warm,
     m_crit_temp;
 
