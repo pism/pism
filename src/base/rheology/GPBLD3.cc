@@ -29,8 +29,8 @@ namespace pism {
 namespace rheology {
 
 GPBLD3::GPBLD3(const std::string &prefix,
-                                 const Config &config,
-                                 EnthalpyConverter::Ptr EC)
+               const Config &config,
+               EnthalpyConverter::Ptr EC)
   : m_EC(EC), m_e(1) {
 
   if (not m_EC) {
@@ -70,7 +70,7 @@ std::string GPBLD3::name() const {
 }
 
 EnthalpyConverter::Ptr GPBLD3::EC() const {
-  return m_EC; 
+  return m_EC;
 }
 
 double GPBLD3::exponent() const {
@@ -82,7 +82,7 @@ double GPBLD3::enhancement_factor() const {
 }
 
 void GPBLD3::effective_viscosity(double hardness, double gamma,
-                                          double *nu, double *dnu) const {
+                                 double *nu, double *dnu) const {
   const double
     my_nu = 0.5 * hardness / cbrt(m_schoofReg + gamma);
 
@@ -114,7 +114,7 @@ double GPBLD3::softness_parameter(double enthalpy, double pressure) const {
 }
 
 double GPBLD3::flow(double stress, double enthalpy,
-                             double pressure, double grainsize) const {
+                    double pressure, double grainsize) const {
   (void) grainsize;
 
   return softness_parameter(enthalpy, pressure) * stress * stress;
