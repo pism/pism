@@ -37,10 +37,7 @@ GPBLD3::GPBLD3(const std::string &prefix,
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  const double standard_gravity   = config.get_double("standard_gravity");
   m_ideal_gas_constant = config.get_double("ideal_gas_constant");
-
-  const double rho                = config.get_double("ice_density");
   m_e                  = config.get_double(prefix + "enhancement_factor");
   m_n                  = config.get_double(prefix + "Glen_exponent");
 
