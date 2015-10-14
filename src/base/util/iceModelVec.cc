@@ -496,7 +496,7 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 //! Writes an IceModelVec to a NetCDF file.
 void IceModelVec::write_impl(const PIO &nc) const {
 
-  m_grid->ctx()->log()->message(3, "  Writing %s...\n", m_name.c_str());
+  m_grid->ctx()->log()->message(3, "+  Writing %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
     throw RuntimeError("This method (IceModelVec::write_impl) only supports"
@@ -517,6 +517,8 @@ void IceModelVec::write_impl(const PIO &nc) const {
     io::write_spatial_variable(metadata(0), *m_grid, nc,
                                write_in_glaciological_units, v_array.get());
   }
+
+  m_grid->ctx()->log()->message(3, "+  Done writing %s.\n", m_name.c_str());
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).

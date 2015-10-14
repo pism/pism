@@ -328,7 +328,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
 }
 
 //! \brief Computes vertically-averaged ice hardness.
-IceModelVec::Ptr IceModel_hardav::compute() {
+IceModelVec::Ptr IceModel_hardav::compute_impl() {
   const double fillval = m_grid->ctx()->config()->get_double("fill_value");
   double *Eij; // columns of enthalpy values
 
@@ -384,7 +384,7 @@ IceModel_rank::IceModel_rank(IceModel *m)
   m_vars[0].set_time_independent(true);
 }
 
-IceModelVec::Ptr IceModel_rank::compute() {
+IceModelVec::Ptr IceModel_rank::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "rank", WITHOUT_GHOSTS);
@@ -411,7 +411,7 @@ IceModel_cts::IceModel_cts(IceModel *m)
             "", "", 0);
 }
 
-IceModelVec::Ptr IceModel_cts::compute() {
+IceModelVec::Ptr IceModel_cts::compute_impl() {
 
   // update vertical levels (in case the grid was extended
   m_vars[0].set_levels(m_grid->z());
@@ -436,7 +436,7 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m)
   m_vars[0].set_time_independent(true);
 }
 
-IceModelVec::Ptr IceModel_proc_ice_area::compute() {
+IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2Int *ice_mask = m_grid->variables().get_2d_mask("mask");
@@ -476,7 +476,7 @@ IceModel_temp::IceModel_temp(IceModel *m)
   m_vars[0].set_double("valid_min", 0);
 }
 
-IceModelVec::Ptr IceModel_temp::compute() {
+IceModelVec::Ptr IceModel_temp::compute_impl() {
 
   // update vertical levels (in case the grid was extended
   m_vars[0].set_levels(m_grid->z());
@@ -530,7 +530,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
   m_vars[0].set_double("valid_max", 0);
 }
 
-IceModelVec::Ptr IceModel_temp_pa::compute() {
+IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
   bool cold_mode = m_grid->ctx()->config()->get_boolean("do_cold_ice_methods");
   double melting_point_temp = m_grid->ctx()->config()->get_double("water_melting_point_temperature");
 
@@ -595,7 +595,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m)
             "Celsius", "Celsius", 0);
 }
 
-IceModelVec::Ptr IceModel_temppabase::compute() {
+IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
   bool cold_mode = m_grid->ctx()->config()->get_boolean("do_cold_ice_methods");
   double melting_point_temp = m_grid->ctx()->config()->get_double("water_melting_point_temperature");
@@ -655,7 +655,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m)
   m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
 }
 
-IceModelVec::Ptr IceModel_enthalpysurf::compute() {
+IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "enthalpysurf", WITHOUT_GHOSTS);
@@ -699,7 +699,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m)
   m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
 }
 
-IceModelVec::Ptr IceModel_enthalpybase::compute() {
+IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "enthalpybase", WITHOUT_GHOSTS);
@@ -724,7 +724,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m)
   m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
 }
 
-IceModelVec::Ptr IceModel_tempbase::compute() {
+IceModelVec::Ptr IceModel_tempbase::compute_impl() {
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -777,7 +777,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
   m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
 }
 
-IceModelVec::Ptr IceModel_tempsurf::compute() {
+IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -829,7 +829,7 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m)
   m_vars[0].set_double("valid_max", 1);
 }
 
-IceModelVec::Ptr IceModel_liqfrac::compute() {
+IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "liqfrac", WITHOUT_GHOSTS);
@@ -858,7 +858,7 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m)
   m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
 }
 
-IceModelVec::Ptr IceModel_tempicethk::compute() {
+IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "tempicethk", WITHOUT_GHOSTS);
@@ -929,7 +929,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m)
 /*!
  * Uses linear interpolation to go beyond vertical grid resolution.
  */
-IceModelVec::Ptr IceModel_tempicethk_basal::compute() {
+IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "tempicethk_basal", WITHOUT_GHOSTS);
@@ -1030,7 +1030,7 @@ IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m)
   set_attrs("flux divergence", "", "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr IceModel_flux_divergence::compute() {
+IceModelVec::Ptr IceModel_flux_divergence::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
@@ -1053,7 +1053,7 @@ IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumula
             "kg m-2", "kg m-2", 0);
 }
 
-IceModelVec::Ptr IceModel_climatic_mass_balance_cumulative::compute() {
+IceModelVec::Ptr IceModel_climatic_mass_balance_cumulative::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "climatic_mass_balance_cumulative", WITHOUT_GHOSTS);
@@ -1571,7 +1571,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
   last_report_time = GSL_NAN;
 }
 
-IceModelVec::Ptr IceModel_dHdt::compute() {
+IceModelVec::Ptr IceModel_dHdt::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "dHdt", WITHOUT_GHOSTS);
@@ -1782,7 +1782,7 @@ IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel 
   m_vars[0].set_string("comment", "positive means ice gain");
 }
 
-IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute() {
+IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
@@ -1807,7 +1807,7 @@ IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumu
   m_vars[0].set_string("comment", "positive means ice gain");
 }
 
-IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute() {
+IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
@@ -1831,7 +1831,7 @@ IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumu
   m_vars[0].set_string("comment", "positive means ice gain");
 }
 
-IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute() {
+IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
@@ -1857,7 +1857,7 @@ IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(Ice
   m_vars[0].set_string("comment", "positive means ice gain");
 }
 
-IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute() {
+IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
@@ -1918,7 +1918,7 @@ IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {
   pj_free(lonlat);
 }
 
-IceModelVec::Ptr IceModel_lat_lon_bounds::compute() {
+IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
 
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);

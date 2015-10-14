@@ -32,7 +32,8 @@ class SSA_taud_mag : public Diag<SSA>
 {
 public:
   SSA_taud_mag(SSA *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! @brief Computes the driving shear stress at the base of ice
@@ -44,7 +45,8 @@ class SSA_taud : public Diag<SSA>
 {
 public:
   SSA_taud(SSA *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 

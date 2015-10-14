@@ -419,7 +419,7 @@ SSA_taud::SSA_taud(SSA *m)
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute() {
+IceModelVec::Ptr SSA_taud::compute_impl() {
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
@@ -443,7 +443,7 @@ SSA_taud_mag::SSA_taud_mag(SSA *m)
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute() {
+IceModelVec::Ptr SSA_taud_mag::compute_impl() {
 
   // Allocate memory:
   IceModelVec2S::Ptr result(new IceModelVec2S);

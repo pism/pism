@@ -46,7 +46,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
   m_vars[0].set_double("valid_max", 1);
 }
 
-IceModelVec::Ptr SIAFD_schoofs_theta::compute() {
+IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() {
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -68,7 +68,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_topgsmooth::compute() {
+IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "topgsmooth", WITHOUT_GHOSTS);
@@ -88,7 +88,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_thksmooth::compute() {
+IceModelVec::Ptr SIAFD_thksmooth::compute_impl() {
   const IceModelVec2S *surface, *thickness;
   const IceModelVec2Int *mask;
 
@@ -117,7 +117,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m)
             "m2 s-1", "m2 s-1", 0);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity::compute() {
+IceModelVec::Ptr SIAFD_diffusivity::compute_impl() {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -142,7 +142,7 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m)
             "m2 s-1", "m2 s-1", 1);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity_staggered::compute() {
+IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() {
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -169,7 +169,7 @@ SIAFD_h_x::SIAFD_h_x(SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_x::compute() {
+IceModelVec::Ptr SIAFD_h_x::compute_impl() {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "h_x", WITH_GHOSTS);
@@ -200,7 +200,7 @@ SIAFD_h_y::SIAFD_h_y(SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_y::compute() {
+IceModelVec::Ptr SIAFD_h_y::compute_impl() {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "h_y", WITH_GHOSTS);

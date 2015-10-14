@@ -30,7 +30,8 @@ class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
   SSAFD_nuH(SSAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 } // end of namespace stressbalance
 } // end of namespace pism

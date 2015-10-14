@@ -46,7 +46,8 @@ class Hydrology_bwat : public Diag<Hydrology>
 {
 public:
   Hydrology_bwat(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -55,7 +56,8 @@ class Hydrology_bwp : public Diag<Hydrology>
 {
 public:
   Hydrology_bwp(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -64,7 +66,8 @@ class Hydrology_bwprel : public Diag<Hydrology>
 {
 public:
   Hydrology_bwprel(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -73,7 +76,8 @@ class Hydrology_effbwp : public Diag<Hydrology>
 {
 public:
   Hydrology_effbwp(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -82,7 +86,8 @@ class Hydrology_hydrobmelt : public Diag<Hydrology>
 {
 public:
   Hydrology_hydrobmelt(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -91,7 +96,8 @@ class Hydrology_hydroinput : public Diag<Hydrology>
 {
 public:
   Hydrology_hydroinput(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -100,7 +106,8 @@ class Hydrology_wallmelt : public Diag<Hydrology>
 {
 public:
   Hydrology_wallmelt(Hydrology *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -110,7 +117,8 @@ class Routing_bwatvel : public Diag<Routing>
 {
 public:
   Routing_bwatvel(Routing *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
@@ -119,7 +127,8 @@ class Distributed_hydrovelbase_mag : public Diag<Distributed>
 {
 public:
   Distributed_hydrovelbase_mag(Distributed *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
