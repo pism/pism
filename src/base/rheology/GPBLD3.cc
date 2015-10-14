@@ -99,7 +99,7 @@ double GPBLD3::hardness_parameter(double E, double p) const {
 
 double GPBLD3::softness_parameter(double enthalpy, double pressure) const {
   const double E_s = m_EC->enthalpy_cts(pressure);
-  if (enthalpy < E_s) {       // cold ice
+  if (PetscLikely(enthalpy < E_s)) {       // cold ice
     double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
     return softness_parameter_paterson_budd(T_pa);
   } else { // temperate ice
@@ -119,7 +119,7 @@ double GPBLD3::flow(double stress, double enthalpy,
 }
 
 double GPBLD3::softness_parameter_paterson_budd(double T_pa) const {
-  if (T_pa < m_crit_temp) {
+  if (PetscLikely(T_pa < m_crit_temp)) {
     return m_A_cold * exp(-m_Q_cold/(m_ideal_gas_constant * T_pa));
   }
   return m_A_warm * exp(-m_Q_warm/(m_ideal_gas_constant * T_pa));
