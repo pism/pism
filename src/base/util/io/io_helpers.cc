@@ -593,6 +593,8 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     dims.push_back(x);
   }
 
+  assert(dims.size() > 1);
+
   nc.def_var(name, nctype, dims);
 
   write_attributes(nc, var, nctype, use_glaciological_units);
