@@ -168,6 +168,12 @@ static void compute_start_and_count(const PIO& nc,
   std::vector<std::string> dims = nc.inq_vardims(short_name);
   unsigned int ndims = dims.size();
 
+  assert(ndims > 0);
+  if (ndims == 0) {
+    throw RuntimeError::formatted("Cannot compute start and count: variable %s is a scalar.",
+                                  short_name.c_str());
+  }
+
   // Resize output vectors:
   start.resize(ndims);
   count.resize(ndims);
