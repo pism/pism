@@ -168,6 +168,12 @@ static void compute_start_and_count(const PIO& nc,
   std::vector<std::string> dims = nc.inq_vardims(short_name);
   unsigned int ndims = dims.size();
 
+  assert(ndims > 0);
+  if (ndims == 0) {
+    throw RuntimeError::formatted("Cannot compute start and count: variable %s is a scalar.",
+                                  short_name.c_str());
+  }
+
   // Resize output vectors:
   start.resize(ndims);
   count.resize(ndims);
@@ -392,8 +398,8 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
                             0, z_count,
                             start, count, imap);
 
-    if (grid.ctx()->config()->get_string("output_variable_order") == "xyz") {
-      // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
+    if (grid.ctx()->config()->get_string("output_variable_order") == "yxz") {
+      // Use the faster and safer (avoids a NetCDF bug) call if the array storage
       // orders in the memory and in NetCDF files are the same.
       nc.put_vara_double(var_name, start, count, input);
     } else {
@@ -592,6 +598,8 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     dims.push_back(y);
     dims.push_back(x);
   }
+
+  assert(dims.size() > 1);
 
   nc.def_var(name, nctype, dims);
 

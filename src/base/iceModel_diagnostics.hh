@@ -29,7 +29,8 @@ class IceModel_hardav : public Diag<IceModel>
 {
 public:
   IceModel_hardav(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes a diagnostic field filled with processor rank values.
@@ -37,7 +38,8 @@ class IceModel_rank : public Diag<IceModel>
 {
 public:
   IceModel_rank(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes CTS, CTS = E/E_s(p).
@@ -45,7 +47,8 @@ class IceModel_cts : public Diag<IceModel>
 {
 public:
   IceModel_cts(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the number of ice-filled cells is a processor's domain.
@@ -53,7 +56,8 @@ class IceModel_proc_ice_area : public Diag<IceModel>
 {
 public:
   IceModel_proc_ice_area(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes ice temperature from enthalpy.
@@ -61,7 +65,8 @@ class IceModel_temp : public Diag<IceModel>
 {
 public:
   IceModel_temp(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Compute the pressure-adjusted temperature in degrees C corresponding
@@ -70,7 +75,8 @@ class IceModel_temp_pa : public Diag<IceModel>
 {
 public:
   IceModel_temp_pa(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes basal values of the pressure-adjusted temperature.
@@ -78,7 +84,8 @@ class IceModel_temppabase : public Diag<IceModel>
 {
 public:
   IceModel_temppabase(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes surface values of ice enthalpy.
@@ -86,7 +93,8 @@ class IceModel_enthalpysurf : public Diag<IceModel>
 {
 public:
   IceModel_enthalpysurf(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes enthalpy at the base of the ice.
@@ -94,7 +102,8 @@ class IceModel_enthalpybase : public Diag<IceModel>
 {
 public:
   IceModel_enthalpybase(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes ice temperature at the base of the ice.
@@ -102,7 +111,8 @@ class IceModel_tempbase : public Diag<IceModel>
 {
 public:
   IceModel_tempbase(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes ice temperature at the surface of the ice.
@@ -110,7 +120,8 @@ class IceModel_tempsurf : public Diag<IceModel>
 {
 public:
   IceModel_tempsurf(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the liquid water fraction.
@@ -118,7 +129,8 @@ class IceModel_liqfrac : public Diag<IceModel>
 {
 public:
   IceModel_liqfrac(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the total thickness of temperate ice in a column.
@@ -126,21 +138,24 @@ class IceModel_tempicethk : public Diag<IceModel>
 {
 public:
   IceModel_tempicethk(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 //! \brief Computes the thickness of the basal layer of temperate ice.
 class IceModel_tempicethk_basal : public Diag<IceModel>
 {
 public:
   IceModel_tempicethk_basal(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 //! \brief Computes the flux divergence.
 class IceModel_flux_divergence : public Diag<IceModel>
 {
 public:
   IceModel_flux_divergence(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the total ice volume.
@@ -366,7 +381,8 @@ class IceModel_climatic_mass_balance_cumulative : public Diag<IceModel>
 {
 public:
   IceModel_climatic_mass_balance_cumulative(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes dHdt, the ice thickness rate of change.
@@ -374,8 +390,9 @@ class IceModel_dHdt : public Diag<IceModel>
 {
 public:
   IceModel_dHdt(IceModel *m);
-  virtual IceModelVec::Ptr compute();
   virtual void update_cumulative();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 protected:
   IceModelVec2S last_ice_thickness;
   double last_report_time;
@@ -422,7 +439,8 @@ class IceModel_nonneg_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
   IceModel_nonneg_flux_2D_cumulative(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -431,7 +449,8 @@ class IceModel_grounded_basal_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
   IceModel_grounded_basal_flux_2D_cumulative(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Reports the 2D cumulative floating basal flux.
@@ -439,7 +458,8 @@ class IceModel_floating_basal_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
   IceModel_floating_basal_flux_2D_cumulative(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Reports the 2D cumulative discharge (calving) flux.
@@ -447,7 +467,8 @@ class IceModel_discharge_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
   IceModel_discharge_flux_2D_cumulative(IceModel *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace pism
@@ -466,7 +487,8 @@ public:
                           const std::string &var_name,
                           const std::string &proj_string);
   ~IceModel_lat_lon_bounds();
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 protected:
   std::string m_var_name;
   projPJ pism, lonlat;

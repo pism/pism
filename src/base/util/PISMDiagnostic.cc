@@ -20,6 +20,7 @@
 #include "PISMDiagnostic.hh"
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
+#include "base/util/Logger.hh"
 
 namespace pism {
 
@@ -96,5 +97,18 @@ void Diagnostic::set_attrs(const std::string &my_long_name,
   }
 }
 
+IceModelVec::Ptr Diagnostic::compute() {
+  // use the name of the first variable
+  std::vector<std::string> names;
+  for (int j = 0; j < m_vars.size(); ++j) {
+    names.push_back(m_vars[j].get_name());
+  }
+  std::string all_names = join(names, ",");
+
+  m_grid->ctx()->log()->message(3, "-  Computing %s...\n", all_names.c_str());
+  IceModelVec::Ptr result = this->compute_impl();
+  m_grid->ctx()->log()->message(3, "-  Done computing %s.\n", all_names.c_str());
+  return result;
+}
 
 } // end of namespace pism

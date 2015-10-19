@@ -59,7 +59,7 @@ public:
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec.
-  virtual IceModelVec::Ptr compute() = 0;
+  IceModelVec::Ptr compute();
 
   virtual int get_nvars();
 
@@ -75,6 +75,8 @@ public:
                  const std::string &my_glaciological_units,
                  int N = 0);
 protected:
+  virtual IceModelVec::Ptr compute_impl() = 0;
+
   //! the grid
   IceGrid::ConstPtr m_grid;
   //! the unit system

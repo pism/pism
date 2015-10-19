@@ -79,7 +79,7 @@ PSB_velbar::PSB_velbar(StressBalance *m)
             "m s-1", "m year-1", 1);
 }
 
-IceModelVec::Ptr PSB_velbar::compute() {
+IceModelVec::Ptr PSB_velbar::compute_impl() {
   // get the thickness
   const IceModelVec2S* thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -124,7 +124,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
   m_vars[0].set_double("valid_min", 0.0);
 }
 
-IceModelVec::Ptr PSB_velbar_mag::compute() {
+IceModelVec::Ptr PSB_velbar_mag::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "velbar_mag", WITHOUT_GHOSTS);
@@ -165,7 +165,7 @@ PSB_flux::PSB_flux(StressBalance *m)
             "m2 s-1", "m2 year-1", 1);
 }
 
-IceModelVec::Ptr PSB_flux::compute() {
+IceModelVec::Ptr PSB_flux::compute_impl() {
   double icefree_thickness = m_grid->ctx()->config()->get_double("mask_icefree_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
@@ -254,7 +254,7 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m)
   m_vars[0].set_double("valid_min", 0.0);
 }
 
-IceModelVec::Ptr PSB_flux_mag::compute() {
+IceModelVec::Ptr PSB_flux_mag::compute_impl() {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-averaged horizontal ice velocity:
@@ -298,7 +298,7 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
   m_vars[0].set_double("valid_min", 0.0);
 }
 
-IceModelVec::Ptr PSB_velbase_mag::compute() {
+IceModelVec::Ptr PSB_velbase_mag::compute_impl() {
   // FIXME: compute this using PSB_velbase.
 
   IceModelVec2S tmp;
@@ -344,7 +344,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
   m_vars[0].set_double("valid_min",  0.0);
 }
 
-IceModelVec::Ptr PSB_velsurf_mag::compute() {
+IceModelVec::Ptr PSB_velsurf_mag::compute_impl() {
 
   // FIXME: Compute this using PSB_velsurf.
 
@@ -403,7 +403,7 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
   m_vars[1].set_double("_FillValue", fill_value);
 }
 
-IceModelVec::Ptr PSB_velsurf::compute() {
+IceModelVec::Ptr PSB_velsurf::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
   double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
@@ -461,7 +461,7 @@ PSB_wvel::PSB_wvel(StressBalance *m)
   m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
 }
 
-IceModelVec::Ptr PSB_wvel::compute() {
+IceModelVec::Ptr PSB_wvel::compute_impl() {
   IceModelVec3::Ptr result3(new IceModelVec3);
   result3->create(m_grid, "wvel", WITHOUT_GHOSTS);
   result3->metadata() = m_vars[0];
@@ -555,7 +555,7 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
   m_vars[0].set_double("_FillValue", fill_value);
 }
 
-IceModelVec::Ptr PSB_wvelsurf::compute() {
+IceModelVec::Ptr PSB_wvelsurf::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
   double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
@@ -606,7 +606,7 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m)
   m_vars[0].set_double("_FillValue", fill_value);
 }
 
-IceModelVec::Ptr PSB_wvelbase::compute() {
+IceModelVec::Ptr PSB_wvelbase::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
   double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
@@ -665,7 +665,7 @@ PSB_velbase::PSB_velbase(StressBalance *m)
   m_vars[1].set_double("_FillValue", fill_value);
 }
 
-IceModelVec::Ptr PSB_velbase::compute() {
+IceModelVec::Ptr PSB_velbase::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
   double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
@@ -719,7 +719,7 @@ PSB_bfrict::PSB_bfrict(StressBalance *m)
             "W m-2", "W m-2", 0);
 }
 
-IceModelVec::Ptr PSB_bfrict::compute() {
+IceModelVec::Ptr PSB_bfrict::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "bfrict", WITHOUT_GHOSTS);
@@ -741,7 +741,7 @@ PSB_uvel::PSB_uvel(StressBalance *m)
             "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr PSB_uvel::compute() {
+IceModelVec::Ptr PSB_uvel::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "uvel", WITHOUT_GHOSTS);
@@ -794,7 +794,7 @@ PSB_vvel::PSB_vvel(StressBalance *m)
             "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr PSB_vvel::compute() {
+IceModelVec::Ptr PSB_vvel::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "vvel", WITHOUT_GHOSTS);
@@ -847,7 +847,7 @@ PSB_wvel_rel::PSB_wvel_rel(StressBalance *m)
             "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr PSB_wvel_rel::compute() {
+IceModelVec::Ptr PSB_wvel_rel::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
@@ -902,7 +902,7 @@ PSB_strainheat::PSB_strainheat(StressBalance *m)
             "W m-3", "mW m-3", 0);
 }
 
-IceModelVec::Ptr PSB_strainheat::compute() {
+IceModelVec::Ptr PSB_strainheat::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "strainheat", WITHOUT_GHOSTS);
@@ -928,7 +928,7 @@ PSB_strain_rates::PSB_strain_rates(StressBalance *m)
             "", "s-1", "s-1", 1);
 }
 
-IceModelVec::Ptr PSB_strain_rates::compute() {
+IceModelVec::Ptr PSB_strain_rates::compute_impl() {
   IceModelVec2V::Ptr velbar = IceModelVec2V::ToVector(PSB_velbar(model).compute());
 
   IceModelVec2::Ptr result(new IceModelVec2);
@@ -964,7 +964,7 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m)
 
 }
 
-IceModelVec::Ptr PSB_deviatoric_stresses::compute() {
+IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() {
 
   IceModelVec2::Ptr velbar = IceModelVec2V::ToVector(PSB_velbar(model).compute());
 
@@ -997,7 +997,7 @@ PSB_pressure::PSB_pressure(StressBalance *m)
   set_attrs("pressure in ice (hydrostatic)", "", "Pa", "Pa", 0);
 }
 
-IceModelVec::Ptr PSB_pressure::compute() {
+IceModelVec::Ptr PSB_pressure::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "pressure", WITHOUT_GHOSTS);
@@ -1054,7 +1054,7 @@ PSB_tauxz::PSB_tauxz(StressBalance *m)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauyz
  */
-IceModelVec::Ptr PSB_tauxz::compute() {
+IceModelVec::Ptr PSB_tauxz::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "tauxz", WITHOUT_GHOSTS);
@@ -1119,7 +1119,7 @@ PSB_tauyz::PSB_tauyz(StressBalance *m)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauxz
  */
-IceModelVec::Ptr PSB_tauyz::compute() {
+IceModelVec::Ptr PSB_tauyz::compute_impl() {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "tauyz", WITHOUT_GHOSTS);

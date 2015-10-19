@@ -120,6 +120,7 @@ if (Pism_USE_TR1)
 else()
   message(STATUS "Using '#include <memory> and std::shared_ptr<...>.")
 endif()
+mark_as_advanced (Pism_USE_TR1)
 
 # Look for libraries using find_package(...), etc. Run CMake with -DPism_LOOK_FOR_LIBRARIES=OFF
 # to build on systems that rely on the module system to set all compiler and linker flags.

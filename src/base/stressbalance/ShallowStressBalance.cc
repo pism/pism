@@ -416,7 +416,7 @@ SSB_taud::SSB_taud(ShallowStressBalance *m)
  * implementation intentionally does not use the eta-transformation or special
  * cases at ice margins.
  */
-IceModelVec::Ptr SSB_taud::compute() {
+IceModelVec::Ptr SSB_taud::compute_impl() {
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
@@ -462,7 +462,7 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
                      "this field is purely diagnostic (not used by the model)");
 }
 
-IceModelVec::Ptr SSB_taud_mag::compute() {
+IceModelVec::Ptr SSB_taud_mag::compute_impl() {
 
   // Allocate memory:
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -497,7 +497,7 @@ SSB_taub::SSB_taub(ShallowStressBalance *m)
 }
 
 
-IceModelVec::Ptr SSB_taub::compute() {
+IceModelVec::Ptr SSB_taub::compute_impl() {
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
@@ -545,7 +545,7 @@ SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
                      "this field is purely diagnostic (not used by the model)");
 }
 
-IceModelVec::Ptr SSB_taub_mag::compute() {
+IceModelVec::Ptr SSB_taub_mag::compute_impl() {
 
   // Allocate memory:
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -602,7 +602,7 @@ SSB_beta::SSB_beta(ShallowStressBalance *m)
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }
 
-IceModelVec::Ptr SSB_beta::compute() {
+IceModelVec::Ptr SSB_beta::compute_impl() {
 
   // Allocate memory:
   IceModelVec2S::Ptr result(new IceModelVec2S);

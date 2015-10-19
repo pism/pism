@@ -829,7 +829,7 @@ Routing_bwatvel::Routing_bwatvel(Routing *m)
 }
 
 
-IceModelVec::Ptr Routing_bwatvel::compute() {
+IceModelVec::Ptr Routing_bwatvel::compute_impl() {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);

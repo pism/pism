@@ -790,6 +790,9 @@ void IceModel::write_backup() {
     return;
   }
 
+  const Profiling &profiling = m_ctx->profiling();
+  profiling.begin("backup");
+
   last_backup_time = wall_clock_hours;
 
   // create a history string:
@@ -799,9 +802,11 @@ void IceModel::write_backup() {
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
            m_time->date().c_str(), wall_clock_hours);
 
+  PetscLogDouble backup_start_time = GetTime();
+
   m_log->message(2,
-             "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
-             backup_filename.c_str(), wall_clock_hours);
+                 "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
+                 pism_timestamp(m_grid->com).c_str(), backup_filename.c_str(), wall_clock_hours);
 
   stampHistory(tmp);
 
@@ -824,6 +829,15 @@ void IceModel::write_backup() {
 
   // Also flush time-series:
   flush_timeseries();
+
+  PetscLogDouble backup_end_time = GetTime();
+  m_log->message(2,
+                 "  [%s] Done saving an automatic backup in %f seconds (%f minutes).\n",
+                 pism_timestamp(m_grid->com).c_str(),
+                 backup_end_time - backup_start_time,
+                 (backup_end_time - backup_start_time) / 60.0);
+
+  profiling.end("backup");
 }
 
 
