@@ -23,6 +23,7 @@ See these namespaces and classes, as well as *the ones derived from
 these classes*. (This is a summary.)
 
 - pism::stressbalance (stress balance models)
+- pism::energy (energy balance models)
 - pism::hydrology (sub-glacial hydrology models)
 - pism::bed::BedDef (bed deformation models)
 - pism::YieldStress, pism::IceBasalResistancePlasticLaw (basal strength)

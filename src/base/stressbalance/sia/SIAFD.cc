@@ -163,7 +163,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   The alternative method, when `surface_gradient_method` = `eta`, transforms
   the thickness to something more regular and differentiates that. We get back
   to the gradient of the surface by applying the chain rule. In particular, as
-  shown in [\ref CDDSV] for the flat bed and \f$n=3\f$ case, if we define
+  shown in [\ref Vazquezetal2003] for the flat bed and \f$n=3\f$ case, if we define
 
   \f[\eta = H^{(2n+2)/n}\f]
 

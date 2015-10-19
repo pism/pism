@@ -195,7 +195,7 @@ protected:
   of the *top* of the water layer.
 
   This (essential) model has been used for finding locations of subglacial lakes
-  [\ref Siegertetal2009, \ref Livingstoneetal2013TCD].  Subglacial lakes occur
+  [\ref Siegertetal2009, \ref Livingstoneetal2013].  Subglacial lakes occur
   at local minima of the hydraulic potential.  If water builds up significantly
   (e.g. thickness of 10s of meters or more) then in the model here the resulting
   lakes diffuse instead of becoming infinitely deep.  Thus we avoid delta
@@ -324,7 +324,7 @@ protected:
   and opening through sliding ("cavitation").  Because of cavitation, this model
   needs access to a StressBalance object.   Background references for this kind of
   model includes especially [\ref Kamb1987, \ref Schoofetal2012], but see also
-  [\ref Hewit2011, \ref Hewittetal2012, \ref Hewitt2013].
+  [\ref Hewitt2011, \ref Hewittetal2012, \ref Hewitt2013].
 
   In addition to the actions within the null strip taken by hydrology::Routing,
   this model also sets the staggered grid values of the gradient of the hydraulic
