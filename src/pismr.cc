@@ -81,7 +81,6 @@ int main(int argc, char *argv[]) {
     options::String profiling_log = options::String("-profile",
                                                     "Save detailed profiling data to a file.");
 
-    Context::Ptr ctx = context_from_options(com, "pismr");
     Config::Ptr config = ctx->config();
 
     if (profiling_log.is_set()) {
