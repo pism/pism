@@ -325,15 +325,25 @@ public:
     return (i-xs) + (j-ys)*xm;
   }
   
-  int xs, //!< x-coordinate of the first element to loop over.
-    xm, //!< total number of elements to loop over in the x-direction.
-    ys, //!< y-coordinate of the first element to loop over.
-    ym, //!< total number of elements to loop over in the y-direction. 
-    lxs, //!< x-index of the first local element.
-    lxm, //!< total number local elements in x direction.
-    lys, //!< y-index of the first local element.
-    lym; //!< total number local elements in y direction.
+  //! x-coordinate of the first element to loop over.
+  int xs;
+  //! total number of elements to loop over in the x-direction.
+  int xm;
 
+  //! y-coordinate of the first element to loop over.
+  int ys;
+  //! total number of elements to loop over in the y-direction. 
+  int ym;
+
+  //! x-index of the first local element.
+  int lxs;
+  //! total number local elements in x direction.
+  int lxm;
+
+  //! y-index of the first local element.
+  int lys;
+  //! total number local elements in y direction.
+  int lym;
 };
 
 //! Numerical integration of finite element functions.

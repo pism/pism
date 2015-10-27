@@ -275,8 +275,11 @@ void SSAFEM::cacheQuadPtValues() {
   list.add(*m_bed);
   list.add(*m_tauc);
 
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-    ys   = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -447,10 +450,11 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Iterate over the elements.
-  int xs = m_element_index.xs,
-    xm   = m_element_index.xm,
-    ys   = m_element_index.ys,
-    ym   = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {

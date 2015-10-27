@@ -165,7 +165,8 @@ void DOFMap::localToGlobal(int k, int *i, int *j) const {
 }
 
 void DOFMap::reset(int i, int j) {
-  m_i = i; m_j = j;
+  m_i = i;
+  m_j = j;
 
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; ++k) {
     m_col[k].i = i + kIOffset[k];
@@ -353,7 +354,9 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
 void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
     const FunctionGerm *test = m_germs[q];
-    vals[q] = 0; dx[q] = 0; dy[q] = 0;
+    vals[q] = 0;
+    dx[q] = 0;
+    dy[q] = 0;
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_local[k];
       dx[q]   += test[k].dx * x_local[k];
@@ -426,9 +429,12 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
  */
 void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, double (*Dv)[3]) {
   for (unsigned int q = 0; q < Nq; q++) {
-    vals[q].u = 0; vals[q].v = 0;
+    vals[q].u = 0;
+    vals[q].v = 0;
     double *Dvq = Dv[q];
-    Dvq[0] = 0; Dvq[1] = 0; Dvq[2] = 0;
+    Dvq[0] = 0;
+    Dvq[1] = 0;
+    Dvq[2] = 0;
     const FunctionGerm *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
@@ -442,23 +448,26 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
 
 /*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
   finite-element function with element-local degrees of freedom `x_local`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, \ dx, and `dy`.
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
   Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
   and similarly for `dy`.
 */
 void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, Vector2 *dx, Vector2 *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
-    vals[q].u = 0; vals[q].v = 0;
-    dx[q].u = 0; dx[q].v = 0;
-    dy[q].u = 0; dy[q].v = 0;
+    vals[q].u = 0;
+    vals[q].v = 0;
+    dx[q].u   = 0;
+    dx[q].v   = 0;
+    dy[q].u   = 0;
+    dy[q].v   = 0;
     const FunctionGerm *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
-      dx[q].u += test[k].dx * x_local[k].u;
-      dx[q].v += test[k].dx * x_local[k].v;
-      dy[q].u += test[k].dy * x_local[k].u;
-      dy[q].v += test[k].dy * x_local[k].v;
+      dx[q].u   += test[k].dx * x_local[k].u;
+      dx[q].v   += test[k].dx * x_local[k].v;
+      dy[q].u   += test[k].dy * x_local[k].u;
+      dy[q].v   += test[k].dy * x_local[k].v;
     }
   }
 }
@@ -652,7 +661,8 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        row.j = j; row.i = i;
+        row.j = j;
+        row.i = i;
         PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
                                                          ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
@@ -756,7 +766,8 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        row.j = j; row.i = i;
+        row.j = j;
+        row.i = i;
         PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
                                                          ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
@@ -779,23 +790,23 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
   const double jacobian_y = 0.5*dy;
 
   const double C = 1.0 / sqrt(3);
-  double pts[n_sides][Nq][2] = {
-    {{  -C,  1.0}, {   C,  1.0}}, // North
-    {{ 1.0,   -C}, { 1.0,    C}}, // East
+  const double pts[n_sides][Nq][2] = {
     {{  -C, -1.0}, {   C, -1.0}}, // South
+    {{ 1.0,   -C}, { 1.0,    C}}, // East
+    {{  -C,  1.0}, {   C,  1.0}}, // North
     {{-1.0,   -C}, {-1.0,    C}}  // West
   };
 
-  for (unsigned int j = 0; j < n_sides; ++j) {
+  for (unsigned int side = 0; side < n_sides; ++side) {
     for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
       for (unsigned int q = 0; q < Nq; ++q) {
-        const double xi = pts[j][q][0];
-        const double eta = pts[j][q][1];
-        m_germs[j][k][q] = ShapeQ1::eval(k, xi, eta);
+        const double xi = pts[side][q][0];
+        const double eta = pts[side][q][1];
+        m_germs[side][k][q] = ShapeQ1::eval(k, xi, eta);
         // convert from derivatives with respect to xi and eta to derivatives with respect to x and
         // y
-        m_germs[j][k][q].dx /= jacobian_x;
-        m_germs[j][k][q].dy /= jacobian_y;
+        m_germs[side][k][q].dx /= jacobian_x;
+        m_germs[side][k][q].dy /= jacobian_y;
       }
     }
   }

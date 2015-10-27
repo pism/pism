@@ -51,8 +51,12 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   dirichletBC.init(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
       m_dofmap.reset(i, j, *m_grid);

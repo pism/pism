@@ -49,8 +49,12 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
       bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
@@ -108,8 +112,12 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
       bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &

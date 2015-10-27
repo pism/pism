@@ -41,8 +41,12 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-    ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
@@ -79,8 +83,12 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
@@ -164,8 +172,12 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
@@ -202,8 +214,12 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
