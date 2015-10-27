@@ -41,7 +41,6 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   m_dirichletScale = 1.0;
   m_ocean_rho = m_config->get_double("sea_water_density");
-  m_earth_grav = m_config->get_double("standard_gravity");
   m_beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
@@ -248,7 +247,10 @@ void SSAFEM::cacheQuadPtValues() {
   std::vector<double> Enth_q[Nq];
   const double *Enth_e[4];
 
-  double ice_density = m_config->get_double("ice_density");
+  const double
+    ice_density      = m_config->get_double("ice_density"),
+    standard_gravity = m_config->get_double("standard_gravity"),
+    rho_g = ice_density * standard_gravity;
 
   for (unsigned int q=0; q<Nq; q++) {
     Enth_q[q].resize(m_grid->Mz());
@@ -304,8 +306,8 @@ void SSAFEM::cacheQuadPtValues() {
             coefficients[q].driving_stress.u = ds_xq[q];
             coefficients[q].driving_stress.v = ds_yq[q];
           } else {
-            coefficients[q].driving_stress.u = -ice_density*m_earth_grav*Hq[q]*hxq[q];
-            coefficients[q].driving_stress.v = -ice_density*m_earth_grav*Hq[q]*hyq[q];
+            coefficients[q].driving_stress.u = -rho_g * Hq[q]*hxq[q];
+            coefficients[q].driving_stress.v = -rho_g * Hq[q]*hyq[q];
           }
 
           coefficients[q].mask = gc.mask(coefficients[q].b, coefficients[q].H);

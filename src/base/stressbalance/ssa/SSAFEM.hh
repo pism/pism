@@ -90,7 +90,6 @@ protected:
   std::vector<Coefficients> m_coefficients;
   double m_dirichletScale;
   double m_ocean_rho;
-  double m_earth_grav;
   double m_beta_ice_free_bedrock;
   double m_epsilon_ssa;
 
