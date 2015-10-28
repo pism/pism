@@ -334,16 +334,20 @@ void enthSystemCtx::assemble_R() {
 /*! \brief Solve the tridiagonal system, in a single column, which
  *  determines the new values of the ice enthalpy.
  *
+ * We are solving a convection-diffusion equation, treating the @f$ z @f$ direction implicitly and
+ * @f$ x, y @f$ directions explicitly. See @ref bombproofenth for the documentation of the treatment
+ * of convection terms. The notes below document the way we treat diffusion using a simplified PDE.
+ *
  * To discretize
  * @f[ \diff{}{z} \left( K(E) \diff{E}{z}\right) = \diff{E}{t} @f]
  *
- * at a location @f$ k @f$ of the vertical grid, we use centered
- * finite differences and evaluate @f$ K(E) @f$ at
- * staggered-grid locations:
+ * at a location @f$ k @f$ of the vertical grid, we use centered finite differences in space,
+ * backward differences in time, and evaluate @f$ K(E) @f$ at staggered-grid locations:
  *
- * @f[ \frac{K_{k+\frac12}\frac{E_{k+1} - E_{k}}{\dz} - K_{k-\frac12}\frac{E_{k} - E_{k-1}}{\dz}}{\dz}, @f]
+ * @f[ \frac{K_{k+\frac12}\frac{E_{k+1} - E_{k}}{\dz} - K_{k-\frac12}\frac{E_{k} - E_{k-1}}{\dz}}{\dz} = \frac{E_{k} - E^{n-1}_{k}}{\dt}, @f]
  *
- * where @f$ K_{k\pm \frac12} = K(E_{k\pm \frac12}) @f$.
+ * where @f$ E = E^{n} @f$ for clarity and @f$ K_{k\pm \frac12} = K(E^{n-1}_{k\pm \frac12}) @f$,
+ * %i.e. we linearize this PDE by evaluating @f$ K(E) @f$ at the _previous_ time-step.
  *
  * We define
  *
@@ -351,20 +355,23 @@ void enthSystemCtx::assemble_R() {
  *
  * and the discretization takes form
  *
- * @f[ -R_{k-\frac12} E_{k-1} + \left( 1 + R_{k-\frac12} + R_{k+\frac12} \right) E_{k} - R_{k+\frac12} E_{k+1} = @f].
+ * @f[ -R_{k-\frac12} E_{k-1} + \left( 1 + R_{k-\frac12} + R_{k+\frac12} \right) E_{k} - R_{k+\frac12} E_{k+1} = E^{n-1}_{k}. @f]
  *
- * In the assembly of the tridiagonal system, this corresponds to
+ * In the assembly of the tridiagonal system this corresponds to
  *
  * @f{align*}{
  * L_i &= - \frac12 (R_{i} + R_{i-1}),\\
  * D_i &= 1 + \frac12 (R_{i} + R_{i-1}) + \frac12 (R_{i} + R_{i+1}),\\
- * U_i &= - \frac12 (R_{i} + R_{i+1}),
+ * U_i &= - \frac12 (R_{i} + R_{i+1}),\\
+ * b_i &= E^{n-1}_{i},
  * @f}
  *
- * where @f$ L_i, D_i, U_i @f$ are lower-diagonal, diagonal, and
- * upper-diagonal entries corresponding to an equation @f$ i @f$.
- * (Staggered-grid values are approximated by interpolating from the
- * regular grid).
+ * where @f$ L_i, D_i, U_i @f$ are lower-diagonal, diagonal, and upper-diagonal entries
+ * corresponding to an equation @f$ i @f$ and @f$ b_i @f$ is the corresponding right-hand side.
+ * (Staggered-grid values are approximated by interpolating from the regular grid).
+ *
+ * This method is _unconditionally stable_ and has a maximum principle (see [@ref MortonMayers,
+ * section 2.11]).
  */
 void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 
