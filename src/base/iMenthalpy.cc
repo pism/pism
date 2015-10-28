@@ -315,8 +315,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       }
 
       const bool is_floating = mask.ocean(i, j);
-
-      bool base_is_cold = system.Enth(0) < system.Enth_s(0);
+      bool base_is_warm = system.Enth(0) >= system.Enth_s(0);
+      bool above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 
       // set boundary conditions and update enthalpy
       {
@@ -332,12 +332,23 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                                EC->pressure(ice_thickness(i, j)));
 
           system.setDirichletBasal(Enth0);
-        } else if (base_is_cold) {
-          // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-          system.setBasalHeatFlux(basal_heat_flux(i, j) + Rb(i, j));
         } else {
-          // warm, grounded base case
-          system.setBasalHeatFlux(0.0);
+          // grounded ice warm and wet 
+          if (base_is_warm && (till_water_thickness(i, j) > 0.0)) {
+            if (above_base_is_warm) {
+              // temperate layer at base (Neumann) case:  q . n = 0  (K0 grad E . n = 0)
+              system.setBasalHeatFlux(0.0);
+            } else {
+              // only the base is warm: E = E_s(p) (Dirichlet)
+              // ( Assumes ice has zero liquid fraction. Is this a valid assumption here?
+              system.setDirichletBasal(system.Enth_s(0));
+            }
+          } else {
+            // (Neumann) case:  q . n = q_lith . n + F_b
+            // a) cold and dry base, or
+            // b) base that is still warm from the last time step, but without basal water
+            system.setBasalHeatFlux(basal_heat_flux(i, j) + Rb(i, j));
+          }
         }
 
         // solve the system
@@ -434,7 +445,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
       // compute basal melt rate
       {
-        base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i,j) == 0.0);
+        bool base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i,j) == 0.0);
         // Determine melt rate, but only preliminarily because of
         // drainage, from heat flux out of bedrock, heat flux into
         // ice, and frictional heating
@@ -454,7 +465,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
               Tpmp_0 = EC->melting_temperature(p_0);
 
             const bool k1_istemperate = EC->is_temperate(Enthnew[1], p_1); // level  z = + \Delta z
-
             double hf_up;
             if (k1_istemperate) {
               const double
