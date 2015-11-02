@@ -258,9 +258,11 @@
  * PISM's stress balance headers.
  */
 %{
-#include "regional/regional.hh"
+#include "regional/SSAFD_Regional.hh"
+#include "regional/SIAFD_Regional.hh"
 %}
-%include "regional/regional.hh"
+%include "regional/SSAFD_Regional.hh"
+%include "regional/SIAFD_Regional.hh"
 
 %include "base/util/projection.hh"
 

@@ -28,7 +28,7 @@ static char help[] =
 #include "base/util/PISMVars.hh"
 #include "base/util/PISMConfigInterface.hh"
 
-#include "../../verif/tests/exactTestK.h"
+#include "verif/tests/exactTestK.h"
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
