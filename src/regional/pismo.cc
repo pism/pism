@@ -1,4 +1,5 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010--2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy
+// Aschwanden
 //
 // This file is part of PISM.
 //
@@ -50,6 +51,7 @@ static char help[] =
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/Context.hh"
+#include "IceGrid_Regional.hh"
 
 int main(int argc, char *argv[]) {
 
@@ -72,7 +74,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    bool input_file_set = options::Bool("-i", "input file name");
+    options::String input_file("-i", "input file name");
     std::string usage =
       "  pismo -i IN.nc [-bootstrap] [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -84,7 +86,7 @@ int main(int argc, char *argv[]) {
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
 
-    if (not input_file_set) {
+    if (not input_file.is_set()) {
       throw RuntimeError("options -i is required\n\n" + usage);
     }
 
@@ -97,9 +99,37 @@ int main(int argc, char *argv[]) {
 
     Context::Ptr ctx = context_from_options(com, "pismo");
     Config::Ptr config = ctx->config();
+    IceGrid::Ptr g;
 
     // initialize the ice dynamics model
-    IceGrid::Ptr g = IceGrid::FromOptions(ctx);
+    options::RealList x_range("-x_range",
+                              "range of X coordinates in the selected subset");
+    options::RealList y_range("-y_range",
+                              "range of Y coordinates in the selected subset");
+
+    if (x_range.is_set() and y_range.is_set()) {
+
+      if (x_range.value().size() != 2) {
+        throw RuntimeError::formatted("invalid -x_range argument: need two numbers");
+      }
+
+      if (y_range.value().size() != 2) {
+        throw RuntimeError::formatted("invalid -y_range argument: need two numbers");
+      }
+
+      if (not options::Bool("-bootstrap", "enable bootstrapping heuristics")) {
+        throw RuntimeError("-x_range and -y_range require -bootstrap.");
+      }
+
+      g = regional_grid(ctx, input_file,
+                        x_range[0], x_range[1],
+                        y_range[0], y_range[1]);
+    } else {
+      g = IceGrid::FromOptions(ctx);
+    }
+
+
+
     IceRegionalModel m(g, ctx);
 
     m.init();

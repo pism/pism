@@ -4,6 +4,7 @@ add_library (pismregional
   SSAFD_Regional.cc
   RegionalDefaultYieldStress.cc
   IceRegionalModel.cc
+  IceGrid_Regional.cc
   )
 target_link_libraries (pismregional pismbase)
 
