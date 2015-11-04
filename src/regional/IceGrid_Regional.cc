@@ -73,10 +73,10 @@ static void validate_range(const std::string &axis, std::vector<double> &x,
   }
 }
 
-IceGrid::Ptr regional_grid(Context::Ptr ctx,
-                           const std::string &filename,
-                           double x_min, double x_max,
-                           double y_min, double y_max) {
+GridParameters regional_grid(Context::Ptr ctx,
+                             const std::string &filename,
+                             double x_min, double x_max,
+                             double y_min, double y_max) {
 
   // FIXME: we should add periodicity to x and y coordinate variables in PISM output files.
   Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
@@ -105,12 +105,12 @@ IceGrid::Ptr regional_grid(Context::Ptr ctx,
 
   // vertical grid parameters
   params.z = full.z;
-  params.periodicity = NONE;
 
-  // set ownership ranges
+  // the rest
+  params.periodicity = NONE;
   params.ownership_ranges_from_options(ctx->size());
 
-  return IceGrid::Ptr(new IceGrid(ctx, params));
+  return params;
 }
 
 } // end of namespace pism

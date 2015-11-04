@@ -32,12 +32,12 @@ namespace pism {
  * @param y_min minimum y coordinate
  * @param y_max maximum y coordinate
  *
- * @return Pointer to a newly allocated IceGrid instance.
+ * @return Parameters describing the grid
  */
-IceGrid::Ptr regional_grid(Context::Ptr ctx,
-                           const std::string &filename,
-                           double x_min, double x_max,
-                           double y_min, double y_max);
+GridParameters regional_grid(Context::Ptr ctx,
+                             const std::string &filename,
+                             double x_min, double x_max,
+                             double y_min, double y_max);
 
 } // end of namespace pism
 

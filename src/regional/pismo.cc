@@ -121,14 +121,22 @@ int main(int argc, char *argv[]) {
         throw RuntimeError("-x_range and -y_range require -bootstrap.");
       }
 
-      g = regional_grid(ctx, input_file,
-                        x_range[0], x_range[1],
-                        y_range[0], y_range[1]);
+      GridParameters p = regional_grid(ctx, input_file,
+                                       x_range[0], x_range[1],
+                                       y_range[0], y_range[1]);
+
+      if (options::Bool("-Lz", "vertical grid extent") and
+          options::Bool("-Mz", "vertical grid size")) {
+        p.vertical_grid_from_options(ctx->config());
+      }
+
+      g = IceGrid::Ptr(new IceGrid(ctx, p));
+
+    } else if (x_range.is_set() ^ y_range.is_set()) {
+      throw RuntimeError("Please set both -x_range and -y_range.");
     } else {
       g = IceGrid::FromOptions(ctx);
     }
-
-
 
     IceRegionalModel m(g, ctx);
 
