@@ -208,8 +208,15 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 
   IceModel::bootstrap_2d(filename);
 
+  // read usurfstore from usurf, then restore its name
+  m_usurf_stored.metadata().set_name("usurf");
   m_usurf_stored.regrid(filename, OPTIONAL, 0.0);
+  m_usurf_stored.metadata().set_name("usurfstore");
+
+  // read thkstore from thk, then restore its name
+  m_thk_stored.metadata().set_name("thk");
   m_thk_stored.regrid(filename, OPTIONAL, 0.0);
+  m_thk_stored.metadata().set_name("thkstore");
 }
 
 
