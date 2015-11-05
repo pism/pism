@@ -99,44 +99,8 @@ int main(int argc, char *argv[]) {
 
     Context::Ptr ctx = context_from_options(com, "pismo");
     Config::Ptr config = ctx->config();
-    IceGrid::Ptr g;
 
-    // initialize the ice dynamics model
-    options::RealList x_range("-x_range",
-                              "range of X coordinates in the selected subset");
-    options::RealList y_range("-y_range",
-                              "range of Y coordinates in the selected subset");
-
-    if (x_range.is_set() and y_range.is_set()) {
-
-      if (x_range.value().size() != 2) {
-        throw RuntimeError::formatted("invalid -x_range argument: need two numbers");
-      }
-
-      if (y_range.value().size() != 2) {
-        throw RuntimeError::formatted("invalid -y_range argument: need two numbers");
-      }
-
-      if (not options::Bool("-bootstrap", "enable bootstrapping heuristics")) {
-        throw RuntimeError("-x_range and -y_range require -bootstrap.");
-      }
-
-      GridParameters p = regional_grid(ctx, input_file,
-                                       x_range[0], x_range[1],
-                                       y_range[0], y_range[1]);
-
-      if (options::Bool("-Lz", "vertical grid extent") and
-          options::Bool("-Mz", "vertical grid size")) {
-        p.vertical_grid_from_options(ctx->config());
-      }
-
-      g = IceGrid::Ptr(new IceGrid(ctx, p));
-
-    } else if (x_range.is_set() ^ y_range.is_set()) {
-      throw RuntimeError("Please set both -x_range and -y_range.");
-    } else {
-      g = IceGrid::FromOptions(ctx);
-    }
+    IceGrid::Ptr g = regional_grid_from_options(ctx);
 
     IceRegionalModel m(g, ctx);
 
