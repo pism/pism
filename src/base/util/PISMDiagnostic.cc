@@ -100,7 +100,7 @@ void Diagnostic::set_attrs(const std::string &my_long_name,
 IceModelVec::Ptr Diagnostic::compute() {
   // use the name of the first variable
   std::vector<std::string> names;
-  for (int j = 0; j < m_vars.size(); ++j) {
+  for (unsigned int j = 0; j < m_vars.size(); ++j) {
     names.push_back(m_vars[j].get_name());
   }
   std::string all_names = join(names, ",");

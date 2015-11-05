@@ -627,16 +627,19 @@ void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims
   try {
     m_impl->nc->def_var(name, nctype, dims);
 
+    // if it's not a spatial variable, we're done
     if (dims.size() < 2) {
       return;
     }
 
-    // When defining a spatial variable, go through all of its dimensions and compute chunk
-    // dimensions.
     std::vector<size_t> dim_lengths;
     for (unsigned int k = 0; k < dims.size(); ++k) {
       dim_lengths.push_back(this->inq_dimlen(dims[k]));
     }
+
+    std::vector<size_t> chunk_dims = chunk_dimensions(nctype, dim_lengths);
+
+    m_impl->nc->def_var_chunking(name, chunk_dims);
 
   } catch (RuntimeError &e) {
     e.add_context("defining variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
