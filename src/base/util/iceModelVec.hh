@@ -198,7 +198,7 @@ public:
   Vec get_vec();
   petsc::DM::Ptr get_dm() const;
   virtual void  set_name(const std::string &name);
-  virtual const std::string& get_name() const;
+  const std::string& get_name() const;
   virtual void  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
                           const std::string &my_units, const std::string &my_standard_name,
                           int component = 0);
