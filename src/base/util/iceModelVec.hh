@@ -231,9 +231,10 @@ public:
   void inc_state_counter();
   void set_time_independent(bool flag);
 
-  bool   m_report_range;                 //!< If true, report range when regridding.
-  bool   write_in_glaciological_units;
-  //!< \brief If true, data is written to a file in "human-friendly" units.
+  //! If true, report range when regridding.
+  bool m_report_range;
+  //! If true, data is written to a file in "human-friendly" units.
+  bool write_in_glaciological_units;
 
 protected:
 
