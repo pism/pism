@@ -891,7 +891,36 @@ void IceModelVec::read(const PIO &nc, const unsigned int time) {
 
 void IceModelVec::write(const PIO &nc) const {
   define(nc);
+
+  m_grid->ctx()->log()->message(3, "  [%s] Writing %s...",
+                               pism_timestamp(m_grid->com).c_str(),
+                               m_name.c_str());
+
+  PetscLogDouble start_time = GetTime();
   write_impl(nc);
+  PetscLogDouble end_time = GetTime();
+
+  const double
+    time_spent = end_time - start_time,
+    megabyte = pow(2, 20),
+    mb_double = sizeof(double) * size() / megabyte,
+    mb_float =  sizeof(float) * size() / megabyte;
+
+  std::string timestamp = pism_timestamp(m_grid->com);
+  std::string spacer(timestamp.size(), ' ');
+  if (time_spent > 1) {
+    m_grid->ctx()->log()->message(3,
+                                  "\n"
+                                  "  [%s] Done writing %s (%f Mb double, %f Mb float)\n"
+                                  "   %s  in %f seconds (%f minutes).\n"
+                                  "   %s  Effective throughput: double: %f Mb/s, float: %f Mb/s.\n",
+                                  timestamp.c_str(), m_name.c_str(), mb_double, mb_float,
+                                  spacer.c_str(), time_spent, time_spent / 60.0,
+                                  spacer.c_str(),
+                                  mb_double / time_spent, mb_float / time_spent);
+  } else {
+    m_grid->ctx()->log()->message(3, " done.\n");
+  }
 }
 
 IceModelVec::AccessList::AccessList() {
