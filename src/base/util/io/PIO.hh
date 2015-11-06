@@ -144,8 +144,6 @@ private:
   PIO & operator=(const PIO &);
 };
 
-std::vector<size_t> chunk_dimensions(IO_Type type, const std::vector<size_t> &dims);
-
 } // end of namespace pism
 
 #endif /* _PIO_H_ */

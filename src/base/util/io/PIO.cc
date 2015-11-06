@@ -585,7 +585,7 @@ void PIO::def_dim(const std::string &name, size_t length) const {
   }
 }
 
-std::vector<size_t> chunk_dimensions(IO_Type type, const std::vector<size_t> &dims) {
+static std::vector<size_t> chunk_dimensions(IO_Type type, const std::vector<size_t> &dims) {
   const unsigned long long int limit = (1UL << 32) - 1;
   const size_t ndims = dims.size();
 
