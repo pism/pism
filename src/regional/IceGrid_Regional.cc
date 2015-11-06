@@ -105,6 +105,8 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
     GridParameters input_grid(ctx->config());
 
     std::vector<std::string> names;
+    names.push_back("enthalpy");
+    names.push_back("temp");
     names.push_back("land_ice_thickness");
     names.push_back("bedrock_altitude");
     names.push_back("thk");
