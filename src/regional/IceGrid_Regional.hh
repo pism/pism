@@ -26,18 +26,10 @@ namespace pism {
  * Select a subset of the computational grid in an input file.
  *
  * @param ctx execution context
- * @param filename name of PISM output file with the "full" grid
- * @param x_min minimum x coordinate
- * @param x_max maximum x coordinate
- * @param y_min minimum y coordinate
- * @param y_max maximum y coordinate
  *
- * @return Parameters describing the grid
+ * @return A pointer to a new grid instance.
  */
-GridParameters regional_grid(Context::Ptr ctx,
-                             const std::string &filename,
-                             double x_min, double x_max,
-                             double y_min, double y_max);
+IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx);
 
 } // end of namespace pism
 

@@ -22,37 +22,15 @@
 
 #include <gsl/gsl_interp.h>
 
+#include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
 
 namespace pism {
 
-static void subset_parameters(const std::vector<double> &x,
-                              double x_min, double x_max,
-                              double &x0, double &Lx, unsigned int &Mx) {
-
-  assert(x_max > x_min);
-
-  size_t x_start = gsl_interp_bsearch(&x[0], x_min, 0, x.size() - 1);
-  // include one more point if we can
-  if (x_start > 0) {
-    x_start -= 1;
-  }
-
-  size_t x_end = gsl_interp_bsearch(&x[0], x_max, 0, x.size() - 1);
-  // include one more point if we can
-  x_end = std::min(x.size() - 1, x_end + 1);
-
-  Lx = (x[x_end] - x[x_start]) / 2.0;
-
-  x0 = (x[x_start] + x[x_end]) / 2.0;
-
-  assert(x_end + 1 >= x_start);
-  Mx = x_end + 1 - x_start;
-}
-
-static void validate_range(const std::string &axis, std::vector<double> &x,
+static void validate_range(const std::string &axis,
+                           const std::vector<double> &x,
                            double x_min, double x_max) {
   if (x_min >= x_max) {
     throw RuntimeError::formatted("invalid -%s_range: %s_min >= %s_max (%f >= %f).",
@@ -73,44 +51,122 @@ static void validate_range(const std::string &axis, std::vector<double> &x,
   }
 }
 
-GridParameters regional_grid(Context::Ptr ctx,
-                             const std::string &filename,
-                             double x_min, double x_max,
-                             double y_min, double y_max) {
+static void subset_extent(const std::string& axis,
+                          const std::vector<double> &x,
+                          double x_min, double x_max,
+                          double &x0, double &Lx, unsigned int &Mx) {
 
-  // FIXME: we should add periodicity to x and y coordinate variables in PISM output files.
-  Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+  validate_range(axis, x, x_min, x_max);
 
-  GridParameters params;
-
-  PIO file(ctx->com(), "netcdf3");
-  file.open(filename, PISM_READONLY); // will be closed automatically
-
-  grid_info full;
-  if (file.inq_var("enthalpy")) {
-    full = grid_info(file, "enthalpy", ctx->unit_system(), p);
-  } else if (file.inq_var("temp")) {
-    full = grid_info(file, "temp", ctx->unit_system(), p);
-  } else {
-    throw RuntimeError::formatted("neither 'enthalpy' nor 'temp' was found in %s.",
-                                  filename.c_str());
+  size_t x_start = gsl_interp_bsearch(&x[0], x_min, 0, x.size() - 1);
+  // include one more point if we can
+  if (x_start > 0) {
+    x_start -= 1;
   }
 
-  // x direction
-  validate_range("x", full.x, x_min, x_max);
-  subset_parameters(full.x, x_min, x_max, params.x0, params.Lx, params.Mx);
-  // y direction
-  validate_range("y", full.y, y_min, y_max);
-  subset_parameters(full.y, y_min, y_max, params.y0, params.Ly, params.My);
+  size_t x_end = gsl_interp_bsearch(&x[0], x_max, 0, x.size() - 1);
+  // include one more point if we can
+  x_end = std::min(x.size() - 1, x_end + 1);
 
-  // vertical grid parameters
-  params.z = full.z;
+  Lx = (x[x_end] - x[x_start]) / 2.0;
 
-  // the rest
-  params.periodicity = NONE;
-  params.ownership_ranges_from_options(ctx->size());
+  x0 = (x[x_start] + x[x_end]) / 2.0;
 
-  return params;
+  assert(x_end + 1 >= x_start);
+  Mx = x_end + 1 - x_start;
 }
+
+//! Create a grid using command-line options and (possibly) an input file.
+/** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
+ */
+IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
+
+  const Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+
+  const options::String input_file("-i", "Specifies a PISM input file");
+  const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  const options::RealList x_range("-x_range",
+                                  "range of X coordinates in the selected subset");
+  const options::RealList y_range("-y_range",
+                                  "range of Y coordinates in the selected subset");
+
+  if (input_file.is_set() and bootstrap and x_range.is_set() and y_range.is_set()) {
+    // bootstrapping; get domain size defaults from an input file, allow overriding all grid
+    // parameters using command-line options
+
+    if (x_range->size() != 2) {
+      throw RuntimeError("invalid -x_range argument: need 2 numbers.");
+    }
+
+    if (y_range->size() != 2) {
+      throw RuntimeError("invalid -y_range argument: need 2 numbers.");
+    }
+
+    GridParameters input_grid(ctx->config());
+
+    std::vector<std::string> names;
+    names.push_back("land_ice_thickness");
+    names.push_back("bedrock_altitude");
+    names.push_back("thk");
+    names.push_back("topg");
+    bool grid_info_found = false;
+
+    PIO file(ctx->com(), "netcdf3");
+    file.open(input_file, PISM_READONLY); // will be closed automatically
+    for (unsigned int i = 0; i < names.size(); ++i) {
+
+      grid_info_found = file.inq_var(names[i]);
+      if (not grid_info_found) {
+        std::string dummy1;
+        bool dummy2;
+        // Failed to find using a short name. Try using names[i] as a
+        // standard name...
+        file.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+      }
+
+      if (grid_info_found) {
+        input_grid = GridParameters(ctx, file, names[i], p);
+
+        grid_info full = grid_info(file, names[i], ctx->unit_system(), p);
+
+        // x direction
+        subset_extent("x", full.x, x_range[0], x_range[1],
+                      input_grid.x0, input_grid.Lx, input_grid.Mx);
+        // y direction
+        subset_extent("y", full.y, y_range[0], y_range[1],
+                      input_grid.y0, input_grid.Ly, input_grid.My);
+
+        // Set periodicity to "NONE" to that IceGrid computes coordinates correctly.
+        input_grid.periodicity = NONE;
+
+        break;
+      }
+    }
+
+    if (not grid_info_found) {
+      throw RuntimeError::formatted("no geometry information found in '%s'",
+                                    input_file->c_str());
+    }
+
+    // ignore -Lx, -Ly, -Mx, -My
+    options::ignored(*ctx->log(), "-Mx");
+    options::ignored(*ctx->log(), "-My");
+    options::ignored(*ctx->log(), "-Lx");
+    options::ignored(*ctx->log(), "-Ly");
+
+    // process options controlling vertical grid parameters, overriding values read from a file
+    input_grid.vertical_grid_from_options(ctx->config());
+
+    // process options controlling ownership ranges
+    input_grid.ownership_ranges_from_options(ctx->size());
+
+    return IceGrid::Ptr(new IceGrid(ctx, input_grid));
+  } else if (x_range.is_set() ^ y_range.is_set()) {
+    throw RuntimeError("Please set both -x_range and -y_range.");
+  } else {
+    return IceGrid::FromOptions(ctx);
+  }
+}
+
 
 } // end of namespace pism
