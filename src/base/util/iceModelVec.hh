@@ -281,6 +281,7 @@ protected:
   void set_dof(petsc::DM::Ptr da_source, Vec source, unsigned int n,
                unsigned int count=1);
 private:
+  size_t size() const;
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);
   IceModelVec& operator=(const IceModelVec&);

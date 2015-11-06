@@ -922,6 +922,22 @@ void IceModelVec::AccessList::add(const IceModelVec &vec) {
   m_vecs.push_back(&vec);
 }
 
+//! Return the size of the global *owned* part of an array, in bytes.
+size_t IceModelVec::size() const {
+  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
+  // DM object.
+
+  size_t
+    Mx = m_grid->Mx(),
+    My = m_grid->My(),
+    Mz = zlevels.size(),
+    dof = m_dof;
+
+  return sizeof(double) * Mx * My * Mz * dof;
+}
+
 void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2) {
   units::Converter c(system, spec1, spec2);
