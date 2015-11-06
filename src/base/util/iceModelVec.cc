@@ -922,7 +922,7 @@ void IceModelVec::AccessList::add(const IceModelVec &vec) {
   m_vecs.push_back(&vec);
 }
 
-//! Return the size of the global *owned* part of an array, in bytes.
+//! Return the total number of elements in the *owned* part of an array.
 size_t IceModelVec::size() const {
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
   // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
@@ -935,7 +935,7 @@ size_t IceModelVec::size() const {
     Mz = zlevels.size(),
     dof = m_dof;
 
-  return sizeof(double) * Mx * My * Mz * dof;
+  return Mx * My * Mz * dof;
 }
 
 void convert_vec(Vec v, units::System::Ptr system,
