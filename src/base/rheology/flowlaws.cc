@@ -162,9 +162,10 @@ void averaged_hardness_vec(const FlowLaw &ice,
 }
 
 
-//! Computes vertical average of B(E, pressure) ice hardness, namely \f$\bar
-//! B(E, p)\f$. See comment for hardness_parameter().
-/*! Note E[0], ..., E[kbelowH] must be valid.  */
+//! Computes vertical average of `B(E, p)` ice hardness, namely @f$\bar B(E, p)@f$.
+/*!
+ * See comment for hardness_parameter(). Note `E[0], ..., E[kbelowH]` must be valid.
+ */
 double averaged_hardness(const FlowLaw &ice,
                          double thickness, int kbelowH,
                          const double *zlevels,
