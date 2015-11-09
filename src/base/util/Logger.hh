@@ -50,6 +50,12 @@ public:
   void message(int threshold, const char format[], ...) const __attribute__((format(printf, 3, 4)));
   void message(int threshold, const std::string &text) const;
 
+  //! Print an error message to the log.
+  /** Always prints the message (regardless of the threshold). The base class implementation prints
+   * to stderr.
+   */
+  void error(const char format[], ...) const __attribute__((format(printf, 2, 3)));
+
   //! Set verbosity threshold.
   void set_threshold(int level);
 
@@ -67,7 +73,8 @@ public:
 protected:
   //! Do the hard work. Override this in a derived class to customize.
   virtual void message_impl(const char buffer[]) const;
-private:
+  virtual void error_impl(const char buffer[]) const;
+  private:
   struct Impl;
   Impl *m_impl;
   Logger(const Logger&);
@@ -84,6 +91,7 @@ public:
 
   std::string get() const;
   virtual void message_impl(const char buffer[]) const;
+  virtual void error_impl(const char buffer[]) const;
 private:
   struct Impl;
   Impl *m_impl;

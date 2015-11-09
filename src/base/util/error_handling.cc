@@ -167,11 +167,10 @@ void ParallelSection::failed() {
   int rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  PetscPrintf(MPI_COMM_SELF, "PISM ERROR: ### Rank %d message:\n", rank);
+  PetscFPrintf(MPI_COMM_SELF, stderr,
+               "PISM ERROR: Rank %d failed with the following message.\n", rank);
 
   handle_fatal_errors(MPI_COMM_SELF);
-
-  PetscPrintf(MPI_COMM_SELF, "PISM ERROR: ### Rank %d message ends here.\n", rank);
 
   m_failed = true;
 }

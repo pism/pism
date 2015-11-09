@@ -82,7 +82,7 @@ if __name__ == '__main__':
     * -i is required
   """ % (sys.argv[0], sys.argv[0])
 
-    PISM.show_usage_check_req_opts(com, sys.argv[0], ["-i"], usage)
+    PISM.show_usage_check_req_opts(context.log, sys.argv[0], ["-i"], usage)
 
     config = context.config
     if not PISM.OptionString("-ssa_method", "").is_set():

@@ -422,7 +422,6 @@ int main(int argc, char *argv[]) {
 
   using namespace pism;
 
-  PetscErrorCode  ierr;
   MPI_Comm com = MPI_COMM_WORLD;
 
   petsc::Initializer petsc(argc, argv, help);
@@ -432,9 +431,11 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     verbosityLevelFromOptions();
+    Context::Ptr ctx = context_from_options(com, "pismo");
+    Logger::Ptr log = ctx->log();
 
-    verbPrintf(2,com, "PISMO %s (regional outlet-glacier run mode)\n",
-               PISM_Revision);
+    log->message(2, "PISMO %s (regional outlet-glacier run mode)\n",
+                 PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -452,22 +453,19 @@ int main(int argc, char *argv[]) {
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     if (not input_file_set) {
-      ierr = PetscPrintf(com,
-                         "\nPISM ERROR: options -i is required\n\n");
-      PISM_CHK(ierr, "PetscPrintf");
-      show_usage(com, "pismo", usage);
+      log->error("PISM ERROR: options -i is required\n\n");
+      show_usage(*log, "pismo", usage);
       return 0;
     } else {
       std::vector<std::string> required;
       required.clear();
 
-      bool done = show_usage_check_req_opts(com, "pismo", required, usage);
+      bool done = show_usage_check_req_opts(*log, "pismo", required, usage);
       if (done) {
         return 0;
       }
     }
 
-    Context::Ptr ctx = context_from_options(com, "pismo");
     Config::Ptr config = ctx->config();
 
     // initialize the ice dynamics model
@@ -478,12 +476,12 @@ int main(int argc, char *argv[]) {
 
     m.run();
 
-    verbPrintf(2,com, "... done with run\n");
+    log->message(2, "... done with run\n");
 
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed_regional.nc");
 
-    print_unused_parameters(*ctx->log(), 3, *config);
+    print_unused_parameters(*log, 3, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

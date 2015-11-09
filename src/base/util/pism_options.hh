@@ -30,11 +30,11 @@ class Logger;
 
 void verbosityLevelFromOptions();
 
-void show_usage(MPI_Comm com, const std::string &execname, const std::string &usage);
+void show_usage(const Logger &log, const std::string &execname, const std::string &usage);
 
 //! @brief Returns true if PISM should terminate after printing some
 //! messages to stdout.
-bool show_usage_check_req_opts(MPI_Comm com,
+bool show_usage_check_req_opts(const Logger &log,
                                const std::string &execname,
                                const std::vector<std::string> &required_options,
                                const std::string &usage);

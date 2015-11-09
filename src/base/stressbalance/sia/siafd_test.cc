@@ -46,8 +46,7 @@ static char help[] =
 
 namespace pism {
 
-static void compute_strain_heating_errors(const Config &config,
-                                          const IceModelVec3 &strain_heating,
+static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
                                           const IceModelVec2S &thickness,
                                           const IceGrid &grid,
                                           double &gmax_strain_heating_err,
@@ -58,8 +57,8 @@ static void compute_strain_heating_errors(const Config &config,
   const double LforFG = 750000; // m
 
   const double
-    ice_rho   = config.get_double("ice_density"),
-    ice_c     = config.get_double("ice_specific_heat_capacity");
+    ice_rho   = grid.ctx()->config()->get_double("ice_density"),
+    ice_c     = grid.ctx()->config()->get_double("ice_specific_heat_capacity");
 
   double   junk0, junk1;
 
@@ -251,8 +250,7 @@ static void setInitStateF(IceGrid &grid,
                                  *enthalpy);
 }
 
-static void reportErrors(const Config &config,
-                         const IceGrid &grid,
+static void reportErrors(const IceGrid &grid,
                          units::System::Ptr unit_system,
                          const IceModelVec2S &thickness,
                          const IceModelVec3 &u_sia,
@@ -260,16 +258,18 @@ static void reportErrors(const Config &config,
                          const IceModelVec3 &w_sia,
                          const IceModelVec3 &strain_heating) {
 
+  Logger::ConstPtr log = grid.ctx()->log();
+
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   double max_strain_heating_error, av_strain_heating_error;
-  compute_strain_heating_errors(config, strain_heating, thickness,
+  compute_strain_heating_errors(strain_heating, thickness,
                                 grid,
                                 max_strain_heating_error, av_strain_heating_error);
 
-  verbPrintf(1,grid.com,
-             "Sigma     :      maxSig       avSig\n");
-  verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
-             max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
+  log->message(1,
+               "Sigma     :      maxSig       avSig\n");
+  log->message(1, "           %12.6f%12.6f\n",
+               max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
   // surface velocity errors if exact values are available; reported in m/year
   double maxUerr, avUerr, maxWerr, avWerr;
@@ -280,13 +280,13 @@ static void reportErrors(const Config &config,
                                maxUerr, avUerr,
                                maxWerr, avWerr);
 
-  verbPrintf(1,grid.com,
-             "surf vels :     maxUvec      avUvec        maxW         avW\n");
-  verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
-             units::convert(unit_system, maxUerr, "m/s", "m/year"),
-             units::convert(unit_system, avUerr,  "m/s", "m/year"),
-             units::convert(unit_system, maxWerr, "m/s", "m/year"),
-             units::convert(unit_system, avWerr,  "m/s", "m/year"));
+  log->message(1,
+               "surf vels :     maxUvec      avUvec        maxW         avW\n");
+  log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
+               units::convert(unit_system, maxUerr, "m/s", "m/year"),
+               units::convert(unit_system, avUerr,  "m/s", "m/year"),
+               units::convert(unit_system, maxWerr, "m/s", "m/year"),
+               units::convert(unit_system, avWerr,  "m/s", "m/year"));
 }
 
 } // end of namespace pism
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
 
     const IceModelVec3 &sigma = stress_balance.volumetric_strain_heating();
 
-    reportErrors(*config, *grid, unit_system,
+    reportErrors(*grid, unit_system,
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:

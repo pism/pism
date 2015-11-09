@@ -22,6 +22,7 @@
 
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/Logger.hh"
 
 using namespace pism;
 
@@ -158,9 +159,10 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     verbosityLevelFromOptions();
+    Logger log(com, getVerbosityLevel());
 
-    verbPrintf(2,com, "PISM-MERGE %s (output file merging tool)\n",
-               PISM_Revision);
+    log.message(2, "PISM-MERGE %s (output file merging tool)\n",
+                PISM_Revision);
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
     }
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> required;
     required.push_back("-i");
 
-    bool done = show_usage_check_req_opts(com, "pismmerge", required, usage);
+    bool done = show_usage_check_req_opts(log, "pismmerge", required, usage);
     if (done) {
       return 0;
     }

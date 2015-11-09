@@ -148,8 +148,6 @@
 %apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
-%include pism_options.i
-
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
@@ -171,6 +169,12 @@
 %include "base/util/pism_const.hh"
 %include "base/util/interpolation.hh"
 
+%shared_ptr(pism::Logger);
+%shared_ptr(pism::StringLogger);
+%include "base/util/Logger.hh"
+
+%include pism_options.i
+
 %ignore pism::Vector2::operator=;
 %include "base/util/Vector2.hh"
 
@@ -185,10 +189,6 @@
 %include pism_DM.i
 %include pism_Vec.i
 /* End of independent PISM classes. */
-
-%shared_ptr(pism::Logger);
-%shared_ptr(pism::StringLogger);
-%include "base/util/Logger.hh"
 
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
