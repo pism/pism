@@ -50,6 +50,10 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_D0 = GSL_NAN;
   m_U0 = GSL_NAN;
   m_B0 = GSL_NAN;
+  m_L_ks = GSL_NAN;
+  m_D_ks = GSL_NAN;
+  m_U_ks = GSL_NAN;
+  m_B_ks = GSL_NAN;
 
   m_ice_density = config.get_double("ice_density");
   m_ice_c   = config.get_double("ice_specific_heat_capacity");
@@ -174,14 +178,17 @@ double enthSystemCtx::compute_lambda() {
 }
 
 
-void enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
+void enthSystemCtx::setDirichletSurface(double E_surface) {
 #if (PISM_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError("setDirichletSurface() should only be called after\n"
                        "initAllColumns() in enthSystemCtx");
   }
 #endif
-  m_Enth_ks = my_Enth_surface;
+  m_L_ks = 0.0;
+  m_D_ks = 1.0;
+  m_U_ks = 0.0;
+  m_B_ks = E_surface;
 }
 
 void enthSystemCtx::checkReadyToSolve() {
@@ -210,7 +217,6 @@ void enthSystemCtx::setDirichletBasal(double Y) {
   m_U0 = 0.0;
   m_B0  = Y;
 }
-
 
 //! Set coefficients in discrete equation for Neumann condition at base of ice.
 /*!
@@ -422,15 +428,16 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
     }
   }
 
-  // set Dirichlet boundary condition at top
+  // Assemble the top surface equation. Values m_{L,D,U,B}_ks are set using setDirichletSurface() or
+  // setSurfaceHeatFlux().
   if (m_ks > 0) {
-    S.L(m_ks) = 0.0;
+    S.L(m_ks) = m_L_ks;
   }
-  S.D(m_ks) = 1.0;
+  S.D(m_ks) = m_D_ks;
   if (m_ks < m_z.size() - 1) {
-    S.U(m_ks) = 0.0;
+    S.U(m_ks) = m_U_ks;
   }
-  S.RHS(m_ks) = m_Enth_ks;
+  S.RHS(m_ks) = m_B_ks;
 
   // Solve it; note drainage is not addressed yet and post-processing may occur
   try {
@@ -445,7 +452,7 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 
   // air above
   for (unsigned int k = m_ks+1; k < x.size(); k++) {
-    x[k] = m_Enth_ks;
+    x[k] = m_B_ks;
   }
 
 #if (PISM_DEBUG==1)
@@ -454,6 +461,10 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   m_D0     = GSL_NAN;
   m_U0     = GSL_NAN;
   m_B0     = GSL_NAN;
+  m_L_ks = GSL_NAN;
+  m_D_ks = GSL_NAN;
+  m_U_ks = GSL_NAN;
+  m_B_ks = GSL_NAN;
 #endif
 }
 

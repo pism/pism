@@ -95,9 +95,9 @@ protected:
     m_nu, m_R_cold, m_R_temp, m_R_factor;
 
   double m_ice_thickness,
-    m_lambda,              //!< implicit FD method parameter
-    m_Enth_ks;             //!< top surface Dirichlet B.C.
+    m_lambda;              //!< implicit FD method parameter
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
+  double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
   bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
 
   const IceModelVec3 &m_Enth3, &m_strain_heating3;
