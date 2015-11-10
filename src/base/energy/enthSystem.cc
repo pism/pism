@@ -190,6 +190,10 @@ void enthSystemCtx::set_surface_dirichlet(double E_surface) {
   m_B_ks = E_surface;
 }
 
+static inline double upwind(double u, double E_m, double E, double E_p, double delta) {
+  return u < 0 ? u * (E_p -  E) / delta : u * (E  - E_m) / delta;
+}
+
 void enthSystemCtx::checkReadyToSolve() {
   if (m_nu < 0.0 || m_R_cold < 0.0 || m_R_temp < 0.0) {
     throw RuntimeError("not ready to solve: need initAllColumns() in enthSystemCtx");
@@ -276,12 +280,8 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   m_B0 = m_Enth[0] + 2.0 * Rminus * m_dz * heat_flux / K;
   // treat vertical velocity using first-order upwinding:
   if (not m_ismarginal) {
-    const double UpEnthu = (m_u[0] < 0 ?
-                            m_u[0] * (m_E_e[0] -  m_Enth[0]) / m_dx :
-                            m_u[0] * (m_Enth[0]  - m_E_w[0]) / m_dx);
-    const double UpEnthv = (m_v[0] < 0 ?
-                            m_v[0] * (m_E_n[0] -  m_Enth[0]) / m_dy :
-                            m_v[0] * (m_Enth[0]  - m_E_s[0]) / m_dy);
+    const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], m_dx);
+    const double UpEnthv = upwind(m_u[0], m_E_s[0], m_Enth[0], m_E_n[0], m_dy);
 
     m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
   }
@@ -416,19 +416,15 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     }
     S.RHS(k) = m_Enth[k];
     if (not m_ismarginal) {
-      const double UpEnthu = (m_u[k] < 0 ?
-                              m_u[k] * (m_E_e[k] -  m_Enth[k]) / m_dx :
-                              m_u[k] * (m_Enth[k]  - m_E_w[k]) / m_dx);
-      const double UpEnthv = (m_v[k] < 0 ?
-                              m_v[k] * (m_E_n[k] -  m_Enth[k]) / m_dy :
-                              m_v[k] * (m_Enth[k]  - m_E_s[k]) / m_dy);
+      const double UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], m_dx);
+      const double UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], m_dy);
 
       S.RHS(k) += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
     }
   }
 
-  // Assemble the top surface equation. Values m_{L,D,U,B}_ks are set using setDirichletSurface() or
-  // setSurfaceHeatFlux().
+  // Assemble the top surface equation. Values m_{L,D,U,B}_ks are set using set_surface_dirichlet()
+  // or set_surface_heat_flux().
   if (m_ks > 0) {
     S.L(m_ks) = m_L_ks;
   }
