@@ -194,6 +194,32 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
   return u < 0 ? u * (E_p -  E) / delta : u * (E  - E_m) / delta;
 }
 
+void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
+  // extract K from R[ks], so this code works even if K=K(T)
+  // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
+  const double
+    K      = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
+    Rl     = m_R[m_ks - 1],
+    Rc     = m_R[m_ks],
+    Rminus = 0.5 * (Rl + Rc),
+    Rplus  = Rc;
+  // modified lower-diagonal entry:
+  m_L_ks = - Rminus - Rplus;
+  // diagonal entry
+  m_D_ks = 1.0 + Rminus + Rplus;
+  // m_Enth[0] (below) is there due to the fully-implicit discretization in time, the second term is
+  // the modification of the right-hand side implementing the Neumann B.C. (similar to
+  // set_basal_heat_flux(); see that method for details)
+  m_B_ks = m_Enth[m_ks] - 2.0 * Rminus * m_dz * heat_flux / K;
+  // treat horizontal velocity using first-order upwinding:
+  if (not m_ismarginal) {
+    const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], m_dx);
+    const double UpEnthv = upwind(m_u[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], m_dy);
+
+    m_B_ks += m_dt * ((m_strain_heating[m_ks] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[m_ks]
+  }
+}
+
 void enthSystemCtx::checkReadyToSolve() {
   if (m_nu < 0.0 || m_R_cold < 0.0 || m_R_temp < 0.0) {
     throw RuntimeError("not ready to solve: need initAllColumns() in enthSystemCtx");
@@ -278,7 +304,7 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   // in time, the second term is the modification of the right-hand
   // side implementing the Neumann B.C. (see the doxygen comment)
   m_B0 = m_Enth[0] + 2.0 * Rminus * m_dz * heat_flux / K;
-  // treat vertical velocity using first-order upwinding:
+  // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
     const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], m_dx);
     const double UpEnthv = upwind(m_u[0], m_E_s[0], m_Enth[0], m_E_n[0], m_dy);

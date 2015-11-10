@@ -55,6 +55,7 @@ public:
 
   double k_from_T(double T);
 
+  void set_surface_heat_flux(double hf);
   void set_surface_dirichlet(double E_surface);
 
   void set_basal_dirichlet(double E_basal);
