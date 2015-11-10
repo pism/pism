@@ -133,11 +133,17 @@ void IceRegionalModel::model_state_setup() {
 
   if (strip_km.is_set()) {
     m_log->message(2, 
-               "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
-               strip_km.value());
+                   "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
+                   strip_km.value());
     set_no_model_strip(*m_grid,
                        units::convert(m_sys, strip_km, "km", "m"),
                        m_no_model_mask);
+  } else {
+    double strip = m_config->get_double("regional_no_model_strip", "m");
+    m_log->message(2,
+                   "* Option -no_model_strip is not set... setting boundary strip width to %.2f km\n",
+                   units::convert(m_sys, strip, "m", "km"));
+    set_no_model_strip(*m_grid, strip, m_no_model_mask);
   }
 }
 
@@ -278,14 +284,6 @@ void IceRegionalModel::set_vars_from_options() {
 
   // base class reads the -bootstrap option and does the bootstrapping:
   IceModel::set_vars_from_options();
-
-  bool nmstripSet = options::Bool("-no_model_strip", 
-                                 "width in km of strip near boundary in which modeling is turned off");
-
-  if (not nmstripSet) {
-    throw RuntimeError("option '-no_model_strip X' (X in km) is REQUIRED if '-i' is not used.\n"
-                       "pismo has no well-defined semantics without it!");
-  }
 
   if (m_config->get_boolean("do_cold_ice_methods")) {
     throw RuntimeError("pismo does not support the 'cold' mode.");
