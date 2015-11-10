@@ -110,12 +110,11 @@ double enthSystemCtx::k_from_T(double T) {
   return m_ice_k;
 }
 
-void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
-                                   double my_ice_thickness) {
-  m_ice_thickness = my_ice_thickness;
-  m_ismarginal    = my_ismarginal;
+void enthSystemCtx::init(int i, int j, bool ismarginal, double ice_thickness) {
+  m_ice_thickness = ice_thickness;
+  m_ismarginal    = ismarginal;
 
-  init_column(my_i, my_j, m_ice_thickness);
+  init_column(i, j, m_ice_thickness);
 
   if (m_ks == 0) {
     return;
@@ -178,7 +177,7 @@ double enthSystemCtx::compute_lambda() {
 }
 
 
-void enthSystemCtx::setDirichletSurface(double E_surface) {
+void enthSystemCtx::set_surface_dirichlet(double E_surface) {
 #if (PISM_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError("setDirichletSurface() should only be called after\n"
@@ -206,7 +205,7 @@ void enthSystemCtx::checkReadyToSolve() {
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-void enthSystemCtx::setDirichletBasal(double Y) {
+void enthSystemCtx::set_basal_dirichlet(double Y) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
@@ -253,7 +252,7 @@ This method should only be called if everything but the basal boundary condition
 is already set.
 
  */
-void enthSystemCtx::setBasalHeatFlux(double heat_flux) {
+void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
 #if (PISM_DEBUG==1)
  checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
@@ -379,7 +378,7 @@ void enthSystemCtx::assemble_R() {
  * This method is _unconditionally stable_ and has a maximum principle (see [@ref MortonMayers,
  * section 2.11]).
  */
-void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
+void enthSystemCtx::solve(std::vector<double> &x) {
 
   TridiagonalSystem &S = *m_solver;
 

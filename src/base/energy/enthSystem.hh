@@ -51,18 +51,18 @@ public:
                 EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
-  void initThisColumn(int i, int j, bool my_ismarginal,
-                      double ice_thickness);
+  void init(int i, int j, bool my_ismarginal, double ice_thickness);
 
   double k_from_T(double T);
 
-  void setDirichletSurface(double my_Enth_surface);
-  void setDirichletBasal(double Y);
-  void setBasalHeatFlux(double hf);
+  void set_surface_dirichlet(double E_surface);
+
+  void set_basal_dirichlet(double E_basal);
+  void set_basal_heat_flux(double hf);
 
   virtual void save_system(std::ostream &output, unsigned int M) const;
 
-  void solveThisColumn(std::vector<double> &result);
+  void solve(std::vector<double> &result);
 
   double lambda() {
     return m_lambda;
