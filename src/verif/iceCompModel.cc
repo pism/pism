@@ -690,7 +690,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
             H0 = 600.0,
             v0 = units::convert(m_sys, 300.0, "m/year", "m/second"),
             Q0 = H0 * v0,
-            B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
+            B0 = stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);

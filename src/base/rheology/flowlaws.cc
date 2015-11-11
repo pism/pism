@@ -100,7 +100,7 @@ EnthalpyConverter::Ptr FlowLaw::EC() const {
 
 //! Return the softness parameter A(T) for a given temperature T.
 /*! This is not a natural part of all FlowLaw instances.   */
-double FlowLaw::softness_parameter_paterson_budd(double T_pa) const {
+double FlowLaw::softness_paterson_budd(double T_pa) const {
   if (T_pa < m_crit_temp) {
     return m_A_cold * exp(-m_Q_cold/(m_ideal_gas_constant * T_pa));
   }
@@ -115,19 +115,19 @@ double FlowLaw::flow(double stress, double enthalpy,
 
 double FlowLaw::flow_impl(double stress, double enthalpy,
                           double pressure, double /* gs */) const {
-  return softness_parameter(enthalpy, pressure) * pow(stress, m_n-1);
+  return softness(enthalpy, pressure) * pow(stress, m_n-1);
 }
 
-double FlowLaw::softness_parameter(double E, double p) const {
-  return this->softness_parameter_impl(E, p);
+double FlowLaw::softness(double E, double p) const {
+  return this->softness_impl(E, p);
 }
 
-double FlowLaw::hardness_parameter(double E, double p) const {
-  return this->hardness_parameter_impl(E, p);
+double FlowLaw::hardness(double E, double p) const {
+  return this->hardness_impl(E, p);
 }
 
-double FlowLaw::hardness_parameter_impl(double E, double p) const {
-  return pow(softness_parameter(E, p), m_hardness_power);
+double FlowLaw::hardness_impl(double E, double p) const {
+  return pow(softness(E, p), m_hardness_power);
 }
 
 void averaged_hardness_vec(const FlowLaw &ice,
@@ -164,7 +164,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
 
 //! Computes vertical average of `B(E, p)` ice hardness, namely @f$\bar B(E, p)@f$.
 /*!
- * See comment for hardness_parameter(). Note `E[0], ..., E[kbelowH]` must be valid.
+ * See comment for hardness(). Note `E[0], ..., E[kbelowH]` must be valid.
  */
 double averaged_hardness(const FlowLaw &ice,
                          double thickness, int kbelowH,
@@ -179,13 +179,13 @@ double averaged_hardness(const FlowLaw &ice,
     double
       p0 = EC.pressure(thickness),
       E0 = enthalpy[0],
-      h0 = ice.hardness_parameter(E0, p0); // ice hardness at the left endpoint
+      h0 = ice.hardness(E0, p0); // ice hardness at the left endpoint
 
     for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
       const double
         p1 = EC.pressure(thickness - zlevels[i]), // pressure at the right endpoint
         E1 = enthalpy[i], // enthalpy at the right endpoint
-        h1 = ice.hardness_parameter(E1, p1); // ice hardness at the right endpoint
+        h1 = ice.hardness(E1, p1); // ice hardness at the right endpoint
 
       // The trapezoid rule sans the "1/2":
       B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
@@ -203,7 +203,7 @@ double averaged_hardness(const FlowLaw &ice,
     depth = thickness - zlevels[kbelowH],
     p = EC.pressure(depth);
 
-  B += depth * ice.hardness_parameter(enthalpy[kbelowH], p);
+  B += depth * ice.hardness(enthalpy[kbelowH], p);
 
   // Now B is an integral of ice hardness; next, compute the average:
   if (thickness > 0) {
@@ -238,17 +238,17 @@ GPBLD::GPBLD(const std::string &prefix,
   \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
   The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by pressure_adjusted_temperature().
 */
-double GPBLD::softness_parameter_impl(double enthalpy, double pressure) const {
+double GPBLD::softness_impl(double enthalpy, double pressure) const {
   const double E_s = m_EC->enthalpy_cts(pressure);
   if (enthalpy < E_s) {       // cold ice
     double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
-    return softness_parameter_paterson_budd(T_pa);
+    return softness_paterson_budd(T_pa);
   } else { // temperate ice
     double omega = m_EC->water_fraction(enthalpy, pressure);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
     omega = std::min(omega, m_water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softness_parameter_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
+    return softness_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
   }
 }
 
@@ -266,9 +266,9 @@ PatersonBudd::~PatersonBudd() {
 }
 
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
-double PatersonBudd::softness_parameter_impl(double E, double pressure) const {
+double PatersonBudd::softness_impl(double E, double pressure) const {
   double T_pa = m_EC->pressure_adjusted_temperature(E, pressure);
-  return softness_parameter_from_temp(T_pa);
+  return softness_from_temp(T_pa);
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
@@ -283,7 +283,7 @@ double PatersonBudd::flow_from_temp(double stress, double temp,
                                     double pressure, double /*gs*/) const {
   // pressure-adjusted temperature:
   const double T_pa = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
-  return softness_parameter_from_temp(T_pa) * pow(stress, m_n-1);
+  return softness_from_temp(T_pa) * pow(stress, m_n-1);
 }
 
 PatersonBuddCold::PatersonBuddCold(const std::string &prefix,
@@ -340,7 +340,7 @@ Hooke::~Hooke() {
   // empty
 }
 
-double Hooke::softness_parameter_from_temp(double T_pa) const {
+double Hooke::softness_from_temp(double T_pa) const {
   return m_A_Hooke * exp(-m_Q_Hooke/(m_ideal_gas_constant * T_pa)
                          + 3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));
 }
@@ -405,20 +405,20 @@ double GoldsbyKohlstedt::averaged_hardness_impl(double, int,
 #endif
 }
 
-double GoldsbyKohlstedt::hardness_parameter_impl(double enthalpy, double pressure) const {
+double GoldsbyKohlstedt::hardness_impl(double enthalpy, double pressure) const {
 
   // We use the Paterson-Budd relation for the hardness parameter. It would be nice if we didn't
   // have to, but we currently need ice hardness to compute the strain heating. See
   // SIAFD::compute_volumetric_strain_heating().
   double
     T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure),
-    softness = softness_parameter_paterson_budd(T_pa);
+    softness = softness_paterson_budd(T_pa);
 
   return pow(softness, m_hardness_power);
 }
 
-double GoldsbyKohlstedt::softness_parameter_impl(double , double) const {
-  throw std::runtime_error("double GoldsbyKohlstedt::softness_parameter is not implemented");
+double GoldsbyKohlstedt::softness_impl(double , double) const {
+  throw std::runtime_error("double GoldsbyKohlstedt::softness is not implemented");
 
 #ifndef __GNUC__
   return 0;

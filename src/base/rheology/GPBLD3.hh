@@ -40,8 +40,8 @@ public:
   double flow(double stress, double E,
               double pressure, double grainsize) const;
 
-  double hardness_parameter(double E, double p) const;
-  double softness_parameter(double E, double p) const;
+  double hardness(double E, double p) const;
+  double softness(double E, double p) const;
 
   void effective_viscosity(double hardness, double gamma,
                            double *nu, double *dnu) const;
@@ -53,7 +53,7 @@ public:
 private:
   EnthalpyConverter::Ptr m_EC;
 
-  double softness_parameter_paterson_budd(double T_pa) const;
+  double softness_paterson_budd(double T_pa) const;
 
   double m_schoofLen, m_schoofVel, m_schoofReg,
     m_A_cold, m_A_warm, m_Q_cold, m_Q_warm,

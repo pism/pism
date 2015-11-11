@@ -464,7 +464,7 @@ void StressBalance::compute_volumetric_strain_heating() {
       for (int k = 0; k <= ks; ++k) {
         double dz,
           pressure = EC->pressure(H - m_grid->z(k)),
-          B        = flow_law->hardness_parameter(E_ij[k], pressure);
+          B        = flow_law->hardness(E_ij[k], pressure);
 
         double u_z = 0.0, v_z = 0.0,
           u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),

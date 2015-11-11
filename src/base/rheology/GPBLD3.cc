@@ -90,21 +90,21 @@ void GPBLD3::effective_viscosity(double hardness, double gamma,
   }
 }
 
-double GPBLD3::hardness_parameter(double E, double p) const {
-  return 1.0 / cbrt(softness_parameter(E, p));
+double GPBLD3::hardness(double E, double p) const {
+  return 1.0 / cbrt(softness(E, p));
 }
 
-double GPBLD3::softness_parameter(double enthalpy, double pressure) const {
+double GPBLD3::softness(double enthalpy, double pressure) const {
   const double E_s = m_EC->enthalpy_cts(pressure);
   if (PetscLikely(enthalpy < E_s)) {       // cold ice
     double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
-    return softness_parameter_paterson_budd(T_pa);
+    return softness_paterson_budd(T_pa);
   } else { // temperate ice
     double omega = m_EC->water_fraction(enthalpy, pressure);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
     omega = std::min(omega, m_water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softness_parameter_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
+    return softness_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
   }
 }
 
@@ -112,14 +112,14 @@ double GPBLD3::flow(double stress, double enthalpy,
                     double pressure, double grainsize) const {
   (void) grainsize;
 
-  return softness_parameter(enthalpy, pressure) * stress * stress;
+  return softness(enthalpy, pressure) * stress * stress;
 }
 
-double GPBLD3::softness_parameter_paterson_budd(double T_pa) const {
-  if (PetscLikely(T_pa < m_crit_temp)) {
-    return m_A_cold * exp(-m_Q_cold/(m_ideal_gas_constant * T_pa));
-  }
-  return m_A_warm * exp(-m_Q_warm/(m_ideal_gas_constant * T_pa));
+double GPBLD3::softness_paterson_budd(double T_pa) const {
+  const double A = T_pa < m_crit_temp ? m_A_cold : m_A_warm;
+  const double Q = T_pa < m_crit_temp ? m_Q_cold : m_Q_warm;
+
+  return A * exp(-Q / (m_ideal_gas_constant * T_pa));
 }
 
 } // end of namespace rheology

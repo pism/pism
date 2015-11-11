@@ -60,9 +60,9 @@ namespace rheology {
 
   - can be represented in the viscosity form
 
-  @note FlowLaw derived classes should implement hardness_parameter... in
-  terms of softness_parameter... That way in many cases we only need to
-  re-implement softness_parameter... to turn one flow law into another.
+  @note FlowLaw derived classes should implement hardness... in
+  terms of softness... That way in many cases we only need to
+  re-implement softness... to turn one flow law into another.
 */
 class FlowLaw {
 public:
@@ -78,16 +78,16 @@ public:
   double enhancement_factor() const;
   EnthalpyConverter::Ptr EC() const;
 
-  double hardness_parameter(double E, double p) const;
-  double softness_parameter(double E, double p) const;
+  double hardness(double E, double p) const;
+  double softness(double E, double p) const;
   double flow(double stress, double E,
               double pressure, double grainsize) const;
 
 protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
-  virtual double hardness_parameter_impl(double E, double p) const;
-  virtual double softness_parameter_impl(double E, double p) const = 0;
+  virtual double hardness_impl(double E, double p) const;
+  virtual double softness_impl(double E, double p) const = 0;
 
 protected:
   std::string m_name;
@@ -97,7 +97,7 @@ protected:
     m_melting_point_temp;  //!< for water, 273.15 K
   EnthalpyConverter::Ptr m_EC;
 
-  double softness_parameter_paterson_budd(double T_pa) const;
+  double softness_paterson_budd(double T_pa) const;
 
   double m_schoofLen, m_schoofVel, m_schoofReg, m_viscosity_power,
     m_hardness_power,
@@ -137,7 +137,7 @@ public:
         const Config &config,
         EnthalpyConverter::Ptr EC);
 protected:
-  double softness_parameter_impl(double enthalpy,
+  double softness_impl(double enthalpy,
                                  double pressure) const;
   double m_T_0, m_water_frac_coeff, m_water_frac_observed_limit;
 };
@@ -153,15 +153,15 @@ public:
 protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double gs) const;
-  // This also takes care of hardness_parameter
-  virtual double softness_parameter_impl(double enthalpy, double pressure) const;
+  // This also takes care of hardness
+  virtual double softness_impl(double enthalpy, double pressure) const;
 
-  virtual double softness_parameter_from_temp(double T_pa) const {
-    return softness_parameter_paterson_budd(T_pa);
+  virtual double softness_from_temp(double T_pa) const {
+    return softness_paterson_budd(T_pa);
   }
 
-  virtual double hardness_parameter_from_temp(double T_pa) const {
-    return pow(softness_parameter_from_temp(T_pa), m_hardness_power);
+  virtual double hardness_from_temp(double T_pa) const {
+    return pow(softness_from_temp(T_pa), m_hardness_power);
   }
 
   // special temperature-dependent method
@@ -181,11 +181,11 @@ protected:
     return m_softness_A * pow(stress, m_n-1);
   }
 
-  double softness_parameter_impl(double, double) const {
+  double softness_impl(double, double) const {
     return m_softness_A;
   }
 
-  double hardness_parameter_impl(double, double) const {
+  double hardness_impl(double, double) const {
     return m_hardness_B;
   }
 
@@ -205,7 +205,7 @@ public:
         EnthalpyConverter::Ptr EC);
   virtual ~Hooke();
 protected:
-  virtual double softness_parameter_from_temp(double T_pa) const;
+  virtual double softness_from_temp(double T_pa) const;
 
   double m_A_Hooke, m_Q_Hooke, m_C_Hooke, m_K_Hooke, m_Tr_Hooke; // constants from Hooke (1981)
   // R_Hooke is the ideal_gas_constant.
@@ -230,15 +230,15 @@ protected:
     return m_Q_cold;
   }
 
-  // takes care of hardness_parameter...
-  double softness_parameter_from_temp(double T_pa) const {
+  // takes care of hardness...
+  double softness_from_temp(double T_pa) const {
     return A() * exp(-Q()/(m_ideal_gas_constant * T_pa));
   }
 
   // ignores pressure and uses non-pressure-adjusted temperature
   double flow_from_temp(double stress, double temp,
                         double , double) const {
-    return softness_parameter_from_temp(temp) * pow(stress,m_n-1);
+    return softness_from_temp(temp) * pow(stress,m_n-1);
   }
 };
 
@@ -287,8 +287,8 @@ protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
 
-  double softness_parameter_impl(double E, double p) const __attribute__((noreturn));
-  double hardness_parameter_impl(double E, double p) const;
+  double softness_impl(double E, double p) const __attribute__((noreturn));
+  double hardness_impl(double E, double p) const;
   virtual double flow_from_temp(double stress, double temp,
                                 double pressure, double gs) const;
   GKparts flowParts(double stress, double temp, double pressure) const;
