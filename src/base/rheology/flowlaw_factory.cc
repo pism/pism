@@ -74,30 +74,30 @@ FlowLawFactory::FlowLawFactory(const std::string &prefix,
   assert(not prefix.empty());
 
   m_flow_laws.clear();
-  add_type(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
-  add_type(ICE_PB, &create_pb);
-  add_type(ICE_GPBLD, &create_gpbld);
-  add_type(ICE_HOOKE, &create_hooke);
-  add_type(ICE_ARR, &create_arr);
-  add_type(ICE_ARRWARM, &create_arrwarm);
-  add_type(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
+  add(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
+  add(ICE_PB, &create_pb);
+  add(ICE_GPBLD, &create_gpbld);
+  add(ICE_HOOKE, &create_hooke);
+  add(ICE_ARR, &create_arr);
+  add(ICE_ARRWARM, &create_arrwarm);
+  add(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
 
-  set_default_type(m_config->get_string(prefix + "flow_law"));
+  set_default(m_config->get_string(prefix + "flow_law"));
 }
 
 FlowLawFactory::~FlowLawFactory() {
   // empty
 }
 
-void FlowLawFactory::add_type(const std::string &name, FlowLawCreator icreate) {
+void FlowLawFactory::add(const std::string &name, FlowLawCreator icreate) {
   m_flow_laws[name] = icreate;
 }
 
-void FlowLawFactory::remove_type(const std::string &name) {
+void FlowLawFactory::remove(const std::string &name) {
   m_flow_laws.erase(name);
 }
 
-void FlowLawFactory::set_default_type(const std::string &type) {
+void FlowLawFactory::set_default(const std::string &type) {
   if (m_flow_laws[type] == NULL) {
     throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available"
                                   " (prefix=\"%s\").",

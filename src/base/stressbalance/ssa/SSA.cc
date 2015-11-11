@@ -105,7 +105,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   {
     rheology::FlowLawFactory ice_factory("ssa_", m_config, m_EC);
-    ice_factory.remove_type(ICE_GOLDSBY_KOHLSTEDT);
+    ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
     m_flow_law = ice_factory.create();
   }
 }
