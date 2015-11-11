@@ -207,6 +207,7 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   m_L_ks = - Rminus - Rplus;
   // diagonal entry
   m_D_ks = 1.0 + Rminus + Rplus;
+  m_U_ks = 0.0;
   // m_Enth[0] (below) is there due to the fully-implicit discretization in time, the second term is
   // the modification of the right-hand side implementing the Neumann B.C. (similar to
   // set_basal_heat_flux(); see that method for details)
