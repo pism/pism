@@ -119,7 +119,7 @@ something like `ice_thickness(i, j) - z[k]`.  The input depth to this routine is
 be negative, representing a position above the surface of the ice.
  */
 double EnthalpyConverter::pressure(double depth) const {
-  if (depth > 0.0) {
+  if (depth >= 0.0) {
     return m_p_air + m_rho_i * m_g * depth;
   } else {
     return m_p_air; // at or above surface of ice
