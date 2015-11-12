@@ -32,8 +32,12 @@ public:
   RuntimeError(const std::string &message);
   ~RuntimeError() throw();
 
+  typedef void (*Hook)(RuntimeError*);
+
   //! @brief build a RuntimeError with a formatted message
   static RuntimeError formatted(const char format[], ...) __attribute__((format(printf, 1, 2)));
+
+  static void set_hook(Hook new_hook);
 
   //! @brief Add a message providing some context. This way we can (sort of)
   //! get a stack trace even though C++ exceptions do not provide one.
@@ -42,6 +46,7 @@ public:
   void print(MPI_Comm com);
   protected:
   std::vector<std::string> m_context;
+  static Hook sm_hook;
 };
 
 class ParallelSection {

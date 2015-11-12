@@ -250,6 +250,35 @@ three cases, though:
    allowed to throw, so we have to catch everything.)
 3. In `main()` to catch all exceptions before terminating.
 
+##### Performing an action every time a PISM exception is thrown
+
+The class `pism::RuntimeError` allows setting a "hook" that is called
+by the constructor of `RuntimeError`. See the example below for a way
+to use it.
+
+    #include <cstdio>
+
+    #include "error_handling.hh"
+
+    void hook(pism::RuntimeError *exception) {
+      printf("throwing exception \"%s\"\n", exception->what());
+    }
+
+    int main(int argc, char **argv) {
+
+      MPI_Init(&argc, &argv);
+
+      pism::RuntimeError::set_hook(hook);
+
+      try {
+        throw pism::RuntimeError("oh no!");
+      } catch (pism::RuntimeError &e) {
+        printf("caught an exception \"%s\"!\n", e.what());
+      }
+
+      return 0;
+    }
+
 ##### Calling C code
 
 Check the return code of every C call and convert it to an exception
