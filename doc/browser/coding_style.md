@@ -276,6 +276,8 @@ to use it.
         printf("caught an exception \"%s\"!\n", e.what());
       }
 
+      MPI_Finalize();
+
       return 0;
     }
 
