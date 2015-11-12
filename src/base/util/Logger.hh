@@ -90,6 +90,7 @@ public:
   void reset();
 
   std::string get() const;
+protected:
   virtual void message_impl(const char buffer[]) const;
   virtual void error_impl(const char buffer[]) const;
 private:
