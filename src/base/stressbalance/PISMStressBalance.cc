@@ -21,7 +21,7 @@
 #include "SSB_Modifier.hh"
 #include "coupler/PISMOcean.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"

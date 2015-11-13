@@ -21,7 +21,7 @@
 #include "FETools.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 

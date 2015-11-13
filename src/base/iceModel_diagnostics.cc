@@ -21,7 +21,7 @@
 #include "base/basalstrength/PISMYieldStress.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/SSB_Modifier.hh"
 #include "base/stressbalance/ShallowStressBalance.hh"

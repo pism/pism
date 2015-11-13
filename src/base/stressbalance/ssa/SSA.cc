@@ -19,7 +19,7 @@
 #include "SSA.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"

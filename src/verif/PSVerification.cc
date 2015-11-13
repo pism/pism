@@ -22,7 +22,7 @@
 
 #include "PSVerification.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/PatersonBuddCold.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMConfigInterface.hh"

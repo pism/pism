@@ -22,7 +22,7 @@
 #include <map>
 #include <string>
 
-#include "flowlaws.hh"
+#include "FlowLaw.hh"
 #include "base/util/PISMConfigInterface.hh"
 
 namespace pism {

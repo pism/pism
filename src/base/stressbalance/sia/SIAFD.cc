@@ -21,7 +21,7 @@
 #include "SIAFD.hh"
 #include "PISMBedSmoother.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"

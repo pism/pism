@@ -31,7 +31,7 @@
 #include "iceCompModel.hh"
 #include "base/stressbalance/sia/SIA_Sliding.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/PatersonBuddCold.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/io/PIO.hh"

@@ -34,7 +34,6 @@
 #include "base/calving/PISMOceanKill.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
-#include "base/rheology/flowlaw_factory.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
 #include "base/stressbalance/ssa/SSAFD.hh"

@@ -19,12 +19,20 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "flowlaw_factory.hh"
+#include "FlowLawFactory.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMUnits.hh"
 #include "base/util/error_handling.hh"
+
+#include "IsothermalGlen.hh"
+#include "PatersonBudd.hh"
+#include "GPBLD.hh"
+#include "Hooke.hh"
+#include "PatersonBuddCold.hh"
+#include "PatersonBuddWarm.hh"
+#include "GoldsbyKohlstedt.hh"
 
 namespace pism {
 namespace rheology {
