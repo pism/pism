@@ -45,6 +45,7 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_beta_CC_grad       = config.get_double("beta_CC") * m_rho * m_standard_gravity;
   m_melting_point_temp = config.get_double("water_melting_point_temperature");
   m_e                  = config.get_double(prefix + "enhancement_factor");
+  m_e_interglacial     = config.get_double(prefix + "enhancement_factor_interglacial");
   m_n                  = config.get_double(prefix + "Glen_exponent");
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
@@ -77,6 +78,10 @@ double FlowLaw::exponent() const {
 
 double FlowLaw::enhancement_factor() const {
   return m_e;
+}
+
+double FlowLaw::enhancement_factor_interglacial() const {
+  return m_e_interglacial;
 }
 
 //! Return the softness parameter A(T) for a given temperature T.

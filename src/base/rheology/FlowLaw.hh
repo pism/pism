@@ -76,6 +76,8 @@ public:
   std::string name() const;
   double exponent() const;
   double enhancement_factor() const;
+  double enhancement_factor_interglacial() const;
+
   EnthalpyConverter::Ptr EC() const;
 
   double hardness(double E, double p) const;
@@ -99,15 +101,39 @@ protected:
 
   double softness_paterson_budd(double T_pa) const;
 
-  double m_schoofLen, m_schoofVel, m_schoofReg, m_viscosity_power,
-    m_hardness_power,
-    m_A_cold, m_A_warm, m_Q_cold, m_Q_warm,  // see Paterson & Budd (1982)
-    m_crit_temp;
+  //! regularizing length
+  double m_schoofLen;
+  //! regularizing velocity
+  double m_schoofVel;
+  //! regularization parameter for @f$ \gamma @f$
+  double m_schoofReg;
 
-  double m_standard_gravity,
-    m_ideal_gas_constant,
-    m_e,                          // flow enhancement factor
-    m_n;                          // power law exponent
+  //! @f$ (1 - n) / (2n) @f$; used to compute viscosity
+  double m_viscosity_power;
+  //! @f$ - 1 / n @f$; used to compute hardness
+  double m_hardness_power;
+
+  //! Paterson-Budd softness, cold case
+  double m_A_cold;
+  //! Paterson-Budd softness, warm case
+  double m_A_warm;
+  //! Activation energy, cold case
+  double m_Q_cold;
+  //! Activation energy, warm case
+  double m_Q_warm;
+  //! critical temperature (cold -- warm transition)
+  double m_crit_temp;
+
+  //! acceleration due to gravity
+  double m_standard_gravity;
+  //! ideal gas constant
+  double m_ideal_gas_constant;
+  //! flow enhancement factor
+  double m_e;
+  //! flow enhancement factor for interglacial periods
+  double m_e_interglacial;
+  //! power law exponent
+  double m_n;
 };
 
 double averaged_hardness(const FlowLaw &ice,
