@@ -60,8 +60,8 @@ namespace rheology {
 
   - can be represented in the viscosity form
 
-  @note FlowLaw derived classes should implement hardness... in
-  terms of softness... That way in many cases we only need to
+  @note FlowLaw derived classes should implement hardness() in
+  terms of softness(). That way in many cases we only need to
   re-implement softness... to turn one flow law into another.
 */
 class FlowLaw {

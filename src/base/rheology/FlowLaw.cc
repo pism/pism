@@ -137,7 +137,7 @@ double FlowLaw::hardness_impl(double E, double p) const {
  * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
 void FlowLaw::effective_viscosity(double hardness, double gamma,
-                                         double *nu, double *dnu) const {
+                                  double *nu, double *dnu) const {
   const double
     my_nu = 0.5 * hardness * pow(m_schoofReg + gamma, m_viscosity_power);
 
@@ -233,7 +233,6 @@ double averaged_hardness(const FlowLaw &ice,
 
   return B;
 }
-
 
 bool FlowLawUsesGrainSize(FlowLaw *flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
