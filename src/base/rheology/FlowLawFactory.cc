@@ -29,6 +29,7 @@
 #include "IsothermalGlen.hh"
 #include "PatersonBudd.hh"
 #include "GPBLD.hh"
+#include "GPBLD3.hh"
 #include "Hooke.hh"
 #include "PatersonBuddCold.hh"
 #include "PatersonBuddWarm.hh"
@@ -50,6 +51,11 @@ FlowLaw* create_pb(const std::string &pre,
 FlowLaw* create_gpbld(const std::string &pre,
                       const Config &config, EnthalpyConverter::Ptr EC) {
   return new (GPBLD)(pre, config, EC);
+}
+
+FlowLaw* create_gpbld3(const std::string &pre,
+                       const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (GPBLD3)(pre, config, EC);
 }
 
 FlowLaw* create_hooke(const std::string &pre,
@@ -85,6 +91,7 @@ FlowLawFactory::FlowLawFactory(const std::string &prefix,
   add(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
   add(ICE_PB, &create_pb);
   add(ICE_GPBLD, &create_gpbld);
+  add(ICE_GPBLD3, &create_gpbld3);
   add(ICE_HOOKE, &create_hooke);
   add(ICE_ARR, &create_arr);
   add(ICE_ARRWARM, &create_arrwarm);

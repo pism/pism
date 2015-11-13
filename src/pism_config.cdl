@@ -1092,7 +1092,7 @@ netcdf pism_config {
 
     pism_config:sia_flow_law_type = "keyword";
     pism_config:sia_flow_law_option = "sia_flow_law";
-    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
+    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:sia_flow_law = "gpbld";
     pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 

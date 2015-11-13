@@ -20,50 +20,21 @@
 #ifndef _GPBLD_OPTIMIZED_H_
 #define _GPBLD_OPTIMIZED_H_
 
-#include <string>
-
-#include "base/enthalpyConverter.hh"
+#include "GPBLD.hh"
 
 namespace pism {
-
-class Config;
-class IceModelVec2S;
-class IceModelVec3;
-
 namespace rheology {
 
-class GPBLD3 {
+class GPBLD3 : public GPBLD {
 public:
-  GPBLD3(const std::string &prefix, const Config &config,
-         EnthalpyConverter::Ptr EC);
-
-  double flow(double stress, double E,
-              double pressure, double grainsize) const;
-
-  double hardness(double E, double p) const;
-  double softness(double E, double p) const;
-
-  void effective_viscosity(double hardness, double gamma,
-                           double *nu, double *dnu) const;
-
-  std::string name() const;
-  double exponent() const;
-  double enhancement_factor() const;
-  EnthalpyConverter::Ptr EC() const;
-private:
-  EnthalpyConverter::Ptr m_EC;
-
+  GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
+  protected:
+  double flow_impl(double stress, double E, double pressure, double grainsize) const;
+  double hardness_impl(double E, double p) const;
+  double softness_impl(double E, double p) const;
   double softness_paterson_budd(double T_pa) const;
-
-  double m_schoofLen, m_schoofVel, m_schoofReg,
-    m_A_cold, m_A_warm, m_Q_cold, m_Q_warm,
-    m_crit_temp;
-
-  double m_ideal_gas_constant,
-    m_e,                          // flow enhancement factor
-    m_n;                          // power law exponent
-
-  double m_T_0, m_water_frac_coeff, m_water_frac_observed_limit;
+private:
+  double m_softness_T0;
 };
 
 } // end of namespace rheology
