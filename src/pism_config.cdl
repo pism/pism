@@ -328,6 +328,21 @@ netcdf pism_config {
     pism_config:e_age_coupling = "no";
     pism_config:e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
 
+    pism_config:eemian_start = -132000.0;
+    pism_config:eemian_start_type = "scalar";
+    pism_config:eemian_start_units = "years";
+    pism_config:eemian_start_doc = "Start of the Eemian interglacial period. See [@ref Greve97Greenland].";
+
+    pism_config:eemian_end = -114500.0;
+    pism_config:eemian_end_type = "scalar";
+    pism_config:eemian_end_units = "years";
+    pism_config:eemian_end_doc = "End of the Eemian interglacial period. See [@ref Greve97Greenland].";
+
+    pism_config:holocene_start = -11000.0;
+    pism_config:holocene_start_type = "scalar";
+    pism_config:holocene_start_units = "years";
+    pism_config:holocene_start_doc = "Start of the Holocene interglacial period. See [@ref Greve97Greenland].";
+
     pism_config:start_year_units = "years";
     pism_config:start_year_type = "scalar";
     pism_config:start_year = 0;
