@@ -29,6 +29,8 @@
 #include "base/util/pism_const.hh"
 #include "base/util/Profiling.hh"
 
+#include "base/util/PISMTime.hh"
+
 namespace pism {
 namespace stressbalance {
 
@@ -72,6 +74,33 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
     rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
     m_flow_law = ice_factory.create();
   }
+
+  const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
+  const bool age_model_enabled = m_config->get_boolean("do_age");
+  const bool e_age_coupling = m_config->get_boolean("e_age_coupling");
+
+  if (compute_grain_size_using_age) {
+    if (not FlowLawUsesGrainSize(m_flow_law)) {
+      throw RuntimeError::formatted("flow law %s does not use grain size "
+                                    "but compute_grain_size_using_age was set",
+                                    m_flow_law->name().c_str());
+    }
+
+    if (not age_model_enabled) {
+      throw RuntimeError::formatted("SIAFD: age model is not active but\n"
+                                    "age is needed for grain-size-based flow law %s",
+                                    m_flow_law->name().c_str());
+    }
+  }
+
+  if (e_age_coupling and not age_model_enabled) {
+      throw RuntimeError("SIAFD: age model is not active but\n"
+                         "age is needed for age-dependent flow enhancement");
+  }
+
+  m_eemian_start   = m_config->get_double("eemian_start", "seconds");
+  m_eemian_end     = m_config->get_double("eemian_end", "seconds");
+  m_holocene_start = m_config->get_double("holocene_start", "seconds");
 }
 
 SIAFD::~SIAFD() {
@@ -91,6 +120,18 @@ void SIAFD::init() {
              "* Initializing the SIA stress balance modifier...\n");
   m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
+
+
+  // implements an option e.g. described in @ref Greve97Greenland that is the
+  // enhancement factor is coupled to the age of the ice
+  if (m_config->get_boolean("e_age_coupling")) {
+    m_log->message(2,
+                   "  using age-dependent enhancement factor:\n"
+                   "  e=%f for ice accumulated during interglacial periods\n"
+                   "  e=%f for ice accumulated during glacial periods\n",
+                   m_flow_law->enhancement_factor_interglacial(),
+                   m_flow_law->enhancement_factor());
+  }
 
   // set bed_state_counter to -1 so that the smoothed bed is computed the first
   // time update() is called.
@@ -562,19 +603,15 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   std::vector<double> delta_ij(m_grid->Mz());
 
   const double enhancement_factor = m_flow_law->enhancement_factor();
+  const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
   double ice_grain_size = m_config->get_double("ice_grain_size");
 
-  bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
+  const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
 
-  // some flow laws use grain size, and even need age to update grain size
-  if (compute_grain_size_using_age && (!m_config->get_boolean("do_age"))) {
-    throw RuntimeError("SIAFD::compute_diffusive_flux(): do_age not set but\n"
-                       "age is needed for grain-size-based flow law");
-  }
+  const bool e_age_coupling = m_config->get_boolean("e_age_coupling");
+  const double current_time = m_grid->ctx()->time()->current();
 
-  const bool use_age = (FlowLawUsesGrainSize(m_flow_law) &&
-                        compute_grain_size_using_age &&
-                        m_config->get_boolean("do_age"));
+  const bool use_age = compute_grain_size_using_age or e_age_coupling;
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
@@ -670,15 +707,25 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           const double pressure = m_EC->pressure(depth);
 
           double flow;
-          if (use_age) {
-            ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
+          if (compute_grain_size_using_age) {
+            const double age = 0.5 * (age_ij[k] + age_offset[k]);
+            ice_grain_size = grainSizeVostok(age);
           }
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
           double E = 0.5 * (E_ij[k] + E_offset[k]);
           flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
-          delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
+          double e = enhancement_factor;
+          if (e_age_coupling) {
+            const double age = 0.5 * (age_ij[k] + age_offset[k]);
+            const double accumulation_time = current_time - age;
+            if (interglacial(accumulation_time)) {
+              e = enhancement_factor_interglacial;
+            }
+          }
+
+          delta_ij[k] = e * theta_local * 2.0 * pressure * flow;
 
           if (k > 0) { // trapezoidal rule
             const double dz = z[k] - z[k-1];
@@ -1023,6 +1070,19 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
   }
   // Linear interpolation on the interval
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);
+}
+
+//! Determine if `accumulation_time` corresponds to an interglacial period.
+bool SIAFD::interglacial(double accumulation_time) {
+  if (accumulation_time < m_eemian_start) {
+    return false;
+  } else if (accumulation_time < m_eemian_end) {
+    return true;
+  } else if (accumulation_time < m_holocene_start) {
+    return false;
+  } else {
+    return true;
+  }
 }
 
 } // end of namespace stressbalance

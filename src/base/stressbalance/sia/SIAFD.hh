@@ -96,6 +96,8 @@ protected:
   virtual void compute_diffusivity(IceModelVec2S &result);
   virtual void compute_diffusivity_staggered(IceModelVec2Stag &result);
 
+  bool interglacial(double accumulation_time);
+
   //! temporary storage for eta, theta and the smoothed thickness
   IceModelVec2S m_work_2d[2];
   //! temporary storage for the surface gradient
@@ -113,8 +115,11 @@ protected:
 
   // unit conversion
   double m_second_to_kiloyear;
+  // enhancement factor-age coupling parameters
+  double m_holocene_start;
+  double m_eemian_start;
+  double m_eemian_end;
 };
-
 
 } // end of namespace stressbalance
 } // end of namespace pism
