@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSB_Modifier.hh"
-#include "base/rheology/flowlaw_factory.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLawFactory.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"

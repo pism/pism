@@ -24,7 +24,6 @@ static char help[] =
   "  used in a PISM software (regression) test.\n\n";
 
 #include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "base/rheology/flowlaws.hh" // FlowLaw
 #include "base/stressbalance/ssa/SSAFD.hh"
 #include "base/stressbalance/ssa/SSAFD_diagnostics.hh"
 #include "base/stressbalance/ssa/SSATestCase.hh"

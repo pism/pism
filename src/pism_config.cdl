@@ -283,11 +283,23 @@ netcdf pism_config {
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "Flow enhancement factor for SIA";
 
+    pism_config:sia_enhancement_factor_interglacial_option = "sia_e_interglacial";
+    pism_config:sia_enhancement_factor_interglacial_units = "1";
+    pism_config:sia_enhancement_factor_interglacial_type = "scalar";
+    pism_config:sia_enhancement_factor_interglacial = 1.0;
+    pism_config:sia_enhancement_factor_interglacial_doc = "Flow enhancement factor for SIA; used for ice accumulated during interglacial periods.";
+
     pism_config:ssa_enhancement_factor_option = "ssa_e";
     pism_config:ssa_enhancement_factor_units = "1";
     pism_config:ssa_enhancement_factor_type = "scalar";
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "Flow enhancement factor for SSA";
+
+    pism_config:ssa_enhancement_factor_interglacial_option = "ssa_e_interglacial";
+    pism_config:ssa_enhancement_factor_interglacial_units = "1";
+    pism_config:ssa_enhancement_factor_interglacial_type = "scalar";
+    pism_config:ssa_enhancement_factor_interglacial = 1.0;
+    pism_config:ssa_enhancement_factor_interglacial_doc = "Flow enhancement factor for SSA; used for ice accumulated during interglacial periods.";
 
     pism_config:brutal_sliding_type = "boolean";
     pism_config:brutal_sliding_option = "brutal_sliding";
@@ -315,6 +327,21 @@ netcdf pism_config {
     pism_config:e_age_coupling_option = "e_age_coupling";
     pism_config:e_age_coupling = "no";
     pism_config:e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
+
+    pism_config:eemian_start = -132000.0;
+    pism_config:eemian_start_type = "scalar";
+    pism_config:eemian_start_units = "years";
+    pism_config:eemian_start_doc = "Start of the Eemian interglacial period. See [@ref Greve97Greenland].";
+
+    pism_config:eemian_end = -114500.0;
+    pism_config:eemian_end_type = "scalar";
+    pism_config:eemian_end_units = "years";
+    pism_config:eemian_end_doc = "End of the Eemian interglacial period. See [@ref Greve97Greenland].";
+
+    pism_config:holocene_start = -11000.0;
+    pism_config:holocene_start_type = "scalar";
+    pism_config:holocene_start_units = "years";
+    pism_config:holocene_start_doc = "Start of the Holocene interglacial period. See [@ref Greve97Greenland].";
 
     pism_config:start_year_units = "years";
     pism_config:start_year_type = "scalar";
@@ -1092,7 +1119,7 @@ netcdf pism_config {
 
     pism_config:sia_flow_law_type = "keyword";
     pism_config:sia_flow_law_option = "sia_flow_law";
-    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
+    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:sia_flow_law = "gpbld";
     pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
