@@ -21,6 +21,7 @@ mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # The default options cache
+option (USE_EVERYTRACE "Get stacktraces via the Everytrace library" OFF)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
@@ -122,6 +123,12 @@ if (Pism_USE_TR1)
   message (STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
   add_definitions (-DPISM_USE_TR1=1)
 endif ()
+
+if (USE_EVERYTRACE)
+	find_package(Everytrace)
+else()
+	set(EVERYTRACE_REFADDR )
+endif()
 
 add_custom_target (etags
   COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags

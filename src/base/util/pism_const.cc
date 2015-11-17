@@ -270,7 +270,7 @@ std::string pism::pism_filename_add_suffix(std::string filename, std::string sep
  * running PETSc hanging waiting for a MPI_Finalize() call. (PetscFinalize()
  * only calls MPI_Finalize() if PetscInitialize() called MPI_Init().)
  */
-void pism::PISMEnd() {
+void pism::PISMEnd_default() {
   int flag;
   PetscFinalize();
 
@@ -279,6 +279,12 @@ void pism::PISMEnd() {
     MPI_Finalize();
 
   exit(0);
+}
+
+void (*pism::PISMEnd_ptr)() = &pism::PISMEnd_default;
+
+void pism::PISMEnd() {
+  (*PISMEnd_ptr)();
 }
 
 void pism::PISMEndQuiet() {

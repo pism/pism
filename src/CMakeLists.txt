@@ -27,6 +27,7 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  ${EVERYTRACE_REFADDR}
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/IceGrid.cc
@@ -58,6 +59,11 @@ set(PISMUTIL_SRC
   base/util/PISMUnits.cc
   base/varcEnthalpyConverter.cc
   )
+
+if (USE_EVERYTRACE)
+	list(APPEND PISMUTIL_SRC ${EVERYTRACE_REFADDR})
+endif()
+
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
@@ -106,14 +112,17 @@ add_dependencies (pismrevision touch_pism_revision)
 
 # Flow laws.
 add_library (pismflowlaws
+  ${EVERYTRACE_REFADDR}
   base/rheology/flowlaw_factory.cc
   base/rheology/flowlaws.cc
 )
 target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
 
+
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pismbase
+  ${EVERYTRACE_REFADDR}
   base/pism_signal.c
   base/columnSystem.cc
   base/energy/bedrockThermalUnit.cc
@@ -157,6 +166,7 @@ target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalanc
 
 # Bed deformation models.
 set(PISMEARTH_SRC
+  ${EVERYTRACE_REFADDR}
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
   earth/PBLingleClark.cc
@@ -178,6 +188,7 @@ set_source_files_properties (base/util/pism_default_config.cc
 
 # Verification tests.
 add_library (pismverif
+  ${EVERYTRACE_REFADDR}
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/PSVerification.cc

@@ -42,6 +42,8 @@ void endPrintRank();
 #ifndef __GNUC__
 #  define  __attribute__(x)  /* nothing */
 #endif
+extern void (*PISMEnd_ptr)();
+void PISMEnd_default()  __attribute__((noreturn));
 void PISMEnd()  __attribute__((noreturn));
 void PISMEndQuiet()  __attribute__((noreturn));
 
