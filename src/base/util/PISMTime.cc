@@ -336,7 +336,7 @@ void Time::init(const Logger &log) {
 
 std::string Time::date(double T) const {
   char tmp[256];
-  snprintf(tmp, 256, "%012.3f", seconds_to_years(T));
+  snprintf(tmp, 256, "%.3f", seconds_to_years(T));
   return std::string(tmp);
 }
 
