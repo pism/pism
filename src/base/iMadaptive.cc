@@ -253,6 +253,11 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     dt_restrictions["-extra_... reporting"] = extras_dt.value();
   }
 
+  MaxTimestep save_dt = save_max_timestep(current_time);
+  if (save_dt.is_finite()) {
+    dt_restrictions["-save_... reporting"] = save_dt.value();
+  }
+
   if (dt_force > 0.0) {
     dt_restrictions["fixed"] = dt_force;
     // If the user asked for fixed time-steps, we're done; proceed to

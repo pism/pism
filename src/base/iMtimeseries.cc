@@ -528,6 +528,17 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
   return reporting_max_timestep(extra_times, my_t);
 }
 
+//! Computes the maximum time-step we can take and still hit all `-extra_times`.
+MaxTimestep IceModel::save_max_timestep(double my_t) {
+
+  if ((not save_snapshots) or
+      (not m_config->get_boolean("save_force_output_times"))) {
+    return MaxTimestep();
+  }
+
+  return reporting_max_timestep(snapshot_times, my_t);
+}
+
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 

@@ -6,7 +6,11 @@ netcdf pism_config {
 
     pism_config:extras_force_output_times_type = "boolean";
     pism_config:extras_force_output_times = "yes";
-    pism_config:extras_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
+    pism_config:extras_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times.";
+
+    pism_config:save_force_output_times_type = "boolean";
+    pism_config:save_force_output_times = "no";
+    pism_config:save_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -save_times.";
 
     pism_config:ts_force_output_times_type = "boolean";
     pism_config:ts_force_output_times = "no";
