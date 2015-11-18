@@ -708,8 +708,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
           double flow;
           if (compute_grain_size_using_age) {
-            const double age = 0.5 * (age_ij[k] + age_offset[k]);
-            ice_grain_size = grainSizeVostok(age);
+            const double A = 0.5 * (age_ij[k] + age_offset[k]);
+            ice_grain_size = grainSizeVostok(A);
           }
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
@@ -718,8 +718,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
           double e = enhancement_factor;
           if (e_age_coupling) {
-            const double age = 0.5 * (age_ij[k] + age_offset[k]);
-            const double accumulation_time = current_time - age;
+            const double A = 0.5 * (age_ij[k] + age_offset[k]);
+            const double accumulation_time = current_time - A;
             if (interglacial(accumulation_time)) {
               e = enhancement_factor_interglacial;
             }

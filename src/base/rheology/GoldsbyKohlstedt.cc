@@ -18,6 +18,7 @@
  */
 
 #include <cmath>
+#include <stdexcept>
 
 #include "GoldsbyKohlstedt.hh"
 
