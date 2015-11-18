@@ -53,6 +53,10 @@ double varcEnthalpyConverter::EfromT(double T) const {
   return (m_c_i + m_c_gradient * Trefdiff) * (T - m_T_0);
 }
 
+double varcEnthalpyConverter::L_impl(double T_pm) const {
+  (void) T_pm;
+  return m_L;
+}
 
 /*!
 A calculation only used in the cold case.
@@ -132,6 +136,5 @@ double varcEnthalpyConverter::enthalpy_impl(double T, double omega, double p) co
     return enthalpy_cts(p) + omega * L(T_m);
   }
 }
-
 
 } // end of namespace pism

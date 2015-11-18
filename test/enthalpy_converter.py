@@ -5,7 +5,6 @@ config = PISM.Context().config
 
 # list of converters
 converters = {"Default": PISM.EnthalpyConverter(config),
-              "Kirchhoff": PISM.KirchhoffEnthalpyConverter(config),
               "verification (cold)": PISM.ColdEnthalpyConverter(config),
               "linear-in-temp C(T)": PISM.varcEnthalpyConverter(config)}
 
@@ -127,7 +126,7 @@ def enthalpy_of_water_test():
     config = PISM.Context().config
     c_w = config.get_double("water_specific_heat_capacity")
 
-    EC = converters["Kirchhoff"]
+    EC = converters["Default"]
 
     depth0 = 0.0
     p0 = EC.pressure(depth0)

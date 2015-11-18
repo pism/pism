@@ -56,6 +56,7 @@ namespace pism {
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_beta        = config.get_double("beta_CC"); // K Pa-1
   m_c_i         = config.get_double("ice_specific_heat_capacity"); // J kg-1 K-1
+  m_c_w         = config.get_double("water_specific_heat_capacity"); // J kg-1 K-1
   m_g           = config.get_double("standard_gravity"); // m s-2
   m_L           = config.get_double("water_latent_heat_fusion"); // J kg-1
   m_p_air       = config.get_double("surface_pressure"); // Pa
@@ -139,11 +140,6 @@ double EnthalpyConverter::c_impl(double /*T*/) const {
 //! temperature.
 double EnthalpyConverter::L(double T_m) const {
   return this->L_impl(T_m);
-}
-
-double EnthalpyConverter::L_impl(double T_m) const {
-  (void) T_m;
-  return m_L;
 }
 
 //! Get melting temperature from pressure p.
@@ -358,7 +354,12 @@ double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) co
   return (E / m_c_i) + m_T_0;
 }
 
-/*! @class KirchhoffEnthalpyConverter
+double ColdEnthalpyConverter::L_impl(double T_pm) const {
+  (void) T_pm;
+  return m_L;
+}
+
+/*! @brief Latent heat of fusion of water using Kirchhoff's law of thermochemistry.
 
   Following a re-interpretation of [@ref
   AschwandenBuelerKhroulevBlatter], we require that @f$ \Diff{H}{p} =
@@ -419,20 +420,7 @@ double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) co
   Note that this form of @f$ L(p) @f$ also follows from Kirchhoff's
   law of thermochemistry.
 */
-
-//! Converter using Kirchhoff's law of thermochemistry.
-KirchhoffEnthalpyConverter::KirchhoffEnthalpyConverter(const Config &config)
-  : EnthalpyConverter(config) {
-  m_c_w = config.get_double("water_specific_heat_capacity"); // J kg-1 K-1
-}
-
-KirchhoffEnthalpyConverter::~KirchhoffEnthalpyConverter() {
-  // empty
-}
-
-//! @brief Latent heat of fusion of water using Kirchhoff's law of
-//! thermochemistry.
-double KirchhoffEnthalpyConverter::L_impl(double T_pm) const {
+double EnthalpyConverter::L_impl(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
@@ -441,8 +429,6 @@ EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config) {
 
   if (config.get_boolean("use_linear_in_temperature_heat_capacity")) {
     EC = new varcEnthalpyConverter(config);
-  } else if (config.get_boolean("use_Kirchhoff_law")) {
-    EC = new KirchhoffEnthalpyConverter(config);
   } else {
     EC = new EnthalpyConverter(config);
   }
