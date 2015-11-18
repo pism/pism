@@ -720,7 +720,7 @@ def gpbld3_test():
             E = EC.enthalpy(T, omega[j], p)
             regular = gpbld.flow(sigma[i], E, p, gs)
             optimized = gpbld3.flow(sigma[i], E, p, gs)
-            assert np.fabs(regular - optimized < 1e-16)
+            assert np.fabs(regular - optimized) < 1e-16
 
 def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
