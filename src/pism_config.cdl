@@ -832,6 +832,11 @@ netcdf pism_config {
     pism_config:force_to_thickness_ice_free_thickness_threshold = 1.0;
     pism_config:force_to_thickness_ice_free_thickness_threshold_doc = "threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use force_to_thickness_ice_free_alpha_factor.";
 
+    pism_config:force_to_thickness_start_time_units = "years";
+    pism_config:force_to_thickness_start_time_type = "scalar";
+    pism_config:force_to_thickness_start_time = -4.54e9;
+    pism_config:force_to_thickness_start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
+
     // PISMOceanModel constants
 
     pism_config:ocean_sub_shelf_heat_flux_into_ice_units = "W meter-2";
