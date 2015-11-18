@@ -1372,6 +1372,12 @@ netcdf pism_config {
     pism_config:grid_lambda = 4.0;
     pism_config:grid_lambda_doc = "Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
 
+    pism_config:regional_no_model_strip = 5.0;
+    pism_config:regional_no_model_strip_units = "km";
+    pism_config:regional_no_model_strip_type = "scalar";
+    pism_config:regional_no_model_strip_doc = "Default width of the 'no model strip' in regional setups.";
+    pism_config:regional_no_model_strip_option = "no_model_strip";
+
     pism_config:cold_mode_is_temperate_ice_tolerance_units = "Kelvin";
     pism_config:cold_mode_is_temperate_ice_tolerance_type = "scalar";
     pism_config:cold_mode_is_temperate_ice_tolerance = 0.001;

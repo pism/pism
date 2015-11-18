@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,50 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _OPTIONS_H_
-#define _OPTIONS_H_
+#ifndef _SIAFD_REGIONAL_H_
+#define _SIAFD_REGIONAL_H_
+
+#include "base/stressbalance/sia/SIAFD.hh"
 
 namespace pism {
-namespace options {
+namespace stressbalance {
 
-//! Template base class used by PISM's option-processing classes.
-/*! (Ensures API consistency and helps code reuse.)
- */
-template <typename T>
-class Option {
+//! \brief A version of the SIA stress balance with tweaks for outlet glacier
+//! simulations.
+class SIAFD_Regional : public SIAFD {
 public:
-  Option() {
-    m_is_set = false;
-  }
-  bool is_set() const {
-    return m_is_set;
-  }
-  T value() const {
-    return m_value;
-  }
-  operator T() const {
-    return m_value;
-  }
-  const T* operator->() const {
-    return &m_value;
-  }
-  T* operator->() {
-    return &m_value;
-  }
-  bool operator==(const T& other) const {
-    return m_value == other;
-  }
+  SIAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  virtual ~SIAFD_Regional();
+  virtual void init();
 protected:
-  T    m_value;
-  bool m_is_set;
-  void set(T new_value, bool new_flag) {
-    m_value  = new_value;
-    m_is_set = new_flag;
-  }
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 };
 
-} // end of namespace options
+} // end of namespace stressbalance
 } // end of namespace pism
 
-
-#endif /* _OPTIONS_H_ */
+#endif /* _SIAFD_REGIONAL_H_ */
