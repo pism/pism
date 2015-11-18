@@ -18,56 +18,129 @@
  */
 
 #include <cmath>
-#include <petscsys.h>
 
 #include "GPBLD3.hh"
 
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 
+#include "approximate/gpbld.h"
+#include "approximate/enthalpy_converter.h"
+
 namespace pism {
 namespace rheology {
 
+/*! Compare provided enthalpy converter to the one hard-wired in the implementation.
+ */
+static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
+                                     const Config &config) {
+  struct enth_constants c = enth_get_constants();
+
+  if (c.T_melting != config.get_double("water_melting_point_temperature")) {
+    throw RuntimeError("water_melting_point_temperature mismatch");
+  }
+
+  if (c.c_i != config.get_double("ice_specific_heat_capacity")) {
+    throw RuntimeError("ice_specific_heat_capacity mismatch");
+  }
+
+  if (c.c_w != config.get_double("water_specific_heat_capacity")) {
+    throw RuntimeError("water_specific_heat_capacity mismatch");
+  }
+
+  if (c.T_0 != config.get_double("enthalpy_converter_reference_temperature")) {
+    throw RuntimeError("enthalpy_converter_reference_temperature mismatch");
+  }
+
+  if (c.beta != config.get_double("beta_CC")) {
+    throw RuntimeError("beta_CC mismatch");
+  }
+
+  if (c.L0 != config.get_double("water_latent_heat_fusion")) {
+    throw RuntimeError("water_latent_heat_fusion mismatch");
+  }
+
+  // check that L depends on T_m
+  const double depth = 5000.0;
+  double T_m = EC->melting_temperature(EC->pressure(depth));
+  if (EC->L(T_m) != enth_L(T_m)) {
+    throw RuntimeError("selected enthalpy converter is not compatible with GPBLD3: "
+                       "different parameterizations of the latent heat of fusion");
+  }
+}
+
 GPBLD3::GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC)
   : GPBLD(prefix, config, EC) {
-  m_name = "Glen-Paterson-Budd-Lliboutry-Duval (optimized for n == 3)";
+  m_name = "Glen-Paterson-Budd-Lliboutry-Duval (using a polynomial approximation, optimized for n == 3)";
 
   if (this->exponent() != 3.0) {
     throw RuntimeError::formatted("Can't use GPBLD3 with Glen exponent %f",
                                   this->exponent());
   }
-  m_softness_T0 = softness_paterson_budd(m_T_0);
+
+  struct gpbld_constants c = gpbld_get_constants();
+
+  if (c.ideal_gas_constant != m_ideal_gas_constant) {
+    throw RuntimeError::formatted("ideal_gas_constant mismatch: %f != %f",
+                                  c.ideal_gas_constant, m_ideal_gas_constant);
+  }
+
+  if (c.A_cold != m_A_cold) {
+    throw RuntimeError::formatted("A_cold mismatch: %f != %f",
+                                  c.A_cold, m_A_cold);
+  }
+
+  if (c.A_warm != m_A_warm) {
+    throw RuntimeError::formatted("A_warm mismatch: %f != %f",
+                                  c.A_warm, m_A_warm);
+  }
+
+  if (c.Q_cold != m_Q_cold) {
+    throw RuntimeError::formatted("Q_cold mismatch: %f != %f",
+                                  c.Q_cold, m_Q_cold);
+  }
+
+  if (c.Q_warm != m_Q_warm) {
+    throw RuntimeError::formatted("Q_warm mismatch: %f != %f",
+                                  c.Q_warm, m_Q_warm);
+  }
+
+  if (c.T_critical != m_crit_temp) {
+    throw RuntimeError::formatted("T_critical mismatch: %f != %f",
+                                  c.T_critical, m_crit_temp);
+  }
+
+  if (c.T_melting != m_T_0) {
+    throw RuntimeError::formatted("T_melting mismatch: %f != %f",
+                                  c.T_melting, m_T_0);
+  }
+
+  if (c.water_fraction_coeff != m_water_frac_coeff) {
+    throw RuntimeError::formatted("water_fraction_coeff mismatch: %f != %f",
+                                  c.water_fraction_coeff, m_water_frac_coeff);
+  }
+
+  if (c.water_frac_observed_limit != m_water_frac_observed_limit) {
+    throw RuntimeError::formatted("water_frac_observed_limit mismatch: %f != %f",
+                                  c.water_frac_observed_limit, m_water_frac_observed_limit);
+  }
+
+  check_enthalpy_converter(EC, config);
+
 }
 
 double GPBLD3::hardness_impl(double E, double p) const {
   return 1.0 / cbrt(softness_impl(E, p));
 }
 
-double GPBLD3::softness_paterson_budd(double T_pa) const {
-  const double A = T_pa < m_crit_temp ? m_A_cold : m_A_warm;
-  const double Q = T_pa < m_crit_temp ? m_Q_cold : m_Q_warm;
-
-  return A * exp(-Q / (m_ideal_gas_constant * T_pa));
-}
-
 double GPBLD3::softness_impl(double enthalpy, double pressure) const {
-  const double E_s = m_EC->enthalpy_cts(pressure);
-  if (PetscLikely(enthalpy < E_s)) {       // cold ice
-    double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
-    return softness_paterson_budd(T_pa);
-  } else { // temperate ice
-    double omega = m_EC->water_fraction(enthalpy, pressure);
-    // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
-    omega = std::min(omega, m_water_frac_observed_limit);
-    // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return m_softness_T0 * (1.0 + m_water_frac_coeff * omega);
-  }
+  return gpbld_softness(enthalpy, pressure);
 }
 
 double GPBLD3::flow_impl(double stress, double enthalpy, double pressure, double grainsize) const {
   (void) grainsize;
 
-  return softness_impl(enthalpy, pressure) * stress * stress;
+  return gpbld_flow(stress, enthalpy, pressure);
 }
 
 } // end of namespace rheology

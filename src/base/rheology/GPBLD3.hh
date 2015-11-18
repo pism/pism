@@ -28,13 +28,10 @@ namespace rheology {
 class GPBLD3 : public GPBLD {
 public:
   GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
-  protected:
+protected:
   double flow_impl(double stress, double E, double pressure, double grainsize) const;
   double hardness_impl(double E, double p) const;
   double softness_impl(double E, double p) const;
-  double softness_paterson_budd(double T_pa) const;
-private:
-  double m_softness_T0;
 };
 
 } // end of namespace rheology

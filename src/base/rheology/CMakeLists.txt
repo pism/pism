@@ -3,13 +3,13 @@ add_library (pismflowlaws
   FlowLaw.cc
   FlowLawFactory.cc
   GPBLD.cc
-  GPBLD3.cc
   GoldsbyKohlstedt.cc
   Hooke.cc
   IsothermalGlen.cc
   PatersonBudd.cc
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
+  GPBLD3.cc
   approximate/gpbld.c
   )
 target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
