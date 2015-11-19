@@ -740,9 +740,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           stress[k] = alpha * pressure[k];
         }
 
-        for (int k = 0; k <= ks; ++k) {
-          flow[k] = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size[k]);
-        }
+        m_flow_law->flow_n(&stress[0], &E[0], &pressure[0], &ice_grain_size[0], ks + 1,
+                           &flow[0]);
 
         for (int k = 0; k <= ks; ++k) {
           delta_ij[k] = e_factor[k] * theta_local * 2.0 * pressure[k] * flow[k];
