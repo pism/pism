@@ -127,6 +127,15 @@ double EnthalpyConverter::pressure(double depth) const {
   }
 }
 
+//! Compute pressure in a column of ice. Does not check validity of `depth`.
+void EnthalpyConverter::pressure(const std::vector<double> &depth,
+                                 unsigned int ks,
+                                 std::vector<double> &result) const {
+  for (unsigned int k = 0; k <= ks; ++k) {
+    result[k] = m_p_air + m_rho_i * m_g * depth[k];
+  }
+}
+
 //! Specific heat capacity of ice as a function of temperature `T`.
 double EnthalpyConverter::c(double T) const {
   return this->c_impl(T);
