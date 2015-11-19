@@ -28,7 +28,7 @@
 
 #include <gsl/gsl_version.h>
 #if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
-  (GSL_MAJOR_VERSION >= 1) && (GSL_MINOR_VERSION >= 15)
+  ((GSL_MAJOR_VERSION >= 1 && GSL_MINOR_VERSION >= 15) || (GSL_MAJOR_VERSION >= 2))
 #define PISM_USE_ODEIV2 1
 #include <gsl/gsl_odeiv2.h>
 #endif
