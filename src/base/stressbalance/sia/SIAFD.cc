@@ -602,7 +602,6 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   const double enhancement_factor = m_flow_law->enhancement_factor();
   const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
-  double ice_grain_size = m_config->get_double("ice_grain_size");
 
   const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
 
@@ -658,9 +657,10 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     My = m_grid->My(),
     Mz = m_grid->Mz();
 
-  std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz);
+  std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
-  std::vector<double> A(Mz);
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("ice_grain_size"));
+  std::vector<double> e_factor(Mz, enhancement_factor);
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
@@ -703,6 +703,23 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           for (int k = 0; k <= ks; ++k) {
             A[k] = 0.5 * (age_ij[k] + age_offset[k]);
           }
+
+          if (compute_grain_size_using_age) {
+            for (int k = 0; k <= ks; ++k) {
+              ice_grain_size[k] = grainSizeVostok(A[k]);
+            }
+          }
+
+          if (e_age_coupling) {
+            for (int k = 0; k <= ks; ++k) {
+              const double accumulation_time = current_time - A[k];
+              if (interglacial(accumulation_time)) {
+                e_factor[k] = enhancement_factor_interglacial;
+              } else {
+                e_factor[k] = enhancement_factor;
+              }
+            }
+          }
         }
 
         {
@@ -726,21 +743,9 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
         double D = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
 
-          if (compute_grain_size_using_age) {
-            ice_grain_size = grainSizeVostok(A[k]);
-          }
+          flow[k] = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size[k]);
 
-          double flow = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size);
-
-          double e = enhancement_factor;
-          if (e_age_coupling) {
-            const double accumulation_time = current_time - A[k];
-            if (interglacial(accumulation_time)) {
-              e = enhancement_factor_interglacial;
-            }
-          }
-
-          delta_ij[k] = e * theta_local * 2.0 * pressure[k] * flow;
+          delta_ij[k] = e_factor[k] * theta_local * 2.0 * pressure[k] * flow[k];
 
           if (k > 0) { // trapezoidal rule
             const double dz = z[k] - z[k-1];
