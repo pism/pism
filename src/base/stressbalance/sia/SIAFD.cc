@@ -600,8 +600,6 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   result.set(0.0);
 
-  std::vector<double> delta_ij(m_grid->Mz());
-
   const double enhancement_factor = m_flow_law->enhancement_factor();
   const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
   double ice_grain_size = m_config->get_double("ice_grain_size");
@@ -660,6 +658,10 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     My = m_grid->My(),
     Mz = m_grid->Mz();
 
+  std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz);
+  std::vector<double> delta_ij(Mz);
+  std::vector<double> A(Mz);
+
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
     ParallelSection loop(m_grid->com);
@@ -683,53 +685,68 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           continue;
         }
 
-        const double *age_ij = NULL, *age_offset = NULL;
-        if (use_age) {
-          age_ij     = age->get_column(i, j);
-          age_offset = age->get_column(i+oi, j+oj);
+        const int ks = m_grid->kBelowHeight(thk);
+
+        for (int k = 0; k <= ks; ++k) {
+          depth[k] = thk - z[k]; // FIXME issue #15
         }
 
-        const double
-          *E_ij     = enthalpy.get_column(i, j),
-          *E_offset = enthalpy.get_column(i+oi, j+oj);
+        // pressure added by the ice (i.e. pressure difference between the
+        // current level and the top of the column)
+        m_EC->pressure(depth, ks, pressure);
+
+        if (use_age) {
+          const double
+            *age_ij     = age->get_column(i, j),
+            *age_offset = age->get_column(i+oi, j+oj);
+
+          for (int k = 0; k <= ks; ++k) {
+            A[k] = 0.5 * (age_ij[k] + age_offset[k]);
+          }
+        }
+
+        {
+          const double
+            *E_ij     = enthalpy.get_column(i, j),
+            *E_offset = enthalpy.get_column(i+oi, j+oj);
+          for (int k = 0; k <= ks; ++k) {
+            E[k] = 0.5 * (E_ij[k] + E_offset[k]);
+          }
+        }
 
         const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const int      ks = m_grid->kBelowHeight(thk);
         const double   alpha =
           sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
         const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
 
-        double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
-          double depth = thk - z[k]; // FIXME issue #15
-          // pressure added by the ice (i.e. pressure difference between the
-          // current level and the top of the column)
-          const double pressure = m_EC->pressure(depth);
+          stress[k] = alpha * pressure[k];
+        }
+
+        double Dfoffset = 0.0;  // diffusivity for deformational SIA flow
+        for (int k = 0; k <= ks; ++k) {
 
           double flow;
           if (compute_grain_size_using_age) {
-            const double A = 0.5 * (age_ij[k] + age_offset[k]);
-            ice_grain_size = grainSizeVostok(A);
+            ice_grain_size = grainSizeVostok(A[k]);
           }
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
-          double E = 0.5 * (E_ij[k] + E_offset[k]);
-          flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
+          flow = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size);
 
           double e = enhancement_factor;
           if (e_age_coupling) {
-            const double A = 0.5 * (age_ij[k] + age_offset[k]);
-            const double accumulation_time = current_time - A;
+            const double accumulation_time = current_time - A[k];
             if (interglacial(accumulation_time)) {
               e = enhancement_factor_interglacial;
             }
           }
 
-          delta_ij[k] = e * theta_local * 2.0 * pressure * flow;
+          delta_ij[k] = e * theta_local * 2.0 * pressure[k] * flow;
 
           if (k > 0) { // trapezoidal rule
             const double dz = z[k] - z[k-1];
-            Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+            Dfoffset += 0.5 * dz * ((depth[k] + dz) * delta_ij[k-1] + depth[k] * delta_ij[k]);
           }
         }
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
