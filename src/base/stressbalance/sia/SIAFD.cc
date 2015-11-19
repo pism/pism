@@ -740,11 +740,12 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           stress[k] = alpha * pressure[k];
         }
 
+        for (int k = 0; k <= ks; ++k) {
+          flow[k] = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size[k]);
+        }
+
         double D = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
-
-          flow[k] = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size[k]);
-
           delta_ij[k] = e_factor[k] * theta_local * 2.0 * pressure[k] * flow[k];
 
           if (k > 0) { // trapezoidal rule
