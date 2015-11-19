@@ -143,5 +143,13 @@ double GPBLD3::flow_impl(double stress, double enthalpy, double pressure, double
   return gpbld_flow(stress, enthalpy, pressure);
 }
 
+void GPBLD3::flow_n_impl(double *stress, double *enthalpy,
+                         double *pressure, double *grainsize,
+                         unsigned int n, double *result) const {
+  (void) grainsize;
+
+  gpbld_flow_n(stress, enthalpy, pressure, n, result);
+}
+
 } // end of namespace rheology
 } // end of namespace pism

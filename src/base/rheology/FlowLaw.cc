@@ -104,6 +104,21 @@ double FlowLaw::flow_impl(double stress, double enthalpy,
   return softness(enthalpy, pressure) * pow(stress, m_n-1);
 }
 
+void FlowLaw::flow_n(double *stress, double *enthalpy,
+                     double *pressure, double *grainsize,
+                     unsigned int n, double *result) const {
+  this->flow_n_impl(stress, enthalpy, pressure, grainsize, n, result);
+}
+
+void FlowLaw::flow_n_impl(double *stress, double *enthalpy,
+                          double *pressure, double *grainsize,
+                          unsigned int n, double *result) const {
+  for (unsigned int k = 0; k < n; ++k) {
+    result[k] = this->flow(stress[k], enthalpy[k], pressure[k], grainsize[k]);
+  }
+}
+
+
 double FlowLaw::softness(double E, double p) const {
   return this->softness_impl(E, p);
 }

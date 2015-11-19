@@ -30,6 +30,9 @@ public:
   GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
 protected:
   double flow_impl(double stress, double E, double pressure, double grainsize) const;
+  void flow_n_impl(double *stress, double *E,
+                   double *pressure, double *grainsize,
+                   unsigned int n, double *result) const;
   double hardness_impl(double E, double p) const;
   double softness_impl(double E, double p) const;
 };

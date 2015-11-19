@@ -84,10 +84,16 @@ public:
   double softness(double E, double p) const;
   double flow(double stress, double E,
               double pressure, double grainsize) const;
+  void flow_n(double *stress, double *E,
+              double *pressure, double *grainsize,
+              unsigned int n, double *result) const;
 
 protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
+  virtual void flow_n_impl(double *stress, double *E,
+                           double *pressure, double *grainsize,
+                           unsigned int n, double *result) const;
   virtual double hardness_impl(double E, double p) const;
   virtual double softness_impl(double E, double p) const = 0;
 
