@@ -744,18 +744,21 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           flow[k] = m_flow_law->flow(stress[k], E[k], pressure[k], ice_grain_size[k]);
         }
 
-        double D = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
           delta_ij[k] = e_factor[k] * theta_local * 2.0 * pressure[k] * flow[k];
+        }
 
-          if (k > 0) { // trapezoidal rule
+        double D = 0.0;  // diffusivity for deformational SIA flow
+        {
+          for (int k = 1; k <= ks; ++k) {
+            // trapezoidal rule
             const double dz = z[k] - z[k-1];
             D += 0.5 * dz * ((depth[k] + dz) * delta_ij[k-1] + depth[k] * delta_ij[k]);
           }
+          // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+          const double dz = thk - z[ks];
+          D += 0.5 * dz * dz * delta_ij[ks];
         }
-        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - z[ks];
-        D += 0.5 * dz * dz * delta_ij[ks];
 
         // Override diffusivity at the edges of the domain. (At these
         // locations PISM uses ghost cells *beyond* the boundary of
