@@ -509,8 +509,12 @@ IceModelVec::Ptr PSB_wvel::compute_impl() {
 
       // in the ice:
       if (M.grounded(i,j)) {
+        const double
+          bed_dx = bed->diff_x_p(i,j),
+          bed_dy = bed->diff_y_p(i,j),
+          uplift_ij = (*uplift)(i,j);
         for (int k = 0; k <= ks ; k++) {
-          result[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+          result[k] = w[k] + uplift_ij + u[k] * bed_dx + v[k] * bed_dy;
         }
 
       } else {                  // floating
