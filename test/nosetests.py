@@ -704,23 +704,69 @@ def gpbld3_test():
     gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
     gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
 
-    TpaC = [-30, -5, 0, 0]
-    depth = 2000
-    gs = 1e-3
-    omega = [0.0, 0.0, 0.0, 0.005]
+    import numpy as np
+    N = 11
+    TpaC = np.linspace(-30, 0, N)
+    depth = np.linspace(0, 4000, N)
+    omega = np.linspace(0, 0.02, N)
     sigma = [1e4, 5e4, 1e5, 1.5e5]
 
-    p = EC.pressure(depth)
-    Tm = EC.melting_temperature(p)
+    gs = 1e-3
+
+    for d in depth:
+        p = EC.pressure(d)
+        Tm = EC.melting_temperature(p)
+        for Tpa in TpaC:
+            T = Tm + Tpa
+            for o in omega:
+                E = EC.enthalpy(T, o, p)
+                for s in sigma:
+                    regular = gpbld.flow(s, E, p, gs)
+                    optimized = gpbld3.flow(s, E, p, gs)
+                    print np.fabs(regular - optimized) / regular
+                    assert np.fabs(regular - optimized) / regular < 1e-15
+
+def gpbld3_error_report():
+    """Print max. absolute and relative difference between GPBLD and
+    GPBLD3. Uses 101*101*101*101 samples in a "reasonable" range of
+    pressure-adjusted temperatures, depth, water fraction, and
+    effective stress. This takes takes about 15 minutes to complete.
+    """
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
+    EC = ctx.enthalpy_converter()
+    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
 
     import numpy as np
-    for i in range(4):
-        for j in range(4):
-            T = Tm + TpaC[j]
-            E = EC.enthalpy(T, omega[j], p)
-            regular = gpbld.flow(sigma[i], E, p, gs)
-            optimized = gpbld3.flow(sigma[i], E, p, gs)
-            assert np.fabs(regular - optimized) < 1e-16
+    N = 101
+    TpaC = np.linspace(-30, 0, N)
+    depth = np.linspace(0, 5000, N)
+    omega = np.linspace(0, 0.02, N)
+    sigma = np.linspace(0, 5e5, N)
+
+    gs = 1e-3
+
+    max_difference = 0.0
+    max_rel_difference = 0.0
+
+    for d in depth:
+        p = EC.pressure(d)
+        Tm = EC.melting_temperature(p)
+        for Tpa in TpaC:
+            T = Tm + Tpa
+            for o in omega:
+                E = EC.enthalpy(T, o, p)
+                for s in sigma:
+                    regular = gpbld.flow(s, E, p, gs)
+                    optimized = gpbld3.flow(s, E, p, gs)
+                    max_difference = max(np.fabs(regular - optimized), max_difference)
+                    if regular > 0.0:
+                        max_rel_difference = max(np.fabs(regular - optimized) / regular,
+                                                 max_rel_difference)
+
+    print "%d (%e) samples" % (N**4, N**4)
+    print "max difference", max_difference
+    print "max relative difference", max_rel_difference
 
 def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
