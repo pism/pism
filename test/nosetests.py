@@ -730,7 +730,7 @@ def gpbld3_error_report():
     """Print max. absolute and relative difference between GPBLD and
     GPBLD3. Uses 101*101*101*101 samples in a "reasonable" range of
     pressure-adjusted temperatures, depth, water fraction, and
-    effective stress. This takes takes about 15 minutes to complete.
+    effective stress. This takes about 15 minutes to complete.
     """
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
