@@ -46,7 +46,10 @@ void ColumnInterpolation::coarse_to_fine(const double *input, unsigned int ks, d
 
 void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned int ks,
                                                 double *result) const {
-  for (unsigned int k = 0; k < Mz_fine(); ++k) {
+  const unsigned int Mzfine = Mz_fine();
+  const unsigned int Mzcoarse = Mz_coarse();
+
+  for (unsigned int k = 0; k < Mzfine; ++k) {
     if (k > ks) {
       result[k] = input[m_coarse2fine[k]];
       continue;
@@ -55,8 +58,8 @@ void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned in
     unsigned int m = m_coarse2fine[k];
 
     // extrapolate (if necessary):
-    if (m == Mz_coarse() - 1) {
-      result[k] = input[Mz_coarse() - 1];
+    if (m == Mzcoarse - 1) {
+      result[k] = input[Mzcoarse - 1];
       continue;
     }
 
@@ -67,11 +70,10 @@ void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned in
 
 void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned int ks,
                                                    double *result) const {
+  const unsigned int Mzcoarse = Mz_coarse();
+
   unsigned int k = 0, m = 0;
-  for (m = 0; m < Mz_coarse() - 2; ++m) {
-    if (k > ks) {
-      break;
-    }
+  for (m = 0; m < Mzcoarse - 2 and k <= ks; ++m) {
 
     const double
       z0 = m_z_coarse[m],
@@ -88,22 +90,16 @@ void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned
       a = d1 - b * (z1 - z0),
       c = f0;
 
-    while (m_z_fine[k] < z1) {
-      if (k > ks) {
-        break;
-      }
-
+    for (; m_z_fine[k] < z1 and k <= ks; ++k) {
       const double s = m_z_fine[k] - z0;
 
       result[k] = s * (a + b * s) + c;
-
-      ++k;
     }
   } // m-loop
 
   // check if we got to the end of the m-loop and use linear
   // interpolation between the remaining 2 coarse levels
-  if (m == Mz_coarse() - 2) {
+  if (m == Mzcoarse - 2) {
     const double
       z0 = m_z_coarse[m],
       z1 = m_z_coarse[m + 1],
@@ -111,18 +107,15 @@ void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned
       f1 = input[m + 1],
       lambda = (f1 - f0) / (z1 - z0);
 
-    while (m_z_fine[k] < z1) {
+    for (; m_z_fine[k] < z1; ++k) {
       result[k] = f0 + lambda * (m_z_fine[k] - z0);
-
-      ++k;
     }
   }
 
   // fill the rest using constant extrapolation
-  const double f0 = input[Mz_coarse() - 1];
-  while (k <= ks) {
+  const double f0 = input[Mzcoarse - 1];
+  for (; k <= ks; ++k) {
     result[k] = f0;
-    ++k;
   }
 }
 
