@@ -897,6 +897,11 @@ void SIAFD::compute_I() {
 
   const unsigned int Mz = m_grid->Mz();
 
+  std::vector<double> dz(Mz);
+  for (unsigned int k = 1; k < Mz; ++k) {
+    dz[k] = m_grid->z(k) - m_grid->z(k-1);
+  }
+
   for (int o = 0; o < 2; ++o) {
     ParallelSection loop(m_grid->com);
     try {
@@ -916,9 +921,8 @@ void SIAFD::compute_I() {
         I_ij[0] = 0.0;
         double I_current = 0.0;
         for (unsigned int k = 1; k <= ks; ++k) {
-          const double dz = m_grid->z(k) - m_grid->z(k-1);
           // trapezoidal rule
-          I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
+          I_current += 0.5 * dz[k] * (delta_ij[k-1] + delta_ij[k]);
           I_ij[k] = I_current;
         }
         // above the ice:
