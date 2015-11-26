@@ -899,7 +899,7 @@ void SIAFD::compute_I() {
 
   std::vector<double> dz(Mz);
   for (unsigned int k = 1; k < Mz; ++k) {
-    dz[k] = m_grid->z(k) - m_grid->z(k-1);
+    dz[k] = m_grid->z(k) - m_grid->z(k - 1);
   }
 
   for (int o = 0; o < 2; ++o) {
@@ -908,12 +908,12 @@ void SIAFD::compute_I() {
       for (PointsWithGhosts p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        const int oi = 1-o, oj=o;
+        const int oi = 1 - o, oj = o;
         const double
-          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+          thk = 0.5 * (thk_smooth(i, j) + thk_smooth(i + oi, j + oj));
 
-        double *delta_ij = m_delta[o].get_column(i,j);
-        double *I_ij     = I[o].get_column(i,j);
+        const double *delta_ij = m_delta[o].get_column(i, j);
+        double       *I_ij     = I[o].get_column(i, j);
 
         const unsigned int ks = m_grid->kBelowHeight(thk);
 
@@ -922,7 +922,7 @@ void SIAFD::compute_I() {
         double I_current = 0.0;
         for (unsigned int k = 1; k <= ks; ++k) {
           // trapezoidal rule
-          I_current += 0.5 * dz[k] * (delta_ij[k-1] + delta_ij[k]);
+          I_current += 0.5 * dz[k] * (delta_ij[k - 1] + delta_ij[k]);
           I_ij[k] = I_current;
         }
         // above the ice:
