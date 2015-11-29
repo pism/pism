@@ -719,7 +719,10 @@ def gpbld3_test():
         for Tpa in TpaC:
             T = Tm + Tpa
             for o in omega:
-                E = EC.enthalpy(T, o, p)
+                if T >= Tm:
+                    E = EC.enthalpy(T, o, p)
+                else:
+                    E = EC.enthalpy(T, 0.0, p)
                 for s in sigma:
                     regular = gpbld.flow(s, E, p, gs)
                     optimized = gpbld3.flow(s, E, p, gs)
@@ -755,7 +758,10 @@ def gpbld3_error_report():
         for Tpa in TpaC:
             T = Tm + Tpa
             for o in omega:
-                E = EC.enthalpy(T, o, p)
+                if T >= Tm:
+                    E = EC.enthalpy(T, o, p)
+                else:
+                    E = EC.enthalpy(T, 0.0, p)
                 for s in sigma:
                     regular = gpbld.flow(s, E, p, gs)
                     optimized = gpbld3.flow(s, E, p, gs)
