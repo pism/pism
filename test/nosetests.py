@@ -741,7 +741,7 @@ def gpbld3_error_report():
     gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
 
     import numpy as np
-    N = 101
+    N = 31
     TpaC = np.linspace(-30, 0, N)
     depth = np.linspace(0, 5000, N)
     omega = np.linspace(0, 0.02, N)
