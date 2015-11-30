@@ -10,7 +10,7 @@ add_library (pismflowlaws
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
   GPBLD3.cc
-  approximate/gpbld.c
+  approximate/gpbld.cc
   )
 target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
 

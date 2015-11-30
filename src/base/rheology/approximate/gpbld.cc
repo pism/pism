@@ -23,7 +23,7 @@
 
 /* include the .c file, not the header */
 #include "enthalpy_converter.c"
-#include "exp6.h"
+#include "vdt/vdtMath.h"
 
 static const struct gpbld_constants gpbld = {
   .ideal_gas_constant        = 8.31441,
@@ -75,7 +75,7 @@ double paterson_budd_softness(double T_pa) {
     C     = C_warm;
   }
 
-  double E = exp6(-QR / T_pa - shift);
+  double E = vdt::fast_exp(-QR / T_pa - shift);
   /* raise to the power 8 by doubling 3 times */
   E = E * E;
   E = E * E;
@@ -110,8 +110,8 @@ double gpbld_flow(double stress, double E, double P) {
   return gpbld_softness(E, P) * (stress * stress);
 }
 
-void gpbld_flow_n(double *restrict stress, double *restrict E, double *restrict P,
-                  unsigned int n, double *restrict result) {
+void gpbld_flow_n(double *stress, double *E, double *P,
+                  unsigned int n, double *result) {
   for (unsigned int k = 0; k < n; ++k) {
     result[k] = gpbld_flow(stress[k], E[k], P[k]);
   }
