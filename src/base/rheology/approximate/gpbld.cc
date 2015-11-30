@@ -33,7 +33,6 @@ static const struct gpbld_constants gpbld = {
   .A_warm                    = 1730.00000,
   .Q_warm                    = 139000.00000,
   .water_fraction_coeff      = 181.25,
-  .T_min                     = 200,
   .T_melting                 = 273.15,
   .water_frac_observed_limit = 0.01,
 };
@@ -42,46 +41,17 @@ struct gpbld_constants gpbld_get_constants() {
   return gpbld;
 }
 
-/* A Helper function used to compute range reduction constants (cold
-   case). */
-static double z_cold(double T) {
-  return (-gpbld.Q_cold/gpbld.ideal_gas_constant) / T;
-}
-
-/* A Helper function used to compute range reduction constants (warm
-   case).*/
-static double z_warm(double T) {
-  return (-gpbld.Q_warm/gpbld.ideal_gas_constant) / T;
-}
-
 double paterson_budd_softness(double T_pa) {
-  /* these constants will be pre-computed */
-  const double
-    T_min      = gpbld.T_min,
-    T_max      = gpbld.T_melting,
-    shift_cold = 0.5 * (z_cold(T_min) + z_cold(gpbld.T_critical)),
-    C_cold     = gpbld.A_cold * exp(shift_cold),
-    shift_warm = 0.5 * (z_warm(gpbld.T_critical) + z_warm(T_max)),
-    C_warm     = gpbld.A_warm * exp(shift_warm);
-
   double
-    QR    = gpbld.Q_cold / gpbld.ideal_gas_constant / 8.0,
-    shift = shift_cold / 8.0,
-    C     = C_cold;
+    QR = gpbld.Q_cold / gpbld.ideal_gas_constant,
+    A  = gpbld.A_cold;
 
   if (T_pa >= gpbld.T_critical) {
-    QR    = gpbld.Q_warm / gpbld.ideal_gas_constant / 8.0;
-    shift = shift_warm / 8.0;
-    C     = C_warm;
+    QR = gpbld.Q_warm / gpbld.ideal_gas_constant;
+    A  = gpbld.A_warm;
   }
 
-  double E = vdt::fast_exp(-QR / T_pa - shift);
-  /* raise to the power 8 by doubling 3 times */
-  E = E * E;
-  E = E * E;
-  E = E * E;
-
-  return C * E;
+  return A * vdt::fast_exp(-QR / T_pa);
 }
 
 /* Glen-Paterson-Budd-Lliboutry-Duval softness (temperate case). */
