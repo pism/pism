@@ -1026,9 +1026,12 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
       *u_ij = u_out.get_column(i, j),
       *v_ij = v_out.get_column(i, j);
 
+    // split into two loops to encourage auto-vectorization
     for (unsigned int k = 0; k < Mz; ++k) {
       u_ij[k] = vel_input_u - 0.25 * (I_e[k] * h_x_e + I_w[k] * h_x_w +
                                       I_n[k] * h_x_n + I_s[k] * h_x_s);
+    }
+    for (unsigned int k = 0; k < Mz; ++k) {
       v_ij[k] = vel_input_v - 0.25 * (I_e[k] * h_y_e + I_w[k] * h_y_w +
                                       I_n[k] * h_y_n + I_s[k] * h_y_s);
     }
