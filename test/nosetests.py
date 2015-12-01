@@ -727,7 +727,7 @@ def gpbld3_test():
                     regular = gpbld.flow(s, E, p, gs)
                     optimized = gpbld3.flow(s, E, p, gs)
                     print np.fabs(regular - optimized) / regular
-                    assert np.fabs(regular - optimized) / regular < 1e-15
+                    assert np.fabs(regular - optimized) / regular < 2e-14
 
 def gpbld3_error_report():
     """Print max. absolute and relative difference between GPBLD and
