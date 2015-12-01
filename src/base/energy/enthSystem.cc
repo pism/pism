@@ -391,6 +391,11 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   S.U(0)   = m_U0;
   S.RHS(0) = m_B0;
 
+  const double
+    one_over_rho = 1.0 / m_ice_density,
+    Dx = 1.0 / m_dx,
+    Dy = 1.0 / m_dy;
+
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {
     const double
@@ -412,13 +417,13 @@ void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
     S.RHS(k) = m_Enth[k];
     if (not m_ismarginal) {
       const double UpEnthu = (m_u[k] < 0 ?
-                              m_u[k] * (m_E_e[k] -  m_Enth[k]) / m_dx :
-                              m_u[k] * (m_Enth[k]  - m_E_w[k]) / m_dx);
+                              m_u[k] * (m_E_e[k] -  m_Enth[k]) * Dx :
+                              m_u[k] * (m_Enth[k]  - m_E_w[k]) * Dx);
       const double UpEnthv = (m_v[k] < 0 ?
-                              m_v[k] * (m_E_n[k] -  m_Enth[k]) / m_dy :
-                              m_v[k] * (m_Enth[k]  - m_E_s[k]) / m_dy);
+                              m_v[k] * (m_E_n[k] -  m_Enth[k]) * Dy :
+                              m_v[k] * (m_Enth[k]  - m_E_s[k]) * Dy);
 
-      S.RHS(k) += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
+      S.RHS(k) += m_dt * (one_over_rho * m_strain_heating[k] - UpEnthu - UpEnthv);
     }
   }
 
