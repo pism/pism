@@ -30,12 +30,16 @@ struct gpbld_constants {
   double ideal_gas_constant;
   /* Paterson-Budd cold case activation energy, Pascal-3 / second */
   double A_cold;
+  /* A_cold^(-1/3) */
+  double A_cold_inv_cuberoot;
   /* Paterson-Budd Q_cold, Joule / mol */
   double Q_cold;
   /* Paterson-Budd critical temperature, Kelvin */
   double T_critical;
   /* Paterson-Budd warm case activation energy, Pascal-3 / second */
   double A_warm;
+  /* A_warm^(-1/3) */
+  double A_warm_inv_cuberoot;
   /* Paterson-Budd Q_warm, Joule / mol */
   double Q_warm;
   /* Glen-Paterson-Budd-Lliboutry-Duval softness parameter, pure number */
@@ -58,6 +62,15 @@ double paterson_budd_softness(double T_pa);
 /* Glen-Paterson-Budd-Lliboutry-Duval softness as a function of
    enthalpy and pressure. */
 double gpbld_softness(double E, double P);
+
+/* Glen-Paterson-Budd-Lliboutry-Duval hardness as a function of
+   enthalpy and pressure. */
+double gpbld_hardness(double E, double P);
+
+/* Glen-Paterson-Budd-Lliboutry-Duval hardness as a function of
+   enthalpy and pressure. */
+void gpbld_hardness_n(double *E, double *P, unsigned int n, double *result);
+
 
 /* Glen-Paterson-Budd-Lliboutry-Duval flow function, optimized for the
    Glen exponent n == 3. */
