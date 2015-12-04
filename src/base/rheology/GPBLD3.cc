@@ -24,7 +24,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 
-#include "approximate/gpbld.h"
+#include "approximate/gpbld.hh"
 #include "approximate/enthalpy_converter.h"
 
 namespace pism {
