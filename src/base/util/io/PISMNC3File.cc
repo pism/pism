@@ -769,7 +769,6 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int NC3File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  char *str = NULL;
   int stat, len, varid = -1;
 
   // Read and broadcast the attribute length:
@@ -796,28 +795,25 @@ int NC3File::get_att_text_impl(const std::string &variable_name, const std::stri
     result.clear();
     return 0;
   }
-  str = new char[len + 1];
-  // Zealously clear the string, so that we don't risk moving unitialized bytes
-  // over MPI (because Valgrind can't tell the difference between these
-  // harmless bytes and potential memory errors)
-  memset(str, 0, len + 1);
+
+  // Note: this sets all elements of str to zero, ensuring that the string is null-terminated and
+  // that we never broadcast uninitialized data.
+  std::vector<char> str(len + 1, 0);
 
   // Now read the string and broadcast stat to see if we succeeded:
   if (m_rank == 0) {
-    stat = nc_get_att_text(m_file_id, varid, att_name.c_str(), str);
+    stat = nc_get_att_text(m_file_id, varid, att_name.c_str(), &str[0]);
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  // On success, broadcast the string. On error, set str to "".
+  // On success, broadcast the string. On error, set result to "".
   if (stat == NC_NOERR) {
-    MPI_Bcast(str, len + 1, MPI_CHAR, 0, m_com);
+    MPI_Bcast(&str[0], len + 1, MPI_CHAR, 0, m_com);
+    result = &str[0];
   } else {
-    strcpy(str, "");
+    result = "";
   }
 
-  result = str;
-
-  delete[] str;
   return 0;
 }
 
