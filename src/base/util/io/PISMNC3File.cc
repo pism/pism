@@ -764,58 +764,97 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
   return 0;
 }
 
-//! \brief Gets a text attribute.
-/*!
- * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
- */
-int NC3File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  int stat, len, varid = -1;
+// Get a text (character array) attribute on rank 0.
+static int get_att_text(int ncid, int varid, const std::string &att_name,
+                        std::string &result) {
+  int stat = 0;
 
-  // Read and broadcast the attribute length:
-  if (m_rank == 0) {
-    size_t attlen;
-
-    if (variable_name == "PISM_GLOBAL") {
-      varid = NC_GLOBAL;
-    } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
-    }
-
-    stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
-    if (stat == NC_NOERR) {
-      len = static_cast<int>(attlen);
-    } else {
-      len = 0;
-    }
-  }
-  MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
-
-  // Allocate some memory or clear result and return:
-  if (len == 0) {
-    result.clear();
+  size_t attlen = 0;
+  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  if (stat != NC_NOERR) {
+    result = "";
     return 0;
   }
 
-  // Note: this sets all elements of str to zero, ensuring that the string is null-terminated and
-  // that we never broadcast uninitialized data.
-  std::vector<char> str(len + 1, 0);
-
-  // Now read the string and broadcast stat to see if we succeeded:
-  if (m_rank == 0) {
-    stat = nc_get_att_text(m_file_id, varid, att_name.c_str(), &str[0]);
-  }
-  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
-
-  // On success, broadcast the string. On error, set result to "".
+  std::vector<char> buffer(attlen + 1, 0);
+  stat = nc_get_att_text(ncid, varid, att_name.c_str(), &buffer[0]);
   if (stat == NC_NOERR) {
-    MPI_Bcast(&str[0], len + 1, MPI_CHAR, 0, m_com);
-    result = &str[0];
+    result = &buffer[0];
   } else {
     result = "";
   }
 
   return 0;
 }
+
+// Get a string attribute on rank 0. Ignores all but the first string in NetCDF-4 "string array"
+// attributes.
+static int get_att_string(int ncid, int varid, const std::string &att_name,
+                          std::string &result) {
+  int stat = 0;
+
+  size_t attlen = 0;
+  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  if (stat != NC_NOERR) {
+    result = "";
+    return 0;
+  }
+
+  std::vector<char*> buffer(attlen, NULL);
+  stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
+  if (stat == NC_NOERR) {
+    result = buffer[0];
+  } else {
+    result = "";
+  }
+  stat = nc_free_string(attlen, &buffer[0]);
+
+  return stat;
+}
+
+
+//! \brief Gets a text attribute.
+/*!
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
+ */
+int NC3File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+  int stat = 0, varid = -1;
+
+  // Read and broadcast the attribute length:
+  if (m_rank == 0) {
+    if (variable_name == "PISM_GLOBAL") {
+      varid = NC_GLOBAL;
+    } else {
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+    }
+
+    nc_type nctype;
+    stat = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
+
+    if (stat == NC_NOERR) {
+      if (nctype == NC_CHAR) {
+        stat = pism::io::get_att_text(m_file_id, varid, att_name, result); check(stat);
+      } else if (nctype == NC_STRING) {
+        stat = pism::io::get_att_string(m_file_id, varid, att_name, result); check(stat);
+      } else {
+        result = "";
+      }
+    } else if (stat == NC_ENOTATT) {
+      result = "";
+    } else {
+      check(stat);
+    }
+  }
+
+  int len = result.size();
+  MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
+
+  result.resize(len);
+  MPI_Bcast(&result[0], len, MPI_CHAR, 0, m_com);
+
+  return 0;
+}
+
 
 //! \brief Writes a double attribute.
 /*!

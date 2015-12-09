@@ -361,13 +361,57 @@ int NC4File::get_att_double_impl(const std::string &variable_name, const std::st
   return 0;
 }
 
+// Get a text (character array) attribute on rank 0.
+static int get_att_text(int ncid, int varid, const std::string &att_name,
+                        std::string &result) {
+  int stat = 0;
 
-int NC4File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  char *str = NULL;
-  int stat, len, varid = -1;
+  size_t attlen = 0;
+  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  if (stat != NC_NOERR) {
+    result = "";
+    return 0;
+  }
 
-  // Read the attribute length:
-  size_t attlen;
+  std::vector<char> buffer(attlen + 1, 0);
+  stat = nc_get_att_text(ncid, varid, att_name.c_str(), &buffer[0]);
+  if (stat == NC_NOERR) {
+    result = &buffer[0];
+  } else {
+    result = "";
+  }
+
+  return 0;
+}
+
+// Get a string attribute on rank 0. Ignores all but the first string in NetCDF-4 "string array"
+// attributes.
+static int get_att_string(int ncid, int varid, const std::string &att_name,
+                          std::string &result) {
+  int stat = 0;
+
+  size_t attlen = 0;
+  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  if (stat != NC_NOERR) {
+    result = "";
+    return 0;
+  }
+
+  std::vector<char*> buffer(attlen, NULL);
+  stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
+  if (stat == NC_NOERR) {
+    result = buffer[0];
+  } else {
+    result = "";
+  }
+  stat = nc_free_string(attlen, &buffer[0]);
+
+  return stat;
+}
+
+int NC4File::get_att_text_impl(const std::string &variable_name,
+                               const std::string &att_name, std::string &result) const {
+  int stat = 0, varid = -1;
 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
@@ -375,37 +419,23 @@ int NC4File::get_att_text_impl(const std::string &variable_name, const std::stri
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+  nc_type nctype;
+  stat = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
+
   if (stat == NC_NOERR) {
-    len = static_cast<int>(attlen);
+    if (nctype == NC_CHAR) {
+      stat = pism::io::get_att_text(m_file_id, varid, att_name, result); check(stat);
+    } else if (nctype == NC_STRING) {
+      stat = pism::io::get_att_string(m_file_id, varid, att_name, result); check(stat);
+    } else {
+      result = "";
+    }
+  } else if (stat == NC_ENOTATT) {
+    result = "";
   } else {
-    len = 0;
+    check(stat);
   }
 
-  // Allocate some memory or set result to NULL and return:
-  if (len == 0) {
-    result.clear();
-    return 0;
-  }
-
-  str = new char[len + 1];
-  memset(str, 0, len + 1);
-
-  // Now read the string and see if we succeeded:
-  stat = nc_get_att_text(m_file_id, varid, att_name.c_str(), str);
-
-  // On success, broadcast the string. On error, set str to "".
-  if (stat != NC_NOERR) {
-    fprintf(stderr, "Error reading the %s attribute; (variable %s, %s)",
-            att_name.c_str(), variable_name.c_str(), nc_strerror(stat));
-
-    delete[] str;
-    return stat;
-  }
-
-  result = str;
-
-  delete[] str;
   return 0;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014 PISM Authors
+// Copyright (C) 2012, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,6 +44,7 @@ static pism::IO_Type nc_type_to_pism_type(int input) {
   case NC_BYTE:
     return PISM_BYTE;
   case NC_CHAR:
+  case NC_STRING:               // treat NC_CHAR and NC_STRING as equivalent
     return PISM_CHAR;
   case NC_SHORT:
     return PISM_SHORT;
