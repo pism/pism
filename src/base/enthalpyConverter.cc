@@ -72,9 +72,15 @@ EnthalpyConverter::~EnthalpyConverter() {
 }
 
 //! Return `true` if ice at `(E, P)` is temperate.
+//! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
-  return this->is_temperate_impl(E, P);
+  if (m_do_cold_ice_methods) {
+    return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
+  } else {
+    return (E >= enthalpy_cts(P));
+  }
 }
+
 
 void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
 #if (PISM_DEBUG==1)
@@ -105,11 +111,6 @@ void EnthalpyConverter::validate_E_P(double E, double P) const {
 #endif
 }
 
-//! Return temperature of ice at `(E, P)`.
-double EnthalpyConverter::temperature(double E, double P) const {
-  return this->temperature_impl(E, P);
-}
-
 
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
@@ -128,10 +129,6 @@ double EnthalpyConverter::pressure(double depth) const {
 
 //! Specific heat capacity of ice as a function of temperature `T`.
 double EnthalpyConverter::c(double T) const {
-  return this->c_impl(T);
-}
-
-double EnthalpyConverter::c_impl(double /*T*/) const {
   return m_c_i;
 }
 
@@ -151,10 +148,6 @@ double EnthalpyConverter::L_impl(double T_m) const {
      \f[ T_m(p) = T_{melting} - \beta p. \f]
  */
 double EnthalpyConverter::melting_temperature(double P) const {
-  return this->melting_temperature_impl(P);
-}
-
-double EnthalpyConverter::melting_temperature_impl(double P) const {
   return m_T_melting - m_beta * P;
 }
 
@@ -164,30 +157,13 @@ double EnthalpyConverter::melting_temperature_impl(double P) const {
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
  */
 double EnthalpyConverter::enthalpy_cts(double P) const {
-  return this->enthalpy_cts_impl(P);
-}
-
-double EnthalpyConverter::enthalpy_cts_impl(double P) const {
   return m_c_i * (melting_temperature(P) - m_T_0);
 }
 
 //! @brief Compute the maximum allowed value of ice enthalpy
 //! (corresponds to @f$ \omega = 1 @f$).
 double EnthalpyConverter::enthalpy_liquid(double P) const {
-  return this->enthalpy_liquid_impl(P);
-}
-
-double EnthalpyConverter::enthalpy_liquid_impl(double P) const {
   return enthalpy_cts(P) + L(melting_temperature(P));
-}
-
-//! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
-bool EnthalpyConverter::is_temperate_impl(double E, double P) const {
-  if (m_do_cold_ice_methods) {
-    return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
-  } else {
-    return (E >= enthalpy_cts(P));
-  }
 }
 
 
@@ -201,7 +177,7 @@ bool EnthalpyConverter::is_temperate_impl(double E, double P) const {
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
-double EnthalpyConverter::temperature_impl(double E, double P) const {
+double EnthalpyConverter::temperature(double E, double P) const {
   validate_E_P(E, P);
 
   if (E < enthalpy_cts(P)) {
@@ -238,10 +214,6 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
 double EnthalpyConverter::water_fraction(double E, double P) const {
   validate_E_P(E, P);
 
-  return this->water_fraction_impl(E, P);
-}
-
-double EnthalpyConverter::water_fraction_impl(double E, double P) const {
   double E_s = enthalpy_cts(P);
   if (E <= E_s) {
     return 0.0;
@@ -267,10 +239,6 @@ Certain cases are not allowed and throw exceptions:
 These inequalities may be violated in the sixth digit or so, however.
  */
 double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
-  return this->enthalpy_impl(T, omega, P);
-}
-
-double EnthalpyConverter::enthalpy_impl(double T, double omega, double P) const {
   validate_T_omega_P(T, omega, P);
 
   const double T_melting = melting_temperature(P);
@@ -307,11 +275,6 @@ Computes:
   @f$ E(T,\omega,p) @f$.
  */
 double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) const {
-  return this->enthalpy_permissive_impl(T, omega, P);
-}
-
-double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, double P) const {
-
   const double T_m = melting_temperature(P);
 
   if (T < T_m) {

@@ -76,17 +76,7 @@ public:
   double pressure(double depth) const;
 
 protected:
-  double enthalpy_permissive_impl(double T, double omega, double P) const;
-  double enthalpy_cts_impl(double P) const;
-  double c_impl(double T) const;
   virtual double L_impl(double T_pm) const;
-  double enthalpy_impl(double T, double omega, double P) const;
-  double water_fraction_impl(double E, double P) const;
-  double melting_temperature_impl(double P) const;
-  double temperature_impl(double E, double P) const;
-  double enthalpy_liquid_impl(double P) const;
-
-  bool is_temperate_impl(double E, double P) const;
 
   void validate_E_P(double E, double P) const;
   void validate_T_omega_P(double T, double omega, double P) const;
