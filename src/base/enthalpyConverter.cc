@@ -323,41 +323,18 @@ double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, doubl
 
 ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
+  // turn on the "cold" enthalpy converter mode
   m_do_cold_ice_methods = true;
+  // set melting temperature to one million Kelvin so that all ice is cold
+  m_T_melting = 1e6;
+  // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to
+  // zero
+  m_beta = 0.0;
 }
 
 ColdEnthalpyConverter::~ColdEnthalpyConverter() {
   // empty
 }
-
-double ColdEnthalpyConverter::enthalpy_permissive_impl(double T,
-                                                       double /*omega*/,
-                                                       double /*pressure*/) const {
-  return m_c_i * (T - m_T_0);
-}
-
-double ColdEnthalpyConverter::enthalpy_impl(double T, double /*omega*/,
-                                            double /*pressure*/) const {
-  return m_c_i * (T - m_T_0);
-}
-
-double ColdEnthalpyConverter::water_fraction_impl(double /*E*/,
-                                                  double /*pressure*/) const {
-  return 0.0;
-}
-
-double ColdEnthalpyConverter::melting_temperature_impl(double /*pressure*/) const {
-  return m_T_melting;
-}
-
-bool ColdEnthalpyConverter::is_temperate_impl(double /*E*/, double /*pressure*/) const {
-  return false;
-}
-
-double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) const {
-  return (E / m_c_i) + m_T_0;
-}
-
 /*! @class KirchhoffEnthalpyConverter
 
   Following a re-interpretation of [@ref

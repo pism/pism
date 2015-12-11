@@ -76,17 +76,17 @@ public:
   double pressure(double depth) const;
 
 protected:
-  virtual double enthalpy_permissive_impl(double T, double omega, double P) const;
-  virtual double enthalpy_cts_impl(double P) const;
-  virtual double c_impl(double T) const;
+  double enthalpy_permissive_impl(double T, double omega, double P) const;
+  double enthalpy_cts_impl(double P) const;
+  double c_impl(double T) const;
   virtual double L_impl(double T_pm) const;
-  virtual double enthalpy_impl(double T, double omega, double P) const;
-  virtual double water_fraction_impl(double E, double P) const;
-  virtual double melting_temperature_impl(double P) const;
-  virtual double temperature_impl(double E, double P) const;
-  virtual double enthalpy_liquid_impl(double P) const;
+  double enthalpy_impl(double T, double omega, double P) const;
+  double water_fraction_impl(double E, double P) const;
+  double melting_temperature_impl(double P) const;
+  double temperature_impl(double E, double P) const;
+  double enthalpy_liquid_impl(double P) const;
 
-  virtual bool is_temperate_impl(double E, double P) const;
+  bool is_temperate_impl(double E, double P) const;
 
   void validate_E_P(double E, double P) const;
   void validate_T_omega_P(double T, double omega, double P) const;
@@ -129,14 +129,6 @@ class ColdEnthalpyConverter : public EnthalpyConverter {
 public:
   ColdEnthalpyConverter(const Config &config);
   virtual ~ColdEnthalpyConverter();
-
-protected:
-  double enthalpy_permissive_impl(double T, double omega, double P) const;
-  double enthalpy_impl(double T, double omega, double P) const;
-  double water_fraction_impl(double E, double P) const;
-  double melting_temperature_impl(double P) const;
-  bool is_temperate_impl(double E, double P) const;
-  double temperature_impl(double E, double P) const;
 };
 
 //! @brief An enthalpy converter including pressure-dependence of the latent heat of fusion of

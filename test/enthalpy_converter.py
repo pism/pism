@@ -151,11 +151,12 @@ def invalid_inputs_test():
     def run(name, EC):
         depth = 1000
         pressure = EC.pressure(depth)
+        E_cts = EC.enthalpy_cts(pressure)
         E_liquid = EC.enthalpy_liquid(pressure)
         T_melting = EC.melting_temperature(pressure)
 
         # don't test the converter that thinks this is cold:
-        if not EC.is_temperate(E_liquid, pressure):
+        if not EC.is_temperate(E_cts, pressure):
             print "skipped...",
             return
 
