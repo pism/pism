@@ -127,6 +127,18 @@ double FlowLaw::hardness(double E, double p) const {
   return this->hardness_impl(E, p);
 }
 
+void FlowLaw::hardness_n(double *enthalpy, double *pressure,
+                         unsigned int n, double *result) const {
+  this->hardness_n_impl(enthalpy, pressure, n, result);
+}
+
+void FlowLaw::hardness_n_impl(double *enthalpy, double *pressure,
+                              unsigned int n, double *result) const {
+  for (unsigned int k = 0; k < n; ++k) {
+    result[k] = this->hardness(enthalpy[k], pressure[k]);
+  }
+}
+
 double FlowLaw::hardness_impl(double E, double p) const {
   return pow(softness(E, p), m_hardness_power);
 }

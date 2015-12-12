@@ -133,6 +133,11 @@ double GPBLD3::hardness_impl(double E, double p) const {
   return 1.0 / cbrt(softness_impl(E, p));
 }
 
+void GPBLD3::hardness_n_impl(double *enthalpy, double *pressure,
+                             unsigned int n, double *result) const {
+  gpbld_hardness_n(enthalpy, pressure, n, result);
+}
+
 double GPBLD3::softness_impl(double enthalpy, double pressure) const {
   return gpbld_softness(enthalpy, pressure);
 }
