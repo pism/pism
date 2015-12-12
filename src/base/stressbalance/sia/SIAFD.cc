@@ -833,6 +833,8 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   IceModelVec2S &thk_smooth = m_work_2d[0];
   m_bed_smoother->get_smoothed_thk(h, H, *mask, thk_smooth);
 
+  const std::vector<double> &z = m_grid->z();
+
   IceModelVec::AccessList list;
   list.add(thk_smooth);
   list.add(m_delta[0]);
@@ -860,15 +862,15 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
         double D = 0.0;
 
         for (unsigned int k = 1; k <= ks; ++k) {
-          double depth = thk - m_grid->z(k);
+          double depth = thk - z[k];
 
-          const double dz = m_grid->z(k) - m_grid->z(k-1);
+          const double dz = z[k] - z[k - 1];
           // trapezoidal rule
           D += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
 
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - m_grid->z(ks);
+        const double dz = thk - z[ks];
         D += 0.5 * dz * dz * delta_ij[ks];
 
         D_stag(i,j,o) = D;
@@ -945,6 +947,7 @@ void SIAFD::compute_I() {
           I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
           I_ij[k] = I_current;
         }
+
         // above the ice:
         for (unsigned int k = ks + 1; k < Mz; ++k) {
           I_ij[k] = I_current;
