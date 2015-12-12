@@ -69,8 +69,7 @@ double gpbld_hardness(double E, double P);
 
 /* Glen-Paterson-Budd-Lliboutry-Duval hardness as a function of
    enthalpy and pressure. */
-void gpbld_hardness_n(double *E, double *P, unsigned int n, double *result);
-
+void gpbld_hardness_n(const double *E, const double *P, unsigned int n, double *result);
 
 /* Glen-Paterson-Budd-Lliboutry-Duval flow function, optimized for the
    Glen exponent n == 3. */
@@ -78,7 +77,7 @@ double gpbld_flow(double stress, double E, double P);
 
 /* Glen-Paterson-Budd-Lliboutry-Duval flow function for a column of
    ice, optimized for the Glen exponent n == 3. */
-void gpbld_flow_n(double *stress, double *E, double *P,
+void gpbld_flow_n(const double *stress, const double *E, const double *P,
                   unsigned int n, double *result);
 
 /* Returns constants used by the implementation. */

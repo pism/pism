@@ -81,22 +81,25 @@ public:
   EnthalpyConverter::Ptr EC() const;
 
   double hardness(double E, double p) const;
-  void hardness_n(double *enthalpy, double *pressure, unsigned int n, double *result) const;
+  void hardness_n(const double *enthalpy, const double *pressure,
+                  unsigned int n, double *result) const;
 
   double softness(double E, double p) const;
 
   double flow(double stress, double E, double pressure, double grainsize) const;
-  void flow_n(double *stress, double *E, double *pressure, double *grainsize,
+  void flow_n(const double *stress, const double *E,
+              const double *pressure, const double *grainsize,
               unsigned int n, double *result) const;
 
 protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
-  virtual void flow_n_impl(double *stress, double *E,
-                           double *pressure, double *grainsize,
+  virtual void flow_n_impl(const double *stress, const double *E,
+                           const double *pressure, const double *grainsize,
                            unsigned int n, double *result) const;
   virtual double hardness_impl(double E, double p) const;
-  virtual void hardness_n_impl(double *enthalpy, double *pressure, unsigned int n, double *result) const;
+  virtual void hardness_n_impl(const double *enthalpy, const double *pressure,
+                               unsigned int n, double *result) const;
   virtual double softness_impl(double E, double p) const = 0;
 
 protected:

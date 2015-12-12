@@ -133,7 +133,7 @@ double GPBLD3::hardness_impl(double enthalpy, double pressure) const {
   return gpbld_hardness(enthalpy, pressure);
 }
 
-void GPBLD3::hardness_n_impl(double *enthalpy, double *pressure,
+void GPBLD3::hardness_n_impl(const double *enthalpy, const double *pressure,
                              unsigned int n, double *result) const {
   gpbld_hardness_n(enthalpy, pressure, n, result);
 }
@@ -148,8 +148,8 @@ double GPBLD3::flow_impl(double stress, double enthalpy, double pressure, double
   return gpbld_flow(stress, enthalpy, pressure);
 }
 
-void GPBLD3::flow_n_impl(double *stress, double *enthalpy,
-                         double *pressure, double *grainsize,
+void GPBLD3::flow_n_impl(const double *stress, const double *enthalpy,
+                         const double *pressure, const double *grainsize,
                          unsigned int n, double *result) const {
   (void) grainsize;
 
