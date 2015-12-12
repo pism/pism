@@ -209,6 +209,8 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();
 
+  std::vector<double> u_x_plus_v_y(Mz);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -262,9 +264,13 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
       }
     }
 
-    double
-      u_x = D_x *  (west * (u_ij[0] - u_w[0]) +  east * (u_e[0] - u_ij[0])),
-      v_y = D_y * (south * (v_ij[0] - v_s[0]) + north * (v_n[0] - v_ij[0]));
+    // compute u_x + v_y using a vectorizable loop
+    for (unsigned int k = 0; k < Mz; ++k) {
+      double
+        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
+        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+      u_x_plus_v_y[k] = u_x + v_y;
+    }
 
     // at the base: include the basal melt rate
     if (basal_melt_rate != NULL) {
@@ -274,17 +280,10 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
     }
 
     // within the ice and above:
-    double old_integrand = u_x + v_y;
     for (unsigned int k = 1; k < Mz; ++k) {
-      u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
-      v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
-      const double new_integrand = u_x + v_y;
-
       const double dz = z[k] - z[k-1];
 
-      w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
-
-      old_integrand = new_integrand;
+      w_ij[k] = w_ij[k - 1] - (0.5 * dz) * (u_x_plus_v_y[k] + u_x_plus_v_y[k - 1]);
     }
   }
 }
