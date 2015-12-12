@@ -400,6 +400,8 @@ void StressBalance::compute_volumetric_strain_heating() {
   list.add(v);
 
   const std::vector<double> &z = m_grid->z();
+  const unsigned int Mz = m_grid->Mz();
+  std::vector<double> depth(Mz), pressure(Mz), hardness(Mz);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -466,9 +468,17 @@ void StressBalance::compute_volumetric_strain_heating() {
       Sigma = m_strain_heating.get_column(i, j);
 
       for (int k = 0; k <= ks; ++k) {
-        double dz,
-          pressure = EC->pressure(H - z[k]),
-          B        = flow_law->hardness(E_ij[k], pressure);
+        depth[k] = H - z[k]; // FIXME issue #15
+      }
+
+      // pressure added by the ice (i.e. pressure difference between the
+      // current level and the top of the column)
+      EC->pressure(depth, ks, pressure);
+
+      flow_law->hardness_n(E_ij, &pressure[0], ks + 1, &hardness[0]);
+
+      for (int k = 0; k <= ks; ++k) {
+        double dz;
 
         double u_z = 0.0, v_z = 0.0,
           u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
@@ -487,10 +497,10 @@ void StressBalance::compute_volumetric_strain_heating() {
           v_z = (v_ij[1] - v_ij[0]) / dz;
         }
 
-        Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+        Sigma[k] = 2.0 * e_to_a_power * hardness[k] * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
       } // k-loop
 
-      int remaining_levels = m_grid->Mz() - (ks + 1);
+      int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
         ierr = PetscMemzero(&Sigma[ks+1],
                             remaining_levels*sizeof(double));
