@@ -129,8 +129,8 @@ GPBLD3::GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverte
 
 }
 
-double GPBLD3::hardness_impl(double E, double p) const {
-  return 1.0 / cbrt(softness_impl(E, p));
+double GPBLD3::hardness_impl(double enthalpy, double pressure) const {
+  return gpbld_hardness(enthalpy, pressure);
 }
 
 void GPBLD3::hardness_n_impl(double *enthalpy, double *pressure,

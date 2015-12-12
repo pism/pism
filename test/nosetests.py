@@ -697,7 +697,7 @@ def flowlaw_test():
             flowcoeff = law.flow(sigma[i], E, p, gs)
             print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega[j], flowcoeff)
 
-def gpbld3_test():
+def gpbld3_flow_test():
     "Test the optimized version of GPBLD."
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
@@ -726,8 +726,37 @@ def gpbld3_test():
                 for s in sigma:
                     regular = gpbld.flow(s, E, p, gs)
                     optimized = gpbld3.flow(s, E, p, gs)
-                    print np.fabs(regular - optimized) / regular
                     assert np.fabs(regular - optimized) / regular < 2e-14
+
+def gpbld3_hardness_test():
+    "Test the hardness implementation in the optimized version of GPBLD."
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
+    EC = ctx.enthalpy_converter()
+    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+
+    import numpy as np
+    N = 11
+    TpaC = np.linspace(-30, 0, N)
+    depth = np.linspace(0, 4000, N)
+    omega = np.linspace(0, 0.02, N)
+
+    for d in depth:
+        p = EC.pressure(d)
+        Tm = EC.melting_temperature(p)
+        for Tpa in TpaC:
+            T = Tm + Tpa
+            for o in omega:
+                if T >= Tm:
+                    E = EC.enthalpy(T, o, p)
+                else:
+                    E = EC.enthalpy(T, 0.0, p)
+
+                regular = gpbld.hardness(E, p)
+                optimized = gpbld3.hardness(E, p)
+                print np.fabs(regular - optimized) / regular
+                assert np.fabs(regular - optimized) / regular < 4e-15
+
 
 def gpbld3_error_report():
     """Print max. absolute and relative difference between GPBLD and
