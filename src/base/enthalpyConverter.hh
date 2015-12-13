@@ -106,9 +106,8 @@ protected:
 
 
 //! An EnthalpyConverter for use in verification tests.
-/*!
-  Treats ice at any temperature as cold (= zero liquid fraction).  Makes absolute
-  temperature (in K) and enthalpy proportional:  \f$E = c_i (T - T_0)\f$.
+/*! Treats ice at any temperature below 10^6 Kelvin as cold (= zero liquid fraction). Makes absolute
+  temperature (in K) and enthalpy proportional: \f$E = c_i (T - T_0)\f$.
 
   The pressure dependence of the pressure-melting temperature is neglected.
 
