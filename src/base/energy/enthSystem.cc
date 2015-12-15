@@ -294,17 +294,22 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
     K      = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
-    Rc     = m_R[0],
-    Rr     = m_R[1],
-    Rminus = Rc,
-    Rplus  = 0.5 * (Rc + Rr);
-  m_D0 = 1.0 + Rminus + Rplus;
-  // modified upper-diagonal term:
-  m_U0 = - Rminus - Rplus;
-  // m_Enth[0] (below) is there due to the fully-implicit discretization
-  // in time, the second term is the modification of the right-hand
-  // side implementing the Neumann B.C. (see the doxygen comment)
-  m_B0 = m_Enth[0] + 2.0 * Rminus * m_dz * heat_flux / K;
+    G      = heat_flux / K,
+    Rminus = m_R[0],             // R_{k-1/2}
+    Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{k+1/2}
+    nu_w   = m_nu * m_w[0];
+
+  const double A_l = m_w[0] >= 0.0 ? 0.5 * m_lambda - 1.0 : -0.5 * m_lambda;
+  const double A_d = m_w[0] >= 0.0 ? 1.0 - m_lambda : m_lambda - 1.0;
+  const double A_u = m_w[0] >= 0.0 ? 0.5 * m_lambda : 1.0 - 0.5 * m_lambda;
+
+  // diagonal entry
+  m_D0 = 1.0 + Rminus + Rplus + nu_w * A_d;
+  // upper-diagonal entry
+  m_U0 = - Rminus - Rplus + nu_w * (A_u + A_l);
+  // right-hand side, excluding the strain heating term and the horizontal advection
+  m_B0 = m_Enth[0] + 2.0 * G * m_dz * (Rminus - nu_w * A_l);
+
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
     const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], m_dx);
