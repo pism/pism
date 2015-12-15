@@ -191,7 +191,7 @@ void enthSystemCtx::set_surface_dirichlet(double E_surface) {
 }
 
 static inline double upwind(double u, double E_m, double E, double E_p, double delta) {
-  return u < 0 ? u * (E_p -  E) / delta : u * (E  - E_m) / delta;
+  return u * (u < 0 ? (E_p -  E) / delta : (E  - E_m) / delta);
 }
 
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
@@ -426,25 +426,24 @@ void enthSystemCtx::solve(std::vector<double> &x) {
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {
     const double
-        Rminus = 0.5 * (m_R[k-1] + m_R[k]),
-        Rplus  = 0.5 * (m_R[k]   + m_R[k+1]);
-    S.L(k) = - Rminus;
-    S.D(k) = 1.0 + Rminus + Rplus;
-    S.U(k) = - Rplus;
-    const double AA = m_nu * m_w[k];
-    if (m_w[k] >= 0.0) {  // velocity upward
-      S.L(k) -= AA * (1.0 - m_lambda/2.0);
-      S.D(k) += AA * (1.0 - m_lambda);
-      S.U(k) += AA * (m_lambda/2.0);
-    } else {            // velocity downward
-      S.L(k) -= AA * (m_lambda/2.0);
-      S.D(k) -= AA * (1.0 - m_lambda);
-      S.U(k) += AA * (1.0 - m_lambda/2.0);
-    }
+      Rminus = 0.5 * (m_R[k-1] + m_R[k]),
+      Rplus  = 0.5 * (m_R[k]   + m_R[k+1]),
+      nu_w   = m_nu * m_w[k];
+
+    const double
+      A_l = m_w[k] >= 0.0 ? 0.5 * m_lambda - 1.0 : -0.5 * m_lambda,
+      A_d = m_w[k] >= 0.0 ? 1.0 - m_lambda : m_lambda - 1.0,
+      A_u = m_w[k] >= 0.0 ? 0.5 * m_lambda : 1.0 - 0.5 * m_lambda;
+
+    S.L(k) = - Rminus + nu_w * A_l;
+    S.D(k) = 1.0 + Rminus + Rplus + nu_w * A_d;
+    S.U(k) = - Rplus + nu_w * A_u;
+
     S.RHS(k) = m_Enth[k];
     if (not m_ismarginal) {
-      const double UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], m_dx);
-      const double UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], m_dy);
+      const double
+        UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], m_dx),
+        UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], m_dy);
 
       S.RHS(k) += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
     }
