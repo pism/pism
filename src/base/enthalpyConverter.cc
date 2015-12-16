@@ -180,10 +180,15 @@ double EnthalpyConverter::temperature(double E, double P) const {
   validate_E_P(E, P);
 
   if (E < enthalpy_cts(P)) {
-    return (E / m_c_i) + m_T_0;
+    return temperature_cold(E);
   } else {
     return melting_temperature(P);
   }
+}
+
+//! Convert enthalpy into temperature (cold case).
+double EnthalpyConverter::temperature_cold(double E) const {
+  return (E / m_c_i) + m_T_0;
 }
 
 
@@ -243,10 +248,15 @@ double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
   const double T_melting = melting_temperature(P);
 
   if (T < T_melting) {
-    return m_c_i * (T - m_T_0);
+    return enthalpy_cold(T);
   } else {
     return enthalpy_cts(P) + omega * L(T_melting);
   }
+}
+
+//! Convert temperature into enthalpy (cold case).
+double EnthalpyConverter::enthalpy_cold(double T) const {
+  return m_c_i * (T - m_T_0);
 }
 
 
