@@ -42,6 +42,7 @@ protected:
   double c_impl(double T) const;
   double enthalpy_impl(double T, double omega, double p) const;
   double temperature_impl(double E, double p) const;
+  double L_impl(double T_pm) const;
 
   //!< reference temperature in the parameterization of C(T)
   const double m_T_r;

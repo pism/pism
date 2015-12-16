@@ -19,6 +19,8 @@
 #ifndef __enthalpyConverter_hh
 #define __enthalpyConverter_hh
 
+#include <vector>
+
 #include "base/util/pism_memory.hh"
 
 namespace pism {
@@ -74,7 +76,8 @@ public:
   double L(double T_m) const;
 
   double pressure(double depth) const;
-
+  void pressure(const std::vector<double> &depth,
+                unsigned int ks, std::vector<double> &result) const;
 protected:
   virtual double enthalpy_permissive_impl(double T, double omega, double P) const;
   virtual double enthalpy_cts_impl(double P) const;
@@ -97,6 +100,8 @@ protected:
   double m_L;
   //! specific heat capacity of ice
   double m_c_i;
+  //! specific heat capacity of pure water
+  double m_c_w;
   //! density of ice
   double m_rho_i;
   //! acceleration due to gravity
@@ -137,19 +142,7 @@ protected:
   double melting_temperature_impl(double P) const;
   bool is_temperate_impl(double E, double P) const;
   double temperature_impl(double E, double P) const;
-};
-
-//! @brief An enthalpy converter including pressure-dependence of the latent heat of fusion of
-//! water.
-class KirchhoffEnthalpyConverter : public EnthalpyConverter {
-public:
-  KirchhoffEnthalpyConverter(const Config &config);
-  virtual ~KirchhoffEnthalpyConverter();
-protected:
-  double L_impl(double T_m) const;
-private:
-  //! specific heat capacity of pure water
-  double m_c_w;
+  double L_impl(double T_pm) const;
 };
 
 EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config);

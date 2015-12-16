@@ -197,7 +197,6 @@
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%shared_ptr(pism::KirchhoffEnthalpyConverter);
 %shared_ptr(pism::varcEnthalpyConverter);
 %include "base/enthalpyConverter.hh"
 %include "base/varcEnthalpyConverter.hh"

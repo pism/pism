@@ -600,11 +600,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   result.set(0.0);
 
-  std::vector<double> delta_ij(m_grid->Mz());
-
   const double enhancement_factor = m_flow_law->enhancement_factor();
   const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
-  double ice_grain_size = m_config->get_double("ice_grain_size");
 
   const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
 
@@ -660,6 +657,11 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     My = m_grid->My(),
     Mz = m_grid->Mz();
 
+  std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
+  std::vector<double> delta_ij(Mz);
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("ice_grain_size"));
+  std::vector<double> e_factor(Mz, enhancement_factor);
+
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
     ParallelSection loop(m_grid->com);
@@ -683,58 +685,79 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
           continue;
         }
 
-        const double *age_ij = NULL, *age_offset = NULL;
-        if (use_age) {
-          age_ij     = age->get_column(i, j);
-          age_offset = age->get_column(i+oi, j+oj);
+        const int ks = m_grid->kBelowHeight(thk);
+
+        for (int k = 0; k <= ks; ++k) {
+          depth[k] = thk - z[k]; // FIXME issue #15
         }
 
-        const double
-          *E_ij     = enthalpy.get_column(i, j),
-          *E_offset = enthalpy.get_column(i+oi, j+oj);
+        // pressure added by the ice (i.e. pressure difference between the
+        // current level and the top of the column)
+        m_EC->pressure(depth, ks, pressure);
 
-        const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const int      ks = m_grid->kBelowHeight(thk);
-        const double   alpha =
-          sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
+        if (use_age) {
+          const double
+            *age_ij     = age->get_column(i, j),
+            *age_offset = age->get_column(i+oi, j+oj);
 
-        double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
-        for (int k = 0; k <= ks; ++k) {
-          double depth = thk - z[k]; // FIXME issue #15
-          // pressure added by the ice (i.e. pressure difference between the
-          // current level and the top of the column)
-          const double pressure = m_EC->pressure(depth);
-
-          double flow;
-          if (compute_grain_size_using_age) {
-            const double A = 0.5 * (age_ij[k] + age_offset[k]);
-            ice_grain_size = grainSizeVostok(A);
+          for (int k = 0; k <= ks; ++k) {
+            A[k] = 0.5 * (age_ij[k] + age_offset[k]);
           }
-          // If the flow law does not use grain size, it will just ignore it,
-          // no harm there
-          double E = 0.5 * (E_ij[k] + E_offset[k]);
-          flow = m_flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
-          double e = enhancement_factor;
-          if (e_age_coupling) {
-            const double A = 0.5 * (age_ij[k] + age_offset[k]);
-            const double accumulation_time = current_time - A;
-            if (interglacial(accumulation_time)) {
-              e = enhancement_factor_interglacial;
+          if (compute_grain_size_using_age) {
+            for (int k = 0; k <= ks; ++k) {
+              ice_grain_size[k] = grainSizeVostok(A[k]);
             }
           }
 
-          delta_ij[k] = e * theta_local * 2.0 * pressure * flow;
-
-          if (k > 0) { // trapezoidal rule
-            const double dz = z[k] - z[k-1];
-            Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+          if (e_age_coupling) {
+            for (int k = 0; k <= ks; ++k) {
+              const double accumulation_time = current_time - A[k];
+              if (interglacial(accumulation_time)) {
+                e_factor[k] = enhancement_factor_interglacial;
+              } else {
+                e_factor[k] = enhancement_factor;
+              }
+            }
           }
         }
-        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - z[ks];
-        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+        {
+          const double
+            *E_ij     = enthalpy.get_column(i, j),
+            *E_offset = enthalpy.get_column(i+oi, j+oj);
+          for (int k = 0; k <= ks; ++k) {
+            E[k] = 0.5 * (E_ij[k] + E_offset[k]);
+          }
+        }
+
+        const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
+        const double alpha =
+          sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
+        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
+
+        for (int k = 0; k <= ks; ++k) {
+          stress[k] = alpha * pressure[k];
+        }
+
+        m_flow_law->flow_n(&stress[0], &E[0], &pressure[0], &ice_grain_size[0], ks + 1,
+                           &flow[0]);
+
+        for (int k = 0; k <= ks; ++k) {
+          delta_ij[k] = e_factor[k] * theta_local * 2.0 * pressure[k] * flow[k];
+        }
+
+        double D = 0.0;  // diffusivity for deformational SIA flow
+        {
+          for (int k = 1; k <= ks; ++k) {
+            // trapezoidal rule
+            const double dz = z[k] - z[k-1];
+            D += 0.5 * dz * ((depth[k] + dz) * delta_ij[k-1] + depth[k] * delta_ij[k]);
+          }
+          // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+          const double dz = thk - z[ks];
+          D += 0.5 * dz * dz * delta_ij[ks];
+        }
 
         // Override diffusivity at the edges of the domain. (At these
         // locations PISM uses ghost cells *beyond* the boundary of
@@ -746,15 +769,15 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
         // "discontinuities" at the boundary.)
         if (i < 0 || i >= (int)Mx - 1 ||
             j < 0 || j >= (int)My - 1) {
-          Dfoffset = 0.0;
+          D = 0.0;
         }
 
-        my_D_max = std::max(my_D_max, Dfoffset);
+        my_D_max = std::max(my_D_max, D);
 
         // vertically-averaged SIA-only flux, sans sliding; note
         //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
         //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
-        result(i,j,o) = - Dfoffset * slope;
+        result(i,j,o) = - D * slope;
 
         // if doing the full update, fill the delta column above the ice and
         // store it:
@@ -810,6 +833,8 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   IceModelVec2S &thk_smooth = m_work_2d[0];
   m_bed_smoother->get_smoothed_thk(h, H, *mask, thk_smooth);
 
+  const std::vector<double> &z = m_grid->z();
+
   IceModelVec::AccessList list;
   list.add(thk_smooth);
   list.add(m_delta[0]);
@@ -834,21 +859,21 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
         }
 
         const unsigned int ks = m_grid->kBelowHeight(thk);
-        double Dfoffset = 0.0;
+        double D = 0.0;
 
         for (unsigned int k = 1; k <= ks; ++k) {
-          double depth = thk - m_grid->z(k);
+          double depth = thk - z[k];
 
-          const double dz = m_grid->z(k) - m_grid->z(k-1);
+          const double dz = z[k] - z[k - 1];
           // trapezoidal rule
-          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+          D += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
 
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - m_grid->z(ks);
-        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+        const double dz = thk - z[ks];
+        D += 0.5 * dz * dz * delta_ij[ks];
 
-        D_stag(i,j,o) = Dfoffset;
+        D_stag(i,j,o) = D;
       }
     }
   } catch (...) {
@@ -896,6 +921,7 @@ void SIAFD::compute_I() {
   assert(thk_smooth.get_stencil_width() >= 2);
 
   const unsigned int Mz = m_grid->Mz();
+  const std::vector<double> &z = m_grid->z();
 
   std::vector<double> dz(Mz);
   for (unsigned int k = 1; k < Mz; ++k) {
@@ -925,6 +951,7 @@ void SIAFD::compute_I() {
           I_current += 0.5 * dz[k] * (delta_ij[k - 1] + delta_ij[k]);
           I_ij[k] = I_current;
         }
+
         // above the ice:
         for (unsigned int k = ks + 1; k < Mz; ++k) {
           I_ij[k] = I_current;
@@ -974,45 +1001,46 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
   list.add(I[0]);
   list.add(I[1]);
 
+  const unsigned int Mz = m_grid->Mz();
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double
+    const double
       *I_e = I[0].get_column(i, j),
       *I_w = I[0].get_column(i - 1, j),
       *I_n = I[1].get_column(i, j),
       *I_s = I[1].get_column(i, j - 1);
 
-    double
-      *u_ij = u_out.get_column(i, j),
-      *v_ij = v_out.get_column(i, j);
-
     // Fetch values from 2D fields *outside* of the k-loop:
-    double
+    const double
       h_x_w = h_x(i - 1, j, 0),
       h_x_e = h_x(i, j, 0),
       h_x_n = h_x(i, j, 1),
       h_x_s = h_x(i, j - 1, 1);
 
-    double
+    const double
       h_y_w = h_y(i - 1, j, 0),
       h_y_e = h_y(i, j, 0),
       h_y_n = h_y(i, j, 1),
       h_y_s = h_y(i, j - 1, 1);
 
-    double
+    const double
       vel_input_u = vel_input(i, j).u,
       vel_input_v = vel_input(i, j).v;
 
-    for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
-      u_ij[k] = - 0.25 * (I_e[k] * h_x_e + I_w[k] * h_x_w +
-                          I_n[k] * h_x_n + I_s[k] * h_x_s);
-      v_ij[k] = - 0.25 * (I_e[k] * h_y_e + I_w[k] * h_y_w +
-                          I_n[k] * h_y_n + I_s[k] * h_y_s);
+    double
+      *u_ij = u_out.get_column(i, j),
+      *v_ij = v_out.get_column(i, j);
 
-      // Add the "SSA" velocity:
-      u_ij[k] += vel_input_u;
-      v_ij[k] += vel_input_v;
+    // split into two loops to encourage auto-vectorization
+    for (unsigned int k = 0; k < Mz; ++k) {
+      u_ij[k] = vel_input_u - 0.25 * (I_e[k] * h_x_e + I_w[k] * h_x_w +
+                                      I_n[k] * h_x_n + I_s[k] * h_x_s);
+    }
+    for (unsigned int k = 0; k < Mz; ++k) {
+      v_ij[k] = vel_input_v - 0.25 * (I_e[k] * h_y_e + I_w[k] * h_y_w +
+                                      I_n[k] * h_y_n + I_s[k] * h_y_s);
     }
   }
 
