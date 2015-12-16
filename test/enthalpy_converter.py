@@ -46,11 +46,7 @@ def reversibility_test():
         omega = EC.water_fraction(E, P)
         # we should get the same E back
         assert E == EC.enthalpy(T, omega, P)
-        if not EC.is_temperate(E, P):
-            # don't test reversibility of omega if our converter
-            # treats this ice as cold
-            return
-        assert omega == omega_prescribed
+        assert np.fabs(omega - omega_prescribed) < 1e-16
 
     try_all_converters(run)
 
@@ -150,11 +146,12 @@ def invalid_inputs_test():
     def run(name, EC):
         depth = 1000
         pressure = EC.pressure(depth)
+        E_cts = EC.enthalpy_cts(pressure)
         E_liquid = EC.enthalpy_liquid(pressure)
         T_melting = EC.melting_temperature(pressure)
 
         # don't test the converter that thinks this is cold:
-        if not EC.is_temperate(E_liquid, pressure):
+        if not EC.is_temperate(E_cts, pressure):
             print "skipped...",
             return
 

@@ -70,8 +70,6 @@ void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned in
 
 void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned int ks,
                                                    double *result) const {
-  const unsigned int Mzcoarse = Mz_coarse();
-
   unsigned int k = 0, m = 0;
   const unsigned int Mz = Mz_coarse();
   for (m = 0; m < Mz - 2 and k <= ks; ++m) {

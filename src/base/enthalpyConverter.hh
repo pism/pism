@@ -70,27 +70,12 @@ public:
   double enthalpy_permissive(double T, double omega, double P) const;
 
   double c(double T) const;
-
-  //! @brief Latent heat of fusion of water as a function of
-  //! pressure-melting temperature.
   double L(double T_m) const;
 
   double pressure(double depth) const;
   void pressure(const std::vector<double> &depth,
                 unsigned int ks, std::vector<double> &result) const;
 protected:
-  virtual double enthalpy_permissive_impl(double T, double omega, double P) const;
-  virtual double enthalpy_cts_impl(double P) const;
-  virtual double c_impl(double T) const;
-  virtual double L_impl(double T_pm) const;
-  virtual double enthalpy_impl(double T, double omega, double P) const;
-  virtual double water_fraction_impl(double E, double P) const;
-  virtual double melting_temperature_impl(double P) const;
-  virtual double temperature_impl(double E, double P) const;
-  virtual double enthalpy_liquid_impl(double P) const;
-
-  virtual bool is_temperate_impl(double E, double P) const;
-
   void validate_E_P(double E, double P) const;
   void validate_T_omega_P(double T, double omega, double P) const;
 
@@ -121,11 +106,10 @@ protected:
 
 
 //! An EnthalpyConverter for use in verification tests.
-/*!
-  Treats ice at any temperature as cold (= zero liquid fraction).  Makes absolute
-  temperature (in K) and enthalpy proportional:  \f$E = c_i (T - T_0)\f$.
 
-  The pressure dependence of the pressure-melting temperature is neglected.
+/*! Treats ice at any temperature below 10^6 Kelvin as cold (= zero liquid fraction).
+
+  The pressure dependence of the pressure-melting temperature is neglected.c;
 
   Note: Any instance of FlowLaw uses an EnthalpyConverter; this is
   the one used in cold mode verification code.
@@ -134,15 +118,6 @@ class ColdEnthalpyConverter : public EnthalpyConverter {
 public:
   ColdEnthalpyConverter(const Config &config);
   virtual ~ColdEnthalpyConverter();
-
-protected:
-  double enthalpy_permissive_impl(double T, double omega, double P) const;
-  double enthalpy_impl(double T, double omega, double P) const;
-  double water_fraction_impl(double E, double P) const;
-  double melting_temperature_impl(double P) const;
-  bool is_temperate_impl(double E, double P) const;
-  double temperature_impl(double E, double P) const;
-  double L_impl(double T_pm) const;
 };
 
 EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config);

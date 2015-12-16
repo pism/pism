@@ -73,9 +73,15 @@ EnthalpyConverter::~EnthalpyConverter() {
 }
 
 //! Return `true` if ice at `(E, P)` is temperate.
+//! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
-  return this->is_temperate_impl(E, P);
+  if (m_do_cold_ice_methods) {
+    return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
+  } else {
+    return (E >= enthalpy_cts(P));
+  }
 }
+
 
 void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
 #if (PISM_DEBUG==1)
@@ -106,11 +112,6 @@ void EnthalpyConverter::validate_E_P(double E, double P) const {
 #endif
 }
 
-//! Return temperature of ice at `(E, P)`.
-double EnthalpyConverter::temperature(double E, double P) const {
-  return this->temperature_impl(E, P);
-}
-
 
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
@@ -138,17 +139,7 @@ void EnthalpyConverter::pressure(const std::vector<double> &depth,
 
 //! Specific heat capacity of ice as a function of temperature `T`.
 double EnthalpyConverter::c(double T) const {
-  return this->c_impl(T);
-}
-
-double EnthalpyConverter::c_impl(double /*T*/) const {
   return m_c_i;
-}
-
-//! Latent heat of fusion of water as a function of pressure melting
-//! temperature.
-double EnthalpyConverter::L(double T_m) const {
-  return this->L_impl(T_m);
 }
 
 //! Get melting temperature from pressure p.
@@ -156,10 +147,6 @@ double EnthalpyConverter::L(double T_m) const {
      \f[ T_m(p) = T_{melting} - \beta p. \f]
  */
 double EnthalpyConverter::melting_temperature(double P) const {
-  return this->melting_temperature_impl(P);
-}
-
-double EnthalpyConverter::melting_temperature_impl(double P) const {
   return m_T_melting - m_beta * P;
 }
 
@@ -169,30 +156,13 @@ double EnthalpyConverter::melting_temperature_impl(double P) const {
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
  */
 double EnthalpyConverter::enthalpy_cts(double P) const {
-  return this->enthalpy_cts_impl(P);
-}
-
-double EnthalpyConverter::enthalpy_cts_impl(double P) const {
   return m_c_i * (melting_temperature(P) - m_T_0);
 }
 
 //! @brief Compute the maximum allowed value of ice enthalpy
 //! (corresponds to @f$ \omega = 1 @f$).
 double EnthalpyConverter::enthalpy_liquid(double P) const {
-  return this->enthalpy_liquid_impl(P);
-}
-
-double EnthalpyConverter::enthalpy_liquid_impl(double P) const {
   return enthalpy_cts(P) + L(melting_temperature(P));
-}
-
-//! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
-bool EnthalpyConverter::is_temperate_impl(double E, double P) const {
-  if (m_do_cold_ice_methods) {
-    return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
-  } else {
-    return (E >= enthalpy_cts(P));
-  }
 }
 
 
@@ -206,7 +176,7 @@ bool EnthalpyConverter::is_temperate_impl(double E, double P) const {
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
-double EnthalpyConverter::temperature_impl(double E, double P) const {
+double EnthalpyConverter::temperature(double E, double P) const {
   validate_E_P(E, P);
 
   if (E < enthalpy_cts(P)) {
@@ -243,10 +213,6 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
 double EnthalpyConverter::water_fraction(double E, double P) const {
   validate_E_P(E, P);
 
-  return this->water_fraction_impl(E, P);
-}
-
-double EnthalpyConverter::water_fraction_impl(double E, double P) const {
   double E_s = enthalpy_cts(P);
   if (E <= E_s) {
     return 0.0;
@@ -272,10 +238,6 @@ Certain cases are not allowed and throw exceptions:
 These inequalities may be violated in the sixth digit or so, however.
  */
 double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
-  return this->enthalpy_impl(T, omega, P);
-}
-
-double EnthalpyConverter::enthalpy_impl(double T, double omega, double P) const {
   validate_T_omega_P(T, omega, P);
 
   const double T_melting = melting_temperature(P);
@@ -312,11 +274,6 @@ Computes:
   @f$ E(T,\omega,p) @f$.
  */
 double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) const {
-  return this->enthalpy_permissive_impl(T, omega, P);
-}
-
-double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, double P) const {
-
   const double T_m = melting_temperature(P);
 
   if (T < T_m) {
@@ -328,47 +285,22 @@ double EnthalpyConverter::enthalpy_permissive_impl(double T, double omega, doubl
 
 ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
+  // turn on the "cold" enthalpy converter mode
   m_do_cold_ice_methods = true;
+  // set melting temperature to one million Kelvin so that all ice is cold
+  m_T_melting = 1e6;
+  // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to
+  // zero
+  m_beta = 0.0;
 }
 
 ColdEnthalpyConverter::~ColdEnthalpyConverter() {
   // empty
 }
 
-double ColdEnthalpyConverter::enthalpy_permissive_impl(double T,
-                                                       double /*omega*/,
-                                                       double /*pressure*/) const {
-  return m_c_i * (T - m_T_0);
-}
-
-double ColdEnthalpyConverter::enthalpy_impl(double T, double /*omega*/,
-                                            double /*pressure*/) const {
-  return m_c_i * (T - m_T_0);
-}
-
-double ColdEnthalpyConverter::water_fraction_impl(double /*E*/,
-                                                  double /*pressure*/) const {
-  return 0.0;
-}
-
-double ColdEnthalpyConverter::melting_temperature_impl(double /*pressure*/) const {
-  return m_T_melting;
-}
-
-bool ColdEnthalpyConverter::is_temperate_impl(double /*E*/, double /*pressure*/) const {
-  return false;
-}
-
-double ColdEnthalpyConverter::temperature_impl(double E, double /*pressure*/) const {
-  return (E / m_c_i) + m_T_0;
-}
-
-double ColdEnthalpyConverter::L_impl(double T_pm) const {
-  (void) T_pm;
-  return m_L;
-}
-
-/*! @brief Latent heat of fusion of water using Kirchhoff's law of thermochemistry.
+//! Latent heat of fusion of water as a function of pressure melting
+//! temperature.
+/*!
 
   Following a re-interpretation of [@ref
   AschwandenBuelerKhroulevBlatter], we require that @f$ \Diff{H}{p} =
@@ -429,7 +361,7 @@ double ColdEnthalpyConverter::L_impl(double T_pm) const {
   Note that this form of @f$ L(p) @f$ also follows from Kirchhoff's
   law of thermochemistry.
 */
-double EnthalpyConverter::L_impl(double T_pm) const {
+double EnthalpyConverter::L(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
