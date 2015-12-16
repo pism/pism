@@ -19,7 +19,6 @@
 #include "base/util/pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "base/util/PISMConfigInterface.hh"
-#include "base/varcEnthalpyConverter.hh"
 
 #include "base/util/error_handling.hh"
 
@@ -61,11 +60,16 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_L           = config.get_double("water_latent_heat_fusion"); // J kg-1
   m_p_air       = config.get_double("surface_pressure"); // Pa
   m_rho_i       = config.get_double("ice_density"); // kg m-3
-  m_T_melting   = config.get_double("water_melting_point_temperature"); // K  
+  m_T_melting   = config.get_double("water_melting_point_temperature"); // K
   m_T_tolerance = config.get_double("cold_mode_is_temperate_ice_tolerance"); // K
   m_T_0         = config.get_double("enthalpy_converter_reference_temperature"); // K
 
   m_do_cold_ice_methods  = config.get_boolean("do_cold_ice_methods");
+
+#if (PISM_LINEAR_HEAT_CAPACITY == 1)
+  m_c_gradient = 7.253;
+  m_T_r        = 256.81786846822;
+#endif
 }
 
 EnthalpyConverter::~EnthalpyConverter() {
@@ -137,11 +141,6 @@ void EnthalpyConverter::pressure(const std::vector<double> &depth,
   }
 }
 
-//! Specific heat capacity of ice as a function of temperature `T`.
-double EnthalpyConverter::c(double T) const {
-  return m_c_i;
-}
-
 //! Get melting temperature from pressure p.
 /*!
      \f[ T_m(p) = T_{melting} - \beta p. \f]
@@ -150,14 +149,6 @@ double EnthalpyConverter::melting_temperature(double P) const {
   return m_T_melting - m_beta * P;
 }
 
-
-//! Get enthalpy E_s(p) at cold-temperate transition point from pressure p.
-/*! Returns
-     \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
- */
-double EnthalpyConverter::enthalpy_cts(double P) const {
-  return m_c_i * (melting_temperature(P) - m_T_0);
-}
 
 //! @brief Compute the maximum allowed value of ice enthalpy
 //! (corresponds to @f$ \omega = 1 @f$).
@@ -168,7 +159,7 @@ double EnthalpyConverter::enthalpy_liquid(double P) const {
 
 //! Get absolute (not pressure-adjusted) ice temperature (K) from enthalpy and pressure.
 /*! From \ref AschwandenBuelerKhroulevBlatter,
-     \f[ T= T(E,p) = \begin{cases} 
+     \f[ T= T(E,p) = \begin{cases}
                        c_i^{-1} E + T_0,  &  E < E_s(p), \\
                        T_m(p),            &  E_s(p) \le E < E_l(p).
                      \end{cases} \f]
@@ -184,11 +175,6 @@ double EnthalpyConverter::temperature(double E, double P) const {
   } else {
     return melting_temperature(P);
   }
-}
-
-//! Convert enthalpy into temperature (cold case).
-double EnthalpyConverter::temperature_cold(double E) const {
-  return (E / m_c_i) + m_T_0;
 }
 
 
@@ -254,11 +240,6 @@ double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
   }
 }
 
-//! Convert temperature into enthalpy (cold case).
-double EnthalpyConverter::enthalpy_cold(double T) const {
-  return m_c_i * (T - m_T_0);
-}
-
 
 //! Compute enthalpy more permissively than enthalpy().
 /*! Computes enthalpy from absolute temperature, liquid water fraction, and
@@ -270,7 +251,7 @@ Treats temperatures above pressure-melting point as \e at the pressure-melting
 point.  Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$
 as cold ice, ignoring the water fraction (\f$\omega\f$) value.
 
-Calls enthalpy(), which validates its inputs. 
+Calls enthalpy(), which validates its inputs.
 
 Computes:
   @f[
@@ -327,7 +308,7 @@ ColdEnthalpyConverter::~ColdEnthalpyConverter() {
   AschwandenBuelerKhroulevBlatter] defines @f$ H_w @f$ as follows:
 
   @f[
-  H_w = \int_{T_0}^{T_m(p)} C_i(t) dt + L + \int_{T_m(p)}^T C_w(t)dt  
+  H_w = \int_{T_0}^{T_m(p)} C_i(t) dt + L + \int_{T_m(p)}^T C_w(t)dt
   @f]
 
   Using the fundamental theorem of Calculus, we get
@@ -339,7 +320,7 @@ ColdEnthalpyConverter::~ColdEnthalpyConverter() {
   capacities of ice and water do not depend on temperature) and using
   the Clausius-Clapeyron relation
   @f[
-  T_m(p) = T_m(p_{\text{air}}) - \beta p,  
+  T_m(p) = T_m(p_{\text{air}}) - \beta p,
   @f]
 
   we get
@@ -375,16 +356,93 @@ double EnthalpyConverter::L(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
-EnthalpyConverter::Ptr enthalpy_converter_from_options(const Config &config) {
-  EnthalpyConverter *EC = NULL;
-
-  if (config.get_boolean("use_linear_in_temperature_heat_capacity")) {
-    EC = new varcEnthalpyConverter(config);
-  } else {
-    EC = new EnthalpyConverter(config);
-  }
-
-  return EnthalpyConverter::Ptr(EC);
+#if (PISM_LINEAR_HEAT_CAPACITY == 1)
+/*!
+  Equation (4.39) in [\ref GreveBlatter2009] is
+  \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
+  \f$T_r = 256.82\f$ K.
+*/
+double EnthalpyConverter::c(double T) const {
+  return m_c_i + m_c_gradient * (T - m_T_r);
 }
+
+//! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on
+//! temperature.
+double EnthalpyConverter::enthalpy_cts(double p) const {
+  return enthalpy_cold(melting_temperature(p));
+}
+
+/*! Convert temperature into enthalpy (cold case).
+
+Let \f$c_i=2009.0\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$, the default
+constant value.  Note equation (4.39) in [\ref GreveBlatter2009] says
+\f$C(T) = c_i + 7.253 (T - T_r)\f$ using a reference temperature
+\f$T_r = 256.81786846822\f$ K.  Thus the calculation of enthalpy from cold ice
+temperature is:
+\f{align*}{
+  E(T) &= \int_{T_0}^T C(T')\,dT \\
+       &= c_i (T-T_0) + \frac{7.253}{2} \left((T-T_r)^2 - (T_0-T_r)^2\right) \\
+       &= \left(c_i + 7.253 \left(\frac{T+T_0}{2} - T_r\right)\right) (T- T_0).
+\f}
+ */
+double EnthalpyConverter::enthalpy_cold(double T) const {
+  const double
+     Trefdiff = 0.5 * (T + m_T_0) - m_T_r;
+  return (m_c_i + m_c_gradient * Trefdiff) * (T - m_T_0);
+}
+
+/*! Convert enthalpy into temperature (cold case).
+
+From the documentation for EfromT(), in the cold ice case we must solve the equation
+  \f[ E = \left(c_i + 7.253 \left(\frac{T+T_0}{2} - T_r\right)\right) (T- T_0) \f]
+for \f$T\f$.  This equation is quadratic in \f$T\f$.  If we write it in terms
+of \f$\Delta T = T-T_0\f$ and \f$\alpha = 2/7.253\f$ then it says
+  \f[ E = c_i \Delta T + \alpha^{-1} \left(\Delta T + 2(T_0-T_r)\right) \Delta T.\f]
+Rearranging as a standard form quadratic in unknown \f$\Delta T\f$ gives
+  \f[ 0 = \Delta T^2 + \left[\alpha c_i + 2(T_0-T_r)\right] \Delta T - \alpha E.\f]
+Define
+  \f[ \beta = \alpha c_i + 2(T_0-T_r) = 486.64, \f]
+which has units K; the value comes from \f$c_i=2009\f$, \f$T_0=223.15\f$, and
+\f$T_r=256.81786846822\f$.  Then the solution of the quadratic is the one which makes
+\f$\Delta T \ge 0\f$ assuming \f$E\ge 0\f$; we stop otherwise.  With the usual
+rewriting to avoid cancellation we have
+  \f[ \Delta T = \frac{-\beta + \sqrt{\beta^2 + 4 \alpha E}}{2} = \frac{2 \alpha E}{\sqrt{\beta^2 + 4 \alpha E} + \beta}.\f]
+Of course, \f$T=T_0 + \Delta T\f$.
+ */
+double EnthalpyConverter::temperature_cold(double E) const {
+  if (E < 0.0) {
+    throw RuntimeError("E < 0 in EnthalpyConverter is not allowed.");
+  }
+  const double
+    ALPHA = 2.0 / m_c_gradient,
+    BETA  = ALPHA * m_c_i + 2.0 * (m_T_0 - m_T_r),
+    tmp   = 2.0 * ALPHA * E,
+    dT    = tmp / (sqrt(BETA*BETA + 2.0*tmp) + BETA);
+  return m_T_0 + dT;
+}
+#else
+//! Specific heat capacity of ice as a function of temperature `T`.
+double EnthalpyConverter::c(double T) const {
+  return m_c_i;
+}
+
+//! Get enthalpy E_s(p) at cold-temperate transition point from pressure p.
+/*! Returns
+     \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
+ */
+double EnthalpyConverter::enthalpy_cts(double P) const {
+  return m_c_i * (melting_temperature(P) - m_T_0);
+}
+
+//! Convert temperature into enthalpy (cold case).
+double EnthalpyConverter::enthalpy_cold(double T) const {
+  return m_c_i * (T - m_T_0);
+}
+
+//! Convert enthalpy into temperature (cold case).
+double EnthalpyConverter::temperature_cold(double E) const {
+  return (E / m_c_i) + m_T_0;
+}
+#endif
 
 } // end of namespace pism

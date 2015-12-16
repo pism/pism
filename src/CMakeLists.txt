@@ -55,7 +55,6 @@ set(PISMUTIL_SRC
   base/util/TerminationReason.cc
   base/util/PISMUnits.cc
   base/util/projection.cc
-  base/varcEnthalpyConverter.cc
   )
 
 if(Pism_USE_TAO)

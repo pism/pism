@@ -133,7 +133,7 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   Time::Ptr time = time_from_options(com, config, sys);
 
   // enthalpy converter
-  EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
+  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
   return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
 }

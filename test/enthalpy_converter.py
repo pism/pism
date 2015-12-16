@@ -5,9 +5,7 @@ config = PISM.Context().config
 
 # list of converters
 converters = {"Default": PISM.EnthalpyConverter(config),
-              "verification (cold)": PISM.ColdEnthalpyConverter(config),
-              "linear-in-temp C(T)": PISM.varcEnthalpyConverter(config)}
-
+              "verification (cold)": PISM.ColdEnthalpyConverter(config)}
 
 def try_all_converters(test):
     print ""
@@ -61,10 +59,10 @@ def heat_capacity_test():
     try_all_converters(run)
 
 def linear_heat_capacity_test():
-    "Test that the linear in temp c converter produces linear in temp c."
-    EC = converters["linear-in-temp C(T)"]
-    T = [0, -10, -20]
-    c = [EC.c(t) for t in T]
+    "Test that the specific heat capacity of ice is linear in T."
+    # Note: this is trivial if c(T) is constant.
+    EC = converters["Default"]
+    c = [EC.c(t) for t in [0, -10, -20]]
     assert c[0] - c[1] == c[1] - c[2]
 
 def temperate_temperature_test():

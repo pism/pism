@@ -52,7 +52,6 @@
 #include "earth/PBLingleClark.hh"
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
-#include "varcEnthalpyConverter.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/projection.hh"

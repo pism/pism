@@ -173,11 +173,6 @@ netcdf pism_config {
     pism_config:hydrology_model = "null";
     pism_config:hydrology_model_doc = "Choose the hydrology sub-model from 'null', 'routing', 'distributed'.";
 
-    pism_config:use_linear_in_temperature_heat_capacity_type = "boolean";
-    pism_config:use_linear_in_temperature_heat_capacity_option = "varc";
-    pism_config:use_linear_in_temperature_heat_capacity = "no";
-    pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [@ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
-
     pism_config:use_temperature_dependent_thermal_conductivity_type = "boolean";
     pism_config:use_temperature_dependent_thermal_conductivity_option = "vark";
     pism_config:use_temperature_dependent_thermal_conductivity = "no";

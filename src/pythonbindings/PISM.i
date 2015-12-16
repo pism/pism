@@ -39,7 +39,6 @@
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/varcEnthalpyConverter.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/PISMDiagnostic.hh"
@@ -197,9 +196,7 @@
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%shared_ptr(pism::varcEnthalpyConverter);
 %include "base/enthalpyConverter.hh"
-%include "base/varcEnthalpyConverter.hh"
 
 %shared_ptr(pism::Time);
 %include "base/util/PISMTime.hh"
