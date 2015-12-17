@@ -37,7 +37,6 @@ option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." OFF)
 option (Pism_USE_TAO "Use TAO in inverse solvers." OFF)
-option (Pism_LINEAR_HEAT_CAPACITY "Use linear-in-T specific heat capacity of ice." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -74,14 +73,6 @@ if (Pism_DEBUG)
 else()
   message (STATUS "Adding -DPISM_DEBUG=0 to compiler flags.")
   add_definitions (-DPISM_DEBUG=0)
-endif ()
-
-if (Pism_LINEAR_HEAT_CAPACITY)
-  message (STATUS "Using linear-in-temperature specific heat capacity of ice.")
-  add_definitions (-DPISM_LINEAR_HEAT_CAPACITY=1)
-else()
-  message (STATUS "Using constant specific heat capacity of ice.")
-  add_definitions (-DPISM_LINEAR_HEAT_CAPACITY=0)
 endif ()
 
 # Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt

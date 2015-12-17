@@ -105,12 +105,6 @@ protected:
   //! @brief if cold ice methods are selected, use `is_temperate()`
   //! check based on temperature, not enthalpy
   bool m_do_cold_ice_methods;
-#if (PISM_LINEAR_HEAT_CAPACITY == 1)
-  //! Derivative (slope) of c in c(T).
-  double m_c_gradient;
-  //! Reference temperature in the parameterization of c(T).
-  double m_T_r;
-#endif
 };
 
 
