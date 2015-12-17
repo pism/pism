@@ -706,8 +706,8 @@ void IceModel::write_snapshot() {
 
   if (split_snapshots) {
     snapshots_file_is_ready = false;    // each snapshot is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             snapshots_filename.c_str(), m_time->date().c_str());
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+             snapshots_filename.c_str(), m_time->date(saving_after).c_str());
   } else {
     strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }

@@ -59,7 +59,7 @@ Context::Ptr pisms_context(MPI_Comm com) {
 
   Time::Ptr time = time_from_options(com, config, sys);
 
-  EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
+  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
   return Context::Ptr(new Context(com, sys, config, EC, time, logger, "pisms"));
 }

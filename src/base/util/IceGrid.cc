@@ -182,7 +182,8 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
 IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl) {
 
-  try {  m_impl->ctx = context;
+  try {
+    m_impl->ctx = context;
 
     m_impl->bsearch_accel = gsl_interp_accel_alloc();
     if (m_impl->bsearch_accel == NULL) {

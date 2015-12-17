@@ -39,10 +39,7 @@
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/varcEnthalpyConverter.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
-#include "base/rheology/flowlaws.hh"
-#include "base/rheology/flowlaw_factory.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMConfig.hh"
@@ -72,6 +69,7 @@
 #endif
 %include <std_shared_ptr.i>
 
+%template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;
 %template(DoubleVector) std::vector<double>;
@@ -199,10 +197,7 @@
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%shared_ptr(pism::KirchhoffEnthalpyConverter);
-%shared_ptr(pism::varcEnthalpyConverter);
 %include "base/enthalpyConverter.hh"
-%include "base/varcEnthalpyConverter.hh"
 
 %shared_ptr(pism::Time);
 %include "base/util/PISMTime.hh"
@@ -232,9 +227,8 @@
 %include "base/util/MaxTimestep.hh"
 %include "base/util/PISMComponent.hh"
 %include "base/basalstrength/basal_resistance.hh"
-%include "base/rheology/flowlaws.hh"
 
-%include "base/rheology/flowlaw_factory.hh"
+%include pism_FlowLaw.i
 
 %include pism_ColumnSystem.i
 
@@ -258,9 +252,11 @@
  * PISM's stress balance headers.
  */
 %{
-#include "regional/regional.hh"
+#include "regional/SSAFD_Regional.hh"
+#include "regional/SIAFD_Regional.hh"
 %}
-%include "regional/regional.hh"
+%include "regional/SSAFD_Regional.hh"
+%include "regional/SIAFD_Regional.hh"
 
 %include "base/util/projection.hh"
 

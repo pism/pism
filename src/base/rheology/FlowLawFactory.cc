@@ -19,12 +19,21 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "flowlaw_factory.hh"
+#include "FlowLawFactory.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMUnits.hh"
 #include "base/util/error_handling.hh"
+
+#include "IsothermalGlen.hh"
+#include "PatersonBudd.hh"
+#include "GPBLD.hh"
+#include "GPBLD3.hh"
+#include "Hooke.hh"
+#include "PatersonBuddCold.hh"
+#include "PatersonBuddWarm.hh"
+#include "GoldsbyKohlstedt.hh"
 
 namespace pism {
 namespace rheology {
@@ -42,6 +51,11 @@ FlowLaw* create_pb(const std::string &pre,
 FlowLaw* create_gpbld(const std::string &pre,
                       const Config &config, EnthalpyConverter::Ptr EC) {
   return new (GPBLD)(pre, config, EC);
+}
+
+FlowLaw* create_gpbld3(const std::string &pre,
+                       const Config &config, EnthalpyConverter::Ptr EC) {
+  return new (GPBLD3)(pre, config, EC);
 }
 
 FlowLaw* create_hooke(const std::string &pre,
@@ -74,30 +88,31 @@ FlowLawFactory::FlowLawFactory(const std::string &prefix,
   assert(not prefix.empty());
 
   m_flow_laws.clear();
-  add_type(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
-  add_type(ICE_PB, &create_pb);
-  add_type(ICE_GPBLD, &create_gpbld);
-  add_type(ICE_HOOKE, &create_hooke);
-  add_type(ICE_ARR, &create_arr);
-  add_type(ICE_ARRWARM, &create_arrwarm);
-  add_type(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
+  add(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
+  add(ICE_PB, &create_pb);
+  add(ICE_GPBLD, &create_gpbld);
+  add(ICE_GPBLD3, &create_gpbld3);
+  add(ICE_HOOKE, &create_hooke);
+  add(ICE_ARR, &create_arr);
+  add(ICE_ARRWARM, &create_arrwarm);
+  add(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
 
-  set_default_type(m_config->get_string(prefix + "flow_law"));
+  set_default(m_config->get_string(prefix + "flow_law"));
 }
 
 FlowLawFactory::~FlowLawFactory() {
   // empty
 }
 
-void FlowLawFactory::add_type(const std::string &name, FlowLawCreator icreate) {
+void FlowLawFactory::add(const std::string &name, FlowLawCreator icreate) {
   m_flow_laws[name] = icreate;
 }
 
-void FlowLawFactory::remove_type(const std::string &name) {
+void FlowLawFactory::remove(const std::string &name) {
   m_flow_laws.erase(name);
 }
 
-void FlowLawFactory::set_default_type(const std::string &type) {
+void FlowLawFactory::set_default(const std::string &type) {
   if (m_flow_laws[type] == NULL) {
     throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available"
                                   " (prefix=\"%s\").",

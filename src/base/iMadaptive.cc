@@ -65,6 +65,10 @@ double IceModel::max_timestep_cfl_3d() {
   MaskQuery mask(vMask);
 
   // update global max of abs of velocities for CFL; only velocities under surface
+  const double
+    one_over_dx = 1.0 / m_grid->dx(),
+    one_over_dy = 1.0 / m_grid->dy();
+
   double max_u = 0.0, max_v = 0.0, max_w = 0.0;
   ParallelSection loop(m_grid->com);
   try {
@@ -84,11 +88,14 @@ double IceModel::max_timestep_cfl_3d() {
             absv = fabs(v[k]);
           max_u = std::max(max_u, absu);
           max_v = std::max(max_v, absv);
-          max_w = std::max(max_w, fabs(w[k]));
-          const double denom = fabs(absu / m_grid->dx()) + fabs(absv / m_grid->dy());
+          const double denom = fabs(absu * one_over_dx) + fabs(absv * one_over_dy);
           if (denom > 0.0) {
             max_dt = std::min(max_dt, 1.0 / denom);
           }
+        }
+
+        for (int k = 0; k <= ks; ++k) {
+          max_w = std::max(max_w, fabs(w[k]));
         }
       }
     }
@@ -251,6 +258,11 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   MaxTimestep extras_dt = extras_max_timestep(current_time);
   if (extras_dt.is_finite()) {
     dt_restrictions["-extra_... reporting"] = extras_dt.value();
+  }
+
+  MaxTimestep save_dt = save_max_timestep(current_time);
+  if (save_dt.is_finite()) {
+    dt_restrictions["-save_... reporting"] = save_dt.value();
   }
 
   if (dt_force > 0.0) {

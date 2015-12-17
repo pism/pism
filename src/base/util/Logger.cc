@@ -94,11 +94,11 @@ void Logger::set_threshold(int level) {
 int Logger::get_threshold() const {
   return m_impl->threshold;
 }
-void Logger::disable() {
+void Logger::disable() const {
   m_impl->enabled = false;
 }
 
-void Logger::enable() {
+void Logger::enable() const {
   m_impl->enabled = true;
 }
 

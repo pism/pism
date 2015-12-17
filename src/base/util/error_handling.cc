@@ -24,9 +24,13 @@
 
 namespace pism {
 
+RuntimeError::Hook RuntimeError::sm_hook = NULL;
+
 RuntimeError::RuntimeError(const std::string &message)
   : std::runtime_error(message) {
-  // empty
+  if (sm_hook != NULL) {
+    sm_hook(this);
+  }
 }
 
 
@@ -39,6 +43,10 @@ RuntimeError RuntimeError::formatted(const char format[], ...) {
   va_end(argp);
 
   return RuntimeError(buffer);
+}
+
+void RuntimeError::set_hook(Hook new_hook) {
+  sm_hook = new_hook;
 }
 
 RuntimeError::~RuntimeError() throw() {

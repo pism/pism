@@ -67,9 +67,9 @@ public:
    * This makes it possible to temporarily silence the logger and then re-enable it with the same
    * threshold as before, but without explicitly storing the current threshold.
    */
-  void disable();
+  void disable() const;
   //! (Re-)enable the logger.
-  void enable();
+  void enable() const;
 protected:
   //! Do the hard work. Override this in a derived class to customize.
   virtual void message_impl(const char buffer[]) const;
@@ -90,6 +90,7 @@ public:
   void reset();
 
   std::string get() const;
+protected:
   virtual void message_impl(const char buffer[]) const;
   virtual void error_impl(const char buffer[]) const;
 private:

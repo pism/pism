@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,6 +44,7 @@ public:
   const std::vector<double>& z_fine() const;
 private:
   std::vector<double> m_z_fine, m_z_coarse;
+  std::vector<double> m_constants;
 
   // Array m_coarse2fine contains indices of the ice coarse vertical grid
   // that are just below a level of the fine grid. I.e. m_coarse2fine[k] is

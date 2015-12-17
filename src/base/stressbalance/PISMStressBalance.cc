@@ -21,7 +21,7 @@
 #include "SSB_Modifier.hh"
 #include "coupler/PISMOcean.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -206,6 +206,11 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
     list.add(*basal_melt_rate);
   }
 
+  const std::vector<double> &z = m_grid->z();
+  const unsigned int Mz = m_grid->Mz();
+
+  std::vector<double> u_x_plus_v_y(Mz);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -259,9 +264,13 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
       }
     }
 
-    double
-      u_x = D_x *  (west * (u_ij[0] - u_w[0]) +  east * (u_e[0] - u_ij[0])),
-      v_y = D_y * (south * (v_ij[0] - v_s[0]) + north * (v_n[0] - v_ij[0]));
+    // compute u_x + v_y using a vectorizable loop
+    for (unsigned int k = 0; k < Mz; ++k) {
+      double
+        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
+        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+      u_x_plus_v_y[k] = u_x + v_y;
+    }
 
     // at the base: include the basal melt rate
     if (basal_melt_rate != NULL) {
@@ -271,17 +280,10 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
     }
 
     // within the ice and above:
-    double old_integrand = u_x + v_y;
-    for (unsigned int k = 1; k < m_grid->Mz(); ++k) {
-      u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
-      v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
-      const double new_integrand = u_x + v_y;
+    for (unsigned int k = 1; k < Mz; ++k) {
+      const double dz = z[k] - z[k-1];
 
-      const double dz = m_grid->z(k) - m_grid->z(k-1);
-
-      w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
-
-      old_integrand = new_integrand;
+      w_ij[k] = w_ij[k - 1] - (0.5 * dz) * (u_x_plus_v_y[k] + u_x_plus_v_y[k - 1]);
     }
   }
 }
@@ -397,6 +399,10 @@ void StressBalance::compute_volumetric_strain_heating() {
   list.add(u);
   list.add(v);
 
+  const std::vector<double> &z = m_grid->z();
+  const unsigned int Mz = m_grid->Mz();
+  std::vector<double> depth(Mz), pressure(Mz), hardness(Mz);
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -462,9 +468,17 @@ void StressBalance::compute_volumetric_strain_heating() {
       Sigma = m_strain_heating.get_column(i, j);
 
       for (int k = 0; k <= ks; ++k) {
-        double dz,
-          pressure = EC->pressure(H - m_grid->z(k)),
-          B        = flow_law->hardness_parameter(E_ij[k], pressure);
+        depth[k] = H - z[k]; // FIXME issue #15
+      }
+
+      // pressure added by the ice (i.e. pressure difference between the
+      // current level and the top of the column)
+      EC->pressure(depth, ks, pressure);
+
+      flow_law->hardness_n(E_ij, &pressure[0], ks + 1, &hardness[0]);
+
+      for (int k = 0; k <= ks; ++k) {
+        double dz;
 
         double u_z = 0.0, v_z = 0.0,
           u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
@@ -473,20 +487,20 @@ void StressBalance::compute_volumetric_strain_heating() {
           v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
 
         if (k > 0) {
-          dz = m_grid->z(k+1) - m_grid->z(k-1);
+          dz = z[k+1] - z[k-1];
           u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
           v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
         } else {
           // use one-sided differences for u_z and v_z on the bottom level
-          dz = m_grid->z(1) - m_grid->z(0);
+          dz = z[1] - z[0];
           u_z = (u_ij[1] - u_ij[0]) / dz;
           v_z = (v_ij[1] - v_ij[0]) / dz;
         }
 
-        Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+        Sigma[k] = 2.0 * e_to_a_power * hardness[k] * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
       } // k-loop
 
-      int remaining_levels = m_grid->Mz() - (ks + 1);
+      int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
         ierr = PetscMemzero(&Sigma[ks+1],
                             remaining_levels*sizeof(double));

@@ -20,13 +20,13 @@
 
 #include "IP_SSAHardavForwardProblem.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/rheology/flowlaws.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace inverse {

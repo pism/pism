@@ -472,6 +472,7 @@ protected:
   unsigned int current_snapshot;
   void init_snapshots();
   void write_snapshot();
+  MaxTimestep save_max_timestep(double my_t);
 
   // scalar time-series
   bool save_ts;                 //! true if the user requested time-series output

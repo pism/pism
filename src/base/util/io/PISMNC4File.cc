@@ -180,6 +180,17 @@ int NC4File::def_var_impl(const std::string &name, IO_Type nctype, const std::ve
   return stat;
 }
 
+int NC4File::def_var_chunking_impl(const std::string &name,
+                                   std::vector<size_t> &dimensions) const {
+  int stat = 0, varid = 0;
+
+  stat = nc_inq_varid(m_file_id, name.c_str(), &varid); check(stat);
+
+  stat = nc_def_var_chunking(m_file_id, varid, NC_CHUNKED, &dimensions[0]); check(stat);
+
+  return stat;
+}
+
 int NC4File::get_varm_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,

@@ -24,7 +24,7 @@
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/pism_options.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
@@ -1230,8 +1230,9 @@ void SSAFD::compute_hardav_staggered() {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid->kBelowHeight(H),
-                                                        &(m_grid->z()[0]), &E[0]);
+        hardness(i,j,o) = rheology::averaged_hardness(*m_flow_law,
+                                                      H, m_grid->kBelowHeight(H),
+                                                      &(m_grid->z()[0]), &E[0]);
       } // o
     }
   } catch (...) {

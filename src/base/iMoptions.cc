@@ -75,17 +75,6 @@ void IceModel::setFromOptions() {
                "              without application of partially filled grid cell scheme (-part_grid)\n"
                "              may lead to (incorrect) non-moving ice shelf front.\n");
   }
-
-
-  // implements an option e.g. described in \ref Greve that is the
-  // enhancement factor is coupled to the age of the ice with
-  // e = 1 (A < 11'000 years), e = 3 otherwise
-  if (m_config->get_boolean("e_age_coupling")) {
-    m_log->message(2,
-               "  setting age-dependent enhancement factor: "
-               "e=1 if A<11'000 years, e=3 otherwise\n");
-
-  }
 }
 
 //! Set the output file size using a command-line option.

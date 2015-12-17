@@ -152,6 +152,15 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
   return global_stat;
 }
 
+int NCFile::def_var_chunking_impl(const std::string &name,
+                                  std::vector<size_t> &dimensions) const {
+  (void) name;
+  (void) dimensions;
+  // the default implementation does nothing
+  return 0;
+}
+
+
 void NCFile::open(const std::string &filename, IO_Mode mode) {
   int stat = this->open_impl(filename, mode); check(stat);
   m_filename = filename;
@@ -211,6 +220,12 @@ void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
   int stat = this->def_var_impl(name, nctype, dims); check(stat);
 }
+
+void NCFile::def_var_chunking(const std::string &name,
+                              std::vector<size_t> &dimensions) const {
+  int stat = this->def_var_chunking_impl(name, dimensions); check(stat);
+}
+
 
 void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,

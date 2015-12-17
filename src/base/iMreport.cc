@@ -285,7 +285,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     if (use_calendar) {
-      snprintf(tempstr,90, "%s", m_time->date().c_str());
+      snprintf(tempstr,90, "%12s", m_time->date().c_str());
     } else {
       snprintf(tempstr,90, "%.3f", m_time->convert_time_interval(m_time->current(), tunitstr));
     }

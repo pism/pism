@@ -22,7 +22,7 @@
 #include <map>
 #include <string>
 
-#include "flowlaws.hh"
+#include "FlowLaw.hh"
 #include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
@@ -31,6 +31,7 @@ namespace rheology {
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (PatersonBudd) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) */
+#define ICE_GPBLD3   "gpbld3"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) (n == 3)*/
 #define ICE_HOOKE   "hooke"         /* Hooke (Hooke) */
 #define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
@@ -45,9 +46,9 @@ public:
                  Config::ConstPtr conf,
                  EnthalpyConverter::Ptr my_EC);
   ~FlowLawFactory();
-  void set_default_type(const std::string &name);
-  void add_type(const std::string &name, FlowLawCreator);
-  void remove_type(const std::string &name);
+  void set_default(const std::string &name);
+  void add(const std::string &name, FlowLawCreator);
+  void remove(const std::string &name);
   FlowLaw* create();
 private:
   std::string m_type_name, m_prefix;
