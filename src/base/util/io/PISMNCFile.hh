@@ -87,6 +87,8 @@ public:
   void def_var(const std::string &name, IO_Type nctype,
                const std::vector<std::string> &dims) const;
 
+  void def_var_chunking(const std::string &name, std::vector<size_t> &dimensions) const;
+
   void get_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
@@ -183,6 +185,9 @@ protected:
   // var
   virtual int def_var_impl(const std::string &name, IO_Type nctype,
                            const std::vector<std::string> &dims) const = 0;
+
+  virtual int def_var_chunking_impl(const std::string &name,
+                                    std::vector<size_t> &dimensions) const;
 
   virtual int get_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,

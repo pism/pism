@@ -69,6 +69,7 @@
 #endif
 %include <std_shared_ptr.i>
 
+%template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;
 %template(DoubleVector) std::vector<double>;

@@ -496,8 +496,6 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 //! Writes an IceModelVec to a NetCDF file.
 void IceModelVec::write_impl(const PIO &nc) const {
 
-  m_grid->ctx()->log()->message(3, "+  Writing %s...\n", m_name.c_str());
-
   if (m_dof != 1) {
     throw RuntimeError("This method (IceModelVec::write_impl) only supports"
                        " IceModelVecs with dof == 1");
@@ -517,8 +515,6 @@ void IceModelVec::write_impl(const PIO &nc) const {
     io::write_spatial_variable(metadata(0), *m_grid, nc,
                                write_in_glaciological_units, v_array.get());
   }
-
-  m_grid->ctx()->log()->message(3, "+  Done writing %s.\n", m_name.c_str());
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
@@ -895,7 +891,36 @@ void IceModelVec::read(const PIO &nc, const unsigned int time) {
 
 void IceModelVec::write(const PIO &nc) const {
   define(nc);
+
+  m_grid->ctx()->log()->message(3, "  [%s] Writing %s...",
+                               pism_timestamp(m_grid->com).c_str(),
+                               m_name.c_str());
+
+  PetscLogDouble start_time = GetTime();
   write_impl(nc);
+  PetscLogDouble end_time = GetTime();
+
+  const double
+    time_spent = end_time - start_time,
+    megabyte = pow(2, 20),
+    mb_double = sizeof(double) * size() / megabyte,
+    mb_float =  sizeof(float) * size() / megabyte;
+
+  std::string timestamp = pism_timestamp(m_grid->com);
+  std::string spacer(timestamp.size(), ' ');
+  if (time_spent > 1) {
+    m_grid->ctx()->log()->message(3,
+                                  "\n"
+                                  "  [%s] Done writing %s (%f Mb double, %f Mb float)\n"
+                                  "   %s  in %f seconds (%f minutes).\n"
+                                  "   %s  Effective throughput: double: %f Mb/s, float: %f Mb/s.\n",
+                                  timestamp.c_str(), m_name.c_str(), mb_double, mb_float,
+                                  spacer.c_str(), time_spent, time_spent / 60.0,
+                                  spacer.c_str(),
+                                  mb_double / time_spent, mb_float / time_spent);
+  } else {
+    m_grid->ctx()->log()->message(3, " done.\n");
+  }
 }
 
 IceModelVec::AccessList::AccessList() {
@@ -920,6 +945,22 @@ IceModelVec::AccessList::AccessList(const IceModelVec &vec) {
 void IceModelVec::AccessList::add(const IceModelVec &vec) {
   vec.begin_access();
   m_vecs.push_back(&vec);
+}
+
+//! Return the total number of elements in the *owned* part of an array.
+size_t IceModelVec::size() const {
+  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
+  // DM object.
+
+  size_t
+    Mx = m_grid->Mx(),
+    My = m_grid->My(),
+    Mz = zlevels.size(),
+    dof = m_dof;
+
+  return Mx * My * Mz * dof;
 }
 
 void convert_vec(Vec v, units::System::Ptr system,

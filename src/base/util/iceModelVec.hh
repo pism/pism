@@ -198,7 +198,7 @@ public:
   Vec get_vec();
   petsc::DM::Ptr get_dm() const;
   virtual void  set_name(const std::string &name);
-  virtual const std::string& get_name() const;
+  const std::string& get_name() const;
   virtual void  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
                           const std::string &my_units, const std::string &my_standard_name,
                           int component = 0);
@@ -231,9 +231,10 @@ public:
   void inc_state_counter();
   void set_time_independent(bool flag);
 
-  bool   m_report_range;                 //!< If true, report range when regridding.
-  bool   write_in_glaciological_units;
-  //!< \brief If true, data is written to a file in "human-friendly" units.
+  //! If true, report range when regridding.
+  bool m_report_range;
+  //! If true, data is written to a file in "human-friendly" units.
+  bool write_in_glaciological_units;
 
 protected:
 
@@ -280,6 +281,7 @@ protected:
   void set_dof(petsc::DM::Ptr da_source, Vec source, unsigned int n,
                unsigned int count=1);
 private:
+  size_t size() const;
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);
   IceModelVec& operator=(const IceModelVec&);
