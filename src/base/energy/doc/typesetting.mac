@@ -1,0 +1,40 @@
+texput(E, "E^{n+1}")$
+texput(Eold, "E^{n}")$
+texput(rho, "\\rho_{i}")$
+texput(w, "w^{n}_{k}")$
+texput(K, "K^{n}")$
+texput(R, "R^{n}")$
+texput(Phi, "\\Phi^{n}_{k}")$
+texput(one_over_dz, "\\frac{1}{\\Delta z}")$
+texput(half, "1/2")$
+texput(nounify(Up), "\\operatorname{Up}")$
+texput(k_s, "k_{s}");
+texput(nounify(Delta), "\\Delta")$
+texput(nounify(delta_p), "\\mathbf{\\delta}_{+}")$
+texput(nounify(delta_m), "\\mathbf{\\delta}_{-}")$
+
+load("neumann_bc.mac")$
+
+file : openw("formulas.tex")$
+
+print_eq(name, equation) := printf(file, "\\newcommand{\\~a}{~a}~%", name, tex1(equation))$
+
+print_eq(discretization, eq)$
+
+print_eq(E, E)$
+print_eq(El, E[k-1])$
+print_eq(Eu, E[k+1])$
+
+print_eq(Lp, l[p])$
+print_eq(Dp, d[p])$
+print_eq(Up, u[p])$
+print_eq(Bp, b[p])$
+
+print_eq(Lm, l[m])$
+print_eq(Dm, d[m])$
+print_eq(Um, u[m])$
+print_eq(Bm, b[m])$
+
+
+/* Close the file */
+close(file)$
