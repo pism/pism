@@ -9,4 +9,4 @@ formulas.tex: discretization.mac generic_equation.mac neumann_bc.mac typesetting
 	maxima -q -b typesetting.mac
 
 clean:
-	@rm -f formulas.tex
+	@rm -f formulas.tex *~ *.aux *.toc *.log

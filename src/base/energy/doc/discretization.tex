@@ -1,9 +1,12 @@
 \documentclass{article}
 \usepackage{amsmath}
-\usepackage[margin=0.5in]{geometry}
+\usepackage{hyperref}
+\usepackage[left=0.5in,right=0.5in]{geometry}
 \parindent=0in \parskip=0.5\baselineskip
 
 \include{formulas}
+
+\newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
 
 \begin{document}
 \title{Discretization of the vertical problem for the conservation of energy}
@@ -14,45 +17,167 @@
 \section{Introduction}
 \label{sec:introduction}
 
+These notes dress up \textsc{Maxima}-generated formulas needed to
+implement (and check the implementation of) the energy balance code in
+PISM, including the implementation of boundary conditions.
+
+\begin{center}
+  \begin{tabular}{ll}
+    Symbol or formula & Comment \\
+    \hline
+    $\rho_{i}$ & ice density\\
+    $c_{i}$ & specific heat capacity of ice\\
+    $k_{i}$ & thermal conductivity of ice\\
+    $\phi$ & heat flux at a boundary\\
+    $G = \phi / K$ & enthalpy flux at a boundary (see also (\ref{eq:2}))\\
+    $\Delta(U_{k}) = U_{k+1} - U_{k-1}$ & centered finite difference\\
+    $\delta_{+}(U_{k}) = U_{k+1} - U_{k}$ & right-sided finite difference\\
+    $\delta_{-}(U_{k}) = U_{k} - U_{k-1}$ & left-sided finite difference\\
+    $\operatorname{Up}(U_{k}, \alpha) =
+    \begin{cases}
+      \delta_{+}(U_{k}), & \alpha < 0,\\
+      \delta_{-}(U_{k}), & \alpha \ge 0.
+    \end{cases}$ & first order upwinding\\
+  \end{tabular}
+\end{center}
+
 \section{Energy balance in a column of ice}
 \label{sec:energy-in-a-column}
 
-\section{Generic equation}
-\label{sec:generic-equation}
+The conservation of energy equation is
 
 \begin{equation}
   \label{eq:1}
-  \discretization
+  \rho_{i} \cdot \frac{dE}{dt} = -\nabla\cdot\mathbf{q} + Q,
+\end{equation}
+where
+$\mathbf{q}$, the enthalpy flux, is defined by
+\begin{align}
+  \label{eq:2}
+  \mathbf{q} &= -K \nabla E,\\
+  K(E) &=
+  \begin{cases}
+    k_{i}/c_{i}, & E \le E_{s},\\
+    K_{0}, & E > E_{s}.\\
+  \end{cases}
+\end{align}
+Here $E_{s}$ is the pressure-dependent enthalpy of the cold-temperate
+transition and $Q$ is the source term consisting of the volumetric
+strain heating and basal frictional heating.
+
+Note that $K$ depeds on $E$, so the system defined by equations
+(\ref{eq:1}) and (\ref{eq:2}) with appropriate boundary conditions is
+nonlinear. The PISM implementation linearizes it by treating the time
+derivative implicitly and using the \emph{previous} (or
+initial) distribution of $E$ to evaluate $K(E)$.
+
+PISM uses a shallow approximation of this equation without horizontal
+conduction terms. Here I focus on the vertical direction, so
+(\ref{eq:1}) becomes
+\begin{equation}
+  \label{eq:3}
+  \rho_{i} \left( \diff{E}{t} + w\,\diff{E}{z} \right) - \diff{}{z}\left( K \diff{E}{z} \right) = \Phi.
+\end{equation}
+The term $\Phi$ above combines horizontal advection and the source:
+\begin{equation}
+  \label{eq:4}
+    \Phi = Q - \rho_{i} \left( u\,\diff{E}{x} + v\,\diff{E}{y} \right).
 \end{equation}
 
-In the upward velocity case we get
+\section{Interior of the column}
+\label{sec:interior}
+
+The discretization scheme for equation (\ref{eq:3}) used in PISM is
 \begin{equation}
-  \label{eq:2}
-  (\Lp)\, \El + (\Dp)\, \E + (\Up)\, \Eu = \Bp.
+  \label{eq:5}
+  \discretization.
 \end{equation}
+Note the convex combination of centered finite difference and
+first-order upwinding approximations of vertical advection with the
+weight $\lambda$.
 
-\begin{align*}
-  L_{k} &= \Lp,\\
-  D_{k} &= \Dp,\\
-  U_{k} &= \Up,\\
-  b_{k} &= \Bp.
-\end{align*}
-
-In the downward velocity case we get
+For $w \ge 0$ this can be rewritten as
 \begin{equation}
-  \label{eq:2}
+  \label{eq:6}
+  (\Lp)\, \El + (\Dp)\, \E + (\Up)\, \Eu = \Bp,
+\end{equation}
+and for $w < 0$
+\begin{equation}
+  \label{eq:7}
   (\Lm)\, \El + (\Dm)\, \E + (\Um)\, \Eu = \Bm.
 \end{equation}
 
-\begin{align*}
-  L_{k} &= \Lm,\\
-  D_{k} &= \Dm,\\
-  U_{k} &= \Um,\\
-  b_{k} &= \Bm.
-\end{align*}
+Here
+\begin{equation}
+  R^{n}_{k} = \R,\quad\quad \mu = \mufactor.
+\end{equation}
+
+This corresponds to the following lower-diagonal ($L_{k}$), diagonal
+($D_{k}$) and upper-diagonal ($U_{k}$) entries in the tridiagonal
+matrix corresponding to the discretization (\ref{eq:5}).
+
+\newcommand{\wcases}[3]{#1 &= \begin{cases} #2, & w < 0,\\#3, & w \ge 0.\end{cases}}
+
+\begin{align}
+  \wcases{L_{k}}{\Lm}{\Lp}\\
+  \notag\\
+  \wcases{D_{k}}{\Dm}{\Dp}\\
+  \notag\\
+  \wcases{U_{k}}{\Um}{\Up}
+\end{align}
+The right hand side $b$ has elements
+\begin{equation}
+  \label{eq:8}
+  b_{k} = \Bp
+\end{equation}
+in both cases.
 
 \section{Neumann B. C.}
 \label{sec:neumann-b-c}
 
+In the case of the initial boundary value system consisting of
+equation (\ref{eq:1}) combined with
+\begin{align}
+  \label{eq:9}
+  \left.\frac{\partial E}{\partial z}\right|_{z = 0} &= G_{0}(t),\\
+  E(z_{\text{surface}}) &= f(t)
+\end{align}
+the Neumann boundary conditions at the base are implemented by
+combining the generic discretization equation (\ref{eq:5}) with the
+equation (\ref{eq:10}) approximating (\ref{eq:9}) and eliminating
+$E_{-1}$.
+\begin{equation}
+  \label{eq:10}
+  \neumannb.
+\end{equation}
+This gives
+\begin{align}
+  \wcases{D_{0}}{\Dmb}{\Dpb}\\
+  \notag\\
+  \wcases{U_{0}}{\Umb}{\Upb}\\
+  \notag\\
+  \wcases{b_{0}}{\Bmb}{\Bpb}
+\end{align}
+
+When assembling the basal equation we approxomate $R_{-\frac{1}{2}}$ by $R_{0}$.
+
+\newcommand{\ks}{k_{s}}
+
+Similarly, when the Neumann B.~C. is imposed at the surface ($k =
+\ks$), we combine (\ref{eq:5}) with (\ref{eq:11}) and eliminate $E_{\ks+1}$.
+\begin{equation}
+  \label{eq:11}
+  \neumanns.
+\end{equation}
+This gives
+\begin{align}
+  \wcases{L_{\ks}}{\Lms}{\Lps}\\
+  \notag\\
+  \wcases{D_{\ks}}{\Dms}{\Dps}\\
+  \notag\\
+  \wcases{b_{\ks}}{\Bms}{\Bps}
+\end{align}
+
+When assembling the surface equation we approxomate $R_{\ks + \frac{1}{2}}$ by $R_{\ks}$.
 
 \end{document}
