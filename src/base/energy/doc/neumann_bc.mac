@@ -11,8 +11,8 @@ E_base : solve(neumann[0], E[-1])[1];
 eq_base[pm] := facsum(subst([k=0, E_base], eq[pm]), E[0], E[1]);
 
 /* Matrix entries for the basal equation */
-d_base[pm] := facsum(coeff(lhs(eq_base[pm]), E[0]), w);
-u_base[pm] := facsum(coeff(lhs(eq_base[pm]), E[1]), w);
+d_base[pm] := facsum(coeff(lhs(eq_base[pm]), E[0]), w[0]);
+u_base[pm] := facsum(coeff(lhs(eq_base[pm]), E[1]), w[0]);
 
 b_base[pm] :=
 expandwrt(
@@ -27,8 +27,8 @@ eq_surface[pm] := facsum(subst([k=k_s, E_surface], eq[pm]), E[k_s-1], E[k_s]);
 E_surface : solve(neumann[k_s], E[k_s+1])[1];
 
 /* Matrix entries for the surface equation */
-l_surface[pm] := facsum(coeff(lhs(eq_surface[pm]), E[k_s-1]), w);
-d_surface[pm] := facsum(coeff(lhs(eq_surface[pm]), E[k_s]), w);
+l_surface[pm] := facsum(coeff(lhs(eq_surface[pm]), E[k_s-1]), w[k_s]);
+d_surface[pm] := facsum(coeff(lhs(eq_surface[pm]), E[k_s]), w[k_s]);
 
 b_surface[pm] :=
 expandwrt(

@@ -7,6 +7,8 @@
 \include{formulas}
 
 \newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\wcase}[3]{\begin{cases} #1, & w^{n}_{#3} < 0,\\#2, & w^{n}_{#3} \ge 0.\end{cases}}
+\newcommand{\wcaseeq}[4]{#1 &= \wcase{#2}{#3}{#4}}
 
 \begin{document}
 \title{Discretization of the vertical problem for the conservation of energy}
@@ -57,8 +59,8 @@ $\mathbf{q}$, the enthalpy flux, is defined by
   \mathbf{q} &= -K \nabla E,\\
   K(E) &=
   \begin{cases}
-    k_{i}/c_{i}, & E \le E_{s},\\
-    K_{0}, & E > E_{s}.\\
+    k_{i}/c_{i}, & E \le E_{s}\quad\text{(cold ice)},\\
+    K_{0}, & E > E_{s}\quad\text{(temperate ice)}.\\
   \end{cases}
 \end{align}
 Here $E_{s}$ is the pressure-dependent enthalpy of the cold-temperate
@@ -116,14 +118,12 @@ This corresponds to the following lower-diagonal ($L_{k}$), diagonal
 ($D_{k}$) and upper-diagonal ($U_{k}$) entries in the tridiagonal
 matrix corresponding to the discretization (\ref{eq:5}).
 
-\newcommand{\wcases}[3]{#1 &= \begin{cases} #2, & w < 0,\\#3, & w \ge 0.\end{cases}}
-
 \begin{align}
-  \wcases{L_{k}}{\Lm}{\Lp}\\
+  \wcaseeq{L_{k}}{\Lm}{\Lp}{k}\\
   \notag\\
-  \wcases{D_{k}}{\Dm}{\Dp}\\
+  \wcaseeq{D_{k}}{\Dm}{\Dp}{k}\\
   \notag\\
-  \wcases{U_{k}}{\Um}{\Up}
+  \wcaseeq{U_{k}}{\Um}{\Up}{k}
 \end{align}
 The right hand side $b$ has elements
 \begin{equation}
@@ -132,6 +132,21 @@ The right hand side $b$ has elements
 \end{equation}
 in both cases.
 
+\newcommand{\Rm}{R^{n}_{k-\frac{1}{2}}}
+\newcommand{\Rp}{R^{n}_{k+\frac{1}{2}}}
+\newcommand{\W}{w^{n}_{k}}
+\newcommand{\wstack}[2]{\left\{\begin{matrix}#1\\#2\end{matrix} \right\}}
+This can be rewritten as
+\begin{align}
+  L_{k} &= -\Rm + \mu\W \wstack{-\lambda}{\lambda - 2},\\
+  D_{k} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda},\\
+  U_{k} &= -\Rp + \mu\W \wstack{2 - \lambda}{\lambda}
+\end{align}
+with
+\begin{equation}
+  \label{eq:12}
+  \wstack{a}{b} = \wcase{a}{b}{}.
+\end{equation}
 \section{Neumann B. C.}
 \label{sec:neumann-b-c}
 
@@ -152,11 +167,22 @@ $E_{-1}$.
 \end{equation}
 This gives
 \begin{align}
-  \wcases{D_{0}}{\Dmb}{\Dpb}\\
+  \wcaseeq{D_{0}}{\Dmb}{\Dpb}{0}\\
   \notag\\
-  \wcases{U_{0}}{\Umb}{\Upb}\\
+  \wcaseeq{U_{0}}{\Umb}{\Upb}{0}\\
   \notag\\
-  \wcases{b_{0}}{\Bmb}{\Bpb}
+  \wcaseeq{b_{0}}{\Bmb}{\Bpb}{0}
+\end{align}
+
+\renewcommand{\Rp}{R^{n}_{\frac{1}{2}}}
+\renewcommand{\Rm}{R^{n}_{-\frac{1}{2}}}
+\renewcommand{\W}{w^{n}_{0}}
+
+Alternatively,
+\begin{align}
+  D_{0} &= 1 + \Rm + \Rp + 2\mu\W \wcase{\lambda - 1}{1 - \lambda}{0}\\
+  U_{0} &= -\Rp -\Rm + 2\mu\W \wcase{1 - \lambda}{\lambda - 1}{0}\\
+  b_{0} &= E^{n}_{0} + \frac{\Delta t \Phi^{n}_{0}}{\rho_{i}}{0}
 \end{align}
 
 When assembling the basal equation we approxomate $R_{-\frac{1}{2}}$ by $R_{0}$.
@@ -171,11 +197,11 @@ Similarly, when the Neumann B.~C. is imposed at the surface ($k =
 \end{equation}
 This gives
 \begin{align}
-  \wcases{L_{\ks}}{\Lms}{\Lps}\\
+  \wcaseeq{L_{\ks}}{\Lms}{\Lps}{\ks}\\
   \notag\\
-  \wcases{D_{\ks}}{\Dms}{\Dps}\\
+  \wcaseeq{D_{\ks}}{\Dms}{\Dps}{\ks}\\
   \notag\\
-  \wcases{b_{\ks}}{\Bms}{\Bps}
+  \wcaseeq{b_{\ks}}{\Bms}{\Bps}{\ks}
 \end{align}
 
 When assembling the surface equation we approxomate $R_{\ks + \frac{1}{2}}$ by $R_{\ks}$.

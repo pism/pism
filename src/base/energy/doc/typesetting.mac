@@ -1,7 +1,7 @@
 texput(E, "E^{n+1}")$
 texput(Eold, "E^{n}")$
 texput(rho, "\\rho_{i}")$
-texput(w, "w^{n}_{k}")$
+texput(w, "w^{n}")$
 texput(K, "K^{n}")$
 texput(R, "R^{n}")$
 texput(Phi, "\\Phi^{n}_{k}")$
