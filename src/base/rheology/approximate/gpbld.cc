@@ -27,17 +27,17 @@
 #include "enthalpy_converter.c"
 
 static const struct gpbld_constants gpbld = {
-  .ideal_gas_constant        = 8.31441,
-  .A_cold                    = 3.610e-13,
-  .A_cold_inv_cuberoot = 14044.2192037997098,
-  .Q_cold                    = 60000.00000,
-  .T_critical                = 263.15000,
-  .A_warm                    = 1730.00000,
-  .A_warm_inv_cuberoot = 0.083301207912519429,
-  .Q_warm                    = 139000.00000,
-  .water_fraction_coeff      = 181.25,
-  .T_melting                 = 273.15,
-  .water_frac_observed_limit = 0.01,
+  /* .ideal_gas_constant        = */ 8.31441,
+  /* .A_cold                    = */ 3.610e-13,
+  /* .A_cold_inv_cuberoot       = */ 14044.2192037997098,
+  /* .Q_cold                    = */ 60000.00000,
+  /* .T_critical                = */ 263.15000,
+  /* .A_warm                    = */ 1730.00000,
+  /* .A_warm_inv_cuberoot       = */ 0.083301207912519429,
+  /* .Q_warm                    = */ 139000.00000,
+  /* .water_fraction_coeff      = */ 181.25,
+  /* .T_melting                 = */ 273.15,
+  /* .water_frac_observed_limit = */ 0.01,
 };
 
 struct gpbld_constants gpbld_get_constants() {
