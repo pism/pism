@@ -44,8 +44,6 @@ struct gpbld_constants {
   double Q_warm;
   /* Glen-Paterson-Budd-Lliboutry-Duval softness parameter, pure number */
   double water_fraction_coeff;
-  /* Minimum allowed pressure-adjusted temperature, Kelvin */
-  double T_min;
   /* Melting point of pure water, Kelvin */
   double T_melting;
   /* Maximum observed liquid water fraction. */
