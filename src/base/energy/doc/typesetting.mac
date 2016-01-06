@@ -4,7 +4,7 @@ texput(rho, "\\rho_{i}")$
 texput(w, "w^{n}")$
 texput(K, "K^{n}")$
 texput(R, "R^{n}")$
-texput(Phi, "\\Phi^{n}_{k}")$
+texput(Phi, "\\Phi^{n}")$
 texput(one_over_dz, "\\frac{1}{\\Delta z}")$
 texput(half, "\\frac{1}{2}")$
 texput(nounify(Up), "\\operatorname{Up}")$

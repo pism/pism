@@ -1,4 +1,4 @@
-assume(w > 0);
+assume(w[k] > 0);
 load("discretization.mac");
 
 l[p] : l;
@@ -8,8 +8,8 @@ b[p] : b;
 
 eq_generic[p] : eq4;
 
-forget(w > 0);
-assume(w < 0);
+forget(w[k] > 0);
+assume(w[k] < 0);
 
 load("discretization.mac");
 

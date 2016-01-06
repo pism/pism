@@ -1,7 +1,8 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{hyperref}
-\usepackage[left=0.5in,right=0.5in]{geometry}
+\usepackage[left=0.5in,right=0.5in,bottom=1in]{geometry}
+\usepackage{fancyhdr}
 \parindent=0in \parskip=0.5\baselineskip
 
 \include{formulas}
@@ -11,10 +12,9 @@
 \newcommand{\wcaseeq}[4]{#1 &= \wcase{#2}{#3}{#4}}
 
 \begin{document}
-\title{Discretization of the vertical problem for the conservation of energy}
-\author{Constantine Khroulev}
-
-\maketitle
+\pagestyle{fancy}
+\fancyhead[L]{Discretization of the vertical problem for the conservation of energy}
+\fancyhead[R]{Constantine Khroulev}
 
 \section{Introduction}
 \label{sec:introduction}
@@ -33,8 +33,8 @@ PISM, including the implementation of boundary conditions.
     $\phi$ & heat flux at a boundary\\
     $G = \phi / K$ & enthalpy flux at a boundary (see also (\ref{eq:2}))\\
     $\Delta(U_{k}) = U_{k+1} - U_{k-1}$ & centered finite difference\\
-    $\delta_{+}(U_{k}) = U_{k+1} - U_{k}$ & right-sided finite difference\\
-    $\delta_{-}(U_{k}) = U_{k} - U_{k-1}$ & left-sided finite difference\\
+    $\delta_{+}(U_{k}) = U_{k+1} - U_{k}$ & forward finite difference\\
+    $\delta_{-}(U_{k}) = U_{k} - U_{k-1}$ & backward finite difference\\
     $\operatorname{Up}(U_{k}, \alpha) =
     \begin{cases}
       \delta_{+}(U_{k}), & \alpha < 0,\\
@@ -67,7 +67,7 @@ Here $E_{s}$ is the pressure-dependent enthalpy of the cold-temperate
 transition and $Q$ is the source term consisting of the volumetric
 strain heating and basal frictional heating.
 
-Note that $K$ depeds on $E$, so the system defined by equations
+Note that $K$ depends on $E$, so the system defined by equations
 (\ref{eq:1}) and (\ref{eq:2}) with appropriate boundary conditions is
 nonlinear. The PISM implementation linearizes it by treating the time
 derivative implicitly and using the \emph{previous} (or
@@ -94,19 +94,19 @@ The discretization scheme for equation (\ref{eq:3}) used in PISM is
   \label{eq:5}
   \discretization.
 \end{equation}
-Note the convex combination of centered finite difference and
-first-order upwinding approximations of vertical advection with the
-weight $\lambda$.
+Note that (\ref{eq:5}) uses a convex combination of centered finite
+difference and first-order upwinding approximations of vertical
+advection with the weight $\lambda$.
 
 For $w \ge 0$ this can be rewritten as
 \begin{equation}
   \label{eq:6}
-  (\Lp)\, \El + (\Dp)\, \E + (\Up)\, \Eu = \Bp,
+  (\Lp)\, \El + (\Dp)\, \E_{k} + (\Up)\, \Eu = \Bp,
 \end{equation}
 and for $w < 0$
 \begin{equation}
   \label{eq:7}
-  (\Lm)\, \El + (\Dm)\, \E + (\Um)\, \Eu = \Bm.
+  (\Lm)\, \El + (\Dm)\, \E_{k} + (\Um)\, \Eu = \Bm.
 \end{equation}
 
 Here
@@ -178,14 +178,16 @@ This gives
 \renewcommand{\Rm}{R^{n}_{-\frac{1}{2}}}
 \renewcommand{\W}{w^{n}_{0}}
 
+\newcommand{\rhs}[1]{E^{n}_{#1} + \frac{\Delta t \Phi^{n}_{#1}}{\rho_{i}}}
+
 Alternatively,
 \begin{align}
-  D_{0} &= 1 + \Rm + \Rp + 2\mu\W \wcase{\lambda - 1}{1 - \lambda}{0}\\
-  U_{0} &= -\Rp -\Rm + 2\mu\W \wcase{1 - \lambda}{\lambda - 1}{0}\\
-  b_{0} &= E^{n}_{0} + \frac{\Delta t \Phi^{n}_{0}}{\rho_{i}}{0}
+  D_{0} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda}\\
+  U_{0} &= -\Rp -\Rm + 2\mu\W \wstack{1 - \lambda}{\lambda - 1}\\
+  b_{0} &= \rhs{0} + 2G_{0}\Delta z \left( \Rm + \W\mu\wstack{\lambda}{2 - \lambda} \right).
 \end{align}
 
-When assembling the basal equation we approxomate $R_{-\frac{1}{2}}$ by $R_{0}$.
+When assembling the basal equation we approximate $R_{-\frac{1}{2}}$ by $R_{0}$.
 
 \newcommand{\ks}{k_{s}}
 
@@ -204,6 +206,17 @@ This gives
   \wcaseeq{b_{\ks}}{\Bms}{\Bps}{\ks}
 \end{align}
 
-When assembling the surface equation we approxomate $R_{\ks + \frac{1}{2}}$ by $R_{\ks}$.
+\renewcommand{\Rp}{R^{n}_{\ks+\frac{1}{2}}}
+\renewcommand{\Rm}{R^{n}_{\ks-\frac{1}{2}}}
+\renewcommand{\W}{w^{n}_{\ks}}
+
+Alternatively,
+\begin{align}
+  L_{\ks} &= -\Rp -\Rm + 2\mu\W \wstack{1 - \lambda}{\lambda - 1}\\
+  D_{\ks} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda}\\
+  b_{\ks} &= \rhs{\ks} + 2G_{\ks}\Delta z\left( -\Rp + \mu\W\wstack{2-\lambda}{\lambda} \right)
+\end{align}
+
+When assembling the surface equation we approximate $R_{\ks + \frac{1}{2}}$ by $R_{\ks}$.
 
 \end{document}

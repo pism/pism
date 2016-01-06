@@ -22,8 +22,8 @@ delta_m(x) := (op(x)[arg(x)] - op(x)[arg(x)-1]);
 eq :
 rho * ((E[k] - Eold[k]) / dt
   + lambda * w[k] * 'Delta(E[k]) / (2 * dz)
-  + (1 - lambda) * w[k] * 'Up(E[k], w) / dz)
-- 'one_over_dz * (K[k+half] * 'delta_p(E[k]) / dz - K[k-half] * 'delta_m(E[k]) / dz) = Phi;
+  + (1 - lambda) * w[k] * 'Up(E[k], w[k]) / dz)
+- 'one_over_dz * (K[k+half] * 'delta_p(E[k]) / dz - K[k-half] * 'delta_m(E[k]) / dz) = Phi[k];
 
 /* The discretization with the upwinding "operator" expanded according
 to the sign of w */
