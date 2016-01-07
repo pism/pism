@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2015 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2016 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -197,21 +197,29 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
+
   const double
     K      = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
+    G      = heat_flux / K,
     Rl     = m_R[m_ks - 1],
     Rc     = m_R[m_ks],
     Rminus = 0.5 * (Rl + Rc),
-    Rplus  = Rc;
+    Rplus  = Rc,
+    mu_w   = 0.5 * m_nu * m_w[m_ks];
+
+  const double A_l = m_w[m_ks] < 0.0 ? 1.0 - m_lambda : m_lambda - 1.0;
+  const double A_d = m_w[m_ks] < 0.0 ? m_lambda - 1.0 : 1.0 - m_lambda;
+  const double A_b = m_w[m_ks] < 0.0 ? 2.0 - m_lambda : m_lambda;
+
   // modified lower-diagonal entry:
-  m_L_ks = - Rminus - Rplus;
+  m_L_ks = - Rminus - Rplus + 2.0 * mu_w * A_l;
   // diagonal entry
-  m_D_ks = 1.0 + Rminus + Rplus;
+  m_D_ks = 1.0 + Rminus + Rplus + 2.0 * mu_w * A_d;
   m_U_ks = 0.0;
   // m_Enth[0] (below) is there due to the fully-implicit discretization in time, the second term is
   // the modification of the right-hand side implementing the Neumann B.C. (similar to
   // set_basal_heat_flux(); see that method for details)
-  m_B_ks = m_Enth[m_ks] - 2.0 * Rminus * m_dz * heat_flux / K;
+  m_B_ks = m_Enth[m_ks] - 2.0 * G * m_dz * (-Rplus + mu_w * A_b);
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
     const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], m_dx);
@@ -297,18 +305,18 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
     G      = heat_flux / K,
     Rminus = m_R[0],             // R_{k-1/2}
     Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{k+1/2}
-    nu_w   = m_nu * m_w[0];
+    mu_w   = 0.5 * m_nu * m_w[0];
 
-  const double A_l = m_w[0] >= 0.0 ? 0.5 * m_lambda - 1.0 : -0.5 * m_lambda;
-  const double A_d = m_w[0] >= 0.0 ? 1.0 - m_lambda : m_lambda - 1.0;
-  const double A_u = m_w[0] >= 0.0 ? 0.5 * m_lambda : 1.0 - 0.5 * m_lambda;
+  const double A_d = m_w[0] < 0.0 ? m_lambda - 1.0 : 1.0 - m_lambda;
+  const double A_u = m_w[0] < 0.0 ? 1.0 - m_lambda : m_lambda - 1.0;
+  const double A_b = m_w[0] < 0.0 ? m_lambda : 2.0 - m_lambda;
 
   // diagonal entry
-  m_D0 = 1.0 + Rminus + Rplus + nu_w * A_d;
+  m_D0 = 1.0 + Rminus + Rplus + 2.0 * mu_w * A_d;
   // upper-diagonal entry
-  m_U0 = - Rminus - Rplus + nu_w * (A_u + A_l);
+  m_U0 = - Rminus - Rplus + 2.8 * mu_w * A_u;
   // right-hand side, excluding the strain heating term and the horizontal advection
-  m_B0 = m_Enth[0] + 2.0 * G * m_dz * (Rminus - nu_w * A_l);
+  m_B0 = m_Enth[0] + 2.0 * G * m_dz * (Rminus + mu_w * A_b);
 
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
