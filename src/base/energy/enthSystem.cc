@@ -219,7 +219,7 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   // m_Enth[0] (below) is there due to the fully-implicit discretization in time, the second term is
   // the modification of the right-hand side implementing the Neumann B.C. (similar to
   // set_basal_heat_flux(); see that method for details)
-  m_B_ks = m_Enth[m_ks] - 2.0 * G * m_dz * (-Rplus + mu_w * A_b);
+  m_B_ks = m_Enth[m_ks] + 2.0 * G * m_dz * (-Rplus + mu_w * A_b);
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
     const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], m_dx);
@@ -314,7 +314,7 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   // diagonal entry
   m_D0 = 1.0 + Rminus + Rplus + 2.0 * mu_w * A_d;
   // upper-diagonal entry
-  m_U0 = - Rminus - Rplus + 2.8 * mu_w * A_u;
+  m_U0 = - Rminus - Rplus + 2.0 * mu_w * A_u;
   // right-hand side, excluding the strain heating term and the horizontal advection
   m_B0 = m_Enth[0] + 2.0 * G * m_dz * (Rminus + mu_w * A_b);
 
