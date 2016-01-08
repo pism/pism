@@ -201,10 +201,8 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   const double
     K      = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
     G      = heat_flux / K,
-    Rl     = m_R[m_ks - 1],
-    Rc     = m_R[m_ks],
-    Rminus = 0.5 * (Rl + Rc),
-    Rplus  = Rc,
+    Rminus = 0.5 * (m_R[m_ks - 1] + m_R[m_ks]), // R_{ks-1/2}
+    Rplus  = m_R[m_ks],                         // R_{ks+1/2}
     mu_w   = 0.5 * m_nu * m_w[m_ks];
 
   const double A_l = m_w[m_ks] < 0.0 ? 1.0 - m_lambda : m_lambda - 1.0;
@@ -215,6 +213,7 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   m_L_ks = - Rminus - Rplus + 2.0 * mu_w * A_l;
   // diagonal entry
   m_D_ks = 1.0 + Rminus + Rplus + 2.0 * mu_w * A_d;
+  // upper-diagonal entry (not used)
   m_U_ks = 0.0;
   // m_Enth[0] (below) is there due to the fully-implicit discretization in time, the second term is
   // the modification of the right-hand side implementing the Neumann B.C. (similar to
@@ -303,8 +302,8 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   const double
     K      = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
     G      = heat_flux / K,
-    Rminus = m_R[0],             // R_{k-1/2}
-    Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{k+1/2}
+    Rminus = m_R[0],                  // R_{-1/2}
+    Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{+1/2}
     mu_w   = 0.5 * m_nu * m_w[0];
 
   const double A_d = m_w[0] < 0.0 ? m_lambda - 1.0 : 1.0 - m_lambda;
@@ -444,8 +443,8 @@ void enthSystemCtx::solve(std::vector<double> &x) {
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {
     const double
-      Rminus = 0.5 * (m_R[k-1] + m_R[k]),
-      Rplus  = 0.5 * (m_R[k]   + m_R[k+1]),
+      Rminus = 0.5 * (m_R[k-1] + m_R[k]),   // R_{k-1/2}
+      Rplus  = 0.5 * (m_R[k]   + m_R[k+1]), // R_{k+1/2}
       nu_w   = m_nu * m_w[k];
 
     const double
