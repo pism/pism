@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -304,7 +304,7 @@ protected:
   double   dt,     //!< mass continuity time step, s
     t_TempAge,  //!< time of last update for enthalpy/temperature
     dt_TempAge,  //!< enthalpy/temperature and age time-steps
-    maxdt_temporary, dt_force,
+    maxdt_temporary,
     dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
     gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,

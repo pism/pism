@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -791,11 +791,6 @@ void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gma
 
 
 void IceCompModel::additionalAtStartTimestep() {
-
-  if (exactOnly == true && testname != 'K') {
-    dt_force = m_config->get_double("maximum_time_step_years", "seconds");
-  }
-
   if (testname == 'F' || testname == 'G') {
     getCompSourcesTestFG();
   }

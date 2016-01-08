@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -265,14 +265,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     dt_restrictions["-save_... reporting"] = save_dt.value();
   }
 
-  if (dt_force > 0.0) {
-    dt_restrictions["fixed"] = dt_force;
-    // If the user asked for fixed time-steps, we're done; proceed to
-    // comparing time-step restrictions.
-  } else {
-
-    // ... else query sub-models, which might add more time-step
-    // restrictions.
+  {
+    // Query sub-models, which might add time-step restrictions.
 
     MaxTimestep surface_dt = surface->max_timestep(current_time);
     if (surface_dt.is_finite())  {

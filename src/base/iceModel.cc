@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -127,7 +127,6 @@ void IceModel::reset_counters() {
 
   maxdt_temporary = 0.0;
   dt              = 0.0;
-  dt_force        = 0.0;
   skipCountDown   = 0;
 
   timestep_hit_multiples_last_time = m_time->current();
@@ -608,7 +607,7 @@ void IceModel::step(bool do_mass_continuity,
   double current_time = m_time->current();
 
   //! \li call additionalAtStartTimestep() to let derived classes do more
-  additionalAtStartTimestep();  // might set dt_force,maxdt_temporary
+  additionalAtStartTimestep();  // might set maxdt_temporary
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
@@ -853,7 +852,6 @@ void IceModel::run() {
   while (m_time->current() < m_time->end()) {
 
     stdout_flags.erase();  // clear it out
-    dt_force = -1.0;
     maxdt_temporary = -1.0;
 
     step(do_mass_conserve, do_energy, do_age, do_skip);

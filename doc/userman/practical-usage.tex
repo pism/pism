@@ -838,7 +838,6 @@ The third line of the above example shows that the SSA stress balance was solved
   \texttt{3D CFL} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
   \texttt{diffusivity} & diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne} \\
   \texttt{end of the run} & end of prescribed run time \\
-  \texttt{fixed} & \texttt{-dt_force} set; generally option \texttt{-dt_force}, which overrides the adaptive scheme; \emph{should not be used}  \\
   \texttt{max} & maximum allowed $\Delta t$ applies; set with \texttt{-max_dt} \\
   \texttt{internal (derived class)} & maximum $\Delta t$ was temporarily set by a derived class \\
   \texttt{2D CFL} & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
@@ -868,8 +867,6 @@ The third line of the above example shows that the SSA stress balance was solved
     \txtopt{max_dt}{(years)} & The maximum time-step in years.  The adaptive
     time-stepping scheme will make the time-step shorter than this as needed
     for stability, but not longer.\\
-    \txtopt{dt_force}{(years)} & The time step (in years) to take, overriding the
-    adaptive scheme. \emph{Not recommended.}\\
     \intextoption{skip} & Enables time-step skipping, see below. \\
     \intextoption{skip_max} & Number of mass-balance steps, including SIA
     diffusivity updates, to perform before temperature, age, and SSA
