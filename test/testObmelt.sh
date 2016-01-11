@@ -1,4 +1,4 @@
-^#!/bin/bash
+#!/bin/bash
 
 # test script to evaluate bmelt calculation
  
