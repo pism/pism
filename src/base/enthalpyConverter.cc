@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2015 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2016 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_p_air       = config.get_double("surface_pressure"); // Pa
   m_rho_i       = config.get_double("ice_density"); // kg m-3
   m_T_melting   = config.get_double("water_melting_point_temperature"); // K
-  m_T_tolerance = config.get_double("cold_mode_is_temperate_ice_tolerance"); // K
+  m_T_tolerance = config.get_double("relaxed_is_temperate_ice_tolerance"); // K
   m_T_0         = config.get_double("enthalpy_converter_reference_temperature"); // K
 
   m_do_cold_ice_methods  = config.get_boolean("do_cold_ice_methods");
@@ -75,10 +75,18 @@ EnthalpyConverter::~EnthalpyConverter() {
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
   if (m_do_cold_ice_methods) {
-    return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
+    return is_temperate_relaxed(E, P);
   } else {
     return (E >= enthalpy_cts(P));
   }
+}
+
+//! A relaxed version of `is_temperate()`.
+/*! Returns `true` if the pressure melting temperature corresponding to `(E, P)` is within
+    `relaxed_is_temperate_ice_tolerance` from `water_melting_point_temperature`.
+ */
+bool EnthalpyConverter::is_temperate(double E, double P) const {
+  return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
 }
 
 

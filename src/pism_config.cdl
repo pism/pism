@@ -1368,10 +1368,10 @@ netcdf pism_config {
     pism_config:regional_no_model_strip_doc = "Default width of the 'no model strip' in regional setups.";
     pism_config:regional_no_model_strip_option = "no_model_strip";
 
-    pism_config:cold_mode_is_temperate_ice_tolerance_units = "Kelvin";
-    pism_config:cold_mode_is_temperate_ice_tolerance_type = "scalar";
-    pism_config:cold_mode_is_temperate_ice_tolerance = 0.001;
-    pism_config:cold_mode_is_temperate_ice_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode only).";
+    pism_config:relaxed_is_temperate_ice_tolerance_units = "Kelvin";
+    pism_config:relaxed_is_temperate_ice_tolerance_type = "scalar";
+    pism_config:relaxed_is_temperate_ice_tolerance = 0.001;
+    pism_config:relaxed_is_temperate_ice_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).";
 
     pism_config:correct_cell_areas_type = "boolean";
     pism_config:correct_cell_areas = "yes";

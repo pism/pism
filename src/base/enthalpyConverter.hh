@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,6 +57,7 @@ public:
   typedef PISM_SHARED_PTR(EnthalpyConverter) Ptr;
 
   bool is_temperate(double E, double P) const;
+  bool is_temperate_relaxed(double E, double P) const;
 
   double temperature(double E, double P) const;
   double melting_temperature(double P) const;
