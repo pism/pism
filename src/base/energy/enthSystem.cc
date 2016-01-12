@@ -300,13 +300,15 @@ Thus
 void enthSystemCtx::assemble_R() {
   if (m_k_depends_on_T == false && m_c_depends_on_T == false) {
 
-    for (unsigned int k = 0; k <= m_ks; k++) {
+    for (unsigned int k = 1; k <= m_ks; k++) {
       m_R[k] = (m_Enth[k] < m_Enth_s[k]) ? m_R_cold : m_R_temp;
     }
+    //still the cold ice value, if no temperate layer above
+    m_R[0] = (m_Enth[1] < m_Enth_s[1]) ? m_R_cold : m_R_temp;
 
   } else {
 
-    for (unsigned int k = 0; k <= m_ks; k++) {
+    for (unsigned int k = 1; k <= m_ks; k++) {
       if (m_Enth[k] < m_Enth_s[k]) {
         // cold case
         const double depth = m_ice_thickness - k * m_dz;
@@ -318,6 +320,15 @@ void enthSystemCtx::assemble_R() {
         // temperate case
         m_R[k] = m_R_temp;
       }
+    }
+    // still the cold ice value, if no temperate layer above
+    if (m_Enth[1] < m_Enth_s[1]) {
+      double T = m_EC->temperature(m_Enth[0],
+                                   m_EC->pressure(m_ice_thickness)); // FIXME: issue #15
+      m_R[0] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC->c(T)) * m_R_factor;
+    } else {
+      // temperate layer case
+      m_R[0] = m_R_temp;
     }
 
   }
