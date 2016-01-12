@@ -85,7 +85,7 @@ bool EnthalpyConverter::is_temperate(double E, double P) const {
 /*! Returns `true` if the pressure melting temperature corresponding to `(E, P)` is within
     `relaxed_is_temperate_ice_tolerance` from `water_melting_point_temperature`.
  */
-bool EnthalpyConverter::is_temperate(double E, double P) const {
+bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
   return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
 }
 
