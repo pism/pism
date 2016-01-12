@@ -1,7 +1,12 @@
 This directory contains scripts testing PISM's behavior in the "ice
 slab warming reversibility" experiment created by Thomas Kleiner.
 
-In this setup a 1000 m thick slab of ice rests on a flat bed and is
+This setup is described in *Enthalpy benchmark experiments for
+numerical ice sheet models* by **T. Kleiner, M. Rückamp, J. H.
+Bondzio, and A. Humbert**, see *experiment A* in
+www.the-cryosphere.net/9/217/2015/
+
+In short: a 1000 m thick slab of ice rests on a flat bed and is
 subject to Dirichlet boundary conditions at the top surface. The
 bottom surface boundary conditions are set by PISM depending on basal
 conditions.
