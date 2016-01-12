@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -569,7 +569,7 @@ IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
 
         if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
           // is 273.15
-          if (EC->is_temperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
+          if (EC->is_temperate_relaxed(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
             Tij[k] = melting_point_temp;
           }
         }
@@ -630,7 +630,7 @@ IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
         // is 273.15
-        if (EC->is_temperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
+        if (EC->is_temperate_relaxed(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
           (*result)(i,j) = melting_point_temp;
         }
       }
@@ -891,13 +891,13 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
         for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
           double pressure = EC->pressure(ice_thickness - m_grid->z(k));
 
-          if (EC->is_temperate(Enth[k], pressure)) {
+          if (EC->is_temperate_relaxed(Enth[k], pressure)) {
             temperate_ice_thickness += m_grid->z(k+1) - m_grid->z(k);
           }
         }
 
         double pressure = EC->pressure(ice_thickness - m_grid->z(ks));
-        if (EC->is_temperate(Enth[ks], pressure)) {
+        if (EC->is_temperate_relaxed(Enth[ks], pressure)) {
           temperate_ice_thickness += ice_thickness - m_grid->z(ks);
         }
 
@@ -971,7 +971,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
       while (k <= ks) {         // FIXME issue #15
         pressure = EC->pressure(thk - m_grid->z(k));
 
-        if (EC->is_temperate(Enth[k],pressure)) {
+        if (EC->is_temperate_relaxed(Enth[k],pressure)) {
           k++;
         } else {
           break;
