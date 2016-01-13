@@ -6,17 +6,27 @@ import PISM
 import numpy as np
 import pylab as plt
 
+ctx = PISM.Context()
+unit_system = ctx.unit_system
+config = ctx.config
 
-class EnthalpyTest(object):
+config.set_string("grid_ice_vertical_spacing_type", "equal")
 
-    def __init__(self, Mz=101, dt=0.1):
-        ctx = PISM.Context()
-        self.EC = PISM.EnthalpyConverter(ctx.config)
-        sys = ctx.unit_system
-        config = ctx.config
+k = config.get_double("ice_thermal_conductivity")
+c = config.get_double("ice_specific_heat_capacity")
+rho = config.get_double("ice_density")
+K = k / c
+# alpha squared
+alpha2 = k / (c * rho)
 
-        config.set_string("grid_ice_vertical_spacing_type", "equal")
+EC = PISM.EnthalpyConverter(ctx.config)
+pressure = np.vectorize(EC.pressure)
+cts = np.vectorize(EC.enthalpy_cts)
 
+class EnthalpyColumn(object):
+    "Set up the grid and arrays needed to run column solvers"
+
+    def __init__(self, Mz, dt):
         self.Lz = 1000.0
         self.z = np.linspace(0, self.Lz, Mz)
 
@@ -30,7 +40,7 @@ class EnthalpyTest(object):
 
         param.ownership_ranges_from_options(1)
 
-        self.dt = PISM.convert(sys, dt, "years", "seconds")
+        self.dt = dt
 
         self.grid = PISM.IceGrid(ctx.ctx, param)
         grid = self.grid
@@ -41,13 +51,14 @@ class EnthalpyTest(object):
 
         self.u, self.v, self.w = PISM.model.create3DVelocityVecs(grid)
 
-        self.esys = PISM.enthSystemCtx(grid.z(), "enth",
-                                       grid.dx(), grid.dy(), self.dt,
-                                       config,
-                                       self.enthalpy,
-                                       self.u, self.v, self.w,
-                                       self.strain_heating,
-                                       self.EC)
+        self.sys = PISM.enthSystemCtx(grid.z(), "enth",
+                                      grid.dx(), grid.dy(), self.dt,
+                                      config,
+                                      self.enthalpy,
+                                      self.u, self.v, self.w,
+                                      self.strain_heating,
+                                      EC)
+
         # zero ice velocity:
         self.reset_flow()
         # no strain heating:
@@ -61,125 +72,253 @@ class EnthalpyTest(object):
     def reset_strain_heating(self):
         self.strain_heating.set(0.0)
 
+    def set_enthalpy(self, E):
+        with PISM.vec.Access(nocomm=[self.enthalpy]):
+            for j in [0, 1, 2]:
+                for i in [0, 1, 2]:
+                    for k, e in enumerate(E):
+                        self.enthalpy[i,j,k] = e
+
     def init_column(self):
-        self.esys.init(1, 1, False, self.Lz)  # NOT marginal (but it does not matter)
+        ice_thickness = self.Lz
+        marginal = False  # NOT marginal (but it does not matter)
+        self.sys.init(1, 1, marginal, ice_thickness)
 
+def convergence_rate_time(title, error_func):
+    "Compute the convergence rate with refinement in time."
+    dts = 2.0**np.arange(10)
 
-def dirichlet_test(dt):
+    max_errors = np.zeros_like(dts)
+    avg_errors = np.zeros_like(dts)
+    for k, dt in enumerate(dts):
+        max_errors[k], avg_errors[k] = error_func(False, dt_years=dt, Mz=101)
+
+    log10 = np.log10
+
+    p_max = np.polyfit(log10(dts), log10(max_errors), 1)
+    p_avg = np.polyfit(log10(dts), log10(avg_errors), 1)
+
+    if True:
+        def log_plot(x, y, style, label):
+            plt.plot(log10(x), log10(y), style, label=label)
+            plt.xticks(log10(x), x)
+
+        def log_fit_plot(x, p, label):
+            plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
+
+        plt.figure()
+        plt.title(title + "\nTesting convergence as dt -> 0")
+        plt.hold(True)
+        log_plot(dts, max_errors, 'o', "max errors")
+        log_plot(dts, avg_errors, 'o', "avg errors")
+        log_fit_plot(dts, p_max, "max: dt^{}".format(p_max[0]))
+        log_fit_plot(dts, p_avg, "avg: dt^{}".format(p_avg[0]))
+        plt.axis('tight')
+        plt.grid(True)
+        plt.legend(loc="best")
+        plt.show()
+
+    return p_max[0], p_avg[0]
+
+def convergence_rate_space(title, error_func):
+    "Compute the convergence rate with refinement in time."
+    Mz = 2.0**np.arange(3,10)
+    dzs = 1000.0 / Mz
+
+    max_errors = np.zeros_like(dzs)
+    avg_errors = np.zeros_like(dzs)
+    for k, M in enumerate(Mz):
+        T = 1.0
+        max_errors[k], avg_errors[k] = error_func(False,
+                                                  T_final_years=T,
+                                                  dt_years=T,
+                                                  Mz=M)
+
+    log10 = np.log10
+
+    p_max = np.polyfit(log10(dzs), log10(max_errors), 1)
+    p_avg = np.polyfit(log10(dzs), log10(avg_errors), 1)
+
+    if True:
+        def log_plot(x, y, style, label):
+            plt.plot(log10(x), log10(y), style, label=label)
+            plt.xticks(log10(x), x)
+
+        def log_fit_plot(x, p, label):
+            plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
+
+        plt.figure()
+        plt.title(title + "\nTesting convergence as dz -> 0")
+        plt.hold(True)
+        log_plot(dzs, max_errors, 'o', "max errors")
+        log_plot(dzs, avg_errors, 'o', "avg errors")
+        log_fit_plot(dzs, p_max, "max: dz^{}".format(p_max[0]))
+        log_fit_plot(dzs, p_avg, "avg: dz^{}".format(p_avg[0]))
+        plt.axis('tight')
+        plt.grid(True)
+        plt.legend(loc="best")
+        plt.show()
+
+    return p_max[0], p_avg[0]
+
+def exact_DN(Lz, U0, QL):
+    """Exact solution (and an initial state) for the 'Dirichlet at the base,
+    Neumann at the top' setup."""
+    n = 1
+    lambda_n = 1.0 / Lz * (np.pi / 2.0 + n * np.pi)
+    a = Lz * 25.0
+
+    def f(z, t):
+        v = a * np.exp(-lambda_n**2 * alpha2 * t) * np.sin(lambda_n * z)
+        return v + (U0 + QL * z)
+    return f
+
+def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the enthalpy solver with Dirichlet B.C. at the base and
-    surface.
+    Neumann at the top surface.
     """
-    T = EnthalpyTest(dt=dt)
+    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
+    dt = PISM.convert(unit_system, dt_years, "years", "seconds")
 
-    E_surface = T.EC.enthalpy(270.0, 0.0, 0.0)
-    E_base = T.EC.enthalpy(230.0, 0.0, T.EC.pressure(T.Lz))
+    column = EnthalpyColumn(Mz, dt)
 
-    T.enthalpy.set(E_base)
+    Lz = column.Lz
+    z = np.array(column.sys.z())
 
-    def E_exact(z):
-        """Exact solution is a straight line connecting basal and surface
-        conditions."""
-        return E_base + (z / T.Lz) * (E_surface - E_base)
+    E_base = EC.enthalpy(230.0, 0.0, EC.pressure(Lz))
+    Q_surface = (EC.enthalpy(270.0, 0.0, 0.0) - 25*Lz - E_base) / Lz
+    E_exact = exact_DN(Lz, E_base, Q_surface)
 
-    with PISM.vec.Access(nocomm=[T.enthalpy, T.u, T.v, T.w, T.strain_heating]):
-        T.init_column()
+    E_steady = E_base + Q_surface * z
 
-        T.esys.set_surface_dirichlet(E_surface)
-        T.esys.set_basal_dirichlet(E_base)
+    with PISM.vec.Access(nocomm=[column.enthalpy,
+                                 column.u, column.v, column.w,
+                                 column.strain_heating]):
+        column.sys.fine_to_coarse(E_exact(z, 0), 1, 1, column.enthalpy)
+        column.reset_flow()
+        column.reset_strain_heating()
 
-        x = T.esys.solve()
+        t = 0.0
+        while t < T_final:
+            column.init_column()
 
-        plt.step(T.z, x, label="dt={}".format(dt))
+            column.sys.set_surface_heat_flux(-K * Q_surface)
+            column.sys.set_basal_dirichlet(E_base)
 
-    return T.z, E_exact(T.z)
+            x = column.sys.solve()
+
+            column.sys.fine_to_coarse(x, 1, 1, column.enthalpy)
+
+            t += dt
+
+    E_exact_final = E_exact(z, t)
+
+    if plot_results:
+        t_years = PISM.convert(unit_system, t, "seconds", "years")
+
+        plt.figure()
+        plt.xlabel("z, meters")
+        plt.ylabel("E, J/kg")
+        plt.hold(True)
+        plt.step(z, E_exact(z, 0), color="blue", label="initial condition")
+        plt.step(z, E_exact_final, color="green", label="exact solution")
+        plt.step(z, cts(pressure(Lz - z)), "--", color="black", label="CTS")
+        plt.step(z, E_steady, "--", color="green", label="steady state profile")
+        plt.grid(True)
+
+        plt.step(z, x, label="T={}".format(t_years), color="red")
+
+        plt.legend(loc="best")
+        plt.show()
+
+    errors = E_exact(z, t) - x
+
+    max_error = np.max(np.fabs(errors))
+    avg_error = np.average(np.fabs(errors))
+
+    return max_error, avg_error
 
 
-def neumann_bc_base_test(dt):
+def exact_ND(Lz, Q0, UL):
+    """Exact solution (and an initial state) for the 'Dirichlet at the base,
+    Neumann at the top' setup."""
+    n = 1
+    lambda_n = 1.0 / Lz * (np.pi / 2.0 + n * np.pi)
+    a = Lz * 25.0
+
+    def f(z, t):
+        v = a * np.exp(-lambda_n**2 * alpha2 * t) * np.sin(lambda_n * (Lz - z))
+        return v + (UL + Q0 * (Lz - z))
+    return f
+
+def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the enthalpy solver with Neumann B.C. at the base and
-    Dirichlet B.C. at the surface.
+    Dirichlet B.C. at the top surface.
     """
+    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
+    dt = PISM.convert(unit_system, dt_years, "years", "seconds")
 
-    T = EnthalpyTest(dt=dt)
+    column = EnthalpyColumn(Mz, dt)
 
-    E_surface = T.EC.enthalpy(270.0, 0.0, 0.0)
+    Lz = column.Lz
+    z = np.array(column.sys.z())
 
-    T.enthalpy.set(0.0)
+    E_surface = EC.enthalpy(260.0, 0.0, 0.0)
+    E_base = EC.enthalpy(240.0, 0.0, EC.pressure(Lz))
+    Q_base = -(E_surface  - E_base) / Lz
+    E_exact = exact_ND(Lz, Q_base, E_surface)
 
-    def E_exact(z):
-        """In the cold case, the exact solution is a straight line with the
-        slope -G/K (G is the geothermal flux) passing through the surface B.C.
-        """
-        return np.zeros_like(z) + E_surface
+    E_steady = E_surface + Q_base * (Lz - z)
 
-    with PISM.vec.Access(nocomm=[T.enthalpy, T.u, T.v, T.w, T.strain_heating]):
-        T.init_column()
+    with PISM.vec.Access(nocomm=[column.enthalpy,
+                                 column.u, column.v, column.w,
+                                 column.strain_heating]):
+        column.sys.fine_to_coarse(E_exact(z, 0), 1, 1, column.enthalpy)
+        column.reset_flow()
+        column.reset_strain_heating()
 
-        T.esys.set_surface_dirichlet(E_surface)
-        T.esys.set_basal_heat_flux(0.0)
+        t = 0.0
+        while t < T_final:
+            column.init_column()
 
-        x = T.esys.solve()
+            column.sys.set_basal_heat_flux(K * Q_base)
+            column.sys.set_surface_dirichlet(E_surface)
 
-        plt.step(T.z, x, label="dt={}".format(dt))
+            x = column.sys.solve()
 
-    return T.z, E_exact(T.z)
+            column.sys.fine_to_coarse(x, 1, 1, column.enthalpy)
 
-def neumann_bc_surface_test(dt):
-    """Test the enthalpy solver with Neumann B.C. at the surface and
-    Dirichlet B.C. at the base.
-    """
+            t += dt
 
-    T = EnthalpyTest(dt=dt)
+    E_exact_final = E_exact(z, t)
 
-    E_base = T.EC.enthalpy(250.0, 0.0, T.EC.pressure(T.Lz))
+    if plot_results:
+        t_years = PISM.convert(unit_system, t, "seconds", "years")
 
-    T.enthalpy.set(0.0)
+        plt.figure()
+        plt.xlabel("z, meters")
+        plt.ylabel("E, J/kg")
+        plt.hold(True)
+        plt.step(z, E_exact(z, 0), color="blue", label="initial condition")
+        plt.step(z, E_exact_final, color="green", label="exact solution")
+        plt.step(z, cts(pressure(Lz - z)), "--", color="black", label="CTS")
+        plt.step(z, E_steady, "--", color="green", label="steady state profile")
+        plt.grid(True)
 
-    def E_exact(z):
-        """In the cold case, the exact solution is a straight line with the
-        slope -G/K (G is the geothermal flux) passing through the base B.C.
-        """
-        return np.zeros_like(z) + E_base
+        plt.step(z, x, label="T={}".format(t_years), color="red")
 
-    with PISM.vec.Access(nocomm=[T.enthalpy, T.u, T.v, T.w, T.strain_heating]):
-        T.init_column()
+        plt.legend(loc="best")
+        plt.show()
 
-        T.esys.set_basal_dirichlet(E_base)
-        T.esys.set_surface_heat_flux(0.0)
+    errors = E_exact(z, t) - x
 
-        x = T.esys.solve()
+    max_error = np.max(np.fabs(errors))
+    avg_error = np.average(np.fabs(errors))
 
-        plt.step(T.z, x, label="dt={}".format(dt))
+    return max_error, avg_error
 
-    return T.z, E_exact(T.z)
+convergence_rate_time("Dirichlet at the base, Neumann at the surface", errors_DN)
+convergence_rate_space("Dirichlet at the base, Neumann at the surface", errors_DN)
 
-
-if __name__ == "__main__":
-    plt.figure(1)
-    plt.title("Testing Dirichlet B.C. (base and surface)")
-    plt.hold(True)
-    z, exact = None, None
-    for dt in [10 ** x for x in range(1, 6)]:
-        z, exact = dirichlet_test(dt)
-    plt.step(z, exact, label="exact (steady state)")
-    plt.grid(True)
-    plt.legend(loc="best")
-
-    plt.figure(2)
-    plt.title("Testing Neumann B.C. (base)")
-    plt.hold(True)
-    for dt in [10 ** x for x in range(1, 6)]:
-        z, exact = neumann_bc_base_test(dt)
-    plt.step(z, exact, label="exact (steady state)")
-    plt.grid(True)
-    plt.legend(loc="best")
-
-    plt.figure(3)
-    plt.title("Testing Neumann B.C. (surface)")
-    plt.hold(True)
-    for dt in [10 ** x for x in range(1, 6)]:
-        z, exact = neumann_bc_surface_test(dt)
-    plt.step(z, exact, label="exact (steady state)")
-    plt.grid(True)
-    plt.legend(loc="best")
-
-    plt.show()
+convergence_rate_time("Neumann at the base, Dirichlet at the surface", errors_ND)
+convergence_rate_space("Neumann at the base, Dirichlet at the surface", errors_ND)
