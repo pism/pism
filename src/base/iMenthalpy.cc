@@ -344,7 +344,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         system.solve(Enthnew);
 
         if (viewOneColumn && (i == id && j == jd)) {
-          system.viewColumnInfoMFile(Enthnew);
+          system.save_to_file(Enthnew);
         }
       }
 

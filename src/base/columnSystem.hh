@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -143,7 +143,8 @@ public:
                   const IceModelVec3 &u3, const IceModelVec3 &v3, const IceModelVec3 &w3);
   ~columnSystemCtx();
 
-  void viewColumnInfoMFile(const std::vector<double> &x);
+  void save_to_file(const std::vector<double> &x);
+  void save_to_file(const std::string &filename, const std::vector<double> &x);
 
   unsigned int ks() const;
   double dz() const;
