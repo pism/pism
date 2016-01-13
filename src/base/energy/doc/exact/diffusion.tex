@@ -1,0 +1,122 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\parindent=0in \parskip=0.5\baselineskip
+
+\usepackage{fancybox}
+\usepackage{xcolor}
+\newcommand{\highlight}[1]{{\color{red!80!black} \fbox{$ \displaystyle #1 $} }}
+
+\begin{document}
+
+\title{Exact solution for a simple IBVP with Dirichlet and Neumann BC}
+\maketitle
+
+\section{Introduction}
+\label{sec:introduction}
+
+This exact solution can be used to test the implementation of the
+enthalpy and temperature column solvers, both in the ice and in the
+bedrock.
+
+This is sufficient to test the bedrock thermal unit code, but only
+goes half way towards checking the enthalpy code: in these notes I
+consider a simple \emph{diffusion only} problem without advection or
+reaction terms.
+
+\section{The problem}
+\label{sec:problem}
+
+\begin{align}
+  \label{eq:1}
+  \text{PDE:} \qquad & u_{t} = \alpha^{2}\, u_{zz},\quad 0 < z < L,\\
+  \label{eq:2}
+  \text{BCs:} \qquad &\left\{
+                       \begin{aligned}
+                         u(0,t) &= U_{0},\\
+                         u_{z}(L,t) &= Q_{L},
+                       \end{aligned}\right.\\
+  \label{eq:3}
+  \text{IC:} \qquad & u(z,0) = \phi(z).
+\end{align}
+
+In the PISM context
+\begin{equation}
+  \label{eq:14}
+  \alpha^{2} = \frac{k}{\rho c_{p}},
+\end{equation}
+where $k$ is the thermal conductivity, $\rho$ is the density, and
+$c_{p}$ is the specific heat capacity of ice.
+
+To transform this problem with \emph{non-homogeneous} boundary conditions
+into one with homogeneous ones I define $v(z,t)$ by subtracting the
+steady state solution from $u$:
+\begin{equation}
+  \label{eq:4}
+  v(z,t) = u(z,t) - \left( U_{0} + Q_{L}\cdot z \right).
+\end{equation}
+
+It is easy to check that $v_{t} = u_{t}$, $v_{zz} = u_{zz}$, and $v$ satisfies
+
+\begin{align}
+\label{eq:15}
+  \text{PDE:} \qquad & v_{t} = \alpha^{2}\, v_{zz},\quad 0 < z < L,\\
+  \label{eq:5}
+  \text{BCs:} \qquad &\left\{
+                       \begin{aligned}
+                         v(0,t) &= 0,\\
+                         v_{z}(L,t) &= 0,
+                       \end{aligned}\right.\\
+\label{eq:16}
+  \text{IC:} \qquad & v(z,0) = \phi(z) - [U_{0} + Q_{L}z].
+\end{align}
+
+This new problem (equations (\ref{eq:15})--(\ref{eq:16})) can be solved using separation of variables, as follows.
+
+Assume that $v(z,t)$ can be written as
+\begin{equation}
+  \label{eq:6}
+  v(z,t) = Z(z)\cdot T(t),
+\end{equation}
+then the PDE (\ref{eq:15}) becomes
+\begin{equation}
+  \label{eq:7}
+  ZT' = \alpha^{2}Z''T,
+\end{equation}
+or
+\begin{equation}
+  \label{eq:8}
+  \frac{T'}{\alpha^{2}T} = \frac{Z''}{Z} = -\lambda^{2},
+\end{equation}
+for some constant $\lambda$, and so
+\begin{align}
+  \label{eq:9}
+  T' + \lambda^{2}\alpha^{2}T &= 0,\\
+  \label{eq:10}
+  Z'' + \lambda^{2}Z &= 0.
+\end{align}
+
+Solving equations (\ref{eq:9}) and (\ref{eq:10}) gives
+\begin{align}
+  T(t) &= C_{1}e^{-(\lambda\alpha)^{2}t},\\
+  Z(z) &= C_{2}\sin(\lambda z) + C_{3}\cos(\lambda z),
+\end{align}
+or
+\begin{equation}
+  \label{eq:11}
+  v(z,t) = e^{-(\lambda\alpha)^{2}t}\left( A\sin(\lambda z) + B\cos(\lambda z) \right)
+\end{equation}
+Combining (\ref{eq:11}) with (\ref{eq:5}) gives
+\begin{align}
+  B &= 0,\\
+  \cos(\lambda\cdot L) &= 0,
+\end{align}
+and so fundamental solutions have the form
+\begin{align}
+  \label{eq:12}
+  v_{n}(z,t) &= \highlight{a_{n}\,e^{-(\lambda_{n}\alpha)^{2}t}\sin\left( \lambda_{n} z \right)},\\
+  \lambda_{n} &= \highlight{\frac{1}{L} \left( \frac{\pi}{2} + n\,\pi \right),\quad n \in \mathbf{Z}}.
+\end{align}
+
+\end{document}
