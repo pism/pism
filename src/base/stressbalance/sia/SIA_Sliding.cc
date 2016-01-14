@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -62,6 +62,8 @@ SIA_Sliding::~SIA_Sliding()
 void SIA_Sliding::init_impl() {
 
   ShallowStressBalance::init_impl();
+
+  m_log->message(2, "* Initializing the SIA sliding stress balance...\n");
 
   m_standard_gravity  = m_config->get_double("standard_gravity");
   m_verification_mode = m_config->get_boolean("sia_sliding_verification_mode");
