@@ -182,7 +182,7 @@ add_library (pismverif
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
   verif/tests/exactTestL.c
-  verif/tests/exactTestsABCDE.c
+  verif/tests/exactTestsABCD.c
   verif/tests/exactTestsFG.c
   verif/tests/exactTestsIJ.c
 )
@@ -251,7 +251,7 @@ target_link_libraries (bedrough_test pismutil)
 install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
-  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
+  set (EXTRA_EXECS simpleABCD simpleFG simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${EXTRA_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
     target_link_libraries (${EXEC} pismverif)

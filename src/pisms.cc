@@ -125,6 +125,12 @@ int main(int argc, char *argv[]) {
     std::string experiment = options::Keyword("-eisII", "EISMINT II experiment name",
                                               "A,B,C,D,E,F,G,H,I,J,K,L", "A");
 
+    // Stop if -eisII G or -eisII H was given.
+    if (experiment == "G" or experiment == "H") {
+      throw RuntimeError::formatted("EISMINT II experiment %s is not supported.",
+                                    experiment.c_str());
+    }
+
     Config::Ptr config = ctx->config();
 
     IceGrid::Ptr g = pisms_grid(ctx);

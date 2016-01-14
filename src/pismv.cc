@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,12 +82,6 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
 
   switch (testname) {
   case 'A':
-  case 'E':
-    // use 1600km by 1600km by 4000m rectangular domain
-    P.Lx = 800e3;
-    P.Ly = P.Lx;
-    Lz = 4000;
-    break;
   case 'B':
   case 'H':
     // use 2400km by 2400km by 4000m rectangular domain
@@ -182,7 +176,7 @@ int main(int argc, char *argv[]) {
     std::string usage =
       "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
+      "  -test x     SIA-type verification test (x = A|B|C|D|F|G|H|K|L)\n"
       "  -no_report  do not give error report at end of run\n"
       "  -eo         do not do numerical run; exact solution only\n"
       "(see User's Manual for tests I and J).\n";
@@ -199,7 +193,7 @@ int main(int argc, char *argv[]) {
 
     // determine test (and whether to report error)
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",
-                                            "A,B,C,D,E,F,G,H,K,L,V", "A");
+                                            "A,B,C,D,F,G,H,K,L,V", "A");
 
     IceGrid::Ptr g = pismv_grid(ctx, testname[0]);
 

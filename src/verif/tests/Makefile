@@ -7,14 +7,11 @@ all : simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simple
 
 # TYPICAL BY-HAND COMPILE-LINK-RUN EXAMPLE:
 #   $ gcc -c simpleABCD.c -o simpleABCD.o
-#   $ gcc -c exactTestsABCDE.c -o exactTestsABCDE.o
-#   $ gcc -lm exactTestsABCDE.o simpleABCD.o -o simpleABCD
+#   $ gcc -c exactTestsABCD.c -o exactTestsABCD.o
+#   $ gcc -lm exactTestsABCD.o simpleABCD.o -o simpleABCD
 #   $ ./simpleABCD
 
-simpleABCD : simpleABCD.o exactTestsABCDE.o
-	$(CC) $^ -o $@ -lm
-
-simpleE : simpleE.o exactTestsABCDE.o
+simpleABCD : simpleABCD.o exactTestsABCD.o
 	$(CC) $^ -o $@ -lm
 
 simpleFG : simpleFG.o exactTestsFG.o
@@ -49,6 +46,6 @@ simpleP : simpleP.o exactTestP.o
 
 .PHONY: clean
 clean:
-	@rm -f *.o *~ simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK \
+	@rm -f *.o *~ simpleABCD simpleFG simpleH simpleI simpleJ simpleK \
 	              simpleL simpleM simpleN simpleO simpleP
 

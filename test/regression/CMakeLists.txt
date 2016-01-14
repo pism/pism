@@ -66,8 +66,6 @@ pism_test (temperature_continuity_base_polythermal temp_continuity.py)
 
 pism_test (enthalpy_symmetry_near_base test_13.sh)
 
-pism_test (Verification:test_E test_14.sh)
-
 pism_test (Verification:test_C test_15.sh)
 
 pism_test (Verification:test_L test_16.sh)
