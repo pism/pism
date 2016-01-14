@@ -241,7 +241,7 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 def exact_ND(L, Q0, UL):
     """Exact solution (and an initial state) for the 'Dirichlet at the base,
     Neumann at the top' setup."""
-    n = 1
+    n = 2
     lambda_n = 1.0 / L * (-np.pi / 2.0 + n * np.pi)
     a = L * 25.0
 
