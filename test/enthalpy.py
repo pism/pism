@@ -161,12 +161,12 @@ def convergence_rate_space(title, error_func):
 
     return p_max[0], p_avg[0]
 
-def exact_DN(Lz, U0, QL):
+def exact_DN(L, U0, QL):
     """Exact solution (and an initial state) for the 'Dirichlet at the base,
     Neumann at the top' setup."""
     n = 1
-    lambda_n = 1.0 / Lz * (np.pi / 2.0 + n * np.pi)
-    a = Lz * 25.0
+    lambda_n = 1.0 / L * (np.pi / 2.0 + n * np.pi)
+    a = L * 25.0
 
     def f(z, t):
         v = a * np.exp(-lambda_n**2 * alpha2 * t) * np.sin(lambda_n * z)
@@ -202,7 +202,7 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
         while t < T_final:
             column.init_column()
 
-            column.sys.set_surface_heat_flux(-K * Q_surface)
+            column.sys.set_surface_heat_flux(K * Q_surface)
             column.sys.set_basal_dirichlet(E_base)
 
             x = column.sys.solve()
@@ -238,17 +238,16 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     return max_error, avg_error
 
-
-def exact_ND(Lz, Q0, UL):
+def exact_ND(L, Q0, UL):
     """Exact solution (and an initial state) for the 'Dirichlet at the base,
     Neumann at the top' setup."""
     n = 1
-    lambda_n = 1.0 / Lz * (np.pi / 2.0 + n * np.pi)
-    a = Lz * 25.0
+    lambda_n = 1.0 / L * (-np.pi / 2.0 + n * np.pi)
+    a = L * 25.0
 
     def f(z, t):
-        v = a * np.exp(-lambda_n**2 * alpha2 * t) * np.sin(lambda_n * (Lz - z))
-        return v + (UL + Q0 * (Lz - z))
+        v = a * np.exp(-lambda_n**2 * alpha2 * t) * np.sin(lambda_n * (L - z))
+        return v + (UL + Q0 * (z - L))
     return f
 
 def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
@@ -265,10 +264,10 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     E_surface = EC.enthalpy(260.0, 0.0, 0.0)
     E_base = EC.enthalpy(240.0, 0.0, EC.pressure(Lz))
-    Q_base = -(E_surface  - E_base) / Lz
+    Q_base = (E_surface  - E_base) / Lz
     E_exact = exact_ND(Lz, Q_base, E_surface)
 
-    E_steady = E_surface + Q_base * (Lz - z)
+    E_steady = E_surface + Q_base * (z - Lz)
 
     with PISM.vec.Access(nocomm=[column.enthalpy,
                                  column.u, column.v, column.w,

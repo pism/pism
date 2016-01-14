@@ -184,7 +184,7 @@ Alternatively,
 \begin{align}
   D_{0} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda}\\
   U_{0} &= -\Rp -\Rm + 2\mu\W \wstack{1 - \lambda}{\lambda - 1}\\
-  b_{0} &= \rhs{0} + 2G_{0}\Delta z \left( \Rm + \mu\W\wstack{\lambda}{2 - \lambda} \right).
+  b_{0} &= \rhs{0} + 2G_{0}\Delta z \left( -\Rm + \mu\W\wstack{-\lambda}{\lambda - 2} \right).
 \end{align}
 
 When assembling the basal equation we approximate $R_{-\frac{1}{2}}$ by $R_{0}$.
@@ -214,7 +214,7 @@ Alternatively,
 \begin{align}
   L_{\ks} &= -\Rp -\Rm + 2\mu\W \wstack{1 - \lambda}{\lambda - 1}\\
   D_{\ks} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda}\\
-  b_{\ks} &= \rhs{\ks} + 2G_{\ks}\Delta z\left( -\Rp + \mu\W\wstack{2-\lambda}{\lambda} \right)
+  b_{\ks} &= \rhs{\ks} + 2G_{\ks}\Delta z\left( \Rp + \mu\W\wstack{\lambda-2}{-\lambda} \right)
 \end{align}
 
 When assembling the surface equation we approximate $R_{\ks + \frac{1}{2}}$ by $R_{\ks}$.

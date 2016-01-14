@@ -4,7 +4,7 @@ load("generic_equation.mac")$
 eq[pm] := E[k-1]*l[pm] + E[k]*d[pm] + E[k+1]*u[pm] = b[pm];
 
 /* Additional equation implementing the Neumann B.C. */
-neumann[k] := (E[k+1] - E[k-1]) / (2 * dz) = -G[k];
+neumann[k] := (E[k+1] - E[k-1]) / (2 * dz) = G[k];
 
 /* Basal equation */
 E_base : solve(neumann[0], E[-1])[1];
