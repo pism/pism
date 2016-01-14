@@ -38,7 +38,7 @@ SIA_Sliding::SIA_Sliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    m_work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS);
+    m_work_2d_stag[i].create(m_grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL);
     snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
     m_work_2d_stag[i].set_name(namestr);
   }
@@ -302,37 +302,36 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
   const IceModelVec2S
-    *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness"),
-    *bed       = m_grid->variables().get_2d_scalar("bedrock_altitude");
+    &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+    &bed       = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
-  IceModelVec::AccessList list;
-  list.add(*thickness);
-  list.add(eta);
+  IceModelVec::AccessList list(eta);
+  list.add(thickness);
 
   unsigned int GHOSTS = eta.get_stencil_width();
-  assert(thickness->get_stencil_width() >= GHOSTS);
+  assert(thickness.get_stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    eta(i,j) = pow((*thickness)(i,j), etapow);
+    eta(i,j) = pow(thickness(i,j), etapow);
   }
 
   list.add(h_x);
   list.add(h_y);
-  list.add(*bed);
+  list.add(bed);
 
   // now use Mahaffy on eta to get grad h on the staggered grid;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
 
-  assert(h_x.get_stencil_width()  >= 1);
-  assert(h_y.get_stencil_width()  >= 1);
-  assert(eta.get_stencil_width()  >= 2);
-  assert(bed->get_stencil_width() >= 2);
+  assert(bed.get_stencil_width() >= 2);
+  assert(eta.get_stencil_width() >= 2);
+  assert(h_x.get_stencil_width() >= 1);
+  assert(h_y.get_stencil_width() >= 1);
 
   for (int o=0; o<2; o++) {
 
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (o==0) {     // If I-offset
@@ -347,8 +346,8 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
           h_y(i,j,o) = 0.0;
         }
         // now add bed slope to get actual h_x,h_y
-        h_x(i,j,o) += bed->diff_x_stagE(i,j);
-        h_y(i,j,o) += bed->diff_y_stagE(i,j);
+        h_x(i,j,o) += bed.diff_x_stagE(i,j);
+        h_y(i,j,o) += bed.diff_y_stagE(i,j);
       } else {        // J-offset
         const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
         if (mean_eta > 0.0) {
@@ -361,8 +360,8 @@ void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &
           h_x(i,j,o) = 0.0;
         }
         // now add bed slope to get actual h_x,h_y
-        h_y(i,j,o) += bed->diff_y_stagN(i,j);
-        h_x(i,j,o) += bed->diff_x_stagN(i,j);
+        h_y(i,j,o) += bed.diff_y_stagN(i,j);
+        h_x(i,j,o) += bed.diff_x_stagN(i,j);
       }
     }
   }
