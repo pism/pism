@@ -288,7 +288,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       // ignore advection and strain heating in ice if isMarginal
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
-      system.initThisColumn(i, j, isMarginal, ice_thickness(i, j));
+      system.init(i, j, isMarginal, ice_thickness(i, j));
 
       // enthalpy and pressures at top of ice
       const double
@@ -320,7 +320,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
       // set boundary conditions and update enthalpy
       {
-        system.setDirichletSurface(Enth_ks);
+        system.set_surface_dirichlet(Enth_ks);
 
         // determine lowest-level equation at bottom of ice; see
         // decision chart in the source code browser and page
@@ -331,31 +331,31 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           double Enth0 = EC->enthalpy_permissive(shelfbtemp(i, j), 0.0,
                                                EC->pressure(ice_thickness(i, j)));
 
-          system.setDirichletBasal(Enth0);
+          system.set_basal_dirichlet(Enth0);
         } else {
           // grounded ice warm and wet 
           if (base_is_warm && (till_water_thickness(i, j) > 0.0)) {
             if (above_base_is_warm) {
               // temperate layer at base (Neumann) case:  q . n = 0  (K0 grad E . n = 0)
-              system.setBasalHeatFlux(0.0);
+              system.set_basal_heat_flux(0.0);
             } else {
               // only the base is warm: E = E_s(p) (Dirichlet)
               // ( Assumes ice has zero liquid fraction. Is this a valid assumption here?
-              system.setDirichletBasal(system.Enth_s(0));
+              system.set_basal_dirichlet(system.Enth_s(0));
             }
           } else {
             // (Neumann) case:  q . n = q_lith . n + F_b
             // a) cold and dry base, or
             // b) base that is still warm from the last time step, but without basal water
-            system.setBasalHeatFlux(basal_heat_flux(i, j) + Rb(i, j));
+            system.set_basal_heat_flux(basal_heat_flux(i, j) + Rb(i, j));
           }
         }
 
         // solve the system
-        system.solveThisColumn(Enthnew);
+        system.solve(Enthnew);
 
         if (viewOneColumn && (i == id && j == jd)) {
-          system.viewColumnInfoMFile(Enthnew);
+          system.save_to_file(Enthnew);
         }
       }
 

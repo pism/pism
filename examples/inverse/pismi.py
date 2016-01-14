@@ -22,7 +22,11 @@
 try:                            # pragma: no cover
     import coverage
     cov = coverage.coverage(branch=True)
-    cov.load()
+    try:
+        # try to load coverage data and ignore failures
+        cov.load()
+    except:
+        pass
     cov.start()
 except ImportError:             # pragma: no cover
     pass

@@ -1,0 +1,222 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage[left=0.5in,right=0.5in,bottom=1in]{geometry}
+\usepackage{fancyhdr}
+\parindent=0in \parskip=0.5\baselineskip
+
+\include{formulas}
+
+\newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\wcase}[3]{\begin{cases} #1, & w^{n}_{#3} < 0,\\#2, & w^{n}_{#3} \ge 0.\end{cases}}
+\newcommand{\wcaseeq}[4]{#1 &= \wcase{#2}{#3}{#4}}
+
+\begin{document}
+\pagestyle{fancy}
+\fancyhead[L]{Discretization of the vertical problem for the conservation of energy}
+\fancyhead[R]{Constantine Khroulev}
+
+\section{Introduction}
+\label{sec:introduction}
+
+These notes dress up \textsc{Maxima}-generated formulas needed to
+implement (and check the implementation of) the energy balance code in
+PISM, including the implementation of boundary conditions.
+
+\begin{center}
+  \begin{tabular}{ll}
+    Symbol or formula & Comment \\
+    \hline
+    $\rho_{i}$ & ice density\\
+    $c_{i}$ & specific heat capacity of ice\\
+    $k_{i}$ & thermal conductivity of ice\\
+    $\phi$ & heat flux at a boundary\\
+    $G = \phi / K$ & enthalpy flux at a boundary (see also (\ref{eq:2}))\\
+    $\Delta(U_{k}) = U_{k+1} - U_{k-1}$ & centered finite difference\\
+    $\delta_{+}(U_{k}) = U_{k+1} - U_{k}$ & forward finite difference\\
+    $\delta_{-}(U_{k}) = U_{k} - U_{k-1}$ & backward finite difference\\
+    $\operatorname{Up}(U_{k}, \alpha) =
+    \begin{cases}
+      \delta_{+}(U_{k}), & \alpha < 0,\\
+      \delta_{-}(U_{k}), & \alpha \ge 0.
+    \end{cases}$ & first order upwinding\\
+  \end{tabular}
+\end{center}
+
+\section{Energy balance in a column of ice}
+\label{sec:energy-in-a-column}
+
+The conservation of energy equation is
+
+\begin{equation}
+  \label{eq:1}
+  \rho_{i} \cdot \frac{dE}{dt} = -\nabla\cdot\mathbf{q} + Q,
+\end{equation}
+where
+$\mathbf{q}$, the enthalpy flux, is defined by
+\begin{align}
+  \label{eq:2}
+  \mathbf{q} &= -K \nabla E,\\
+  K(E) &=
+  \begin{cases}
+    k_{i}/c_{i}, & E \le E_{s}\quad\text{(cold ice)},\\
+    K_{0}, & E > E_{s}\quad\text{(temperate ice)}.\\
+  \end{cases}
+\end{align}
+Here $E_{s}$ is the pressure-dependent enthalpy of the cold-temperate
+transition and $Q$ is the source term consisting of the volumetric
+strain heating and basal frictional heating.
+
+Note that $K$ depends on $E$, so the system defined by equations
+(\ref{eq:1}) and (\ref{eq:2}) with appropriate boundary conditions is
+nonlinear. The PISM implementation linearizes it by treating the time
+derivative implicitly and using the \emph{previous} (or
+initial) distribution of $E$ to evaluate $K(E)$.
+
+PISM uses a shallow approximation of this equation without horizontal
+conduction terms. Here I focus on the vertical direction, so
+(\ref{eq:1}) becomes
+\begin{equation}
+  \label{eq:3}
+  \rho_{i} \left( \diff{E}{t} + w\,\diff{E}{z} \right) - \diff{}{z}\left( K \diff{E}{z} \right) = \Phi.
+\end{equation}
+The term $\Phi$ above combines horizontal advection and the source:
+\begin{equation}
+  \label{eq:4}
+    \Phi = Q - \rho_{i} \left( u\,\diff{E}{x} + v\,\diff{E}{y} \right).
+\end{equation}
+
+\section{Interior of the column}
+\label{sec:interior}
+
+The discretization scheme for equation (\ref{eq:3}) used in PISM is
+\begin{equation}
+  \label{eq:5}
+  \discretization.
+\end{equation}
+Note that (\ref{eq:5}) uses a convex combination of centered finite
+difference and first-order upwinding approximations of vertical
+advection with the weight $\lambda$.
+
+For $w \ge 0$ this can be rewritten as
+\begin{equation}
+  \label{eq:6}
+  (\Lp)\, \El + (\Dp)\, \E_{k} + (\Up)\, \Eu = \Bp,
+\end{equation}
+and for $w < 0$
+\begin{equation}
+  \label{eq:7}
+  (\Lm)\, \El + (\Dm)\, \E_{k} + (\Um)\, \Eu = \Bm.
+\end{equation}
+
+Here
+\begin{equation}
+  R^{n}_{k} = \R,\quad\quad \mu = \mufactor.
+\end{equation}
+
+This corresponds to the following lower-diagonal ($L_{k}$), diagonal
+($D_{k}$) and upper-diagonal ($U_{k}$) entries in the tridiagonal
+matrix corresponding to the discretization (\ref{eq:5}).
+
+\begin{align}
+  \wcaseeq{L_{k}}{\Lm}{\Lp}{k}\\
+  \notag\\
+  \wcaseeq{D_{k}}{\Dm}{\Dp}{k}\\
+  \notag\\
+  \wcaseeq{U_{k}}{\Um}{\Up}{k}
+\end{align}
+The right hand side $b$ has elements
+\begin{equation}
+  \label{eq:8}
+  b_{k} = \Bp
+\end{equation}
+in both cases.
+
+\newcommand{\Rm}{R^{n}_{k-\frac{1}{2}}}
+\newcommand{\Rp}{R^{n}_{k+\frac{1}{2}}}
+\newcommand{\W}{w^{n}_{k}}
+\newcommand{\wstack}[2]{\left\{\begin{matrix}#1\\#2\end{matrix} \right\}}
+This can be rewritten as
+\begin{align}
+  L_{k} &= -\Rm + \mu\W \wstack{-\lambda}{\lambda - 2},\\
+  D_{k} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda},\\
+  U_{k} &= -\Rp + \mu\W \wstack{2 - \lambda}{\lambda}
+\end{align}
+with
+\begin{equation}
+  \label{eq:12}
+  \wstack{a}{b} = \wcase{a}{b}{}.
+\end{equation}
+\section{Neumann B. C.}
+\label{sec:neumann-b-c}
+
+In the case of the initial boundary value system consisting of
+equation (\ref{eq:1}) combined with
+\begin{align}
+  \label{eq:9}
+  \left.\frac{\partial E}{\partial z}\right|_{z = 0} &= G_{0}(t),\\
+  E(z_{\text{surface}}) &= f(t)
+\end{align}
+the Neumann boundary conditions at the base are implemented by
+combining the generic discretization equation (\ref{eq:5}) with the
+equation (\ref{eq:10}) approximating (\ref{eq:9}) and eliminating
+$E_{-1}$.
+\begin{equation}
+  \label{eq:10}
+  \neumannb.
+\end{equation}
+This gives
+\begin{align}
+  \wcaseeq{D_{0}}{\Dmb}{\Dpb}{0}\\
+  \notag\\
+  \wcaseeq{U_{0}}{\Umb}{\Upb}{0}\\
+  \notag\\
+  \wcaseeq{b_{0}}{\Bmb}{\Bpb}{0}
+\end{align}
+
+\renewcommand{\Rp}{R^{n}_{\frac{1}{2}}}
+\renewcommand{\Rm}{R^{n}_{-\frac{1}{2}}}
+\renewcommand{\W}{w^{n}_{0}}
+
+\newcommand{\rhs}[1]{E^{n}_{#1} + \frac{\Delta t \Phi^{n}_{#1}}{\rho_{i}}}
+
+Alternatively,
+\begin{align}
+  D_{0} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda}\\
+  U_{0} &= -\Rp -\Rm + 2\mu\W \wstack{1 - \lambda}{\lambda - 1}\\
+  b_{0} &= \rhs{0} + 2G_{0}\Delta z \left( -\Rm + \mu\W\wstack{-\lambda}{\lambda - 2} \right).
+\end{align}
+
+When assembling the basal equation we approximate $R_{-\frac{1}{2}}$ by $R_{0}$.
+
+\newcommand{\ks}{k_{s}}
+
+Similarly, when the Neumann B.~C. is imposed at the surface ($k =
+\ks$), we combine (\ref{eq:5}) with (\ref{eq:11}) and eliminate $E_{\ks+1}$.
+\begin{equation}
+  \label{eq:11}
+  \neumanns.
+\end{equation}
+This gives
+\begin{align}
+  \wcaseeq{L_{\ks}}{\Lms}{\Lps}{\ks}\\
+  \notag\\
+  \wcaseeq{D_{\ks}}{\Dms}{\Dps}{\ks}\\
+  \notag\\
+  \wcaseeq{b_{\ks}}{\Bms}{\Bps}{\ks}
+\end{align}
+
+\renewcommand{\Rp}{R^{n}_{\ks+\frac{1}{2}}}
+\renewcommand{\Rm}{R^{n}_{\ks-\frac{1}{2}}}
+\renewcommand{\W}{w^{n}_{\ks}}
+
+Alternatively,
+\begin{align}
+  L_{\ks} &= -\Rp -\Rm + 2\mu\W \wstack{1 - \lambda}{\lambda - 1}\\
+  D_{\ks} &= 1 + \Rm + \Rp + 2\mu\W \wstack{\lambda - 1}{1 - \lambda}\\
+  b_{\ks} &= \rhs{\ks} + 2G_{\ks}\Delta z\left( \Rp + \mu\W\wstack{\lambda-2}{-\lambda} \right)
+\end{align}
+
+When assembling the surface equation we approximate $R_{\ks + \frac{1}{2}}$ by $R_{\ks}$.
+
+\end{document}

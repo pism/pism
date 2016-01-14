@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -51,18 +51,21 @@ public:
                 EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
-  void initThisColumn(int i, int j, bool my_ismarginal,
-                      double ice_thickness);
+  void init(int i, int j, bool my_ismarginal, double ice_thickness);
 
   double k_from_T(double T);
 
-  void setDirichletSurface(double my_Enth_surface);
-  void setDirichletBasal(double Y);
-  void setBasalHeatFlux(double hf);
+  void set_surface_heat_flux(double hf);
+  void set_surface_enthalpy_flux(double dE);
+  void set_surface_dirichlet(double E_surface);
+
+  void set_basal_dirichlet(double E_basal);
+  void set_basal_heat_flux(double hf);
+  void set_basal_enthalpy_flux(double dE);
 
   virtual void save_system(std::ostream &output, unsigned int M) const;
 
-  void solveThisColumn(std::vector<double> &result);
+  void solve(std::vector<double> &result);
 
   double lambda() {
     return m_lambda;
@@ -95,9 +98,9 @@ protected:
     m_nu, m_R_cold, m_R_temp, m_R_factor;
 
   double m_ice_thickness,
-    m_lambda,              //!< implicit FD method parameter
-    m_Enth_ks;             //!< top surface Dirichlet B.C.
+    m_lambda;              //!< implicit FD method parameter
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
+  double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
   bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
 
   const IceModelVec3 &m_Enth3, &m_strain_heating3;

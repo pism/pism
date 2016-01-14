@@ -1,0 +1,26 @@
+/* pure diffusion, Dirichlet at the base and Neumann at the surface */
+T(t) := exp(-(lambda*alpha)^2*t);
+Z(z) := A*sin(lambda*z) + B*cos(lambda*z);
+v(z,t) := T(t) * Z(z);
+
+phi(z) := U[0] + Q[L] * z;
+u(z,t) := v(z,t) + phi(z);
+
+B : 0;
+lambda : %pi / (2*L);
+
+/* Check that T satisfies its equation */
+eq_T : diff(T(t), t) + (lambda*alpha)^2 * T(t) = 0;
+
+/* Check that Z satisfies its equation */
+eq_Z : diff(Z(z), z, 2) + lambda^2 * Z(z) = 0;
+
+/* Check that u(x,t) satisfies the PDE */
+eq: diff(u(x,t),t) = alpha^2 * diff(u(x,t),x,2);
+lhs(eq) - rhs(eq), expand;
+
+/* Check that du/dx = Q[L] at x = L */
+ux_L : subst([x = L], diff(u(x,t), x));
+
+/* Check that u(0,t) = U[0] */
+u_0 : u(0, t);

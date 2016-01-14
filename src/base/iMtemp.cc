@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -251,7 +251,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                              i, j);
           PISM_CHK(ierr, "PetscPrintf");
 
-          system.viewColumnInfoMFile(x);
+          system.save_to_file(x);
         }
 
       }       // end of "if there are enough points in ice to bother ..."
