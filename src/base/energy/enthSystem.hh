@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -56,10 +56,12 @@ public:
   double k_from_T(double T);
 
   void set_surface_heat_flux(double hf);
+  void set_surface_enthalpy_flux(double dE);
   void set_surface_dirichlet(double E_surface);
 
   void set_basal_dirichlet(double E_basal);
   void set_basal_heat_flux(double hf);
+  void set_basal_enthalpy_flux(double dE);
 
   virtual void save_system(std::ostream &output, unsigned int M) const;
 

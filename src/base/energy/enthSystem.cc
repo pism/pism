@@ -197,10 +197,19 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
-
   const double
-    K      = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
-    G      = heat_flux / K,
+    K = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
+    G = heat_flux / K;
+
+  this->set_surface_enthalpy_flux(G);
+}
+
+//! Set enthalpy flux at the surface.
+/*! This method should probably be used for debugging only. Its purpose is to allow setting the
+    enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
+ */
+void enthSystemCtx::set_surface_enthalpy_flux(double G) {
+  const double
     Rminus = 0.5 * (m_R[m_ks - 1] + m_R[m_ks]), // R_{ks-1/2}
     Rplus  = m_R[m_ks],                         // R_{ks+1/2}
     mu_w   = 0.5 * m_nu * m_w[m_ks];
@@ -291,17 +300,21 @@ is already set.
 
  */
 void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
-#if (PISM_DEBUG==1)
- checkReadyToSolve();
-  if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
-    throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
-  }
-#endif
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K      = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
-    G      = heat_flux / K,
+    K = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
+    G = heat_flux / K;
+
+  this->set_basal_enthalpy_flux(G);
+}
+
+//! Set enthalpy flux at the base.
+/*! This method should probably be used for debugging only. Its purpose is to allow setting the
+    enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
+ */
+void enthSystemCtx::set_basal_enthalpy_flux(double G) {
+  const double
     Rminus = m_R[0],                  // R_{-1/2}
     Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{+1/2}
     mu_w   = 0.5 * m_nu * m_w[0];
