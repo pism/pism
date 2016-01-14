@@ -659,8 +659,9 @@ void IceModel::step(bool do_mass_continuity,
                                                   "_stressbalance_failed", "");
     dumpToFile(o_file);
 
-    throw RuntimeError::formatted("stress balance computation failed. Model state was saved to '%s'",
-                                  o_file.c_str());
+    e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
+                  o_file.c_str());
+    throw;
   }
 
   stdout_flags += stress_balance->stdout_report();
