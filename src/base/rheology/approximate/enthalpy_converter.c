@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,12 +20,12 @@
 #include "enthalpy_converter.h"
 
 static const struct enth_constants enth = {
-  .T_melting = 273.15,
-  .c_i = 2009.0,
-  .c_w = 4170,
-  .T_0 = 223.15,
-  .beta = 7.9e-8,
-  .L0 = 3.34e5
+  /* .T_melting = */ 273.15,
+  /* .c_i = */ 2009.0,
+  /* .c_w = */ 4170,
+  /* .T_0 = */ 223.15,
+  /* .beta = */ 7.9e-8,
+  /* .L0 = */ 3.34e5
 };
 
 double enth_melting_temperature(double P) {
