@@ -288,7 +288,7 @@ void IceCompModel::set_vars_from_options() {
 }
 
 void IceCompModel::initTestABCDH() {
-  double     A0, T0, H, accum, dummy1, dummy2, dummy3;
+  double     A0, T0, H, accum;
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -312,8 +312,7 @@ void IceCompModel::initTestABCDH() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = m_grid->x(i), yy = m_grid->y(j),
-        r = radius(*m_grid, i, j);
+      const double r = radius(*m_grid, i, j);
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -598,8 +597,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         area += a;
         vol += a * ice_thickness(i,j) * 1e-3;
       }
-      double xx = m_grid->x(i), yy = m_grid->y(j),
-        r = radius(*m_grid, i,j);
+      double xx = m_grid->x(i), r = radius(*m_grid, i,j);
       switch (testname) {
       case 'A':
         exactA(r,&Hexact,&dummy);

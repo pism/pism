@@ -166,7 +166,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
  * @return 0 on success
  */
 void Verification::update_ABCDH(double time) {
-  double         A0, T0, H, accum, dummy1, dummy2, dummy3;
+  double         A0, T0, H, accum;
 
   double f = m_config->get_double("ice_density") / m_config->get_double("lithosphere_density");
 
@@ -185,8 +185,7 @@ void Verification::update_ABCDH(double time) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = m_grid->x(i), yy = m_grid->y(j),
-        r = radius(*m_grid, i, j);
+      const double r = radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         exactA(r, &H, &accum);
