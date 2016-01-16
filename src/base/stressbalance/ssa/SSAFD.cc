@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -288,6 +288,7 @@ void SSAFD::assemble_rhs() {
     rho_ocean = m_config->get_double("sea_water_density"),
     rho_ice = m_config->get_double("ice_density");
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
 
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
@@ -381,7 +382,7 @@ void SSAFD::assemble_rhs() {
           ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
         } else {
           // grounded terminus
-          if (b >= sea_level) {
+          if (b >= sea_level or is_dry_simulation) {
             ocean_pressure = 0.5 * rho_g * H_ij2;
           } else {
             ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
