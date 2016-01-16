@@ -264,18 +264,6 @@ void IceModel::createVecs() {
                       "fractional grounded/floating mask (floating=0, grounded=1)",
                       "", "");
     m_grid->variables().add(gl_mask);
-
-    gl_mask_x.create(m_grid, "gl_mask_x", WITHOUT_GHOSTS);
-    gl_mask_x.set_attrs("internal",
-                        "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
-                        "", "");
-    m_grid->variables().add(gl_mask_x);
-
-    gl_mask_y.create(m_grid, "gl_mask_y", WITHOUT_GHOSTS);
-    gl_mask_y.set_attrs("internal",
-                        "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
-                        "", "");
-    m_grid->variables().add(gl_mask_y);
   }
 
   // grounded_dragging_floating integer mask
