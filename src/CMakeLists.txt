@@ -122,6 +122,7 @@ add_library (pismbase
   base/iMenthalpy.cc
   base/iMfractures.cc
   base/iMgeometry.cc
+  base/floatation_mask.cc
   base/iMinit.cc
   base/iMIO.cc
   base/iMoptions.cc
