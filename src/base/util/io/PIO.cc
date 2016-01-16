@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -52,25 +52,6 @@ namespace pism {
 
 using std::string;
 using std::vector;
-
-static size_t io_type_size(IO_Type type) {
-  switch (type) {
-  case PISM_NAT:
-    return 0;
-  case PISM_BYTE:
-    return 1;
-  case PISM_CHAR:
-    return sizeof(char);
-  case PISM_SHORT:
-    return sizeof(short);
-  case PISM_INT:
-    return sizeof(int);
-  case PISM_FLOAT:
-    return sizeof(float);
-  case PISM_DOUBLE:
-    return sizeof(double);
-  }
-}
 
 //! This class collects information needed to perform an array writing operation. It is used by
 //! PIO::put_1d_var() to delay writing until PIO::enddef() or PIO::close() are called. This allows
@@ -585,50 +566,13 @@ void PIO::def_dim(const std::string &name, size_t length) const {
   }
 }
 
-static std::vector<size_t> chunk_dimensions(IO_Type type, const std::vector<size_t> &dims) {
-  const unsigned long long int limit = (1UL << 32) - 1;
-  const size_t ndims = dims.size();
-
-  std::vector<size_t> result(ndims, 1);
-
-  bool over_the_limit = false;
-  unsigned long long int chunk_size = io_type_size(type);
-
-  for (int k = ndims - 1; k >= 0; --k) {
-    // we define spatial variables before the time dimension is extended, so it has length 0 at the
-    // time of this call
-    size_t dim = dims[k] > 0 ? dims[k] : 1;
-
-    if (not over_the_limit) {
-
-      size_t N = 1;
-      while (chunk_size * dim / N > limit) {
-        N += 1;
-      }
-
-      if (N > 1) {
-        over_the_limit = true;
-      }
-
-      result[k] = dim / N;
-    } else {
-      result[k] = 1;
-    }
-
-    chunk_size *= result[k];
-  }
-
-  return result;
-}
-
-
 //! \brief Define a variable.
 void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
   try {
     m_impl->nc->def_var(name, nctype, dims);
 
-    // FIXME: I need to tune chunk_dimensions (see the call above)
-    // before we use this.
+    // FIXME: I need to write and tune chunk_dimensions that would be called below before we use
+    // this.
     //
     /*
     // if it's not a spatial variable, we're done
