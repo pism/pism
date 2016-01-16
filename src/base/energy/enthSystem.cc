@@ -86,12 +86,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
     m_k_depends_on_T = false;
   }
 
-  // check if c(T) is a constant function:
-  if (EC->c(260) != EC->c(270)) {
-    m_c_depends_on_T = true;
-  } else {
-    m_c_depends_on_T = false;
-  }
+  m_c_depends_on_T = false;
 }
 
 
@@ -355,7 +350,7 @@ Thus
   \f[ R = \frac{k \Delta t}{\rho c \Delta z^2}. \f]
  */
 void enthSystemCtx::assemble_R() {
-  if (not m_k_depends_on_T && not m_c_depends_on_T) {
+  if (not m_k_depends_on_T) {
 
     for (unsigned int k = 1; k <= m_ks; k++) {
       m_R[k] = (m_Enth[k] < m_Enth_s[k]) ? m_R_cold : m_R_temp;
@@ -370,9 +365,9 @@ void enthSystemCtx::assemble_R() {
         // cold case
         const double depth = m_ice_thickness - k * m_dz;
         double T = m_EC->temperature(m_Enth[k],
-                                   m_EC->pressure(depth)); // FIXME: issue #15
+                                     m_EC->pressure(depth)); // FIXME: issue #15
 
-        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC->c(T)) * m_R_factor;
+        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC->c()) * m_R_factor;
       } else {
         // temperate case
         m_R[k] = m_R_temp;
@@ -382,7 +377,7 @@ void enthSystemCtx::assemble_R() {
     if (m_Enth[1] < m_Enth_s[1]) {
       double T = m_EC->temperature(m_Enth[0],
                                    m_EC->pressure(m_ice_thickness)); // FIXME: issue #15
-      m_R[0] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC->c(T)) * m_R_factor;
+      m_R[0] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC->c()) * m_R_factor;
     } else {
       // temperate layer case
       m_R[0] = m_R_temp;

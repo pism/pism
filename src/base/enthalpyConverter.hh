@@ -70,7 +70,7 @@ public:
   double enthalpy_liquid(double P) const;
   double enthalpy_permissive(double T, double omega, double P) const;
 
-  double c(double T) const;
+  double c() const;
   double L(double T_m) const;
 
   double pressure(double depth) const;

@@ -359,8 +359,8 @@ double EnthalpyConverter::L(double T_pm) const {
   return m_L + (m_c_w - m_c_i) * (T_pm - 273.15);
 }
 
-//! Specific heat capacity of ice as a function of temperature `T`.
-double EnthalpyConverter::c(double T) const {
+//! Specific heat capacity of ice.
+double EnthalpyConverter::c() const {
   return m_c_i;
 }
 

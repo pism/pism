@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2015 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2016 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -473,7 +473,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
               hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / dz;
             } else {
               double T_0 = EC->temperature(Enthnew[0], p_0);
-              const double K_0 = system.k_from_T(T_0) / EC->c(T_0);
+              const double K_0 = system.k_from_T(T_0) / EC->c();
 
               hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / dz;
             }

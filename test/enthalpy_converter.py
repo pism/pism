@@ -48,23 +48,6 @@ def reversibility_test():
 
     try_all_converters(run)
 
-def heat_capacity_test():
-    "Test that c() does not crash."
-    def run(name, EC):
-        depth = 1000
-        pressure = EC.pressure(depth)
-        T = EC.melting_temperature(pressure)
-        print " reports c({}) = {}...".format(T, EC.c(T)),
-
-    try_all_converters(run)
-
-def linear_heat_capacity_test():
-    "Test that the specific heat capacity of ice is linear in T."
-    # Note: this is trivial if c(T) is constant.
-    EC = converters["Default"]
-    c = [EC.c(t) for t in [0, -10, -20]]
-    assert c[0] - c[1] == c[1] - c[2]
-
 def temperate_temperature_test():
     "For temperate ice, an increase of E should not change T."
 
