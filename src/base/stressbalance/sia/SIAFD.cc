@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -921,7 +921,6 @@ void SIAFD::compute_I() {
   assert(thk_smooth.get_stencil_width() >= 2);
 
   const unsigned int Mz = m_grid->Mz();
-  const std::vector<double> &z = m_grid->z();
 
   std::vector<double> dz(Mz);
   for (unsigned int k = 1; k < Mz; ++k) {
