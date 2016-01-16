@@ -190,8 +190,8 @@ void enthSystemCtx::set_surface_dirichlet(double E_surface) {
   m_B_ks = E_surface;
 }
 
-static inline double upwind(double u, double E_m, double E, double E_p, double delta) {
-  return u * (u < 0 ? (E_p -  E) / delta : (E  - E_m) / delta);
+static inline double upwind(double u, double E_m, double E, double E_p, double delta_inverse) {
+  return u * delta_inverse * (u < 0 ? (E_p -  E) : (E  - E_m));
 }
 
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
@@ -230,8 +230,8 @@ void enthSystemCtx::set_surface_enthalpy_flux(double G) {
   m_B_ks = m_Enth[m_ks] + 2.0 * G * m_dz * (Rplus + mu_w * A_b);
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
-    const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], m_dx);
-    const double UpEnthv = upwind(m_u[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], m_dy);
+    const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], 1.0 / m_dx);
+    const double UpEnthv = upwind(m_u[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
 
     m_B_ks += m_dt * ((m_strain_heating[m_ks] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[m_ks]
   }
@@ -332,8 +332,8 @@ void enthSystemCtx::set_basal_enthalpy_flux(double G) {
 
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
-    const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], m_dx);
-    const double UpEnthv = upwind(m_u[0], m_E_s[0], m_Enth[0], m_E_n[0], m_dy);
+    const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], 1.0 / m_dx);
+    const double UpEnthv = upwind(m_u[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
 
     m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
   }
@@ -483,8 +483,8 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     S.RHS(k) = m_Enth[k];
     if (not m_ismarginal) {
       const double
-        UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], m_dx),
-        UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], m_dy);
+        UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], Dx),
+        UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
 
       S.RHS(k) += m_dt * (one_over_rho * m_strain_heating[k] - UpEnthu - UpEnthv);
     }
