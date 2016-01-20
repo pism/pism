@@ -291,9 +291,8 @@ protected:
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
   
-  IceModelVec2S gl_mask, //!< mask to determine grounding line position
-    gl_mask_x, //!< mask to determine grounding line position in x-direction
-    gl_mask_y; //!< mask to determine grounding line position in y-direction
+  //! mask to determine grounding line position
+  IceModelVec2S gl_mask;
 
   IceModelVec3
   T3,             //!< absolute temperature of ice; K (ghosted)
@@ -378,7 +377,7 @@ protected:
                            StarStencil<double> &SSA_velocity,
                            StarStencil<double> &SIA_flux);
   virtual void massContExplicitStep();
-  virtual void update_floatation_mask();
+  virtual void update_grounded_cell_fraction();
   virtual void do_calving();
   virtual void Href_cleanup();
   virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
