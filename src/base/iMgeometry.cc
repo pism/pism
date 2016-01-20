@@ -839,7 +839,7 @@ void IceModel::update_floatation_mask() {
 
   compute_floatation_mask(ice_density, ocean_density, sea_level,
                           ice_thickness, bed_topography, vMask,
-                          gl_mask);
+                          gl_mask, NULL, NULL);
 }
 
 } // end of namespace pism

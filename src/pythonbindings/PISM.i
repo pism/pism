@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,6 +36,7 @@
 #include "base/util/PISMUnits.hh"
 #include "pism_python.hh"
 
+#include "base/floatation_mask.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
@@ -237,6 +238,7 @@
  */
 %include pism_Hydrology.i
 
+%include "base/floatation_mask.hh"
 %include "base/util/Mask.hh"
 %include "pism_python.hh"
 %include "base/basalstrength/PISMYieldStress.hh"

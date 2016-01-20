@@ -31,7 +31,9 @@ void compute_floatation_mask(double ice_density,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &bed_topography,
                              const IceModelVec2Int &mask,
-                             IceModelVec2S &result);
+                             IceModelVec2S &result,
+                             IceModelVec2S *result_x,
+                             IceModelVec2S *result_y);
 
 } // end of namespace pism
 

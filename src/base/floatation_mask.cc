@@ -123,14 +123,26 @@ static inline double gl_position(double mu,
 
    FIXME: sometimes alpha<0 (slightly below flotation) even though the
    mask says grounded
-*/
+
+   @param ice_density ice density, kg/m3
+   @param ocean_density ocean (sea water) density, kg/m3
+   @param sea_level sea level elevation, m
+   @param ice_thickness ice thickness (a 2D field)
+   @param bed_topography bed topography (a 2D field)
+   @param mask cell type mask (a 2D field)
+   @param result resulting grounded fraction
+   @param result_x grounding line position in the x direction (1D parameterization, for debugging)
+   @param result_y grounding line position in the y direction (1D parameterization, for debugging) 
+ */
 void compute_floatation_mask(double ice_density,
                              double ocean_density,
                              double sea_level,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &bed_topography,
                              const IceModelVec2Int &mask,
-                             IceModelVec2S &result) {
+                             IceModelVec2S &result,
+                             IceModelVec2S *result_x,
+                             IceModelVec2S *result_y) {
 
   const double mu = ice_density / ocean_density;
 
@@ -139,6 +151,13 @@ void compute_floatation_mask(double ice_density,
   list.add(bed_topography);
   list.add(mask);
   list.add(result);
+
+  if (result_x != NULL) {
+    list.add(*result_x);
+  }
+  if (result_y != NULL) {
+    list.add(*result_y);
+  }
 
   IceGrid::ConstPtr grid = result.get_grid();
 
@@ -177,8 +196,8 @@ void compute_floatation_mask(double ice_density,
           const Direction direction = dirs[k];
 
           if (mask::grounded(m[direction])) {
-            const double L = gl_position(mu, sea_level, H.ij, b.ij, H[direction], b[direction]);
-            lambda[k] = std::max(0.5 - L, 0.0);
+            const double L = gl_position(mu, sea_level, H[direction], b[direction], H.ij, b.ij);
+            lambda[k] = std::max(L - 0.5, 0.0);
           } else {
             lambda[k] = 0.0;
           }
@@ -193,23 +212,16 @@ void compute_floatation_mask(double ice_density,
         lambda_x = lambda[East] + lambda[West],
         lambda_y = lambda[South] + lambda[North];
 
-      // Combine "grounded fractions" in the X and Y directions to obtain the fraction of a 2D cell
-      // that is grounded.
-      //
-      // Note that even if lambda_x is zero in some cases the cell may still have a non-zero
-      // grounded fraction. (Consider ice thickness and bed topography that don't depend on X.) This
-      // means that just multiplying lambda_x and lambda_y would needlessly mark some cells as
-      // fully floating even though they are not.
-      if (lambda_x > 0.0 and lambda_y > 0.0) {
-        result(i, j) = lambda_x * lambda_y;
-      } else if (lambda_x == 0.0) {
-        result(i, j) = lambda_y;
-      } else if (lambda_y == 0.0) {
-        result(i, j) = lambda_x;
-      } else {
-        // This can't happen. It's OK to set result to zero, though.
-        result(i, j) = 0.0;
+      if (result_x != NULL) {
+        (*result_x)(i, j) = lambda_x;
       }
+      if (result_y != NULL) {
+        (*result_y)(i, j) = lambda_y;
+      }
+
+      // Note: in the flowline case (in general: when one of lambda_[xy] is zero) this does not work
+      // very well, but I don't know how to get it "right"... (CK)
+      result(i, j) = lambda_x * lambda_y;
 
     } // end of the loop over grid points
   } catch (...) {
