@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _FLOATATION_MASK_H_
-#define _FLOATATION_MASK_H_
+#ifndef _GROUNDED_CELL_FRACTION_H_
+#define _GROUNDED_CELL_FRACTION_H_
 
 namespace pism {
 
 class IceModelVec2S;
 class IceModelVec2Int;
 
-void compute_floatation_mask(double ice_density,
+void compute_grounded_cell_fraction(double ice_density,
                              double ocean_density,
                              double sea_level,
                              const IceModelVec2S &ice_thickness,
@@ -38,4 +38,4 @@ void compute_floatation_mask(double ice_density,
 } // end of namespace pism
 
 
-#endif /* _FLOATATION_MASK_H_ */
+#endif /* _GROUNDED_CELL_FRACTION_H_ */

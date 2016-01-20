@@ -134,7 +134,7 @@ static inline double gl_position(double mu,
    @param result_x grounding line position in the x direction (1D parameterization, for debugging)
    @param result_y grounding line position in the y direction (1D parameterization, for debugging) 
  */
-void compute_floatation_mask(double ice_density,
+void compute_grounded_cell_fraction(double ice_density,
                              double ocean_density,
                              double sea_level,
                              const IceModelVec2S &ice_thickness,

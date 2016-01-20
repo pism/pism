@@ -34,7 +34,7 @@
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
 
-#include "base/floatation_mask.hh"
+#include "base/grounded_cell_fraction.hh"
 
 namespace pism {
 
@@ -825,7 +825,7 @@ void IceModel::massContExplicitStep() {
 /**
    @brief Updates the fractional "flotation mask".
  */
-void IceModel::update_floatation_mask() {
+void IceModel::update_grounded_cell_fraction() {
 
   const double
     ice_density   = m_config->get_double("ice_density"),
@@ -837,7 +837,7 @@ void IceModel::update_floatation_mask() {
   assert(beddef != NULL);
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  compute_floatation_mask(ice_density, ocean_density, sea_level,
+  compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
                           ice_thickness, bed_topography, vMask,
                           gl_mask, NULL, NULL);
 }

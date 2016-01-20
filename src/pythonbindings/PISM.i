@@ -36,7 +36,7 @@
 #include "base/util/PISMUnits.hh"
 #include "pism_python.hh"
 
-#include "base/floatation_mask.hh"
+#include "base/grounded_cell_fraction.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
@@ -238,7 +238,7 @@
  */
 %include pism_Hydrology.i
 
-%include "base/floatation_mask.hh"
+%include "base/grounded_cell_fraction.hh"
 %include "base/util/Mask.hh"
 %include "pism_python.hh"
 %include "base/basalstrength/PISMYieldStress.hh"

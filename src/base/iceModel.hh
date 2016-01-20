@@ -377,7 +377,7 @@ protected:
                            StarStencil<double> &SSA_velocity,
                            StarStencil<double> &SIA_flux);
   virtual void massContExplicitStep();
-  virtual void update_floatation_mask();
+  virtual void update_grounded_cell_fraction();
   virtual void do_calving();
   virtual void Href_cleanup();
   virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
