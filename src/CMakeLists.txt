@@ -128,6 +128,7 @@ add_library (pismbase
   base/iMenergy.cc
   base/iMenthalpy.cc
   base/iMfractures.cc
+  base/grounded_cell_fraction.cc
   base/iMgeometry.cc
   base/iMinit.cc
   base/iMIO.cc

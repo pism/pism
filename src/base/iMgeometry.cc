@@ -23,6 +23,7 @@
 #include <algorithm>
 
 #include "iceModel.hh"
+#include "base/grounded_cell_fraction.hh"
 #include "base/calving/PISMIcebergRemover.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
@@ -906,8 +907,7 @@ void IceModel::update_floatation_mask() {
 
   double
     ice_density   = m_config->get_double("ice_density"),
-    ocean_density = m_config->get_double("sea_water_density"),
-    mu            = ice_density / ocean_density;
+    ocean_density = m_config->get_double("sea_water_density");
 
   assert(ocean != NULL);
   double sea_level = ocean->sea_level_elevation();
@@ -918,150 +918,9 @@ void IceModel::update_floatation_mask() {
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(bed_topography);
-  list.add(vMask);
-  list.add(gl_mask);
-  list.add(gl_mask_x);
-  list.add(gl_mask_y);
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double
-        alpha        = 0.0,
-        beta         = 0.0,
-        lambda_g     = 0.0,
-        gl_mask_gr_x = 1.0,
-        gl_mask_gr_y = 1.0,
-        gl_mask_fl_x = 1.0,
-        gl_mask_fl_y = 1.0;
-
-      // grounded part
-      if (mask.grounded(i, j)) {
-        alpha = mu*ice_thickness(i, j) + bed_topography(i, j) - sea_level;
-
-        if (mask.ocean(i + 1, j)) {
-
-          beta = mu*ice_thickness(i + 1, j) + bed_topography(i + 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_x += (lambda_g - 0.5);
-          }
-
-        } else if (mask.ocean(i - 1, j)) {
-
-          beta = mu*ice_thickness(i - 1, j) + bed_topography(i - 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_x += (lambda_g - 0.5);
-          }
-
-        } else if (mask.ocean(i, j + 1)) {
-
-          beta = mu*ice_thickness(i, j + 1) + bed_topography(i, j + 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_y += (lambda_g - 0.5);
-          }
-
-        } else if (mask.ocean(i, j - 1)) {
-
-          beta = mu*ice_thickness(i, j - 1) + bed_topography(i, j - 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_y += (lambda_g - 0.5);
-          }
-
-        }
-
-        gl_mask_x(i,j) = gl_mask_gr_x;
-        gl_mask_y(i,j) = gl_mask_gr_y;
-        gl_mask(i,j)   = gl_mask_gr_x * gl_mask_gr_y;
-      }
-
-      // floating part
-      if (mask.floating_ice(i, j)) {
-        beta = mu*ice_thickness(i, j) + bed_topography(i, j) - sea_level;
-
-        if (mask.grounded(i - 1, j)) {
-
-          alpha = mu*ice_thickness(i - 1, j) + bed_topography(i - 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_x -= (lambda_g - 0.5);
-          }
-
-        } else if (mask.grounded(i + 1, j)) {
-
-          alpha = mu*ice_thickness(i + 1, j) + bed_topography(i + 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_x -= (lambda_g - 0.5);
-          }
-
-        } else if (mask.grounded(i, j - 1)) {
-
-          alpha = mu*ice_thickness(i, j - 1) + bed_topography(i, j - 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_y -= (lambda_g - 0.5);
-          }
-
-        } else if (mask.grounded(i, j + 1)) {
-
-          alpha = mu*ice_thickness(i, j + 1) + bed_topography(i, j + 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_y -= (lambda_g - 0.5);
-          }
-
-        }
-
-        gl_mask_x(i,j) = 1.0 - gl_mask_fl_x;
-        gl_mask_y(i,j) = 1.0 - gl_mask_fl_y;
-        gl_mask(i,j)   = 1.0 - gl_mask_fl_x * gl_mask_fl_y;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
+  compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
+                                 ice_thickness, bed_topography, vMask,
+                                 gl_mask, &gl_mask_x, &gl_mask_y);
 
 }
 

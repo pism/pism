@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,6 +34,20 @@ struct StarStencil {
   //! Get the element corresponding to a given direction.
   //! Use foo.ij to get the value at i,j (center of the star).
   inline T& operator[](Direction direction) {
+    switch (direction) {
+    default:                    // just to silence the warning
+    case North:
+      return n;
+    case East:
+      return e;
+    case South:
+      return s;
+    case West:
+      return w;
+    }
+  }
+
+  inline const T& operator[](Direction direction) const {
     switch (direction) {
     default:                    // just to silence the warning
     case North:
