@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,6 @@ static char help[] =
 using namespace pism;
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode ierr;
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
@@ -44,11 +43,11 @@ int main(int argc, char *argv[]) {
 
   try {
     verbosityLevelFromOptions();
-
     Context::Ptr ctx = context_from_options(com, "pismr");
+    Logger::Ptr log = ctx->log();
 
-    ctx->log()->message(2, "PISMR %s (basic evolution run mode)\n",
-                        PISM_Revision);
+    log->message(2, "PISMR %s (basic evolution run mode)\n",
+                 PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -64,15 +63,14 @@ int main(int argc, char *argv[]) {
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     if (not input_file_set) {
-      ierr = PetscPrintf(com, "\nPISM ERROR: option -i is required\n\n");
-      PISM_CHK(ierr, "PetscPrintf");
-      show_usage(com, "pismr", usage);
+      log->error("PISM ERROR: option -i is required\n\n");
+      show_usage(*log, "pismr", usage);
       return 0;
     } else {
       std::vector<std::string> required;
       required.clear();
 
-      bool done = show_usage_check_req_opts(com, "pismr", required, usage);
+      bool done = show_usage_check_req_opts(*log, "pismr", required, usage);
       if (done) {
         return 0;
       }
@@ -87,7 +85,7 @@ int main(int argc, char *argv[]) {
       ctx->profiling().start();
     }
 
-    ctx->log()->message(3, "* Setting the computational grid...\n");
+    log->message(3, "* Setting the computational grid...\n");
     IceGrid::Ptr g = IceGrid::FromOptions(ctx);
 
     IceModel m(g, ctx);
@@ -102,11 +100,11 @@ int main(int argc, char *argv[]) {
     } else {
       m.run();
 
-      ctx->log()->message(2, "... done with run\n");
+      log->message(2, "... done with run\n");
       // provide a default output file name if no -o option is given.
       m.writeFiles("unnamed.nc");
     }
-    print_unused_parameters(*ctx->log(), 3, *config);
+    print_unused_parameters(*log, 3, *config);
 
     if (profiling_log.is_set()) {
       ctx->profiling().report(profiling_log);

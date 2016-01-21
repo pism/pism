@@ -101,7 +101,7 @@ int NCFile::move_if_exists_impl(const std::string &file_to_move, int rank_to_use
 
       stat = rename(file_to_move.c_str(), backup_filename.c_str());
       if (stat != 0) {
-        printf("PISM ERROR: can't move '%s' to '%s'.\n", file_to_move.c_str(), backup_filename.c_str());
+        fprintf(stderr, "PISM ERROR: can't move '%s' to '%s'.\n", file_to_move.c_str(), backup_filename.c_str());
       }
 
     }
@@ -141,7 +141,7 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
 
       stat = remove(file_to_remove.c_str());
       if (stat != 0) {
-        printf("PISM ERROR: can't remove '%s'.\n", file_to_remove.c_str());
+        fprintf(stderr, "PISM ERROR: can't remove '%s'.\n", file_to_remove.c_str());
       }
     }
   } // end of "if (rank == rank_to_use)"
@@ -151,6 +151,15 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
 
   return global_stat;
 }
+
+int NCFile::def_var_chunking_impl(const std::string &name,
+                                  std::vector<size_t> &dimensions) const {
+  (void) name;
+  (void) dimensions;
+  // the default implementation does nothing
+  return 0;
+}
+
 
 void NCFile::open(const std::string &filename, IO_Mode mode) {
   int stat = this->open_impl(filename, mode); check(stat);
@@ -211,6 +220,12 @@ void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
   int stat = this->def_var_impl(name, nctype, dims); check(stat);
 }
+
+void NCFile::def_var_chunking(const std::string &name,
+                              std::vector<size_t> &dimensions) const {
+  int stat = this->def_var_chunking_impl(name, dimensions); check(stat);
+}
+
 
 void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,

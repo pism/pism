@@ -21,7 +21,7 @@
 #include "FETools.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 
@@ -347,10 +347,11 @@ void SSAFEM::cacheQuadPtValues() {
         // Now, for each column over a quadrature point, find the averaged_hardness.
         for (unsigned int q = 0; q < Nq; q++) {
           // Evaluate column integrals in flow law at every quadrature point's column
-          coefficients[q].B = m_flow_law->averaged_hardness(coefficients[q].H,
-                                                            m_grid->kBelowHeight(coefficients[q].H),
-                                                            &(m_grid->z()[0]),
-                                                            &(Enth_q[q])[0]);
+          coefficients[q].B = rheology::averaged_hardness(*m_flow_law,
+                                                          coefficients[q].H,
+                                                          m_grid->kBelowHeight(coefficients[q].H),
+                                                          &(m_grid->z()[0]),
+                                                          &(Enth_q[q])[0]);
         }
 
       } // j-loop

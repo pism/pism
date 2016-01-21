@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,6 +38,7 @@ using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 #include "base/util/petscwrappers/Vec.hh"
 #include "base/util/petscwrappers/VecScatter.hh"
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "io/io_helpers.hh"
 #include "base/util/Logger.hh"
 
@@ -291,8 +292,6 @@ void IceModelVec2::write_impl(const PIO &nc) const {
     return;
   }
 
-  m_grid->ctx()->log()->message(3, "+  Writing %s...\n", m_name.c_str());
-
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
   petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
@@ -313,8 +312,6 @@ void IceModelVec2::write_impl(const PIO &nc) const {
     io::write_spatial_variable(m_metadata[j], *m_grid, nc,
                            write_in_glaciological_units, tmp_array.get());
   }
-
-  m_grid->ctx()->log()->message(3, "+  Done writing %s.\n", m_name.c_str());
 }
 
 void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {

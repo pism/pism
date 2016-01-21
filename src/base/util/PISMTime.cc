@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "PISMTime.hh"
 #include "PISMTime_Calendar.hh"
 #include "pism_options.hh"
+#include "pism_utilities.hh"
 #include "error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/Logger.hh"
@@ -336,7 +337,7 @@ void Time::init(const Logger &log) {
 
 std::string Time::date(double T) const {
   char tmp[256];
-  snprintf(tmp, 256, "%012.3f", seconds_to_years(T));
+  snprintf(tmp, 256, "%.3f", seconds_to_years(T));
   return std::string(tmp);
 }
 

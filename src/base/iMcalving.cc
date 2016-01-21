@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2016 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_const.hh"
 #include "coupler/PISMOcean.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

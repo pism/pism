@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -59,7 +59,7 @@ Context::Ptr pisms_context(MPI_Comm com) {
 
   Time::Ptr time = time_from_options(com, config, sys);
 
-  EnthalpyConverter::Ptr EC = enthalpy_converter_from_options(*config);
+  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
   return Context::Ptr(new Context(com, sys, config, EC, time, logger, "pisms"));
 }
@@ -98,11 +98,12 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    Context::Ptr ctx = pisms_context(com);
     verbosityLevelFromOptions();
+    Context::Ptr ctx = pisms_context(com);
+    Logger::Ptr log = ctx->log();
 
-    ctx->log()->message(2, "PISMS %s (simplified geometry mode)\n",
-                        PISM_Revision);
+    log->message(2, "PISMS %s (simplified geometry mode)\n",
+                 PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -116,13 +117,19 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
 
-    bool done = show_usage_check_req_opts(com, "pisms", required, usage);
+    bool done = show_usage_check_req_opts(*log, "pisms", required, usage);
     if (done) {
       return 0;
     }
 
     std::string experiment = options::Keyword("-eisII", "EISMINT II experiment name",
                                               "A,B,C,D,E,F,G,H,I,J,K,L", "A");
+
+    // Stop if -eisII G or -eisII H was given.
+    if (experiment == "G" or experiment == "H") {
+      throw RuntimeError::formatted("EISMINT II experiment %s is not supported.",
+                                    experiment.c_str());
+    }
 
     Config::Ptr config = ctx->config();
 
@@ -133,12 +140,12 @@ int main(int argc, char *argv[]) {
 
     m.run();
 
-    verbPrintf(2,com, "... done with run \n");
+    log->message(2, "... done with run \n");
 
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed.nc");
 
-    print_unused_parameters(*ctx->log(), 3, *config);
+    print_unused_parameters(*log, 3, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

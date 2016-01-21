@@ -20,7 +20,7 @@
 
 #include "ShallowStressBalance.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLawFactory.hh"
 
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"

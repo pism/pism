@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,13 +20,13 @@
 
 #include "IP_SSAHardavForwardProblem.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/rheology/flowlaws.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace inverse {
@@ -588,9 +588,9 @@ void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMo
                                   KSPConvergedReasons[reason]);
   } else {
     m_log->message(4,
-               "IP_SSAHardavForwardProblem::apply_linearization converged"
-               " (KSP reason %s)\n",
-               KSPConvergedReasons[reason]);
+                   "IP_SSAHardavForwardProblem::apply_linearization converged"
+                   " (KSP reason %s)\n",
+                   KSPConvergedReasons[reason]);
   }
 
   du.copy_from(m_du_global);
@@ -658,8 +658,8 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
                                   KSPConvergedReasons[reason]);
   } else {
     m_log->message(4,
-               "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
-               KSPConvergedReasons[reason]);
+                   "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+                   KSPConvergedReasons[reason]);
   }
 
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);

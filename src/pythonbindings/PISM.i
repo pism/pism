@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,16 +33,16 @@
 
 #include "base/util/interpolation.hh"
 
+#include "base/util/pism_utilities.hh"
+
 #include "base/util/PISMUnits.hh"
 #include "pism_python.hh"
 
+#include "base/grounded_cell_fraction.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/varcEnthalpyConverter.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
-#include "base/rheology/flowlaws.hh"
-#include "base/rheology/flowlaw_factory.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMConfig.hh"
@@ -72,6 +72,7 @@
 #endif
 %include <std_shared_ptr.i>
 
+%template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;
 %template(DoubleVector) std::vector<double>;
@@ -148,8 +149,6 @@
 %apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
-%include pism_options.i
-
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
@@ -169,7 +168,14 @@
 
 /* PISM header with no dependence on other PISM headers. */
 %include "base/util/pism_const.hh"
+%include "base/util/pism_utilities.hh"
 %include "base/util/interpolation.hh"
+
+%shared_ptr(pism::Logger);
+%shared_ptr(pism::StringLogger);
+%include "base/util/Logger.hh"
+
+%include pism_options.i
 
 %ignore pism::Vector2::operator=;
 %include "base/util/Vector2.hh"
@@ -186,10 +192,6 @@
 %include pism_Vec.i
 /* End of independent PISM classes. */
 
-%shared_ptr(pism::Logger);
-%shared_ptr(pism::StringLogger);
-%include "base/util/Logger.hh"
-
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %shared_ptr(pism::DefaultConfig);
@@ -199,10 +201,7 @@
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%shared_ptr(pism::KirchhoffEnthalpyConverter);
-%shared_ptr(pism::varcEnthalpyConverter);
 %include "base/enthalpyConverter.hh"
-%include "base/varcEnthalpyConverter.hh"
 
 %shared_ptr(pism::Time);
 %include "base/util/PISMTime.hh"
@@ -232,9 +231,8 @@
 %include "base/util/MaxTimestep.hh"
 %include "base/util/PISMComponent.hh"
 %include "base/basalstrength/basal_resistance.hh"
-%include "base/rheology/flowlaws.hh"
 
-%include "base/rheology/flowlaw_factory.hh"
+%include pism_FlowLaw.i
 
 %include pism_ColumnSystem.i
 
@@ -243,6 +241,7 @@
  */
 %include pism_Hydrology.i
 
+%include "base/grounded_cell_fraction.hh"
 %include "base/util/Mask.hh"
 %include "pism_python.hh"
 %include "base/basalstrength/PISMYieldStress.hh"
@@ -258,9 +257,11 @@
  * PISM's stress balance headers.
  */
 %{
-#include "regional/regional.hh"
+#include "regional/SSAFD_Regional.hh"
+#include "regional/SIAFD_Regional.hh"
 %}
-%include "regional/regional.hh"
+%include "regional/SSAFD_Regional.hh"
+%include "regional/SIAFD_Regional.hh"
 
 %include "base/util/projection.hh"
 

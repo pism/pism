@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -578,9 +578,9 @@ void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMode
                                   KSPConvergedReasons[reason]);
   } else {
     m_log->message(4,
-               "IP_SSATaucForwardProblem::apply_linearization converged"
-               " (KSP reason %s)\n",
-               KSPConvergedReasons[reason]);
+                   "IP_SSATaucForwardProblem::apply_linearization converged"
+                   " (KSP reason %s)\n",
+                   KSPConvergedReasons[reason]);
   }
 
   du.copy_from(m_du_global);
@@ -651,9 +651,9 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
                                   KSPConvergedReasons[reason]);
   } else {
     m_log->message(4,
-               "IP_SSATaucForwardProblem::apply_linearization converged"
-               " (KSP reason %s)\n",
-               KSPConvergedReasons[reason]);
+                   "IP_SSATaucForwardProblem::apply_linearization converged"
+                   " (KSP reason %s)\n",
+                   KSPConvergedReasons[reason]);
   }
 
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);

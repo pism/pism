@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "base/util/pism_const.hh"
 #include "coupler/PISMOcean.hh"
 #include "earth/PISMBedDef.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

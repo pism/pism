@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,7 @@
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
 #include "base/util/Logger.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -100,7 +101,7 @@ void Diagnostic::set_attrs(const std::string &my_long_name,
 IceModelVec::Ptr Diagnostic::compute() {
   // use the name of the first variable
   std::vector<std::string> names;
-  for (int j = 0; j < m_vars.size(); ++j) {
+  for (unsigned int j = 0; j < m_vars.size(); ++j) {
     names.push_back(m_vars[j].get_name());
   }
   std::string all_names = join(names, ",");

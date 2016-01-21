@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -291,9 +291,8 @@ protected:
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
   
-  IceModelVec2S gl_mask, //!< mask to determine grounding line position
-    gl_mask_x, //!< mask to determine grounding line position in x-direction
-    gl_mask_y; //!< mask to determine grounding line position in y-direction
+  //! mask to determine grounding line position
+  IceModelVec2S gl_mask;
 
   IceModelVec3
   T3,             //!< absolute temperature of ice; K (ghosted)
@@ -304,7 +303,7 @@ protected:
   double   dt,     //!< mass continuity time step, s
     t_TempAge,  //!< time of last update for enthalpy/temperature
     dt_TempAge,  //!< enthalpy/temperature and age time-steps
-    maxdt_temporary, dt_force,
+    maxdt_temporary,
     dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
     gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
@@ -378,7 +377,7 @@ protected:
                            StarStencil<double> &SSA_velocity,
                            StarStencil<double> &SIA_flux);
   virtual void massContExplicitStep();
-  virtual void update_floatation_mask();
+  virtual void update_grounded_cell_fraction();
   virtual void do_calving();
   virtual void Href_cleanup();
   virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
@@ -472,6 +471,7 @@ protected:
   unsigned int current_snapshot;
   void init_snapshots();
   void write_snapshot();
+  MaxTimestep save_max_timestep(double my_t);
 
   // scalar time-series
   bool save_ts;                 //! true if the user requested time-series output

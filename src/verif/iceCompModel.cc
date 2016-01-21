@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,15 +23,15 @@
 #include <vector>     // STL vector container; sortable; used in test L
 #include <algorithm>  // required by sort(...) in test L
 
-#include "tests/exactTestsABCDE.h"
+#include "tests/exactTestsABCD.h"
 #include "tests/exactTestsFG.h"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
 #include "iceCompModel.hh"
-#include "base/stressbalance/sia/SIA_Sliding.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
+#include "base/rheology/PatersonBuddCold.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/io/PIO.hh"
@@ -47,6 +47,7 @@
 #include "base/util/Context.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Logger.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -198,15 +199,7 @@ void IceCompModel::allocate_stressbalance() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  if (testname == 'E') {
-    m_config->set_boolean("sia_sliding_verification_mode", true);
-    ShallowStressBalance *ssb = new SIA_Sliding(m_grid, EC);
-    SIAFD *sia = new SIAFD(m_grid, EC);
-
-    stress_balance = new StressBalance(m_grid, ssb, sia);
-  } else {
-    IceModel::allocate_stressbalance();
-  }
+  IceModel::allocate_stressbalance();
 
   if (testname != 'V') {
     // check on whether the options (already checked) chose the right
@@ -271,9 +264,8 @@ void IceCompModel::set_vars_from_options() {
   case 'B':
   case 'C':
   case 'D':
-  case 'E':
   case 'H':
-    initTestABCDEH();
+    initTestABCDH();
     break;
   case 'F':
   case 'G':
@@ -296,8 +288,8 @@ void IceCompModel::set_vars_from_options() {
   compute_enthalpy_cold(T3, Enth3);
 }
 
-void IceCompModel::initTestABCDEH() {
-  double     A0, T0, H, accum, dummy1, dummy2, dummy3;
+void IceCompModel::initTestABCDH() {
+  double     A0, T0, H, accum;
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -321,8 +313,7 @@ void IceCompModel::initTestABCDEH() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = m_grid->x(i), yy = m_grid->y(j),
-        r = radius(*m_grid, i, j);
+      const double r = radius(*m_grid, i, j);
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -340,16 +331,12 @@ void IceCompModel::initTestABCDEH() {
         exactD(time, r, &H, &accum);
         ice_thickness(i, j)   = H;
         break;
-      case 'E':
-        exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-        ice_thickness(i, j)   = H;
-        break;
       case 'H':
         exactH(f, time, r, &H, &accum);
         ice_thickness(i, j)   = H;
         break;
       default:
-        throw RuntimeError("test must be A, B, C, D, E, or H");
+        throw RuntimeError("test must be A, B, C, D, or H");
       }
     }
   } catch (...) {
@@ -477,7 +464,7 @@ void IceCompModel::initTestL() {
 }
 
 //! \brief Tests A and E have a thickness B.C. (ice_thickness == 0 outside a circle of radius 750km).
-void IceCompModel::reset_thickness_tests_AE() {
+void IceCompModel::reset_thickness_test_A() {
   const double LforAE = 750e3; // m
 
   IceModelVec::AccessList list(ice_thickness);
@@ -555,31 +542,6 @@ void IceCompModel::fillSolnTestABCDH() {
 }
 
 
-void IceCompModel::fillSolnTestE() {
-  double     H, accum, dummy;
-  Vector2     bvel;
-
-  // FIXME: This code messes with a field owned by the stress balance
-  // object. This is BAD.
-  IceModelVec2V &vel_adv = const_cast<IceModelVec2V&>(stress_balance->advective_velocity());
-
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(vel_adv);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    double xx = m_grid->x(i), yy = m_grid->y(j);
-    exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
-    ice_thickness(i,j) = H;
-    vel_adv(i,j)    = bvel;
-  }
-
-  ice_thickness.update_ghosts();
-}
-
-
 void IceCompModel::fillSolnTestL() {
 
   vHexactL.update_ghosts();
@@ -636,8 +598,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         area += a;
         vol += a * ice_thickness(i,j) * 1e-3;
       }
-      double xx = m_grid->x(i), yy = m_grid->y(j),
-        r = radius(*m_grid, i,j);
+      double xx = m_grid->x(i), r = radius(*m_grid, i,j);
       switch (testname) {
       case 'A':
         exactA(r,&Hexact,&dummy);
@@ -650,9 +611,6 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         break;
       case 'D':
         exactD(time,r,&Hexact,&dummy);
-        break;
-      case 'E':
-        exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
         break;
       case 'F':
         if (r > LforFG - 1.0) {  // outside of sheet
@@ -690,14 +648,14 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
             H0 = 600.0,
             v0 = units::convert(m_sys, 300.0, "m/year", "m/second"),
             Q0 = H0 * v0,
-            B0 = stress_balance->get_stressbalance()->flow_law()->hardness_parameter(0, 0),
+            B0 = stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
         }
         break;
       default:
-        throw RuntimeError("test must be A, B, C, D, E, F, G, H, K, L, or O");
+        throw RuntimeError("test must be A, B, C, D, F, G, H, K, L, or O");
       }
 
       if (Hexact > 0) {
@@ -741,61 +699,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 }
 
 
-void IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, double &gmaxvecerr,
-                                                        double &gavvecerr, double &gmaxuberr,
-                                                        double &gmaxvberr) {
-  double    maxvecerr, avvecerr, maxuberr, maxvberr;
-  double    ubexact,vbexact, dummy1,dummy2,dummy3;
-  Vector2    bvel;
-
-  if (testname != 'E') {
-    throw RuntimeError("basal velocity errors only computable for test E");
-  }
-
-  const IceModelVec2V &vel_adv = stress_balance->advective_velocity();
-
-  IceModelVec::AccessList list;
-  list.add(vel_adv);
-  list.add(ice_thickness);
-
-  maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (ice_thickness(i,j) > 0.0) {
-      double xx = m_grid->x(i), yy = m_grid->y(j);
-      exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
-      // compute maximum errors
-      const double uberr = fabs(vel_adv(i,j).u - ubexact);
-      const double vberr = fabs(vel_adv(i,j).v - vbexact);
-      maxuberr = std::max(maxuberr,uberr);
-      maxvberr = std::max(maxvberr,vberr);
-      const double vecerr = sqrt(uberr*uberr + vberr*vberr);
-      maxvecerr = std::max(maxvecerr,vecerr);
-      avvecerr += vecerr;
-    }
-  }
-
-  gmaxuberr = GlobalMax(m_grid->com, maxuberr);
-  gmaxvberr = GlobalMax(m_grid->com, maxvberr);
-
-  gmaxvecerr = GlobalMax(m_grid->com, maxvecerr);
-  gavvecerr = GlobalSum(m_grid->com, avvecerr);
-  gavvecerr = gavvecerr/(m_grid->Mx()*m_grid->My());
-
-  const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),
-                    ypeak = 450e3 * sin(25.0*(M_PI/180.0));
-  exactE(xpeak,ypeak,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
-  exactmaxspeed = sqrt(ubexact*ubexact + vbexact*vbexact);
-}
-
-
 void IceCompModel::additionalAtStartTimestep() {
-
-  if (exactOnly == true && testname != 'K') {
-    dt_force = m_config->get_double("maximum_time_step_years", "seconds");
-  }
-
   if (testname == 'F' || testname == 'G') {
     getCompSourcesTestFG();
   }
@@ -804,8 +708,8 @@ void IceCompModel::additionalAtStartTimestep() {
 
 void IceCompModel::additionalAtEndTimestep() {
 
-  if (testname == 'A' || testname == 'E') {
-    reset_thickness_tests_AE();
+  if (testname == 'A') {
+    reset_thickness_test_A();
   }
 
   // do nothing at the end of the time step unless the user has asked for the
@@ -830,9 +734,6 @@ void IceCompModel::additionalAtEndTimestep() {
   case 'D':
   case 'H':
     fillSolnTestABCDH();
-    break;
-  case 'E':
-    fillSolnTestE();
     break;
   case 'F':
   case 'G':
@@ -1105,42 +1006,6 @@ void IceCompModel::reportErrors() {
       err.set_name("average_surface_w");
       err.set_string("long_name", "average ice surface vertical velocity error");
       io::write_timeseries(nc, err, (size_t)start, avWerr);
-    }
-  }
-
-  // basal velocity errors if appropriate; reported in m/year except prcntavvec
-  if (testname == 'E') {
-    double exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
-    computeBasalVelocityErrors(exactmaxspeed,
-                               maxvecerr,avvecerr,maxuberr,maxvberr);
-    m_log->message(1,
-               "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
-    m_log->message(1,
-               "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
-               units::convert(m_sys, maxvecerr, "m/second", "m/year"),
-               units::convert(m_sys, avvecerr, "m/second", "m/year"),
-               (avvecerr/exactmaxspeed)*100.0,
-               units::convert(m_sys, maxuberr, "m/second", "m/year"),
-               units::convert(m_sys, maxvberr, "m/second", "m/year"));
-
-    if (report_file.is_set()) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("maximum_basal_velocity");
-      err.set_string("units", "m/s");
-      err.set_string("glaciological_units", "meters/year");
-      io::write_timeseries(nc, err, (size_t)start, maxvecerr);
-
-      err.set_name("average_basal_velocity");
-      io::write_timeseries(nc, err, (size_t)start, avvecerr);
-      err.set_name("maximum_basal_u");
-      io::write_timeseries(nc, err, (size_t)start, maxuberr);
-      err.set_name("maximum_basal_v");
-      io::write_timeseries(nc, err, (size_t)start, maxvberr);
-
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("relative_basal_velocity");
-      err.set_string("units", "percent");
-      io::write_timeseries(nc, err, (size_t)start, (avvecerr/exactmaxspeed)*100);
     }
   }
 

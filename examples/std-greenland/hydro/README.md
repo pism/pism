@@ -1,11 +1,9 @@
 std-greenland/hydro/
 ===========
 
-These subglacial hydrology runs are documented in the paper
+These subglacial hydrology runs are documented in the published paper
 
-*  E. Bueler, W. Van Pelt (2014) _Mass-conserving subglacial hydrology in the_
-   _Parallel Ice Sheet Model_. Geoscientific Model Development Discussions
-   7 (4) pp. 4705–4775, doi:10.5194/gmdd-7-4705-2014
+*  E. Bueler and W. van Pelt (2015) Mass-conserving subglacial hydrology in the Parallel Ice Sheet Model version 0.6. Geoscientific Model Development 8 (6) pp. 1613–1635, [doi:10.5194/gmd-8-1613-2015](http://dx.doi.org/10.5194/gmd-8-1613-2015)
 
 These runs start with input data from files generated one level up (directory
 `examples/std-greenland/`), especially from script `gridseq.sh`.  Thus these

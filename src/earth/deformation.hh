@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #ifndef __deformation_hh
 #define __deformation_hh
+
+#include <vector>
 
 #include <petscvec.h>
 #include <fftw3.h>

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -461,7 +461,7 @@ PSB_wvel::PSB_wvel(StressBalance *m)
   m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
 }
 
-IceModelVec::Ptr PSB_wvel::compute_impl() {
+IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
   IceModelVec3::Ptr result3(new IceModelVec3);
   result3->create(m_grid, "wvel", WITHOUT_GHOSTS);
   result3->metadata() = m_vars[0];
@@ -509,8 +509,12 @@ IceModelVec::Ptr PSB_wvel::compute_impl() {
 
       // in the ice:
       if (M.grounded(i,j)) {
+        const double
+          bed_dx = bed->diff_x_p(i,j),
+          bed_dy = bed->diff_y_p(i,j),
+          uplift_ij = (*uplift)(i,j);
         for (int k = 0; k <= ks ; k++) {
-          result[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+          result[k] = w[k] + uplift_ij + u[k] * bed_dx + v[k] * bed_dy;
         }
 
       } else {                  // floating
@@ -525,8 +529,16 @@ IceModelVec::Ptr PSB_wvel::compute_impl() {
       }
 
       // above the ice:
-      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
-        result[k] = 0.0;
+      if (zero_above_ice) {
+        // set to zeros
+        for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
+          result[k] = 0.0;
+        }
+      } else {
+        // extrapolate using the topmost value
+        for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
+          result[k] = result[ks];
+        }
       }
 
     }
@@ -536,6 +548,10 @@ IceModelVec::Ptr PSB_wvel::compute_impl() {
   loop.check();
 
   return result3;
+}
+
+IceModelVec::Ptr PSB_wvel::compute_impl() {
+  return this->compute(true);   // fill wvel above the ice with zeros
 }
 
 PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
@@ -564,7 +580,8 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() {
   result->create(m_grid, "wvelsurf", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec3::Ptr w3 = IceModelVec3::To3DScalar(PSB_wvel(model).compute());
+  // here "false" means "don't fill w3 above the ice surface with zeros"
+  IceModelVec3::Ptr w3 = IceModelVec3::To3DScalar(PSB_wvel(model).compute(false));
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -615,7 +632,8 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() {
   result->create(m_grid, "wvelbase", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec3::Ptr w3 = IceModelVec3::To3DScalar(PSB_wvel(model).compute());
+  // here "false" means "don't fill w3 above the ice surface with zeros"
+  IceModelVec3::Ptr w3 = IceModelVec3::To3DScalar(PSB_wvel(model).compute(false));
 
   w3->getHorSlice(*result, 0.0);
 

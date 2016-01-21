@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,9 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
+#include "base/util/pism_utilities.hh"
+
+#include "base/grounded_cell_fraction.hh"
 
 namespace pism {
 
@@ -112,7 +115,6 @@ void IceModel::update_mask(const IceModelVec2S &bed,
  * @param[in] thickness ice thickness
  * @param[out] result computed surface elevation
  *
- * @return 0 on success.
  */
 void IceModel::update_surface_elevation(const IceModelVec2S &bed,
                                         const IceModelVec2S &thickness,
@@ -823,246 +825,22 @@ void IceModel::massContExplicitStep() {
 
 /**
    @brief Updates the fractional "flotation mask".
-
-   This mask ranges from 0 to 1 and is equal to the fraction of the
-   cell (by area) that is grounded.
-
-   Currently it is used to adjust the basal drag near the grounding
-   line in the SSAFD stress balance model and the basal melt rate
-   computation in the energy balance code (IceModel::temperatureStep()
-   and IceModel::enthalpyAndDrainageStep()).
-
-   We use the 1D (flow line) parameterization of the sub-grid
-   grounding line position due to [@ref Gladstoneetal2010], (section
-   3.1.1) and generalize it to the case of arbitrary sea level
-   elevation. Then this sub-grid grounding line position is used to
-   compute the grounded area fraction for each cell.
-
-   We use the "LI" 1D grounding line position parameterization in "x"
-   and "y" directions *independently*. The grounding line positions in
-   the "x" and "y" directions (@f$ \lambda_x @f$ and @f$ \lambda_y
-   @f$) are then interpreted as *width* and *height* of a rectangular
-   sub-set of the cell. The grounded area is computed as the product
-   of these two: @f$ A_g = \lambda_x \times \lambda_y. @f$
-
-   Consider a cell at `(i,j)` and assume that the ice is grounded
-   there and floating at `(i+1,j)`.
-
-   Assume that the ice thickness and bedrock elevation change linearly
-   from `(i,j)` to `(i+1,j)` and drop the `j` index for clarity:
-
-   @f{align*}{
-   H(\lambda) &= H_{i}(1 - \lambda) + H_{i+1}\lambda,\\
-   b(\lambda) &= b_{i}(1 - \lambda) + b_{i+1}\lambda.\\
-   @f}
-
-   Here @f$ \lambda @f$ is the dimensionless variable parameterizing
-   the sub-grid grounding line position, ranging from 0 to 1.
-
-   Now, substituting @f$ b(\lambda) @f$ and @f$ H(\lambda) @f$ into
-   the floatation criterion
-
-   @f{align*}{
-   \mu\cdot H(\lambda) &= z_{\text{sea level}} - b(\lambda),\\
-   \mu &= \rho_{\text{ice}} / \rho_{\text{sea water}}.
-   @f}
-
-   and solving for @f$ \lambda @f$, we get
-
-   @f{align*}{
-   \lambda_{g} &= \frac{\alpha}{\alpha - \beta}\\
-   & \text{where} \\
-   \alpha &= \mu\cdot H_{i} + b_{i} - z_{\text{sea level}}\\
-   \beta &= \mu\cdot H_{i+1} + b_{i+1} - z_{\text{sea level}}.
-   @f}
-
-   Note that [@ref Gladstoneetal2010] describe a parameterization of
-   the grounding line position within a cell defined as the interval
-   from the grid point `(i)` to the grid point `(i+1)`, with the ice
-   thickness @f$ H @f$ and the bed elevation @f$ b @f$ defined *at
-   grid points* (boundaries of a 1D cell).
-
-   Here we compute a grounded fraction of the **cell centered at the
-   grid point**. Grid-point-centered cells and cells with grid points
-   at their corners are shifted by 0.5 of a cell width relative to
-   each other.
-
-   This explains if-clauses like this one:
-   ~~~ c++
-   if (lambda_g < 0.5) {
-     gl_mask_gr_x += (lambda_g - 0.5);
-   }
-   ~~~
-
-   they convert the sub-grid grounding line position into the form
-   used by PISM.
-
-   FIXME: sometimes alpha<0 (slightly below flotation) even though the
-   mask says grounded
  */
-void IceModel::update_floatation_mask() {
+void IceModel::update_grounded_cell_fraction() {
 
-  MaskQuery mask(vMask);
-
-  double
+  const double
     ice_density   = m_config->get_double("ice_density"),
-    ocean_density = m_config->get_double("sea_water_density"),
-    mu            = ice_density / ocean_density;
+    ocean_density = m_config->get_double("sea_water_density");
 
   assert(ocean != NULL);
-  double sea_level = ocean->sea_level_elevation();
+  const double sea_level = ocean->sea_level_elevation();
 
-  gl_mask.set(0.0);
-  gl_mask_x.set(0.0);
-  gl_mask_y.set(0.0);
-
+  assert(beddef != NULL);
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(bed_topography);
-  list.add(vMask);
-  list.add(gl_mask);
-  list.add(gl_mask_x);
-  list.add(gl_mask_y);
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double
-        alpha        = 0.0,
-        beta         = 0.0,
-        lambda_g     = 0.0,
-        gl_mask_gr_x = 1.0,
-        gl_mask_gr_y = 1.0,
-        gl_mask_fl_x = 1.0,
-        gl_mask_fl_y = 1.0;
-
-      // grounded part
-      if (mask.grounded(i, j)) {
-        alpha = mu*ice_thickness(i, j) + bed_topography(i, j) - sea_level;
-
-        if (mask.ocean(i + 1, j)) {
-
-          beta = mu*ice_thickness(i + 1, j) + bed_topography(i + 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_x += (lambda_g - 0.5);
-          }
-
-        } else if (mask.ocean(i - 1, j)) {
-
-          beta = mu*ice_thickness(i - 1, j) + bed_topography(i - 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_x += (lambda_g - 0.5);
-          }
-
-        } else if (mask.ocean(i, j + 1)) {
-
-          beta = mu*ice_thickness(i, j + 1) + bed_topography(i, j + 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_y += (lambda_g - 0.5);
-          }
-
-        } else if (mask.ocean(i, j - 1)) {
-
-          beta = mu*ice_thickness(i, j - 1) + bed_topography(i, j - 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g < 0.5) {
-            gl_mask_gr_y += (lambda_g - 0.5);
-          }
-
-        }
-
-        gl_mask_x(i,j) = gl_mask_gr_x;
-        gl_mask_y(i,j) = gl_mask_gr_y;
-        gl_mask(i,j)   = gl_mask_gr_x * gl_mask_gr_y;
-      }
-
-      // floating part
-      if (mask.floating_ice(i, j)) {
-        beta = mu*ice_thickness(i, j) + bed_topography(i, j) - sea_level;
-
-        if (mask.grounded(i - 1, j)) {
-
-          alpha = mu*ice_thickness(i - 1, j) + bed_topography(i - 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_x -= (lambda_g - 0.5);
-          }
-
-        } else if (mask.grounded(i + 1, j)) {
-
-          alpha = mu*ice_thickness(i + 1, j) + bed_topography(i + 1, j) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_x -= (lambda_g - 0.5);
-          }
-
-        } else if (mask.grounded(i, j - 1)) {
-
-          alpha = mu*ice_thickness(i, j - 1) + bed_topography(i, j - 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_y -= (lambda_g - 0.5);
-          }
-
-        } else if (mask.grounded(i, j + 1)) {
-
-          alpha = mu*ice_thickness(i, j + 1) + bed_topography(i, j + 1) - sea_level;
-
-          assert(alpha - beta != 0.0);
-          lambda_g = alpha / (alpha - beta);
-          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
-
-          if (lambda_g >= 0.5) {
-            gl_mask_fl_y -= (lambda_g - 0.5);
-          }
-
-        }
-
-        gl_mask_x(i,j) = 1.0 - gl_mask_fl_x;
-        gl_mask_y(i,j) = 1.0 - gl_mask_fl_y;
-        gl_mask(i,j)   = 1.0 - gl_mask_fl_x * gl_mask_fl_y;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
+  compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
+                          ice_thickness, bed_topography, vMask,
+                          gl_mask, NULL, NULL);
 }
 
 } // end of namespace pism

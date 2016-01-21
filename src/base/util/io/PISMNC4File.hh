@@ -54,7 +54,11 @@ protected:
   virtual int inq_ndims_impl(int &result) const;
 
   // var
-  virtual int def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  virtual int def_var_chunking_impl(const std::string &name,
+                                    std::vector<size_t> &dimensions) const;
+
+  virtual int def_var_impl(const std::string &name,
+                           IO_Type nctype, const std::vector<std::string> &dims) const;
 
   virtual int get_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2015 Constantine Khroulev
+// Copyright (C) 2009-2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@
 #include "base/util/io/io_helpers.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -526,6 +527,17 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
   }
 
   return reporting_max_timestep(extra_times, my_t);
+}
+
+//! Computes the maximum time-step we can take and still hit all `-extra_times`.
+MaxTimestep IceModel::save_max_timestep(double my_t) {
+
+  if ((not save_snapshots) or
+      (not m_config->get_boolean("save_force_output_times"))) {
+    return MaxTimestep();
+  }
+
+  return reporting_max_timestep(snapshot_times, my_t);
 }
 
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.

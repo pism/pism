@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,7 +128,7 @@ Give first argument NULL to get standard out.  No binary viewer.
 
 Give description string as `info` argument.
 
-Result should be executable as part of a Matlab/Octave script.
+Result should be executable as a Python (SciPy) script.
 
 Does not stop on non-fatal errors.
  */
@@ -138,20 +138,11 @@ void TridiagonalSystem::save_vector(std::ostream &output,
                                     const std::string &variable) const {
   assert(system_size >= 1);
 
-  output << "%% viewing ColumnSystem column object with description '" << variable << "'"
-         << " (columns  [k value])" << std::endl;
-
-  output << variable << "_with_index = [..." << std::endl;
+  output << variable << " = numpy.array([";
   for (unsigned int k = 0; k < system_size; k++) {
-    output << "  " << k << " " << v[k];
-    if (k == system_size - 1) {
-      output << "];" << std::endl;
-    } else {
-      output << ";" << std::endl;
-    }
+    output << v[k] << ", ";
   }
-
-  output << variable << " = " << variable << "_with_index(:,2);\n" << std::endl;
+  output << "])" << std::endl;
 }
 
 
@@ -162,8 +153,8 @@ Give first argument NULL to get standard out.  No binary viewer.
 Give description string as `info` argument.
  */
 void TridiagonalSystem::save_matrix(std::ostream &output,
-                                 unsigned int system_size,
-                                 const std::string &variable) const {
+                                    unsigned int system_size,
+                                    const std::string &variable) const {
 
   if (system_size < 2) {
     std::cout << "\n\n<nmax >= 2 required to view tri-diagonal matrix " << variable
@@ -171,50 +162,17 @@ void TridiagonalSystem::save_matrix(std::ostream &output,
     return;
   }
 
-  if (system_size > 500) {
-    std::cout << "\n\n<nmax > 500:" << variable
-              << " matrix too big to display as full; viewing tridiagonal matrix diagonals..."
-              << std::endl;
+  save_vector(output, m_U, system_size, variable + "_U");
+  save_vector(output, m_D, system_size,   variable + "_D");
+  save_vector(output, m_L, system_size, variable + "_L");
 
-    save_vector(output, m_U, system_size + 1, variable + "_super_diagonal_U");
-    save_vector(output, m_D, system_size,   variable + "_diagonal_D");
-
-    // discard m_L[0], which is not used
-    {
-      std::vector<double> L_tmp(system_size - 1);
-      for (unsigned int i = 0; i < system_size - 1; ++i) {
-        L_tmp[i] = m_L[i + 1];
-      }
-      save_vector(output, L_tmp, system_size - 1, variable + "_sub_diagonal_L");
-    }
-  } else {
-    output << "\n"
-           << variable << " = [..." << std::endl;
-
-    for (unsigned int i = 0; i < system_size; ++i) { // row
-      for (unsigned int j = 0; j < system_size; j++) { // column
-        double A_ij = 0.0;
-
-        if (j == i - 1) {
-          A_ij = m_L[i];
-        } else if (j == i) {
-          A_ij = m_D[i];
-        } else if (j == i + 1) {
-          A_ij = m_U[i];
-        } else {
-          A_ij = 0.0;
-        }
-
-        output << A_ij << " ";
-      } // column loop
-
-      if (i != system_size - 1) {
-        output << ";" << std::endl;
-      } else {
-        output << "];" << std::endl;
-      }
-    } // row-loop
-  } // end of printing the full matrix
+  // prepare to convert to a sparse matrix
+  output << variable << "_diagonals = ["
+         << variable << "_L[1:], "
+         << variable << "_D, "
+         << variable << "_U[:-1]]" << std::endl;
+  output << "import scipy.sparse" << std::endl;
+  output << variable << " = scipy.sparse.diags(" << variable << "_diagonals, [-1, 0, 1])" << std::endl;
 }
 
 
@@ -225,12 +183,14 @@ void TridiagonalSystem::save_system(std::ostream &output,
   save_vector(output, m_rhs, system_size, m_prefix + "_rhs");
 }
 
-//! Write system matrix, right-hand-side, and (provided) solution into an already-named m-file.
+//! Write system matrix, right-hand-side, and (provided) solution into an already-named Python
+//! script.
 void TridiagonalSystem::save_system_with_solution(const std::string &filename,
                                                   unsigned int M,
                                                   const std::vector<double> &x) {
   std::ofstream output(filename.c_str());
-  output << "% system has 1-norm = " << norm1(M)
+  output << "import numpy" << std::endl;
+  output << "# system has 1-norm = " << norm1(M)
          << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
 
   save_system(output, M);
@@ -377,14 +337,14 @@ void columnSystemCtx::init_column(int i, int j,
 #endif
 }
 
-//! Write system matrix and right-hand-side into an m-file.  The file name contains ZERO_PIVOT_ERROR.
+//! Write system matrix and right-hand-side into an Python script.  The file name contains ZERO_PIVOT_ERROR.
 void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
   char filename[TEMPORARY_STRING_LENGTH];
-  snprintf(filename, sizeof(filename), "%s_i%d_j%d_ZERO_PIVOT_ERROR.m",
+  snprintf(filename, sizeof(filename), "%s_i%d_j%d_ZERO_PIVOT_ERROR.py",
            m_solver->prefix().c_str(), m_i, m_j);
 
   std::ofstream output(filename);
-  output << "% system has 1-norm = " << m_solver->norm1(M)
+  output << "# system has 1-norm = " << m_solver->norm1(M)
          << " and diagonal-dominance ratio = " << m_solver->ddratio(M) << std::endl;
 
   m_solver->save_system(output, M);
@@ -392,45 +352,22 @@ void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
 
 
 //! @brief Write system matrix, right-hand-side, and (provided)
-//! solution into an m-file. Constructs file name from m_prefix.
-/*!
-An example of the use of this procedure is from <c>examples/searise-greenland/</c>
-running the enthalpy formulation.  First run spinup.sh in that directory  (FIXME:
-which was modified to have equal spacing in z, when I did this example) to
-generate `g20km_steady.nc`.  Then:
+//! solution into Python script. Constructs file name from m_prefix.
+void columnSystemCtx::save_to_file(const std::vector<double> &x) {
 
-\code
-  $ pismr -calving ocean_kill -e 3 -atmosphere searise_greenland -surface pdd \
-          -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
-          -no_mass -y 1 -i g20km_steady.nc -view_sys -id 19 -jd 79
+  char filename[TEMPORARY_STRING_LENGTH];
+  snprintf(filename, sizeof(filename), "%s_i%d_j%d.py", m_solver->prefix().c_str(), m_i, m_j);
 
-    ...
-
-  $ octave -q
-  >> enth_i19_j79
-  >> whos
-
-    ...
-
-  >> A = enth_A; b = enth_rhs; x = enth_x;
-  >> norm(x - (A\b))/norm(x)
-  ans =  1.4823e-13
-  >> cond(A)
-  ans =  2.6190
-\endcode
-
-Of course we can also do `spy(A)`, `eig(A)`, and look at individual entries,
-and row and column sums, and so on.
- */
-void columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x) {
   std::cout << "saving "
             << m_solver->prefix() << " column system at (i,j)"
-            << " = (" << m_i << "," << m_j << ") to m-file...\n" << std::endl;
+            << " = (" << m_i << "," << m_j << ") to " << filename << " ...\n" << std::endl;
 
-  char buffer[TEMPORARY_STRING_LENGTH];
-  snprintf(buffer, sizeof(buffer), "%s_i%d_j%d.m", m_solver->prefix().c_str(), m_i, m_j);
+  this->save_to_file(filename, x);
+}
 
-  m_solver->save_system_with_solution(buffer, m_z.size(), x);
+void columnSystemCtx::save_to_file(const std::string &filename,
+                                   const std::vector<double> &x) {
+  m_solver->save_system_with_solution(filename, m_z.size(), x);
 }
 
 } // end of namespace pism

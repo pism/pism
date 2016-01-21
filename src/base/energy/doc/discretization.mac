@@ -1,0 +1,53 @@
+linel : 200$
+
+/* The definition of mu. */
+mu_eq : mu = dt / (2 * dz);
+/* The definition of R. */
+R_eq[k] := R[k] = K[k] * dt / (rho * dz^2);
+/* Equations used to get rid of K in the discretization. */
+Rplus  : solve(R_eq[k+half], K[k+half])[1]$
+Rminus : solve(R_eq[k-half], K[k-half])[1]$
+/* Define one over dz to make the equation prettier. */
+one_over_dz : 1 / dz$
+
+/* Upwinding */
+Up(a, b) := if b >= 0 then op(a)[k] - op(a)[k - 1] else op(a)[k + 1] - op(a)[k];
+
+/* The discretization itself. */
+arg(x) := args(x)[1];
+Delta(x) := (op(x)[arg(x)+1] - op(x)[arg(x)-1]);
+delta_p(x) := (op(x)[arg(x)+1] - op(x)[arg(x)]);
+delta_m(x) := (op(x)[arg(x)] - op(x)[arg(x)-1]);
+
+eq :
+rho * ((E[k] - Eold[k]) / dt
+  + lambda * w[k] * 'Delta(E[k]) / (2 * dz)
+  + (1 - lambda) * w[k] * 'Up(E[k], w[k]) / dz)
+- 'one_over_dz * (K[k+half] * 'delta_p(E[k]) / dz - K[k-half] * 'delta_m(E[k]) / dz) = Phi[k];
+
+/* The discretization with the upwinding "operator" expanded according
+to the sign of w */
+eq1 : eq, nouns;
+
+/* Multiply by dt / rho and expand. */
+eq2 : eq * dt / rho, nouns, expand$
+
+/* Simplify */
+eq3 : ev(lhs(eq2), Rplus, Rminus, solve(mu_eq, dt)[1]) = rhs(eq2)$
+
+/* Factor out E[k-1], E[k], E[k+1] */
+eq4 : facsum(eq3, E[k-1], E[k], E[k+1]);
+
+l : facsum(coeff(lhs(eq4), E[k-1]), w[k])$
+d : facsum(coeff(lhs(eq4), E[k]), w[k])$
+u : facsum(coeff(lhs(eq4), E[k+1]), w[k])$
+b : rhs(eq4) - (lhs(eq4) - E[k-1]*l - E[k]*d - E[k+1]*u), expand$
+
+/* Test that the lower, diagonal, upper diagonal entries and the
+b give an equation equivalent to eq4. test should simplify to 0. */
+test : lhs(eq4) - rhs(eq4) - (E[k-1]*l + E[k]*d + E[k+1]*u - b), expand;
+
+l_eq : L[k] = l;
+d_eq : D[k] = d;
+u_eq : U[k] = u;
+b_eq : B[k] = b;

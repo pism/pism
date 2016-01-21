@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "PISMConfigInterface.hh"
 #include "PISMUnits.hh"
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 

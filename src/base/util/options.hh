@@ -32,19 +32,22 @@ public:
   Option() {
     m_is_set = false;
   }
-  bool is_set() {
+  bool is_set() const {
     return m_is_set;
   }
-  T value() {
+  T value() const {
     return m_value;
   }
-  operator T() {
+  operator T() const {
     return m_value;
+  }
+  const T* operator->() const {
+    return &m_value;
   }
   T* operator->() {
     return &m_value;
   }
-  bool operator==(const T& other) {
+  bool operator==(const T& other) const {
     return m_value == other;
   }
 protected:

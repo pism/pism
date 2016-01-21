@@ -23,6 +23,7 @@
 #include "Logger.hh"
 #include "pism_const.hh"
 #include "pism_options.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -71,17 +72,33 @@ void Logger::message_impl(const char buffer[]) const {
   verbPrintf(1, m_impl->com, buffer);
 }
 
+void Logger::error(const char format[], ...) const {
+  char buffer[8192];
+  va_list argp;
+
+  va_start(argp, format);
+  vsnprintf(buffer, sizeof(buffer), format, argp);
+  va_end(argp);
+
+  error_impl(buffer);
+}
+
+void Logger::error_impl(const char buffer[]) const {
+  PetscErrorCode ierr = PetscFPrintf(m_impl->com, stderr, buffer);
+  PISM_CHK(ierr, "PetscFPrintf");
+}
+
 void Logger::set_threshold(int level) {
   m_impl->threshold = level;
 }
 int Logger::get_threshold() const {
   return m_impl->threshold;
 }
-void Logger::disable() {
+void Logger::disable() const {
   m_impl->enabled = false;
 }
 
-void Logger::enable() {
+void Logger::enable() const {
   m_impl->enabled = true;
 }
 
@@ -112,6 +129,10 @@ StringLogger::~StringLogger() {
 }
 
 void StringLogger::message_impl(const char buffer[]) const {
+  m_impl->data << buffer;
+}
+
+void StringLogger::error_impl(const char buffer[]) const {
   m_impl->data << buffer;
 }
 

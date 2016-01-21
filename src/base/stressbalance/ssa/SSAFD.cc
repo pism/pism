@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/pism_options.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
@@ -288,6 +288,7 @@ void SSAFD::assemble_rhs() {
     rho_ocean = m_config->get_double("sea_water_density"),
     rho_ice = m_config->get_double("ice_density");
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
 
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
@@ -367,7 +368,8 @@ void SSAFD::assemble_rhs() {
             bMM = 0;
         }
 
-        double ocean_pressure = ocean_pressure_difference(ocean(M_ij), H_ij, (*m_bed)(i,j), sea_level,
+        double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
+                                                          H_ij, (*m_bed)(i,j), sea_level,
                                                           rho_ice, rho_ocean, standard_gravity);
 
         if (m_melange_back_pressure != NULL) {
@@ -1212,8 +1214,9 @@ void SSAFD::compute_hardav_staggered() {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid->kBelowHeight(H),
-                                                        &(m_grid->z()[0]), &E[0]);
+        hardness(i,j,o) = rheology::averaged_hardness(*m_flow_law,
+                                                      H, m_grid->kBelowHeight(H),
+                                                      &(m_grid->z()[0]), &E[0]);
       } // o
     }
   } catch (...) {

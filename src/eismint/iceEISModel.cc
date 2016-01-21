@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,8 @@
 #include "iceEISModel.hh"
 
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
-#include "base/stressbalance/sia/SIA_Sliding.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Context.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -79,15 +79,8 @@ void IceEISModel::allocate_stressbalance() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  ShallowStressBalance *my_stress_balance;
-
+  ShallowStressBalance *my_stress_balance = new ZeroSliding(m_grid, EC);
   SSB_Modifier *modifier = new SIAFD(m_grid, EC);
-
-  if (m_experiment == 'G' || m_experiment == 'H') {
-    my_stress_balance = new SIA_Sliding(m_grid, EC);
-  } else {
-    my_stress_balance = new ZeroSliding(m_grid, EC);
-  }
 
   // ~StressBalance() will de-allocate my_stress_balance and modifier.
   stress_balance = new StressBalance(m_grid, my_stress_balance, modifier);

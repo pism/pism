@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,10 +27,12 @@
 #include <cstring>              // memset
 #include <cstdio>               // stderr, fprintf
 
-namespace pism {
-namespace io {
+#include "base/util/pism_utilities.hh" // join
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
+
+namespace pism {
+namespace io {
 
 NC3File::NC3File(MPI_Comm c)
   : NCFile(c), m_rank(0) {
@@ -764,62 +766,101 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
   return 0;
 }
 
+// Get a text (character array) attribute on rank 0.
+static int get_att_text(int ncid, int varid, const std::string &att_name,
+                        std::string &result) {
+  int stat = 0;
+
+  size_t attlen = 0;
+  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  if (stat != NC_NOERR) {
+    result = "";
+    return 0;
+  }
+
+  std::vector<char> buffer(attlen + 1, 0);
+  stat = nc_get_att_text(ncid, varid, att_name.c_str(), &buffer[0]);
+  if (stat == NC_NOERR) {
+    result = &buffer[0];
+  } else {
+    result = "";
+  }
+
+  return 0;
+}
+
+// Get a string attribute on rank 0. In "string array" attributes array elements are concatenated
+// using "," as the separator.
+static int get_att_string(int ncid, int varid, const std::string &att_name,
+                          std::string &result) {
+  int stat = 0;
+
+  size_t attlen = 0;
+  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  if (stat != NC_NOERR) {
+    result = "";
+    return 0;
+  }
+
+  std::vector<char*> buffer(attlen, NULL);
+  stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
+  if (stat == NC_NOERR) {
+    std::vector<std::string> strings(attlen);
+    for (size_t k = 0; k < attlen; ++k) {
+      strings[k] = buffer[k];
+    }
+    result = join(strings, ",");
+  } else {
+    result = "";
+  }
+  stat = nc_free_string(attlen, &buffer[0]);
+
+  return stat;
+}
+
+
 //! \brief Gets a text attribute.
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int NC3File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  char *str = NULL;
-  int stat, len, varid = -1;
+  int stat = 0, varid = -1;
 
   // Read and broadcast the attribute length:
   if (m_rank == 0) {
-    size_t attlen;
-
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+    nc_type nctype;
+    stat = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
+
     if (stat == NC_NOERR) {
-      len = static_cast<int>(attlen);
+      if (nctype == NC_CHAR) {
+        stat = pism::io::get_att_text(m_file_id, varid, att_name, result); check(stat);
+      } else if (nctype == NC_STRING) {
+        stat = pism::io::get_att_string(m_file_id, varid, att_name, result); check(stat);
+      } else {
+        result = "";
+      }
+    } else if (stat == NC_ENOTATT) {
+      result = "";
     } else {
-      len = 0;
+      check(stat);
     }
   }
+
+  int len = result.size();
   MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
 
-  // Allocate some memory or clear result and return:
-  if (len == 0) {
-    result.clear();
-    return 0;
-  }
-  str = new char[len + 1];
-  // Zealously clear the string, so that we don't risk moving unitialized bytes
-  // over MPI (because Valgrind can't tell the difference between these
-  // harmless bytes and potential memory errors)
-  memset(str, 0, len + 1);
+  result.resize(len);
+  MPI_Bcast(&result[0], len, MPI_CHAR, 0, m_com);
 
-  // Now read the string and broadcast stat to see if we succeeded:
-  if (m_rank == 0) {
-    stat = nc_get_att_text(m_file_id, varid, att_name.c_str(), str);
-  }
-  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
-
-  // On success, broadcast the string. On error, set str to "".
-  if (stat == NC_NOERR) {
-    MPI_Bcast(str, len + 1, MPI_CHAR, 0, m_com);
-  } else {
-    strcpy(str, "");
-  }
-
-  result = str;
-
-  delete[] str;
   return 0;
 }
+
 
 //! \brief Writes a double attribute.
 /*!

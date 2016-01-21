@@ -24,9 +24,13 @@
 
 namespace pism {
 
+RuntimeError::Hook RuntimeError::sm_hook = NULL;
+
 RuntimeError::RuntimeError(const std::string &message)
   : std::runtime_error(message) {
-  // empty
+  if (sm_hook != NULL) {
+    sm_hook(this);
+  }
 }
 
 
@@ -39,6 +43,10 @@ RuntimeError RuntimeError::formatted(const char format[], ...) {
   va_end(argp);
 
   return RuntimeError(buffer);
+}
+
+void RuntimeError::set_hook(Hook new_hook) {
+  sm_hook = new_hook;
 }
 
 RuntimeError::~RuntimeError() throw() {
@@ -167,11 +175,10 @@ void ParallelSection::failed() {
   int rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  PetscPrintf(MPI_COMM_SELF, "PISM ERROR: ### Rank %d message:\n", rank);
+  PetscFPrintf(MPI_COMM_SELF, stderr,
+               "PISM ERROR: Rank %d failed with the following message.\n", rank);
 
   handle_fatal_errors(MPI_COMM_SELF);
-
-  PetscPrintf(MPI_COMM_SELF, "PISM ERROR: ### Rank %d message ends here.\n", rank);
 
   m_failed = true;
 }

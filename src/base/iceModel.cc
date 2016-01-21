@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,6 +47,7 @@
 #include "pism_signal.h"
 #include "base/util/PISMVars.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -127,7 +128,6 @@ void IceModel::reset_counters() {
 
   maxdt_temporary = 0.0;
   dt              = 0.0;
-  dt_force        = 0.0;
   skipCountDown   = 0;
 
   timestep_hit_multiples_last_time = m_time->current();
@@ -265,18 +265,6 @@ void IceModel::createVecs() {
                       "fractional grounded/floating mask (floating=0, grounded=1)",
                       "", "");
     m_grid->variables().add(gl_mask);
-
-    gl_mask_x.create(m_grid, "gl_mask_x", WITHOUT_GHOSTS);
-    gl_mask_x.set_attrs("internal",
-                        "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
-                        "", "");
-    m_grid->variables().add(gl_mask_x);
-
-    gl_mask_y.create(m_grid, "gl_mask_y", WITHOUT_GHOSTS);
-    gl_mask_y.set_attrs("internal",
-                        "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
-                        "", "");
-    m_grid->variables().add(gl_mask_y);
   }
 
   // grounded_dragging_floating integer mask
@@ -608,7 +596,7 @@ void IceModel::step(bool do_mass_continuity,
   double current_time = m_time->current();
 
   //! \li call additionalAtStartTimestep() to let derived classes do more
-  additionalAtStartTimestep();  // might set dt_force,maxdt_temporary
+  additionalAtStartTimestep();  // might set maxdt_temporary
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
@@ -637,7 +625,7 @@ void IceModel::step(bool do_mass_continuity,
   // stress balance and the energy code)
   if (m_config->get_boolean("sub_groundingline")) {
     updateSurfaceElevationAndMask(); // update h and mask
-    update_floatation_mask();
+    update_grounded_cell_fraction();
   }
 
   double sea_level = ocean->sea_level_elevation();
@@ -660,8 +648,9 @@ void IceModel::step(bool do_mass_continuity,
                                                   "_stressbalance_failed", "");
     dumpToFile(o_file);
 
-    throw RuntimeError::formatted("stress balance computation failed. Model state was saved to '%s'",
-                                  o_file.c_str());
+    e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
+                  o_file.c_str());
+    throw;
   }
 
   stdout_flags += stress_balance->stdout_report();
@@ -853,7 +842,6 @@ void IceModel::run() {
   while (m_time->current() < m_time->end()) {
 
     stdout_flags.erase();  // clear it out
-    dt_force = -1.0;
     maxdt_temporary = -1.0;
 
     step(do_mass_conserve, do_energy, do_age, do_skip);

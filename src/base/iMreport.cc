@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,7 @@
 #include "coupler/PISMOcean.hh"
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -65,7 +66,7 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
 
       if (mask.icy(i, j)) {
         // accumulate area of base which is at melt point
-        if (EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           meltarea += a;
         }
       }
@@ -285,7 +286,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     if (use_calendar) {
-      snprintf(tempstr,90, "%s", m_time->date().c_str());
+      snprintf(tempstr,90, "%12s", m_time->date().c_str());
     } else {
       snprintf(tempstr,90, "%.3f", m_time->convert_time_interval(m_time->current(), tunitstr));
     }
@@ -402,12 +403,12 @@ double  IceModel::compute_ice_volume_temperate() {
         const double A = cell_area(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          if (EC->is_temperate(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          if (EC->is_temperate_relaxed(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
             volume += (m_grid->z(k + 1) - m_grid->z(k)) * A;
           }
         }
 
-        if (EC->is_temperate(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate_relaxed(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           volume += (ice_thickness(i,j) - m_grid->z(ks)) * A;
         }
       }
@@ -446,12 +447,12 @@ double IceModel::compute_ice_volume_cold() {
         const double A = cell_area(i, j);
 
         for (int k=0; k<ks; ++k) {
-          if (not EC->is_temperate(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          if (not EC->is_temperate_relaxed(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
             volume += (m_grid->z(k+1) - m_grid->z(k)) * A;
           }
         }
 
-        if (not EC->is_temperate(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+        if (not EC->is_temperate_relaxed(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           volume += (ice_thickness(i,j) - m_grid->z(ks)) * A;
         }
       }
@@ -509,7 +510,7 @@ double IceModel::compute_ice_area_temperate() {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
-          EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
       }
     }
@@ -545,7 +546,7 @@ double IceModel::compute_ice_area_cold() {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and
-          not EC->is_temperate(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          not EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
       }
     }

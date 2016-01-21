@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,13 @@
 #include "SSA.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/pism_utilities.hh"
 
 #include "SSA_diagnostics.hh"
 
@@ -105,7 +106,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   {
     rheology::FlowLawFactory ice_factory("ssa_", m_config, m_EC);
-    ice_factory.remove_type(ICE_GOLDSBY_KOHLSTEDT);
+    ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
     m_flow_law = ice_factory.create();
   }
 }
@@ -459,14 +460,14 @@ IceModelVec::Ptr SSA_taud_mag::compute_impl() {
 }
 
 //! Evaluate the ocean pressure difference term in the calving-front BC.
-double SSA::ocean_pressure_difference(bool shelf, double H, double bed, double sea_level,
+double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
                                       double rho_ice, double rho_ocean, double g) {
   if (shelf) {
     // floating shelf
     return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
   } else {
     // grounded terminus
-    if (bed >= sea_level) {
+    if (bed >= sea_level or dry_mode) {
       return 0.5 * rho_ice * g * H * H;
     } else {
       return 0.5 * rho_ice * g * (H * H - (rho_ocean / rho_ice) * pow(sea_level - bed, 2.0));

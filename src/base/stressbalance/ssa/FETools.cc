@@ -20,7 +20,6 @@
 #include <cassert>
 
 #include "FETools.hh"
-#include "base/rheology/flowlaws.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/iceModelVec.hh"
 #include "base/util/error_handling.hh"

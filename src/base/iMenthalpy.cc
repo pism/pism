@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2015 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2016 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -288,7 +288,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       // ignore advection and strain heating in ice if isMarginal
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
-      system.initThisColumn(i, j, isMarginal, ice_thickness(i, j));
+      system.init(i, j, isMarginal, ice_thickness(i, j));
 
       // enthalpy and pressures at top of ice
       const double
@@ -315,12 +315,12 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       }
 
       const bool is_floating = mask.ocean(i, j);
-
-      bool base_is_cold = system.Enth(0) < system.Enth_s(0);
+      bool base_is_warm = system.Enth(0) >= system.Enth_s(0);
+      bool above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 
       // set boundary conditions and update enthalpy
       {
-        system.setDirichletSurface(Enth_ks);
+        system.set_surface_dirichlet(Enth_ks);
 
         // determine lowest-level equation at bottom of ice; see
         // decision chart in the source code browser and page
@@ -331,20 +331,31 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           double Enth0 = EC->enthalpy_permissive(shelfbtemp(i, j), 0.0,
                                                EC->pressure(ice_thickness(i, j)));
 
-          system.setDirichletBasal(Enth0);
-        } else if (base_is_cold) {
-          // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-          system.setBasalHeatFlux(basal_heat_flux(i, j) + Rb(i, j));
+          system.set_basal_dirichlet(Enth0);
         } else {
-          // warm, grounded base case
-          system.setBasalHeatFlux(0.0);
+          // grounded ice warm and wet 
+          if (base_is_warm && (till_water_thickness(i, j) > 0.0)) {
+            if (above_base_is_warm) {
+              // temperate layer at base (Neumann) case:  q . n = 0  (K0 grad E . n = 0)
+              system.set_basal_heat_flux(0.0);
+            } else {
+              // only the base is warm: E = E_s(p) (Dirichlet)
+              // ( Assumes ice has zero liquid fraction. Is this a valid assumption here?
+              system.set_basal_dirichlet(system.Enth_s(0));
+            }
+          } else {
+            // (Neumann) case:  q . n = q_lith . n + F_b
+            // a) cold and dry base, or
+            // b) base that is still warm from the last time step, but without basal water
+            system.set_basal_heat_flux(basal_heat_flux(i, j) + Rb(i, j));
+          }
         }
 
         // solve the system
-        system.solveThisColumn(Enthnew);
+        system.solve(Enthnew);
 
         if (viewOneColumn && (i == id && j == jd)) {
-          system.viewColumnInfoMFile(Enthnew);
+          system.save_to_file(Enthnew);
         }
       }
 
@@ -434,7 +445,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
       // compute basal melt rate
       {
-        base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i,j) == 0.0);
+        bool base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i,j) == 0.0);
         // Determine melt rate, but only preliminarily because of
         // drainage, from heat flux out of bedrock, heat flux into
         // ice, and frictional heating
@@ -454,7 +465,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
               Tpmp_0 = EC->melting_temperature(p_0);
 
             const bool k1_istemperate = EC->is_temperate(Enthnew[1], p_1); // level  z = + \Delta z
-
             double hf_up;
             if (k1_istemperate) {
               const double
@@ -463,7 +473,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
               hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / dz;
             } else {
               double T_0 = EC->temperature(Enthnew[0], p_0);
-              const double K_0 = system.k_from_T(T_0) / EC->c(T_0);
+              const double K_0 = system.k_from_T(T_0) / EC->c();
 
               hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / dz;
             }
